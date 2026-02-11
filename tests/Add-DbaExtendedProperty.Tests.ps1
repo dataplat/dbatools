@@ -66,4 +66,27 @@ Describe $CommandName -Tag IntegrationTests {
             $ep.Value | Should -Be "Sup"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputEp = @{
+                Name  = "dbatoolsci_OutputTest"
+                Value = "OutputValidation"
+            }
+            $outputResult = $db | Add-DbaExtendedProperty @splatOutputEp
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ExtendedProperty"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ParentName", "Type", "Name", "Value")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

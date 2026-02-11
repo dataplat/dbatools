@@ -42,7 +42,7 @@ function Enable-DbaReplPublishing {
 
         Returns one ReplicationServer object per instance specified, representing the publisher configuration. The object is refreshed after the publishing configuration is created, reflecting the updated replication state.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (inherited from Get-DbaReplServer via Select-DefaultView):
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
@@ -53,12 +53,11 @@ function Enable-DbaReplPublishing {
 
         Additional properties available (from SMO ReplicationServer object):
         - DistributionDatabases: Collection of distribution databases configured on the instance
-        - PublisherConnections: Collection of publishers configured on the distributor
-        - Distributors: Collection of distributors configured on this instance
+        - DistributionPublishers: Collection of publishers configured on the distributor
         - RegisteredSubscribers: Collection of registered subscribers
-        - Publishers: Collection of publishers configured on the distributor
+        - ReplicationDatabases: Collection of databases enabled for replication
 
-        All properties from the base SMO ReplicationServer object are accessible through Select-Object *.
+        All properties from the base SMO ReplicationServer object are accessible using Select-Object *.
 
     .NOTES
         Tags: repl, Replication

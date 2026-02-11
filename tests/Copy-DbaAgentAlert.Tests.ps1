@@ -127,4 +127,47 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Contain "dbatoolsci test alert"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputAlertName = "dbatoolsci output alert"
+            $serverOutputSetup = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
+            $serverOutputSetup.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($outputAlertName)',
+            @message_id=0,
+            @severity=7,
+            @enabled=1,
+            @delay_between_responses=0,
+            @include_event_description_in=0,
+            @category_name=N'[Uncategorized]',
+            @job_id=N'00000000-0000-0000-0000-000000000000';")
+
+            $splatCopyOutputAlert = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Alert       = $outputAlertName
+            }
+            $result = Copy-DbaAgentAlert @splatCopyOutputAlert
+        }
+
+        AfterAll {
+            $serverOutputCleanup1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
+            $serverOutputCleanup1.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($outputAlertName)'") 2>$null
+            $serverOutputCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -Database master
+            $serverOutputCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($outputAlertName)'") 2>$null
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

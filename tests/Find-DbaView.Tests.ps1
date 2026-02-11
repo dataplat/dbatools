@@ -89,4 +89,58 @@ AS
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_viewoutput"
+            $outputView = @"
+CREATE VIEW dbo.v_dbatoolsci_outputtest
+AS
+    SELECT [sid],[loginname],[sysadmin]
+    FROM [master].[sys].[syslogins];
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewoutput" -Query $outputView
+            $result = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci_outputtest -Database "dbatoolsci_viewoutput"
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewoutput" -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "ViewTextFound"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in the default display" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "View" -Because "View should be excluded from default display"
+            $defaultProps | Should -Not -Contain "ViewFullText" -Because "ViewFullText should be excluded from default display"
+        }
+
+        It "Has the additional properties available" {
+            $result[0].psobject.Properties["View"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["ViewFullText"] | Should -Not -BeNullOrEmpty
+        }
+    }
 }

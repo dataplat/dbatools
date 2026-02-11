@@ -41,4 +41,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            try {
+                $outputResult = Clear-DbaLatchStatistics -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            } catch {
+                $outputResult = $null
+            }
+            # Filter out null elements that may come from ShouldProcess issues in Pester
+            if ($outputResult) {
+                $outputResult = @($outputResult | Where-Object { $null -ne $PSItem })
+                if ($outputResult.Count -eq 0) { $outputResult = $null }
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Status")
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

@@ -147,4 +147,44 @@ Describe $CommandName -Tag IntegrationTests {
             $results.where( { $PSItem.object -eq "[dbo].[t2]" }).IncludeColumns | Should -Be "c3, c4"
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Index",
+                "IndexType",
+                "KeyColumns",
+                "IncludeColumns",
+                "FilterDefinition",
+                "FillFactor",
+                "DataCompression",
+                "IndexReads",
+                "IndexUpdates",
+                "Size",
+                "IndexRows",
+                "IndexLookups",
+                "MostRecentlyUsed",
+                "StatsSampleRows",
+                "StatsRowMods",
+                "HistogramSteps",
+                "StatsLastUpdated"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

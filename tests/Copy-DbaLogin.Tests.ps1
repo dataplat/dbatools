@@ -341,4 +341,49 @@ Describe $CommandName -Tag IntegrationTests {
             $functionContent | Should -BeLike '*xp_logininfo*'
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Clean up tester on destination, then copy fresh for output validation
+            Initialize-TestLogin -Instance $TestConfig.InstanceCopy2 -Login "dbatoolsci_outputlogin"
+            Initialize-TestLogin -Instance $TestConfig.InstanceCopy1 -Login "dbatoolsci_outputlogin"
+
+            # Create a dedicated test login on source
+            $outputLoginPassword = ConvertTo-SecureString -Force -AsPlainText "dbatoolsci_pass1A"
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceCopy1 -Login "dbatoolsci_outputlogin" -SecurePassword $outputLoginPassword
+
+            $splatOutputCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Login       = "dbatoolsci_outputlogin"
+                Force       = $true
+            }
+            $outputResult = Copy-DbaLogin @splatOutputCopy
+        }
+        AfterAll {
+            Initialize-TestLogin -Instance $TestConfig.InstanceCopy2 -Login "dbatoolsci_outputlogin"
+            Initialize-TestLogin -Instance $TestConfig.InstanceCopy1 -Login "dbatoolsci_outputlogin"
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the correct values for key properties" {
+            $outputResult[0].Name | Should -BeExactly "dbatoolsci_outputlogin"
+            $outputResult[0].Type | Should -BeLike "Login - *"
+            $outputResult[0].Status | Should -BeExactly "Successful"
+            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
+            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
+    }
 }

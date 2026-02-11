@@ -52,9 +52,9 @@ function Get-DbaDbFeatureUsage {
         https://dbatools.io/Get-DbaDbFeatureUsage
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
-        Returns one object per Enterprise-edition feature found in the queried database(s).
+        Returns one DataRow per Enterprise-edition feature found in the queried database(s).
 
         Properties:
         - ComputerName: The name of the computer hosting the SQL Server instance
@@ -64,7 +64,7 @@ function Get-DbaDbFeatureUsage {
         - Feature: The name of the Enterprise-edition feature that is currently in use
         - Database: The database where this Enterprise feature was detected
 
-        No properties are returned if no Enterprise features are found in the queried database(s).
+        No rows are returned if no Enterprise features are found in the queried database(s).
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDbFeatureUsage

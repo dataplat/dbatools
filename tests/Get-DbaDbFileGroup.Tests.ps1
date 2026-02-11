@@ -104,4 +104,24 @@ Describe $CommandName -Tag IntegrationTests {
             $pipedResults.Parent.Name | Should -Contain "msdb"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.FileGroup"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Parent", "FileGroupType", "Name", "Size")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

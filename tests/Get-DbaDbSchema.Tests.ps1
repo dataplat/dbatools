@@ -159,4 +159,24 @@ Describe $CommandName -Tag IntegrationTests {
             $schemas | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName -IncludeSystemSchemas
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "IsSystemObject")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -81,4 +81,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Copy again with Force to get output for validation
+            $splatCopyOutput = @{
+                Source      = $TestConfig.InstanceCopy2
+                Destination = $TestConfig.InstanceCopy1
+                CMSGroup    = $groupName
+                Force       = $true
+            }
+            $outputResult = @(Copy-DbaRegServer @splatCopyOutput)
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the correct values for migration properties" {
+            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
+            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $outputResult[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
+        }
+    }
 }

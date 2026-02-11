@@ -392,3 +392,49 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputJobName = "dbatoolsci_outhist_$(Get-Random)"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -StepName "dbatoolsci_step1" -Subsystem TransactSql -Command "select 1"
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Wait
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = @(Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.AgentJobHistory"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Job", "StepName", "RunDate", "StartDate", "EndDate", "Duration", "Status", "OperatorEmailed", "Message")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property for Job" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["Job"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Job"].MemberType | Should -Be "AliasProperty"
+        }
+    }
+}

@@ -62,4 +62,32 @@ Describe $CommandName -Tag IntegrationTests {
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Cmd",
+                "Output",
+                "Field",
+                "Data"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

@@ -119,4 +119,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.FailoverMode | Should -Be "Manual"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $primaryAgName
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Name",
+                "Role",
+                "RollupSynchronizationState",
+                "AvailabilityMode",
+                "BackupPriority",
+                "EndpointUrl",
+                "SessionTimeout",
+                "FailoverMode",
+                "ReadonlyRoutingList"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

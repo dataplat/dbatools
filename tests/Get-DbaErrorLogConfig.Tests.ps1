@@ -39,4 +39,23 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "LogCount", "LogSize", "LogPath")
+            foreach ($prop in $expectedProps) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

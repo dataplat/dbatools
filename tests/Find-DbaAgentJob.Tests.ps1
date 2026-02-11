@@ -114,4 +114,56 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -HaveCount 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_outputval
+            if (-not $result) {
+                $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_testjob_outputval" -OwnerLogin "sa"
+                $result = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_outputval
+            }
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_testjob_outputval" -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Category",
+                "OwnerLoginName",
+                "CurrentRunStatus",
+                "CurrentRunRetryAttempt",
+                "Enabled",
+                "LastRunDate",
+                "LastRunOutcome",
+                "DateCreated",
+                "HasSchedule",
+                "OperatorToEmail",
+                "CreateDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

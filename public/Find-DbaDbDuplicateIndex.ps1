@@ -38,9 +38,9 @@ function Find-DbaDbDuplicateIndex {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
-        Returns one object per duplicate or overlapping index found. When exact duplicates are found, one object is returned for each matching index (e.g., if three indexes have identical structure, three objects are returned).
+        Returns one data row per duplicate or overlapping index found. When exact duplicates are found, one object is returned for each matching index (e.g., if three indexes have identical structure, three objects are returned).
 
         Properties:
         - DatabaseName: Name of the database containing the index

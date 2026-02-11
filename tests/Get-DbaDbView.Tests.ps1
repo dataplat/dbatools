@@ -112,4 +112,33 @@ Describe $CommandName -Tag IntegrationTests {
             @($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database tempdb -View $viewName
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.View"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "CreateDate",
+                "DateLastModified",
+                "Name"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

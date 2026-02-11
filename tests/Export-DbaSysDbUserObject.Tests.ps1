@@ -153,4 +153,20 @@ Describe $CommandName -Tag IntegrationTests {
             $script -match "IF NOT EXISTS" | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        It "Returns strings when using -PassThru" {
+            $resultPassThru = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -PassThru
+            $resultPassThru | Should -Not -BeNullOrEmpty
+            $resultPassThru[0] | Should -BeOfType System.String
+        }
+
+        It "Returns a file when using -FilePath" {
+            $outputFilePath = "$backupPath\dbatoolsci_outputvalidation_$(Get-Random).sql"
+            $resultFile = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFilePath
+            $resultFile | Should -Not -BeNullOrEmpty
+            $resultFile | Should -BeOfType System.IO.FileInfo
+            Remove-Item -Path $outputFilePath -ErrorAction SilentlyContinue
+        }
+    }
 }

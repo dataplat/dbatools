@@ -69,4 +69,22 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Option | Should -Be "ansi_nulls"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDbccUserOption -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Option", "Value")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
+            }
+        }
+    }
 }

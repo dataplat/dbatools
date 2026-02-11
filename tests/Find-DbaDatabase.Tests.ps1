@@ -77,4 +77,37 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceBrokerGuid | Should -BeLike "*-0000-0000-000000000000"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Pattern Master
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Id",
+                "Size",
+                "Owner",
+                "CreateDate",
+                "ServiceBrokerGuid",
+                "Tables",
+                "StoredProcedures",
+                "Views",
+                "ExtendedProperties"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
 }

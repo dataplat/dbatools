@@ -74,4 +74,24 @@ Describe $CommandName -Tag IntegrationTests {
             $schedule.ActiveStartTimeOfDay | Should -Be "01:00:00"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Copy all schedules again - they will be skipped as already existing which still returns valid MigrationObject output
+            $outputResult = @(Copy-DbaAgentSchedule -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2)
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

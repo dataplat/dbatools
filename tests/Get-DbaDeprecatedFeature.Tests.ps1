@@ -38,4 +38,22 @@ Describe $CommandName -Tag IntegrationTests {
             $deprecatedResults.DeprecatedFeature | Should -Contain "sysdatabases"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "DeprecatedFeature", "UsageCount")
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

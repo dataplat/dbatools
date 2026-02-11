@@ -30,4 +30,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IsHadrEnabled | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaAgHadr -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Server"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "IsHadrEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

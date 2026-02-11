@@ -68,4 +68,31 @@ Describe $CommandName -Tag IntegrationTests {
             $ep.Name | Should -Be "dbatoolz"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaExtendedProperty -SqlInstance $server2 -Database $newDbName
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ExtendedProperty"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ParentName",
+                "Type",
+                "Name",
+                "Value"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

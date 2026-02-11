@@ -36,4 +36,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceInstallDate -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "SqlInstallDate")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has SqlInstallDate as a DbaDateTime value" {
+            $result.SqlInstallDate | Should -Not -BeNullOrEmpty
+            $result.SqlInstallDate.GetType().FullName | Should -Be "Dataplat.Dbatools.Utility.DbaDateTime"
+        }
+    }
+
+    Context "Output validation with IncludeWindows" {
+        BeforeAll {
+            $resultWindows = Get-DbaInstanceInstallDate -SqlInstance $TestConfig.InstanceSingle -IncludeWindows
+        }
+
+        It "Has the expected default display properties with WindowsInstallDate" {
+            if (-not $resultWindows) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $resultWindows.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "SqlInstallDate", "WindowsInstallDate")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

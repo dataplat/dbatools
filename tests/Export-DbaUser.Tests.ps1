@@ -216,4 +216,25 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputFileValidation = "$($TestConfig.Temp)\Dbatoolsci_user_OutputValidation.sql"
+            $resultFile = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -FilePath $outputFileValidation
+            $resultPassthru = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru
+        }
+        AfterAll {
+            Remove-Item -Path $outputFileValidation -ErrorAction SilentlyContinue
+        }
+
+        It "Returns System.IO.FileInfo when writing to file" {
+            $resultFile | Should -Not -BeNullOrEmpty
+            $resultFile | Should -BeOfType System.IO.FileInfo
+        }
+
+        It "Returns System.String when using -Passthru" {
+            $resultPassthru | Should -Not -BeNullOrEmpty
+            $resultPassthru | Should -BeOfType [System.String]
+        }
+    }
 }

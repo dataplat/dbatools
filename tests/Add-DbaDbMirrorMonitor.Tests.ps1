@@ -31,4 +31,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results.MonitorStatus | Should -Be "Added"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            $result = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle | Where-Object MonitorStatus
+        }
+
+        AfterAll {
+            Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.MonitorStatus | Should -Be "Added"
+        }
+    }
 }

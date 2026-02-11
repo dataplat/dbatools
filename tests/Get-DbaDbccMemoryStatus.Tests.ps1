@@ -66,4 +66,29 @@ Describe $CommandName -Tag IntegrationTests {
             $memoryStatusResults.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output validation" {
+        It "Returns output of the documented type" {
+            $memoryStatusResults | Should -Not -BeNullOrEmpty
+            $memoryStatusResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "RecordSet",
+                "RowId",
+                "RecordSetId",
+                "Type",
+                "Name",
+                "Value",
+                "ValueType"
+            )
+            foreach ($prop in $expectedProperties) {
+                $memoryStatusResults[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
+            }
+        }
+    }
 }

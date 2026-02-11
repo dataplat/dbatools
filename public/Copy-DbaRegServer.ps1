@@ -59,11 +59,11 @@ function Copy-DbaRegServer {
         https://dbatools.io/Copy-DbaRegServer
 
     .OUTPUTS
-        PSCustomObject
+        PSCustomObject (MigrationObject)
 
         Returns one object per migration action (group creation, instance addition, etc.). The command returns multiple objects representing the status of different CMS components being migrated.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: The timestamp when the migration action occurred (DbaDateTime object)
         - SourceServer: Name of the source SQL Server instance from which items are being copied
         - DestinationServer: Name of the destination SQL Server instance to which items are being copied

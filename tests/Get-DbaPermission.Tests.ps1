@@ -140,4 +140,22 @@ Describe $CommandName -Tag IntegrationTests {
 
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaPermission -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "PermState", "PermissionName", "SecurableType", "Securable", "Grantee", "GranteeType", "RevokeStatement", "GrantStatement")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
 }

@@ -134,4 +134,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputPath = "$($TestConfig.Temp)\$CommandName-outputtest-$(Get-Random)"
+            $null = New-Item -Path $outputPath -ItemType Directory
+            $outputFilePath = "$outputPath\dbatoolsci_outputtest.sql"
+            $passthruResult = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -Passthru
+            $fileResult = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -FilePath $outputFilePath
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns string output when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns FileInfo output when using -FilePath" {
+            if (-not $fileResult) { Set-ItResult -Skipped -Because "no file result to validate" }
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+    }
 }

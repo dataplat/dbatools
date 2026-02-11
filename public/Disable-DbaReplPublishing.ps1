@@ -45,21 +45,11 @@ function Disable-DbaReplPublishing {
 
         Returns the ReplicationServer object for each instance after disabling publishing. The instance is returned with its publisher configuration removed from the distributor.
 
-        Default display properties (via Select-DefaultView):
-        - ComputerName: The computer name of the SQL Server instance
-        - InstanceName: The SQL Server instance name
-        - SqlInstance: The full SQL Server instance name (computer\instance)
+        Properties include:
         - IsDistributor: Boolean indicating whether this instance is configured as a distributor
         - IsPublisher: Boolean indicating whether this instance is configured as a publisher (will be False after successful execution)
-        - DistributionServer: The name of the server hosting the distribution database
-        - DistributionDatabase: The name of the distribution database
-
-        Additional properties available on the ReplicationServer object (accessible via Select-Object *):
         - DistributionDatabases: Collection of distribution databases on this distributor
         - DistributionPublishers: Collection of publishers registered with this distributor
-        - Subscribers: Collection of subscribers connected to this distributor
-        - PublisherDatabases: Collection of databases published from this instance
-        - SubscriptionServers: Collection of subscription servers
         - ConnectionContext: The server connection context used for RMO operations
 
     .LINK

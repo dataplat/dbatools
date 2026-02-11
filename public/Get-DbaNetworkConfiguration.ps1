@@ -59,7 +59,6 @@ function Get-DbaNetworkConfiguration {
         - TcpIpProperties: Nested object containing Enabled, KeepAlive, and ListenAll properties for TCP/IP configuration
         - TcpIpAddresses: Array of objects representing IP address configurations with properties like Name, Active, Enabled, IpAddress, TcpDynamicPorts, and TcpPort
         - Certificate: Nested object containing SSL certificate information (FriendlyName, DnsNameList, Thumbprint, Generated, Expires, IssuedTo, IssuedBy, Certificate object)
-        - SuitableCertificate: Array of certificates from the local machine store that are suitable for SQL Server encryption based on key usage, signature algorithm, validity, and DNS names
         - Advanced: Nested object containing advanced settings (ForceEncryption, HideInstance, AcceptedSPNs, ExtendedProtection)
 
         When -OutputType ServerProtocols is specified:

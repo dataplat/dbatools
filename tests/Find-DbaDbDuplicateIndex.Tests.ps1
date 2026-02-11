@@ -88,4 +88,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status.Count | Should -BeGreaterOrEqual 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutput = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "dbatools_dupeindex"
+            }
+            $result = @(Find-DbaDbDuplicateIndex @splatOutput)
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "DatabaseName",
+                "TableName",
+                "IndexName",
+                "KeyColumns",
+                "IncludedColumns",
+                "IndexType",
+                "IndexSizeMB",
+                "RowCount",
+                "IsDisabled",
+                "IsUnique",
+                "IsFiltered",
+                "CompressionDescription"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
 }

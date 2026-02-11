@@ -142,4 +142,61 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputJobName = "dbatoolsci_copyjobstep_output_$(Get-Random)"
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $outputJobName
+            $splatOutputStep = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Job         = $outputJobName
+                StepName    = "OutputStep1"
+                Subsystem   = "TransactSql"
+                Command     = "SELECT 1"
+            }
+            $null = New-DbaAgentJobStep @splatOutputStep
+            $null = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Job $outputJobName
+
+            # Add another step so synchronization has something new to copy
+            $splatOutputStep2 = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Job         = $outputJobName
+                StepName    = "OutputStep2"
+                Subsystem   = "TransactSql"
+                Command     = "SELECT 2"
+            }
+            $null = New-DbaAgentJobStep @splatOutputStep2
+
+            $splatOutputValidation = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Job         = $outputJobName
+            }
+            $result = @(Copy-DbaAgentJobStep @splatOutputValidation | Where-Object { $null -ne $PSItem })
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

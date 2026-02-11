@@ -67,4 +67,51 @@ Describe $CommandName -Tag IntegrationTests {
             $newConfig.ConfiguredValue | Should -Be $sourceConfigValue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Set a different value on destination so the copy produces a Successful result
+            $outputSourceConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy1 -ConfigName RemoteQueryTimeout
+            $outputDestConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout
+            $outputOriginalValue = $outputDestConfig.ConfiguredValue
+
+            if ($outputSourceConfig.ConfiguredValue -eq $outputDestConfig.ConfiguredValue) {
+                $outputTempValue = $outputSourceConfig.ConfiguredValue + 100
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout -Value $outputTempValue
+            }
+
+            $splatOutputCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                ConfigName  = "RemoteQueryTimeout"
+            }
+            $result = Copy-DbaSpConfigure @splatOutputCopy
+        }
+
+        AfterAll {
+            if ($outputOriginalValue) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout -Value $outputOriginalValue -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected values for standard migration properties" {
+            $result[0].Type | Should -Be "Configuration Value"
+            $result[0].Status | Should -BeIn @("Successful", "Skipped")
+            $result[0].SourceServer | Should -Not -BeNullOrEmpty
+            $result[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
+    }
 }

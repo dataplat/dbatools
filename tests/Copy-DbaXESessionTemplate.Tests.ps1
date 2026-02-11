@@ -48,4 +48,20 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputTestDest = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $outputTestDest -ItemType Directory -Force
+            $result = Copy-DbaXESessionTemplate -Destination $outputTestDest
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputTestDest -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

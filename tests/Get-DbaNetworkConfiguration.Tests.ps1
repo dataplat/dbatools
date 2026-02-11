@@ -59,4 +59,57 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsTcpIpProperties | Sort-Object)
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $resultFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+            $resultCert = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType Certificate
+        }
+
+        It "Returns output of type PSCustomObject for Full output" {
+            if (-not $resultFull) { Set-ItResult -Skipped -Because "no result to validate" }
+            $resultFull | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct properties for Full output" {
+            if (-not $resultFull) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SharedMemoryEnabled",
+                "NamedPipesEnabled",
+                "TcpIpEnabled",
+                "TcpIpProperties",
+                "TcpIpAddresses",
+                "Certificate",
+                "Advanced"
+            )
+            foreach ($prop in $expectedProps) {
+                $resultFull.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has the expected default display properties for Certificate output" {
+            if (-not $resultCert) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $resultCert[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ServiceAccount",
+                "ForceEncryption",
+                "FriendlyName",
+                "DnsNameList",
+                "Thumbprint",
+                "Generated",
+                "Expires",
+                "IssuedTo",
+                "IssuedBy"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

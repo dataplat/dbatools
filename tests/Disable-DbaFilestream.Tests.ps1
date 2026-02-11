@@ -41,4 +41,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceAccessLevel | Should -Be 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Enable filestream first so we can test disabling it
+            $null = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            $outputResult = Disable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force
+        }
+
+        It "Returns output with expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceAccess",
+                "ServiceAccess",
+                "ServiceShareName"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

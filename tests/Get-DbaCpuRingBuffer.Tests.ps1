@@ -30,4 +30,27 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 240)
+        }
+
+        It "Returns output with expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "RecordId",
+                "EventTime",
+                "SQLProcessUtilization",
+                "OtherProcessUtilization",
+                "SystemIdle"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

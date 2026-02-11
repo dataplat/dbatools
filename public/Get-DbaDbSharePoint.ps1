@@ -55,31 +55,25 @@ function Get-DbaDbSharePoint {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Database
 
-        Returns one SMO Database object for each SharePoint database found in the SharePoint farm. The number of databases returned depends on the size and configuration of the SharePoint farm, typically including content databases, service application databases, and other associated databases.
+        Returns one SMO Database object for each SharePoint database found in the SharePoint farm. Output is produced by Get-DbaDatabase, which sets default display properties via Select-DefaultView.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Get-DbaDatabase / Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: Database name
-        - Status: Current database status (EmergencyMode, Normal, Offline, Recovering, RecoveryPending, Restoring, Standby, Suspect)
+        - Status: Current database status
         - IsAccessible: Boolean indicating if the database is currently accessible
         - RecoveryModel: Database recovery model (Full, Simple, BulkLogged)
-        - LogReuseWaitStatus: Status of transaction log reuse (LogSwitch, ChkptBkup, ActiveBkup, ActiveTran, etc.)
-        - Size: Database size in megabytes (MB)
-        - Compatibility: Database compatibility level (numeric value representing SQL Server version)
+        - LogReuseWaitStatus: Status of transaction log reuse
+        - SizeMB: Database size in megabytes (aliased from Size)
+        - Compatibility: Database compatibility level (aliased from CompatibilityLevel)
         - Collation: Database collation setting
         - Owner: Database owner login name
-        - Encrypted: Boolean indicating if Transparent Data Encryption (TDE) is enabled
-        - LastFullBackup: DateTime of the most recent full backup
-        - LastDiffBackup: DateTime of the most recent differential backup
-        - LastLogBackup: DateTime of the most recent transaction log backup
-
-        Additional properties available (from SMO Database object):
-        - IsCdcEnabled: Boolean indicating if Change Data Capture is enabled (SQL Server 2008+)
-        - And all other standard SMO Database properties (use Select-Object * to see all)
-
-        All properties from the base SMO Database object are accessible via Select-Object even though only default properties are displayed without using the -Property parameter.
+        - Encrypted: Boolean indicating if TDE is enabled (aliased from EncryptionEnabled)
+        - LastFullBackup: DateTime of the most recent full backup (aliased from LastBackupDate)
+        - LastDiffBackup: DateTime of the most recent differential backup (aliased from LastDifferentialBackupDate)
+        - LastLogBackup: DateTime of the most recent transaction log backup (aliased from LastLogBackupDate)
 
     #>
     [CmdletBinding()]

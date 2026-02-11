@@ -30,4 +30,36 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $env:appveyor) {
             $results | Where-Object ProtocolDisplayName -eq "TCP/IP" | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaClientProtocol)
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.Management.Infrastructure.CimInstance"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "DisplayName", "DLL", "Order", "IsEnabled")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["ComputerName"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["DisplayName"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["DisplayName"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["DLL"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["DLL"].MemberType | Should -Be "AliasProperty"
+            $result[0].psobject.Properties["Order"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Order"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

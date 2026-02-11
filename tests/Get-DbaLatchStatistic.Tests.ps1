@@ -39,4 +39,45 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaLatchStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "WaitType",
+                "WaitSeconds",
+                "WaitCount",
+                "Percentage",
+                "AverageWaitSeconds",
+                "URL"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has valid values for standard connection properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+            $result[0].InstanceName | Should -Not -BeNullOrEmpty
+            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a valid URL pointing to sqlskills.com" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].URL | Should -Match "sqlskills.com"
+        }
+    }
 }

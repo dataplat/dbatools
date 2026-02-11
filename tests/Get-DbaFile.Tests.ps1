@@ -62,4 +62,38 @@ Describe $CommandName -Tag IntegrationTests {
             ($results.Filename -match "master.mdf").Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "Filename")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in the default display" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("ComputerName", "InstanceName", "RemoteFilename")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+
+        It "Has all expected properties available" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Filename", "RemoteFilename")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

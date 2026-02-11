@@ -150,4 +150,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputTest = @{
+                SqlInstance       = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                Database          = $existingDbWithBackup
+            }
+            $outputResult = Get-DbaAgDatabase @splatOutputTest
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityDatabase"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "LocalReplicaRole",
+                "Name",
+                "SynchronizationState",
+                "IsFailoverReady",
+                "IsJoined",
+                "IsSuspended"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

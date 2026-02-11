@@ -294,4 +294,55 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server | Disconnect-DbaInstance
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        }
+
+        AfterAll {
+            if ($result) {
+                $result | Disconnect-DbaInstance
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Server"
+        }
+
+        It "Has the expected dbatools-added ComputerName property" {
+            $result.PSObject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added IsAzure property" {
+            $result.PSObject.Properties["IsAzure"] | Should -Not -BeNullOrEmpty
+            $result.IsAzure | Should -BeOfType [bool]
+        }
+
+        It "Has the expected dbatools-added DbaInstanceName property" {
+            $result.PSObject.Properties["DbaInstanceName"] | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added SqlInstance property" {
+            $result.PSObject.Properties["SqlInstance"] | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added NetPort property" {
+            $result.PSObject.Properties["NetPort"] | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added ConnectedAs property" {
+            $result.PSObject.Properties["ConnectedAs"] | Should -Not -BeNullOrEmpty
+            $result.ConnectedAs | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns SqlConnection when using -SqlConnectionOnly" {
+            $connResult = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlConnectionOnly
+            $connResult | Should -Not -BeNullOrEmpty
+            $connResult | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnection]
+        }
+    }
 }

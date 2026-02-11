@@ -182,4 +182,62 @@ Describe $CommandName -Tag IntegrationTests {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_tbl', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_tbl")
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output', 'V') IS NOT NULL DROP VIEW dbo.dbatoolsci_view_output")
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_dest")
+            $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_tbl (id int); INSERT dbo.dbatoolsci_view_output_tbl SELECT 1")
+            $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_output AS SELECT id FROM dbo.dbatoolsci_view_output_tbl")
+            $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_dest (id int)")
+            $outputResult = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_output -DestinationTable dbatoolsci_view_output_dest
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output', 'V') IS NOT NULL DROP VIEW dbo.dbatoolsci_view_output")
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_tbl', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_tbl")
+            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_dest")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct source and destination values" {
+            $outputResult.SourceDatabase | Should -Be "tempdb"
+            $outputResult.SourceTable | Should -Be "dbatoolsci_view_output"
+            $outputResult.DestinationTable | Should -Be "dbatoolsci_view_output_dest"
+            $outputResult.RowsCopied | Should -Be 1
+        }
+    }
 }

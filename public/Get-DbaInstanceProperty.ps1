@@ -38,9 +38,9 @@ function Get-DbaInstanceProperty {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.SqlServer.Management.Smo.Property
 
-        Returns one object per instance property from the Information, UserOptions, and Settings collections. The function returns properties from three separate SMO collections, outputting each property with contextual information about which collection it came from.
+        Returns one SMO Property object per instance property from the Information, UserOptions, and Settings collections. The function returns properties from three separate SMO collections, outputting each property with contextual information about which collection it came from.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer hosting the SQL Server instance

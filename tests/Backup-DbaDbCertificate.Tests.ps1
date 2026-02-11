@@ -153,4 +153,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputTest = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = $db1Name
+                Certificate        = $cert1.Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+            }
+            $result = Backup-DbaDbCertificate @splatOutputTest
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "Certificate", "Path", "Key", "Status")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected excluded properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("exportPathCert", "exportPathKey", "ExportPath", "ExportKey")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+    }
 }

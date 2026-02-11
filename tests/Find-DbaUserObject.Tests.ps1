@@ -66,4 +66,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Owner | Should -Be UserLogin1
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -Pattern UserLogin1)
+        }
+
+        It "Returns results" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "Owner",
+                "Name",
+                "Parent"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

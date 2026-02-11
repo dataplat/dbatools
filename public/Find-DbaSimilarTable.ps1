@@ -71,7 +71,7 @@ function Find-DbaSimilarTable {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per matching table pair found. Each object represents one source table matched against one similar table.
+        Returns one object per matching table pair found. Each object represents one source table matched against one similar table. All properties are displayed by default (no Select-DefaultView applied).
 
         Properties:
         - ComputerName: The computer name of the SQL Server instance

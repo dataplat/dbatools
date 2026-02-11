@@ -71,9 +71,9 @@ function Copy-DbaDataCollector {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per collection set or configuration operation performed. Each object represents the result of copying a collection set or attempting to configure Data Collector settings on the destination instance.
+        Returns one object per collection set or configuration operation performed with TypeName dbatools.MigrationObject.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: The date and time the operation was performed (DbaDateTime type)
         - SourceServer: The name of the source SQL Server instance
         - DestinationServer: The name of the destination SQL Server instance

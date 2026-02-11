@@ -74,4 +74,40 @@ Describe $CommandName -Tag IntegrationTests {
             $cert.Name | Should -Not -BeIn $certificateName1, $certificateName2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Query master database which has built-in certificates, avoiding New-DbaDbMasterKey issues
+            $result = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found in master database" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Certificate"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found in master database" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

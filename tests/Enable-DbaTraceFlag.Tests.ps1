@@ -59,4 +59,47 @@ Describe $CommandName -Tag IntegrationTests {
             $enableResults.TraceFlag -contains $safeTraceFlag | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Use a different trace flag (4199) to avoid conflicts with the 3226 used in other tests
+            $outputTraceFlag = 4199
+            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $currentOutputFlags = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
+            if ($currentOutputFlags.TraceFlag -contains $outputTraceFlag) {
+                $null = $outputInstance.Query("DBCC TRACEOFF($outputTraceFlag,-1)")
+            }
+            $outputResult = @(Enable-DbaTraceFlag -SqlInstance $outputInstance -TraceFlag $outputTraceFlag) | Where-Object { $null -ne $PSItem -and $PSItem.psobject.Properties["Status"] }
+        }
+
+        AfterAll {
+            if ($outputInstance) {
+                try { $null = $outputInstance.Query("DBCC TRACEOFF($outputTraceFlag,-1)") } catch { }
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("SourceServer", "InstanceName", "SqlInstance", "TraceFlag", "Status", "Notes", "DateTime")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status for a successful enable" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].Status | Should -Be "Successful"
+        }
+
+        It "Has a valid DateTime property" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].DateTime | Should -Not -BeNullOrEmpty
+            $outputResult[0].DateTime | Should -BeOfType [DbaDateTime]
+        }
+    }
 }

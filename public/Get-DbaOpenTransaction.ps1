@@ -35,9 +35,9 @@ function Get-DbaOpenTransaction {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Management.Automation.PSCustomObject
+        System.Data.DataRow
 
-        Returns one object per open transaction found on the specified instance(s). If no open transactions exist, nothing is returned.
+        Returns one DataRow per open transaction found on the specified instance(s). If no open transactions exist, nothing is returned.
 
         Properties:
         - ComputerName: The name of the computer hosting the SQL Server instance

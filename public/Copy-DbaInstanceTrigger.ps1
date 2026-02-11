@@ -63,18 +63,18 @@ function Copy-DbaInstanceTrigger {
         https://dbatools.io/Copy-DbaInstanceTrigger
 
     .OUTPUTS
-        PSCustomObject (MigrationObject)
+        PSCustomObject
 
-        Returns one object per server trigger processed, showing the status of each trigger copy operation.
+        Returns one object per server trigger processed with TypeName dbatools.MigrationObject.
 
-        Properties:
-        - SourceServer: The name of the source SQL Server instance where the trigger was copied from
-        - DestinationServer: The name of the destination SQL Server instance where the trigger was copied to
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: The date and time when the copy operation was processed (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
         - Name: The name of the server trigger
         - Type: Always "Server Trigger"
         - Status: The result of the copy operation (Successful, Skipped, or Failed)
         - Notes: Additional details about the operation (e.g., "Already exists on destination", error message if failed)
-        - DateTime: The date and time when the copy operation was processed
 
     .EXAMPLE
         PS C:\> Copy-DbaInstanceTrigger -Source sqlserver2014a -Destination sqlcluster

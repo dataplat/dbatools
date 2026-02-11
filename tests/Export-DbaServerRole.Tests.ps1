@@ -132,4 +132,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTempPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputTempPath -ItemType Directory
+            $outputTestFile = "$outputTempPath\dbatoolsci_outputtest.sql"
+
+            $passthruResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -Passthru
+            $fileResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -FilePath $outputTestFile
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputTempPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns string output when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns FileInfo output when writing to file" {
+            $fileResult | Should -Not -BeNullOrEmpty
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+    }
 }

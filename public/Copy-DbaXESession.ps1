@@ -50,18 +50,18 @@ function Copy-DbaXESession {
         Use this when you need to update session configurations or when consolidating monitoring setups from multiple sources requires overwriting existing sessions.
 
     .OUTPUTS
-         PSCustomObject (with TypeName: MigrationObject)
+        PSCustomObject (with TypeName: MigrationObject)
 
-         Returns one object per Extended Event session processed, documenting the migration status for each session copy attempt.
+        Returns one object per Extended Event session processed, documenting the migration status for each session copy attempt.
 
-         Properties:
-         - DateTime: Timestamp (DbaDateTime) when the migration operation occurred
-         - SourceServer: Name of the source SQL Server instance from which the session was copied
-         - DestinationServer: Name of the destination SQL Server instance where the session was copied to
-         - Name: Name of the Extended Event session being migrated
-         - Type: Always "Extended Event" indicating the object type being migrated
-         - Status: Migration result (Successful, Skipped, or Failed)
-         - Notes: Additional information; null for successful migrations, error message for failed operations or "Already exists on destination" for skipped sessions
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp (DbaDateTime) when the migration operation occurred
+        - SourceServer: Name of the source SQL Server instance from which the session was copied
+        - DestinationServer: Name of the destination SQL Server instance where the session was copied to
+        - Name: Name of the Extended Event session being migrated
+        - Type: Always "Extended Event" indicating the object type being migrated
+        - Status: Migration result (Successful, Skipped, or Failed)
+        - Notes: Additional information; null for successful migrations, error message for failed operations or "Already exists on destination" for skipped sessions
     .NOTES
         Tags: Migration, ExtendedEvent, XEvent
         Author: Chrissy LeMaire (@cl), netnerds.net

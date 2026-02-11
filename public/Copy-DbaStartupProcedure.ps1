@@ -63,10 +63,10 @@ function Copy-DbaStartupProcedure {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per startup procedure copy operation. The object represents the outcome of copying a single startup procedure from source to destination.
+        Returns one object per startup procedure copy operation with TypeName dbatools.MigrationObject.
 
-        Default display properties (via Select-DefaultView):
-        - DateTime: Timestamp when the copy operation occurred
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp when the copy operation occurred (DbaDateTime)
         - SourceServer: Name of the source SQL Server instance
         - DestinationServer: Name of the destination SQL Server instance
         - Name: Name of the startup procedure

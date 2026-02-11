@@ -113,4 +113,28 @@ Describe $CommandName -Tag IntegrationTests {
             { Convert-DbaMaskingValue -Value "whatever" -EnableException } | Should -Throw "Please enter a data type"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Convert-DbaMaskingValue -Value "test" -DataType varchar
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("OriginalValue", "NewValue", "DataType", "ErrorMessage")
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Returns correct property values for a varchar conversion" {
+            $result.OriginalValue | Should -Be "test"
+            $result.NewValue | Should -Be "'test'"
+            $result.DataType | Should -Be "varchar"
+        }
+    }
 }

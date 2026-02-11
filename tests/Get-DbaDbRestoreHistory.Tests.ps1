@@ -208,4 +208,69 @@ Describe $CommandName -Tag IntegrationTests {
             $results.RestoreType | Should -Be Log
         }
     }
+
+}
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+        $null = New-Item -Path $outputBackupPath -ItemType Directory
+
+        $outputDbName = "dbatoolsci_rh_output_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+
+        $outputBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Type Full -Path $outputBackupPath
+        $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $outputBackup.BackupPath -DatabaseName $outputDbName -WithReplace
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Last)
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Username",
+                "RestoreType",
+                "Date",
+                "From",
+                "To",
+                "BackupFinishDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the excluded properties not in default display" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("first_lsn", "last_lsn", "checkpoint_lsn", "database_backup_lsn", "backup_finish_date")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+    }
 }

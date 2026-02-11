@@ -25,3 +25,30 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $splatCopyServer = @{
+                Source                  = $TestConfig.InstanceCopy1
+                Destination             = $TestConfig.InstanceCopy2
+                ExcludeServerProperties = $true
+                Force                   = $true
+            }
+            $outputResult = @(Copy-DbaAgentServer @splatCopyServer | Where-Object Type -eq "Agent Properties")
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

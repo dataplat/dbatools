@@ -86,7 +86,7 @@ function Backup-DbaDbMasterKey {
         - Status: Result of the backup operation ("Success" or "Failure")
 
         Additional properties available (added by this function):
-        - DatabaseID: The ID (GUID) of the database containing the master key
+        - DatabaseID: The ID of the database containing the master key
         - Filename: The complete file path where the master key backup was exported
 
         All properties from the base SMO MasterKey object are also accessible:

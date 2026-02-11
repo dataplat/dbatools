@@ -54,9 +54,9 @@ function Copy-DbaSystemDbUserObject {
     .OUTPUTS
         PSCustomObject (default when -Classic is not specified)
 
-        Returns one object per user-defined object (schema, table, view, function, trigger, etc.) copied from system databases. The Classic mode returns no output.
+        Returns one object per user-defined object (schema, table, view, function, trigger, etc.) copied from system databases with TypeName dbatools.MigrationObject. The Classic mode returns no output.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: The date and time the operation completed (DbaDateTime)
         - SourceServer: The name of the source SQL Server instance
         - DestinationServer: The name of the destination SQL Server instance

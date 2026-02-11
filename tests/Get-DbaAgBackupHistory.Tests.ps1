@@ -37,4 +37,30 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-# No Integration Tests, because we don't have an availability group running in AppVeyor
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $agName = (Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr).Name | Select-Object -First 1
+            $result = Get-DbaAgBackupHistory -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Last
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no backup history available for the AG" }
+            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
+        }
+
+        It "Has the AvailabilityGroupName property added by the function" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no backup history available for the AG" }
+            $result[0].psobject.Properties["AvailabilityGroupName"] | Should -Not -BeNullOrEmpty
+            $result[0].AvailabilityGroupName | Should -Be $agName
+        }
+
+        It "Has the core backup history properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no backup history available for the AG" }
+            $coreProperties = @("SqlInstance", "Database", "Type", "TotalSize", "DeviceType", "Start", "End")
+            foreach ($prop in $coreProperties) {
+                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the backup history object"
+            }
+        }
+    }
+}

@@ -27,4 +27,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ComputerName | Should -Be ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaFeature -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "Product", "Instance", "InstanceID", "Feature", "Language", "Edition", "Version", "Clustered", "Configured")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

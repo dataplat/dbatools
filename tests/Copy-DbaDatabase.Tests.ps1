@@ -669,4 +669,61 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolsci_outputval_$(Get-Random)"
+            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputBackupPath -ItemType Directory
+
+            $splatCreateDb = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Name        = $outputTestDb
+            }
+            $null = New-DbaDatabase @splatCreateDb
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $outputTestDb -ErrorAction SilentlyContinue
+
+            $splatCopyOutput = @{
+                Source        = $TestConfig.InstanceCopy2
+                Destination   = $TestConfig.InstanceCopy1
+                Database      = $outputTestDb
+                BackupRestore = $true
+                SharedPath    = $outputBackupPath
+            }
+            $outputResult = Copy-DbaDatabase @splatCopyOutput
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $outputTestDb -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["DestinationDatabase"] | Should -Not -BeNullOrEmpty -Because "DestinationDatabase should be available as an additional property"
+        }
+    }
 }

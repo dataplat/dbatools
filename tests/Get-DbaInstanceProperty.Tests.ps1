@@ -67,4 +67,30 @@ Describe $CommandName -Tag IntegrationTests {
             $(Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Select-Object -Unique SqlInstance).count | Should -Be 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2)
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Property"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Value", "PropertyType")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Returns properties from all three property types" {
+            $propertyTypes = $result.PropertyType | Sort-Object -Unique
+            $propertyTypes | Should -Contain "Information"
+            $propertyTypes | Should -Contain "UserOption"
+            $propertyTypes | Should -Contain "Setting"
+        }
+    }
 }

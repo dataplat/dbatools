@@ -58,4 +58,25 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ChildItem $backupPath).Count | Should -BeExactly 1
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputPath = "$($TestConfig.Temp)\$CommandName-outputtest-$(Get-Random)"
+            $null = New-Item -Path $outputPath -ItemType Directory
+            $splatDiag = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                QueryName   = "Memory Clerk Usage"
+            }
+            $result = Invoke-DbaDiagnosticQuery @splatDiag | Export-DbaDiagnosticQuery -Path $outputPath
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of type System.IO.FileInfo" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+    }
 }

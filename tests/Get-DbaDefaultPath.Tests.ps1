@@ -42,4 +42,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ErrorLog -match ":\\" | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Data",
+                "Log",
+                "Backup",
+                "ErrorLog"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

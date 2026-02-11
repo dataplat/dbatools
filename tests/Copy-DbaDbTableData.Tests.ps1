@@ -254,4 +254,59 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_output_src', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_output_src")
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_output_dest")
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_output_src (id int); INSERT dbo.dbatoolsci_output_src SELECT 1")
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_output_dest (id int)")
+            $outputResult = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_output_src -DestinationTable dbatoolsci_output_dest
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_output_src', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_output_src")
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_output_dest")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct source and destination values" {
+            $outputResult.SourceDatabase | Should -Be "tempdb"
+            $outputResult.SourceTable | Should -Be "dbatoolsci_output_src"
+            $outputResult.DestinationTable | Should -Be "dbatoolsci_output_dest"
+            $outputResult.RowsCopied | Should -Be 1
+        }
+    }
 }

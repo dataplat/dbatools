@@ -93,4 +93,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results.MaxValue | Should -Be 1024
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1 -WarningAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Total", "MaxValue")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

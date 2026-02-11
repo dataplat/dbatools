@@ -195,4 +195,61 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -BeGreaterThan 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputStatHeader = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatHeader
+            $outputDensityVector = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option DensityVector
+            $outputHistogram = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option Histogram
+            $outputStatsStream = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatsStream
+        }
+
+        It "Returns output of type PSCustomObject for StatHeader" {
+            $outputStatHeader | Should -Not -BeNullOrEmpty
+            $outputStatHeader[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns output of type PSCustomObject for DensityVector" {
+            $outputDensityVector | Should -Not -BeNullOrEmpty
+            $outputDensityVector[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns output of type PSCustomObject for Histogram" {
+            $outputHistogram | Should -Not -BeNullOrEmpty
+            $outputHistogram[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns output of type PSCustomObject for StatsStream" {
+            $outputStatsStream | Should -Not -BeNullOrEmpty
+            $outputStatsStream[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties for StatHeader" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Object", "Target", "Cmd", "Name", "Updated", "Rows", "RowsSampled", "Steps", "Density", "AverageKeyLength", "StringIndex", "FilterExpression", "UnfilteredRows", "PersistedSamplePercent")
+            foreach ($prop in $expectedProps) {
+                $outputStatHeader[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on StatHeader output"
+            }
+        }
+
+        It "Has the expected properties for DensityVector" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Object", "Target", "Cmd", "AllDensity", "AverageLength", "Columns")
+            foreach ($prop in $expectedProps) {
+                $outputDensityVector[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on DensityVector output"
+            }
+        }
+
+        It "Has the expected properties for Histogram" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Object", "Target", "Cmd", "RangeHiKey", "RangeRows", "EqualRows", "DistinctRangeRows", "AverageRangeRows")
+            foreach ($prop in $expectedProps) {
+                $outputHistogram[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on Histogram output"
+            }
+        }
+
+        It "Has the expected properties for StatsStream" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Object", "Target", "Cmd", "StatsStream", "Rows", "DataPages")
+            foreach ($prop in $expectedProps) {
+                $outputStatsStream[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on StatsStream output"
+            }
+        }
+    }
 }

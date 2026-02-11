@@ -80,11 +80,11 @@ function Copy-DbaAgentServer {
         Shows what would happen if the command were executed.
 
     .OUTPUTS
-        PSCustomObject (MigrationObject type)
+        PSCustomObject (MigrationObject)
 
-        Returns one object per destination instance. The object contains details about the Agent server properties migration status.
+        Returns one object per destination instance for Agent server properties migration, plus output from nested Copy-DbaAgent* calls for jobs, operators, alerts, schedules, proxies, and job categories.
 
-        Default display properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: The timestamp when the copy operation was executed (DbaDateTime)
         - SourceServer: The name of the source SQL Server instance
         - DestinationServer: The name of the destination SQL Server instance

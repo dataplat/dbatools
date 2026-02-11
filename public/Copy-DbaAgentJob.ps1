@@ -83,12 +83,12 @@ function Copy-DbaAgentJob {
         https://dbatools.io/Copy-DbaAgentJob
 
     .OUTPUTS
-        MigrationObject (PSCustomObject)
+        PSCustomObject
 
-        Returns one object per job processed, regardless of whether it was successfully copied, skipped, or failed. This provides a consistent record of all job migration operations.
+        Returns one object per job processed with TypeName dbatools.MigrationObject.
 
-        Properties:
-        - DateTime: Timestamp when the operation was attempted (DbaDateTime type)
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp when the operation was attempted (Dataplat.Dbatools.Utility.DbaDateTime)
         - SourceServer: The name of the source SQL Server instance
         - DestinationServer: The name of the destination SQL Server instance
         - Name: The name of the SQL Agent job

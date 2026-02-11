@@ -26,8 +26,14 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output" {
+            $outputFile = "$($TestConfig.Temp)\dbatoolsci_exportconfig_$(Get-Random).json"
+            $result = Get-DbatoolsConfig | Export-DbatoolsConfig -OutPath $outputFile
+            $result | Should -BeNullOrEmpty
+            Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
+        }
+    }
+}

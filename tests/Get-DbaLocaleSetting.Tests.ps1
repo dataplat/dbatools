@@ -27,4 +27,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaLocaleSetting -ComputerName $env:ComputerName
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected ComputerName property" {
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has locale-related properties from the registry" {
+            $propNames = $result[0].psobject.Properties.Name
+            $propNames | Should -Contain "ComputerName"
+            # Locale registry key should have at least a few standard properties
+            $propNames.Count | Should -BeGreaterThan 1
+        }
+    }
 }

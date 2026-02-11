@@ -123,4 +123,24 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "You must pipe in a database or specify a SqlInstance"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Synonym"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "BaseServer", "BaseDatabase", "BaseSchema", "BaseObject")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

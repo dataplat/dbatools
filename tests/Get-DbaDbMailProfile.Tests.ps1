@@ -99,4 +99,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Contain $profilename
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 -Profile $profilename
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailProfile"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "Description",
+                "ForceDeleteForActiveProfiles",
+                "IsBusyProfile"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

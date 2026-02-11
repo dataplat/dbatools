@@ -188,6 +188,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            $outputJobName = "dbatoolsci_copyjob_output"
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $outputJobName
+            $splatCopyOutputJob = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Job         = $outputJobName
+            }
+            $result = @(Copy-DbaAgentJob @splatCopyOutputJob) | Where-Object { $PSItem -ne $null }
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $outputJobName -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $outputJobName -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+
     Context "Regression test for issue #9316 - alert-to-job links preserved with -Force" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

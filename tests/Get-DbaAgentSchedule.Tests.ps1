@@ -324,4 +324,48 @@ Describe $CommandName -Tag IntegrationTests {
             $result.FrequencyTypes | Should -Be "OnIdle"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobSchedule"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ScheduleName",
+                "ActiveEndDate",
+                "ActiveEndTimeOfDay",
+                "ActiveStartDate",
+                "ActiveStartTimeOfDay",
+                "DateCreated",
+                "FrequencyInterval",
+                "FrequencyRecurrenceFactor",
+                "FrequencyRelativeIntervals",
+                "FrequencySubDayInterval",
+                "FrequencySubDayTypes",
+                "FrequencyTypes",
+                "IsEnabled",
+                "JobCount",
+                "Description",
+                "ScheduleUid"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property ScheduleName" {
+            $outputResult[0].psobject.Properties["ScheduleName"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["ScheduleName"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

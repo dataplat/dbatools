@@ -143,4 +143,28 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Parent.Name | Should -Be $fgName
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputFileName = "dbatoolsci_outputval_$random"
+            $splatOutputFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgName
+                FileName    = $outputFileName
+            }
+            $result = Add-DbaDbFile @splatOutputFile
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DataFile"
+        }
+
+        It "Has the expected properties" {
+            $result.Name | Should -Be $outputFileName
+            $result.FileName | Should -Not -BeNullOrEmpty
+            $result.Parent | Should -Not -BeNullOrEmpty
+        }
+    }
 }

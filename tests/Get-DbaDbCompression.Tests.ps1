@@ -88,4 +88,37 @@ Describe $CommandName -Tag IntegrationTests {
             $excludeResults.Database | Should -Not -Contain $dbname
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "TableName",
+                "IndexName",
+                "Partition",
+                "IndexID",
+                "IndexType",
+                "DataCompression",
+                "SizeCurrent",
+                "RowCount"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

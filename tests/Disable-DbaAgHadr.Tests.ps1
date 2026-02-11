@@ -46,4 +46,31 @@ Describe $CommandName -Tag IntegrationTests {
             $disableResults.IsHadrEnabled | Should -BeFalse
         }
     }
+
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $result = Disable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "IsHadrEnabled")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Returns the correct values" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].ComputerName | Should -Not -BeNullOrEmpty
+            $result[0].InstanceName | Should -Not -BeNullOrEmpty
+            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $result[0].IsHadrEnabled | Should -BeFalse
+        }
+    }
 }

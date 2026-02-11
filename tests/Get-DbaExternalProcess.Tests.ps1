@@ -84,4 +84,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ProcessId | Should -Not -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            Start-Sleep -Seconds 1
+            $result = Get-DbaExternalProcess -ComputerName $computerName
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no external processes found" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no external processes found" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "ProcessId",
+                "Name",
+                "HandleCount",
+                "WorkingSetSize",
+                "VirtualSize",
+                "CimObject"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -22,15 +22,17 @@ function Get-DbaAgHadr {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.SqlServer.Management.Smo.Server
 
-        Returns one object per SQL Server instance queried, containing the current HADR status.
+        Returns one SMO Server object per SQL Server instance queried, filtered to show HADR status.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER or named instance)
         - SqlInstance: The full SQL Server instance identifier in the format ComputerName\InstanceName or instance name for default
         - IsHadrEnabled: Boolean value indicating whether HADR is enabled ($true) or disabled ($false) on the instance
+
+        All properties from the SMO Server object are accessible via Select-Object * even though only the default properties are displayed without explicit column selection.
 
     .NOTES
         Tags: AG, HA

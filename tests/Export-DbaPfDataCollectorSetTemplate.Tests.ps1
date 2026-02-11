@@ -57,4 +57,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results.BaseName | Should -Be "Long Running Queries"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries"
+        }
+
+        AfterAll {
+            if ($result) {
+                Remove-Item -Path $result.FullName -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns an XML file" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Extension | Should -Be ".xml"
+        }
+    }
 }

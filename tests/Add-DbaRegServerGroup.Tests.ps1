@@ -108,4 +108,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputgroup"
+        }
+
+        AfterAll {
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "dbatoolsci-outputgroup" | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.ServerGroup"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            # When ComputerName is present, all 8 props are shown; otherwise 5
+            # Test for the core properties that are always present
+            $expectedDefaults = @("Name", "DisplayName", "Description", "ServerGroups", "RegisteredServers")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -112,4 +112,48 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
+            Start-Sleep -Seconds 1
+            $outputResult = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle
+            while ($job.CurrentRunStatus -eq "Executing") {
+                Start-Sleep -Seconds 1
+                $job.Refresh()
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Login",
+                "Command",
+                "PercentComplete",
+                "StartTime",
+                "RunningTime",
+                "EstimatedTimeToGo",
+                "EstimatedCompletionTime"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has Text property excluded from default display" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Text" -Because "Text should be excluded from default display"
+        }
+    }
 }

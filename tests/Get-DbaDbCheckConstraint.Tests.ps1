@@ -77,4 +77,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object Name -eq "spt_fallback_db" | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ExcludeSystemTable
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Check"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Parent",
+                "ID",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "IsEnabled",
+                "IsChecked",
+                "NotForReplication",
+                "Text",
+                "State"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

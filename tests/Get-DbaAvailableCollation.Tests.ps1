@@ -27,4 +27,33 @@ Describe $CommandName -Tag IntegrationTests {
             ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "CodePage",
+                "CodePageName",
+                "LocaleID",
+                "LocaleName",
+                "Description"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

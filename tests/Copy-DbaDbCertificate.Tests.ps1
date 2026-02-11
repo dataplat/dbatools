@@ -89,4 +89,66 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy2 -Database dbatoolscopycred -Certificate $certificateName | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
+
+            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputBackupPath -ItemType Directory
+
+            $outputSecurePassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+
+            $outputDbName = "dbatoolsci_outputcert_$(Get-Random)"
+            $outputDatabases = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Name $outputDbName
+
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceCopy1 -Database $outputDbName -SecurePassword $outputSecurePassword -Confirm:$false
+            $outputCertName = "Cert_$(Get-Random)"
+            $null = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy1 -Name $outputCertName -Database $outputDbName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatOutputCopy = @{
+                Source             = $TestConfig.InstanceCopy1
+                Destination        = $TestConfig.InstanceCopy2
+                EncryptionPassword = $outputSecurePassword
+                MasterKeyPassword  = $outputSecurePassword
+                Database           = $outputDbName
+                SharedPath         = $outputBackupPath
+            }
+            $result = Copy-DbaDbCertificate @splatOutputCopy
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
+            $null = $outputDatabases | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "SourceDatabase"
+            $result[0].psobject.Properties.Name | Should -Contain "SourceDatabaseID"
+            $result[0].psobject.Properties.Name | Should -Contain "DestinationDatabase"
+            $result[0].psobject.Properties.Name | Should -Contain "DestinationDatabaseID"
+        }
+    }
 }

@@ -43,4 +43,25 @@ Describe $CommandName -Tag IntegrationTests {
             $hideInstanceResults.HideInstance | Should -BeFalse
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Disable-DbaHideInstance -SqlInstance $TestConfig.InstanceSingle
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "HideInstance")
+            foreach ($prop in $expectedProperties) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

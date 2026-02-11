@@ -37,9 +37,9 @@ function Get-DbaAgentLog {
         https://dbatools.io/Get-DbaAgentLog
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.LogFileEntry
+        System.Data.DataRow
 
-        Returns one LogFileEntry object per log entry found. If multiple log numbers are specified, all entries from all requested log files are returned.
+        Returns one DataRow object per log entry found. If multiple log numbers are specified, all entries from all requested log files are returned.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
@@ -48,11 +48,6 @@ function Get-DbaAgentLog {
         - LogDate: The date and time when the log entry was created (DateTime)
         - ProcessInfo: The process ID or source component that created the entry (typically spid or component name)
         - Text: The full text content of the log entry message
-
-        Additional properties available (from SMO LogFileEntry object):
-        - Id: Unique identifier for the log entry
-
-        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
 
     .EXAMPLE
         PS C:\> Get-DbaAgentLog -SqlInstance sql01\sharepoint

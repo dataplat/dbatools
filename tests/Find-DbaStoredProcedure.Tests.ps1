@@ -151,4 +151,88 @@ AS
             $results | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolsci_outputsproc_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+
+            $createProc = @"
+CREATE PROCEDURE dbo.sp_dbatoolsci_outputtest
+AS
+    SET NOCOUNT ON;
+    PRINT 'dbatoolsci output validation test';
+"@
+            $splatCreateOutputProc = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $outputTestDb
+                Query       = $createProc
+            }
+            $null = Invoke-DbaQuery @splatCreateOutputProc
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatFindOutput = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Pattern     = "dbatoolsci output"
+                Database    = $outputTestDb
+            }
+            $result = @(Find-DbaStoredProcedure @splatFindOutput)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Confirm:$false -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns results" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct default display properties excluding StoredProcedure and StoredProcedureFullText" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "StoredProcedure" -Because "StoredProcedure should be excluded from default display"
+            $defaultProps | Should -Not -Contain "StoredProcedureFullText" -Because "StoredProcedureFullText should be excluded from default display"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "StoredProcedureTextFound"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the StoredProcedure property available via Select-Object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "StoredProcedure"
+        }
+
+        It "Has the StoredProcedureFullText property available via Select-Object" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "StoredProcedureFullText"
+        }
+    }
 }

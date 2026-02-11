@@ -143,4 +143,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SendRequestDate | Should -BeGreaterThan "2018-01-01"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Select-Object -First 1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Profile",
+                "Recipients",
+                "CopyRecipients",
+                "BlindCopyRecipients",
+                "Subject",
+                "Importance",
+                "Sensitivity",
+                "FileAttachments",
+                "AttachmentEncoding",
+                "SendRequestDate",
+                "SendRequestUser",
+                "SentStatus",
+                "SentDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -87,4 +87,31 @@ Describe $CommandName -Tag IntegrationTests {
             $singleDbResults.ExtentsChanged | Should -BeGreaterOrEqual 0
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "ExtentsTotal",
+                "ExtentsChanged",
+                "ChangedPerc"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

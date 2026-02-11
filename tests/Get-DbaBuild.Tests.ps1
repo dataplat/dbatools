@@ -267,4 +267,33 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $resultFromInstance = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1
+            $resultFromBuild = Get-DbaBuild -Build "13.0.6300"
+        }
+
+        It "Returns output of the documented type from SqlInstance" {
+            $resultFromInstance | Should -Not -BeNullOrEmpty
+            $resultFromInstance[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties from SqlInstance query" {
+            $expectedProps = @("SqlInstance", "Build", "NameLevel", "SPLevel", "CULevel", "KBLevel", "BuildLevel", "SupportedUntil", "MatchType", "Warning")
+            foreach ($prop in $expectedProps) {
+                $resultFromInstance[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Returns output of the documented type from Build lookup" {
+            $resultFromBuild | Should -Not -BeNullOrEmpty
+            $resultFromBuild[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Excludes SqlInstance from default display when using -Build" {
+            $defaultProps = $resultFromBuild[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "SqlInstance" -Because "SqlInstance should be excluded from default display when using -Build"
+        }
+    }
 }

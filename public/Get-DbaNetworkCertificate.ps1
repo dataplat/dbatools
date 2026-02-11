@@ -33,11 +33,11 @@ function Get-DbaNetworkCertificate {
 
         Returns one object per SQL Server instance that has a certificate configured for network encryption. Instances without certificates are filtered out and will not appear in the results.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)
-        - VSName: Virtual Server Name if applicable (for clustered instances)
+        - VSName: Virtual Server Name if applicable (for clustered instances, excluded when empty)
         - ServiceAccount: The Windows service account running SQL Server
         - ForceEncryption: Boolean indicating if encryption is forced for all connections
         - FriendlyName: Human-readable certificate name from the certificate store
@@ -47,6 +47,8 @@ function Get-DbaNetworkCertificate {
         - Expires: DateTime when the certificate expires (NotAfter)
         - IssuedTo: Certificate subject (who it was issued to)
         - IssuedBy: Certificate issuer name
+
+        Additional properties available:
         - Certificate: The full X509Certificate2 object with complete certificate information
 
     .EXAMPLE

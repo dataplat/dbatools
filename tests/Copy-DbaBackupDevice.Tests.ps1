@@ -86,4 +86,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Not -Be "Successful"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Copy the device again - it already exists so we get a Skipped result which still has the full output object
+            $result = Copy-DbaBackupDevice -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -BackupDevice $deviceName -WarningAction SilentlyContinue 3> $null
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

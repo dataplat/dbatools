@@ -74,4 +74,24 @@ Describe $CommandName -Tag IntegrationTests {
             { Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master } | Should -Not -Throw
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = @(Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -Database master)
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionFunction"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "CreateDate", "Name", "NumberOfPartitions")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

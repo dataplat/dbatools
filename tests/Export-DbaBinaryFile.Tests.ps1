@@ -109,4 +109,56 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputExportPath = "$($TestConfig.Temp)\exports-$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputExportPath -ItemType Directory -Force
+
+            # Create a test table with binary data directly via SQL
+            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $null = $outputDb.Query("CREATE TABLE [dbo].[dbatoolsci_BinaryOutput]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
+            $null = $outputDb.Query("INSERT INTO [dbo].[dbatoolsci_BinaryOutput] ([FileName123], [TheFile123]) VALUES ('testfile.bin', CAST('test binary content' AS varbinary(max)))")
+
+            $splatOutputExport = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = "dbatoolsci_BinaryOutput"
+                Path        = $outputExportPath
+            }
+            $outputResult = Export-DbaBinaryFile @splatOutputExport
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $cleanDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $null = $cleanDb.Query("IF OBJECT_ID('dbo.dbatoolsci_BinaryOutput') IS NOT NULL DROP TABLE dbo.dbatoolsci_BinaryOutput")
+            Remove-Item -Path $outputExportPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("FullName", "Name", "DirectoryName", "Extension", "Length", "CreationTime", "LastWriteTime")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the FileInfo object"
+            }
+        }
+
+        It "Has the correct filename" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].Name | Should -Be "testfile.bin"
+        }
+    }
 }

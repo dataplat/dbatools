@@ -32,4 +32,23 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no patches found on this instance" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no patches found on this instance" }
+            $expectedProperties = @("ComputerName", "Name", "Version", "InstallDate")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

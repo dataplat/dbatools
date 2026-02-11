@@ -146,6 +146,28 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            # Use -ExcludePassword to avoid DAC connection requirement
+            # Copy thorsmomma credential which was created earlier - use Force to ensure we get a result
+            $result = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thorsmomma -Force -ExcludePassword
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+
     # See https://github.com/dataplat/dbatools/issues/7896 and comments above in BeforeAll
     Context "Crypto provider cred" {
         It "ensure copied credential is using the same crypto provider" {

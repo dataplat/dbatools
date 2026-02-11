@@ -74,4 +74,49 @@ Describe $CommandName -Tag IntegrationTests {
         $results.Classification -match "Service Packs"
         $results.Link -match "-jpn_"
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaKbUpdate -Name KB4057119
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            # Base properties that should always be present
+            $expectedDefaults = @(
+                "Title",
+                "Architecture",
+                "Language",
+                "Hotfix",
+                "UpdateId",
+                "Link"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has build-level properties when build info is available" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $result[0].NameLevel) { Set-ItResult -Skipped -Because "build info not available for this KB" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $buildProps = @(
+                "NameLevel",
+                "SPLevel",
+                "KBLevel",
+                "CULevel",
+                "BuildLevel",
+                "SupportedUntil"
+            )
+            foreach ($prop in $buildProps) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set when build info is available"
+            }
+        }
+    }
 }

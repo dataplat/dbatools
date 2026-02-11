@@ -64,11 +64,11 @@ function Copy-DbaInstanceAuditSpecification {
         https://dbatools.io/Copy-DbaInstanceAuditSpecification
 
     .OUTPUTS
-        MigrationObject
+        PSCustomObject
 
-        Returns one object per audit specification processed, with the results of the copy operation for each specification.
+        Returns one object per audit specification processed with TypeName dbatools.MigrationObject.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: Timestamp when the copy operation was executed (DbaDateTime)
         - SourceServer: Name of the source SQL Server instance
         - DestinationServer: Name of the destination SQL Server instance

@@ -27,8 +27,58 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($env:APPVEYOR) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Must enable distributor first before we can export replication settings
+            $distDbName = "dbatoolsci_distrepl_$(Get-Random)"
+            $splatDistributor = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                DistributionDatabase = $distDbName
+                Confirm              = $false
+            }
+            $null = Enable-DbaReplDistributor @splatDistributor
+
+            $splatPublishing = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Confirm     = $false
+            }
+            $null = Enable-DbaReplPublishing @splatPublishing
+
+            $result = Export-DbaReplServerSetting -SqlInstance $TestConfig.InstanceSingle -Passthru
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Disable-DbaReplPublishing -SqlInstance $TestConfig.InstanceSingle -Force -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Disable-DbaReplDistributor -SqlInstance $TestConfig.InstanceSingle -Force -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output as string when using -Passthru" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Includes the sp_dropdistributor statement" {
+            $result -match "sp_dropdistributor" | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns no output when writing to file" {
+            $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $tempPath -ItemType Directory
+            try {
+                $fileResult = Export-DbaReplServerSetting -SqlInstance $TestConfig.InstanceSingle -Path $tempPath
+                $fileResult | Should -BeNullOrEmpty
+            } finally {
+                Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}

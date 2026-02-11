@@ -33,9 +33,9 @@ function Get-DbaInstanceTrigger {
         https://dbatools.io/Get-DbaInstanceTrigger
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Trigger
+        Microsoft.SqlServer.Management.Smo.ServerDdlTrigger
 
-        Returns one Trigger object per server-level DDL trigger on the specified instance(s).
+        Returns one ServerDdlTrigger object per server-level DDL trigger on the specified instance(s).
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance

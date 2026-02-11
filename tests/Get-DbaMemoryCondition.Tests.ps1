@@ -63,4 +63,27 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaMemoryCondition -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no ring buffer records found" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has dbasize properties for memory values" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no ring buffer records found" }
+            $result[0].TotalPhysicalMemory | Should -BeOfType [dbasize]
+            $result[0].AvailablePhysicalMemory | Should -BeOfType [dbasize]
+            $result[0].TotalPageFile | Should -BeOfType [dbasize]
+            $result[0].AvailablePageFile | Should -BeOfType [dbasize]
+            $result[0].TotalVirtualAddressSpace | Should -BeOfType [dbasize]
+            $result[0].AvailableVirtualAddressSpace | Should -BeOfType [dbasize]
+            $result[0].SQLReservedMemory | Should -BeOfType [dbasize]
+            $result[0].SQLCommittedMemory | Should -BeOfType [dbasize]
+        }
+    }
 }

@@ -127,4 +127,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestDb = "dbatoolsci_orphanoutput_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+            $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Force
+            $result = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($result) {
+                Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock { Remove-Item -Path $args -ErrorAction SilentlyContinue } -ArgumentList $result.FileName
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Filename", "RemoteFilename")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

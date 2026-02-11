@@ -377,4 +377,37 @@ Describe $CommandName -Tag IntegrationTests {
     # placeholder for a future test with availability groups
     # It "Export availability groups" {
     # }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputValidationDir = "$($TestConfig.Temp)\$CommandName-outputvalidation-$(Get-Random)"
+            if (-not (Test-Path $outputValidationDir -PathType Container)) {
+                $null = New-Item -Path $outputValidationDir -ItemType Container
+            }
+            $outputResult = Export-DbaInstance -SqlInstance $testServer -Path $outputValidationDir -Exclude "Audits", "AvailabilityGroups", "BackupDevices", "CentralManagementServer", "Credentials", "CustomErrors", "DatabaseMail", "Databases", "Endpoints", "ExtendedEvents", "LinkedServers", "Logins", "PolicyManagement", "ReplicationSettings", "ResourceGovernor", "ServerAuditSpecifications", "ServerRoles", "SysDbUserObjects", "SystemTriggers", "OleDbProvider"
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputValidationDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type System.IO.FileInfo" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns files that exist on disk" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].FullName | Should -Exist
+        }
+
+        It "Returns files with content" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].Length | Should -BeGreaterThan 0
+        }
+    }
 }

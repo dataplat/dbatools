@@ -140,4 +140,28 @@ Describe $CommandName -Tag IntegrationTests {
             $retrievedCert.Subject | Should -Be $script:certSubject
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Add-DbaComputerCertificate -Path $certPath
+        }
+
+        AfterAll {
+            Remove-DbaComputerCertificate -Thumbprint $certThumbprint -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("FriendlyName", "DnsNameList", "Thumbprint", "NotBefore", "NotAfter", "Subject", "Issuer")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

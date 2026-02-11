@@ -77,4 +77,29 @@ Describe $CommandName -Tag IntegrationTests {
             "$results" | Should -Match $secondescaped
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputPath = "$($TestConfig.Temp)\$CommandName-outputtest-$(Get-Random)"
+            $null = New-Item -Path $outputPath -ItemType Directory
+            $outputFilePath = "$outputPath\dbatoolsci_outputtest.sql"
+            $passthruResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -FilePath $outputFilePath
+            $fileResult = Get-ChildItem -Path $outputFilePath -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns string output when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns file output when using -FilePath" {
+            $fileResult | Should -Not -BeNullOrEmpty
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+    }
 }

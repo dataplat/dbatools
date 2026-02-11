@@ -45,9 +45,9 @@ function Get-DbaDbServiceBrokerQueue {
         https://dbatools.io/Get-DbaDbServiceBrokerQueue
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.ServiceBrokerQueue
+        Microsoft.SqlServer.Management.Smo.Broker.ServiceQueue
 
-        Returns one ServiceBrokerQueue object per queue found across the specified databases. System queues are included by default but can be excluded using the -ExcludeSystemQueue parameter.
+        Returns one ServiceQueue object per queue found across the specified databases. System queues are included by default but can be excluded using the -ExcludeSystemQueue parameter.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
@@ -62,7 +62,7 @@ function Get-DbaDbServiceBrokerQueue {
         - ProcedureName: Name of the stored procedure that activates the queue (if configured)
         - ProcedureSchema: Schema containing the activation procedure
 
-        Additional properties available (from SMO ServiceBrokerQueue object):
+        Additional properties available (from SMO Broker.ServiceQueue object):
         - IsSystemObject: Boolean indicating if this is a system queue created by SQL Server
         - IsActivationEnabled: Boolean indicating if queue activation is enabled
         - MaxReaders: Maximum number of simultaneous queue readers

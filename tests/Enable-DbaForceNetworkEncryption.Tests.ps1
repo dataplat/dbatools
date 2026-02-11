@@ -45,4 +45,22 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ForceEncryption | Should -BeTrue
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Enable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "ForceEncryption", "CertificateThumbprint")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

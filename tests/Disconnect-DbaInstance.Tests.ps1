@@ -50,4 +50,32 @@ Describe $CommandName -Tag IntegrationTests {
             $disconnectResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Create a fresh connection to disconnect
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputResult = @(Get-DbaConnectedInstance | Disconnect-DbaInstance)
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "ConnectionType", "State")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("SqlInstance", "ConnectionString", "ConnectionType", "State")
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

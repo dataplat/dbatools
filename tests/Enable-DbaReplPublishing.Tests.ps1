@@ -21,3 +21,54 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($env:APPVEYOR) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Must enable distributor first before publishing
+            $distDbName = "dbatoolsci_distpub_$(Get-Random)"
+            $splatDistributor = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                DistributionDatabase = $distDbName
+                Confirm              = $false
+            }
+            $null = Enable-DbaReplDistributor @splatDistributor
+
+            $splatPublishing = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Confirm     = $false
+            }
+            $result = Enable-DbaReplPublishing @splatPublishing
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Disable-DbaReplPublishing -SqlInstance $TestConfig.InstanceSingle -Force -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Disable-DbaReplDistributor -SqlInstance $TestConfig.InstanceSingle -Force -Confirm:$false -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Replication.ReplicationServer"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "IsDistributor", "IsPublisher", "DistributionServer", "DistributionDatabase")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Shows the instance is configured as a publisher" {
+            $result.IsPublisher | Should -BeTrue
+        }
+    }
+}

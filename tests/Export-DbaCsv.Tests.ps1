@@ -332,6 +332,39 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         }
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            $outputFilePath = "$testExportPath\dbatoolsci_outputvalidation_$(Get-Random).csv"
+            $splatOutputValidation = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = $tableName
+                Path        = $outputFilePath
+            }
+            $result = Export-DbaCsv @splatOutputValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("Path", "RowsExported", "FileSizeBytes", "FileSizeMB", "CompressionType", "Elapsed", "RowsPerSecond")
+            foreach ($prop in $expectedProps) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the result object"
+            }
+        }
+
+        It "Returns no output when no rows are exported" {
+            $emptyTableName = "dbatoolsci_emptycsv_$(Get-Random)"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "CREATE TABLE $emptyTableName (id INT)" -EnableException
+            $emptyResult = Export-DbaCsv -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table $emptyTableName -Path "$testExportPath\dbatoolsci_empty_$(Get-Random).csv"
+            $emptyResult | Should -BeNullOrEmpty
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "DROP TABLE $emptyTableName" -EnableException
+        }
+    }
+
     Context "Compression options (issue #8646)" {
         It "exports with each compression type" {
             $compressionTypes = @("None", "GZip", "Deflate")

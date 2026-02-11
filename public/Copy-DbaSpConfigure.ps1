@@ -65,9 +65,9 @@ function Copy-DbaSpConfigure {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per sp_configure setting processed, regardless of whether the setting was updated, skipped, or failed.
+        Returns one object per sp_configure setting processed with TypeName dbatools.MigrationObject, regardless of whether the setting was updated, skipped, or failed.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
         - DateTime: Timestamp when the operation was performed (DbaDateTime object)
         - SourceServer: Name of the source SQL Server instance
         - DestinationServer: Name of the destination SQL Server instance

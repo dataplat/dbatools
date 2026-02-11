@@ -49,4 +49,40 @@ Describe $CommandName -Tag IntegrationTests {
             $uniqueDbs | Should -Contain "master"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaDbMemoryUsage -SqlInstance $TestConfig.InstanceSingle -IncludeSystemDb -Database "master"
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "PageType",
+                "Size",
+                "PercentUsed"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include PageCount in default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "PageCount" -Because "PageCount is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has PageCount available as a non-default property" {
+            $outputResult[0].psobject.Properties["PageCount"] | Should -Not -BeNullOrEmpty
+        }
+    }
 }

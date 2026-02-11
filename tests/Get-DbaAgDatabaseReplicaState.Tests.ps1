@@ -108,4 +108,64 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ReplicaRole | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has all documented properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ReplicaServerName",
+                "ReplicaRole",
+                "ReplicaAvailabilityMode",
+                "ReplicaFailoverMode",
+                "ReplicaConnectionState",
+                "ReplicaJoinState",
+                "ReplicaSynchronizationState",
+                "DatabaseName",
+                "SynchronizationState",
+                "IsFailoverReady",
+                "IsJoined",
+                "IsSuspended",
+                "SuspendReason",
+                "EstimatedRecoveryTime",
+                "EstimatedDataLoss",
+                "SynchronizationPerformance",
+                "LogSendQueueSize",
+                "LogSendRate",
+                "RedoQueueSize",
+                "RedoRate",
+                "FileStreamSendRate",
+                "EndOfLogLSN",
+                "RecoveryLSN",
+                "TruncationLSN",
+                "LastCommitLSN",
+                "LastCommitTime",
+                "LastHardenedLSN",
+                "LastHardenedTime",
+                "LastReceivedLSN",
+                "LastReceivedTime",
+                "LastRedoneLSN",
+                "LastRedoneTime",
+                "LastSentLSN",
+                "LastSentTime"
+            )
+            $actualProperties = $result[0].psobject.Properties.Name
+            foreach ($prop in $expectedProperties) {
+                $actualProperties | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

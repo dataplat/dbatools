@@ -63,20 +63,18 @@ function Copy-DbaAgentSchedule {
         https://dbatools.io/Copy-DbaAgentSchedule
 
     .OUTPUTS
-        PSCustomObject
+        PSCustomObject (MigrationObject)
 
         Returns one object per schedule copied, with migration status details for each operation.
 
-        Properties:
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp when the copy operation was performed (DbaDateTime)
         - SourceServer: Name of the source SQL Server instance containing the original schedule
         - DestinationServer: Name of the destination SQL Server instance where the schedule was copied
         - Name: The name of the job schedule that was copied
         - Type: The type of object copied (always "Agent Schedule")
         - Status: The result of the copy operation ("Successful", "Skipped", or "Failed")
         - Notes: Additional context explaining the status (e.g., "Already exists on destination", "Schedule has associated jobs")
-        - DateTime: Timestamp (UTC) when the copy operation was performed
-
-        Default display order: DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentSchedule -Source sqlserver2014a -Destination sqlcluster

@@ -48,9 +48,9 @@ function Get-DbaAgentSchedule {
         https://dbatools.io/Get-DbaAgentSchedule
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.SharedSchedule
+        Microsoft.SqlServer.Management.Smo.Agent.JobSchedule
 
-        Returns one SharedSchedule object per shared schedule found. Shared schedules can be reused across multiple SQL Server Agent jobs to standardize maintenance windows and reduce administrative overhead.
+        Returns one JobSchedule object per shared schedule found. Shared schedules can be reused across multiple SQL Server Agent jobs to standardize maintenance windows and reduce administrative overhead.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance

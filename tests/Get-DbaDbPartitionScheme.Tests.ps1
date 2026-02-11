@@ -102,4 +102,31 @@ DROP PARTITION FUNCTION [$PFName];
             { Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master } | Should -Not -Throw
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionScheme"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "PartitionFunction"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

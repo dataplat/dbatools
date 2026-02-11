@@ -123,4 +123,30 @@ Describe $CommandName -Tag IntegrationTests {
             { $results[-1].LogDate -le $beforeFilter } | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "LogDate", "Source", "Text")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property for Source" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["Source"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["Source"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

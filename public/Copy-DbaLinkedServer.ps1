@@ -69,9 +69,9 @@ function Copy-DbaLinkedServer {
      .OUTPUTS
          PSCustomObject
 
-         Returns one object per linked server processed. The object contains migration status information for each linked server and its logins that were copied from source to destination.
+         Returns one object per linked server processed with TypeName dbatools.MigrationObject.
 
-         Default display properties (via Select-DefaultView):
+         Default display properties (via Select-DefaultView with TypeName MigrationObject):
          - DateTime: Timestamp when the linked server was processed (DbaDateTime object)
          - SourceServer: Name of the source SQL Server instance
          - DestinationServer: Name of the destination SQL Server instance

@@ -56,4 +56,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeGreaterThan 5
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Find-DbaCommand -Pattern "snapshot")
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "CommandName",
+                "Synopsis"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -82,4 +82,32 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Table"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Name",
+                "BinaryColumn",
+                "FileNameColumn"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

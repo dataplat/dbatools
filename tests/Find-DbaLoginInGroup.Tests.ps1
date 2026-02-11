@@ -21,8 +21,32 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-<#
-Integration test should appear below and are custom to the command you are writing.
-Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Find-DbaLoginInGroup -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no AD group logins found on test instance" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no AD group logins found on test instance" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "Login", "DisplayName", "MemberOf", "ParentADGroupLogin")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no AD group logins found on test instance" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Login", "DisplayName", "MemberOf", "ParentADGroupLogin")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+}

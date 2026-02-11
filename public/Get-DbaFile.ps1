@@ -54,13 +54,13 @@ function Get-DbaFile {
 
         Returns one object per file found in the specified directories across all target instances.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (via Select-DefaultView -ExcludeProperty):
+        - SqlInstance: The full SQL Server instance name (computer\instance)
         - Filename: The full path of the file on the target server (with path separators adapted for the host OS)
 
         Additional properties available (via Select-Object *):
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
-        - SqlInstance: The full SQL Server instance name (computer\instance)
         - RemoteFilename: The UNC path to the file for remote access (\\ComputerName\share\path)
 
     .EXAMPLE

@@ -24,3 +24,16 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $result = Compare-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no differences found across replicas" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+    }
+}

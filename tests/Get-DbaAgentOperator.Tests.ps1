@@ -60,4 +60,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeExactly 1
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator dbatoolsci_operator
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "ID", "IsEnabled", "EmailAddress", "LastEmail")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property IsEnabled" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["IsEnabled"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["IsEnabled"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

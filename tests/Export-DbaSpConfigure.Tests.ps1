@@ -21,8 +21,28 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-#
-#    Integration test should appear below and are custom to the command you are writing.
-#    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-#    for more guidence.
-#
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $outputDir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $outputDir -ItemType Directory
+            $result = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path $outputDir
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputDir -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType System.IO.FileInfo
+        }
+
+        It "Returns a .sql file with sp_configure content" {
+            $result.Extension | Should -Be ".sql"
+            $content = Get-Content -Path $result.FullName -Raw
+            $content | Should -Match "sp_configure"
+        }
+    }
+}

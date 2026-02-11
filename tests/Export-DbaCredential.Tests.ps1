@@ -185,4 +185,39 @@ Describe $CommandName -Tag IntegrationTests {
             $excludePasswordResults | Should -Not -Match "ReallyT3rrible!"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputFilePath = "$backupPath\dbatoolsci_outputtest_$(Get-Random).sql"
+            $splatOutputTest = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                FilePath        = $outputFilePath
+                ExcludePassword = $true
+            }
+            $result = Export-DbaCredential @splatOutputTest
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns the exported file path" {
+            $result.FullName | Should -Be $outputFilePath
+            Test-Path $result.FullName | Should -BeTrue
+        }
+
+        It "Returns string output when using Passthru" {
+            $splatPassthru = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                Passthru        = $true
+                ExcludePassword = $true
+            }
+            $passthruResult = Export-DbaCredential @splatPassthru
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+    }
 }

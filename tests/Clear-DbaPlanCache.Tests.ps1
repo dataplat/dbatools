@@ -41,4 +41,24 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Match "below"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Use a high threshold to avoid actually clearing the plan cache
+            $result = Clear-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle -Threshold 10240
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Size", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

@@ -187,4 +187,28 @@ Describe $CommandName -Tag IntegrationTests {
             { Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDir = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputDir -ItemType Directory -Force
+            $outputFile = "$outputDir\dbatoolsci_exportlogin_output.sql"
+            $fileResult = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -FilePath $outputFile -ExcludeDatabase -WarningAction SilentlyContinue
+            $passthruResult = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -Passthru -ExcludeDatabase -WarningAction SilentlyContinue
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputDir -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns a FileInfo object when writing to file" {
+            $fileResult | Should -Not -BeNullOrEmpty
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns a string when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+    }
 }

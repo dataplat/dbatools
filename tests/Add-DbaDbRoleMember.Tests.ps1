@@ -217,4 +217,17 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter.MemberRole | Should -Contain $role
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $splatOutputTest = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Role        = $role
+                Member      = $user1
+                Database    = $dbname
+            }
+            $outputResult = Add-DbaDbRoleMember @splatOutputTest
+            $outputResult | Should -BeNullOrEmpty
+        }
+    }
 }

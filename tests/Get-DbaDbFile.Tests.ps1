@@ -80,4 +80,57 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "FileGroupName",
+                "ID",
+                "Type",
+                "TypeDescription",
+                "LogicalName",
+                "PhysicalName",
+                "State",
+                "MaxSize",
+                "Growth",
+                "GrowthType",
+                "NextGrowthEventSize",
+                "Size",
+                "UsedSpace",
+                "AvailableSpace",
+                "IsOffline",
+                "IsReadOnly",
+                "IsReadOnlyMedia",
+                "IsSparse",
+                "NumberOfDiskWrites",
+                "NumberOfDiskReads",
+                "ReadFromDisk",
+                "WrittenToDisk",
+                "VolumeFreeSpace",
+                "FileGroupDataSpaceId",
+                "FileGroupType",
+                "FileGroupTypeDescription",
+                "FileGroupDefault",
+                "FileGroupReadOnly"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

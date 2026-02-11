@@ -75,4 +75,26 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsPipedTyped | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaModule -SqlInstance $TestConfig.InstanceSingle -Database msdb -Type View | Select-Object -First 1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties excluding Definition" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Definition" -Because "Definition should be excluded from default display"
+        }
+
+        It "Has the Definition property available" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.PSObject.Properties.Name | Should -Contain "Definition" -Because "Definition should still exist on the object"
+        }
+    }
 }

@@ -45,7 +45,7 @@ function Get-DbaDbServiceBrokerService {
         https://dbatools.io/Get-DbaDbServiceBrokerService
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.ServiceBrokerService
+        Microsoft.SqlServer.Management.Smo.Broker.BrokerService
 
         Returns one ServiceBrokerService object per Service Broker service found across the specified databases. System services are included by default but can be excluded using the -ExcludeSystemService parameter.
 

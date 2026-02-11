@@ -96,4 +96,46 @@ Describe $CommandName -Tag IntegrationTests {
             $excludeResults.Database | Should -Not -Contain $dbName
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $dbName)
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "FileGroup",
+                "PhysicalName",
+                "FileType",
+                "UsedSpace",
+                "FreeSpace",
+                "FileSize",
+                "PercentUsed",
+                "AutoGrowth",
+                "AutoGrowType",
+                "SpaceUntilMaxSize",
+                "AutoGrowthPossible",
+                "UnusableSpace"
+            )
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has no default display property set since Select-DefaultView is not used" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
+    }
 }

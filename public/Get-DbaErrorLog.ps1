@@ -57,22 +57,20 @@ function Get-DbaErrorLog {
         https://dbatools.io/Get-DbaErrorLog
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.LogFileEntry
+        System.Data.DataRow
 
-        Returns one LogFileEntry object per error log entry found. If multiple log numbers are specified, all entries from all requested log files are returned. Entries are processed in reverse log order (newest logs first) to prioritize recent activity.
+        Returns one DataRow object per error log entry found. If multiple log numbers are specified, all entries from all requested log files are returned. Entries are processed in reverse log order (newest logs first) to prioritize recent activity.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - LogDate: The date and time when the log entry was created (DateTime)
-        - Source: The process ID or source component that created the entry (e.g., spid123, Backup, Logon)
+        - Source: The process ID or source component that created the entry (aliased from ProcessInfo, e.g., spid123, Backup, Logon)
         - Text: The full text content of the log entry message
 
-        Additional properties available (from SMO LogFileEntry object):
-        - ProcessInfo: The raw process identifier or source component (same as Source but without aliasing)
-
-        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
+        Additional properties available:
+        - ProcessInfo: The raw process identifier or source component (Source is an alias for this property)
 
     .EXAMPLE
         PS C:\> Get-DbaErrorLog -SqlInstance sql01\sharepoint

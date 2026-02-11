@@ -41,7 +41,7 @@ function Get-DbaExternalProcess {
 
         Returns one object per external process spawned by SQL Server on each target computer. For servers with no child processes spawned by SQL Server, nothing is returned.
 
-        Properties:
+        Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer where the SQL Server process resides
         - ProcessId: The operating system process ID of the child process (unsigned integer)
         - Name: The executable name of the child process (e.g., cmd.exe, bcp.exe, DTExec.exe)
@@ -49,7 +49,9 @@ function Get-DbaExternalProcess {
         - WorkingSetSize: Memory currently in use by the child process in bytes (unsigned long)
         - VirtualSize: Total virtual address space reserved by the child process in bytes (unsigned long)
         - CimObject: The underlying WMI process object providing full access to all Win32_Process properties
-        - Credential: The credential object used for the WMI connection (this property is typically not useful for analysis)
+
+        Additional properties available:
+        - Credential: The credential object used for the WMI connection
 
     .EXAMPLE
         PS C:\> Get-DbaExternalProcess -ComputerName SERVER01, SERVER02

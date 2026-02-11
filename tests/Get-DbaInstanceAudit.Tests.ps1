@@ -72,4 +72,42 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Enabled | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit LoginAudit
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Audit"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "IsEnabled",
+                "OnFailure",
+                "MaximumFiles",
+                "MaximumFileSize",
+                "MaximumFileSizeUnit",
+                "MaximumRolloverFiles",
+                "QueueDelay",
+                "ReserveDiskSpace",
+                "FullName"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property IsEnabled" {
+            $result[0].psobject.Properties["IsEnabled"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["IsEnabled"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

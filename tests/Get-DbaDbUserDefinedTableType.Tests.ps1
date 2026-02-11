@@ -85,4 +85,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeExactly 2
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputValidation = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Type        = $tableTypeName
+            }
+            $result = Get-DbaDbUserDefinedTableType @splatOutputValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedTableType"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ID",
+                "Name",
+                "Columns",
+                "Owner",
+                "CreateDate",
+                "IsSystemObject",
+                "Version"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -37,7 +37,7 @@ function Enable-DbaReplDistributor {
 
         Returns one ReplicationServer object per instance configured as a distributor. The object shows the distributor configuration and replication server role details after enabling distribution.
 
-        Default display properties (via Select-DefaultView):
+        Default display properties (inherited from Get-DbaReplServer via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
@@ -49,13 +49,10 @@ function Enable-DbaReplDistributor {
         Additional properties available (from SMO ReplicationServer object):
         - DistributionDatabases: Collection of distribution databases configured on the distributor
         - DistributorSecurity: Distribution agent credentials and security settings
-        - LocalPublisher: Boolean indicating if this server can function as a local publisher
-        - PublisherIdentity: Identity of the publisher
         - ReplicationDatabases: Collection of databases enabled for replication on this instance
-        - SubscriptionServers: List of subscription servers
-        - ThirdPartySubscribers: Information about non-SQL Server subscribers
+        - RegisteredSubscribers: Collection of registered subscriber instances
 
-        All properties from the base SMO ReplicationServer object are accessible even though only default properties are displayed without using Select-Object *.
+        All properties from the base SMO ReplicationServer object are accessible using Select-Object *.
 
     .NOTES
         Tags: repl, Replication
