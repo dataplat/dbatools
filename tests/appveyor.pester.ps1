@@ -58,8 +58,6 @@ param (
 Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
-# diable logging
-$env:DBATOOLS_DISABLE_LOGGING = $true
 # imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
 

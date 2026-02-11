@@ -189,11 +189,9 @@ function Install-DbaWhoIsActive {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
                         foreach ($batch in $batches) {
                             try {
-                                #$null = $server.databases[$Database].ExecuteNonQuery($batch)
-                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $batch -EnableException
+                                $null = $server.databases[$Database].ExecuteNonQuery($batch)
                             } catch {
-                                # No ErrorRecord with ExecuteNonQuery, to prevent too long eventlog entry on AppVeyor.
-                                Stop-Function -Message "Failed to install stored procedure using ExecuteNonQuery."
+                                Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
                             }
                         }
 
