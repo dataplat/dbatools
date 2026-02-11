@@ -232,9 +232,8 @@ function Install-DbaDarlingData {
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
                         try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
-                            }
+                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
                         } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
