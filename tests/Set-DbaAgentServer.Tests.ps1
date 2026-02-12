@@ -65,10 +65,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "changes agent server job history properties to 10000 / 100" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100
-        $results.MaximumHistoryRows | Should -Be 10000
-        $results.MaximumJobHistoryRows | Should -Be 100
-        $results.JobHistoryIsEnabled | Should -Be $true
+        $script:outputResult = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100
+        $script:outputResult.MaximumHistoryRows | Should -Be 10000
+        $script:outputResult.MaximumJobHistoryRows | Should -Be 100
+        $script:outputResult.JobHistoryIsEnabled | Should -Be $true
     }
 
     It "disable max history and then enables it again" {
@@ -351,5 +351,49 @@ Describe $CommandName -Tag IntegrationTests {
             $validationError = $true
         }
         $validationError | Should -Be $true
+    }
+
+    It "Returns output of the documented type" {
+        $script:outputResult | Should -Not -BeNullOrEmpty
+        $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobServer"
+    }
+
+    It "Has the expected default display properties" {
+        if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+        $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+        $expectedDefaults = @(
+            "ComputerName",
+            "InstanceName",
+            "SqlInstance",
+            "AgentDomainGroup",
+            "AgentLogLevel",
+            "AgentMailType",
+            "AgentShutdownWaitTime",
+            "ErrorLogFile",
+            "IdleCpuDuration",
+            "IdleCpuPercentage",
+            "IsCpuPollingEnabled",
+            "JobServerType",
+            "LoginTimeout",
+            "JobHistoryIsEnabled",
+            "MaximumHistoryRows",
+            "MaximumJobHistoryRows",
+            "MsxAccountCredentialName",
+            "MsxAccountName",
+            "MsxServerName",
+            "Name",
+            "NetSendRecipient",
+            "ServiceAccount",
+            "ServiceStartMode",
+            "SqlAgentAutoStart",
+            "SqlAgentMailProfile",
+            "SqlAgentRestart",
+            "SqlServerRestart",
+            "State",
+            "SysAdminOnly"
+        )
+        foreach ($prop in $expectedDefaults) {
+            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        }
     }
 }

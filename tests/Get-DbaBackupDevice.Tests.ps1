@@ -61,5 +61,26 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a PhysicalLocation of \\.\Tape0" {
             $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.BackupDevice"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "BackupDeviceType",
+                "PhysicalLocation",
+                "SkipTapeLabel"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

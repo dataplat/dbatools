@@ -61,6 +61,19 @@ if (-not $env:appveyor) {
             It "Returns the right default one year expiry date" {
                 $defaultCert.NotAfter -match ((Get-Date).Date).AddMonths(12) | Should -BeTrue
             }
+
+            It "Returns output of the documented type" {
+                $defaultCert | Should -Not -BeNullOrEmpty
+                $defaultCert.psobject.TypeNames | Should -Contain "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $defaultCert.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("FriendlyName", "DnsNameList", "Thumbprint", "NotBefore", "NotAfter", "Subject", "Issuer")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
 
         Context "Can generate a new certificate with custom settings" {

@@ -97,6 +97,25 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Object -eq "dbo.dbatoolct_example" | Should -Be $true
             $result.Output.Substring(0, 25) -eq "DBCC execution completed." | Should -Be $true
         }
+
+        It "Returns output as PSCustomObject" {
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 
     Context "Validate BatchSize parameter" {

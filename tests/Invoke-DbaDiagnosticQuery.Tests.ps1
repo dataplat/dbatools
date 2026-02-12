@@ -103,6 +103,42 @@ Describe $CommandName -Tag IntegrationTests {
             Param($columnname)
             @($results.Result | Get-Member | Where-Object Name -eq $columnname).Count | Should -Be 0
         }
+
+        It "Returns output as PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Number",
+                "Name",
+                "Description",
+                "DatabaseSpecific",
+                "Database",
+                "Notes",
+                "Result"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has non-null ComputerName, InstanceName, and SqlInstance properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a non-null Result property for a query with data" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].Result | Should -Not -BeNullOrEmpty
+        }
     }
 
     Context "verifying output when exporting queries as files instead of running" {

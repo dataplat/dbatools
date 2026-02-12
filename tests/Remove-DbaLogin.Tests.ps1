@@ -64,6 +64,24 @@ Describe $CommandName -Tag IntegrationTests {
             $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
             $verifyLogin | Should -BeNullOrEmpty
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Login", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct Status value for a successful removal" {
+                $results.Status | Should -Be "Dropped"
+            }
+        }
     }
 
     Context "Regression test for issue #9163 - Warn when login not found" {

@@ -91,6 +91,18 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
             $expectedProps = "ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status".Split(",")
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
+
+        It "Returns output of the documented type" {
+            $repairResults | Should -Not -BeNullOrEmpty
+            $repairResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "DatabaseName", "User", "Status")
+            foreach ($prop in $expectedProps) {
+                $repairResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "When running repair again" {

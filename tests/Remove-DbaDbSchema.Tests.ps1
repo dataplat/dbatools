@@ -122,4 +122,36 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbSchema @splatGetPipeSchema) | Should -BeNullOrEmpty
         }
     }
+
+}
+
+Describe "$CommandName - Output" -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $outputTestDb = "dbatoolsci_removesch_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Confirm:$false -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Schema "dbatoolsci_OutputSchema"
+            $splatRemoveOutputSchema = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $outputTestDb
+                Schema      = "dbatoolsci_OutputSchema"
+                Confirm     = $false
+            }
+            $result = Remove-DbaDbSchema @splatRemoveOutputSchema
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

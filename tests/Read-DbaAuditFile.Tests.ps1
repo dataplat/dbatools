@@ -62,14 +62,39 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Verifying command output" {
+        BeforeAll {
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile | Select-Object -First 1
+        }
+
         It "returns some results with Raw parameter" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw
-            $results | Should -Not -BeNullOrEmpty
+            $rawResults = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw
+            $rawResults | Should -Not -BeNullOrEmpty
         }
 
         It "returns structured results with server_principal_name property" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile | Select-Object -First 1
             $results.server_principal_name | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected standard properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $results.psobject.Properties.Name | Should -Contain "name"
+            $results.psobject.Properties.Name | Should -Contain "timestamp"
+        }
+
+        It "Has the server_principal_name property from audit fields" {
+            $results | Should -Not -BeNullOrEmpty
+            $results.psobject.Properties.Name | Should -Contain "server_principal_name"
+        }
+
+        It "Returns raw enumeration when using -Raw" {
+            $rawResult = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw
+            $rawResult | Should -Not -BeNullOrEmpty
+            $rawResult[0].GetType().FullName | Should -BeLike "Microsoft.SqlServer.XEvent*"
         }
     }
 }

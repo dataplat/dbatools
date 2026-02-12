@@ -98,5 +98,26 @@ Describe $CommandName -Tag IntegrationTests {
             $ExpectedPropsDefault = "ComputerName", "CreateDate", "InstanceName", "Name", "SnapshotOf", "SqlInstance", "DiskUsage"
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
+
+        It "Returns output of the documented type" {
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+        }
+
+        It "Has the expected default display properties" {
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "SnapshotOf", "CreateDate", "DiskUsage")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property SnapshotOf" {
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $results[0].psobject.Properties["SnapshotOf"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["SnapshotOf"].MemberType | Should -Be "AliasProperty"
+        }
     }
 }

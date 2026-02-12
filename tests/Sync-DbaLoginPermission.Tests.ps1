@@ -69,6 +69,33 @@ CREATE LOGIN [$DBUserName]
             $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceMulti2 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
             $permissionsAfter.member | Should -Be $DBUserName
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has DateTime property populated" {
+                $results[0].DateTime | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has a valid Status value" {
+                $results[0].Status | Should -BeIn @("Successful", "Failed")
+            }
+
+            It "Has Type set to Login Permissions" {
+                $results[0].Type | Should -Be "Login Permissions"
+            }
+        }
     }
 
     Context "Login state synchronization" {

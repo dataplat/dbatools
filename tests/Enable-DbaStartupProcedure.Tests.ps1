@@ -66,6 +66,28 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Status | Should -Be $true
             $result.Note | Should -Be "Enable succeded"
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.StoredProcedure"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "Startup", "Action", "Status", "Note")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected property values for a successful enable" {
+            $result.Schema | Should -Be "dbo"
+            $result.Name | Should -Be $startupProcName
+            $result.Database | Should -Be "master"
+            $result.Startup | Should -BeTrue
+            $result.Action | Should -Be "Enable"
+            $result.Status | Should -BeTrue
+        }
     }
 
     Context "When enabling an already enabled procedure" {

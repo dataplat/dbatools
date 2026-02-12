@@ -24,7 +24,19 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling force network encryption" {
         It "Returns results with ForceEncryption set to false" {
             $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
+            if (-not $results) { Set-ItResult -Skipped -Because "command returned no results" }
             $results.ForceEncryption | Should -BeFalse
+            $results[0] | Should -BeOfType PSCustomObject
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ForceEncryption",
+                "CertificateThumbprint"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 }

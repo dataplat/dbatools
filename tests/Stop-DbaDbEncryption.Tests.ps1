@@ -78,6 +78,36 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.EncryptionEnabled | Should -Be $false
             }
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $script:outputForValidation = $results
+            }
+
+            It "Returns output with results" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "DatabaseName",
+                    "EncryptionEnabled"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias property DatabaseName" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].PSObject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 
     Context "Parallel processing" {
@@ -144,4 +174,5 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
 }

@@ -160,4 +160,39 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "You must pipe in a synonym, database, or server or specify a SqlInstance"
         }
     }
+
+}
+
+Describe "$CommandName - Output" -Tag IntegrationTests {
+    BeforeAll {
+        $outputTestDb = "dbatoolsci_synout_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
+        $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Synonym "dbatoolsci_outsyn" -BaseObject "obj_out"
+        $outputSynonym = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Synonym "dbatoolsci_outsyn"
+        $outputResult = @($outputSynonym | Remove-DbaDbSynonym -Confirm:$false | Where-Object { $null -ne $PSItem })
+    }
+
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Confirm:$false -ErrorAction SilentlyContinue
+    }
+
+    Context "Output validation" {
+        It "Returns output of the documented type" {
+            if (-not $outputResult -or $outputResult.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected output properties" {
+            if (-not $outputResult -or $outputResult.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Synonym", "Status")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has the correct status value on success" {
+            if (-not $outputResult -or $outputResult.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].Status | Should -Be "Removed"
+        }
+    }
 }

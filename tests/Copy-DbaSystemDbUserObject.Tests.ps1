@@ -79,19 +79,36 @@ AS
     }
 
     Context "When copying objects to the same instance" {
-        It "Should execute successfully with default parameters" {
+        BeforeAll {
             $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle
+        }
+
+        It "Should execute successfully with default parameters" {
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute successfully with -Classic parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
-            $results | Should -Not -BeNullOrEmpty
+            $classicResults = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
+            $classicResults | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute successfully with -Force parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Force
-            $results | Should -Not -BeNullOrEmpty
+            $forceResults = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Force
+            $forceResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

@@ -108,5 +108,30 @@ Describe $CommandName -Tag IntegrationTests {
             $multiResults.Name | Should -Contain $keyName
             $multiResults.Name | Should -Contain $keyName2
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AsymmetricKey"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Owner",
+                "KeyEncryptionAlgorithm",
+                "KeyLength",
+                "PrivateKeyEncryptionType",
+                "Thumbprint"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

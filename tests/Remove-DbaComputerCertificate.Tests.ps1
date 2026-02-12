@@ -49,5 +49,18 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $verifyResults = Get-DbaComputerCertificate -Thumbprint $thumbprint
             $verifyResults | Should -BeNullOrEmpty
         }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "Store", "Folder", "Thumbprint", "Status")
+            foreach ($prop in $expectedProps) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 }

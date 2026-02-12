@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {
@@ -73,6 +73,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+
+        It "Returns System.IO.FileInfo when writing to file" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType System.IO.FileInfo
         }
     }
 
@@ -97,6 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Remove previous output file if exists
             Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
             $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health | Export-DbaXESession -FilePath $outputFile
+            $resultPassthru = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -105,6 +111,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+
+        It "Returns System.String when using -Passthru" {
+            $resultPassthru | Should -Not -BeNullOrEmpty
+            $resultPassthru | Should -BeOfType [System.String]
         }
     }
 }

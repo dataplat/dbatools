@@ -76,5 +76,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityGroup | Should -Be $agname
             $results.AvailabilityDatabases.Name | Should -Not -Contain $dbname
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Database", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Returns the correct Status value" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.Status | Should -Be "Removed"
+            }
+        }
     }
 }

@@ -42,6 +42,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
             $results | Should -Not -BeNullOrEmpty
             ($results | Get-Content) -contains "information for current instance"
+            $script:outputValidationResult = $results
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns a file with the correct extension" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult.Extension | Should -Be ".ipynb"
         }
     }
 }

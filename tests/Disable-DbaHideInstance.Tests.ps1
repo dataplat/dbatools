@@ -22,6 +22,16 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When disabling hide instance" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $hideInstanceResults = Disable-DbaHideInstance -SqlInstance $TestConfig.InstanceSingle
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         AfterAll {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -32,15 +42,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns result with HideInstance set to false" {
-            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $hideInstanceResults = Disable-DbaHideInstance -SqlInstance $TestConfig.InstanceSingle
-
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
             $hideInstanceResults.HideInstance | Should -BeFalse
+        }
+
+        It "Returns output of the documented type" {
+            $hideInstanceResults | Should -Not -BeNullOrEmpty
+            $hideInstanceResults | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $hideInstanceResults | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "HideInstance")
+            foreach ($prop in $expectedProperties) {
+                $hideInstanceResults.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 }

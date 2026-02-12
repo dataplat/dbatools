@@ -57,9 +57,35 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When disabling trace flags" {
+        BeforeAll {
+            # Re-enable the trace flag so we can disable it and capture a result
+            $null = $server.Query("DBCC TRACEON($safeTraceFlag,-1)")
+            $result = @(Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag)
+            $result = $result | Where-Object { $null -ne $PSItem }
+        }
+
         It "Should disable trace flag $safeTraceFlag" {
-            $disableResults = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag
-            $disableResults.TraceFlag | Should -Contain $safeTraceFlag
+            $result.TraceFlag | Should -Contain $safeTraceFlag
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("SourceServer", "InstanceName", "SqlInstance", "TraceFlag", "Status", "Notes", "DateTime")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has a Status of Successful" {
+            $result[0].Status | Should -Be "Successful"
+        }
+
+        It "Has a DateTime value" {
+            $result[0].DateTime | Should -Not -BeNullOrEmpty
         }
     }
 }

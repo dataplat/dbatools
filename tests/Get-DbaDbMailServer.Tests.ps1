@@ -107,5 +107,31 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets results" {
             $accountFilterResults | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            if (-not $accountFilterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $accountFilterResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $accountFilterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $accountFilterResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Account",
+                "Name",
+                "Port",
+                "EnableSsl",
+                "ServerType",
+                "UserName",
+                "UseDefaultCredentials",
+                "NoCredentialChange"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

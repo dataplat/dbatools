@@ -57,6 +57,20 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Remove Agent Operator is removed properly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputOperatorName = "dbatoolsci_outputtest_$(Get-Random)"
+            $null = New-DbaAgentOperator -SqlInstance $instanceConnection -Operator $outputOperatorName
+            $script:outputValidationResult = Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $outputOperatorName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $outputOperatorName -ErrorAction SilentlyContinue
+        }
+
         It "Should have no operator with that name" {
             Remove-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1
             $results = (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorEmail1).Count
@@ -70,6 +84,29 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -Not -BeNullOrEmpty
             Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName | Remove-DbaAgentOperator
             (Get-DbaAgentOperator -SqlInstance $instanceConnection -Operator $operatorName) | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:outputValidationResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has correct values for removal output" {
+                $script:outputValidationResult.Status | Should -Be "Dropped"
+                $script:outputValidationResult.IsRemoved | Should -BeTrue
+                $script:outputValidationResult.Name | Should -Be $outputOperatorName
+                $script:outputValidationResult.ComputerName | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult.InstanceName | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult.SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

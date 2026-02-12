@@ -72,6 +72,22 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }).Count
             $agentCount | Should -BeGreaterThan 0
         }
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status", "DashboardPath")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+        It "Has correct values for standard properties" {
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $results[0].Database | Should -Be $database
+        }
 
     }
 }

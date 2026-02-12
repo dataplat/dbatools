@@ -40,5 +40,27 @@ if (-not $env:appveyor) {
                 $results.Count | Should -BeGreaterOrEqual 1
             }
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $server.Query("DBCC STACKDUMP")
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+                $result = Get-DbaDump -SqlInstance $TestConfig.InstanceSingle
+            }
+
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "FileName", "CreationTime", "Size")
+                foreach ($prop in $expectedProps) {
+                    $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+        }
     }
 }

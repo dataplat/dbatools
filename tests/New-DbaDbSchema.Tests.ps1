@@ -105,5 +105,14 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Name | Should -Be TestSchema4
             $schema.Parent.Name | Should -Be $newDbName
         }
+
+        It "Returns output of the documented type" {
+            $schema | Should -Not -BeNullOrEmpty
+            $schema[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+        }
+
+        It "Has no default display property set since Select-DefaultView is not used" {
+            $schema[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 }

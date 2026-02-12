@@ -91,4 +91,29 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Select-Object -Unique | Should -Not -Contain "db_owner"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner"
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseRole"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "Database",
+                "Name",
+                "IsFixedRole"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

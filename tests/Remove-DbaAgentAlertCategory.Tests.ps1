@@ -31,9 +31,11 @@ Describe $CommandName -Tag IntegrationTests {
             # Create test categories that we can remove later
             $testCategories = @("CategoryTest1", "CategoryTest2", "CategoryTest3")
             $randomCategoryName = "dbatoolsci_test_$(Get-Random)"
+            $outputCategoryName = "dbatoolsci_outputtest_$(Get-Random)"
 
             # Create the alert categories for testing
             $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
+            $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -44,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Clean up any remaining test categories
-            $remainingCategories = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories, $randomCategoryName -ErrorAction SilentlyContinue
+            $remainingCategories = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories, $randomCategoryName, $outputCategoryName -ErrorAction SilentlyContinue
             if ($remainingCategories) {
                 $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $remainingCategories.Name
             }
@@ -65,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove the alert categories" {
-            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
+            $script:outputValidationResult = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
 
             $newresults = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
 
@@ -78,6 +80,35 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName) | Should -Not -BeNullOrEmpty
             Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName | Remove-DbaAgentAlertCategory
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName) | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                $result = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+
+            It "Returns output as PSCustomObject" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct values for a successful removal" {
+                $result.Name | Should -Be $outputCategoryName
+                $result.Status | Should -Be "Dropped"
+                $result.IsRemoved | Should -BeTrue
+                $result.ComputerName | Should -Not -BeNullOrEmpty
+                $result.InstanceName | Should -Not -BeNullOrEmpty
+                $result.SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

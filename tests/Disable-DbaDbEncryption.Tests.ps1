@@ -67,6 +67,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["DatabaseName"].MemberType | Should -Be "AliasProperty"
+        }
     }
 
     Context "When disabling encryption via parameters" {

@@ -175,4 +175,42 @@ Describe $CommandName -Tag IntegrationTests {
         $fileText | Should -Match $group
         $fileText | Should -Not -Match $group2
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRandom = Get-Random
+            $outputSrvName = "dbatoolsci-output-server-$outputRandom"
+            $outputRegSrvName = "dbatoolsci-output-regsrv-$outputRandom"
+            $outputNewDirectory = "$($TestConfig.Temp)\$CommandName-output-$outputRandom"
+            $null = New-Item -Path $outputNewDirectory -ItemType Directory -Force
+
+            $outputServer = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $outputSrvName -Name $outputRegSrvName -Description "Output validation test"
+            $outputResult = $outputServer | Export-DbaRegServer -Path $outputNewDirectory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # Clean up using direct SQL to avoid broken Remove-DbaRegServer
+            try {
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $server.Query("DELETE FROM msdb.dbo.sysmanagement_shared_registered_servers_internal WHERE name LIKE 'dbatoolsci-output-%'")
+            } catch {
+                # Ignore cleanup errors
+            }
+            Remove-Item -Path $outputNewDirectory -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns an XML file" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.Extension | Should -Be ".xml"
+        }
+    }
 }

@@ -22,8 +22,11 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output" {
+            $result = Remove-DbaDbBackupRestoreHistory -SqlInstance $TestConfig.InstanceSingle -KeepDays 0 -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

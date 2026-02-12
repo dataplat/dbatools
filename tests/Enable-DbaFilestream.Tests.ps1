@@ -57,5 +57,28 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeLike '*Filestream must be at least level 2 when using ShareName*'
             $results | Should -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "InstanceAccess", "ServiceAccess", "ServiceShareName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].PSObject.Properties.Name | Should -Contain "InstanceAccessLevel"
+            $results[0].PSObject.Properties.Name | Should -Contain "ServiceAccessLevel"
+        }
     }
 }

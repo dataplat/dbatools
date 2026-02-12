@@ -61,9 +61,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When creating workload groups" {
+        BeforeAll {
+            # Prepare output for validation tests
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputWorkloadGroup = "dbatoolsci_outputwkl"
+            $splatNewOutputWkl = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $outputWorkloadGroup
+                Force         = $true
+            }
+            $script:outputValidationResult = New-DbaRgWorkloadGroup @splatNewOutputWkl
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         AfterEach {
             # Clean up after each test
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $testWorkloadGroup, $testWorkloadGroup2 -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            # Clean up output validation workload group
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWorkloadGroup -ErrorAction SilentlyContinue
         }
 
         It "Creates a workload group in default resource pool" {
@@ -157,6 +175,38 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle
 
             $result.ReconfigurePending | Should -Be $true
+        }
+    }
+    Context "Output validation" {
+        BeforeAll {
+            $result = $script:outputValidationResult
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.WorkloadGroup
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

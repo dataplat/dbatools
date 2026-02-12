@@ -70,4 +70,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Schema | Should -BeExactly "dbo"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputQueue = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = "tempdb"
+                ExcludeSystemQueue = $true
+            }
+            $outputResult = Get-DbaDbServiceBrokerQueue @splatOutputQueue
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Broker.ServiceQueue"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "QueueID", "CreateDate", "DateLastModified", "Name", "ProcedureName", "ProcedureSchema")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["QueueID"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["QueueID"].MemberType | Should -Be "AliasProperty"
+        }
+    }
 }

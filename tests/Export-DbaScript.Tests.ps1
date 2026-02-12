@@ -40,6 +40,12 @@ Describe $CommandName -Tag IntegrationTests {
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Capture results for output validation tests (without EnableException to allow output to pipeline)
+            $firstTable = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1
+            $passthruResult = $firstTable | Export-DbaScript -Passthru
+            $outputFilePath = "$tempPath\outputtest-$(Get-Random).sql"
+            $fileResult = $firstTable | Export-DbaScript -FilePath $outputFilePath
         }
 
         AfterAll {
@@ -84,6 +90,18 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
+        }
+
+        It "Returns string output when using -Passthru" {
+            if ($passthruResult -eq $null) { Set-ItResult -Skipped -Because "No test tables available in msdb" }
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns FileInfo output when writing to file" {
+            if ($fileResult -eq $null) { Set-ItResult -Skipped -Because "No test tables available in msdb" }
+            $fileResult | Should -Not -BeNullOrEmpty
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
         }
     }
 }

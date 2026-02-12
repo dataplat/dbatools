@@ -316,3 +316,31 @@ Describe $CommandName -Tag UnitTests, "InputParameters" {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $outputObj = New-Object -TypeName psobject -Property @{
+                Name  = "OutputTest"
+                Value = 42
+            }
+            $result = ConvertTo-DbaDataTable -InputObject $outputObj
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.GetType().FullName | Should -Be "System.Data.DataTable"
+        }
+
+        It "Contains expected columns from input object" {
+            $result.Columns.ColumnName | Should -Contain "Name"
+            $result.Columns.ColumnName | Should -Contain "Value"
+        }
+
+        It "Contains the input data as rows" {
+            $result.Rows.Count | Should -Be 1
+            $result.Rows[0].Name | Should -Be "OutputTest"
+            $result.Rows[0].Value | Should -Be 42
+        }
+    }
+}

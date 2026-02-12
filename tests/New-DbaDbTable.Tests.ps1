@@ -102,16 +102,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should create the table" {
-        BeforeEach {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $map = @{
                 Name      = 'test'
                 Type      = 'varchar'
                 MaxLength = 20
                 Nullable  = $true
             }
+            $script:outputValidationResult = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $tablename -ColumnMap $map
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         It "Creates the table" {
-            (New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $tablename -ColumnMap $map).Name | Should -Contain $tablename
+            $script:outputValidationResult.Name | Should -Contain $tablename
         }
         It "Really created it" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname).Name | Should -Contain $tablename
@@ -258,6 +261,25 @@ Describe $CommandName -Tag IntegrationTests {
             $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti2 -Database $graphDbName -Name $tablenameEdge -ColumnMap $map -IsEdge
             $result.Name | Should -Be $tablenameEdge
             $result.IsEdge | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputValidationResult
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Table"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "FullTextIndex")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

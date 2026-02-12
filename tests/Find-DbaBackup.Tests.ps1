@@ -192,5 +192,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
             $results.Count | Should -BeExactly 5
         }
+
+        It "Returns output of the documented type" {
+            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected file properties" {
+            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].FullName | Should -Not -BeNullOrEmpty
+            $results[0].Name | Should -Not -BeNullOrEmpty
+            $results[0].Extension | Should -Be ".bak"
+            $results[0].LastWriteTime | Should -Not -BeNullOrEmpty
+        }
     }
 }

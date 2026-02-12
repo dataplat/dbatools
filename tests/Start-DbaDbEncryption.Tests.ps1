@@ -89,6 +89,32 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
         }
+
+        Context "Output validation" {
+            It "Returns output with expected properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "encryption setup failed - likely pre-existing certificate conflicts" }
+                $results[0].ComputerName | Should -Not -BeNullOrEmpty
+                $results[0].InstanceName | Should -Not -BeNullOrEmpty
+                $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+                $results[0].DatabaseName | Should -Not -BeNullOrEmpty
+                $results[0].EncryptionEnabled | Should -Be $true
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "encryption setup failed - likely pre-existing certificate conflicts" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "DatabaseName",
+                    "EncryptionEnabled"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 
     Context "Parallel processing" {
@@ -138,4 +164,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }
+
 }

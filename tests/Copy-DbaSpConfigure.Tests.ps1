@@ -66,5 +66,25 @@ Describe $CommandName -Tag IntegrationTests {
             $newConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy1 -ConfigName RemoteQueryTimeout
             $newConfig.ConfiguredValue | Should -Be $sourceConfigValue
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected values for standard migration properties" {
+            $results[0].Type | Should -Be "Configuration Value"
+            $results[0].Status | Should -BeIn @("Successful", "Skipped")
+            $results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
     }
 }

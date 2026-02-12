@@ -43,4 +43,12 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "system_health is not running"
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output when session does not exist" {
+            # Watch-DbaXESession streams infinitely when a session is running, so we can only test the non-existent session path
+            $result = Watch-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session "dbatoolsci_nonexistent_session" -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

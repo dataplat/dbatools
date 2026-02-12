@@ -43,4 +43,61 @@ Describe $CommandName -Tag IntegrationTests {
             $properties | Should -Contain "MemoryToReserve"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserName",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents",
+                "ParameterString"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the expected simple mode properties" {
+            $simpleResult = Get-DbaStartupParameter -SqlInstance $TestConfig.InstanceSingle -Simple
+            $simpleResult | Should -Not -BeNullOrEmpty
+            $expectedSimpleProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "ParameterString"
+            )
+            $actualProperties = $simpleResult.PSObject.Properties.Name
+            foreach ($prop in $expectedSimpleProperties) {
+                $actualProperties | Should -Contain $prop -Because "property '$prop' should exist on the simple output object"
+            }
+        }
+    }
 }

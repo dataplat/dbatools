@@ -60,6 +60,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $setPort = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
             $setPort | Should -Be $testPort
+
+            # Capture for output validation
+            $script:outputForValidation = $result
         }
 
         It "Should change the port back to the old value" {
@@ -72,6 +75,32 @@ Describe $CommandName -Tag IntegrationTests {
 
             $setPort = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
             $setPort | Should -Be $originalPort
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = $script:outputForValidation
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Changes",
+                "RestartNeeded",
+                "Restarted"
+            )
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
         }
     }
 }

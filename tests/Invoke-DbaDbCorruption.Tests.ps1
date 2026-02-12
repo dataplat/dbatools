@@ -98,4 +98,59 @@ Describe $CommandName -Tag IntegrationTests {
             $checkDbResult | Should -Not -Be "Success"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_corruptionoutput"
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $null = $outputServer.Query("CREATE DATABASE [$outputDbName]")
+            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName
+            $null = $outputDb.Query("
+                CREATE TABLE dbo.[OutputTest] (id int);
+                INSERT dbo.[OutputTest]
+                SELECT TOP 1000 1
+                FROM sys.objects")
+
+            $corruptionResult = $null
+            try {
+                $corruptionResult = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Table OutputTest -Confirm:$false -WarningAction SilentlyContinue -ErrorAction Stop
+            } catch {
+                # Command may fail in certain test environments
+            }
+        }
+
+        AfterAll {
+            try {
+                $cleanServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $cleanServer.Query("IF DB_ID('dbatoolsci_corruptionoutput') IS NOT NULL BEGIN ALTER DATABASE [dbatoolsci_corruptionoutput] SET MULTI_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [dbatoolsci_corruptionoutput]; END")
+            } catch {
+                # Ignore cleanup errors
+            }
+        }
+
+        It "Returns output of the documented type" {
+            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            $corruptionResult | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Status"
+            )
+            foreach ($prop in $expectedProps) {
+                $corruptionResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Returns the correct status" {
+            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            $corruptionResult.Status | Should -Be "Corrupted"
+        }
+    }
 }

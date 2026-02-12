@@ -37,6 +37,25 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.URL -match "sqlskills.com" | Should -Be $true
             }
         }
+
+        It "Returns output of type PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "WaitType", "Category", "WaitSeconds", "ResourceSeconds", "SignalSeconds", "WaitCount", "Percentage", "AverageWaitSeconds", "AverageResourceSeconds", "AverageSignalSeconds", "URL")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Excludes Notes and Ignorable from default display without IncludeIgnorable" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Notes" -Because "Notes should be excluded from default display"
+            $defaultProps | Should -Not -Contain "Ignorable" -Because "Ignorable should be excluded from default display without IncludeIgnorable"
+        }
     }
 
     Context "Command returns proper info when using parameter IncludeIgnorable" {
@@ -62,6 +81,13 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.URL -match "sqlskills.com" | Should -Be $true
             }
+        }
+
+        It "Includes Ignorable in default display with IncludeIgnorable" {
+            $outputWithIgnorable = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable
+            $defaultProps = $outputWithIgnorable[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Contain "Ignorable" -Because "Ignorable should be in the default display set when IncludeIgnorable is specified"
+            $defaultProps | Should -Not -Contain "Notes" -Because "Notes should still be excluded from default display"
         }
     }
 }

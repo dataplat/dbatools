@@ -51,4 +51,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Dropped"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputPropName = "dbatoolsci_outputprop_$(Get-Random)"
+            $outputEp = $db | Add-DbaExtendedProperty -Name $outputPropName -Value "test_value"
+            $result = $outputEp | Remove-DbaExtendedProperty -Confirm:$false
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "ParentName", "PropertyType", "Name", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct values for a successful removal" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be "Dropped"
+            $result.Name | Should -Be $outputPropName
+        }
+    }
 }

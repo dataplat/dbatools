@@ -51,4 +51,27 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle | Select-Object -First 1
+        }
+
+        It "Returns output as PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result.psobject.Properties.Name | Should -Contain "ComputerName"
+            $result.psobject.Properties.Name | Should -Contain "Name"
+        }
+
+        It "Does not display Credential in default output" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Credential" -Because "Credential is excluded via Select-DefaultView -ExcludeProperty"
+        }
+    }
 }

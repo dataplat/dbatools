@@ -125,6 +125,19 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
 
+        It "Returns output of the documented type" {
+            $snapResult = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 | Select-Object -First 1
+            $snapResult | Should -Not -BeNullOrEmpty
+            $snapResult.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+        }
+
+        It "Has working alias properties" {
+            $snapResult = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 | Select-Object -First 1
+            $snapResult | Should -Not -BeNullOrEmpty
+            $snapResult.psobject.Properties["SnapshotOf"] | Should -Not -BeNullOrEmpty
+            $snapResult.psobject.Properties["SnapshotOf"].MemberType | Should -Be "AliasProperty"
+        }
+
         It "Creates multiple snaps for db with dot in the name (see #8829)" {
             $results = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -EnableException -Database $db4
             $results | Should -Not -Be $null

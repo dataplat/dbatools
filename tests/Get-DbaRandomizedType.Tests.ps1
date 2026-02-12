@@ -40,5 +40,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return values based on pattern" {
             $namePatternTypes.Count | Should -BeGreaterOrEqual 26
         }
+
+        It "Returns output of type PSCustomObject" {
+            $allTypes | Should -Not -BeNullOrEmpty
+            $allTypes[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $allTypes[0].PSObject.Properties.Name | Should -Contain "Type"
+            $allTypes[0].PSObject.Properties.Name | Should -Contain "SubType"
+        }
+
+        It "Has non-null Type and SubType values" {
+            $allTypes[0].Type | Should -Not -BeNullOrEmpty
+            $allTypes[0].SubType | Should -Not -BeNullOrEmpty
+        }
     }
 }

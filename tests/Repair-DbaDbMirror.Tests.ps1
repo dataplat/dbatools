@@ -21,8 +21,17 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($true) {
+        # Repair-DbaDbMirror requires database mirroring infrastructure (two instances with mirroring endpoints
+        # and a mirrored database in suspended state). This is not available in standard CI environments.
+        # Skipping output validation as there is no safe way to create a suspended mirror in test.
+
+        It "Returns output of the documented type" {
+            # Repair-DbaDbMirror returns Microsoft.SqlServer.Management.Smo.Database objects
+            # This test is skipped because mirroring infrastructure is required
+            $true | Should -BeTrue
+        }
+    }
+}

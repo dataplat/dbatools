@@ -61,4 +61,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Database -contains $dbname | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no suspect pages to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no suspect pages to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileId",
+                "PageId",
+                "EventType",
+                "ErrorCount",
+                "LastUpdateDate"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

@@ -47,6 +47,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should only have one database" {
             ($resultsTyped | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
+
+        It "Returns output of the documented type" {
+            $result = $resultsTyped | Select-Object -First 1
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties excluding Definition" {
+            $result = $resultsTyped | Select-Object -First 1
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Definition" -Because "Definition should be excluded from default display"
+        }
+
+        It "Has the Definition property available" {
+            $result = $resultsTyped | Select-Object -First 1
+            $result | Should -Not -BeNullOrEmpty
+            $result.PSObject.Properties.Name | Should -Contain "Definition" -Because "Definition should still exist on the object"
+        }
     }
 
     Context "Accepts Piped Input" {
@@ -75,4 +94,5 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsPipedTyped | Select-Object -Unique Database | Measure-Object).Count | Should -Be 1
         }
     }
+
 }

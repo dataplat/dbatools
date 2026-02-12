@@ -38,5 +38,40 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
                 $result.URL -match "sqlskills.com" | Should -Be $true
             }
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "WaitType",
+                "WaitSeconds",
+                "WaitCount",
+                "Percentage",
+                "AverageWaitSeconds",
+                "URL"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has valid values for standard connection properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a valid URL pointing to sqlskills.com" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].URL | Should -Match "sqlskills.com"
+        }
     }
 }

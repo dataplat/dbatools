@@ -123,3 +123,54 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputJobName = "dbatoolsci_outfile_$(Get-Random)"
+            $outputFilePath = "$($TestConfig.Temp)\dbatoolsci_output_$(Get-Random).txt"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -StepName "dbatoolsci_outstep1" -Subsystem TransactSql -Command "select 1" -OutputFileName $outputFilePath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = @(Get-DbaAgentJobOutputFile -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Job", "JobStep", "OutputFileName", "RemoteOutputFileName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include StepId in default display" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "StepId" -Because "StepId is excluded from default display"
+        }
+
+        It "Has StepId available as a property" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties["StepId"] | Should -Not -BeNullOrEmpty
+        }
+    }
+}

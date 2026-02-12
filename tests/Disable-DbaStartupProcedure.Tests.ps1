@@ -79,6 +79,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return success note" {
             $result.Note | Should -Be "Disable succeded"
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.StoredProcedure"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "Startup", "Action", "Status", "Note")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "When disabling an already disabled procedure" {
@@ -141,4 +154,5 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Note | Should -Be "Disable succeded"
         }
     }
+
 }

@@ -75,5 +75,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a queuename of $testQueueName" {
             $testResults.QueueName | Should -Be $testQueueName
         }
+
+        It "Returns output of the documented type" {
+            $testResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Broker.BrokerService"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $testResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Owner",
+                "ServiceID",
+                "Name",
+                "QueueSchema",
+                "QueueName"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $testResults[0].psobject.Properties["ServiceID"] | Should -Not -BeNullOrEmpty
+            $testResults[0].psobject.Properties["ServiceID"].MemberType | Should -Be "AliasProperty"
+        }
     }
 }

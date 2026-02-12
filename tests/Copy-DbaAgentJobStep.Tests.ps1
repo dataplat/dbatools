@@ -115,6 +115,18 @@ Describe $CommandName -Tag IntegrationTests {
             ($destSteps | Where-Object Name -eq "Step1").Command | Should -BeLike "*SELECT 1*"
             ($destSteps | Where-Object Name -eq "Step2").Command | Should -BeLike "*SELECT 2*"
         }
+
+        It "Returns output with the expected TypeName" {
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Non-existent job handling" {
@@ -142,4 +154,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
     }
+
 }

@@ -72,5 +72,28 @@ Describe $CommandName -Tag IntegrationTests {
             $testDatabase.Refresh()
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the correct properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the expected values" {
+                $results.Status | Should -Be "Success"
+                $results.Database | Should -Be $testDatabase.Name
+                $results.ComputerName | Should -Not -BeNullOrEmpty
+                $results.InstanceName | Should -Not -BeNullOrEmpty
+                $results.SqlInstance | Should -Not -BeNullOrEmpty
+            }
+        }
     }
+
 }

@@ -32,10 +32,32 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should return file information for a single database" {
-        It "returns information about tempdb" {
+        BeforeAll {
             $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
+
+        It "returns information about tempdb" {
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $false
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "FileMapping")
+            foreach ($prop in $expectedProps) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has a FileMapping property that is a hashtable" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].FileMapping | Should -BeOfType [hashtable]
+            $results[0].FileMapping.Count | Should -BeGreaterThan 0
         }
     }
 }

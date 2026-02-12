@@ -67,6 +67,7 @@ AS
     FROM [master].[sys].[syslogins];
 "@
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewdb" -Query $DatabaseView
+            $result = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci_sysadmin -Database "dbatoolsci_viewdb"
         }
 
         AfterAll {
@@ -87,6 +88,42 @@ AS
         It "Should find no results when Excluding dbatoolsci_viewdb" {
             $results = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatools* -ExcludeDatabase "dbatoolsci_viewdb"
             $results | Should -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "ViewTextFound"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in the default display" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "View" -Because "View should be excluded from default display"
+            $defaultProps | Should -Not -Contain "ViewFullText" -Because "ViewFullText should be excluded from default display"
+        }
+
+        It "Has the additional properties available" {
+            $result[0].psobject.Properties["View"] | Should -Not -BeNullOrEmpty
+            $result[0].psobject.Properties["ViewFullText"] | Should -Not -BeNullOrEmpty
         }
     }
 }

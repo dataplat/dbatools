@@ -57,8 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "selects the next value of a sequence" {
-            $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
-            $sequenceValue | Should -Be 100
+            $script:outputResult = Select-DbaDbSequenceNextValue -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
+            $script:outputResult | Should -Be 100
 
             $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random"
             $sequenceValue | Should -Be 101
@@ -67,6 +67,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports piping databases" {
             $sequenceValue = Get-DbaDatabase -SqlInstance $server -Database $newDbName | Select-DbaDbSequenceNextValue -Sequence "Sequence1_$random" -Schema "Schema_$random"
             $sequenceValue | Should -Be 102
+        }
+
+        Context "Output validation" {
+            It "Returns output of type System.Int64" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult | Should -BeOfType [System.Int64]
+            }
         }
     }
 }

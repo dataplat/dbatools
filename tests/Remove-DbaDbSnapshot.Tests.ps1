@@ -64,6 +64,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Operations on snapshots" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name "dbatoolsci_RemoveSnap_outputtest" -ErrorAction SilentlyContinue
+            $script:outputResult = Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot "dbatoolsci_RemoveSnap_outputtest"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         BeforeEach {
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name $db1_snap1 -ErrorAction SilentlyContinue
             $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Name $db1_snap2 -ErrorAction SilentlyContinue
@@ -99,6 +106,19 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2
             $ExpectedPropsDefault = 'ComputerName', 'Name', 'InstanceName', 'SqlInstance', 'Status'
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputResult[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has working alias property Name mapped from Database" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputResult[0].PSObject.Properties["Name"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].PSObject.Properties["Name"].MemberType | Should -Be "AliasProperty"
+            }
         }
     }
 }

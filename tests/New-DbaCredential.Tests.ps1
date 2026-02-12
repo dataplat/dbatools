@@ -55,8 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "thorcred"
             $results.Identity | Should -Be "thor"
 
-            $results = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity thorsmomma -Password $password
-            $results | Should -Not -Be $null
+            $script:outputForValidation = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity thorsmomma -Password $password
+            $script:outputForValidation | Should -Not -Be $null
         }
 
         It "Gets the newly created credential" {
@@ -82,6 +82,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "Managed Identity"
             $results.Name | Should -Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
             $results.Identity | Should -Be "Managed Identity"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = $script:outputForValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Credential"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Identity", "CreateDate", "MappedClassType", "ProviderName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

@@ -52,6 +52,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should get the table" {
+        BeforeAll {
+            $outputResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tablename
+        }
+
         It "Gets the table" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
@@ -61,6 +65,22 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname).Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname).Name | Should -Contain $tablename
         }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Table"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedBaseDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex")
+            foreach ($prop in $expectedBaseDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+            # FullTextIndex is always appended to the default display properties
+            $defaultProps | Should -Contain "FullTextIndex" -Because "property 'FullTextIndex' should be in the default display set"
+        }
     }
 
     Context "Should not get the table if database is excluded" {
@@ -69,4 +89,5 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
         }
     }
+
 }

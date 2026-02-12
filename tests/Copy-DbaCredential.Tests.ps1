@@ -124,8 +124,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Copy Credential with the same properties." {
-        It "Should copy successfully" {
+        BeforeAll {
             $results = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thorcred
+            # Capture output for validation (thorsmomma was created in BeforeAll)
+            $script:outputForValidation = Copy-DbaCredential -Source $server2 -Destination $server3 -Name thorsmomma -Force -ExcludePassword
+        }
+
+        It "Should copy successfully" {
             $results.Status | Should -Be "Successful"
         }
 
@@ -136,6 +141,22 @@ Describe $CommandName -Tag IntegrationTests {
             # Compare its value
             $Credential1.Name | Should -Be $Credential2.Name
             $Credential1.Identity | Should -Be $Credential2.Identity
+        }
+
+        It "Returns output with the expected TypeName" {
+            $result = $script:outputForValidation
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result = $script:outputForValidation
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 

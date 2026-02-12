@@ -83,5 +83,32 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
             $results.DatabaseId | Select-Object -Unique | Should -Be $db1.ID
         }
         #>
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
+            $results[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "EventClass",
+                "DatabaseName",
+                "Filename",
+                "Duration",
+                "StartTime",
+                "EndTime",
+                "ChangeInSize",
+                "ApplicationName",
+                "HostName"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

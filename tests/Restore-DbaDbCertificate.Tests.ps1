@@ -91,4 +91,66 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Remove-DbaDbCertificate
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputBackupPath -ItemType Directory
+
+            $outputDbName = "dbatoolsci_certoutput-$(Get-Random)"
+            $outputMasterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $outputCertificatePassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -Force
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Password $outputMasterKeyPassword
+            $outputCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName
+            $outputBackup = Backup-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $outputCert.Name -Database $outputDbName -EncryptionPassword $outputCertificatePassword -Path $outputBackupPath
+            $outputCert | Remove-DbaDbCertificate
+
+            $outputResult = Restore-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Path $outputBackup.ExportPath -Password $outputCertificatePassword -Database $outputDbName -EncryptionPassword $outputCertificatePassword
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Remove-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $outputCert.Name -Database $outputDbName -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output that is not null" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Certificate"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

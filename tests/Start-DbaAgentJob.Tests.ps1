@@ -86,5 +86,44 @@ Describe $CommandName -Tag IntegrationTests {
             $nonExistentStepResults = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $jobName3 -StepName "stepdoesnoteexist"
             ($nonExistentStepResults.SqlInstance).Count | Should -Be 0
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $startJobResults | Should -Not -BeNullOrEmpty
+                $startJobResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $startJobResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $startJobResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "Category",
+                    "OwnerLoginName",
+                    "CurrentRunStatus",
+                    "CurrentRunRetryAttempt",
+                    "Enabled",
+                    "LastRunDate",
+                    "LastRunOutcome",
+                    "HasSchedule",
+                    "OperatorToEmail",
+                    "CreateDate"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias properties" {
+                if (-not $startJobResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $startJobResults[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+                $startJobResults[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+                $startJobResults[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+                $startJobResults[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
+            }
+        }
     }
 }

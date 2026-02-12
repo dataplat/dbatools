@@ -37,8 +37,26 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Set-DbaCmConnection -ComputerName $env:COMPUTERNAME -ResetConfiguration
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Connection.ManagementConnection"
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.Properties.Name | Should -Contain "ComputerName"
+            $result[0].psobject.Properties.Name | Should -Contain "CimRM"
+            $result[0].psobject.Properties.Name | Should -Contain "CimDCOM"
+            $result[0].psobject.Properties.Name | Should -Contain "Wmi"
+            $result[0].psobject.Properties.Name | Should -Contain "PowerShellRemoting"
+            $result[0].psobject.Properties.Name | Should -Contain "DisabledConnectionTypes"
+            $result[0].psobject.Properties.Name | Should -Contain "OverrideExplicitCredential"
+        }
+    }
+}

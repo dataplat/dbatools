@@ -73,5 +73,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns correct results" {
             $result[0].IdentityValue | Should -BeExactly 125
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Cmd",
+                "IdentityValue",
+                "ColumnValue",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

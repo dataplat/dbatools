@@ -87,6 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Set-DbaAgentSchedule @splatSetSchedule
             $renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
+            $script:outputForValidation = Set-DbaAgentSchedule @splatSetSchedule
         }
 
         AfterAll {
@@ -347,6 +348,52 @@ Describe $CommandName -Tag IntegrationTests {
             It "$($r.name) Should have different EndTime" {
                 $r.EndTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndTime)"
             }
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputForValidation
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobSchedule"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ScheduleName",
+                "ActiveEndDate",
+                "ActiveEndTimeOfDay",
+                "ActiveStartDate",
+                "ActiveStartTimeOfDay",
+                "DateCreated",
+                "FrequencyInterval",
+                "FrequencyRecurrenceFactor",
+                "FrequencyRelativeIntervals",
+                "FrequencySubDayInterval",
+                "FrequencySubDayTypes",
+                "FrequencyTypes",
+                "IsEnabled",
+                "JobCount",
+                "Description",
+                "ScheduleUid"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["ScheduleName"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["ScheduleName"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

@@ -168,6 +168,39 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Databases["msdb"].Tables.Count
             $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
         }
+
+        It "Returns output of the documented type" {
+            $server | Should -Not -BeNullOrEmpty
+            $server.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Server"
+        }
+
+        It "Has the expected dbatools-added ComputerName property" {
+            $server.PSObject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $server.ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added IsAzure property" {
+            $server.PSObject.Properties["IsAzure"] | Should -Not -BeNullOrEmpty
+            $server.IsAzure | Should -BeOfType [bool]
+        }
+
+        It "Has the expected dbatools-added DbaInstanceName property" {
+            $server.PSObject.Properties["DbaInstanceName"] | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added SqlInstance property" {
+            $server.PSObject.Properties["SqlInstance"] | Should -Not -BeNullOrEmpty
+            $server.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added NetPort property" {
+            $server.PSObject.Properties["NetPort"] | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected dbatools-added ConnectedAs property" {
+            $server.PSObject.Properties["ConnectedAs"] | Should -Not -BeNullOrEmpty
+            $server.ConnectedAs | Should -Not -BeNullOrEmpty
+        }
     }
 
     if ($TestConfig.InstanceMulti1 -match "localhost") {
@@ -292,6 +325,14 @@ Describe $CommandName -Tag IntegrationTests {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
+        }
+    }
+
+    Context "Output validation" {
+        It "Returns SqlConnection when using -SqlConnectionOnly" {
+            $connResult = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlConnectionOnly
+            $connResult | Should -Not -BeNullOrEmpty
+            $connResult | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnection]
         }
     }
 }

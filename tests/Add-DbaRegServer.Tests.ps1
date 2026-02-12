@@ -71,6 +71,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Adds a registered server with non-null SqlInstance" {
             $results1.SqlInstance | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $results1 | Should -Not -BeNullOrEmpty
+            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results1) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "When adding a registered server with extended properties" {

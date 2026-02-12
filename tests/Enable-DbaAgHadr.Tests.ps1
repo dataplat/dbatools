@@ -45,5 +45,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
             $results.IsHadrEnabled | Should -BeTrue
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "IsHadrEnabled")
+            foreach ($prop in $expectedProperties) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 }

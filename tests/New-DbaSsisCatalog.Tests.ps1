@@ -73,5 +73,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "creates the catalog" -Skip:(-not $shouldRunTests) {
             $results.Created | Should -Be $true
         }
+
+        It "Returns output of the documented type" -Skip:(-not $shouldRunTests) {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" -Skip:(-not $shouldRunTests) {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "SsisCatalog", "Created")
+            foreach ($prop in $expectedProperties) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

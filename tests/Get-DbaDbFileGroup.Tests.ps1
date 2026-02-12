@@ -73,6 +73,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the correct object" {
             $results[0].GetType().ToString() | Should -Be "Microsoft.SqlServer.Management.Smo.FileGroup"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.FileGroup"
+        }
+
+        It "Has the expected default display properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Parent", "FileGroupType", "Name", "Size")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Accepts database and filegroup input" {
@@ -104,4 +118,5 @@ Describe $CommandName -Tag IntegrationTests {
             $pipedResults.Parent.Name | Should -Contain "msdb"
         }
     }
+
 }

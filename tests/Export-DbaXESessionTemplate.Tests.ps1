@@ -66,5 +66,10 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
             $results.Name | Should -Be "$sessionName.xml"
         }
+
+        It "Returns System.IO.FileInfo" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType System.IO.FileInfo
+        }
     }
 }

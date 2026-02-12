@@ -56,6 +56,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master
             $results.IsAccessible | Should -BeTrue
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsAccessible", "RecoveryModel", "LogReuseWaitStatus", "SizeMB", "Compatibility", "Collation", "Owner", "Encrypted", "LastFullBackup", "LastDiffBackup", "LastLogBackup")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["SizeMB"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["SizeMB"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["Compatibility"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Compatibility"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["Encrypted"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Encrypted"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["LastFullBackup"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["LastFullBackup"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["LastDiffBackup"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["LastDiffBackup"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["LastLogBackup"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["LastLogBackup"].MemberType | Should -Be "AliasProperty"
+        }
     }
 
 }

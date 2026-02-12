@@ -42,5 +42,28 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should cycle instance error log" {
             $results.LogType | Should -Be "instance"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogType",
+                "IsSuccessful",
+                "Notes"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $results.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 }

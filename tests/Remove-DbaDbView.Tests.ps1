@@ -52,6 +52,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When removing views" {
+        BeforeAll {
+            $script:outputForValidation = Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1 -Confirm:$false
+        }
+
         It "removes a view" {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -Not -BeNullOrEmpty
             Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1
@@ -62,6 +66,31 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -Not -BeNullOrEmpty
             Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2 | Remove-DbaDbView
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "View", "ViewName", "ViewSchema", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct values for a successful removal" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.Status | Should -Be "Dropped"
+                $script:outputForValidation.IsRemoved | Should -BeTrue
+                $script:outputForValidation.Database | Should -Be $dbname1
+                $script:outputForValidation.ViewName | Should -Be $view1
+                $script:outputForValidation.ViewSchema | Should -Be "dbo"
+                $script:outputForValidation.View | Should -Be "dbo.$view1"
+            }
         }
     }
 }

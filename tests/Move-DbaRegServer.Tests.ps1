@@ -90,3 +90,41 @@ Describe $CommandName -Tag IntegrationTests {
         $results.Count | Should -Be 2
     }
 }
+
+Describe "$CommandName Output" -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRandom = Get-Random
+            $outputGroup = "dbatoolsci-outputgrp-$outputRandom"
+            $outputSrvName = "dbatoolsci-outputsrv-$outputRandom"
+            $outputRegName = "dbatoolsci-outputreg-$outputRandom"
+
+            $outputNewGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $outputGroup
+            $outputNewServer = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $outputSrvName -Name $outputRegName
+
+            $outputResult = $outputNewServer | Move-DbaRegServer -NewGroup $outputGroup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $outputRegName | Remove-DbaRegServer -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $outputGroup | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the expected type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

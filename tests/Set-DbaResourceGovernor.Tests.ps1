@@ -48,6 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "enables resource governor" {
             $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+            $script:outputForValidation = $results
             $results.Enabled | Should -Be $true
         }
 
@@ -74,6 +75,35 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = $script:outputForValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ResourceGovernor"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ClassifierFunction",
+                "Enabled",
+                "MaxOutstandingIOPerVolume",
+                "ReconfigurePending",
+                "ResourcePools",
+                "ExternalResourcePools"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

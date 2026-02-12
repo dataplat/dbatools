@@ -101,6 +101,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random", "testlogin2_$random" -Password $password1
 
             New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "testdb1_$random"
+
+            # Capture output for validation
+            $script:outputForValidation = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $password1
         }
 
         AfterAll {
@@ -334,6 +337,45 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -MustChangePassword
             $result.Name | Should -Contain "testlogin1_$random"
             $result.Name | Should -Contain "testlogin2_$random"
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Login"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "DenyLogin",
+                    "IsDisabled",
+                    "IsLocked",
+                    "PasswordPolicyEnforced",
+                    "PasswordExpirationEnabled",
+                    "MustChangePassword",
+                    "PasswordChanged",
+                    "ServerRole",
+                    "Notes"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has the expected NoteProperties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].PSObject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].PSObject.Properties["InstanceName"] | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].PSObject.Properties["SqlInstance"] | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].PSObject.Properties["PasswordChanged"] | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].PSObject.Properties["ServerRole"] | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

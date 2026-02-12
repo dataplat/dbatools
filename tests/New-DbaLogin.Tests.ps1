@@ -132,18 +132,29 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Create new logins" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        }
+
         It "Should be created successfully - Hashed password" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force
-            $results.Name | Should -Be "tester"
-            $results.DefaultDatabase | Should -Be "master"
-            $results.IsDisabled | Should -Be $false
-            $results.PasswordExpirationEnabled | Should -Be $false
-            $results.PasswordPolicyEnforced | Should -Be $false
-            $results.MustChangePassword | Should -Be $false
-            $results.LoginType | Should -Be "SqlLogin"
+            $script:outputValidationResult = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force
+            $script:outputValidationResult.Name | Should -Be "tester"
+            $script:outputValidationResult.DefaultDatabase | Should -Be "master"
+            $script:outputValidationResult.IsDisabled | Should -Be $false
+            $script:outputValidationResult.PasswordExpirationEnabled | Should -Be $false
+            $script:outputValidationResult.PasswordPolicyEnforced | Should -Be $false
+            $script:outputValidationResult.MustChangePassword | Should -Be $false
+            $script:outputValidationResult.LoginType | Should -Be "SqlLogin"
         }
         It "Should be created successfully - password, credential and a custom sid " {
-            $results = New-DbaLogin -SqlInstance $server1 -Login claudio -Password $securePassword -Sid $sid -MapToCredential $credLogin
+            $splatNewLogin = @{
+                SqlInstance        = $server1
+                Login              = "claudio"
+                Password           = $securePassword
+                Sid                = $sid
+                MapToCredential    = $credLogin
+            }
+            $results = New-DbaLogin @splatNewLogin
             $results.Name | Should -Be "claudio"
             $results.EnumCredentials() | Should -Be $credLogin
             $results.DefaultDatabase | Should -Be "master"
@@ -155,7 +166,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LoginType | Should -Be "SqlLogin"
         }
         It "Should be created successfully - password and all the flags (exclude -PasswordMustChange)" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login port -Password $securePassword -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -DenyWindowsLogin
+            $splatNewLogin = @{
+                SqlInstance         = $server1
+                Login               = "port"
+                Password            = $securePassword
+                PasswordPolicy      = $true
+                PasswordExpiration  = $true
+                DefaultDatabase     = "tempdb"
+                Disabled            = $true
+                Language            = "Nederlands"
+                DenyWindowsLogin    = $true
+            }
+            $results = New-DbaLogin @splatNewLogin
             $results.Name | Should -Be "port"
             $results.Language | Should -Be "Nederlands"
             $results.EnumCredentials() | Should -Be $null
@@ -168,7 +190,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DenyWindowsLogin | Should -Be $true
         }
         It "Should be created successfully - password and all the flags (include -PasswordMustChange)" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login withMustChange -Password $securePassword -PasswordPolicy -PasswordExpiration -PasswordMustChange -DefaultDatabase tempdb -Disabled -Language Nederlands -DenyWindowsLogin
+            $splatNewLogin = @{
+                SqlInstance         = $server1
+                Login               = "withMustChange"
+                Password            = $securePassword
+                PasswordPolicy      = $true
+                PasswordExpiration  = $true
+                PasswordMustChange  = $true
+                DefaultDatabase     = "tempdb"
+                Disabled            = $true
+                Language            = "Nederlands"
+                DenyWindowsLogin    = $true
+            }
+            $results = New-DbaLogin @splatNewLogin
             $results.Name | Should -Be "withMustChange"
             $results.Language | Should -Be "Nederlands"
             $results.EnumCredentials() | Should -Be $null
@@ -181,7 +215,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DenyWindowsLogin | Should -Be $true
         }
         It "Should be created successfully - password and just -PasswordMustChange" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login MustChange -Password $securePassword -PasswordMustChange -DefaultDatabase tempdb -Disabled -Language Nederlands -DenyWindowsLogin
+            $splatNewLogin = @{
+                SqlInstance         = $server1
+                Login               = "MustChange"
+                Password            = $securePassword
+                PasswordMustChange  = $true
+                DefaultDatabase     = "tempdb"
+                Disabled            = $true
+                Language            = "Nederlands"
+                DenyWindowsLogin    = $true
+            }
+            $results = New-DbaLogin @splatNewLogin
             $results.Name | Should -Be "MustChange"
             $results.Language | Should -Be "Nederlands"
             $results.EnumCredentials() | Should -Be $null
@@ -208,6 +252,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DefaultDatabase | Should -Be "master"
             $results.IsDisabled | Should -Be $false
             $results.LoginType | Should -Be "Certificate"
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Login"
+            }
+
+            It "Has the expected default display properties" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "LoginType",
+                    "CreateDate",
+                    "LastLogin",
+                    "HasAccess",
+                    "IsLocked",
+                    "IsDisabled",
+                    "MustChangePassword"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
 
         It "Should be copied successfully" {

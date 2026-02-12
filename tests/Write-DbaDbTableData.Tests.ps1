@@ -113,4 +113,14 @@ Describe $CommandName -Tag IntegrationTests {
         $query = "SELECT TOP 1 * FROM [$tableName]"
         { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query $query -EnableException } | Should -Not -Throw
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $script:outputForValidation = Get-ChildItem | Select-Object -First 1 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table "dbatoolsci_outputtest" -AutoCreateTable
+        }
+
+        It "Returns no output" {
+            $script:outputForValidation | Should -BeNullOrEmpty
+        }
+    }
 }

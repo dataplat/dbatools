@@ -38,6 +38,22 @@ Describe $CommandName -Tag IntegrationTests {
         $exportPath = "$($TestConfig.Temp)\exports-$CommandName-$(Get-Random)"
         $null = New-Item -Path $exportPath -ItemType Directory -Force
 
+        # Set up test table and data for output validation
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        $null = $db.Query("CREATE TABLE [dbo].[dbatoolsci_BinaryOutput]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
+        $null = $db.Query("INSERT INTO [dbo].[dbatoolsci_BinaryOutput] ([FileName123], [TheFile123]) VALUES ('testfile.bin', CAST('test binary content' AS varbinary(max)))")
+
+        $outputExportPath = "$exportPath\output-validation"
+        $null = New-Item -Path $outputExportPath -ItemType Directory -Force
+
+        $splatOutputExport = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = "tempdb"
+            Table       = "dbatoolsci_BinaryOutput"
+            Path        = $outputExportPath
+        }
+        $script:outputResult = Export-DbaBinaryFile @splatOutputExport
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -45,6 +61,10 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Clean up output validation table
+        $cleanDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        $null = $cleanDb.Query("IF OBJECT_ID('dbo.dbatoolsci_BinaryOutput') IS NOT NULL DROP TABLE dbo.dbatoolsci_BinaryOutput")
 
         # Remove the export directory.
         Remove-Item -Path $exportPath -Recurse -ErrorAction SilentlyContinue
@@ -107,6 +127,24 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Has the expected FileInfo properties" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("FullName", "Name", "DirectoryName", "Extension", "Length", "CreationTime", "LastWriteTime")
+            foreach ($prop in $expectedProps) {
+                $script:outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the FileInfo object"
+            }
+        }
+
+        It "Has the correct filename" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].Name | Should -Be "testfile.bin"
         }
     }
 }

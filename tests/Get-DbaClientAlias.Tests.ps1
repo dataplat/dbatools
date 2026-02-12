@@ -30,9 +30,31 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "gets the alias" {
-        It "returns accurate information" {
+        BeforeAll {
             $results = Get-DbaClientAlias
+        }
+
+        It "returns accurate information" {
             $results.AliasName -contains "dbatoolscialias" | Should -Be $true
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "NetworkLibrary",
+                "ServerName",
+                "AliasName",
+                "AliasString",
+                "Architecture"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 }

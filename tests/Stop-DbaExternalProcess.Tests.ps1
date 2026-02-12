@@ -85,5 +85,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ProcessId | Should -Not -BeNullOrEmpty
             $results.Status | Should -Be "Stopped"
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $results | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $results.PSObject.Properties.Name | Should -Contain "ComputerName"
+                $results.PSObject.Properties.Name | Should -Contain "ProcessId"
+                $results.PSObject.Properties.Name | Should -Contain "Name"
+                $results.PSObject.Properties.Name | Should -Contain "Status"
+            }
+        }
     }
 }

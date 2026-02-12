@@ -35,4 +35,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ForceEncryption | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "ForceEncryption", "CertificateThumbprint")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

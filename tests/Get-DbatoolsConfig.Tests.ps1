@@ -27,5 +27,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbatoolsConfig -FullName sql.connection.timeout
             $results.Value | Should -BeOfType [int]
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
+        }
+
+        It "Has the expected properties" {
+            $results[0].psobject.Properties.Name | Should -Contain "Module"
+            $results[0].psobject.Properties.Name | Should -Contain "Name"
+            $results[0].psobject.Properties.Name | Should -Contain "Value"
+            $results[0].psobject.Properties.Name | Should -Contain "Description"
+            $results[0].psobject.Properties.Name | Should -Contain "Hidden"
+        }
     }
 }

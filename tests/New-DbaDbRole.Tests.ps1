@@ -56,6 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
             $result.Parent | Should -Be $dbname
+            $script:outputRole = $result
         }
 
         It 'Add new role with specificied owner' {
@@ -82,6 +83,24 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
             $result.Parent | Should -Be $dbname
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputRole | Should -Not -BeNullOrEmpty
+            $script:outputRole[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseRole"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:outputRole[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Parent", "Owner")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $script:outputRole[0].psobject.Properties["Parent"] | Should -Not -BeNullOrEmpty
+            $script:outputRole[0].psobject.Properties["Parent"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

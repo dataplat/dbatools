@@ -48,7 +48,11 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Testing SqlWatch uninstaller" {
         BeforeAll {
-            $null = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
+            $result = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
+        }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
         }
 
         It "Removed all tables" {

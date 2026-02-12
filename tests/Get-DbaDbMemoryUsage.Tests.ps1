@@ -29,6 +29,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Functionality" {
+        BeforeAll {
+            $script:outputResult = Get-DbaDbMemoryUsage -SqlInstance $TestConfig.InstanceSingle -IncludeSystemDb -Database "master"
+        }
+
         It "Returns data" {
             $result = Get-DbaDbMemoryUsage -SqlInstance $instance -IncludeSystemDb
             $result.Status.Count | Should -BeGreaterOrEqual 1
@@ -47,6 +51,36 @@ Describe $CommandName -Tag IntegrationTests {
             $uniqueDbs = $result.Database | Select-Object -Unique
             $uniqueDbs | Should -Not -Contain "ResourceDb"
             $uniqueDbs | Should -Contain "master"
+        }
+
+        It "Returns output of the expected type" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "PageType",
+                "Size",
+                "PercentUsed"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include PageCount in default display properties" {
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "PageCount" -Because "PageCount is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has PageCount available as a non-default property" {
+            $script:outputResult[0].psobject.Properties["PageCount"] | Should -Not -BeNullOrEmpty
         }
     }
 }

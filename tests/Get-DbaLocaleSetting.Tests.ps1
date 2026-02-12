@@ -22,9 +22,28 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets LocaleSettings" {
-        It "Gets results" {
+        BeforeAll {
             $results = Get-DbaLocaleSetting -ComputerName $env:ComputerName
+        }
+
+        It "Gets results" {
             $results | Should -Not -Be $null
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected ComputerName property" {
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has locale-related properties from the registry" {
+            $propNames = $results[0].psobject.Properties.Name
+            $propNames | Should -Contain "ComputerName"
+            # Locale registry key should have at least a few standard properties
+            $propNames.Count | Should -BeGreaterThan 1
         }
     }
 }

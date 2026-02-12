@@ -70,6 +70,31 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a count of 1" {
             $results.Count | Should -BeExactly 1
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedTableType"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ID",
+                "Name",
+                "Columns",
+                "Owner",
+                "CreateDate",
+                "IsSystemObject",
+                "Version"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets all the Db User Defined Table Type" {

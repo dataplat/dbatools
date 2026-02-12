@@ -73,6 +73,35 @@ exec sp_addrolemember 'userrole','bob';
                 }
             }
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Object",
+                "Type",
+                "Member",
+                "RoleSecurableClass",
+                "SchemaOwner",
+                "Securable",
+                "GranteeType",
+                "Grantee",
+                "Permission",
+                "State",
+                "Grantor",
+                "GrantorType",
+                "SourceView"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "Command do not return error when database as different collation" {

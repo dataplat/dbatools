@@ -186,6 +186,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Revert SQL Engine service account changes" {
         BeforeAll {
             $results = $services | Where-Object { $PSItem.ServiceType -eq "Engine" } | Update-DbaServiceAccount -Username $currentEngineUser
+            $script:outputForValidation = $results
         }
 
         It "Should return something" {
@@ -203,6 +204,29 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.Status | Should -Be "Successful"
                 $result.State | Should -Be "Running"
                 $result.StartName | Should -Be $currentEngineUser
+            }
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Wmi.SqlService"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "ServiceName",
+                    "State",
+                    "StartName",
+                    "Status",
+                    "Message"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

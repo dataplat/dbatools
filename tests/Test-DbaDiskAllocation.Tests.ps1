@@ -33,5 +33,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Test-DbaDiskAllocation -NoSqlCheck -ComputerName $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $results = Test-DbaDiskAllocation -ComputerName $TestConfig.InstanceSingle
+            }
+
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "DiskName", "DiskLabel", "BlockSize", "IsSqlDisk", "IsBestPractice")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias properties for backwards compatibility" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $results[0].PSObject.Properties["Server"] | Should -Not -BeNullOrEmpty
+                $results[0].PSObject.Properties["Server"].MemberType | Should -Be "AliasProperty"
+                $results[0].PSObject.Properties["Name"] | Should -Not -BeNullOrEmpty
+                $results[0].PSObject.Properties["Name"].MemberType | Should -Be "AliasProperty"
+                $results[0].PSObject.Properties["Label"] | Should -Not -BeNullOrEmpty
+                $results[0].PSObject.Properties["Label"].MemberType | Should -Be "AliasProperty"
+            }
+        }
     }
 }

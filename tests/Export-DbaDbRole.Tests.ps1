@@ -83,7 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -FilePath $outputFile1
+            $fileResult = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -FilePath $outputFile1
+            $passthruResult = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -92,6 +93,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile1).Length | Should -BeGreaterThan 0
+        }
+
+        It "Returns string output when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns FileInfo output when using -FilePath" {
+            if (-not $fileResult) { Set-ItResult -Skipped -Because "no file result to validate" }
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
         }
     }
 
@@ -134,4 +145,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
         }
     }
+
 }

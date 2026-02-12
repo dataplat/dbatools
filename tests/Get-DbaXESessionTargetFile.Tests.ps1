@@ -55,5 +55,18 @@ Describe $CommandName -Tag IntegrationTests {
             $result = $session | Get-DbaXESessionTargetFile
             $result.Extension | Should -Contain ".xel"
         }
+
+        It "Returns output of the documented type" {
+            $result = $session | Get-DbaXESessionTargetFile
+            $result[0] | Should -BeOfType "System.IO.FileInfo"
+        }
+
+        It "Has expected FileInfo properties" {
+            $result = $session | Get-DbaXESessionTargetFile
+            $result[0].Name | Should -Not -BeNullOrEmpty
+            $result[0].FullName | Should -Not -BeNullOrEmpty
+            $result[0].Extension | Should -Not -BeNullOrEmpty
+            $result[0].Length | Should -BeGreaterThan 0
+        }
     }
 }

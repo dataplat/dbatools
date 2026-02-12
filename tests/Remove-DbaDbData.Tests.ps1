@@ -144,4 +144,23 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -ExcludeSystemView).Name | Should -Be "vw_emp"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_removedata_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName -Owner sa -EnableException
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Query "
+                CREATE TABLE dbo.outputtable (col int);
+                INSERT INTO dbo.outputtable VALUES (1);" -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result = Remove-DbaDbData -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

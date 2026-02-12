@@ -43,10 +43,30 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When setting configuration values" {
-        It "impacts the connection timeout" {
-            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
+        BeforeAll {
+            $result = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60 -PassThru
             $results = New-DbaConnectionString -SqlInstance test -Database dbatools -ConnectTimeout ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)
+        }
+
+        It "impacts the connection timeout" {
             $results | Should -Match "Connect Timeout=60"
+        }
+
+        It "Returns no output without -PassThru" {
+            $noOutput = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 30
+            $noOutput | Should -BeNullOrEmpty
+        }
+
+        It "Returns output of the expected type with -PassThru" {
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
+        }
+
+        It "Has the expected properties on the config object" {
+            $result.FullName | Should -Not -BeNullOrEmpty
+            $result.Value | Should -Not -BeNullOrEmpty
+            $result.Module | Should -Not -BeNullOrEmpty
+            $result.Name | Should -Not -BeNullOrEmpty
         }
     }
 }

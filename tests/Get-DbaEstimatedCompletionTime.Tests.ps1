@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
     }
 
     Context "Gets correct results" {
-        It "Gets Query Estimated Completion" {
+        BeforeAll {
             $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
             $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle
@@ -80,7 +80,9 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
                 Start-Sleep -Seconds 1
                 $job.Refresh()
             }
+        }
 
+        It "Gets Query Estimated Completion" {
             $results | Should -Not -BeNullOrEmpty
             $results.Command | Should -Match "DBCC"
             $results.Database | Should -Be "checkdbTestDatabase"
@@ -89,27 +91,59 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         It "Gets Query Estimated Completion when using -Database" {
             $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
-            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -Database checkdbTestDatabase
+            $resultsWithDb = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -Database checkdbTestDatabase
             while ($job.CurrentRunStatus -eq "Executing") {
                 Start-Sleep -Seconds 1
                 $job.Refresh()
             }
 
-            $results | Should -Not -BeNullOrEmpty
-            $results.Command | Should -Match "DBCC"
-            $results.Database | Should -Be "checkdbTestDatabase"
+            $resultsWithDb | Should -Not -BeNullOrEmpty
+            $resultsWithDb.Command | Should -Match "DBCC"
+            $resultsWithDb.Database | Should -Be "checkdbTestDatabase"
         }
 
         It "Gets no Query Estimated Completion when using -ExcludeDatabase" {
             $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
-            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase checkdbTestDatabase
+            $resultsExcluded = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase checkdbTestDatabase
             while ($job.CurrentRunStatus -eq "Executing") {
                 Start-Sleep -Seconds 1
                 $job.Refresh()
             }
 
-            $results | Should -BeNullOrEmpty
+            $resultsExcluded | Should -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Login",
+                "Command",
+                "PercentComplete",
+                "StartTime",
+                "RunningTime",
+                "EstimatedTimeToGo",
+                "EstimatedCompletionTime"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has Text property excluded from default display" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Text" -Because "Text should be excluded from default display"
         }
     }
 }

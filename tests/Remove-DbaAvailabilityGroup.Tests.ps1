@@ -58,5 +58,25 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
             $results | Should -BeNullorEmpty
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Returns the correct values" {
+                $results[0].Status | Should -Be "Removed"
+                $results[0].AvailabilityGroup | Should -Be $agname
+            }
+        }
     }
+
 }

@@ -79,6 +79,31 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should include system views" {
             @($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
         }
+
+        It "Returns output of the documented type" {
+            $result = $results | Where-Object Name -eq $viewName | Select-Object -First 1
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.View"
+        }
+
+        It "Has the expected default display properties" {
+            $result = $results | Where-Object Name -eq $viewName | Select-Object -First 1
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "CreateDate",
+                "DateLastModified",
+                "Name"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Exclusions work correctly" {
@@ -112,4 +137,5 @@ Describe $CommandName -Tag IntegrationTests {
             @($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
         }
     }
+
 }

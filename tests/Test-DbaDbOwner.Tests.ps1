@@ -295,12 +295,42 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputValidationResult = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database master
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "Should return the correct information including database, currentowner and targetowner" {
             $whoami = whoami
             $results = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             $results.Database | Should -Be $dbname
             $results.CurrentOwner | Should -Be $whoami
             $results.TargetOwner | Should -Be 'sa'
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $outputValidationResult | Should -Not -BeNullOrEmpty
+                $outputValidationResult[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DBState", "CurrentOwner", "TargetOwner", "OwnerMatch")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Does not include Server in default display properties" {
+                $defaultProps = $outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps | Should -Not -Contain "Server" -Because "Server is excluded via Select-DefaultView -ExcludeProperty"
+            }
+
+            It "Has the Server property available on the object" {
+                $outputValidationResult[0].PSObject.Properties.Name | Should -Contain "Server"
+            }
         }
     }
 }

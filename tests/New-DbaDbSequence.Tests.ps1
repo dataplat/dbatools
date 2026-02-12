@@ -210,5 +210,20 @@ Describe $CommandName -Tag IntegrationTests {
             $sequence2 = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Schema dbo -Name "Sequence_in_dbo_schema" -IntegerType bigint -WarningVariable warn
             $warn.message | Should -Not -BeLike "*Schema dbo already exists in the database*"
         }
+
+        It "Returns output of the documented type" {
+            $outputSequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "dbatoolsci_outputtest"
+            $outputSequence | Should -Not -BeNullOrEmpty
+            $outputSequence[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Sequence"
+        }
+
+        It "Has the expected default display properties" {
+            $outputSequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "dbatoolsci_outputtest_props"
+            $defaultProps = $outputSequence[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "DataType", "StartValue", "IncrementValue")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

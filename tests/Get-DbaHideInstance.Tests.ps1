@@ -30,4 +30,17 @@ Describe $CommandName -Tag IntegrationTests {
     It "Returns true or false" {
         $hideInstanceResults.HideInstance | Should -Not -BeNullOrEmpty
     }
+
+    It "Returns output of the expected type" {
+        if (-not $hideInstanceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+        $hideInstanceResults[0] | Should -BeOfType PSCustomObject
+    }
+
+    It "Has the expected properties" {
+        if (-not $hideInstanceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+        $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "HideInstance")
+        foreach ($prop in $expectedProperties) {
+            $hideInstanceResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+        }
+    }
 }

@@ -97,5 +97,46 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns results for OutputBuffer with correct SessionId" {
             $resultOutputBuffer.SessionId | Should -Be $spid
         }
+
+        It "Returns output of type PSCustomObject for InputBuffer" {
+            if (-not $resultInputBuffer) { Set-ItResult -Skipped -Because "no InputBuffer result to validate" }
+            $resultInputBuffer[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns output of type PSCustomObject for OutputBuffer" {
+            if (-not $resultOutputBuffer) { Set-ItResult -Skipped -Because "no OutputBuffer result to validate" }
+            $resultOutputBuffer[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties for InputBuffer" {
+            if (-not $resultInputBuffer) { Set-ItResult -Skipped -Because "no InputBuffer result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "SessionId", "EventType", "Parameters", "EventInfo")
+            foreach ($prop in $expectedProps) {
+                $resultInputBuffer[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on InputBuffer output"
+            }
+        }
+
+        It "Has the correct properties for OutputBuffer" {
+            if (-not $resultOutputBuffer) { Set-ItResult -Skipped -Because "no OutputBuffer result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "SessionId", "Buffer", "HexBuffer")
+            foreach ($prop in $expectedProps) {
+                $resultOutputBuffer[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on OutputBuffer output"
+            }
+        }
+
+        It "Has the expected default display properties for OutputBuffer" {
+            if (-not $resultOutputBuffer) { Set-ItResult -Skipped -Because "no OutputBuffer result to validate" }
+            $defaultProps = $resultOutputBuffer[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "SessionId", "Buffer")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include HexBuffer in default display properties for OutputBuffer" {
+            if (-not $resultOutputBuffer) { Set-ItResult -Skipped -Because "no OutputBuffer result to validate" }
+            $defaultProps = $resultOutputBuffer[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "HexBuffer" -Because "HexBuffer should not be in the default display set"
+        }
     }
 }

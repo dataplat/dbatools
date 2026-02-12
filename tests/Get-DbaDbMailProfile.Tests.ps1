@@ -91,6 +91,29 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Description of 'Profile for system email'" {
             $results.Description | Should -BeExactly "Profile for system email"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailProfile"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "Description",
+                "ForceDeleteForActiveProfiles",
+                "IsBusyProfile"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets no DbMailProfile when using -ExcludeProfile" {

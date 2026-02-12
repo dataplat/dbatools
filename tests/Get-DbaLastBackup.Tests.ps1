@@ -111,4 +111,49 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LastLogBackupIsCopyOnly | Should -Be $false
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "LastFullBackup",
+                "LastDiffBackup",
+                "LastLogBackup"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has additional properties available beyond default display" {
+            $additionalProps = @(
+                "RecoveryModel",
+                "SinceFull",
+                "SinceDiff",
+                "SinceLog",
+                "LastFullBackupIsCopyOnly",
+                "LastDiffBackupIsCopyOnly",
+                "LastLogBackupIsCopyOnly",
+                "DatabaseCreated",
+                "DaysSinceDbCreated",
+                "Status"
+            )
+            foreach ($prop in $additionalProps) {
+                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the object"
+            }
+        }
+    }
 }

@@ -201,6 +201,9 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
         $results.length | Should -BeGreaterThan 0
 
+        # Store results for output validation context
+        $script:outputForValidation = $results
+
         # parse the exact format of the date
         $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").length
         $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
@@ -377,4 +380,29 @@ Describe $CommandName -Tag IntegrationTests {
     # placeholder for a future test with availability groups
     # It "Export availability groups" {
     # }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputForValidation
+        }
+
+        It "Returns output" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type System.IO.FileInfo" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns files that exist on disk" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].FullName | Should -Exist
+        }
+
+        It "Returns files with content" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].Length | Should -BeGreaterThan 0
+        }
+    }
 }

@@ -173,4 +173,22 @@ Describe $CommandName -Tag IntegrationTests {
             $result.ReconfigurePending | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output" {
+            $outputPoolName = "dbatoolsci_outputpool"
+            $splatNewOutputPool = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                ResourcePool            = $outputPoolName
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+                Force                   = $true
+            }
+            $null = New-DbaRgResourcePool @splatNewOutputPool
+            $result = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $outputPoolName
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

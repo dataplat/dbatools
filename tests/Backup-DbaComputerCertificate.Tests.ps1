@@ -63,9 +63,17 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
     }
 
     Context "Certificate is backed up properly" {
-        It "Returns the proper results" {
+        BeforeAll {
             $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
+        }
+
+        It "Returns the proper results" {
             $backupResult.Name | Should -Match "$certThumbprint.cer"
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $backupResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $backupResult[0] | Should -BeOfType System.IO.FileInfo
         }
     }
 }

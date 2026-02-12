@@ -58,10 +58,34 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Remove a certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
+            $script:removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
             $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
             $getResults | Should -HaveCount 0
-            $removeResults.Status | Should -Be "Success"
+            $script:removeResults.Status | Should -Be "Success"
+        }
+
+        It "Returns output of the documented type" {
+            $script:removeResults | Should -Not -BeNullOrEmpty
+            $script:removeResults | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            foreach ($prop in $expectedProperties) {
+                $script:removeResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status for a successful removal" {
+            $script:removeResults.Status | Should -Be "Success"
+        }
+
+        It "Has the correct Name" {
+            $script:removeResults.Name | Should -Be $keyname
+        }
+
+        It "Has the correct Database" {
+            $script:removeResults.Database | Should -Be $database
         }
     }
     Context "Remove a specific certificate" {

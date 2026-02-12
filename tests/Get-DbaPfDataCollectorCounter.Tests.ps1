@@ -35,4 +35,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Not -Be $null
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaPfDataCollectorCounter | Select-Object -First 1
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "DataCollectorSet", "DataCollector", "Name", "FileName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected excluded properties available" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("Credential", "CounterObject", "DataCollectorSetXml")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+    }
 }

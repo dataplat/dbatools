@@ -78,6 +78,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should show trace flag 7745 meets best practice" {
             ($results | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties for query store configuration" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $qsResult = $results | Where-Object Name -eq "ActualState" | Select-Object -First 1
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Value", "RecommendedValue", "IsBestPractice", "Justification")
+                foreach ($prop in $expectedProps) {
+                    $qsResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                }
+            }
+
+            It "Has the expected properties for trace flag results" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $tfResult = $results | Where-Object Name -like "Trace Flag *" | Select-Object -First 1
+                if (-not $tfResult) { Set-ItResult -Skipped -Because "no trace flag result to validate" }
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Value", "RecommendedValue", "IsBestPractice", "Justification")
+                foreach ($prop in $expectedProps) {
+                    $tfResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the trace flag output object"
+                }
+            }
+        }
     }
 
     Context "Exclude database works" {
@@ -113,4 +139,5 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultsPipe | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
         }
     }
+
 }

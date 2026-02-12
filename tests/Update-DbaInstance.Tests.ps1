@@ -880,3 +880,80 @@ Describe -Skip "$CommandName Integration Tests" -Tag IntegrationTests {
         }
     }
 }
+
+Describe "$CommandName Output Validation" -Tag UnitTests {
+    BeforeAll {
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+        }
+        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate" ; Successful = $true ; Status = "Dummy" }
+        }
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                InstanceName = "LAB"
+                Version      = [PSCustomObject]@{
+                    "SqlInstance" = $null
+                    "Build"       = "11.0.5058"
+                    "NameLevel"   = "2012"
+                    "SPLevel"     = "SP2"
+                    "CULevel"     = $null
+                    "KBLevel"     = "2958429"
+                    "BuildLevel"  = [version]'11.0.5058'
+                    "MatchType"   = "Exact"
+                }
+            }
+        }
+        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                FullName = "c:\mocked\filename.exe"
+            }
+        }
+        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+
+        $outputExeDir = "C:\Temp\dbatools_${CommandName}_output"
+        if (-not (Test-Path $outputExeDir)) {
+            $null = New-Item -ItemType Directory -Path $outputExeDir
+        }
+        $null = New-Item -ItemType File -Path (Join-Path $outputExeDir "SQLServer2012-KB4018073-x64-ENU.exe") -Force
+
+        $result = Update-DbaInstance -Version 2012SP4 -Path $outputExeDir -Restart -Confirm:$false -EnableException
+    }
+
+    AfterAll {
+        if (Test-Path $outputExeDir) {
+            Remove-Item $outputExeDir -Force -Recurse
+        }
+    }
+
+    Context "Output validation" {
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "MajorVersion",
+                "TargetLevel",
+                "KB",
+                "Successful",
+                "Restarted",
+                "InstanceName",
+                "Installer",
+                "Notes"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

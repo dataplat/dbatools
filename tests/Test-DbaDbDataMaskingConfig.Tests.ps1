@@ -153,4 +153,61 @@ Describe $CommandName -Tag IntegrationTests {
         $findings.Count | Should -Be 1
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            # Generate a fresh config file and break it to produce error output
+            $outputValDbName = "dbatoolsci_maskoutputval_$(Get-Random)"
+            $outputValPath = "$($TestConfig.Temp)\dbatoolsci_maskoutputval_$(Get-Random)"
+            $null = New-Item -Path $outputValPath -ItemType Directory
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $createQuery = "CREATE DATABASE [$outputValDbName]"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $createQuery
+
+            $tableQuery = "
+            CREATE TABLE [dbo].[MaskOutputTest](
+                [ID] [int] IDENTITY(1,1) NOT NULL,
+                [Firstname] [varchar](30) NULL,
+                [Lastname] [varchar](50) NULL,
+                [City] [varchar](255) NULL,
+                [DOB] [date] NULL
+            ) ON [PRIMARY]
+            "
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputValDbName -Query $tableQuery
+
+            $outputFile = New-DbaDbMaskingConfig -SqlInstance $TestConfig.InstanceSingle -Database $outputValDbName -Table MaskOutputTest -Path $outputValPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Break the config to produce error output by removing a required property
+            $outputJson = Get-Content -Path $outputFile.FullName | ConvertFrom-Json
+            $targetCol = $outputJson.Tables[0].Columns | Where-Object { $null -ne $PSItem.SubType } | Select-Object -First 1
+            if ($targetCol) {
+                $targetCol.PSObject.Properties.Remove("SubType")
+            }
+            $outputJson | ConvertTo-Json -Depth 5 | Out-File $outputFile.FullName -Force
+
+            $result = @(Test-DbaDbDataMaskingConfig -FilePath $outputFile.FullName)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputValDbName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputValPath -Recurse -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $result[0].PSObject.Properties.Name | Should -Contain "Table"
+            $result[0].PSObject.Properties.Name | Should -Contain "Column"
+            $result[0].PSObject.Properties.Name | Should -Contain "Value"
+            $result[0].PSObject.Properties.Name | Should -Contain "Error"
+        }
+    }
 }

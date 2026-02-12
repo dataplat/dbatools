@@ -135,6 +135,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object ServerName -match "server1$" | Should -Not -BeNullOrEmpty
         }
 
+        It "Returns output of the documented type" {
+            $outputResults = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $group
+            $outputResults | Should -Not -BeNullOrEmpty
+            $outputResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            $outputResults = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $group
+            $defaultProps = $outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the added NoteProperty members" {
+            $outputResults = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $group
+            $outputResults[0].PSObject.Properties["Source"] | Should -Not -BeNullOrEmpty
+            $outputResults[0].PSObject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $outputResults[0].PSObject.Properties["InstanceName"] | Should -Not -BeNullOrEmpty
+            $outputResults[0].PSObject.Properties["SqlInstance"] | Should -Not -BeNullOrEmpty
+            $outputResults[0].PSObject.Properties["ParentServer"] | Should -Not -BeNullOrEmpty
+            $outputResults[0].PSObject.Properties["Group"] | Should -Not -BeNullOrEmpty
+        }
+
         # Property Comparisons will come later when we have the commands
     }
 }

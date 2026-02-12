@@ -59,4 +59,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Owner | Should -Be $sa
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Reuse the endpoint created in the earlier context via Get-DbaEndpoint
+            $result = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1 -Endpoint $endpointName
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Endpoint"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ID", "Name", "EndpointState", "EndpointType", "Owner", "IsAdminEndpoint", "Fqdn", "IsSystemObject")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

@@ -235,6 +235,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Test retrieving version from instances" {
+        BeforeAll {
+            $resultFromBuild = Get-DbaBuild -Build "13.0.6300"
+        }
+
         It "Should return an exact match" {
             $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             $results | Should -Not -BeNullOrEmpty
@@ -265,6 +269,30 @@ Describe $CommandName -Tag IntegrationTests {
                     $v.CULevel | Should -Be $r.CULevel
                 }
             }
+        }
+
+        It "Returns output of the documented type from SqlInstance" {
+            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties from SqlInstance query" {
+            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $expectedProps = @("SqlInstance", "Build", "NameLevel", "SPLevel", "CULevel", "KBLevel", "BuildLevel", "SupportedUntil", "MatchType", "Warning")
+            foreach ($prop in $expectedProps) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Returns output of the documented type from Build lookup" {
+            $resultFromBuild | Should -Not -BeNullOrEmpty
+            $resultFromBuild[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Excludes SqlInstance from default display when using -Build" {
+            $defaultProps = $resultFromBuild[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "SqlInstance" -Because "SqlInstance should be excluded from default display when using -Build"
         }
     }
 }

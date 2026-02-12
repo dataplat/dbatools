@@ -86,6 +86,13 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
             (Get-ChildItem -Path $testPath -File -Recurse).Count | Should -Be 0
         }
+
+        Context "Output validation" {
+            It "Returns no output" {
+                $result = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
+                $result | Should -BeNullOrEmpty
+            }
+        }
     }
 
     Context "Extension-specific file removal" {
@@ -150,4 +157,5 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ChildItem -Path $testPath -Directory -Recurse).Count | Should -Be 0
         }
     }
+
 }

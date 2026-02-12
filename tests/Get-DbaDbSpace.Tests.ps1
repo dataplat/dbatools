@@ -88,6 +88,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a physical path for $dbName" {
             $databaseResults[0].PhysicalName | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the expected type" {
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $databaseResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "FileGroup",
+                "PhysicalName",
+                "FileType",
+                "UsedSpace",
+                "FreeSpace",
+                "FileSize",
+                "PercentUsed",
+                "AutoGrowth",
+                "AutoGrowType",
+                "SpaceUntilMaxSize",
+                "AutoGrowthPossible",
+                "UnusableSpace"
+            )
+            foreach ($prop in $expectedProps) {
+                $databaseResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has no default display property set since Select-DefaultView is not used" {
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $databaseResults[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {

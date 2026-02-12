@@ -81,6 +81,15 @@ function Get-DbaStub {
         }
     }
 
+    Context "Output validation" {
+        It "Returns no output" {
+            $tempFilePath = Join-Path $TestDrive "dbatoolsci_outputtest.ps1"
+            [System.IO.File]::WriteAllText($tempFilePath, "function Get-DbaStub { process { 1 } }")
+            $result = Invoke-DbatoolsFormatter -Path $tempFilePath
+            $result | Should -BeNullOrEmpty
+        }
+    }
+
     AfterAll {
         # TestDrive is automatically cleaned up by Pester, but adding explicit cleanup for consistency
         # No additional cleanup needed as TestDrive handles temporary file cleanup

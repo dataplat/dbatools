@@ -73,5 +73,18 @@ Describe $CommandName -Tag IntegrationTests {
             $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy2 -Schedule dbatoolsci_DailySchedule
             $schedule.ActiveStartTimeOfDay | Should -Be "01:00:00"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

@@ -74,6 +74,23 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.LogCount | Should -Be 8
             }
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $logCountResults | Should -Not -BeNullOrEmpty
+                $logCountResults | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $logCountResults | Should -Not -BeNullOrEmpty
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "LogCount", "LogSize")
+                foreach ($result in $logCountResults) {
+                    foreach ($prop in $expectedProps) {
+                        $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                    }
+                }
+            }
+        }
     }
     Context "Apply LogSize to multiple instances" {
         BeforeAll {

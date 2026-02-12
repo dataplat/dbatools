@@ -24,8 +24,22 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException
-            $results.ExtendedProtection | Should -Be "0 - Off"
+            $script:outputForValidation = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $script:outputForValidation.ExtendedProtection | Should -Be "0 - Off"
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "ComputerName"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "InstanceName"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "SqlInstance"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "ExtendedProtection"
+            }
         }
     }
     Context "Command works when passed different values" {

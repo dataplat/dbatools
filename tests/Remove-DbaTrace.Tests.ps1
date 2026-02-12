@@ -121,6 +121,7 @@ select TraceID=@TraceID
     Context "Test Removing Trace" {
         BeforeAll {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace
+            $script:outputForValidation = $results | Where-Object { $null -ne $PSItem -and $PSItem.PSObject.Properties.Name -contains "Status" }
         }
 
         It "returns the right values" {
@@ -130,6 +131,24 @@ select TraceID=@TraceID
 
         It "doesn't return any result for trace file id $($traceid)" {
             Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
+        }
+
+        Context "Output validation" {
+            BeforeAll {
+                $result = $script:outputForValidation
+            }
+
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
         }
     }
 }

@@ -46,4 +46,40 @@ Describe $CommandName -Tag IntegrationTests {
             $typeResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ResourcePool"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "CapCpuPercentage",
+                "IsSystemObject",
+                "MaximumCpuPercentage",
+                "MaximumIopsPerVolume",
+                "MaximumMemoryPercentage",
+                "MinimumCpuPercentage",
+                "MinimumIopsPerVolume",
+                "MinimumMemoryPercentage",
+                "WorkloadGroups"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

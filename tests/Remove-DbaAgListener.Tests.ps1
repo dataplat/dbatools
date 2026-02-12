@@ -63,5 +63,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Remove-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -Listener $agListener.Name
             $results.Status | Should -Be "Removed"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Listener", "Status")
+            foreach ($prop in $expectedProperties) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for removal output" {
+            $results.Status | Should -Be "Removed"
+            $results.AvailabilityGroup | Should -Be $agName
+            $results.Listener | Should -Be $agListener.Name
+            $results.ComputerName | Should -Not -BeNullOrEmpty
+            $results.InstanceName | Should -Not -BeNullOrEmpty
+            $results.SqlInstance | Should -Not -BeNullOrEmpty
+        }
     }
 }

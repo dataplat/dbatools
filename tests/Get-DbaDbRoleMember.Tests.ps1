@@ -99,5 +99,40 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.Role | Select-Object -Unique | Should -Not -Contain "db_owner"
         }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner" -IncludeSystemUser
+
+            if (-not $outputValidationResult) {
+                Set-ItResult -Skipped -Because "No results returned from Get-DbaDbRoleMember"
+            }
+
+            $outputValidationResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $outputValidationResult = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner" -IncludeSystemUser
+
+            if (-not $outputValidationResult) {
+                Set-ItResult -Skipped -Because "No results returned from Get-DbaDbRoleMember"
+            }
+
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Role",
+                "UserName",
+                "Login",
+                "MemberRole",
+                "SmoRole",
+                "SmoUser",
+                "SmoMemberRole"
+            )
+            foreach ($prop in $expectedProps) {
+                $outputValidationResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

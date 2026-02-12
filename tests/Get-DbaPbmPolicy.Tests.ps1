@@ -98,4 +98,33 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results.Condition -eq "dbatoolsci_Condition" | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle -Policy dbatoolsci_TestPolicy
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Dmf.Policy"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ID", "Name", "Enabled", "Description", "PolicyCategory", "AutomatedPolicyEvaluationMode", "Condition", "CreateDate", "CreatedBy", "DateModified", "ModifiedBy", "IsSystemObject", "ObjectSet", "RootCondition", "ScheduleUid")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in the default display" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("HelpText", "HelpLink", "Urn", "Properties", "Metadata", "Parent", "IdentityKey", "HasScript", "PolicyEvaluationStarted", "ConnectionProcessingStarted", "TargetProcessed", "ConnectionProcessingFinished", "PolicyEvaluationFinished", "PropertyMetadataChanged", "PropertyChanged")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+    }
 }

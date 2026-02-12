@@ -109,5 +109,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         It "Should have command of WAITFOR" {
             $results.WaitType | Should -BeLike "*WAITFOR*"
         }
+
+        It "Returns output of the expected type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Spid", "Thread", "Scheduler", "WaitMs", "WaitType", "BlockingSpid", "ResourceDesc", "NodeId", "Dop", "DbId")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "SqlText" -Because "SqlText is excluded via Select-DefaultView"
+            $defaultProps | Should -Not -Contain "QueryPlan" -Because "QueryPlan is excluded via Select-DefaultView"
+            $defaultProps | Should -Not -Contain "InfoUrl" -Because "InfoUrl is excluded via Select-DefaultView"
+        }
+
+        It "Has the excluded properties available on the object" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].PSObject.Properties.Name | Should -Contain "SqlText" -Because "SqlText should be accessible via Select-Object *"
+            $results[0].PSObject.Properties.Name | Should -Contain "QueryPlan" -Because "QueryPlan should be accessible via Select-Object *"
+            $results[0].PSObject.Properties.Name | Should -Contain "InfoUrl" -Because "InfoUrl should be accessible via Select-Object *"
+        }
     }
 }

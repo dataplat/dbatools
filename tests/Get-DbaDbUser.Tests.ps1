@@ -123,5 +123,32 @@ DROP LOGIN [$DBUserName2];
             $resultsByMultipleLogin.Name | Should -Be $dbUserName, $dbUserName2
             $resultsByMultipleLogin.Database | Should -Be "master", "master"
         }
+
+        It "Returns output of the documented type" {
+            $results1 | Should -Not -BeNullOrEmpty
+            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "Login",
+                "LoginType",
+                "AuthenticationType",
+                "State",
+                "HasDbAccess",
+                "DefaultSchema"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

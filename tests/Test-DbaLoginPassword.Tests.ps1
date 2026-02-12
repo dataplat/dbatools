@@ -57,10 +57,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns just one login" {
             $results = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce
             $results.SqlLogin | Should -Be $weaksauce
+            $script:outputForValidation = @($results)
         }
         It "handles passwords with quotes, see #9095" {
             $results = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce -Dictionary "&é`"'(-", "hello"
             $results.SqlLogin | Should -Be $weaksauce
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProperties = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "SqlLogin",
+                    "WeakPassword",
+                    "Password",
+                    "Disabled",
+                    "CreatedDate",
+                    "ModifiedDate",
+                    "DefaultDatabase"
+                )
+                foreach ($prop in $expectedProperties) {
+                    $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has correct login name in results" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].SqlLogin | Should -Be $weaksauce
+                $script:outputForValidation[0].WeakPassword | Should -Be "True"
+            }
         }
     }
 }

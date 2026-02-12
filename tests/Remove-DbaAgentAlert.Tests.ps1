@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "removes a SQL Agent alert" {
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -Not -BeNullOrEmpty
-            Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName
+            $script:outputValidationResult = Remove-DbaAgentAlert -SqlInstance $server -Alert $alertName
             (Get-DbaAgentAlert -SqlInstance $server -Alert $alertName ) | Should -BeNullOrEmpty
         }
 
@@ -60,6 +60,27 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentAlert -SqlInstance $server ) | Should -Not -BeNullOrEmpty
             Remove-DbaAgentAlert -SqlInstance $server
             (Get-DbaAgentAlert -SqlInstance $server ) | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:outputValidationResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Returns the correct Status and IsRemoved values" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult.Status | Should -Be "Dropped"
+                $script:outputValidationResult.IsRemoved | Should -BeTrue
+            }
         }
     }
 }

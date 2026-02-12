@@ -96,5 +96,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaCredential @splatMultipleCreds
             $results.Count | Should -BeGreaterThan 1
         }
+
+        It "Returns output of the documented type" {
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Credential"
+        }
+
+        It "Has the expected default display properties" {
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ID", "Name", "Identity", "MappedClassType", "ProviderName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

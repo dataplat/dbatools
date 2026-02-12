@@ -106,6 +106,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Get last history for all databases" {
         BeforeAll {
             $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle
+            # Capture output for validation
+            $script:outputResult = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database master -LastFull
         }
 
         It "Should be more than one database" {
@@ -237,6 +239,54 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since "-" -WarningVariable warning 3> $null
             $results | Should -BeNullOrEmpty
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputResult
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
+        }
+
+        It "Has the expected properties from BackupHistory object" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "UserName",
+                "Start",
+                "End",
+                "Duration",
+                "Path",
+                "TotalSize",
+                "CompressedBackupSize",
+                "CompressionRatio",
+                "Type",
+                "BackupSetId",
+                "DeviceType",
+                "Software",
+                "FullName",
+                "FileList",
+                "Position",
+                "FirstLsn",
+                "DatabaseBackupLsn",
+                "CheckpointLsn",
+                "LastLsn",
+                "SoftwareVersionMajor",
+                "IsCopyOnly",
+                "LastRecoveryForkGuid",
+                "RecoveryModel"
+            )
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on BackupHistory object"
+            }
         }
     }
 }

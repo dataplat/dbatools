@@ -56,6 +56,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Functionality" {
+        BeforeAll {
+            $script:outputForValidation = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
+        }
+
         It "Returns Results" {
             $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
@@ -121,6 +125,20 @@ Describe $CommandName -Tag IntegrationTests {
 
             $warn | Should -Match "You must pipe in a database or specify a SqlInstance"
             $warn | Should -Match "You must pipe in a database or specify a SqlInstance"
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Synonym"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "BaseServer", "BaseDatabase", "BaseSchema", "BaseObject")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

@@ -87,5 +87,23 @@ Describe $CommandName -Tag IntegrationTests {
             $fileBackupResults.Status | Should -Be "Success"
             $fileBackupPath = $fileBackupResults.Path
         }
+
+        It "Returns output of the documented type" {
+            $backupResults | Should -Not -BeNullOrEmpty
+            $backupResults.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServiceMasterKey"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $backupResults.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Path", "Status")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $backupResults.psobject.Properties["Path"] | Should -Not -BeNullOrEmpty
+            $backupResults.psobject.Properties["Path"].MemberType | Should -Be "AliasProperty"
+        }
     }
 }

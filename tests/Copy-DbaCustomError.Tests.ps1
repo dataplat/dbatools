@@ -50,6 +50,20 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying custom errors" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Store output for validation context
+            $splatCopyValidation = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                CustomError = 60000
+            }
+            $script:outputForValidation = Copy-DbaCustomError @splatCopyValidation | Where-Object { $null -ne $PSItem }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         BeforeEach {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -93,6 +107,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should verify custom error exists" {
             $errorResults = Get-DbaCustomError -SqlInstance $TestConfig.InstanceCopy1
             $errorResults.ID | Should -Contain 60000
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

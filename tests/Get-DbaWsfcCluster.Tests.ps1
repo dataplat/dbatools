@@ -19,3 +19,37 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not (Get-CimInstance -Namespace root\MSCluster -ClassName MSCluster_Cluster -ErrorAction SilentlyContinue)) {
+        BeforeAll {
+            $result = Get-DbaWsfcCluster
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Cluster"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "Name",
+                "Fqdn",
+                "State",
+                "DrainOnShutdown",
+                "DynamicQuorumEnabled",
+                "EnableSharedVolumes",
+                "SharedVolumesRoot",
+                "QuorumPath",
+                "QuorumType",
+                "QuorumTypeValue",
+                "RequestReplyTimeout"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

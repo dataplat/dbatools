@@ -166,19 +166,59 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Monthly schedule is correct" {
-        It "verify schedule components" {
-            $results = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest)
+        BeforeAll {
+            $script:monthlyResults = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti1 -Schedule dbatoolsci_MonthlyTest)
+        }
 
-            $results.Count | Should -Be 1
-            $results | Should -Not -BeNullOrEmpty
-            $results.ScheduleName | Should -Be "dbatoolsci_MonthlyTest"
-            $results.FrequencyInterval | Should -Be 10
-            $results.IsEnabled | Should -Be $true
-            $results.SqlInstance | Should -Not -BeNullOrEmpty
+        It "verify schedule components" {
+            $script:monthlyResults.Count | Should -Be 1
+            $script:monthlyResults | Should -Not -BeNullOrEmpty
+            $script:monthlyResults.ScheduleName | Should -Be "dbatoolsci_MonthlyTest"
+            $script:monthlyResults.FrequencyInterval | Should -Be 10
+            $script:monthlyResults.IsEnabled | Should -Be $true
+            $script:monthlyResults.SqlInstance | Should -Not -BeNullOrEmpty
             $datetimeFormat = (Get-Culture).DateTimeFormat
-            $startDate = Get-Date $results.ActiveStartDate -Format $datetimeFormat.ShortDatePattern
+            $startDate = Get-Date $script:monthlyResults.ActiveStartDate -Format $datetimeFormat.ShortDatePattern
             $startTime = Get-Date "00:00:00" -Format $datetimeFormat.LongTimePattern
-            $results.Description | Should -Be "Occurs every month on day 10 of that month at $startTime. Schedule will be used starting on $startDate."
+            $script:monthlyResults.Description | Should -Be "Occurs every month on day 10 of that month at $startTime. Schedule will be used starting on $startDate."
+        }
+
+        It "Returns output of the documented type" {
+            $script:monthlyResults | Should -Not -BeNullOrEmpty
+            $script:monthlyResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobSchedule"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:monthlyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ScheduleName",
+                "ActiveEndDate",
+                "ActiveEndTimeOfDay",
+                "ActiveStartDate",
+                "ActiveStartTimeOfDay",
+                "DateCreated",
+                "FrequencyInterval",
+                "FrequencyRecurrenceFactor",
+                "FrequencyRelativeIntervals",
+                "FrequencySubDayInterval",
+                "FrequencySubDayTypes",
+                "FrequencyTypes",
+                "IsEnabled",
+                "JobCount",
+                "Description",
+                "ScheduleUid"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property ScheduleName" {
+            $script:monthlyResults[0].psobject.Properties["ScheduleName"] | Should -Not -BeNullOrEmpty
+            $script:monthlyResults[0].psobject.Properties["ScheduleName"].MemberType | Should -Be "AliasProperty"
         }
     }
 

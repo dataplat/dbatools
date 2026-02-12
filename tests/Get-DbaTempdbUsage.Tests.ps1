@@ -19,8 +19,56 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = @(Get-DbaTempdbUsage -SqlInstance $TestConfig.InstanceSingle)
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no active tempdb usage to validate" }
+            $result[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Returns output with expected properties when tempdb activity exists" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no active tempdb usage to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Spid",
+                "StatementCommand",
+                "QueryText",
+                "ProcedureName",
+                "StartTime",
+                "CurrentUserAllocatedKB",
+                "TotalUserAllocatedKB",
+                "UserDeallocatedKB",
+                "TotalUserDeallocatedKB",
+                "InternalAllocatedKB",
+                "TotalInternalAllocatedKB",
+                "InternalDeallocatedKB",
+                "TotalInternalDeallocatedKB",
+                "RequestedReads",
+                "RequestedWrites",
+                "RequestedLogicalReads",
+                "RequestedCPUTime",
+                "IsUserProcess",
+                "Status",
+                "Database",
+                "LoginName",
+                "OriginalLoginName",
+                "NTDomain",
+                "NTUserName",
+                "HostName",
+                "ProgramName",
+                "LoginTime",
+                "LastRequestedStartTime",
+                "LastRequestedEndTime"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
+}

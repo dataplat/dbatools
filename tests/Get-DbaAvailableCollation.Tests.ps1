@@ -22,9 +22,35 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Available Collations" {
-        It "finds a collation that matches Slovenian" {
+        BeforeAll {
             $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "finds a collation that matches Slovenian" {
             ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "CodePage",
+                "CodePageName",
+                "LocaleID",
+                "LocaleName",
+                "Description"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

@@ -59,6 +59,9 @@ Describe $CommandName -Tag IntegrationTests {
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
 
+        # Get results for output validation
+        $outputResult = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $primaryAgName
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -117,6 +120,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Role | Should -Be "Primary"
             $results.AvailabilityMode | Should -Be "SynchronousCommit"
             $results.FailoverMode | Should -Be "Manual"
+        }
+    }
+
+    Context "Output validation" {
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Name",
+                "Role",
+                "RollupSynchronizationState",
+                "AvailabilityMode",
+                "BackupPriority",
+                "EndpointUrl",
+                "SessionTimeout",
+                "FailoverMode",
+                "ReadonlyRoutingList"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

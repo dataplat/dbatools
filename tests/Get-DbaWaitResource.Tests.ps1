@@ -106,6 +106,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return the correct object type" {
             $results.ObjectType | Should -Be "USER_TABLE"
         }
+
+        It "Returns output of type PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected PAGE properties" {
+            $expectedProps = @("DatabaseID", "DatabaseName", "DataFileName", "DataFilePath", "ObjectID", "ObjectName", "ObjectSchema", "ObjectType")
+            foreach ($prop in $expectedProps) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on PAGE wait resource output"
+            }
+        }
     }
 
     Context "Deciphering a KEY WaitResource" {
@@ -156,5 +168,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return col1 is bilbo" {
             $resultskey.ObjectData.col2 | Should -Be "bilbo"
         }
+
+        It "Returns output of type PSCustomObject for KEY" {
+            $resultskey | Should -Not -BeNullOrEmpty
+            $resultskey | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected KEY properties" {
+            $expectedProps = @("DatabaseID", "DatabaseName", "SchemaName", "IndexName", "ObjectID", "ObjectName", "HobtID")
+            foreach ($prop in $expectedProps) {
+                $resultskey.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on KEY wait resource output"
+            }
+        }
     }
+
 }

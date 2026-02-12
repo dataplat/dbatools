@@ -87,6 +87,29 @@ Describe $CommandName -Tag IntegrationTests {
             $uniqueInstances = $result.SqlInstance | Select-Object -Unique
             $uniqueInstances.Count | Should -BeExactly 2
         }
+
+        It "Returns output of the expected type" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Role",
+                "Name",
+                "SmoRole",
+                "SmoLogin"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 
     AfterAll {

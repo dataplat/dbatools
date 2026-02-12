@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
 
-            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName "Step 1" -NewName "Step 1 updated"
+            $script:outputValidationResult = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName "Step 1" -NewName "Step 1 updated"
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
 
@@ -567,6 +567,21 @@ Describe $CommandName -Tag IntegrationTests {
             $newJobStep.OnFailAction | Should -Be GoToStep
             $newJobStep.OnFailStep | Should -Be 11
             $newJobStep.JobStepFlags | Should -Be AppendAllCmdExecOutputToJobHistory
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobStep"
+        }
+
+        It "Has the correct properties on the output object" {
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "Name"
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "Subsystem"
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "Command"
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "DatabaseName"
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "OnSuccessAction"
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain "OnFailAction"
         }
     }
 }

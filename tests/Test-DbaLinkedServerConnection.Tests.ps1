@@ -68,6 +68,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Result | Should -Be 'Success'
             $results.Connectivity | Should -BeTrue
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].PSObject.TypeNames | Should -Contain "Dataplat.Dbatools.Validation.LinkedServerResult"
+            }
+
+            It "Has the expected properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProperties = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "LinkedServerName",
+                    "RemoteServer",
+                    "Connectivity",
+                    "Result"
+                )
+                foreach ($prop in $expectedProperties) {
+                    $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+        }
     }
 
     Context "Piping to function works" {

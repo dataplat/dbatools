@@ -136,6 +136,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
             $results.Id | Should -Be $traceid
             $results.IsRunning | Should -BeFalse
+            $script:outputForValidation = $results
+        }
+
+        Context "Output validation" {
+            It "Returns output" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+            }
+
+            It "Returns output with expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "ComputerName"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "InstanceName"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "SqlInstance"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Id"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "IsRunning"
+            }
+
+            It "Has the correct excluded properties from default display" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
+                $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
+                $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential should be excluded from default display"
+            }
+
+            It "Shows the trace as stopped" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].IsRunning | Should -BeFalse
+            }
         }
     }
 }

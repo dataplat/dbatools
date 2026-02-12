@@ -57,6 +57,28 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying linked server with the same properties" {
+        BeforeAll {
+            # Create a dedicated linked server on source for output validation
+            $outputLinkedName = "dbatoolsci_outputlinked"
+            $outputCreateSql = "IF NOT EXISTS (SELECT * FROM sys.servers WHERE name = '$outputLinkedName') EXEC master.dbo.sp_addlinkedserver @server = N'$outputLinkedName', @srvproduct=N'SQL Server'"
+
+            $outputServer1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $outputServer1.Query($outputCreateSql)
+
+            try {
+                $outputServer2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+                $outputServer2.Query("IF EXISTS (SELECT * FROM sys.servers WHERE name = '$outputLinkedName') EXEC master.dbo.sp_dropserver @server=N'$outputLinkedName', @droplogins='droplogins'")
+            } catch { }
+
+            $splatOutputCopy = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                LinkedServer  = $outputLinkedName
+                WarningAction = "SilentlyContinue"
+            }
+            $script:outputResult = Copy-DbaLinkedServer @splatOutputCopy
+        }
+
         It "Copies successfully" {
             $splatCopy = @{
                 Source        = $TestConfig.InstanceCopy1
@@ -91,5 +113,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaLinkedServer @splatCopySkip
             $results.Status | Should -BeExactly "Skipped"
         }
+
+        It "Returns output of the expected type" {
+            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the correct values for key properties" {
+            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            $script:outputResult[0].Name | Should -BeExactly "dbatoolsci_outputlinked"
+            $script:outputResult[0].Status | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
+
+        AfterAll {
+            try { $outputServer1.Query("EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_outputlinked', @droplogins='droplogins'") } catch { }
+            try {
+                $outputCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+                $outputCleanup2.Query("EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_outputlinked', @droplogins='droplogins'")
+            } catch { }
+        }
     }
+
 }

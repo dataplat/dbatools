@@ -66,3 +66,70 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }#>
+
+Describe $CommandName -Tag IntegrationTests -Skip:($env:appveyor) {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceSingle) {
+        BeforeAll {
+            $result = Test-DbaWindowsLogin -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no Windows domain logins found to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no Windows domain logins found to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "Server",
+                "Domain",
+                "Login",
+                "Type",
+                "Found",
+                "SamAccountNameMismatch",
+                "DisabledInSQLServer",
+                "Enabled",
+                "LockedOut",
+                "PasswordExpired",
+                "PasswordNotRequired"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected excluded properties still accessible" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no Windows domain logins found to validate" }
+            $excludedProps = @(
+                "AccountNotDelegated",
+                "AllowReversiblePasswordEncryption",
+                "CannotChangePassword",
+                "PasswordNeverExpires",
+                "SmartcardLogonRequired",
+                "TrustedForDelegation",
+                "UserAccountControl"
+            )
+            foreach ($prop in $excludedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "excluded property '$prop' should still be accessible"
+            }
+        }
+
+        It "Should not have excluded properties in the default display set" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no Windows domain logins found to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @(
+                "AccountNotDelegated",
+                "AllowReversiblePasswordEncryption",
+                "CannotChangePassword",
+                "PasswordNeverExpires",
+                "SmartcardLogonRequired",
+                "TrustedForDelegation",
+                "UserAccountControl"
+            )
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+    }
+}

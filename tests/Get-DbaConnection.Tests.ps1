@@ -22,10 +22,47 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "returns the proper transport" {
-        It "returns a valid AuthScheme" {
+        BeforeAll {
             $results = Get-DbaConnection -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "returns a valid AuthScheme" {
             foreach ($result in $results) {
                 $result.AuthScheme | Should -BeIn "NTLM", "Kerberos", "SQL"
+            }
+        }
+
+        It "Returns output with expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SessionId",
+                "MostRecentSessionId",
+                "ConnectTime",
+                "Transport",
+                "ProtocolType",
+                "ProtocolVersion",
+                "EndpointId",
+                "EncryptOption",
+                "AuthScheme",
+                "NodeAffinity",
+                "Reads",
+                "Writes",
+                "LastRead",
+                "LastWrite",
+                "PacketSize",
+                "ClientNetworkAddress",
+                "ClientTcpPort",
+                "ServerNetworkAddress",
+                "ServerTcpPort",
+                "ConnectionId",
+                "ParentConnectionId",
+                "MostRecentSqlHandle"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

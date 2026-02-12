@@ -160,6 +160,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Exports file to random and specified paths" {
+        BeforeAll {
+            $outputDir = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputDir -ItemType Directory -Force
+            $outputFile = "$outputDir\dbatoolsci_exportlogin_output.sql"
+            $script:fileResult = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -FilePath $outputFile -ExcludeDatabase -WarningAction SilentlyContinue
+            $script:passthruResult = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -Passthru -ExcludeDatabase -WarningAction SilentlyContinue
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputDir -Recurse -ErrorAction SilentlyContinue
+        }
+
         It "Should export file to the configured path" {
             $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.DirectoryName
@@ -185,6 +197,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should not export file to custom file path with NoClobber" {
             { Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
+        }
+        It "Returns a FileInfo object when writing to file" {
+            $script:fileResult | Should -Not -BeNullOrEmpty
+            $script:fileResult | Should -BeOfType [System.IO.FileInfo]
+        }
+        It "Returns a string when using -Passthru" {
+            $script:passthruResult | Should -Not -BeNullOrEmpty
+            $script:passthruResult | Should -BeOfType [System.String]
         }
     }
 }

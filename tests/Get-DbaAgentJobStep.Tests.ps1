@@ -30,6 +30,9 @@ Describe $CommandName -Tag IntegrationTests {
             $jobName = "dbatoolsci_job_$(Get-Random)"
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command "select 1"
+
+            # Store results at script scope for output validation
+            $script:outputValidationResult = @(Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName)
         }
 
         AfterAll {
@@ -55,6 +58,24 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Disabled
             $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -ExcludeDisabledJobs
             $results.Name | Should -Not -Contain "dbatoolsci_jobstep1"
+        }
+
+        It "Returns output" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobStep"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "AgentJob", "Name", "SubSystem", "LastRunDate", "LastRunOutcome", "State")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

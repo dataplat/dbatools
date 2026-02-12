@@ -55,5 +55,51 @@ Describe $CommandName -Tag IntegrationTests {
                 $p.Name | Should -Be $prop
             }
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "Domain",
+                "DomainRole",
+                "Manufacturer",
+                "Model",
+                "SystemFamily",
+                "SystemType",
+                "ProcessorName",
+                "ProcessorCaption",
+                "ProcessorMaxClockSpeed",
+                "NumberLogicalProcessors",
+                "NumberProcessors",
+                "IsHyperThreading",
+                "TotalPhysicalMemory",
+                "IsSystemManagedPageFile",
+                "PendingReboot"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @(
+                "SystemSkuNumber",
+                "IsDaylightSavingsTime",
+                "DaylightInEffect",
+                "DnsHostName",
+                "AdminPasswordStatus"
+            )
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
     }
 }

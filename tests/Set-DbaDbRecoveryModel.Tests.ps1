@@ -63,5 +63,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "AllDatabases" | Should -Be $true
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                $script:outputResult = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $dbname -RecoveryModel BulkLogged
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+
+            It "Returns output of the documented type" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "Status",
+                    "IsAccessible",
+                    "RecoveryModel",
+                    "LastFullBackup",
+                    "LastDiffBackup",
+                    "LastLogBackup"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias properties" {
+                $script:outputResult[0].psobject.Properties["LastFullBackup"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["LastFullBackup"].MemberType | Should -Be "AliasProperty"
+                $script:outputResult[0].psobject.Properties["LastDiffBackup"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["LastDiffBackup"].MemberType | Should -Be "AliasProperty"
+                $script:outputResult[0].psobject.Properties["LastLogBackup"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["LastLogBackup"].MemberType | Should -Be "AliasProperty"
+            }
+        }
     }
 }

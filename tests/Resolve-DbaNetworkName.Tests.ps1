@@ -87,8 +87,32 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Resolve-DbaNetworkName $env:COMPUTERNAME -EnableException
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "InputName",
+                "ComputerName",
+                "IPAddress",
+                "DNSHostname",
+                "DNSDomain",
+                "Domain",
+                "DNSHostEntry",
+                "FQDN",
+                "FullComputerName"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+}

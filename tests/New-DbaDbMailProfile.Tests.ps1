@@ -81,5 +81,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Description of $description " {
             $results.description | Should -Be $description
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailProfile"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "Description",
+                "IsBusyProfile"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

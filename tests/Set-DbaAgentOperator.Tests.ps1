@@ -60,5 +60,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -Be 1
             $results.EmailAddress | Should -Be "new@new.com"
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
+            }
+
+            It "Has the correct properties on the output object" {
+                $results[0].PSObject.Properties.Name | Should -Contain "Name"
+                $results[0].PSObject.Properties.Name | Should -Contain "EmailAddress"
+                $results[0].PSObject.Properties.Name | Should -Contain "PagerDays"
+                $results[0].PSObject.Properties.Name | Should -Contain "ID"
+            }
+        }
     }
 }

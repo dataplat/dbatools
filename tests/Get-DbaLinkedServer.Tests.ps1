@@ -87,6 +87,47 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Impersonate for authentication" {
             $results.Impersonate | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteServer",
+                "ProductName",
+                "Impersonate",
+                "RemoteUser",
+                "Publisher",
+                "Distributor",
+                "DateLastModified"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["RemoteServer"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["RemoteServer"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["Publisher"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Publisher"].MemberType | Should -Be "AliasProperty"
+        }
+
+        It "Has valid values for standard connection properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
     }
 
     Context "Gets Linked Servers using -ExcludeLinkedServer" {

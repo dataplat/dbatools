@@ -40,5 +40,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns success" {
             $clearResults.Status | Should -Be "Success"
         }
+
+        It "Returns output of the expected type" {
+            $clearResults | Should -Not -BeNullOrEmpty
+            $clearResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $clearResults | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Status")
+            foreach ($prop in $expectedProps) {
+                $clearResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

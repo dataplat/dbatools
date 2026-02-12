@@ -80,17 +80,33 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Connects to multiple instances" {
-        It "Returns multiple objects" {
+        BeforeAll {
             # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
             $results = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -WarningAction SilentlyContinue
+        }
+
+        It "Returns multiple objects" {
             $results.Count | Should -BeGreaterThan 1 # and ultimately not throw an exception
         }
 
         It "Returns the right amount of" {
             # Suppressing warning on Azure: [Test-DbaMaxMemory] The memory calculation may be inaccurate as the following SQL components have also been detected: SSIS,SSAS
             $null = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Max 1024 -WarningAction SilentlyContinue
-            $results = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1
-            $results.MaxValue | Should -Be 1024
+            $singleResult = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1
+            $singleResult.MaxValue | Should -Be 1024
+        }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Total", "MaxValue")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

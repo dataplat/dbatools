@@ -50,5 +50,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ConfiguredValue -eq $remoteQueryTimeout.config_value | Should -Be $true
             $results.RunningValue -eq $remoteQueryTimeout.run_value | Should -Be $true
         }
+
+        It "Returns output of the expected type" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "DisplayName",
+                "Description",
+                "IsAdvanced",
+                "IsDynamic",
+                "MinValue",
+                "MaxValue",
+                "ConfiguredValue",
+                "RunningValue",
+                "DefaultValue",
+                "IsRunningDefaultValue"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("ServerName", "Parent", "ConfigName", "Property")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
     }
 }

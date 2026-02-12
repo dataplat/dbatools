@@ -20,3 +20,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $result = Resolve-DbaPath -Path $env:TEMP
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.String]
+        }
+
+        It "Returns a valid file system path" {
+            Test-Path -Path $result | Should -BeTrue
+        }
+    }
+}

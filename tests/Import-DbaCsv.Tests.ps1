@@ -849,6 +849,20 @@ Id,RequiredName,OptionalValue
     }
 
     Context "Deep data validation" {
+        BeforeAll {
+            # Capture output for validation in output validation Its below
+            $outputTestFile = "$($TestConfig.Temp)\dbatoolsci_outputval_$(Get-Random).csv"
+            $outputTestTable = "dbatoolsci_outputval_$(Get-Random)"
+            "col1,col2`nval1,val2`nval3,val4" | Out-File -FilePath $outputTestFile -Encoding UTF8
+            $script:outputResult = Import-DbaCsv -Path $outputTestFile -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table $outputTestTable -AutoCreateTable
+        }
+
+        AfterAll {
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE IF EXISTS $outputTestTable" -ErrorAction SilentlyContinue
+            Remove-Item $outputTestFile -ErrorAction SilentlyContinue
+        }
+
         It "verifies exact data values match between CSV and database" {
             $filePath = "$($TestConfig.Temp)\deepval-$(Get-Random).csv"
             $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
@@ -1076,6 +1090,38 @@ all,filled,here
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Schema",
+                "RowsCopied",
+                "Elapsed",
+                "RowsPerSecond",
+                "Path"
+            )
+            foreach ($prop in $expectedProperties) {
+                $script:outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct Database and Table values" {
+            $script:outputResult[0].Database | Should -Be "tempdb"
+            $script:outputResult[0].Table | Should -Be $outputTestTable
+        }
+
+        It "Has correct RowsCopied value" {
+            $script:outputResult[0].RowsCopied | Should -Be 2
         }
     }
 }

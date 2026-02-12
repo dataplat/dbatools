@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Role for User" {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase -Role $testRole
-            Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $testRole -User "User1" -Database $testDatabase
+            $script:outputValidationResult = Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $testRole -User "User1" -Database $testDatabase
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database $testDatabase -Role $testRole
 
             $roleDB.UserName | Should -Be "User1"
@@ -150,6 +150,12 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database "msdb" -Role "db_datareader", "SQLAgentReaderRole"
             $roleDB.UserName -contains "User2" | Should -Be $true
             $roleDBAfter.UserName -contains "User2" | Should -Be $false
+        }
+
+        Context "Output validation" {
+            It "Returns no output" {
+                $script:outputValidationResult | Should -BeNullOrEmpty
+            }
         }
     }
 }

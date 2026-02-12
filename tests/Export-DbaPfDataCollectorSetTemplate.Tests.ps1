@@ -47,14 +47,42 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Verifying command returns all the required results" {
+        BeforeAll {
+            # Store results for output validation
+            $script:outputForValidation = @()
+        }
+
         It "returns a file system object using piped input" {
             $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate
+            $script:outputForValidation += $results
             $results.BaseName | Should -Be "Long Running Queries"
         }
 
         It "returns a file system object using direct parameter" {
             $results = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries"
+            $script:outputForValidation += $results
             $results.BaseName | Should -Be "Long Running Queries"
+        }
+
+        It "Returns output of the documented type" {
+            $result = $script:outputForValidation[0]
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns an XML file" {
+            $result = $script:outputForValidation[0]
+            $result | Should -Not -BeNullOrEmpty
+            $result.Extension | Should -Be ".xml"
+        }
+
+        AfterAll {
+            # Clean up generated files
+            foreach ($file in $script:outputForValidation) {
+                if ($file) {
+                    Remove-Item -Path $file.FullName -ErrorAction SilentlyContinue
+                }
+            }
         }
     }
 }

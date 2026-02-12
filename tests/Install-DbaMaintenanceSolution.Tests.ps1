@@ -63,6 +63,11 @@ Describe $CommandName -Tag IntegrationTests {
             }
             Invoke-DbaQuery @splatCleanup
 
+            # Set up database for output validation
+            $outputDb = "dbatoolsci_maintsol_output_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $outputDb
+            $script:outputValidationResult = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database $outputDb -ReplaceExisting
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -89,6 +94,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
             Invoke-DbaQuery @splatCleanup
 
+            # Clean up output validation database
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database $outputDb -Query $cleanupQuery -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $outputDb -Confirm:$false -ErrorAction SilentlyContinue
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -106,6 +115,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database tempdb -WarningAction SilentlyContinue
             $sproc = Get-DbaModule -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Results")
+            foreach ($prop in $expectedProps) {
+                $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no additional unexpected properties" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Results")
+            $script:outputValidationResult[0].PSObject.Properties.Name | Should -HaveCount $expectedProps.Count
+        }
+
+        It "Returns success status" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].Results | Should -Be "Success"
         }
     }
 
@@ -239,4 +272,5 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@CheckSum = 'Y'"
         }
     }
+
 }

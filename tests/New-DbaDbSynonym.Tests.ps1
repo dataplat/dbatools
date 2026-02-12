@@ -56,13 +56,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Functionality" {
-        It "Add new synonym and returns results" {
-            $result1 = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
+        BeforeAll {
+            # Capture the first result for output validation in the nested Context below
+            $script:resultForValidation = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
+        }
 
-            $result1.Count | Should -Be 1
-            $result1.Name | Should -Be "syn1"
-            $result1.Database | Should -Be $dbname
-            $result1.BaseObject | Should -Be "obj1"
+        It "Add new synonym and returns results" {
+            $script:resultForValidation.Count | Should -Be 1
+            $script:resultForValidation.Name | Should -Be "syn1"
+            $script:resultForValidation.Database | Should -Be $dbname
+            $script:resultForValidation.BaseObject | Should -Be "obj1"
         }
 
         It "Add new synonym with default schema" {
@@ -150,6 +153,26 @@ Describe $CommandName -Tag IntegrationTests {
             $result7.BaseDatabase | Should -Contain "bdb7"
             $result7.BaseServer | Should -Contain "bsrv7"
             $result7.BaseObject | Should -Be "obj7"
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:resultForValidation | Should -Not -BeNullOrEmpty
+                $script:resultForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Synonym"
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $script:resultForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Schema", "BaseServer", "BaseDatabase", "BaseSchema", "BaseObject")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias property for Database" {
+                $script:resultForValidation[0].psobject.Properties["Database"] | Should -Not -BeNullOrEmpty
+                $script:resultForValidation[0].psobject.Properties["Database"].MemberType | Should -Be "AliasProperty"
+            }
         }
 
     }

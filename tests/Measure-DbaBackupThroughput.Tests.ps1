@@ -64,4 +64,54 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Measure-DbaBackupThroughput -SqlInstance $TestConfig.InstanceSingle -Database $testDb
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "AvgThroughput",
+                "AvgSize",
+                "AvgDuration",
+                "MinThroughput",
+                "MaxThroughput",
+                "MinBackupDate",
+                "MaxBackupDate",
+                "BackupCount"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has DbaSize type for throughput properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].AvgThroughput | Should -BeOfType [DbaSize]
+            $result[0].MinThroughput | Should -BeOfType [DbaSize]
+            $result[0].MaxThroughput | Should -BeOfType [DbaSize]
+        }
+
+        It "Has DbaTimeSpan type for AvgDuration" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].AvgDuration | Should -BeOfType [DbaTimeSpan]
+        }
+
+        It "Has DbaDateTime type for date properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].MinBackupDate | Should -BeOfType [DbaDateTime]
+            $result[0].MaxBackupDate | Should -BeOfType [DbaDateTime]
+        }
+    }
 }

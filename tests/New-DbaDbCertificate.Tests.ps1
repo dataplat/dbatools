@@ -46,6 +46,14 @@ Describe $CommandName -Tag IntegrationTests {
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
 
+            # Create certificate for output validation
+            $outputCertName = "dbatoolsci_outcert_$(Get-Random)"
+            $splatOutputCert = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Name        = $outputCertName
+            }
+            $script:outputValidationResult = New-DbaDbCertificate @splatOutputCert
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -57,6 +65,12 @@ Describe $CommandName -Tag IntegrationTests {
             # Cleanup master keys
             if ($tempdbmasterkey) {
                 $tempdbmasterkey | Remove-DbaDbMasterKey
+            }
+
+            # Cleanup output validation certificate
+            if ($outputCertName) {
+                $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $server.Databases["master"].Query("IF EXISTS (SELECT 1 FROM sys.certificates WHERE name = '$outputCertName') DROP CERTIFICATE [$outputCertName]")
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -87,6 +101,35 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Cleanup
             $null = $cert2 | Remove-DbaDbCertificate
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Certificate"
+        }
+
+        It "Has the expected default display properties" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

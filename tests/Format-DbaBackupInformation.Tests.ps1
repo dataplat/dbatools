@@ -45,6 +45,25 @@ Describe $CommandName -Tag IntegrationTests {
             ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.PhysicalName -like '*ContinuePointTest*' }).count | Should -BeGreaterThan 0
         }
 
+        It "Returns output of the documented type" {
+            $output | Should -Not -BeNullOrEmpty
+            $output[0].psobject.TypeNames -match "Dataplat\.Dbatools\.Database\.BackupHistory" | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the additional properties added by the function" {
+            $output[0].psobject.Properties["OriginalDatabase"] | Should -Not -BeNullOrEmpty -Because "OriginalDatabase should be added by Format-DbaBackupInformation"
+            $output[0].psobject.Properties["OriginalFileList"] | Should -Not -BeNullOrEmpty -Because "OriginalFileList should be added by Format-DbaBackupInformation"
+            $output[0].psobject.Properties["OriginalFullName"] | Should -Not -BeNullOrEmpty -Because "OriginalFullName should be added by Format-DbaBackupInformation"
+            $output[0].psobject.Properties["IsVerified"] | Should -Not -BeNullOrEmpty -Because "IsVerified should be added by Format-DbaBackupInformation"
+        }
+
+        It "Preserves the core backup history properties" {
+            $coreProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Type", "TotalSize", "DeviceType", "FullName", "FirstLsn", "LastLsn")
+            foreach ($prop in $coreProperties) {
+                $output[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should be preserved from the input backup history"
+            }
+        }
+
     }
 
     Context "Test it works as a parameter as well" {

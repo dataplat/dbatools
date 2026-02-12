@@ -104,5 +104,25 @@ Describe $CommandName -Tag IntegrationTests {
             $roleResults = Get-DbaServerRole @splatGetRole
             $roleResults.Name | Should -Contain $testRoleName
         }
+
+        It "Returns output of the expected type" {
+            $copyResults | Should -Not -BeNullOrEmpty
+            $copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected values for standard migration properties" {
+            $copyResults[0].Type | Should -Be "Server Role"
+            $copyResults[0].Status | Should -Be "Successful"
+            $copyResults[0].SourceServer | Should -Not -BeNullOrEmpty
+            $copyResults[0].DestinationServer | Should -Not -BeNullOrEmpty
+        }
     }
 }

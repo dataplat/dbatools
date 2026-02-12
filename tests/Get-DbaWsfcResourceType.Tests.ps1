@@ -19,3 +19,32 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not (Get-CimInstance -Namespace root\MSCluster -ClassName MSCluster_Cluster -ErrorAction SilentlyContinue)) {
+        BeforeAll {
+            $result = Get-DbaWsfcResourceType
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_ResourceType"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ClusterName",
+                "ClusterFqdn",
+                "Name",
+                "DisplayName",
+                "DllName",
+                "RequiredDependencyTypes"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+}

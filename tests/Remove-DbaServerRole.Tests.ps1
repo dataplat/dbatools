@@ -47,6 +47,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputRoleName = "dbatoolsci_outputrole_$(Get-Random)"
+            $null = New-DbaServerRole -SqlInstance $testInstance -ServerRole $outputRoleName
+            $script:outputForValidation = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $outputRoleName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "It returns info about server-role removed" {
             $results = Remove-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
             $results.ServerRole | Should -Be $testRoleExecutor
@@ -56,5 +66,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
             $results | Should -Be $null
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "ServerRole", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct values for a successful removal" {
+                $script:outputForValidation.Status | Should -Be "Success"
+                $script:outputForValidation.ServerRole | Should -Be $outputRoleName
+                $script:outputForValidation.ComputerName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.InstanceName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.SqlInstance | Should -Not -BeNullOrEmpty
+            }
+        }
     }
+
 }

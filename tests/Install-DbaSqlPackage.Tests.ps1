@@ -76,4 +76,28 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # SqlPackage should already be installed from the previous context
+            $result = Install-DbaSqlPackage
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $result.PSObject.Properties.Name | Should -Contain "Name"
+            $result.PSObject.Properties.Name | Should -Contain "Path"
+            $result.PSObject.Properties.Name | Should -Contain "Installed"
+        }
+
+        It "Has correct values for standard properties" {
+            $result.Installed | Should -BeTrue
+            $result.Path | Should -Not -BeNullOrEmpty
+            $result.Name | Should -Not -BeNullOrEmpty
+        }
+    }
 }

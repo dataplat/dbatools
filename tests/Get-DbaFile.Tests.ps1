@@ -33,6 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
             $testDbName = "dbatoolsci_getfile$random"
             $server.Query("CREATE DATABASE $testDbName")
 
+            # Capture results for output validation
+            $script:fileResults = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -60,6 +63,34 @@ Describe $CommandName -Tag IntegrationTests {
             $masterPath = $server.MasterDBPath
             $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -Path $masterPath
             ($results.Filename -match "master.mdf").Count | Should -BeGreaterThan 0
+        }
+
+        It "Returns output of the documented type" {
+            $script:fileResults | Should -Not -BeNullOrEmpty
+            $script:fileResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:fileResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "Filename")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in the default display" {
+            $defaultProps = $script:fileResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("ComputerName", "InstanceName", "RemoteFilename")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
+
+        It "Has all expected properties available" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Filename", "RemoteFilename")
+            foreach ($prop in $expectedProps) {
+                $script:fileResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 }

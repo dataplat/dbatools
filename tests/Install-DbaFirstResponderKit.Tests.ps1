@@ -74,6 +74,22 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database -WarningAction SilentlyContinue
             $result[0].Status -eq "Error" | Should -Be $true
         }
+        It "Returns output of the documented type" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $resultsDownload[0] | Should -BeOfType PSCustomObject
+        }
+        It "Has the expected properties" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            foreach ($prop in $expectedProps) {
+                $resultsDownload[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+        It "Has no additional unexpected properties" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            $resultsDownload[0].PSObject.Properties.Name | Should -HaveCount $expectedProps.Count
+        }
     }
 
     Context "Testing First Responder Kit installer with LocalFile" {
@@ -132,4 +148,5 @@ Describe $CommandName -Tag IntegrationTests {
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }
+
 }

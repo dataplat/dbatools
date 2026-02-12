@@ -33,4 +33,23 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = Get-DbaWindowsLog -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("InstanceName", "Timestamp", "Spid", "Severity", "ErrorNumber", "State", "Message")
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on output"
+            }
+        }
+    }
 }

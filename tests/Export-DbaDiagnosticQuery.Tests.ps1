@@ -54,8 +54,13 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceSingle
                 QueryName   = "Memory Clerk Usage"
             }
-            $null = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery -Path $backupPath
+            $result = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery -Path $backupPath
             (Get-ChildItem $backupPath).Count | Should -BeExactly 1
+        }
+
+        It "Returns output of type System.IO.FileInfo" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [System.IO.FileInfo]
         }
     }
 }

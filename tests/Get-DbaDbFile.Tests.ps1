@@ -59,12 +59,62 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Physical name is populated" {
+        BeforeAll {
+            $script:dbFileResults = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
         It "Master returns proper results" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
-            $result = $results | Where-Object LogicalName -eq "master"
+            $result = $script:dbFileResults | Where-Object LogicalName -eq "master"
             $result.PhysicalName -match "master.mdf" | Should -Be $true
-            $result = $results | Where-Object LogicalName -eq "mastlog"
+            $result = $script:dbFileResults | Where-Object LogicalName -eq "mastlog"
             $result.PhysicalName -match "mastlog.ldf" | Should -Be $true
+        }
+
+        It "Returns output of the documented type" {
+            $script:dbFileResults | Should -Not -BeNullOrEmpty
+            $script:dbFileResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $script:dbFileResults | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "FileGroupName",
+                "ID",
+                "Type",
+                "TypeDescription",
+                "LogicalName",
+                "PhysicalName",
+                "State",
+                "MaxSize",
+                "Growth",
+                "GrowthType",
+                "NextGrowthEventSize",
+                "Size",
+                "UsedSpace",
+                "AvailableSpace",
+                "IsOffline",
+                "IsReadOnly",
+                "IsReadOnlyMedia",
+                "IsSparse",
+                "NumberOfDiskWrites",
+                "NumberOfDiskReads",
+                "ReadFromDisk",
+                "WrittenToDisk",
+                "VolumeFreeSpace",
+                "FileGroupDataSpaceId",
+                "FileGroupType",
+                "FileGroupTypeDescription",
+                "FileGroupDefault",
+                "FileGroupReadOnly"
+            )
+            foreach ($prop in $expectedProps) {
+                $script:dbFileResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
         }
     }
 
@@ -80,4 +130,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
         }
     }
+
 }

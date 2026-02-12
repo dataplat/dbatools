@@ -77,10 +77,28 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
+        It "Returns output of the documented type" {
+            $script:outputResults = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
+            $script:outputResults | Should -Not -BeNullOrEmpty
+            $script:outputResults[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
         It "Has the correct default properties" {
             $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "LogDate", "Source", "Text"
-            $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
-            ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+            ($script:outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "LogDate", "Source", "Text")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property for Source" {
+            $script:outputResults[0].psobject.Properties["Source"] | Should -Not -BeNullOrEmpty
+            $script:outputResults[0].psobject.Properties["Source"].MemberType | Should -Be "AliasProperty"
         }
 
         It "Returns filtered results for [Source = $sourceFilter]" {

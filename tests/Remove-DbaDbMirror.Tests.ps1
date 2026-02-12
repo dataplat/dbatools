@@ -21,8 +21,32 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($env:APPVEYOR) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Find a mirrored database to test with
+            $mirroredDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle | Where-Object IsMirroringEnabled -eq $true | Select-Object -First 1
+            if ($mirroredDb) {
+                $result = Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceSingle -Database $mirroredDb.Name -Confirm:$false
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no mirrored database available to test" }
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no mirrored database available to test" }
+            $result.ComputerName | Should -Not -BeNullOrEmpty
+            $result.InstanceName | Should -Not -BeNullOrEmpty
+            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $result.Database | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be "Removed"
+        }
+    }
+}

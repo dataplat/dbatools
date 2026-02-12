@@ -58,6 +58,24 @@ Describe $CommandName -Tag IntegrationTests {
         $linkedServerLogin6 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin6Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
         $linkedServerLogin7 = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin7Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
 
+        # Setup for output validation
+        $outputRandom = Get-Random
+        $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $outputInstance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+
+        $outputSecurePassword = ConvertTo-SecureString -String "s3cur3P4ssw0rd?" -AsPlainText -Force
+        $outputLocalLoginName = "dbatoolsci_outlocal_$outputRandom"
+        $outputRemoteLoginName = "dbatoolsci_outremote_$outputRandom"
+        $outputLinkedServerName = "dbatoolsci_outLS_$outputRandom"
+
+        New-DbaLogin -SqlInstance $outputInstance -Login $outputLocalLoginName -SecurePassword $outputSecurePassword
+        New-DbaLogin -SqlInstance $outputInstance3 -Login $outputRemoteLoginName -SecurePassword $outputSecurePassword
+
+        $null = New-DbaLinkedServer -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -ServerProduct mssql -Provider sqlncli -DataSource $outputInstance3
+        $null = New-DbaLinkedServerLogin -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -LocalLogin $outputLocalLoginName -RemoteUser $outputRemoteLoginName -RemoteUserPassword $outputSecurePassword
+
+        $script:outputForValidation = Remove-DbaLinkedServerLogin -SqlInstance $outputInstance -LinkedServer $outputLinkedServerName -LocalLogin $outputLocalLoginName -Confirm:$false
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
@@ -67,6 +85,16 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -Force
         Remove-DbaLogin -SqlInstance $InstanceSingle -Login $localLogin1Name, $localLogin2Name, $localLogin3Name, $localLogin4Name, $localLogin5Name, $localLogin6Name, $localLogin7Name
         Remove-DbaLogin -SqlInstance $instance3 -Login $remoteLoginName
+
+        # Cleanup for output validation
+        $outputInstance.LinkedServers.Refresh()
+        if ($outputInstance.LinkedServers.Name -contains $outputLinkedServerName) {
+            $outputInstance.LinkedServers[$outputLinkedServerName].Drop($true)
+        }
+        $sql1 = "IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '$outputLocalLoginName') DROP LOGIN [$outputLocalLoginName]"
+        $sql2 = "IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '$outputRemoteLoginName') DROP LOGIN [$outputRemoteLoginName]"
+        Invoke-DbaQuery -SqlInstance $outputInstance -Query $sql1 -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $outputInstance3 -Query $sql2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -131,6 +159,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $InstanceSingle | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Not -Contain $localLogin7Name
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = $script:outputForValidation
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "LinkedServer", "Login", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status value for a successful removal" {
+            $result.Status | Should -Be "Removed"
         }
     }
 }

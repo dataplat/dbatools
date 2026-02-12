@@ -21,8 +21,27 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputJobName = "dbatoolsci_outputtest_$(Get-Random)"
+            $outputStepName = "dbatoolsci_step1"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
+            $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -StepId 1 -StepName $outputStepName -Subsystem TransactSql -Command "select 1"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $result = Remove-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -StepName $outputStepName
+        }
+
+        AfterAll {
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

@@ -50,9 +50,28 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Default Execution" {
-        It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
+        BeforeAll {
             $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+        }
+
+        It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
             $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "ConfiguredRecoveryModel", "ActualRecoveryModel")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 
@@ -99,6 +118,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw
         }
     }
-
 
 }

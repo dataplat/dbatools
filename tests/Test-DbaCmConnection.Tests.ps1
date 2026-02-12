@@ -23,8 +23,33 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    It "returns some valid info" {
+    BeforeAll {
         $results = Test-DbaCmConnection -Type Wmi
+    }
+
+    It "returns some valid info" {
         $results.ComputerName | Should -Be $env:COMPUTERNAME
+    }
+
+    Context "Output validation" {
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results.GetType().FullName | Should -Be "Dataplat.Dbatools.Connection.ManagementConnection"
+        }
+
+        It "Has the expected connection test properties" {
+            $results.PSObject.Properties.Name | Should -Contain "ComputerName"
+            $results.PSObject.Properties.Name | Should -Contain "Wmi"
+            $results.PSObject.Properties.Name | Should -Contain "CimRM"
+            $results.PSObject.Properties.Name | Should -Contain "CimDCOM"
+            $results.PSObject.Properties.Name | Should -Contain "PowerShellRemoting"
+        }
+
+        It "Has the expected timestamp properties" {
+            $results.PSObject.Properties.Name | Should -Contain "LastWmi"
+            $results.PSObject.Properties.Name | Should -Contain "LastCimRM"
+            $results.PSObject.Properties.Name | Should -Contain "LastCimDCOM"
+            $results.PSObject.Properties.Name | Should -Contain "LastPowerShellRemoting"
+        }
     }
 }

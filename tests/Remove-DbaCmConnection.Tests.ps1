@@ -18,8 +18,13 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output when removing a cached connection" {
+            # Set up a connection in the cache by using Get-DbaCmConnection on a known computer
+            $null = Get-DbaCmConnection
+            $result = Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -Confirm:$false -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

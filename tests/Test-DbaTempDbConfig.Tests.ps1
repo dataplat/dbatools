@@ -65,5 +65,21 @@ Describe $CommandName -Tag IntegrationTests {
             }
             ($results | Where-Object Rule -match $rule).Recommended | Should -BeExactly $recommended
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Returns exactly 6 rule objects" {
+            $results.Count | Should -BeExactly 6
+        }
+
+        It "Has the expected properties on each result object" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Rule", "Recommended", "CurrentSetting", "IsBestPractice", "Notes")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

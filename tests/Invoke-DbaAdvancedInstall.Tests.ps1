@@ -504,6 +504,34 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'TestDrive:\dummy.exe'
             $result.Notes | Should -BeNullOrEmpty
+
+            # Store for use in output validation Its
+            $script:outputValidation_14 = $result
+        }
+
+        It "Returns output of the documented type" {
+            $result = $script:outputValidation_14
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $result = $script:outputValidation_14
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "Version", "Port", "Successful", "Restarted", "Installer", "ExitCode", "LogFile", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has additional properties available beyond defaults" {
+            $result = $script:outputValidation_14
+            $result.PSObject.Properties.Name | Should -Contain "SACredential"
+            $result.PSObject.Properties.Name | Should -Contain "Configuration"
+            $result.PSObject.Properties.Name | Should -Contain "ExitMessage"
+            $result.PSObject.Properties.Name | Should -Contain "Log"
+            $result.PSObject.Properties.Name | Should -Contain "ConfigurationFile"
         }
     }
+
 }

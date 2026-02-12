@@ -147,7 +147,7 @@ select TraceID=@TraceID
                 SqlInstance = $TestConfig.InstanceSingle
                 Id          = $traceid
             }
-            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
+            $result = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
             $splatStartSession = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Session     = $sessionName
@@ -159,6 +159,30 @@ select TraceID=@TraceID
             $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "StartTime", "AutoStart", "State", "Targets", "TargetFile", "Events", "MaxMemory", "MaxEventSize")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Returns output with -OutputScriptOnly" {
+            $splatGetTrace = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Id          = $traceid
+            }
+            $scriptResult = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name "dbatoolsci-script-only" -OutputScriptOnly
+            $scriptResult | Should -Not -BeNullOrEmpty
+            $scriptResult | Should -BeOfType [System.String]
         }
     }
 }

@@ -83,4 +83,47 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $renamedLogin | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputLoginName = "dbatoolsci_renameoutput_$(Get-Random)"
+            $outputRenamedLogin = "dbatoolsci_renameoutput2_$(Get-Random)"
+            $outputPassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
+
+            $splatOutputLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $outputLoginName
+                Password    = $outputPassword
+            }
+            $null = New-DbaLogin @splatOutputLogin
+
+            $splatOutputRename = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $outputLoginName
+                NewLogin    = $outputRenamedLogin
+            }
+            $result = Rename-DbaLogin @splatOutputRename
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $null = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Login $outputRenamedLogin -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputRenamedLogin -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "PreviousLogin", "NewLogin", "PreviousUser", "NewUser", "Status")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

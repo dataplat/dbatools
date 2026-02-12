@@ -71,6 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command copies jobs properly" {
         BeforeAll {
             $results = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob
+            $script:outputForValidation = @($results) | Where-Object { $PSItem -ne $null }
         }
 
         It "returns one success" {
@@ -97,6 +98,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 

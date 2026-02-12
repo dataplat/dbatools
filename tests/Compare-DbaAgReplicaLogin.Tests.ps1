@@ -22,3 +22,24 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
+        BeforeAll {
+            $result = Compare-DbaAgReplicaLogin -SqlInstance $TestConfig.InstanceHadr
+        }
+
+        It "Returns output of the expected type when differences exist" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no login differences found across replicas" }
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties when differences exist" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no login differences found across replicas" }
+            $expectedProps = @("AvailabilityGroup", "Replica", "LoginName", "Status", "ModifyDate", "CreateDate")
+            foreach ($prop in $expectedProps) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+}

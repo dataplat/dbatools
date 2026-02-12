@@ -77,5 +77,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Be $databaseName2
             $results.DatabaseId | Should -Be $db2.Id
         }
+
+        It "Returns output of the documented type" {
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the expected properties" {
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "DatabaseName",
+                "DatabaseId",
+                "SchemaName",
+                "TableName",
+                "ObjectId",
+                "IndexName",
+                "IndexId",
+                "TypeDesc"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
     }
 }

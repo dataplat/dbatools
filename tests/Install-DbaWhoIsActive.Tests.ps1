@@ -47,8 +47,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     }
 
     Context "Should install sp_WhoIsActive" {
-        It "Should output correct results" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should output correct results" {
+            $installResults.Database | Should -Be $dbName
+            $installResults.Name | Should -Be "sp_WhoisActive"
+            $installResults.Status | Should -Be "Installed"
+        }
+
+        It "Returns output of the documented type" {
+            $installResults | Should -Not -BeNullOrEmpty
+            $installResults | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Version", "Status")
+            foreach ($prop in $expectedProps) {
+                $installResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct values for standard properties" {
+            $installResults.ComputerName | Should -Not -BeNullOrEmpty
+            $installResults.InstanceName | Should -Not -BeNullOrEmpty
+            $installResults.SqlInstance | Should -Not -BeNullOrEmpty
             $installResults.Database | Should -Be $dbName
             $installResults.Name | Should -Be "sp_WhoisActive"
             $installResults.Status | Should -Be "Installed"

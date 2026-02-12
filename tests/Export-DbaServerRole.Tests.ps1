@@ -94,6 +94,17 @@ Describe $CommandName -Tag IntegrationTests {
             $role = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole
             $null = $role | Export-DbaServerRole -FilePath $outputFile
             $results = $role | Export-DbaServerRole -Passthru
+
+            $outputTempPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
+            $null = New-Item -Path $outputTempPath -ItemType Directory
+            $outputTestFile = "$outputTempPath\dbatoolsci_outputtest.sql"
+
+            $passthruResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -Passthru
+            $fileResult = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole -FilePath $outputTestFile
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputTempPath -Recurse -ErrorAction SilentlyContinue
         }
 
         It "Exports results to one sql file" {
@@ -130,6 +141,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "should include GRANT VIEW ANY DATABASE" {
             $results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
+        }
+
+        It "Returns string output when using -Passthru" {
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
+        }
+
+        It "Returns FileInfo output when writing to file" {
+            $fileResult | Should -Not -BeNullOrEmpty
+            $fileResult | Should -BeOfType [System.IO.FileInfo]
         }
     }
 }

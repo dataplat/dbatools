@@ -42,6 +42,9 @@ Describe $CommandName -Tag IntegrationTests {
             $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw -Name $certificateName1
             $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw -Name $certificateName2
 
+            # Query master database which has built-in certificates for output validation
+            $script:outputForValidation = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -72,6 +75,37 @@ Describe $CommandName -Tag IntegrationTests {
             $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName
             $cert.Database | Should -Not -Match $dbName
             $cert.Name | Should -Not -BeIn $certificateName1, $certificateName2
+        }
+
+        It "Returns output of the documented type" {
+            $result = $script:outputForValidation
+            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found in master database" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Certificate"
+        }
+
+        It "Has the expected default display properties" {
+            $result = $script:outputForValidation
+            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found in master database" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

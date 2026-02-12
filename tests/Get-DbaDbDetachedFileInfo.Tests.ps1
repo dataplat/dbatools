@@ -63,5 +63,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Log files" {
             $results.LogFiles | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Version",
+                "ExactVersion",
+                "Collation",
+                "DataFiles",
+                "LogFiles"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results.PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

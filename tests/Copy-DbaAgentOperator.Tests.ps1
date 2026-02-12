@@ -66,6 +66,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying operators" {
+        BeforeAll {
+            $splatCopyOperators = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Operator    = @($operatorName1, $operatorName2)
+            }
+            $validationResults = Copy-DbaAgentOperator @splatCopyOperators
+        }
+
         It "Returns two copied operators" {
             $splatCopyOperators = @{
                 Source      = $TestConfig.InstanceCopy1
@@ -85,6 +94,20 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $copyResult = Copy-DbaAgentOperator @splatCopyExisting
             $copyResult.Status | Should -Be "Skipped"
+        }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $validationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $validationResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $validationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $validationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

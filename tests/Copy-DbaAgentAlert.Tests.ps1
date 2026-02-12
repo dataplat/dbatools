@@ -34,6 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Set variables for test alerts and operator
         $alert1 = "dbatoolsci test alert"
         $alert2 = "dbatoolsci test alert 2"
+        $outputAlertName = "dbatoolsci output alert"
         $operatorName = "Dan the man Levitan"
         $operatorEmail = "levitan@dbatools.io"
 
@@ -57,6 +58,15 @@ Describe $CommandName -Tag IntegrationTests {
         @include_event_description_in=0,
         @job_id=N'00000000-0000-0000-0000-000000000000';")
 
+        $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_alert @name=N'$($outputAlertName)',
+        @message_id=0,
+        @severity=7,
+        @enabled=1,
+        @delay_between_responses=0,
+        @include_event_description_in=0,
+        @category_name=N'[Uncategorized]',
+        @job_id=N'00000000-0000-0000-0000-000000000000';")
+
         $serverInstanceSingle.Query("EXEC msdb.dbo.sp_add_operator
         @name = N'$operatorName',
         @enabled = 1,
@@ -78,10 +88,12 @@ Describe $CommandName -Tag IntegrationTests {
         $serverCleanup2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert2)'")
+        $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($outputAlertName)'") 2>$null
         $serverCleanup2.Query("EXEC msdb.dbo.sp_delete_operator @name = '$($operatorName)'")
 
         $serverCleanup3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -Database master
         $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($alert1)'")
+        $serverCleanup3.Query("EXEC msdb.dbo.sp_delete_alert @name=N'$($outputAlertName)'") 2>$null
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -125,6 +137,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "The newly copied alert exists" {
             $results = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceCopy1
             $results.Name | Should -Contain "dbatoolsci test alert"
+        }
+
+        It "Returns output of the documented type" {
+            $splatCopyOutputAlert = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Alert       = $outputAlertName
+            }
+            $result = Copy-DbaAgentAlert @splatCopyOutputAlert
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $splatCopyOutputAlert = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Alert       = $outputAlertName
+            }
+            $result = Copy-DbaAgentAlert @splatCopyOutputAlert
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

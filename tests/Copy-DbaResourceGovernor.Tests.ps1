@@ -97,5 +97,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.InstanceCopy2
             $results.Name | Should -BeExactly "dbatoolsci_fnRG"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the correct values for migration properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $results[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
+        }
     }
 }

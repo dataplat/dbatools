@@ -38,4 +38,19 @@ Describe $CommandName -Tag IntegrationTests {
     It "Returns the version specified" {
         $versionResults | Should -Not -BeNullOrEmpty
     }
+
+    Context "Output validation" {
+        It "Returns output of the expected type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "Version", "Loaded", "Path", "LoadTemplate")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

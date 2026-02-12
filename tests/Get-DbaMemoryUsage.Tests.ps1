@@ -48,5 +48,23 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results from simple call" {
             $resultsSimple.Count -gt 0 | Should -BeTrue
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "SqlInstance", "CounterInstance", "Counter", "Pages", "Memory")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist"
+            }
+        }
+
+        It "Has dbasize property for Memory" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].Memory | Should -BeOfType [dbasize]
+        }
     }
 }

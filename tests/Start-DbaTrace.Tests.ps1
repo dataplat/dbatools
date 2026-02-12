@@ -136,9 +136,34 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "is now running after start" {
-            $runningResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
-            $runningResults.Id | Should -Be $traceid
-            $runningResults.IsRunning | Should -Be $true
+            $script:outputResult = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
+            $script:outputResult.Id | Should -Be $traceid
+            $script:outputResult.IsRunning | Should -Be $true
+        }
+
+        Context "Output validation" {
+            It "Returns output with expected properties" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult.Id | Should -Be $traceid
+                $script:outputResult.IsRunning | Should -Be $true
+            }
+
+            It "Has the correct default display properties excluding Parent, RemotePath, and SqlCredential" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
+                $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
+                $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential should be excluded from default display"
+            }
+
+            It "Has expected visible properties in default display" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedVisible = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Status", "IsRunning", "Path", "MaxSize", "StopTime", "MaxFiles", "IsRowset", "IsRollover", "IsShutdown", "IsDefault", "BufferCount", "BufferSize", "FilePosition", "ReaderSpid", "StartTime", "LastEventTime", "EventCount", "DroppedEventCount")
+                foreach ($prop in $expectedVisible) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 }

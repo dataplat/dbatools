@@ -68,10 +68,26 @@ Describe $CommandName -Tag IntegrationTests {
             $extractOptions = New-DbaDacOption -Action Export
             $extractOptions.ExtractAllTableData = $true
             $dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
+
+            # Output validation
+            $outputDbName = "dbatoolsci_yourpublishoutput"
+            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $outputDbName
+            $null = $outputDb.Query("CREATE TABLE dbo.outputexample (id int, PRIMARY KEY (id));
+                INSERT dbo.outputexample
+                SELECT top 10 object_id
+                FROM sys.objects")
+            $outputExtractOptions = New-DbaDacOption -Action Export
+            $outputExtractOptions.ExtractAllTableData = $true
+            $outputDacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $outputDbName -DacOption $outputExtractOptions
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $outputDbName -Confirm:$false
+            $outputOptions = New-DbaDacOption -Action Publish
+            $script:validationResult = $outputDacpac | Publish-DbaDacPackage -DacOption $outputOptions -Database $outputDbName -SqlInstance $TestConfig.InstanceCopy1
         }
 
         AfterAll {
             if ($dacpac.Path) { Remove-Item -Path $dacpac.Path -ErrorAction SilentlyContinue }
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            if ($outputDacpac.Path) { Remove-Item -Path $outputDacpac.Path -ErrorAction SilentlyContinue }
         }
 
         It "Performs an xml-based deployment" {
@@ -135,6 +151,30 @@ Describe $CommandName -Tag IntegrationTests {
             Test-Path ($results.DatabaseScriptPath) | Should -Be $true
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $dbname | Should -BeNullOrEmpty
             Remove-Item $results.DatabaseScriptPath
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:validationResult | Should -Not -BeNullOrEmpty
+                $script:validationResult[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:validationResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:validationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Dacpac", "PublishXml", "Result", "DeployOptions", "SqlCmdVariableValues")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has the expected properties on the output object" {
+                if (-not $script:validationResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Dacpac", "PublishXml", "Result", "DeployOptions", "SqlCmdVariableValues", "ConnectionString")
+                foreach ($prop in $expectedProperties) {
+                    $script:validationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
         }
     }
     Context "Bacpac tests" {

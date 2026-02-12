@@ -106,6 +106,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
+
+            $resultOutput = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $resultOutput | Should -Not -BeNullOrEmpty
+            $resultOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $resultOutput) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $resultOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "DisplayName", "Type", "Successful", "Status", "Protocol", "LocalPort", "Program")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
+
     Context "RuleType Port (traditional port-based rules)" -Skip:$isUsingDynamicPort {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

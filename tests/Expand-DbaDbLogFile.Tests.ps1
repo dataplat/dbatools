@@ -73,5 +73,25 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.InitialSize -gt $result.CurrentSize
             }
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties excluding LogFileCount" {
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "ID", "Name", "InitialSize", "CurrentSize", "InitialVLFCount", "CurrentVLFCount")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+            $defaultProps | Should -Not -Contain "LogFileCount" -Because "LogFileCount is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has LogFileCount as a non-default property" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].LogFileCount | Should -Not -BeNullOrEmpty
+        }
     }
 }

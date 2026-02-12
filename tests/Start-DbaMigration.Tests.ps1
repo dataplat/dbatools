@@ -153,6 +153,22 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceDbs.Status | Should -Be $destDbs.Status
             $sourceDbs.Owner | Should -Be $destDbs.Owner
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                if (-not $migrationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $migrationResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $migrationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $migrationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 
     Context "When using last backup method" {
@@ -254,4 +270,5 @@ Describe $CommandName -Tag IntegrationTests {
             $destDb.Status | Should -Be "Normal"
         }
     }
+
 }

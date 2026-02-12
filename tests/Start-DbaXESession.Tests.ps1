@@ -81,6 +81,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Verifying command works" {
+        BeforeAll {
+            # Stop the valid session first so we can start it and capture output
+            $null = Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid -WarningAction SilentlyContinue
+            $script:outputResult = Start-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid -WarningAction SilentlyContinue
+        }
+
         It "starts the system_health session" {
             $systemhealth | Start-DbaXESession
             $systemhealth.Refresh()
@@ -144,6 +150,36 @@ Describe $CommandName -Tag IntegrationTests {
             $dbatoolsciValid.IsRunning | Should -Be $true
             # Using $TestConfig.InstanceSingle because the SMO $server is not updated after the job is removed
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "Status",
+                    "StartTime",
+                    "AutoStart",
+                    "State",
+                    "Targets",
+                    "TargetFile",
+                    "Events",
+                    "MaxMemory",
+                    "MaxEventSize"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 }

@@ -126,5 +126,33 @@ Describe $CommandName -Tag IntegrationTests {
             }
             { Set-DbaAgReplica @splatLoadBalanced } | Should -Not -Throw
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $splatOutputValidation = @{
+                    SqlInstance       = $TestConfig.InstanceHadr
+                    AvailabilityGroup = $agName
+                    Replica           = $replicaName
+                    BackupPriority    = 50
+                }
+                $script:outputValidationResult = Set-DbaAgReplica @splatOutputValidation
+            }
+
+            It "Returns output of the documented type" {
+                $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"
+            }
+
+            It "Has the expected properties" {
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "Name"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "AvailabilityMode"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "FailoverMode"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "BackupPriority"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "ConnectionModeInPrimaryRole"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "ConnectionModeInSecondaryRole"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "EndpointUrl"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "SeedingMode"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "SessionTimeout"
+            }
+        }
     }
 }

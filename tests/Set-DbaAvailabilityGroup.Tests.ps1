@@ -72,5 +72,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $script:outputValidationResult = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -HealthCheckTimeout $($agname | Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr | Select-Object -ExpandProperty HealthCheckTimeout)
+            }
+
+            It "Returns output of the documented type" {
+                $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroup"
+            }
+
+            It "Has the expected properties" {
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "Name"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "AutomatedBackupPreference"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "BasicAvailabilityGroup"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "ClusterType"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "DatabaseHealthTrigger"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "DtcSupportEnabled"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "FailureConditionLevel"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "HealthCheckTimeout"
+                $script:outputValidationResult[0].psobject.Properties.Name | Should -Contain "IsDistributedAvailabilityGroup"
+            }
+        }
     }
+
 }

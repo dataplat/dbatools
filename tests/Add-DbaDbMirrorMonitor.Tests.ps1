@@ -22,12 +22,28 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When adding mirror monitor" {
+        BeforeAll {
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle | Where-Object MonitorStatus
+        }
+
         AfterAll {
             $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Adds the mirror monitor" {
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
+            $results.MonitorStatus | Should -Be "Added"
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results.psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $results.ComputerName | Should -Not -BeNullOrEmpty
+            $results.InstanceName | Should -Not -BeNullOrEmpty
+            $results.SqlInstance | Should -Not -BeNullOrEmpty
             $results.MonitorStatus | Should -Be "Added"
         }
     }

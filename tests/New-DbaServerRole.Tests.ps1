@@ -39,6 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
+            $script:outputForValidation = $result
         }
 
         It 'Add new server-role with specificied owner' {
@@ -56,5 +57,24 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Contain $roleExecutor
             $result.Name | Should -Contain $roleMaster
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $result = $script:outputForValidation
+                $result | Should -Not -BeNullOrEmpty
+                $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServerRole"
+            }
+
+            It "Has the expected default display properties" {
+                $result = $script:outputForValidation
+                $result | Should -Not -BeNullOrEmpty
+                $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Role", "Login", "Owner", "IsFixedRole", "DateCreated", "DateModified")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
+
 }

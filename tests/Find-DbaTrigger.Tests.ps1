@@ -125,6 +125,7 @@ GO
 
         It "Should find a specific Trigger on the Table [dbo].[Customer]" {
             $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase Master -TriggerLevel Object
+            $script:outputValidationResults = $results
             $results.Object | Should -Be "[dbo].[Customer]"
         }
 
@@ -132,6 +133,53 @@ GO
             $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -TriggerLevel All
             $results.name | Should -Be @("dbatoolsci_safety", "dbatoolsci_reminder1")
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID
+        }
+
+        It "Returns results" {
+            $script:outputValidationResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of type PSCustomObject" {
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the correct default display properties excluding Trigger and TriggerFullText" {
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputValidationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Trigger" -Because "Trigger should be excluded from default display"
+            $defaultProps | Should -Not -Contain "TriggerFullText" -Because "TriggerFullText should be excluded from default display"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputValidationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "SqlInstance",
+                "TriggerLevel",
+                "Database",
+                "DatabaseId",
+                "Object",
+                "Name",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "TriggerTextFound"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the Trigger property available via Select-Object" {
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0].psobject.Properties.Name | Should -Contain "Trigger"
+        }
+
+        It "Has the TriggerFullText property available via Select-Object" {
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0].psobject.Properties.Name | Should -Contain "TriggerFullText"
         }
     }
 }

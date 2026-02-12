@@ -112,4 +112,46 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $emptyPlanResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object -First 1)
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            # These properties should be excluded from default display
+            $defaultProps | Should -Not -Contain "BatchQueryPlanRaw" -Because "BatchQueryPlanRaw should be excluded from default display"
+            $defaultProps | Should -Not -Contain "SingleStatementPlanRaw" -Because "SingleStatementPlanRaw should be excluded from default display"
+            $defaultProps | Should -Not -Contain "PlanWarnings" -Because "PlanWarnings should be excluded from default display"
+        }
+
+        It "Has the expected properties on the object" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "ObjectName",
+                "QueryPosition",
+                "SqlHandle",
+                "PlanHandle",
+                "CreationTime",
+                "LastExecutionTime",
+                "StatementType",
+                "BatchQueryPlanRaw",
+                "SingleStatementPlanRaw"
+            )
+            foreach ($prop in $expectedProps) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

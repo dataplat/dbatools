@@ -21,8 +21,12 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns no output when resetting a config item" {
+            $configItem = Get-DbatoolsConfig -FullName "sql.connection.encrypt"
+            $result = Reset-DbatoolsConfig -ConfigurationItem $configItem
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

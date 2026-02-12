@@ -45,6 +45,26 @@ Describe $CommandName -Tag IntegrationTests {
             $defaultFiles = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceMulti2
             ($results | Where-Object Name -eq "DefaultFile").Value | Should -BeLike "$($defaultFiles.Data)*"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Property"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Value", "PropertyType")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Returns properties from all three property types" {
+            $propertyTypes = $results.PropertyType | Sort-Object -Unique
+            $propertyTypes | Should -Contain "Information"
+            $propertyTypes | Should -Contain "UserOption"
+            $propertyTypes | Should -Contain "Setting"
+        }
     }
 
     Context "Property filters work" {

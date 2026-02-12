@@ -48,5 +48,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns results for DBCC PROCCACHE" {
             $result | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Count",
+                "Used",
+                "Active",
+                "CacheSize",
+                "CacheUsed",
+                "CacheActive"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
+            }
+        }
     }
 }

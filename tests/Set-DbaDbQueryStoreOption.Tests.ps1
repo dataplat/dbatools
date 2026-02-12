@@ -79,6 +79,8 @@ Describe $CommandName -Tag IntegrationTests {
                 if ($server.VersionMajor -ge 13) {
                     $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should -Be 901
+                    # Store for output validation
+                    $script:outputForValidation = $results
                 }
             }
         }
@@ -102,6 +104,35 @@ Describe $CommandName -Tag IntegrationTests {
                     $result = $results | Where-Object Database -eq dbatoolsciqs
                     $result.Count | Should -Be 0
                 }
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $result = $script:outputForValidation
+            if ($result.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.QueryStoreOptions"
+        }
+
+        It "Has the expected default display properties" {
+            $result = $script:outputForValidation
+            if ($result.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ActualState",
+                "DataFlushIntervalInSeconds",
+                "StatisticsCollectionIntervalInMinutes",
+                "MaxStorageSizeInMB",
+                "CurrentStorageSizeInMB",
+                "QueryCaptureMode",
+                "SizeBasedCleanupMode",
+                "StaleQueryThresholdInDays"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
             }
         }
     }

@@ -169,7 +169,7 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath        = $excludePasswordFilePath
                 ExcludePassword = $true
             }
-            $null = Export-DbaCredential @splatExportNoPassword
+            $result = Export-DbaCredential @splatExportNoPassword
             $excludePasswordResults = Get-Content -Path $excludePasswordFilePath
         }
 
@@ -183,6 +183,28 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not have the password" {
             $excludePasswordResults | Should -Not -Match "ReallyT3rrible!"
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Returns the exported file path" {
+            $result.FullName | Should -Be $excludePasswordFilePath
+            Test-Path $result.FullName | Should -BeTrue
+        }
+
+        It "Returns string output when using Passthru" {
+            $splatPassthru = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                Passthru        = $true
+                ExcludePassword = $true
+            }
+            $passthruResult = Export-DbaCredential @splatPassthru
+            $passthruResult | Should -Not -BeNullOrEmpty
+            $passthruResult | Should -BeOfType [System.String]
         }
     }
 }

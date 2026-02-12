@@ -1001,4 +1001,62 @@ use master
             $results.RestoreComplete | Should -Be $true
         }
     }
+
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_outputrestore-$(Get-Random)"
+            $outputBakPath = "$backupPath\$outputDbName.bak"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName -EnableException
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -FilePath $outputBakPath -EnableException
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -EnableException
+            $outputResult = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $outputBakPath -DatabaseName $outputDbName -WithReplace
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue
+            Remove-Item -Path $outputBakPath -ErrorAction SilentlyContinue
+        }
+
+        It "Returns output that is not null" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "BackupFile",
+                "BackupFilesCount",
+                "BackupSize",
+                "CompressedBackupSize",
+                "Database",
+                "Owner",
+                "DatabaseRestoreTime",
+                "FileRestoreTime",
+                "NoRecovery",
+                "RestoreComplete",
+                "RestoredFile",
+                "RestoredFilesCount",
+                "Script",
+                "RestoreDirectory",
+                "WithReplace"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "DatabaseName"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "RestoredFileFull"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "BackupStartTime"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "BackupEndTime"
+            $outputResult[0].PSObject.Properties.Name | Should -Contain "ExitError"
+        }
+    }
 }

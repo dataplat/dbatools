@@ -109,6 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
+            $script:outputValidationResult = $result
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -154,6 +155,79 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Refresh()
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
             $db.LogFiles[0].Size | Should -Be $oldLogSize
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $outputResult = $script:outputValidationResult
+                $outputResult | Should -Not -BeNullOrEmpty
+                $outputResult[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected output properties" {
+                $outputResult = $script:outputValidationResult
+                $expectedProps = @(
+                    "ComputerName", "InstanceName", "SqlInstance", "Database", "File",
+                    "Start", "End", "Elapsed", "Success",
+                    "InitialSize", "InitialUsed", "InitialAvailable",
+                    "TargetAvailable", "FinalAvailable", "FinalSize",
+                    "InitialAverageFragmentation", "FinalAverageFragmentation",
+                    "InitialTopFragmentation", "FinalTopFragmentation", "Notes"
+                )
+                foreach ($prop in $expectedProps) {
+                    $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                }
+            }
+
+            Context "ExcludeIndexStats behavior" {
+                BeforeAll {
+                    $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+                    $excludeStatsDb = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrink_exclude")
+
+                    $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($excludeStatsDb, "PRIMARY")
+                    $excludeStatsDb.FileGroups.Add($primaryFileGroup)
+                    $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $excludeStatsDb.Name)
+                    $primaryFile.FileName = "$($defaultPath.Data)\$($excludeStatsDb.Name).mdf"
+                    $primaryFile.Size = 8 * 1024
+                    $primaryFile.Growth = 8 * 1024
+                    $primaryFile.GrowthType = "KB"
+                    $primaryFileGroup.Files.Add($primaryFile)
+
+                    $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($excludeStatsDb, "$($excludeStatsDb.Name)_log")
+                    $logFile.FileName = "$($defaultPath.Log)\$($excludeStatsDb.Name)_log.ldf"
+                    $logFile.Size = 8 * 1024
+                    $logFile.Growth = 8 * 1024
+                    $logFile.GrowthType = "KB"
+                    $excludeStatsDb.LogFiles.Add($logFile)
+
+                    $excludeStatsDb.Create()
+
+                    $server.Query("
+                    ALTER DATABASE [$($excludeStatsDb.name)] MODIFY FILE ( NAME = N'$($excludeStatsDb.name)', SIZE = 16384KB )
+                    ALTER DATABASE [$($excludeStatsDb.name)] MODIFY FILE ( NAME = N'$($excludeStatsDb.name)_log', SIZE = 16384KB )")
+
+                    $excludeStatsDb.Refresh()
+                    $excludeStatsDb.Checkpoint()
+
+                    $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+                    $excludedResult = Invoke-DbaDbShrink $server -Database $excludeStatsDb.Name -FileType Log -ExcludeIndexStats
+                }
+
+                AfterAll {
+                    $excludeStatsDb | Remove-DbaDatabase -ErrorAction SilentlyContinue -Confirm:$false
+                }
+
+                It "Excludes fragmentation properties when using ExcludeIndexStats" {
+                    if (-not $excludedResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                    $defaultProps = $excludedResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                    $defaultProps | Should -Not -Contain "InitialAverageFragmentation"
+                    $defaultProps | Should -Not -Contain "FinalAverageFragmentation"
+                    $defaultProps | Should -Not -Contain "InitialTopFragmentation"
+                    $defaultProps | Should -Not -Contain "FinalTopFragmentation"
+                }
+            }
         }
     }
 }

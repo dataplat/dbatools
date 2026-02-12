@@ -49,6 +49,23 @@ Describe $CommandName -Tag IntegrationTests {
                     $service.State | Should -Be 'Running'
                     $service.Status | Should -Be 'Successful'
                 }
+                $script:outputForValidation = $services
+            }
+
+            Context "Output validation" {
+                It "Returns output of the expected type" {
+                    if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                    $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+                }
+
+                It "Has the expected default display properties" {
+                    if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                    $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                    $expectedDefaults = @("ComputerName", "ServiceName", "InstanceName", "ServiceType", "State", "Status", "Message")
+                    foreach ($prop in $expectedDefaults) {
+                        $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                    }
+                }
             }
         }
 

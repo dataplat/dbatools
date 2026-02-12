@@ -126,5 +126,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle -Recurse
             $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
         }
+
+        It "Returns output of the expected type" {
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Filename", "RemoteFilename")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

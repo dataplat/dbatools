@@ -44,5 +44,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has valid SizeInGB property" {
             $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $allResults | Should -Not -BeNullOrEmpty
+            $allResults[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Computer.DiskSpace"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "Name", "Label", "Capacity", "Free", "BlockSize", "FileSystem", "Type", "SizeInBytes", "FreeInBytes", "SizeInKB", "FreeInKB", "SizeInMB", "FreeInMB", "SizeInGB", "FreeInGB", "SizeInTB", "FreeInTB", "SizeInPB", "FreeInPB")
+            foreach ($prop in $expectedProperties) {
+                $allResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

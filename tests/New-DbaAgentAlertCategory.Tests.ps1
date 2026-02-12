@@ -34,8 +34,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "New Agent Alert Category is added properly" {
+        BeforeAll {
+            $outputCatName = "dbatoolsci_outputcat_$(Get-Random)"
+            $script:outputForValidation = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName
+        }
+
         AfterAll {
-            $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1, CategoryTest2 | Remove-DbaAgentAlertCategory
+            $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1, CategoryTest2, $outputCatName | Remove-DbaAgentAlertCategory
         }
 
         It "Should have the right name and category type" {
@@ -57,6 +62,22 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not write over existing job categories" {
             $results = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -WarningAction SilentlyContinue
             $WarnVar | Should -Match "already exists"
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult = $script:outputForValidation
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.AlertCategory"
+        }
+
+        It "Has the expected default display properties" {
+            $outputResult = $script:outputForValidation
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "ID", "AlertCount")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

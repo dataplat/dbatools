@@ -79,13 +79,42 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Gets back some results" {
-        It "return at least two results" {
+        BeforeAll {
             $splatFind = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatools_dupeindex"
             }
             $results = @(Find-DbaDbDuplicateIndex @splatFind)
+        }
+
+        It "return at least two results" {
             $results.Status.Count | Should -BeGreaterOrEqual 2
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "DatabaseName",
+                "TableName",
+                "IndexName",
+                "KeyColumns",
+                "IncludedColumns",
+                "IndexType",
+                "IndexSizeMB",
+                "RowCount",
+                "IsDisabled",
+                "IsUnique",
+                "IsFiltered",
+                "CompressionDescription"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
         }
     }
 }

@@ -78,6 +78,18 @@ Describe $CommandName -Tag IntegrationTests {
                 $row.value | Should -BeIn $mailSettings.values
             }
         }
+
+        It "Returns output of the documented type" {
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.ConfigurationValue"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Value", "Description")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets DbMail Settings when using -Name" {
@@ -101,4 +113,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.description | Should -BeExactly "Extensions not allowed in outgoing mails"
         }
     }
+
 }

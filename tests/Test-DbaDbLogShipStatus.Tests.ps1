@@ -39,4 +39,11 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -Match "No information available"
         }
     }
+
+    Context "Output validation" {
+        It "Returns no output when log shipping is not configured" {
+            $result = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+        }
+    }
 }

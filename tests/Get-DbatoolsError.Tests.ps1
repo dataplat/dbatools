@@ -23,11 +23,38 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets an error" {
-        It "returns a dbatools error" {
+        BeforeAll {
             try {
-                $null = Connect-DbaInstance -SqlInstance "nothing" -ConnectTimeout 1 -ErrorAction Stop
+                $null = Connect-DbaInstance -SqlInstance "dbatoolsci_fakeinst" -ConnectTimeout 1 -ErrorAction Stop
             } catch { }
-            Get-DbatoolsError | Should -Not -BeNullOrEmpty
+            $result = Get-DbatoolsError -First 1
+        }
+
+        It "returns a dbatools error" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output with expected properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProperties = @(
+                "CategoryInfo",
+                "ErrorDetails",
+                "Exception",
+                "FullyQualifiedErrorId",
+                "InvocationInfo",
+                "PipelineIterationInfo",
+                "PSMessageDetails",
+                "ScriptStackTrace",
+                "TargetObject"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has a dbatools FullyQualifiedErrorId" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].FullyQualifiedErrorId | Should -Match "dbatools"
         }
     }
 }

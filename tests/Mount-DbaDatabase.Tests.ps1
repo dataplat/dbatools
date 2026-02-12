@@ -68,5 +68,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return that the AttachOption default is None" {
             $results.AttachOption | Should -Be "None"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "AttachResult", "AttachOption", "FileStructure")
+            foreach ($prop in $expectedProps) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

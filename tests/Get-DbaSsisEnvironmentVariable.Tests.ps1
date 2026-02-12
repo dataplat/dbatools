@@ -63,8 +63,23 @@ BEGIN
 END
 
 #>
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip:($PSVersionTable.PSEdition -eq "Core") {
+        BeforeAll {
+            $result = Get-DbaSsisEnvironmentVariable -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no SSIS environments configured on test instance" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no SSIS environments configured on test instance" }
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Folder", "Environment", "Id", "Name", "Description", "Type", "IsSensitive", "BaseDataType", "Value")
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
+}

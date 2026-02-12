@@ -77,6 +77,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Location | Should -Be location1
             $results.ProviderString | Should -Be providerString1
             $results.Catalog | Should -Be catalog1
+
+            # Output validation
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServer"
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteServer",
+                "ProductName",
+                "Impersonate",
+                "RemoteUser",
+                "Publisher",
+                "Distributor",
+                "DateLastModified"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+            $results[0].psobject.Properties["RemoteServer"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["RemoteServer"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["Publisher"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Publisher"].MemberType | Should -Be "AliasProperty"
         }
 
         It "Check the validation for duplicate linked servers" {

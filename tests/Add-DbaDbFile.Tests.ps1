@@ -142,5 +142,30 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Be "pipelinefile_$random"
             $result.Parent.Name | Should -Be $fgName
         }
+
+        It "Returns output of the documented type" {
+            $splatAddFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgName
+                FileName    = "outputval_$random"
+            }
+            $result = Add-DbaDbFile @splatAddFile
+            $result | Should -Not -BeNullOrEmpty
+            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DataFile"
+        }
+
+        It "Has the expected properties" {
+            $splatAddFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgName
+                FileName    = "proptest_$random"
+            }
+            $result = Add-DbaDbFile @splatAddFile
+            $result.Name | Should -Be "proptest_$random"
+            $result.FileName | Should -Not -BeNullOrEmpty
+            $result.Parent | Should -Not -BeNullOrEmpty
+        }
     }
 }

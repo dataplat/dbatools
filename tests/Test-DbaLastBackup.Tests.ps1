@@ -117,6 +117,51 @@ Describe $CommandName -Tag IntegrationTests {
             $singleDbResults.DbccResult | Should -Be "Success"
             $singleDbResults.BackupDates | ForEach-Object { $PSItem | Should -BeOfType DbaDateTime }
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $singleDbResults | Should -Not -BeNullOrEmpty
+                $singleDbResults | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                if (-not $singleDbResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProperties = @(
+                    "SourceServer",
+                    "TestServer",
+                    "Database",
+                    "FileExists",
+                    "Size",
+                    "RestoreResult",
+                    "DbccResult",
+                    "RestoreStart",
+                    "RestoreEnd",
+                    "RestoreElapsed",
+                    "DbccMaxDop",
+                    "DbccStart",
+                    "DbccEnd",
+                    "DbccElapsed",
+                    "BackupDates",
+                    "BackupFiles"
+                )
+                foreach ($prop in $expectedProperties) {
+                    $singleDbResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has correct source and test server values" {
+                if (-not $singleDbResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $singleDbResults.SourceServer | Should -Not -BeNullOrEmpty
+                $singleDbResults.TestServer | Should -Not -BeNullOrEmpty
+                $singleDbResults.Database | Should -Be $testlastbackup
+            }
+
+            It "Has backup dates as DbaDateTime" {
+                if (-not $singleDbResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $singleDbResults.BackupDates | Should -Not -BeNullOrEmpty
+                $singleDbResults.BackupDates | ForEach-Object { $PSItem | Should -BeOfType DbaDateTime }
+            }
+        }
     }
 
     Context "Testing the whole instance" {
@@ -186,4 +231,5 @@ Describe $CommandName -Tag IntegrationTests {
             ($null -eq $fileresult) | Should -Be $true
         }
     }
+
 }

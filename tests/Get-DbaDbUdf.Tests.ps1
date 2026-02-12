@@ -100,5 +100,28 @@ END;
         It "Should not Throw an Error" {
             { Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
         }
+
+        It "Returns output of the documented type" {
+            $results1 | Should -Not -BeNullOrEmpty
+            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedFunction"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "DataType"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

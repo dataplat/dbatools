@@ -54,6 +54,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results for DBCC USEROPTIONS" {
             $result.Count | Should -BeGreaterThan 0
         }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Option", "Value")
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
+            }
+        }
     }
 
     Context "Accepts an Option Value" {

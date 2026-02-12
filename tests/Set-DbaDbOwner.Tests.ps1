@@ -60,6 +60,20 @@ Describe $CommandName -Tag IntegrationTests {
             $svr.Databases[$dbname].refresh()
             $svr.Databases[$dbname].Owner | Should -Be $owner
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Owner")
+                foreach ($prop in $expectedProps) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+        }
     }
 
     Context "Sets multiple database owners" {

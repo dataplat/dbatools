@@ -32,6 +32,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         }
 
+        # Ensure monitor is in a known good state using direct SQL for output validation
+        $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        try { $outputServer.Query("EXEC msdb.dbo.sp_dbmmonitordropmonitoring") } catch { <# may not exist #> }
+        $outputServer.Query("EXEC msdb.dbo.sp_dbmmonitoraddmonitoring")
+        $script:outputValidationResult = @(Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -EnableException:$false | Where-Object { $null -ne $PSItem })
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -51,5 +57,16 @@ Describe $CommandName -Tag IntegrationTests {
     It "removes the mirror monitor" {
         $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         $results.MonitorStatus | Should -Be "Removed"
+    }
+
+    Context "Output validation" {
+        It "Returns output with the correct properties" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0] | Should -BeOfType PSCustomObject
+            $script:outputValidationResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].MonitorStatus | Should -Be "Removed"
+        }
     }
 }

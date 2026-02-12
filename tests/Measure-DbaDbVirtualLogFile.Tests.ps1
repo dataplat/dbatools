@@ -75,5 +75,40 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.Total | Should -BeGreaterThan 0
             }
         }
+
+        It "Returns output of the documented type" {
+            $testResults | Should -Not -BeNullOrEmpty
+            $testResults[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $testResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $testResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Total"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $testResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $additionalProps = @(
+                "TotalCount",
+                "Inactive",
+                "Active",
+                "LogFileName",
+                "LogFileGrowth",
+                "LogFileGrowthType"
+            )
+            foreach ($prop in $additionalProps) {
+                $testResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+            }
+        }
     }
 }

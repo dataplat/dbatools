@@ -68,5 +68,38 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.MatchPercent -eq 100 | Should -Be $true
             }
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Table",
+                "MatchingTable",
+                "MatchPercent",
+                "OriginalDatabaseName",
+                "OriginalDatabaseId",
+                "OriginalSchemaName",
+                "OriginalTableName",
+                "OriginalTableNameRankInDB",
+                "OriginalTableType",
+                "OriginalColumnCount",
+                "MatchingDatabaseName",
+                "MatchingDatabaseId",
+                "MatchingSchemaName",
+                "MatchingTableName",
+                "MatchingTableType",
+                "MatchingColumnCount"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

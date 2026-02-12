@@ -91,6 +91,20 @@ CREATE TRIGGER dbatoolsci_safety
         It "Should have text of Trigger" {
             $databaseResults.Text | Should -BeLike "*FOR DROP_SYNONYM*"
         }
+
+        It "Returns output of the documented type" {
+            $databaseResults | Should -Not -BeNullOrEmpty
+            $databaseResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseDdlTrigger"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $databaseResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "IsEnabled", "DateLastModified")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets no Database Trigger when using -ExcludeDatabase" {

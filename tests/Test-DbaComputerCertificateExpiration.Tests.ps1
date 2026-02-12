@@ -41,5 +41,35 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results | Select-Object -ExpandProperty Note | Should -Be "This certificate has expired and is no longer valid"
             $results.Thumbprint | Should -Be $thumbprint
         }
+
+        Context "Output validation" {
+            It "Returns output with expected properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.ExpiredOrExpiring | Should -BeTrue
+                $results.Note | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "Store",
+                    "Folder",
+                    "Name",
+                    "DnsNameList",
+                    "Thumbprint",
+                    "NotBefore",
+                    "NotAfter",
+                    "Subject",
+                    "Issuer",
+                    "Algorithm",
+                    "ExpiredOrExpiring",
+                    "Note"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 }

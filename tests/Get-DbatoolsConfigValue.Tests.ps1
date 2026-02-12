@@ -19,8 +19,22 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        It "Returns the configured value for a known setting" {
+            $result = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [int]
+        }
+
+        It "Returns the fallback value when config does not exist" {
+            $result = Get-DbatoolsConfigValue -FullName "dbatoolsci.nonexistent.setting" -Fallback 42
+            $result | Should -Be 42
+        }
+
+        It "Returns null when config does not exist and no fallback" {
+            $result = Get-DbatoolsConfigValue -FullName "dbatoolsci.nonexistent.setting"
+            $result | Should -BeNullOrEmpty
+        }
+    }
+}

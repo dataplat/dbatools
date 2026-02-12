@@ -33,3 +33,42 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $upgradeDbName = "dbatoolsci_upgrade_output"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $upgradeDbName
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $upgradeDbName -Confirm:$false -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Invoke-DbaDbUpgrade -SqlInstance $TestConfig.InstanceSingle -Database $upgradeDbName -Force
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected output properties" {
+            $expectedProps = @(
+                "ComputerName", "InstanceName", "SqlInstance", "Database",
+                "OriginalCompatibility", "CurrentCompatibility", "Compatibility",
+                "TargetRecoveryTime", "DataPurity", "UpdateUsage", "UpdateStats", "RefreshViews"
+            )
+            foreach ($prop in $expectedProps) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
+    }
+}

@@ -47,6 +47,22 @@ Describe $CommandName -Tags IntegrationTests {
         It "confirms the db is the same collation as the server" {
             $result = Test-DbaDbCollation -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $result.IsEqual | Should -BeTrue
+            $script:outputForValidation = $result
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "ServerCollation", "DatabaseCollation", "IsEqual")
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
         }
     }
 }

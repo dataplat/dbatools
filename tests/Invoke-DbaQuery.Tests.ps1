@@ -47,6 +47,14 @@ Describe $CommandName -Tag IntegrationTests {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
         $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT TestColumn = @p1; END")
 
+        # Capture output validation results for later reuse
+        $script:resultDataRow = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr")
+        $script:resultDataSet = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataSet
+        $script:resultPSObject = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As PSObject)
+        $script:resultSingleValue = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 42" -As SingleValue
+        $script:resultDataTable = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataTable
+        $script:resultAppend = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -AppendServerInstance)
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
@@ -400,5 +408,36 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results.Column1 | Should -Be "Null"
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
+    }
+
+    Context "Output validation" {
+        It "Returns DataRow by default" {
+            $script:resultDataRow | Should -Not -BeNullOrEmpty
+            $script:resultDataRow[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Returns DataTable when -As DataTable is specified" {
+            $script:resultDataTable | Should -Not -BeNullOrEmpty
+            $script:resultDataTable.GetType().Name | Should -Be "DataTable"
+        }
+
+        It "Returns DataSet when -As DataSet is specified" {
+            $script:resultDataSet | Should -Not -BeNullOrEmpty
+            $script:resultDataSet | Should -BeOfType [System.Data.DataSet]
+        }
+
+        It "Returns PSObject when -As PSObject is specified" {
+            $script:resultPSObject | Should -Not -BeNullOrEmpty
+            $script:resultPSObject[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Returns a single value when -As SingleValue is specified" {
+            $script:resultSingleValue | Should -Be 42
+        }
+
+        It "Includes ServerInstance property when -AppendServerInstance is specified" {
+            $script:resultAppend | Should -Not -BeNullOrEmpty
+            $script:resultAppend[0].PSObject.Properties.Name | Should -Contain "ServerInstance"
+        }
     }
 }

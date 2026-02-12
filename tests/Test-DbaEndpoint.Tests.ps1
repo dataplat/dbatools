@@ -45,4 +45,19 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
+
+    Context "Output validation" {
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Endpoint", "Port", "Connection", "SslConnection")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+    }
 }

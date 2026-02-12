@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "stops the system_health session" {
-            $dbatoolsciValid | Stop-DbaXESession
+            $script:outputForValidation = $dbatoolsciValid | Stop-DbaXESession
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
         }
@@ -83,6 +83,36 @@ Describe $CommandName -Tag IntegrationTests {
             Stop-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+            }
+
+            It "Has the expected default display properties" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "Status",
+                    "StartTime",
+                    "AutoStart",
+                    "State",
+                    "Targets",
+                    "TargetFile",
+                    "Events",
+                    "MaxMemory",
+                    "MaxEventSize"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 }

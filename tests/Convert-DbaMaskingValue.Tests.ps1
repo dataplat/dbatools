@@ -73,6 +73,27 @@ Describe $CommandName -Tag IntegrationTests {
             $convertedValue = Convert-DbaMaskingValue -Value $value -DataType nchar
             $convertedValue.NewValue | Should -Be "'''this is just text'''"
         }
+
+        It "Returns output of type PSCustomObject" {
+            $result = Convert-DbaMaskingValue -Value "test" -DataType varchar
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $result = Convert-DbaMaskingValue -Value "test" -DataType varchar
+            $expectedProps = @("OriginalValue", "NewValue", "DataType", "ErrorMessage")
+            foreach ($prop in $expectedProps) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Returns correct property values for a varchar conversion" {
+            $result = Convert-DbaMaskingValue -Value "test" -DataType varchar
+            $result.OriginalValue | Should -Be "test"
+            $result.NewValue | Should -Be "'test'"
+            $result.DataType | Should -Be "varchar"
+        }
     }
 
     Context "Date and time data types" {

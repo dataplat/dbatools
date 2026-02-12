@@ -95,6 +95,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SourceDatabaseID | Should -Be $sourceDb.ID
             $results.DestinationDatabaseID | Should -Be $sourceDb.ID
         }
+
+        It "Returns output as PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct source and destination values" {
+            $results.SourceDatabase | Should -Be "tempdb"
+            $results.SourceTable | Should -Be "dbatoolsci_example"
+            $results.DestinationTable | Should -Be "dbatoolsci_example2"
+            $results.RowsCopied | Should -Be 10
+        }
     }
 
     Context "When copying table data between instances" {
@@ -254,4 +286,5 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
 }

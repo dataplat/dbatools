@@ -45,9 +45,43 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    It "starts the endpoint" {
-        $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint "TSQL Default TCP"
-        $results = $endpoint | Start-DbaEndpoint
-        $results.EndpointState | Should -Be "Started"
+    Context "starts the endpoint" {
+        BeforeAll {
+            $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint "TSQL Default TCP"
+            $results = $endpoint | Start-DbaEndpoint
+        }
+
+        It "starts the endpoint" {
+            $results.EndpointState | Should -Be "Started"
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Endpoint"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "ID",
+                    "Name",
+                    "EndpointState",
+                    "EndpointType",
+                    "Owner",
+                    "IsAdminEndpoint",
+                    "Fqdn",
+                    "IsSystemObject"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
+
 }

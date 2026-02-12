@@ -65,6 +65,20 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Name", "Status", "Database"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
+
+        It "Returns output of type PSCustomObject" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $resultsDownload[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct output properties" {
+            if (-not $resultsDownload) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            $actualProps = $resultsDownload[0].PsObject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $actualProps | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "Testing DarlingData installer with LocalFile" {

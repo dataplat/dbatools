@@ -31,6 +31,25 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results = Get-DbaPbmCategory -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Dmf.PolicyCategory"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "MandateDatabaseSubscriptions"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Command actually works using -Category" {

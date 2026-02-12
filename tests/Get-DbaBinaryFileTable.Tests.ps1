@@ -73,13 +73,40 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    It "returns a table" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb
-        $results.Name.Count | Should -BeGreaterOrEqual 1
-    }
+    Context "When retrieving binary file tables" {
+        BeforeAll {
+            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
 
-    It "supports piping" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
-        $results.Name.Count | Should -BeGreaterOrEqual 1
+        It "returns a table" {
+            $results.Name.Count | Should -BeGreaterOrEqual 1
+        }
+
+        It "supports piping" {
+            $pipeResults = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
+            $pipeResults.Name.Count | Should -BeGreaterOrEqual 1
+        }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Table"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Name",
+                "BinaryColumn",
+                "FileNameColumn"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

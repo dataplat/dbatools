@@ -76,5 +76,27 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Category", "OwnerLoginName", "CurrentRunStatus", "CurrentRunRetryAttempt", "Enabled", "LastRunDate", "LastRunOutcome", "HasSchedule", "OperatorToEmail", "CreateDate")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
+        }
     }
 }

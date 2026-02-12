@@ -44,5 +44,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return false for VersionNumber -1" {
             $falseResults.Exists | Should -Be $false
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $trueResults | Should -Not -BeNullOrEmpty
+                $trueResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @("ComputerName", "Version", "Exists")
+                foreach ($prop in $expectedProps) {
+                    $trueResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+        }
     }
 }

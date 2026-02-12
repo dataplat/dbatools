@@ -73,6 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets Changed Extents for Single Database" {
         BeforeAll {
             $singleDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            # Store for reuse in output validation
+            $script:outputForValidation = $singleDbResults
         }
 
         It "Gets results" {
@@ -85,6 +87,33 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have extents changed for $dbname" {
             $singleDbResults.ExtentsChanged | Should -BeGreaterOrEqual 0
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputForValidation
+        }
+
+        It "Returns output as PSCustomObject" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "ExtentsTotal",
+                "ExtentsChanged",
+                "ChangedPerc"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 }

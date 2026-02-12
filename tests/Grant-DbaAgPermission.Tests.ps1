@@ -63,5 +63,32 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
             $results.Status | Should -Be "Success"
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Permission",
+                "Type",
+                "Status"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for Type and Status" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].Type | Should -Be "Grant"
+            $results[0].Status | Should -Be "Success"
+        }
     }
 }

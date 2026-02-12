@@ -175,5 +175,31 @@ Describe $CommandName -Tag IntegrationTests {
             )
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
+
+        It "Returns output as PSCustomObject" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "InstanceName", "ComputerName", "DatabaseName", "RW", "Status", "Access")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include Database in default display (excluded via Select-DefaultView)" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Database" -Because "Database is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has the Database property available for programmatic access" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
+            $result[0].psobject.Properties["Database"] | Should -Not -BeNullOrEmpty
+        }
     }
 }

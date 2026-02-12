@@ -49,5 +49,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns results" {
             $disconnectResults | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output as PSCustomObject" {
+            $disconnectResults | Should -Not -BeNullOrEmpty
+            $disconnectResults[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $disconnectResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("SqlInstance", "ConnectionType", "State")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("SqlInstance", "ConnectionString", "ConnectionType", "State")
+            foreach ($prop in $expectedProperties) {
+                $disconnectResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 }

@@ -60,5 +60,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be "Success"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Permission", "Type", "Status")
+            foreach ($prop in $expectedProperties) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct Type value" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].Type | Should -Be "Revoke"
+        }
+
+        It "Has correct Status value" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].Status | Should -Be "Success"
+        }
     }
 }

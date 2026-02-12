@@ -62,6 +62,9 @@ Describe $CommandName -Tag IntegrationTests {
             $result2.Name | Should -Contain $resourcePoolName
             $newResourcePool | Should -Not -Be $null
 
+            # Capture for output validation
+            $script:outputValidationResult = $newResourcePool
+
         }
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
@@ -131,6 +134,32 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle
 
             $result.ReconfigurePending | Should -Be $true
+        }
+        It "Returns output of the documented type" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.ResourcePool
+        }
+        It "Has the expected default display properties" {
+            $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "CapCpuPercentage",
+                "IsSystemObject",
+                "MaximumCpuPercentage",
+                "MaximumIopsPerVolume",
+                "MaximumMemoryPercentage",
+                "MinimumCpuPercentage",
+                "MinimumIopsPerVolume",
+                "MinimumMemoryPercentage",
+                "WorkloadGroups"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
         AfterEach {
             # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.

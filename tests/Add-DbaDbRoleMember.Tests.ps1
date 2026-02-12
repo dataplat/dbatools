@@ -118,6 +118,10 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter.Login | Should -Be $user1
             $roleDBAfter.UserName | Should -Be $user1
         }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
+        }
     }
 
     Context "When adding a user to multiple roles" {
@@ -217,4 +221,5 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter.MemberRole | Should -Contain $role
         }
     }
+
 }

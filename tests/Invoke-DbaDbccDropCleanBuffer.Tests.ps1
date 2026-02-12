@@ -39,6 +39,28 @@ Describe $CommandName -Tag IntegrationTests {
                 $p.Name | Should -Be $prop
             }
         }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $result.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 
     Context "Works correctly" {

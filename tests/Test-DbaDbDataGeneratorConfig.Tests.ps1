@@ -71,6 +71,23 @@ Describe $CommandName -Tag IntegrationTests {
         $findings += Test-DbaDbDataGeneratorConfig -FilePath $file.FullName
 
         $findings.Count | Should -Be 1
-    }
 
+        Context "Output validation" {
+            BeforeAll {
+                $script:outputForValidation = $findings
+            }
+
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Table"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Column"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Value"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Error"
+            }
+        }
+    }
 }

@@ -91,4 +91,18 @@ function Get-DbaStub {
             $newContent | Should -Be $wantedContent
         }
     }
+
+    Context "Output validation" {
+        It "Returns output of type PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("Path", "Pattern", "ReplacedWith")
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

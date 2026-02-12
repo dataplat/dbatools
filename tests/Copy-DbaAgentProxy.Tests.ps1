@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination  = $TestConfig.InstanceCopy2
                 ProxyAccount = "dbatoolsci_agentproxy"
             }
-            $copyResults = Copy-DbaAgentProxy @splatCopyProxy
+            $copyResults = @(Copy-DbaAgentProxy @splatCopyProxy) | Where-Object { $PSItem.Name }
         }
 
         It "Should return one successful result" {
@@ -85,6 +85,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should create the proxy on the destination" {
             $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceCopy2 -Proxy "dbatoolsci_agentproxy"
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
+        }
+
+        It "Returns output of the expected type" {
+            $copyResults | Should -Not -BeNullOrEmpty
+            $copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

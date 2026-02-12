@@ -122,7 +122,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -CacheSize 1000
             $sequence.Name | Should -Be "Sequence1_$random"
-            $sequence.Schema | Should -Be "Schema_$random"
+            $sequence.Schema | Should -Be "Schema_$raw"
             $sequence.SequenceCacheType | Should -Be CacheWithSize
             $sequence.CacheSize | Should -Be 1000
             $sequence.Parent.Name | Should -Be $newDbName
@@ -132,6 +132,27 @@ Describe $CommandName -Tag IntegrationTests {
             $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -WarningAction SilentlyContinue
             $sequence | Should -BeNullOrEmpty
             $WarnVar | Should -Match "cannot be zero"
+        }
+
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+                $outputResult = Get-DbaDatabase -SqlInstance $server -Database $newDbName | Set-DbaDbSequence -Sequence "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 5 -Confirm:$false
+
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+
+            It "Returns output of the documented type" {
+                $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Sequence"
+            }
+
+            It "Has the expected properties" {
+                $outputResult[0].Name | Should -Not -BeNullOrEmpty
+                $outputResult[0].Schema | Should -Not -BeNullOrEmpty
+                $outputResult[0].IncrementValue | Should -Be 5
+                $outputResult[0].Parent | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

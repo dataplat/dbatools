@@ -39,5 +39,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $results[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "LogDate", "ProcessInfo", "Text")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

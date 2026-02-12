@@ -56,6 +56,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $outputValidationResult = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ExcludeSystemTable
+        }
+
         It "returns no check constraints from excluded DB with -ExcludeDatabase" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
             $results | Where-Object { $PSItem.Database -eq "master" } | Should -BeNullOrEmpty
@@ -75,6 +79,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should exclude system tables" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database master -ExcludeSystemTable
             $results | Where-Object Name -eq "spt_fallback_db" | Should -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Check"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Parent",
+                "ID",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "IsEnabled",
+                "IsChecked",
+                "NotForReplication",
+                "Text",
+                "State"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

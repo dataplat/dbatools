@@ -49,11 +49,15 @@ Describe $CommandName -Tag UnitTests {
         It "Should convert to 20000000024300001" {
             $hexResults.Numeric | Should -Be 20000000024300001
         }
+
+        It "Returns output of type PSCustomObject" {
+            $hexResults | Should -Not -BeNullOrEmpty
+            $hexResults | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $hexResults.PSObject.Properties.Name | Should -Contain "Hexadecimal"
+            $hexResults.PSObject.Properties.Name | Should -Contain "Numeric"
+        }
     }
 }
-
-#
-#    Integration test should appear below and are custom to the command you are writing.
-#    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-#    for more guidance.
-#

@@ -50,5 +50,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "successfully connects" {
             $results.SqlConnected | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
+        }
+
+        It "Has the expected properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @(
+                "MachineName",
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Port",
+                "Confidence",
+                "Availability",
+                "Ping",
+                "TcpConnected",
+                "SqlConnected",
+                "Timestamp",
+                "ScanTypes"
+            )
+            $propNames = $results[0].psobject.Properties.Name
+            foreach ($prop in $expectedProps) {
+                $propNames | Should -Contain $prop -Because "property '$prop' should be present in the output"
+            }
+        }
     }
 }

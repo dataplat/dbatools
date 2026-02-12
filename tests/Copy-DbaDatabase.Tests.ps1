@@ -241,6 +241,25 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.Status | Should -Be "Successful"
             }
         }
+
+        It "Returns output with the expected TypeName" {
+            if (-not $backupRestoreResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $backupRestoreResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $backupRestoreResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $backupRestoreResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the expected additional properties" {
+            if (-not $backupRestoreResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $backupRestoreResults[0].psobject.Properties["DestinationDatabase"] | Should -Not -BeNullOrEmpty -Because "DestinationDatabase should be available as an additional property"
+        }
     }
 
     Context "UseLastBackup - read backup history" {
@@ -669,4 +688,5 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
 }

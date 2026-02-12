@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
+            $script:removeJobResult = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
         }
 
         AfterAll {
@@ -59,6 +59,28 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have deleted history: dbatoolsci_daily" {
             (Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob) | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns output as PSCustomObject" {
+                $script:removeJobResult | Should -Not -BeNullOrEmpty
+                $script:removeJobResult | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $script:removeJobResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct values for a successful removal" {
+                $script:removeJobResult.Name | Should -Be "dbatoolsci_testjob"
+                $script:removeJobResult.Status | Should -Be "Dropped"
+                $script:removeJobResult.ComputerName | Should -Not -BeNullOrEmpty
+                $script:removeJobResult.InstanceName | Should -Not -BeNullOrEmpty
+                $script:removeJobResult.SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 
@@ -159,4 +181,5 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
     }
+
 }

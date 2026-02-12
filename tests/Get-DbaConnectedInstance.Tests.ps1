@@ -16,10 +16,32 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "gets connected objects" {
-        It "returns some results" {
+        BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
-            $results = Get-DbaConnectedInstance
-            $results | Should -Not -BeNullOrEmpty
+            $script:connectedInstanceResults = Get-DbaConnectedInstance
+        }
+
+        It "returns some results" {
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of the documented type" {
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
+            $script:connectedInstanceResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:connectedInstanceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "SqlInstance",
+                "ConnectionType",
+                "ConnectionObject",
+                "Pooled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

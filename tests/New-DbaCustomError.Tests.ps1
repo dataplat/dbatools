@@ -114,6 +114,21 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Supports multiple server inputs" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputMsgId = 70099
+            $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = $outputMsgId) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = $outputMsgId, @lang = 'all'; END")
+            $outputValidationResult = New-DbaCustomError -SqlInstance $server -MessageID $outputMsgId -Severity 16 -MessageText "dbatoolsci_outputtest"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = $outputMsgId) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = $outputMsgId, @lang = 'all'; END")
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
 
         It "Add messages to preconnected servers" {
             $results = ([DbaInstanceParameter[]]$server, $server2 | New-DbaCustomError -MessageID 70006 -Severity 20 -MessageText "test_70006")
@@ -124,6 +139,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results[1].Severity | Should -Be 20
             $results[0].ID | Should -Be 70006
             $results[1].ID | Should -Be 70006
+        }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedMessage]
+        }
+
+        It "Has the expected properties" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult[0].ID | Should -Be $outputMsgId
+            $outputValidationResult[0].Severity | Should -Be 16
+            $outputValidationResult[0].Text | Should -Be "dbatoolsci_outputtest"
+            $outputValidationResult[0].Language | Should -Not -BeNullOrEmpty
         }
     }
 }

@@ -55,5 +55,24 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Find-DbaCommand -Pattern snapshot -Rebuild)
             $results.Count | Should -BeGreaterThan 5
         }
+
+        It "Returns output of the expected type" {
+            $results = @(Find-DbaCommand -Pattern "snapshot")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $results = @(Find-DbaCommand -Pattern "snapshot")
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "CommandName",
+                "Synopsis"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 }

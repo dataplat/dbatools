@@ -52,5 +52,39 @@ Describe $CommandName -Tag IntegrationTests {
             )
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedPropsDefault | Sort-Object)
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $parameterResults | Should -Not -BeNullOrEmpty
+                $parameterResults[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $parameterResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "ExecutionCount",
+                    "Total",
+                    "Average",
+                    "ExecuteOnlyTotal",
+                    "ExecuteOnlyAverage",
+                    "NetworkOnlyTotal"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias properties" {
+                $parameterResults[0].PSObject.Properties["ExecutionCount"] | Should -Not -BeNullOrEmpty
+                $parameterResults[0].PSObject.Properties["ExecutionCount"].MemberType | Should -Be "AliasProperty"
+                $parameterResults[0].PSObject.Properties["Average"] | Should -Not -BeNullOrEmpty
+                $parameterResults[0].PSObject.Properties["Average"].MemberType | Should -Be "AliasProperty"
+                $parameterResults[0].PSObject.Properties["ExecuteOnlyAverage"] | Should -Not -BeNullOrEmpty
+                $parameterResults[0].PSObject.Properties["ExecuteOnlyAverage"].MemberType | Should -Be "AliasProperty"
+            }
+        }
     }
 }

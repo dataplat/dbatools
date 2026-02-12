@@ -60,5 +60,24 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the correct counter name" {
             $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
         }
+
+        It "Returns output of the expected type" {
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "DataCollectorSet", "DataCollector", "Name", "FileName")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Does not include excluded properties in default display" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "DataCollectorSetXml" -Because "DataCollectorSetXml should be excluded from default display"
+            $defaultProps | Should -Not -Contain "Credential" -Because "Credential should be excluded from default display"
+            $defaultProps | Should -Not -Contain "CounterObject" -Because "CounterObject should be excluded from default display"
+        }
     }
 }

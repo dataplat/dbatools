@@ -59,9 +59,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We can only test that the command does not write any warning.
         # A real test would need a very complex setup.
 
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $script:outputForValidation = Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -ServersFromFile $testFile
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "ServersFromFile" {
-            Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -ServersFromFile $testFile
-            $WarnVar | Should -BeNullOrEmpty
+            $script:outputForValidation | Should -BeNullOrEmpty
         }
 
         It "Pipeline of instances" {
@@ -72,6 +77,12 @@ Describe $CommandName -Tag IntegrationTests {
         It "ServersFromCMS" {
             Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -SqlCms $TestConfig.InstanceMulti1
             $WarnVar | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns no output" {
+                $script:outputForValidation | Should -BeNullOrEmpty
+            }
         }
     }
 }

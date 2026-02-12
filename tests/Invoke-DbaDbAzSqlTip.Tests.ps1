@@ -62,5 +62,31 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
         It "Database name should be 'test'" {
             $results.Database | Should -Be "test"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "tip_id",
+                "description",
+                "confidence_percent",
+                "additional_info_url",
+                "details"
+            )
+            foreach ($prop in $expectedProperties) {
+                $results[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $results[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 }

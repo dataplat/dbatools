@@ -56,6 +56,10 @@ Describe $CommandName -Tag IntegrationTests {
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
+        BeforeAll {
+            $script:outputForValidation = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU"
+        }
+
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
@@ -64,6 +68,33 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
+        }
+
+        Context "Output validation" {
+            It "Returns output as a PSCustomObject" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "Build"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "MatchType"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "Compliant"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "MaxBehind"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "SPTarget"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "CUTarget"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain "BuildTarget"
+            }
+
+            It "Hides MinimumBuild when using -MaxBehind" {
+                $defaultProps = $script:outputForValidation.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps | Should -Not -Contain "MinimumBuild" -Because "MinimumBuild should be hidden when using -MaxBehind"
+            }
+
+            It "Returns boolean when using -Quiet" {
+                $quietResult = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -Quiet
+                $quietResult | Should -BeOfType [bool]
+            }
         }
     }
 }

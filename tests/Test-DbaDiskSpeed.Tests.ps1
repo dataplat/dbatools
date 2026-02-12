@@ -45,6 +45,9 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.Reads | Should -BeGreaterOrEqual 0
             }
+
+            # Store for output validation
+            $script:outputForValidation = $results
         }
 
         It "sample pipeline" {
@@ -341,6 +344,44 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $validColumns | Should -Be $true
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType [System.Data.DataRow]
+            }
+
+            It "Has the expected properties for File aggregation" {
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "SizeGB", "FileName", "FileID", "FileType", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer")
+                $row = if ($script:outputForValidation -is [System.Data.DataRow]) { $script:outputForValidation } else { $script:outputForValidation[0] }
+                $actualProps = @($row.Table.Columns.ColumnName)
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in File aggregation"
+                }
+            }
+
+            It "Has the expected properties for Database aggregation" {
+                $dbResult = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -Database master -AggregateBy Database
+                $dbResult | Should -Not -BeNullOrEmpty
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer")
+                $row = if ($dbResult -is [System.Data.DataRow]) { $dbResult } else { $dbResult[0] }
+                $actualProps = @($row.Table.Columns.ColumnName)
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in Database aggregation"
+                }
+            }
+
+            It "Has the expected properties for Disk aggregation" {
+                $diskResult = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -AggregateBy Disk
+                $diskResult | Should -Not -BeNullOrEmpty
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer")
+                $row = if ($diskResult -is [System.Data.DataRow]) { $diskResult } else { $diskResult[0] }
+                $actualProps = @($row.Table.Columns.ColumnName)
+                foreach ($prop in $expectedProps) {
+                    $actualProps | Should -Contain $prop -Because "property '$prop' should be present in Disk aggregation"
+                }
+            }
         }
     }
 }

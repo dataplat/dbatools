@@ -70,6 +70,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have last modified user of dbatools\dbatoolssci " {
             $results.lastmoduser | Should -Be "dbatools\dbatoolssci"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogDate",
+                "EventType",
+                "Description",
+                "Login"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets Db Mail Log using -Type" {

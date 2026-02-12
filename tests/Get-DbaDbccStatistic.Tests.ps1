@@ -94,6 +94,11 @@ Describe $CommandName -Tag IntegrationTests {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
     }
 
     Context "Validate standard output for DensityVector option" {
@@ -121,6 +126,11 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($prop in $props) {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
+        }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
         }
     }
 
@@ -152,6 +162,11 @@ Describe $CommandName -Tag IntegrationTests {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
     }
 
     Context "Validate standard output for StatsStream option" {
@@ -180,6 +195,11 @@ Describe $CommandName -Tag IntegrationTests {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
+
+        It "Returns output of type PSCustomObject" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType [PSCustomObject]
+        }
     }
 
     Context "Validate returns results for single Object" {
@@ -195,4 +215,5 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -BeGreaterThan 0
         }
     }
+
 }

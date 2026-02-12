@@ -34,5 +34,43 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AuthType | Should -Be 'Windows Authentication'
             $results.ConnectingAsUser | Should -Be $whoami
         }
+
+        It "Returns output as a PSCustomObject" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected connection properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SqlVersion",
+                "ConnectingAsUser",
+                "ConnectSuccess",
+                "AuthType",
+                "AuthScheme",
+                "TcpPort",
+                "IPAddress",
+                "NetBiosName",
+                "IsPingable",
+                "PSRemotingAccessible",
+                "DomainName",
+                "LocalWindows",
+                "LocalPowerShell",
+                "LocalCLR",
+                "LocalSMOVersion",
+                "LocalDomainUser",
+                "LocalRunAsAdmin",
+                "LocalEdition"
+            )
+            foreach ($prop in $expectedProps) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has valid connection status" {
+            $results.ConnectSuccess | Should -BeTrue
+        }
     }
 }

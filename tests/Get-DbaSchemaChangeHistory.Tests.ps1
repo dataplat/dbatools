@@ -43,4 +43,37 @@ Describe $CommandName -Tag IntegrationTests {
             $schemaResults.Object | Should -Contain "dbatoolsci_schemachange"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $schemaDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $schemaDb.Query("CREATE TABLE dbatoolsci_outputvalidation_$(Get-Random) (id int identity)")
+            $outputResult = Get-DbaSchemaChangeHistory -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
+
+        It "Returns results" {
+            $outputResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "DateModified",
+                "LoginName",
+                "UserName",
+                "ApplicationName",
+                "DDLOperation",
+                "Object",
+                "ObjectType"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }

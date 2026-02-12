@@ -49,6 +49,9 @@ Describe $CommandName -Tag IntegrationTests {
         $sqlCn.Databases.Refresh()
         $resultNotMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $dbNameNotMatches -Verbose 4>&1
         $verboseSetMsg = "*Performing the operation `"Setting*Compatibility Level*"
+
+        # Capture clean output (without verbose) for output validation
+        $script:outputForValidation = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $dbNameNotMatches
     }
     AfterAll {
         $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
@@ -69,6 +72,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should output an object" {
             ($resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Compatibility", "PreviousCompatibility")
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has correct values for key properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation.Database | Should -Be $dbNameNotMatches
+                $script:outputForValidation.ComputerName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.InstanceName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

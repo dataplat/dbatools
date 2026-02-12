@@ -45,5 +45,37 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has a version matching the instance" {
             $assemblyResults.Version | Should -BeExactly $masterDatabase.assemblies.Version
         }
+
+        It "Returns output of the documented type" {
+            $assemblyResults | Should -Not -BeNullOrEmpty
+            $assemblyResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.SqlAssembly"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $assemblyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $assemblyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ID",
+                "Name",
+                "Owner",
+                "SecurityLevel",
+                "CreateDate",
+                "IsSystemObject",
+                "Version"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property SecurityLevel" {
+            if (-not $assemblyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $assemblyResults[0].psobject.Properties["SecurityLevel"] | Should -Not -BeNullOrEmpty
+            $assemblyResults[0].psobject.Properties["SecurityLevel"].MemberType | Should -Be "AliasProperty"
+        }
     }
 }

@@ -99,5 +99,32 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $script:outputForValidation = $linkedServer1 | New-DbaLinkedServerLogin -LocalLogin $localLogin2Name -Impersonate
+            }
+
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServerLogin"
+            }
+
+            It "Has the expected default display properties" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "RemoteUser",
+                    "Impersonate"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 }

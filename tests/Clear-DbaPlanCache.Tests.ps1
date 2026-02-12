@@ -27,6 +27,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Make plan cache way higher than likely for a test rig
             $threshold = 10240
+            # Capture output for validation tests
+            $script:outputForValidation = Clear-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle -Threshold $threshold
         }
 
         It "Returns correct datatypes" {
@@ -39,6 +41,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle | Clear-DbaPlanCache -Threshold $threshold
             $results.Size | Should -BeOfType [dbasize]
             $results.Status | Should -Match "below"
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Size", "Status")
+            foreach ($prop in $expectedProperties) {
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
         }
     }
 }

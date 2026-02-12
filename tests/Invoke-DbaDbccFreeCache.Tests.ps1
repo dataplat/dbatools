@@ -44,6 +44,21 @@ Describe $CommandName -Tag IntegrationTests {
                 $resultFreeSystemCache.PSObject.Properties[$property].Name | Should -Be $property
             }
         }
+
+        It "Returns output of the expected type" {
+            $resultFreeSystemCache | Should -Not -BeNullOrEmpty
+            $resultFreeSystemCache | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the correct properties" {
+            foreach ($prop in $expectedProperties) {
+                $resultFreeSystemCache.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has no Select-DefaultView properties" {
+            $resultFreeSystemCache.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
     }
 
     Context "Works correctly" {
@@ -70,4 +85,5 @@ Describe $CommandName -Tag IntegrationTests {
             $resultNoInfo.Output | Should -BeNullOrEmpty
         }
     }
+
 }

@@ -82,6 +82,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have MailServer of '[smtp.dbatools.io]' " -Skip {
             $results.MailServers | Should -Be "[smtp.dbatools.io]"
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailAccount"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Id",
+                    "Name",
+                    "DisplayName",
+                    "Description",
+                    "EmailAddress",
+                    "ReplyToAddress",
+                    "IsBusyAccount",
+                    "MailServers"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
     Context "Gets DbMail when using -Account" {
         BeforeAll {

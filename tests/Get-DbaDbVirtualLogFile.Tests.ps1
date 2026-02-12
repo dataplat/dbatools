@@ -82,4 +82,41 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputValidation = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $testDbName
+                IncludeSystemDBs = $false
+            }
+            $outputResult = Get-DbaDbVirtualLogFile @splatOutputValidation
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "RecoveryUnitId",
+                "FileId",
+                "FileSize",
+                "StartOffset",
+                "FSeqNo",
+                "Status",
+                "Parity",
+                "CreateLsn"
+            )
+            foreach ($prop in $expectedProperties) {
+                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+    }
 }

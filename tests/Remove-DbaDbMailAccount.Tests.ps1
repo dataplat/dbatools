@@ -91,4 +91,39 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbMailAccount -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputAccountName = "dbatoolsci_outputtest_$(Get-Random)"
+            $splatOutputAccount = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Name         = $outputAccountName
+                EmailAddress = "outputtest@ad.local"
+            }
+            $null = New-DbaDbMailAccount @splatOutputAccount
+            $outputResult = Remove-DbaDbMailAccount -SqlInstance $TestConfig.InstanceSingle -Account $outputAccountName -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $outputResult | Should -Not -BeNullOrEmpty
+            $outputResult | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+            foreach ($prop in $expectedProps) {
+                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for a successful removal" {
+            $outputResult.Name | Should -Be $outputAccountName
+            $outputResult.Status | Should -Be "Dropped"
+            $outputResult.IsRemoved | Should -BeTrue
+        }
+    }
 }

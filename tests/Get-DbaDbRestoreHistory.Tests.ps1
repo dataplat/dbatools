@@ -143,6 +143,38 @@ Describe $CommandName -Tag IntegrationTests {
             @($results | Where-Object Database -eq $dbname1).Count | Should -Be 4
             @($results | Where-Object Database -eq $dbname2).Count | Should -Be 2
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Username",
+                "RestoreType",
+                "Date",
+                "From",
+                "To",
+                "BackupFinishDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the excluded properties not in default display" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @("first_lsn", "last_lsn", "checkpoint_lsn", "database_backup_lsn", "backup_finish_date")
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+        }
     }
 
     Context "return object properties" {
@@ -208,4 +240,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.RestoreType | Should -Be Log
         }
     }
+
 }

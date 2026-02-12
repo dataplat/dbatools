@@ -63,5 +63,34 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2 | Remove-DbaDbTable
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -BeNullOrEmpty
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+                $outputTestTable = "dbatoolsci_outputtest_$(Get-Random)"
+                $null = $InstanceSingle.Query("CREATE TABLE $outputTestTable (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
+                $script:removeResult = Remove-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $outputTestTable -Confirm:$false
+
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+
+            It "Returns output of the expected type" {
+                $script:removeResult | Should -Not -BeNullOrEmpty
+                $script:removeResult | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "TableName", "TableSchema", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:removeResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has correct values for Status and IsRemoved on success" {
+                $script:removeResult.Status | Should -Be "Dropped"
+                $script:removeResult.IsRemoved | Should -BeTrue
+            }
+        }
     }
 }

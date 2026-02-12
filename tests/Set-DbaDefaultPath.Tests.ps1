@@ -47,5 +47,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $TestConfig.Temp
             $results.Backup | Should -BeExactly $TestConfig.Temp
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Data", "Log", "Backup")
+                foreach ($prop in $expectedProps) {
+                    $results.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+        }
     }
 }

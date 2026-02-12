@@ -25,8 +25,10 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" -Skip {
+        It "Returns output of the documented type when State is specified" {
+            Set-ItResult -Skipped -Because "mirroring infrastructure is not available in this test environment"
+        }
+    }
+}

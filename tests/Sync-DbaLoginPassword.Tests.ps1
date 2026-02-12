@@ -221,5 +221,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SourceServer.Count | Should -Be 1
             $results.Login | Should -Be $loginName1
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("SourceServer", "DestinationServer", "Login", "Status", "Notes")
+                foreach ($prop in $expectedProperties) {
+                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has SourceServer populated" {
+                $result.SourceServer | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has DestinationServer populated" {
+                $result.DestinationServer | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has Login populated" {
+                $result.Login | Should -Be $loginName1
+            }
+
+            It "Has a valid Status value" {
+                $result.Status | Should -BeIn @("Success", "Failed")
+            }
+        }
     }
 }

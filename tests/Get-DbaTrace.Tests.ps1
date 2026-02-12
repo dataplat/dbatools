@@ -61,9 +61,68 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Test Check Default Trace" {
+        BeforeAll {
+            $script:traceResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle
+        }
+
         It "Should find at least one trace file" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle
-            $results.Id.Count -gt 0 | Should -Be $true
+            $script:traceResults.Id.Count -gt 0 | Should -Be $true
+        }
+
+        It "Returns results" {
+            $script:traceResults | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns output of PSCustomObject type" {
+            if (-not $script:traceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:traceResults[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $script:traceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:traceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status",
+                "IsRunning",
+                "Path",
+                "MaxSize",
+                "StopTime",
+                "MaxFiles",
+                "IsRowset",
+                "IsRollover",
+                "IsShutdown",
+                "IsDefault",
+                "BufferCount",
+                "BufferSize",
+                "FilePosition",
+                "ReaderSpid",
+                "StartTime",
+                "LastEventTime",
+                "EventCount",
+                "DroppedEventCount"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Excludes Parent, RemotePath, and SqlCredential from default display" {
+            if (-not $script:traceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:traceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -Contain "Parent" -Because "Parent is excluded via Select-DefaultView -ExcludeProperty"
+            $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath is excluded via Select-DefaultView -ExcludeProperty"
+            $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential is excluded via Select-DefaultView -ExcludeProperty"
+        }
+
+        It "Has Parent and RemotePath available as non-default properties" {
+            if (-not $script:traceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $allProps = $script:traceResults[0].PSObject.Properties.Name
+            $allProps | Should -Contain "Parent" -Because "Parent should be accessible via Select-Object *"
+            $allProps | Should -Contain "RemotePath" -Because "RemotePath should be accessible via Select-Object *"
         }
     }
 }

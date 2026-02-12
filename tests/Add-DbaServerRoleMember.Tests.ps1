@@ -110,5 +110,10 @@ Describe $CommandName -Tag IntegrationTests {
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
             $roleAfter.EnumMemberNames() | Should -Contain $login2
         }
+
+        It "Returns no output" {
+            $result = Add-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $fixedServerRoles[0] -Login $login1 -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
     }
 }

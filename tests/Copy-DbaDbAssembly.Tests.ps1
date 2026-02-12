@@ -36,6 +36,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $assemblyHashBytes = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly -Query "SELECT HASHBYTES('SHA2_512', content) FROM sys.assembly_files WHERE name = 'resolveDNS'" -As SingleValue
         $assemblyHashHex = "0x$(($assemblyHashBytes | ForEach-Object ToString X2) -join '')"
         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "DECLARE @assemblyHash VARBINARY(64) = $assemblyHashHex, @assemblyName NVARCHAR(4000) = 'resolveDNS'; EXEC sys.sp_add_trusted_assembly @hash = @assemblyHash, @description = @assemblyName"
+
+        # Create output validation result - reuse for later output validation tests
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly -Query "IF EXISTS (SELECT 1 FROM sys.assemblies WHERE name = 'resolveDNS') DROP ASSEMBLY resolveDNS" -ErrorAction SilentlyContinue
+        $script:outputForValidation = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS
     }
 
     AfterAll {
@@ -70,5 +74,27 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.Type | Should -Be "Database Assembly"
         $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly).ID
         $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly).ID
+    }
+
+    It "Returns output with the expected TypeName" {
+        $script:outputForValidation | Should -Not -BeNullOrEmpty
+        $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+    }
+
+    It "Has the expected default display properties" {
+        $script:outputForValidation | Should -Not -BeNullOrEmpty
+        $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+        $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+        foreach ($prop in $expectedDefaults) {
+            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        }
+    }
+
+    It "Has the expected additional properties" {
+        $script:outputForValidation | Should -Not -BeNullOrEmpty
+        $script:outputForValidation[0].psobject.Properties["SourceDatabase"] | Should -Not -BeNullOrEmpty -Because "SourceDatabase should be available"
+        $script:outputForValidation[0].psobject.Properties["SourceDatabaseID"] | Should -Not -BeNullOrEmpty -Because "SourceDatabaseID should be available"
+        $script:outputForValidation[0].psobject.Properties["DestinationDatabase"] | Should -Not -BeNullOrEmpty -Because "DestinationDatabase should be available"
+        $script:outputForValidation[0].psobject.Properties["DestinationDatabaseID"] | Should -Not -BeNullOrEmpty -Because "DestinationDatabaseID should be available"
     }
 }

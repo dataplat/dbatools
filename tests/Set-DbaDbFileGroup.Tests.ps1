@@ -62,6 +62,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When setting filegroup properties" {
+        BeforeAll {
+            # Prepare result for output validation using pipeline input
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1name
+            $script:outputForValidation = $outputDb | Set-DbaDbFileGroup -FileGroup $fileGroup1Name -AutoGrowAllFiles -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
 
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
             $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles
@@ -107,6 +114,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $fg1, $newDb1 | Set-DbaDbFileGroup -FileGroup Primary -AutoGrowAllFiles
             $results.Name | Should -Be $fileGroup1Name, Primary
             $results.AutoGrowAllFiles | Should -Be $true, $true
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputResult = $script:outputForValidation
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult | Should -BeOfType Microsoft.SqlServer.Management.Smo.FileGroup
+        }
+
+        It "Has the expected properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProps = @("Name", "IsDefault", "ReadOnly", "AutogrowAllFiles", "ID", "Files", "FileGroupType")
+            foreach ($prop in $expectedProps) {
+                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct values for key properties" {
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult.Name | Should -Be $fileGroup1Name
+            $outputResult.AutogrowAllFiles | Should -Be $true
         }
     }
 }

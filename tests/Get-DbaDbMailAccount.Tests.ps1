@@ -115,6 +115,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have MailServer of '[smtp.dbatools.io]' " {
             $results.MailServers | Should -Be "[smtp.dbatools.io]"
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailAccount"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ID", "Name", "DisplayName", "Description", "EmailAddress", "ReplyToAddress", "IsBusyAccount", "MailServers")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Gets no DbMail when using -ExcludeAccount" {
@@ -123,4 +137,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeNullOrEmpty
         }
     }
+
 }

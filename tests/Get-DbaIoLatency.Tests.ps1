@@ -27,4 +27,57 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-DbaIoLatency -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseId",
+                "DatabaseName",
+                "FileId",
+                "PhysicalName",
+                "NumberOfReads",
+                "IoStallRead",
+                "NumberOfwrites",
+                "IoStallWrite",
+                "IoStall",
+                "NumberOfBytesRead",
+                "NumberOfBytesWritten",
+                "SampleMilliseconds",
+                "SizeOnDiskBytes"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the excluded properties available but not in default display" {
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $excludedProps = @(
+                "FileHandle",
+                "ReadLatency",
+                "WriteLatency",
+                "Latency",
+                "AvgBPerRead",
+                "AvgBPerWrite",
+                "AvgBPerTransfer"
+            )
+            foreach ($prop in $excludedProps) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from default display"
+                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should still exist on the object"
+            }
+        }
+    }
 }

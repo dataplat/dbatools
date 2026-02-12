@@ -65,5 +65,59 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
         }
+
+        It "Returns output of the documented type" {
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroup"
+        }
+
+        It "Has the expected default display properties" {
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LocalReplicaRole",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ClusterType",
+                "DtcSupportEnabled",
+                "AutomatedBackupPreference",
+                "AvailabilityReplicas",
+                "AvailabilityDatabases",
+                "AvailabilityGroupListeners"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["AvailabilityGroup"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["AvailabilityGroup"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["PrimaryReplica"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["PrimaryReplica"].MemberType | Should -Be "AliasProperty"
+        }
+
+        It "Has the expected default display properties with IsPrimary" {
+            $resultIsPrimary = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -IsPrimary
+            if (-not $resultIsPrimary) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $resultIsPrimary[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "IsPrimary"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set with -IsPrimary"
+            }
+        }
     }
 }

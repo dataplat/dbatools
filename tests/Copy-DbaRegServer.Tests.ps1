@@ -71,14 +71,37 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying registered servers" {
-        It "Should complete successfully" {
+        BeforeAll {
             $splatCopy = @{
                 Source      = $TestConfig.InstanceCopy2
                 Destination = $TestConfig.InstanceCopy1
                 CMSGroup    = $groupName
+                Force       = $true
             }
-            $results = Copy-DbaRegServer @splatCopy
-            $results.Status | Should -Be @("Successful", "Successful")
+            $script:results = Copy-DbaRegServer @splatCopy
+        }
+
+        It "Should complete successfully" {
+            $script:results.Status | Should -Be @("Successful", "Successful")
+        }
+
+        It "Returns output of the expected type" {
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has the correct values for migration properties" {
+            $script:results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:results[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $script:results[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
         }
     }
 }

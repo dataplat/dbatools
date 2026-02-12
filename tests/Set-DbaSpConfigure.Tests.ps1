@@ -28,6 +28,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout).ConfiguredValue
             $newtimeout = $remotequerytimeout + 1
+            # Capture output from first call for output validation
+            $script:outputForValidation = $null
         }
 
         It "changes the remote query timeout from the original to new value" {
@@ -36,6 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
                 return
             }
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $newtimeout
+            $script:outputForValidation = $results
             $results.PreviousValue | Should -Be $remotequerytimeout
             $results.NewValue | Should -Be $newtimeout
         }
@@ -57,6 +60,27 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning -match "existing" | Should -Be $true
+        }
+
+        Context "Output validation" {
+            It "Returns output of type PSCustomObject" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "ConfigName",
+                    "PreviousValue",
+                    "NewValue"
+                )
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                }
+            }
         }
     }
 }

@@ -68,4 +68,33 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $udf2 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputTestUdf = "dbatoolsci_outputudf_$(Get-Random)"
+            $null = $server.Query("CREATE FUNCTION dbo.$outputTestUdf (@a int) RETURNS TABLE AS RETURN (SELECT 1 a);", $dbname1)
+            $result = Remove-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $outputTestUdf -Confirm:$false
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the expected type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Udf", "UdfName", "UdfSchema", "Status", "IsRemoved")
+            foreach ($prop in $expectedProperties) {
+                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has correct values for Status and IsRemoved on success" {
+            $result.Status | Should -Be "Dropped"
+            $result.IsRemoved | Should -BeTrue
+        }
+    }
 }

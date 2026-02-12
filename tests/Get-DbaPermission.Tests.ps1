@@ -97,6 +97,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "parameters work" {
+        BeforeAll {
+            $outputValidationResult = Get-DbaPermission -SqlInstance $server -Database "master"
+        }
+
         It "returns server level permissions with -IncludeServerLevel" -Skip:$env:appveyor {
             # Skip It on AppVeyor because test failes with "Invalid object name 'sys.availability_replicas'"
 
@@ -120,6 +124,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -HaveCount 4
             $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "DENY" -and $PSItem.PermissionName -in ("DELETE", "INSERT", "UPDATE") } | Should -HaveCount 3
             $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "GRANT" -and $PSItem.PermissionName -eq "SELECT" } | Should -HaveCount 1
+        }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "PermState", "PermissionName", "SecurableType", "Securable", "Grantee", "GranteeType", "RevokeStatement", "GrantStatement")
+            foreach ($prop in $expectedProps) {
+                $outputValidationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
         }
     }
 

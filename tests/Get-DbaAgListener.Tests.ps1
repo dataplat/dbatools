@@ -63,9 +63,34 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When getting AG listeners" {
-        It "Returns results with proper data" {
+        BeforeAll {
             $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
+        }
+
+        It "Returns results with proper data" {
             $results.PortNumber | Should -Contain 14330
+        }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Name",
+                "PortNumber",
+                "ClusterIPConfiguration"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 }

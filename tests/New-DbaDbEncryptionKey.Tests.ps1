@@ -72,6 +72,67 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a fresh database for output validation
+            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+
+            $outputMasterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            if (-not $outputMasterCert) {
+                $delOutputMasterCert = $true
+                $outputMasterCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
+            }
+
+            $result = $outputDb | New-DbaDbEncryptionKey -Force -EncryptorName $outputMasterCert.Name
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($outputDb) {
+                $outputDb | Remove-DbaDatabase -ErrorAction SilentlyContinue
+            }
+            if ($delOutputMasterCert) {
+                $outputMasterCert | Remove-DbaDbCertificate -ErrorAction SilentlyContinue
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey"
+        }
+
+        It "Has the expected default display properties" {
+            $result | Should -Not -BeNullOrEmpty
+            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "EncryptionAlgorithm",
+                "EncryptionState",
+                "EncryptionType",
+                "EncryptorName",
+                "ModifyDate",
+                "OpenedDate",
+                "RegenerateDate",
+                "SetDate",
+                "Thumbprint"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+    }
 }
 
 
