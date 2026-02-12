@@ -26,20 +26,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Get-DbaSpinLockStatistic -SqlInstance $TestConfig.InstanceSingle)
             $results.Count | Should -BeGreaterThan 0
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = @(Get-DbaSpinLockStatistic -SqlInstance $TestConfig.InstanceSingle)
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -52,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Backoffs"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

@@ -22,24 +22,21 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting server agent" {
-        It "Should get 1 agent server" {
-            $agentResults = Get-DbaAgentServer -SqlInstance $TestConfig.InstanceSingle
-            $agentResults.Count | Should -BeExactly 1
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $outputResult = Get-DbaAgentServer -SqlInstance $TestConfig.InstanceSingle
+            $agentResults = Get-DbaAgentServer -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Should get 1 agent server" {
+            $agentResults.Count | Should -BeExactly 1
         }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobServer"
+            $agentResults | Should -Not -BeNullOrEmpty
+            $agentResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobServer"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $agentResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

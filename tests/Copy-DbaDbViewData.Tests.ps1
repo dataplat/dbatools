@@ -94,6 +94,12 @@ Describe $CommandName -Tag IntegrationTests {
             SELECT top 13 2
             FROM sys.objects")
 
+        # Setup for output validation
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_tbl (id int); INSERT dbo.dbatoolsci_view_output_tbl SELECT 1")
+        $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_output AS SELECT id FROM dbo.dbatoolsci_view_output_tbl")
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_dest (id int)")
+        $outputResult = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_output -DestinationTable dbatoolsci_view_output_dest
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -103,6 +109,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Remove-TempObjects $db, $db2
+
+        # Cleanup for output validation
+        $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output', 'V') IS NOT NULL DROP VIEW dbo.dbatoolsci_view_output")
+        $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_tbl', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_tbl")
+        $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_dest")
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -183,61 +194,35 @@ Describe $CommandName -Tag IntegrationTests {
         $result.RowsCopied | Should -Be 1
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+    It "Returns output as PSCustomObject" {
+        $outputResult | Should -Not -BeNullOrEmpty
+        $outputResult | Should -BeOfType PSCustomObject
+    }
 
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_tbl', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_tbl")
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output', 'V') IS NOT NULL DROP VIEW dbo.dbatoolsci_view_output")
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_dest")
-            $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_tbl (id int); INSERT dbo.dbatoolsci_view_output_tbl SELECT 1")
-            $null = $db.Query("CREATE VIEW dbo.dbatoolsci_view_output AS SELECT id FROM dbo.dbatoolsci_view_output_tbl")
-            $null = $db.Query("CREATE TABLE dbo.dbatoolsci_view_output_dest (id int)")
-            $outputResult = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_output -DestinationTable dbatoolsci_view_output_dest
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    It "Has the expected properties" {
+        $expectedProperties = @(
+            "SourceInstance",
+            "SourceDatabase",
+            "SourceDatabaseID",
+            "SourceSchema",
+            "SourceTable",
+            "DestinationInstance",
+            "DestinationDatabase",
+            "DestinationDatabaseID",
+            "DestinationSchema",
+            "DestinationTable",
+            "RowsCopied",
+            "Elapsed"
+        )
+        foreach ($prop in $expectedProperties) {
+            $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
         }
+    }
 
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output', 'V') IS NOT NULL DROP VIEW dbo.dbatoolsci_view_output")
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_tbl', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_tbl")
-            $null = $db.Query("IF OBJECT_ID('dbo.dbatoolsci_view_output_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_view_output_dest")
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output as PSCustomObject" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @(
-                "SourceInstance",
-                "SourceDatabase",
-                "SourceDatabaseID",
-                "SourceSchema",
-                "SourceTable",
-                "DestinationInstance",
-                "DestinationDatabase",
-                "DestinationDatabaseID",
-                "DestinationSchema",
-                "DestinationTable",
-                "RowsCopied",
-                "Elapsed"
-            )
-            foreach ($prop in $expectedProperties) {
-                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has correct source and destination values" {
-            $outputResult.SourceDatabase | Should -Be "tempdb"
-            $outputResult.SourceTable | Should -Be "dbatoolsci_view_output"
-            $outputResult.DestinationTable | Should -Be "dbatoolsci_view_output_dest"
-            $outputResult.RowsCopied | Should -Be 1
-        }
+    It "Has correct source and destination values" {
+        $outputResult.SourceDatabase | Should -Be "tempdb"
+        $outputResult.SourceTable | Should -Be "dbatoolsci_view_output"
+        $outputResult.DestinationTable | Should -Be "dbatoolsci_view_output_dest"
+        $outputResult.RowsCopied | Should -Be 1
     }
 }

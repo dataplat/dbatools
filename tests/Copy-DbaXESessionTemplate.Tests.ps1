@@ -31,11 +31,17 @@ Describe $CommandName -Tag IntegrationTests {
             if ($sourceTemplate) {
                 $sourceTemplateName = $sourceTemplate.Name
             }
+
+            # Set up destination for output validation
+            $outputTestDest = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $outputTestDest -ItemType Directory -Force
+            $result = Copy-DbaXESessionTemplate -Destination $outputTestDest
         }
 
         AfterAll {
             # Clean up test artifacts if needed
             # We don't remove the templates as they might be useful for the user
+            Remove-Item -Path $outputTestDest -Recurse -ErrorAction SilentlyContinue
         }
 
         It "Successfully copies the template files" {
@@ -46,18 +52,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $copiedTemplate = Get-ChildItem -Path $templatePath | Where-Object Name -eq $sourceTemplateName
                 $copiedTemplate | Should -Not -BeNullOrEmpty
             }
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestDest = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-            $null = New-Item -Path $outputTestDest -ItemType Directory -Force
-            $result = Copy-DbaXESessionTemplate -Destination $outputTestDest
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputTestDest -Recurse -ErrorAction SilentlyContinue
         }
 
         It "Returns no output" {

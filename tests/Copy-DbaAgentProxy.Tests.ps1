@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination  = $TestConfig.InstanceCopy2
                 ProxyAccount = "dbatoolsci_agentproxy"
             }
-            $copyResults = Copy-DbaAgentProxy @splatCopyProxy
+            $copyResults = @(Copy-DbaAgentProxy @splatCopyProxy) | Where-Object { $PSItem.Name }
         }
 
         It "Should return one successful result" {
@@ -86,29 +86,14 @@ Describe $CommandName -Tag IntegrationTests {
             $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceCopy2 -Proxy "dbatoolsci_agentproxy"
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Delete the proxy on dest so we can re-copy it
-            $destSrv = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-            try { $destSrv.Query("EXEC msdb.dbo.sp_delete_proxy @proxy_name = 'dbatoolsci_agentproxy'") } catch { }
-
-            $splatOutputProxy = @{
-                Source       = $TestConfig.InstanceCopy1
-                Destination  = $TestConfig.InstanceCopy2
-                ProxyAccount = "dbatoolsci_agentproxy"
-            }
-            $outputResult = @(Copy-DbaAgentProxy @splatOutputProxy) | Where-Object { $PSItem.Name }
-        }
 
         It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            $copyResults | Should -Not -BeNullOrEmpty
+            $copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

@@ -79,32 +79,25 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Gets back some results" {
-        It "return at least two results" {
+        BeforeAll {
             $splatFind = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatools_dupeindex"
             }
             $results = @(Find-DbaDbDuplicateIndex @splatFind)
-            $results.Status.Count | Should -BeGreaterOrEqual 2
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutput = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = "dbatools_dupeindex"
-            }
-            $result = @(Find-DbaDbDuplicateIndex @splatOutput)
+        It "return at least two results" {
+            $results.Status.Count | Should -BeGreaterOrEqual 2
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType System.Data.DataRow
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType System.Data.DataRow
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
             $expectedProps = @(
                 "DatabaseName",
                 "TableName",
@@ -120,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "CompressionDescription"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
             }
         }
     }

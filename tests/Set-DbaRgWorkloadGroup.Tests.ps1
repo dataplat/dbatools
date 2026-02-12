@@ -39,6 +39,33 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
 
+            # Prepare output validation workload group
+            $outputWklGroupName = "dbatoolsci_outputwklgroup"
+            $splatNewOutputWklGroup = @{
+                SqlInstance                         = $TestConfig.InstanceSingle
+                WorkloadGroup                       = $outputWklGroupName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = "Internal"
+                Importance                          = "MEDIUM"
+                RequestMaximumMemoryGrantPercentage = 25
+                RequestMaximumCpuTimeInSeconds      = 0
+                RequestMemoryGrantTimeoutInSeconds  = 0
+                MaximumDegreeOfParallelism          = 0
+                GroupMaximumRequests                = 0
+                Force                               = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
+
+            $splatSetOutputWklGroup = @{
+                SqlInstance                         = $TestConfig.InstanceSingle
+                WorkloadGroup                       = $outputWklGroupName
+                ResourcePool                        = "default"
+                ResourcePoolType                    = "Internal"
+                Importance                          = "HIGH"
+                RequestMaximumMemoryGrantPercentage = 26
+            }
+            $script:outputValidationResult = Set-DbaRgWorkloadGroup @splatSetOutputWklGroup
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -48,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup any remaining workload groups
-            $wklGroupCleanupNames = @("dbatoolssci_wklgroupTest", "dbatoolssci_wklgroupTest2")
+            $wklGroupCleanupNames = @("dbatoolssci_wklgroupTest", "dbatoolssci_wklgroupTest2", "dbatoolsci_outputwklgroup")
             $resourcePoolCleanupName = "dbatoolssci_poolTest"
 
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupNames -ErrorAction SilentlyContinue
@@ -241,71 +268,33 @@ Describe $CommandName -Tag IntegrationTests {
             $wklGroupCleanupName2 = "dbatoolssci_wklgroupTest2"
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupName, $wklGroupCleanupName2 -ErrorAction SilentlyContinue
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-
-            $outputWklGroupName = "dbatoolsci_outputwklgroup"
-            $splatNewOutputWklGroup = @{
-                SqlInstance                         = $TestConfig.InstanceSingle
-                WorkloadGroup                       = $outputWklGroupName
-                ResourcePool                        = "default"
-                ResourcePoolType                    = "Internal"
-                Importance                          = "MEDIUM"
-                RequestMaximumMemoryGrantPercentage = 25
-                RequestMaximumCpuTimeInSeconds      = 0
-                RequestMemoryGrantTimeoutInSeconds  = 0
-                MaximumDegreeOfParallelism          = 0
-                GroupMaximumRequests                = 0
-                Force                               = $true
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.WorkloadGroup"
             }
-            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
 
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatSetOutputWklGroup = @{
-                SqlInstance                         = $TestConfig.InstanceSingle
-                WorkloadGroup                       = $outputWklGroupName
-                ResourcePool                        = "default"
-                ResourcePoolType                    = "Internal"
-                Importance                          = "HIGH"
-                RequestMaximumMemoryGrantPercentage = 26
-            }
-            $result = Set-DbaRgWorkloadGroup @splatSetOutputWklGroup
-        }
-
-        AfterAll {
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWklGroupName -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.WorkloadGroup"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Id",
-                "Name",
-                "ExternalResourcePoolName",
-                "GroupMaximumRequests",
-                "Importance",
-                "IsSystemObject",
-                "MaximumDegreeOfParallelism",
-                "RequestMaximumCpuTimeInSeconds",
-                "RequestMaximumMemoryGrantPercentage",
-                "RequestMemoryGrantTimeoutInSeconds"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Id",
+                    "Name",
+                    "ExternalResourcePoolName",
+                    "GroupMaximumRequests",
+                    "Importance",
+                    "IsSystemObject",
+                    "MaximumDegreeOfParallelism",
+                    "RequestMaximumCpuTimeInSeconds",
+                    "RequestMaximumMemoryGrantPercentage",
+                    "RequestMemoryGrantTimeoutInSeconds"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

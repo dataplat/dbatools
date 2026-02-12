@@ -261,9 +261,36 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
     }
 
     Context "Decrypt Stored Procedure" {
-        It "Should be successful" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should be successful" {
             $result.Script | Should -Be $queryStoredProcedure
+        }
+
+        It "Returns output as PSCustomObject" {
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Type",
+                "Schema",
+                "Name",
+                "FullName",
+                "Script",
+                "OutputFile"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
     }
 
@@ -318,33 +345,4 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
-        }
-
-        It "Returns output as PSCustomObject" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProperties = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Type",
-                "Schema",
-                "Name",
-                "FullName",
-                "Script",
-                "OutputFile"
-            )
-            foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-    }
 }

@@ -77,21 +77,14 @@ Describe $CommandName -Tag IntegrationTests {
             $triggerNames = $results | Where-Object Name -in $trigger1Name, $trigger2Name
             $triggerNames.Count | Should -BeExactly 2
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaInstanceTrigger -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServerDdlTrigger"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServerDdlTrigger"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName", "InstanceName", "SqlInstance", "ID", "Name",
                 "AnsiNullsStatus", "AssemblyName", "BodyStartIndex", "ClassName",

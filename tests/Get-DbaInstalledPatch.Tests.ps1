@@ -31,12 +31,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $result | Should -Not -BeNullOrEmpty
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the expected type" {
             if (-not $result) { Set-ItResult -Skipped -Because "no patches found on this instance" }

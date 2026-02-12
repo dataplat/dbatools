@@ -142,27 +142,28 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Be "pipelinefile_$random"
             $result.Parent.Name | Should -Be $fgName
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputFileName = "dbatoolsci_outputval_$random"
-            $splatOutputFile = @{
+        It "Returns output of the documented type" {
+            $splatAddFile = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 FileGroup   = $fgName
-                FileName    = $outputFileName
+                FileName    = "outputval_$random"
             }
-            $result = Add-DbaDbFile @splatOutputFile
-        }
-
-        It "Returns output of the documented type" {
+            $result = Add-DbaDbFile @splatAddFile
             $result | Should -Not -BeNullOrEmpty
             $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DataFile"
         }
 
         It "Has the expected properties" {
-            $result.Name | Should -Be $outputFileName
+            $splatAddFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FileGroup   = $fgName
+                FileName    = "proptest_$random"
+            }
+            $result = Add-DbaDbFile @splatAddFile
+            $result.Name | Should -Be "proptest_$random"
             $result.FileName | Should -Not -BeNullOrEmpty
             $result.Parent | Should -Not -BeNullOrEmpty
         }

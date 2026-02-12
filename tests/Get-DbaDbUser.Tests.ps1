@@ -123,20 +123,14 @@ DROP LOGIN [$DBUserName2];
             $resultsByMultipleLogin.Name | Should -Be $dbUserName, $dbUserName2
             $resultsByMultipleLogin.Database | Should -Be "master", "master"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master -User $DBUserName
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
+            $results1 | Should -Not -BeNullOrEmpty
+            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

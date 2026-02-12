@@ -34,30 +34,24 @@ Describe $CommandName -Tag IntegrationTests {
             $cmConnectionResults = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME
             $cmConnectionResults | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the expected type" {
+            if (-not $cmConnectionResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $cmConnectionResults[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Connection.ManagementConnection"
+        }
+
+        It "Has the expected properties" {
+            if (-not $cmConnectionResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $cmConnectionResults[0].psobject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $cmConnectionResults[0].psobject.Properties["DisabledConnectionTypes"] | Should -Not -BeNullOrEmpty
+            $cmConnectionResults[0].psobject.Properties["OverrideExplicitCredential"] | Should -Not -BeNullOrEmpty
+        }
     }
 
     Context "Returns DbaCmConnection for User" {
         It "Results are not Empty" {
             $userConnectionResults = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME -UserName *
             $userConnectionResults | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME
-        }
-
-        It "Returns output of the expected type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Connection.ManagementConnection"
-        }
-
-        It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["DisabledConnectionTypes"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["OverrideExplicitCredential"] | Should -Not -BeNullOrEmpty
         }
     }
 }

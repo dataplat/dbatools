@@ -59,6 +59,9 @@ Describe $CommandName -Tag IntegrationTests {
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
         $replicaName = $primaryAg.PrimaryReplica
 
+        # Get results for output validation
+        $outputResult = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $primaryAgName
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -121,10 +124,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $primaryAgName
-        }
-
         It "Returns output of the documented type" {
             if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
             $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"

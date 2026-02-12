@@ -22,14 +22,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When clearing connection pool" {
+        BeforeAll {
+            $result = Clear-DbaConnectionPool
+        }
+
         It "Doesn't throw" {
             { Clear-DbaConnectionPool } | Should -Not -Throw
         }
-    }
 
-    Context "Output validation" {
         It "Returns no output" {
-            $result = Clear-DbaConnectionPool
             $result | Should -BeNullOrEmpty
         }
     }

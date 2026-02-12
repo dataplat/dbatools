@@ -57,21 +57,17 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeLike '*Filestream must be at least level 2 when using ShareName*'
             $results | Should -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "InstanceAccess", "ServiceAccess", "ServiceShareName")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -79,9 +75,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected additional properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].PSObject.Properties.Name | Should -Contain "InstanceAccessLevel"
-            $result[0].PSObject.Properties.Name | Should -Contain "ServiceAccessLevel"
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].PSObject.Properties.Name | Should -Contain "InstanceAccessLevel"
+            $results[0].PSObject.Properties.Name | Should -Contain "ServiceAccessLevel"
         }
     }
 }

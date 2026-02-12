@@ -50,19 +50,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ConfiguredValue -eq $remoteQueryTimeout.config_value | Should -Be $true
             $results.RunningValue -eq $remoteQueryTimeout.run_value | Should -Be $true
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
-        }
 
         It "Returns output of the expected type" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
             $result | Should -Not -BeNullOrEmpty
             $result[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
             $result | Should -Not -BeNullOrEmpty
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
@@ -87,6 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does not include excluded properties in default display" {
+            $result = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
             $result | Should -Not -BeNullOrEmpty
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $excludedProps = @("ServerName", "Parent", "ConfigName", "Property")

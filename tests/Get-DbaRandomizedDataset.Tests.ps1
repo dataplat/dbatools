@@ -25,25 +25,22 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command generates data sets" {
-        It "Should have $rowCount rows" {
-            $rowCount = 10
-            $dataset = Get-DbaRandomizedDataset -Template PersonalData -Rows $rowCount
-            $dataset.Count | Should -Be 10
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = @(Get-DbaRandomizedDataset -Template PersonalData -Rows 1)
+            $rowCount = 10
+            $dataset = @(Get-DbaRandomizedDataset -Template PersonalData -Rows $rowCount)
+        }
+
+        It "Should have $rowCount rows" {
+            $dataset.Count | Should -Be 10
         }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $dataset | Should -Not -BeNullOrEmpty
+            $dataset[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has properties defined by the PersonalData template" {
-            $result[0].PSObject.Properties.Name.Count | Should -BeGreaterThan 0
+            $dataset[0].PSObject.Properties.Name.Count | Should -BeGreaterThan 0
         }
     }
 }

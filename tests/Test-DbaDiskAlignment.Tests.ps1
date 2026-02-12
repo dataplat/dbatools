@@ -29,26 +29,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return a result not using sql" {
-            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $TestConfig.InstanceSingle
-            $results | Should -Not -Be $null
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Test-DbaDiskAlignment -ComputerName $TestConfig.InstanceSingle -NoSqlCheck
+            $script:outputForValidation = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $TestConfig.InstanceSingle
+            $script:outputForValidation | Should -Not -Be $null
         }
 
-        It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType PSCustomObject
+            }
 
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @("ComputerName", "Name", "PartitionSize", "PartitionType", "TestingStripeSize", "OffsetModuluCalculation", "StartingOffset", "IsOffsetBestPractice", "IsBestPractice", "NumberOfBlocks", "BootPartition", "PartitionBlockSize", "IsDynamicDisk")
-            foreach ($prop in $expectedProps) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @("ComputerName", "Name", "PartitionSize", "PartitionType", "TestingStripeSize", "OffsetModuluCalculation", "StartingOffset", "IsOffsetBestPractice", "IsBestPractice", "NumberOfBlocks", "BootPartition", "PartitionBlockSize", "IsDynamicDisk")
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                }
             }
         }
     }

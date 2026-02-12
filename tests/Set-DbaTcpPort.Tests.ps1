@@ -60,6 +60,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $setPort = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
             $setPort | Should -Be $testPort
+
+            # Capture for output validation
+            $script:outputForValidation = $result
         }
 
         It "Should change the port back to the old value" {
@@ -77,14 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $portInfo = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle
-            $currentPort = $portInfo.Port
-            # Set the same port to get a result without actually changing anything meaningful
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -Port $currentPort -Confirm:$false -WarningAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $result = $script:outputForValidation
         }
 
         It "Returns output of the expected type" {

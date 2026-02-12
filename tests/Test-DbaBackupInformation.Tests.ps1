@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     InModuleScope dbatools {
         Context "Everything as it should" {
-            It "Should pass as all systems Green" {
+            BeforeAll {
                 $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
                 $BackupHistory = $BackupHistory | Format-DbaBackupInformation
                 Mock Connect-DbaInstance -MockWith {
@@ -68,10 +68,16 @@ Describe $CommandName -Tag IntegrationTests {
                     }
                 }
                 Mock New-DbaDirectory { $True }
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
-                ($output.Count) -gt 0 | Should -Be $true
-                "False" -in ($Output.IsVerified) | Should -Be $False
-                ($null -ne $WarnVar) | Should -Be $True
+                $script:output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+            }
+            It "Should pass as all systems Green" {
+                ($script:output.Count) -gt 0 | Should -Be $true
+                "False" -in ($script:output.IsVerified) | Should -Be $False
+                ($null -ne $warnvar) | Should -Be $True
+            }
+            It "Returns objects with IsVerified property" {
+                $script:output | Should -Not -BeNullOrEmpty
+                $script:output[0].psobject.Properties.Name | Should -Contain "IsVerified" -Because "output should have the IsVerified property added by the command"
             }
         }
         Context "Not being able to see backups is bad" {
@@ -259,50 +265,6 @@ Describe $CommandName -Tag IntegrationTests {
                 ($output.Count) -gt 0 | Should -Be $true
                 $true -in ($Output.IsVerified) | Should -Be $False
                 ($null -ne $WarnVar) | Should -Be $True
-            }
-        }
-        Context "Output validation" {
-            It "Returns objects with IsVerified property" {
-                $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
-                $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-                Mock Connect-DbaInstance -MockWith {
-                    $obj = [PSCustomObject]@{
-                        Name                 = "BASEName"
-                        NetName              = "BASENetName"
-                        ComputerName         = "BASEComputerName"
-                        InstanceName         = "BASEInstanceName"
-                        DomainInstanceName   = "BASEDomainInstanceName"
-                        InstallDataDirectory = "BASEInstallDataDirectory"
-                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
-                        ServiceName          = "BASEServiceName"
-                        VersionMajor         = 9
-                        ConnectionContext    = New-Object PSObject
-                    }
-                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value "put=an=equal=in=it"
-                    Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
-                        param($query)
-                        if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
-                            return @(
-                                @{ "Name"          = "master"
-                                    "PhysicalName" = "C:\temp\master.mdf"
-                                }
-                            )
-                        }
-                    }
-                    $obj.PSObject.TypeNames.Clear()
-                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
-                    return $obj
-                }
-                Mock Get-DbaDatabase { $null }
-                Mock New-DbaDirectory { $true }
-                Mock Test-DbaPath { [PSCustomObject]@{
-                        FilePath   = "does\exists"
-                        FileExists = $true
-                    }
-                }
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningAction SilentlyContinue
-                $output | Should -Not -BeNullOrEmpty
-                $output[0].psobject.Properties.Name | Should -Contain "IsVerified" -Because "output should have the IsVerified property added by the command"
             }
         }
     }

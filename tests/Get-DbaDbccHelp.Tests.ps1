@@ -40,6 +40,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return property: Output" {
             $result.PSObject.Properties["Output"].Name | Should -Be "Output"
         }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("Operation", "Cmd", "Output")
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
+            }
+        }
     }
 
     Context "Works correctly" {
@@ -54,20 +66,6 @@ Describe $CommandName -Tag IntegrationTests {
             $pageResult.Operation | Should -Be "PAGE"
             $pageResult.Cmd | Should -Be "DBCC HELP(PAGE)"
             $pageResult.Output | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("Operation", "Cmd", "Output")
-            foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
-            }
         }
     }
 }

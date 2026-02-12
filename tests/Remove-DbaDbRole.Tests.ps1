@@ -104,6 +104,13 @@ Describe $CommandName -Tag IntegrationTests {
             $result0.Count | Should -BeGreaterThan $result1.Count
             $result1.Name -contains $role1 | Should -Be $false
         }
+
+        It "Returns no output" {
+            $outputRole = "dbatoolssci_outval_$(Get-Random)"
+            $null = $server.Query("CREATE ROLE [$outputRole]", $dbname1)
+            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $outputRole -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
     }
 
     Context "Schema ownership handling" {
@@ -190,15 +197,6 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $schemaOwner = Invoke-DbaQuery @splatQuery
             $schemaOwner.Owner | Should -Be "dbo"
-        }
-    }
-
-    Context "Output validation" {
-        It "Returns no output" {
-            $outputRole = "dbatoolssci_outval_$(Get-Random)"
-            $null = $server.Query("CREATE ROLE [$outputRole]", $dbname1)
-            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $outputRole -Confirm:$false
-            $result | Should -BeNullOrEmpty
         }
     }
 }

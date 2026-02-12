@@ -71,32 +71,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Databases are migratable" {
             (Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Database $db1).IsMigratable | Should -Be $true
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            # Use same instance as source and destination to avoid version mismatch issues
-            $outputResult = Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy1 -Database $db1
-        }
+        Context "Output validation" {
+            BeforeAll {
+                # Capture output for validation - using same instance as source and destination to avoid version mismatch issues
+                $script:outputForValidation = Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy1 -Database $db1
+            }
 
-        It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType PSCustomObject
+            }
 
-        It "Has the expected properties" {
-            $expectedProperties = @(
-                "SourceInstance",
-                "DestinationInstance",
-                "SourceVersion",
-                "DestinationVersion",
-                "Database",
-                "FeaturesInUse",
-                "IsMigratable",
-                "Notes"
-            )
-            foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            It "Has the expected properties" {
+                $expectedProperties = @(
+                    "SourceInstance",
+                    "DestinationInstance",
+                    "SourceVersion",
+                    "DestinationVersion",
+                    "Database",
+                    "FeaturesInUse",
+                    "IsMigratable",
+                    "Notes"
+                )
+                foreach ($prop in $expectedProperties) {
+                    $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
             }
         }
     }

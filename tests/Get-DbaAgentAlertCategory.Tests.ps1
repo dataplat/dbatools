@@ -48,20 +48,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category dbatoolsci_testcategory | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeExactly 1
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.AlertCategory"
+            $allResults = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle
+            $allResults | Should -Not -BeNullOrEmpty
+            $allResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.AlertCategory"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $allResults = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle
+            $defaultProps = $allResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

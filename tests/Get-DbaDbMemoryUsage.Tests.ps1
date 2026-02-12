@@ -29,6 +29,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Functionality" {
+        BeforeAll {
+            $script:outputResult = Get-DbaDbMemoryUsage -SqlInstance $TestConfig.InstanceSingle -IncludeSystemDb -Database "master"
+        }
+
         It "Returns data" {
             $result = Get-DbaDbMemoryUsage -SqlInstance $instance -IncludeSystemDb
             $result.Status.Count | Should -BeGreaterOrEqual 1
@@ -48,20 +52,14 @@ Describe $CommandName -Tag IntegrationTests {
             $uniqueDbs | Should -Not -Contain "ResourceDb"
             $uniqueDbs | Should -Contain "master"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbMemoryUsage -SqlInstance $TestConfig.InstanceSingle -IncludeSystemDb -Database "master"
-        }
 
         It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -77,12 +75,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does not include PageCount in default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "PageCount" -Because "PageCount is excluded via Select-DefaultView -ExcludeProperty"
         }
 
         It "Has PageCount available as a non-default property" {
-            $outputResult[0].psobject.Properties["PageCount"] | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.Properties["PageCount"] | Should -Not -BeNullOrEmpty
         }
     }
 }

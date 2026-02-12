@@ -55,16 +55,14 @@ Describe $CommandName -Tag IntegrationTests {
                 $p.Name | Should -Be $prop
             }
         }
-    }
 
-    Context "Output validation" {
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -Not -BeNullOrEmpty
             $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -Not -BeNullOrEmpty
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
@@ -90,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does not include excluded properties in default display" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result | Should -Not -BeNullOrEmpty
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $excludedProps = @(
                 "SystemSkuNumber",

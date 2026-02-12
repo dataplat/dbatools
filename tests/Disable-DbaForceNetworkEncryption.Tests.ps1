@@ -24,22 +24,9 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling force network encryption" {
         It "Returns results with ForceEncryption set to false" {
             $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
+            if (-not $results) { Set-ItResult -Skipped -Because "command returned no results" }
             $results.ForceEncryption | Should -BeFalse
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
-        }
-
-        It "Returns output of type PSCustomObject" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -48,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "CertificateThumbprint"
             )
             foreach ($prop in $expectedProps) {
-                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

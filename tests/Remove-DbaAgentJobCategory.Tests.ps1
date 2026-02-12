@@ -33,6 +33,10 @@ Describe $CommandName -Tag IntegrationTests {
             $testCategories = @("CategoryTest1", "CategoryTest2", "CategoryTest3")
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
 
+            # Create output validation category
+            $outputCategoryName = "dbatoolsci_outputtest_$(Get-Random)"
+            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -43,6 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Clean up any remaining test categories
             $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category "CategoryTest1", "CategoryTest2", "CategoryTest3" -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -69,43 +74,32 @@ Describe $CommandName -Tag IntegrationTests {
 
             $newresults.Count | Should -Be 0
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputCategoryName = "dbatoolsci_outputtest_$(Get-Random)"
-            $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $result = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
-        }
-
-        AfterAll {
-            $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output as PSCustomObject" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+        Context "Output validation" {
+            BeforeAll {
+                $script:result = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
             }
-        }
 
-        It "Has the correct values for a successful removal" {
-            $result.Name | Should -Be $outputCategoryName
-            $result.Status | Should -Be "Dropped"
-            $result.IsRemoved | Should -BeTrue
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            It "Returns output as PSCustomObject" {
+                $script:result | Should -Not -BeNullOrEmpty
+                $script:result | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct values for a successful removal" {
+                $script:result.Name | Should -Be $outputCategoryName
+                $script:result.Status | Should -Be "Dropped"
+                $script:result.IsRemoved | Should -BeTrue
+                $script:result.ComputerName | Should -Not -BeNullOrEmpty
+                $script:result.InstanceName | Should -Not -BeNullOrEmpty
+                $script:result.SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

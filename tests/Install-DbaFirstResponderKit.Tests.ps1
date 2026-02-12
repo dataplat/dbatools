@@ -74,6 +74,22 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $database -WarningAction SilentlyContinue
             $result[0].Status -eq "Error" | Should -Be $true
         }
+        It "Returns output of the documented type" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $resultsDownload[0] | Should -BeOfType PSCustomObject
+        }
+        It "Has the expected properties" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            foreach ($prop in $expectedProps) {
+                $resultsDownload[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+        It "Has no additional unexpected properties" {
+            $resultsDownload | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            $resultsDownload[0].PSObject.Properties.Name | Should -HaveCount $expectedProps.Count
+        }
     }
 
     Context "Testing First Responder Kit installer with LocalFile" {
@@ -133,42 +149,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDb = "dbatoolsci_frk_output_$(Get-Random)"
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
-            $outputServer.Query("CREATE DATABASE $outputDb")
-
-            $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -Database $outputDb -Branch main -Force
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $outputDb -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
-            foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has no additional unexpected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
-            $result[0].PSObject.Properties.Name | Should -HaveCount $expectedProps.Count
-        }
-    }
 }

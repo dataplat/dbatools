@@ -77,6 +77,44 @@ Describe $CommandName -Tag IntegrationTests {
             $dbResults.LastGoodCheckDb -ne $null | Should -Be $true
             $dbResults.LastGoodCheckDb -is [datetime] | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $masterResults | Should -Not -BeNullOrEmpty
+            $masterResults | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $masterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseCreated",
+                "LastGoodCheckDb",
+                "DaysSinceDbCreated",
+                "DaysSinceLastGoodCheckDb",
+                "Status",
+                "DataPurityEnabled",
+                "CreateVersion",
+                "DbccFlags"
+            )
+            foreach ($prop in $expectedProperties) {
+                $masterResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has valid values for standard connection properties" {
+            if (-not $masterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $masterResults.ComputerName | Should -Not -BeNullOrEmpty
+            $masterResults.InstanceName | Should -Not -BeNullOrEmpty
+            $masterResults.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has a valid Status value" {
+            if (-not $masterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $masterResults.Status | Should -BeIn @("Ok", "New database, not checked yet", "CheckDB should be performed")
+        }
     }
 
     Context "Piping works" {
@@ -107,47 +145,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -Database master
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProperties = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "DatabaseCreated",
-                "LastGoodCheckDb",
-                "DaysSinceDbCreated",
-                "DaysSinceLastGoodCheckDb",
-                "Status",
-                "DataPurityEnabled",
-                "CreateVersion",
-                "DbccFlags"
-            )
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
-        }
-
-        It "Has valid values for standard connection properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has a valid Status value" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result.Status | Should -BeIn @("Ok", "New database, not checked yet", "CheckDB should be performed")
-        }
-    }
 }

@@ -60,34 +60,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be "Success"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Revoke-DbaAgPermission -Type EndPoint
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType [PSCustomObject]
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results | Should -Not -BeNullOrEmpty
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Permission", "Type", "Status")
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has correct Type value" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].Type | Should -Be "Revoke"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].Type | Should -Be "Revoke"
         }
 
         It "Has correct Status value" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].Status | Should -Be "Success"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].Status | Should -Be "Success"
         }
     }
 }

@@ -48,7 +48,11 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Testing SqlWatch uninstaller" {
         BeforeAll {
-            $null = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
+            $result = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
+        }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
         }
 
         It "Removed all tables" {
@@ -69,30 +73,6 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "Removed all SQL Agent jobs" {
             $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }).Count
             $agentCount | Should -Be 0
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDatabase = "dbatoolsci_sqlwatch_output_$(Get-Random)"
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputServer.Query("CREATE DATABASE $outputDatabase")
-            Install-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns no output" {
-            $result = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase
-            $result | Should -BeNullOrEmpty
         }
     }
 }

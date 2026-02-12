@@ -56,6 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
             $result.Parent | Should -Be $dbname
+            $script:outputRole = $result
         }
 
         It 'Add new role with specificied owner' {
@@ -83,26 +84,14 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Name | Should -Be $roleExecutor
             $result.Parent | Should -Be $dbname
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputDbName = "dbatoolsci_outputrole"
-            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputInstance.Query("IF DB_ID('$outputDbName') IS NULL CREATE DATABASE [$outputDbName]")
-            $outputRole = New-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Role "dbatoolsci_outputtest"
-        }
-        AfterAll {
-            $outputInstance.Query("IF DB_ID('$outputDbName') IS NOT NULL DROP DATABASE [$outputDbName]")
-        }
 
         It "Returns output of the documented type" {
-            $outputRole | Should -Not -BeNullOrEmpty
-            $outputRole[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseRole"
+            $script:outputRole | Should -Not -BeNullOrEmpty
+            $script:outputRole[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.DatabaseRole"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputRole[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputRole[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Parent", "Owner")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -110,8 +99,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            $outputRole[0].psobject.Properties["Parent"] | Should -Not -BeNullOrEmpty
-            $outputRole[0].psobject.Properties["Parent"].MemberType | Should -Be "AliasProperty"
+            $script:outputRole[0].psobject.Properties["Parent"] | Should -Not -BeNullOrEmpty
+            $script:outputRole[0].psobject.Properties["Parent"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

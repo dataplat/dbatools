@@ -73,25 +73,15 @@ WHERE p.type = 'X'
             }
             { Copy-DbaExtendedStoredProcedure @splatWhatIf } | Should -Not -Throw
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputTest = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-            }
-            $result = Copy-DbaExtendedStoredProcedure @splatOutputTest
-        }
 
         It "Returns output with the expected TypeName" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no custom Extended Stored Procedures exist to copy" }
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $results) { Set-ItResult -Skipped -Because "no custom Extended Stored Procedures exist to copy" }
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no custom Extended Stored Procedures exist to copy" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no custom Extended Stored Procedures exist to copy" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

@@ -48,6 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "enables resource governor" {
             $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+            $script:outputForValidation = $results
             $results.Enabled | Should -Be $true
         }
 
@@ -79,11 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $result = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-        }
-
-        AfterAll {
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Disabled -ErrorAction SilentlyContinue
+            $result = $script:outputForValidation
         }
 
         It "Returns output of the documented type" {

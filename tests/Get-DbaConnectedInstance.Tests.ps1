@@ -16,27 +16,23 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "gets connected objects" {
-        It "returns some results" {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
-            $results = Get-DbaConnectedInstance
-            $results | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
-            $result = Get-DbaConnectedInstance
+            $script:connectedInstanceResults = Get-DbaConnectedInstance
+        }
+
+        It "returns some results" {
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
+            $script:connectedInstanceResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $script:connectedInstanceResults | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:connectedInstanceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "SqlInstance",
                 "ConnectionType",

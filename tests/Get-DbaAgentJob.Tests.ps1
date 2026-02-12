@@ -33,6 +33,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_disabled -Disabled
+            # Store a single job result for output validation
+            $singleJobResult = @(Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob)
         }
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
@@ -46,6 +48,43 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should get a specific job" {
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
             $results.Name | Should -Be "dbatoolsci_testjob"
+        }
+
+        It "Returns output of the documented type" {
+            $singleJobResult | Should -Not -BeNullOrEmpty
+            $singleJobResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $singleJobResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $singleJobResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Category",
+                "OwnerLoginName",
+                "CurrentRunStatus",
+                "CurrentRunRetryAttempt",
+                "Enabled",
+                "LastRunDate",
+                "LastRunOutcome",
+                "HasSchedule",
+                "OperatorToEmail",
+                "CreateDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $singleJobResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $singleJobResult[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+            $singleJobResult[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+            $singleJobResult[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+            $singleJobResult[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
         }
     }
     Context "Command gets no disabled jobs" {
@@ -154,54 +193,6 @@ Describe $CommandName -Tag IntegrationTests {
             $nullVariable = $null
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -ExcludeJob $nullVariable
             $results | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputJobName = "dbatoolsci_outputjob_$(Get-Random)"
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
-            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName
-        }
-        AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Name",
-                "Category",
-                "OwnerLoginName",
-                "CurrentRunStatus",
-                "CurrentRunRetryAttempt",
-                "Enabled",
-                "LastRunDate",
-                "LastRunOutcome",
-                "HasSchedule",
-                "OperatorToEmail",
-                "CreateDate"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-
-        It "Has working alias properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
-            $result[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

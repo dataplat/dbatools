@@ -147,7 +147,7 @@ select TraceID=@TraceID
                 SqlInstance = $TestConfig.InstanceSingle
                 Id          = $traceid
             }
-            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
+            $result = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
             $splatStartSession = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Session     = $sessionName
@@ -159,25 +159,6 @@ select TraceID=@TraceID
             $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputSessionName = "dbatoolsci-output-session"
-            $splatGetTrace = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Id          = $traceid
-            }
-            $result = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $outputSessionName
-        }
-
-        AfterAll {
-            $splatRemoveOutputSession = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Session     = $outputSessionName
-            }
-            $null = Remove-DbaXESession @splatRemoveOutputSession -ErrorAction SilentlyContinue
         }
 
         It "Returns output of the documented type" {

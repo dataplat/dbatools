@@ -216,7 +216,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             # Remove the orphan user with -Force to trigger schema output
-            $outputResult = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -User $outputLogin -Force
+            $script:outputResult = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -User $outputLogin -Force
         }
 
         AfterAll {
@@ -227,19 +227,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult | Should -BeOfType PSCustomObject
         }
 
         It "Has the correct properties for schema operations" {
-            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
-            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
-            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
-            $outputResult[0].DatabaseName | Should -Be $outputDbName
-            $outputResult[0].SchemaName | Should -Not -BeNullOrEmpty
-            $outputResult[0].Action | Should -BeIn @("DROP", "ALTER OWNER")
-            $outputResult[0].SchemaOwnerBefore | Should -Not -BeNullOrEmpty
-            $outputResult[0].SchemaOwnerAfter | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].DatabaseName | Should -Be $outputDbName
+            $script:outputResult[0].SchemaName | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].Action | Should -BeIn @("DROP", "ALTER OWNER")
+            $script:outputResult[0].SchemaOwnerBefore | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].SchemaOwnerAfter | Should -Not -BeNullOrEmpty
         }
     }
 }

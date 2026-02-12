@@ -62,6 +62,9 @@ Describe $CommandName -Tag IntegrationTests {
             $result2.Name | Should -Contain $resourcePoolName
             $newResourcePool | Should -Not -Be $null
 
+            # Capture for output validation
+            $script:outputValidationResult = $newResourcePool
+
         }
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
@@ -132,47 +135,12 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.ReconfigurePending | Should -Be $true
         }
-        AfterEach {
-            # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $resourcePoolName = "dbatoolssci_poolTest"
-            $resourcePoolName2 = "dbatoolssci_poolTest2"
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal -ErrorAction SilentlyContinue
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
-
-            # Reset for next test
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-    }
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-            $outputPoolName = "dbatoolsci_outputpool"
-            $splatNewOutputPool = @{
-                SqlInstance             = $TestConfig.InstanceSingle
-                ResourcePool            = $outputPoolName
-                MaximumCpuPercentage    = 100
-                MaximumMemoryPercentage = 100
-                MaximumIOPSPerVolume    = 100
-                CapCpuPercentage        = 100
-                Force                   = $true
-            }
-            $result = New-DbaRgResourcePool @splatNewOutputPool
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-        AfterAll {
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $outputPoolName -Type Internal -ErrorAction SilentlyContinue
-        }
-
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.ResourcePool
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0] | Should -BeOfType Microsoft.SqlServer.Management.Smo.ResourcePool
         }
-
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputValidationResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -192,6 +160,18 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
             }
+        }
+        AfterEach {
+            # We want to run all commands in the AfterEach block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $resourcePoolName = "dbatoolssci_poolTest"
+            $resourcePoolName2 = "dbatoolssci_poolTest2"
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal -ErrorAction SilentlyContinue
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
+
+            # Reset for next test
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
 }

@@ -60,6 +60,20 @@ Describe $CommandName -Tag IntegrationTests {
             $svr.Databases[$dbname].refresh()
             $svr.Databases[$dbname].Owner | Should -Be $owner
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Owner")
+                foreach ($prop in $expectedProps) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+        }
     }
 
     Context "Sets multiple database owners" {
@@ -118,33 +132,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Updates at least one database" {
             @($results).Count | Should -BeGreaterOrEqual 1
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputOwner = "dbatoolssci_outval_$(Get-Random)"
-            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputOwner -Password ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
-            $outputDb = "dbatoolsci_outval_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDb -Owner sa
-            $result = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $outputDb -TargetLogin $outputOwner
-        }
-
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDb -ErrorAction SilentlyContinue
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputOwner -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Owner")
-            foreach ($prop in $expectedProps) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
         }
     }
 }

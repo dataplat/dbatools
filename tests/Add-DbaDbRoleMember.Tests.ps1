@@ -118,6 +118,10 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDBAfter.Login | Should -Be $user1
             $roleDBAfter.UserName | Should -Be $user1
         }
+
+        It "Returns no output" {
+            $result | Should -BeNullOrEmpty
+        }
     }
 
     Context "When adding a user to multiple roles" {
@@ -218,16 +222,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        It "Returns no output" {
-            $splatOutputTest = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Role        = $role
-                Member      = $user1
-                Database    = $dbname
-            }
-            $outputResult = Add-DbaDbRoleMember @splatOutputTest
-            $outputResult | Should -BeNullOrEmpty
-        }
-    }
 }

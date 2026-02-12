@@ -80,6 +80,36 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a preview DatabaseRenames" {
             $previewResults.DatabaseRenames | Should -Be "dbatoolsci_rename1 --> dbatoolsci_rename2"
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $previewResults | Should -Not -BeNullOrEmpty
+                $previewResults | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $previewResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DBN", "FGN", "LGN", "FNN", "PendingRenames", "Status")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Excludes hidden properties from default display" {
+                $defaultProps = $previewResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps | Should -Not -Contain "DatabaseRenames" -Because "DatabaseRenames should be excluded from default display"
+                $defaultProps | Should -Not -Contain "FileGroupsRenames" -Because "FileGroupsRenames should be excluded from default display"
+                $defaultProps | Should -Not -Contain "LogicalNameRenames" -Because "LogicalNameRenames should be excluded from default display"
+                $defaultProps | Should -Not -Contain "FileNameRenames" -Because "FileNameRenames should be excluded from default display"
+            }
+
+            It "Has accessible hidden properties" {
+                $previewResults[0].PSObject.Properties.Name | Should -Contain "DatabaseRenames"
+                $previewResults[0].PSObject.Properties.Name | Should -Contain "FileGroupsRenames"
+                $previewResults[0].PSObject.Properties.Name | Should -Contain "LogicalNameRenames"
+                $previewResults[0].PSObject.Properties.Name | Should -Contain "FileNameRenames"
+            }
+        }
     }
 
     Context "Should rename a database" {
@@ -334,55 +364,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $outputDbName = "dbatoolsci_renameoutput_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-
-            $splatOutputPreview = @{
-                SqlInstance  = $TestConfig.InstanceSingle
-                Database     = $outputDbName
-                DatabaseName = "$($outputDbName)_new"
-                Preview      = $true
-            }
-            $result = Rename-DbaDatabase @splatOutputPreview
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DBN", "FGN", "LGN", "FNN", "PendingRenames", "Status")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-
-        It "Excludes hidden properties from default display" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $defaultProps | Should -Not -Contain "DatabaseRenames" -Because "DatabaseRenames should be excluded from default display"
-            $defaultProps | Should -Not -Contain "FileGroupsRenames" -Because "FileGroupsRenames should be excluded from default display"
-            $defaultProps | Should -Not -Contain "LogicalNameRenames" -Because "LogicalNameRenames should be excluded from default display"
-            $defaultProps | Should -Not -Contain "FileNameRenames" -Because "FileNameRenames should be excluded from default display"
-        }
-
-        It "Has accessible hidden properties" {
-            $result[0].PSObject.Properties.Name | Should -Contain "DatabaseRenames"
-            $result[0].PSObject.Properties.Name | Should -Contain "FileGroupsRenames"
-            $result[0].PSObject.Properties.Name | Should -Contain "LogicalNameRenames"
-            $result[0].PSObject.Properties.Name | Should -Contain "FileNameRenames"
         }
     }
 }

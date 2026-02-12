@@ -135,6 +135,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return 2 log backups" {
             ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 2
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "SqlInstance",
+                "Database",
+                "Type",
+                "TotalSize",
+                "DeviceType",
+                "Start",
+                "Duration",
+                "End",
+                "Path",
+                "FullName",
+                "FileList",
+                "FirstLsn",
+                "LastLsn"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the BackupHistory object"
+            }
+        }
     }
 
     Context "Get history for one database" {
@@ -268,50 +294,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputBackupDir = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
-            $null = New-Item -Path $outputBackupDir -ItemType Directory
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master -Type Full -FilePath "$outputBackupDir\master_output.bak"
-            $splatOutputValidation = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Path        = $outputBackupDir
-            }
-            $outputResult = Get-DbaBackupInformation @splatOutputValidation
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputBackupDir -Recurse -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @(
-                "SqlInstance",
-                "Database",
-                "Type",
-                "TotalSize",
-                "DeviceType",
-                "Start",
-                "Duration",
-                "End",
-                "Path",
-                "FullName",
-                "FileList",
-                "FirstLsn",
-                "LastLsn"
-            )
-            foreach ($prop in $expectedProps) {
-                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the BackupHistory object"
-            }
-        }
-    }
 }

@@ -23,6 +23,16 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        try {
+            $script:outputForValidation = Clear-DbaLatchStatistics -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+        } catch {
+            $script:outputForValidation = $null
+        }
+        # Filter out null elements that may come from ShouldProcess issues in Pester
+        if ($script:outputForValidation) {
+            $script:outputForValidation = @($script:outputForValidation | Where-Object { $null -ne $PSItem })
+            if ($script:outputForValidation.Count -eq 0) { $script:outputForValidation = $null }
+        }
     }
 
     AfterAll {
@@ -30,43 +40,20 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command executes properly and returns proper info" {
-        BeforeAll {
-            $splatClearLatch = @{
-                SqlInstance = $TestConfig.InstanceSingle
-            }
-            $results = Clear-DbaLatchStatistics @splatClearLatch
-        }
-
         It "Returns success" {
-            $results.Status | Should -Be "Success"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            try {
-                $outputResult = Clear-DbaLatchStatistics -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-            } catch {
-                $outputResult = $null
-            }
-            # Filter out null elements that may come from ShouldProcess issues in Pester
-            if ($outputResult) {
-                $outputResult = @($outputResult | Where-Object { $null -ne $PSItem })
-                if ($outputResult.Count -eq 0) { $outputResult = $null }
-            }
+            $script:outputForValidation.Status | Should -Be "Success"
         }
 
         It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            $script:outputForValidation[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Status")
             foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

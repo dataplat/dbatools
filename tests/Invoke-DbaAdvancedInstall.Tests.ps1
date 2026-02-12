@@ -504,72 +504,19 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Restarted | Should -Be $false
             $result.Installer | Should -Be 'TestDrive:\dummy.exe'
             $result.Notes | Should -BeNullOrEmpty
-        }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $version = [version]'14.0'
-            $cred = New-Object PSCredential('foo', (ConvertTo-SecureString 'bar' -Force -AsPlainText))
-
-            @(
-                "[OPTIONS]"
-                'SQLSVCACCOUNT="foo\bar"'
-                'FEATURES="SQLEngine,AS"'
-            ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-
-            $config = @{
-                OPTIONS = @{
-                    ACTION                = "Install"
-                    AGTSVCSTARTUPTYPE     = "Automatic"
-                    ASCOLLATION           = "Latin1_General_CI_AS"
-                    BROWSERSVCSTARTUPTYPE = "False"
-                    ENABLERANU            = "False"
-                    ERRORREPORTING        = "False"
-                    FEATURES              = "SQLEngine"
-                    FILESTREAMLEVEL       = "0"
-                    HELP                  = "False"
-                    INDICATEPROGRESS      = "False"
-                    INSTANCEID            = 'foo'
-                    INSTANCENAME          = 'foo'
-                    ISSVCSTARTUPTYPE      = "Automatic"
-                    QUIET                 = "True"
-                    QUIETSIMPLE           = "False"
-                    RSINSTALLMODE         = "DefaultNativeMode"
-                    RSSVCSTARTUPTYPE      = "Automatic"
-                    SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
-                    SQLSVCSTARTUPTYPE     = "Automatic"
-                    SQLSYSADMINACCOUNTS   = 'foo\bar'
-                    SQMREPORTING          = "False"
-                    TCPENABLED            = "1"
-                    UPDATEENABLED         = "False"
-                    X86                   = "False"
-                }
-            }
-
-            $splatOutputTest = @{
-                ComputerName                  = $env:COMPUTERNAME
-                InstanceName                  = 'foo'
-                Port                          = 1337
-                InstallationPath              = 'TestDrive:\dummy.exe'
-                ConfigurationPath             = 'TestDrive:\Configuration.ini'
-                ArgumentList                  = @('/IACCEPTSQLSERVERLICENSETERMS')
-                Restart                       = $false
-                Version                       = $version
-                Configuration                 = $config
-                SaveConfiguration             = 'TestDrive:\Configuration.copy.ini'
-                SaCredential                  = $cred
-                PerformVolumeMaintenanceTasks = $true
-            }
-            $result = Invoke-DbaAdvancedInstall @splatOutputTest -EnableException
+            # Store for use in output validation Its
+            $script:outputValidation_14 = $result
         }
 
         It "Returns output of the documented type" {
+            $result = $script:outputValidation_14
             $result | Should -Not -BeNullOrEmpty
             $result | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
+            $result = $script:outputValidation_14
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "Version", "Port", "Successful", "Restarted", "Installer", "ExitCode", "LogFile", "Notes")
             foreach ($prop in $expectedDefaults) {
@@ -578,6 +525,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has additional properties available beyond defaults" {
+            $result = $script:outputValidation_14
             $result.PSObject.Properties.Name | Should -Contain "SACredential"
             $result.PSObject.Properties.Name | Should -Contain "Configuration"
             $result.PSObject.Properties.Name | Should -Contain "ExitMessage"
@@ -585,4 +533,5 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PSObject.Properties.Name | Should -Contain "ConfigurationFile"
         }
     }
+
 }

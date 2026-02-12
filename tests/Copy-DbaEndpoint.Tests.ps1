@@ -64,6 +64,28 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying endpoints between instances" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Clean up any leftover test endpoint on destination using T-SQL to avoid ShouldProcess issues
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "IF EXISTS (SELECT 1 FROM sys.endpoints WHERE name = 'Hadr_endpoint') DROP ENDPOINT [Hadr_endpoint]" -ErrorAction SilentlyContinue
+
+            # Copy the Hadr_endpoint for output validation
+            $splatOutputCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Endpoint    = "Hadr_endpoint"
+            }
+            $script:outputForValidation = Copy-DbaEndpoint @splatOutputCopy
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # Clean up copied endpoint on destination using T-SQL to avoid ShouldProcess issues
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "IF EXISTS (SELECT 1 FROM sys.endpoints WHERE name = 'Hadr_endpoint') DROP ENDPOINT [Hadr_endpoint]" -ErrorAction SilentlyContinue
+        }
+
         It "Successfully copies a mirroring endpoint" {
             $splatCopy = @{
                 Source      = $TestConfig.InstanceCopy1
@@ -75,41 +97,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
             $results.Name | Should -Be $endpointName
         }
-    }
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            # Clean up any leftover test endpoint on destination using T-SQL to avoid ShouldProcess issues
-            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "IF EXISTS (SELECT 1 FROM sys.endpoints WHERE name = 'Hadr_endpoint') DROP ENDPOINT [Hadr_endpoint]" -ErrorAction SilentlyContinue
-
-            # Copy the existing Hadr_endpoint from Copy1 to Copy2 to get output for validation
-            $splatOutputCopy = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Endpoint    = "Hadr_endpoint"
-            }
-            $outputResult = Copy-DbaEndpoint @splatOutputCopy
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            # Clean up copied endpoint on destination using T-SQL to avoid ShouldProcess issues
-            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "IF EXISTS (SELECT 1 FROM sys.endpoints WHERE name = 'Hadr_endpoint') DROP ENDPOINT [Hadr_endpoint]" -ErrorAction SilentlyContinue
-        }
 
         It "Returns output with the expected TypeName" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "DateTime",
                 "SourceServer",
@@ -125,11 +121,11 @@ Describe "$CommandName Output" -Tag IntegrationTests {
         }
 
         It "Has correct property values" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].Type | Should -Be "Endpoint"
-            $outputResult[0].Name | Should -Not -BeNullOrEmpty
-            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].Type | Should -Be "Endpoint"
+            $script:outputForValidation[0].Name | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].DestinationServer | Should -Not -BeNullOrEmpty
         }
     }
 }

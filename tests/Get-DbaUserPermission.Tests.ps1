@@ -73,6 +73,35 @@ exec sp_addrolemember 'userrole','bob';
                 }
             }
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Object",
+                "Type",
+                "Member",
+                "RoleSecurableClass",
+                "SchemaOwner",
+                "Securable",
+                "GranteeType",
+                "Grantee",
+                "Permission",
+                "State",
+                "Grantor",
+                "GrantorType",
+                "SourceView"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "Command do not return error when database as different collation" {
@@ -102,60 +131,6 @@ exec sp_addrolemember 'userrole','bob';
 
         It "returns results" {
             $results.Status.Count -gt 0 | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDbName = "dbatoolsci_UserPermOutput"
-            $outputSql = @"
-create user alice_output without login;
-create role outputrole AUTHORIZATION dbo;
-exec sp_addrolemember 'outputrole','alice_output';
-"@
-
-            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-            $outputDb.ExecuteNonQuery($outputSql)
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $result = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Object",
-                "Type",
-                "Member",
-                "RoleSecurableClass",
-                "SchemaOwner",
-                "Securable",
-                "GranteeType",
-                "Grantee",
-                "Permission",
-                "State",
-                "Grantor",
-                "GrantorType",
-                "SourceView"
-            )
-            foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
         }
     }
 }

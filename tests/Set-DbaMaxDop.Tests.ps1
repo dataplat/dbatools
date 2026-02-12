@@ -69,6 +69,28 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.CurrentInstanceMaxDop | Should -Be 2
             }
         }
+
+        Context "Output validation for instance-level" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "PreviousInstanceMaxDopValue",
+                    "CurrentInstanceMaxDop"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
@@ -76,6 +98,23 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti2 -MaxDop 4 -Database $singledb
             foreach ($result in $results) {
                 $result.DatabaseMaxDop | Should -Be 4
+            }
+        }
+
+        Context "Output validation for database-level" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                # InstanceName, Database, PreviousDatabaseMaxDopValue are standard properties
+                # CurrentDatabaseMaxDopValue is a calculated property (hashtable) so it shows as System.Collections.Hashtable
+                $defaultProps | Should -Contain "InstanceName" -Because "property 'InstanceName' should be in the default display set"
+                $defaultProps | Should -Contain "Database" -Because "property 'Database' should be in the default display set"
+                $defaultProps | Should -Contain "PreviousDatabaseMaxDopValue" -Because "property 'PreviousDatabaseMaxDopValue' should be in the default display set"
             }
         }
     }
@@ -121,50 +160,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation for instance-level" {
-        BeforeAll {
-            $outputResult = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1 -MaxDop 2
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "PreviousInstanceMaxDopValue",
-                "CurrentInstanceMaxDop"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-    }
-
-    Context "Output validation for database-level" {
-        BeforeAll {
-            $outputDbResult = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti2 -MaxDop 4 -Database $singledb
-        }
-
-        It "Returns output of the documented type" {
-            $outputDbResult | Should -Not -BeNullOrEmpty
-            $outputDbResult | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputDbResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputDbResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            # InstanceName, Database, PreviousDatabaseMaxDopValue are standard properties
-            # CurrentDatabaseMaxDopValue is a calculated property (hashtable) so it shows as System.Collections.Hashtable
-            $defaultProps | Should -Contain "InstanceName" -Because "property 'InstanceName' should be in the default display set"
-            $defaultProps | Should -Contain "Database" -Because "property 'Database' should be in the default display set"
-            $defaultProps | Should -Contain "PreviousDatabaseMaxDopValue" -Because "property 'PreviousDatabaseMaxDopValue' should be in the default display set"
-        }
-    }
 }

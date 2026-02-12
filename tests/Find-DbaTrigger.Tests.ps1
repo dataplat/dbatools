@@ -125,6 +125,7 @@ GO
 
         It "Should find a specific Trigger on the Table [dbo].[Customer]" {
             $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase Master -TriggerLevel Object
+            $script:outputValidationResults = $results
             $results.Object | Should -Be "[dbo].[Customer]"
         }
 
@@ -133,67 +134,26 @@ GO
             $results.name | Should -Be @("dbatoolsci_safety", "dbatoolsci_reminder1")
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputTriggerDb = "dbatoolsci_outputtrigger_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTriggerDb
-
-            $createTriggerSql = @"
-CREATE TABLE dbo.dbatoolsci_outputtable (id int, PRIMARY KEY (id));
-GO
-CREATE TRIGGER dbatoolsci_outputtrigger
-ON dbo.dbatoolsci_outputtable
-AFTER INSERT
-AS PRINT 'dbatoolsci output validation';
-GO
-"@
-            $splatCreateTrigger = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $outputTriggerDb
-                Query       = $createTriggerSql
-            }
-            $null = Invoke-DbaQuery @splatCreateTrigger
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatFindTrigger = @{
-                SqlInstance  = $TestConfig.InstanceSingle
-                Pattern      = "dbatoolsci output"
-                Database     = $outputTriggerDb
-                TriggerLevel = "Object"
-            }
-            $result = @(Find-DbaTrigger @splatFindTrigger)
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTriggerDb -Confirm:$false -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns results" {
-            $result | Should -Not -BeNullOrEmpty
+            $script:outputValidationResults | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output of type PSCustomObject" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the correct default display properties excluding Trigger and TriggerFullText" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputValidationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "Trigger" -Because "Trigger should be excluded from default display"
             $defaultProps | Should -Not -Contain "TriggerFullText" -Because "TriggerFullText should be excluded from default display"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputValidationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "SqlInstance",
@@ -213,13 +173,13 @@ GO
         }
 
         It "Has the Trigger property available via Select-Object" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties.Name | Should -Contain "Trigger"
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0].psobject.Properties.Name | Should -Contain "Trigger"
         }
 
         It "Has the TriggerFullText property available via Select-Object" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties.Name | Should -Contain "TriggerFullText"
+            if (-not $script:outputValidationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputValidationResults[0].psobject.Properties.Name | Should -Contain "TriggerFullText"
         }
     }
 }

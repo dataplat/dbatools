@@ -44,43 +44,42 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $backupPath -Recurse
     }
     Context "Suspends data movement" {
+        BeforeAll {
+            # Resume data movement first so we can suspend and capture the output
+            $null = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement -ErrorAction SilentlyContinue
+        }
+
         It "Should return suspended results" {
             $results = Suspend-DbaAgDbDataMovement -SqlInstance $TestConfig.InstanceHadr -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
             $results.SynchronizationState | Should -Be 'NotSynchronizing'
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            # Resume data movement first so we can suspend and capture the output
-            $null = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname | Resume-DbaAgDbDataMovement -ErrorAction SilentlyContinue
-            $outputResult = Suspend-DbaAgDbDataMovement -SqlInstance $TestConfig.InstanceHadr -Database $dbname
-        }
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityDatabase"
+            }
 
-        It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityDatabase"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "AvailabilityGroup",
-                "LocalReplicaRole",
-                "Name",
-                "SynchronizationState",
-                "IsFailoverReady",
-                "IsJoined",
-                "IsSuspended"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "AvailabilityGroup",
+                    "LocalReplicaRole",
+                    "Name",
+                    "SynchronizationState",
+                    "IsFailoverReady",
+                    "IsJoined",
+                    "IsSuspended"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying job categories" {
-        It "Returns successful results" {
+        BeforeAll {
             $splatCopyCategory = @{
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
@@ -80,6 +80,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $results = Copy-DbaAgentJobCategory @splatCopyCategory
+            $script:outputForValidation = $results | Where-Object { $PSItem }
+        }
+
+        It "Returns successful results" {
             $results.Name | Should -Be "dbatoolsci test category"
             $results.Status | Should -Be "Successful"
         }
@@ -99,12 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $splatOutputValidation = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                JobCategory = "dbatoolsci test category"
-            }
-            $result = Copy-DbaAgentJobCategory @splatOutputValidation
+            $result = $script:outputForValidation
         }
 
         It "Returns output with the expected TypeName" {

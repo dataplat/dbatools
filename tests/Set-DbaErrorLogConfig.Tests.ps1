@@ -74,6 +74,23 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.LogCount | Should -Be 8
             }
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $logCountResults | Should -Not -BeNullOrEmpty
+                $logCountResults | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $logCountResults | Should -Not -BeNullOrEmpty
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "LogCount", "LogSize")
+                foreach ($result in $logCountResults) {
+                    foreach ($prop in $expectedProps) {
+                        $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                    }
+                }
+            }
+        }
     }
     Context "Apply LogSize to multiple instances" {
         BeforeAll {
@@ -83,25 +100,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns LogSize set to 100 for each instance" {
             foreach ($result in $logSizeResults) {
                 $result.LogSize.Kilobyte | Should -Be 100
-            }
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti1 -LogCount 8
-        }
-
-        It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "LogCount", "LogSize")
-            foreach ($prop in $expectedProps) {
-                $outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

@@ -87,6 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Set-DbaAgentSchedule @splatSetSchedule
             $renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
+            $script:outputForValidation = Set-DbaAgentSchedule @splatSetSchedule
         }
 
         AfterAll {
@@ -352,19 +353,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputJobName = "dbatoolsci_setschedout_$(Get-Random)"
-            $outputScheduleName = "dbatoolsci_outschd"
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -OwnerLogin "sa" -EnableException
-            $outputStart = (Get-Date).AddDays(2).ToString("yyyyMMdd")
-            $outputEnd = (Get-Date).AddDays(4).ToString("yyyyMMdd")
-            $null = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -Job $outputJobName -FrequencyRecurrenceFactor "1" -FrequencySubdayInterval "5" -FrequencySubdayType "Time" -StartDate $outputStart -StartTime "010000" -EndDate $outputEnd -EndTime "020000" -EnableException
-            $outputAltStart = (Get-Date).AddDays(3).ToString("yyyyMMdd")
-            $outputAltEnd = (Get-Date).AddDays(5).ToString("yyyyMMdd")
-            $outputResult = Set-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $outputScheduleName -Job $outputJobName -FrequencyRecurrenceFactor "3" -StartDate $outputAltStart -StartTime "113300" -EndDate $outputAltEnd -EndTime "221100"
-        }
-
-        AfterAll {
-            Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $outputJobName -Confirm:$false -ErrorAction SilentlyContinue
+            $outputResult = $script:outputForValidation
         }
 
         It "Returns output of the documented type" {

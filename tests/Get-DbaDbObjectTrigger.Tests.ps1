@@ -197,6 +197,25 @@ CREATE TRIGGER $triggerviewname
         It "Should be a Table trigger" {
             $results.Parent.GetType().Name | Should -Be "Table"
         }
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Trigger"
+        }
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Parent",
+                "IsEnabled",
+                "DateLastModified"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
     Context "Gets only View Trigger when using -Type" {
         BeforeAll {
@@ -210,33 +229,6 @@ CREATE TRIGGER $triggerviewname
         }
         It "Should be a View trigger" {
             $results.Parent.GetType().Name | Should -Be "View"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Type Table
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Trigger"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Name",
-                "Parent",
-                "IsEnabled",
-                "DateLastModified"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
         }
     }
 }

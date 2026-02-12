@@ -56,34 +56,27 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Supports piping sequences" {
             (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
-            Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence
+            $script:result = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence
             (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $null = New-DbaDbSequence -SqlInstance $TestConfig.InstanceSingle -Database $newDbName -Sequence "dbatoolsci_OutputSeq_$random" -Schema "Schema_$random"
-            $result = Get-DbaDbSequence -SqlInstance $TestConfig.InstanceSingle -Database $newDbName -Sequence "dbatoolsci_OutputSeq_$random" -Schema "Schema_$random" | Remove-DbaDbSequence -Confirm:$false
-        }
-
-        It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected output properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Sequence", "SequenceName", "SequenceSchema", "Status", "IsRemoved")
-            foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:result | Should -Not -BeNullOrEmpty
+                $script:result | Should -BeOfType [PSCustomObject]
             }
-        }
 
-        It "Has the correct values for status properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].Status | Should -Be "Dropped"
-            $result[0].IsRemoved | Should -BeTrue
+            It "Has the expected output properties" {
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Sequence", "SequenceName", "SequenceSchema", "Status", "IsRemoved")
+                foreach ($prop in $expectedProps) {
+                    $script:result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has the correct values for status properties" {
+                $script:result[0].Status | Should -Be "Dropped"
+                $script:result[0].IsRemoved | Should -BeTrue
+            }
         }
     }
 }

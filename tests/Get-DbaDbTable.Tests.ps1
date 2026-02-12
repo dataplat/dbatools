@@ -52,6 +52,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should get the table" {
+        BeforeAll {
+            $outputResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tablename
+        }
+
         It "Gets the table" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
@@ -60,19 +64,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets the table when you specify the database" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname).Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname).Name | Should -Contain $tablename
-        }
-    }
-
-    Context "Should not get the table if database is excluded" {
-        It "Doesn't find the table" {
-            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
-            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tablename
         }
 
         It "Returns output of the documented type" {
@@ -91,4 +82,12 @@ Describe $CommandName -Tag IntegrationTests {
             $defaultProps | Should -Contain "FullTextIndex" -Because "property 'FullTextIndex' should be in the default display set"
         }
     }
+
+    Context "Should not get the table if database is excluded" {
+        It "Doesn't find the table" {
+            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
+            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
+        }
+    }
+
 }

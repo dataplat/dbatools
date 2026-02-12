@@ -73,6 +73,41 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should include system procedures" {
             ($results | Where-Object Name -eq "sp_columns") | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the expected type" {
+            $outputResult = $results | Where-Object Name -eq $procName
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.StoredProcedure"
+        }
+
+        It "Has the expected default display properties" {
+            $outputResult = $results | Where-Object Name -eq $procName
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "ObjectId",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "ImplementationType",
+                "Startup"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias property ObjectId" {
+            $outputResult = $results | Where-Object Name -eq $procName
+            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $outputResult[0].psobject.Properties["ObjectId"] | Should -Not -BeNullOrEmpty
+            $outputResult[0].psobject.Properties["ObjectId"].MemberType | Should -Be "AliasProperty"
+        }
     }
 
     Context "Exclusions work correctly" {
@@ -132,41 +167,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = @(Get-DbaDbStoredProcedure -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -Name $procName)
-        }
-
-        It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.StoredProcedure"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Schema",
-                "ObjectId",
-                "CreateDate",
-                "DateLastModified",
-                "Name",
-                "ImplementationType",
-                "Startup"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-
-        It "Has working alias property ObjectId" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.Properties["ObjectId"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["ObjectId"].MemberType | Should -Be "AliasProperty"
-        }
-    }
 }

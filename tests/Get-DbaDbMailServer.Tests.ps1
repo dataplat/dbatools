@@ -107,21 +107,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets results" {
             $accountFilterResults | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle -Account $mailAccountName
-        }
 
         It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailServer"
+            if (-not $accountFilterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $accountFilterResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailServer"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $accountFilterResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $accountFilterResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

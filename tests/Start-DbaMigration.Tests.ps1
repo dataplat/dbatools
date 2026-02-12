@@ -153,6 +153,22 @@ Describe $CommandName -Tag IntegrationTests {
             $sourceDbs.Status | Should -Be $destDbs.Status
             $sourceDbs.Owner | Should -Be $destDbs.Owner
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                if (-not $migrationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $migrationResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $migrationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $migrationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
 
     Context "When using last backup method" {
@@ -255,54 +271,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputTestDb = "dbatoolsci_outputmigration$(Get-Random)"
-            $outputBackupPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
-            $null = New-Item -Path $outputBackupPath -ItemType Directory
-
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $outputTestDb -ErrorAction SilentlyContinue
-
-            $splatCreateOutputDb = @{
-                SqlInstance = $TestConfig.InstanceCopy1
-                Query       = "CREATE DATABASE $outputTestDb; ALTER DATABASE $outputTestDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
-            }
-            Invoke-DbaQuery @splatCreateOutputDb
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatOutputMigration = @{
-                Force         = $true
-                Source        = $TestConfig.InstanceCopy1
-                Destination   = $TestConfig.InstanceCopy2
-                BackupRestore = $true
-                SharedPath    = $outputBackupPath
-                Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials", "StartupProcedures", "MasterCertificates"
-            }
-            $outputResult = Start-DbaMigration @splatOutputMigration
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $outputTestDb -ErrorAction SilentlyContinue
-            Remove-Item -Path $outputBackupPath -Recurse -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-    }
 }

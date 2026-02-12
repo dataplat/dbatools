@@ -75,28 +75,15 @@ Describe $CommandName -Tag IntegrationTests {
             $copiedProc = $results | Where-Object Name -eq $procName
             $copiedProc.Status | Should -Be "Successful"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Clean destination first so copy produces a fresh Successful result
-            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database "master" -Query "IF OBJECT_ID('dbatoolsci_test_startup') IS NOT NULL DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
-            $splatOutputCopy = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Procedure   = "dbatoolsci_test_startup"
-            }
-            $outputResults = Copy-DbaStartupProcedure @splatOutputCopy
-        }
 
         It "Returns output with the expected TypeName" {
-            if (-not $outputResults) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResults) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

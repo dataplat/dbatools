@@ -68,11 +68,31 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Should create the user with login" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $script:outputResult = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Login $userName -DefaultSchema guest
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "Creates the user and get it" {
-            New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Login $userName -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should -Be $userName
             $newDbUser.DefaultSchema | Should -Be "guest"
+        }
+
+        It "Returns output of the documented type" {
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "LoginType", "Login", "AuthenticationType", "DefaultSchema")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
     Context "Should create the user with password" {
@@ -126,35 +146,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -EnableException
             $results.Count | Should -Be $accessibleDbCount
             $results.Name | Get-Unique | Should -Be $loginName
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputLoginName = "dbatoolsci_outputlogin_$(Get-Random)"
-            $outputUserName = "dbatoolsci_outputuser_$(Get-Random)"
-            $outputDbName = "dbatoolscidb_output_$(Get-Random)"
-            $outputPassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -Password $outputPassword -Force
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-            $outputResult = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputLoginName
-        }
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "LoginType", "Login", "AuthenticationType", "DefaultSchema")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
         }
     }
 }

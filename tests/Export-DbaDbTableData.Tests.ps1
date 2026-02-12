@@ -60,6 +60,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When exporting table data" {
+        BeforeAll {
+            $outputPath = "$($TestConfig.Temp)\$CommandName-outputtest-$(Get-Random)"
+            $null = New-Item -Path $outputPath -ItemType Directory
+            $outputFilePath = "$outputPath\dbatoolsci_outputtest.sql"
+        }
+
+        AfterAll {
+            Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        }
+
         It "exports the table data" {
             $escaped = [regex]::escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)")
             $secondescaped = [regex]::escape("INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],")
@@ -76,28 +86,16 @@ Describe $CommandName -Tag IntegrationTests {
             "$results" | Should -Match $escaped
             "$results" | Should -Match $secondescaped
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputPath = "$($TestConfig.Temp)\$CommandName-outputtest-$(Get-Random)"
-            $null = New-Item -Path $outputPath -ItemType Directory
-            $outputFilePath = "$outputPath\dbatoolsci_outputtest.sql"
-            $passthruResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -FilePath $outputFilePath
-            $fileResult = Get-ChildItem -Path $outputFilePath -ErrorAction SilentlyContinue
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
-        }
 
         It "Returns string output when using -Passthru" {
+            $passthruResult = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
             $passthruResult | Should -Not -BeNullOrEmpty
             $passthruResult | Should -BeOfType [System.String]
         }
 
         It "Returns file output when using -FilePath" {
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -FilePath $outputFilePath
+            $fileResult = Get-ChildItem -Path $outputFilePath -ErrorAction SilentlyContinue
             $fileResult | Should -Not -BeNullOrEmpty
             $fileResult | Should -BeOfType [System.IO.FileInfo]
         }

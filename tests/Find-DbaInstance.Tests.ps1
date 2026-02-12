@@ -50,20 +50,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "successfully connects" {
             $results.SqlConnected | Should -Be $true
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect | Where-Object SqlInstance -eq $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @(
                 "MachineName",
                 "ComputerName",
@@ -78,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Timestamp",
                 "ScanTypes"
             )
-            $propNames = $result[0].psobject.Properties.Name
+            $propNames = $results[0].psobject.Properties.Name
             foreach ($prop in $expectedProps) {
                 $propNames | Should -Contain $prop -Because "property '$prop' should be present in the output"
             }

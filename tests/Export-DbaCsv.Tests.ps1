@@ -330,26 +330,33 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
             $result.Elapsed | Should -BeOfType [timespan]
             $result.RowsPerSecond | Should -BeGreaterThan 0
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputFilePath = "$testExportPath\dbatoolsci_outputvalidation_$(Get-Random).csv"
-            $splatOutputValidation = @{
+        It "Returns output of the documented type" {
+            $filePath = "$testExportPath\output-validation.csv"
+
+            $splatExport = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Table       = $tableName
-                Path        = $outputFilePath
+                Path        = $filePath
             }
-            $result = Export-DbaCsv @splatOutputValidation
-        }
+            $result = Export-DbaCsv @splatExport
 
-        It "Returns output of the documented type" {
             $result | Should -Not -BeNullOrEmpty
             $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected properties" {
+            $filePath = "$testExportPath\property-validation.csv"
+
+            $splatExport = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = $tableName
+                Path        = $filePath
+            }
+            $result = Export-DbaCsv @splatExport
+
             $expectedProps = @("Path", "RowsExported", "FileSizeBytes", "FileSizeMB", "CompressionType", "Elapsed", "RowsPerSecond")
             foreach ($prop in $expectedProps) {
                 $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the result object"

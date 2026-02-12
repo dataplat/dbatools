@@ -70,39 +70,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a count of 1" {
             $results.Count | Should -BeExactly 1
         }
-    }
-
-    Context "Gets all the Db User Defined Table Type" {
-        BeforeAll {
-            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.InstanceSingle -Database tempdb
-        }
-
-        It "Gets results" {
-            $results | Should -Not -BeNullOrEmpty
-        }
-
-        It "Should have a count of 2" {
-            $results.Count | Should -BeExactly 2
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputValidation = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = "tempdb"
-                Type        = $tableTypeName
-            }
-            $result = Get-DbaDbUserDefinedTableType @splatOutputValidation
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedTableType"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedTableType"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -119,6 +94,20 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
             }
+        }
+    }
+
+    Context "Gets all the Db User Defined Table Type" {
+        BeforeAll {
+            $results = Get-DbaDbUserDefinedTableType -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
+
+        It "Gets results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have a count of 2" {
+            $results.Count | Should -BeExactly 2
         }
     }
 }

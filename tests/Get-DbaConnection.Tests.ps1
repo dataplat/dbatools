@@ -22,21 +22,18 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "returns the proper transport" {
-        It "returns a valid AuthScheme" {
+        BeforeAll {
             $results = Get-DbaConnection -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "returns a valid AuthScheme" {
             foreach ($result in $results) {
                 $result.AuthScheme | Should -BeIn "NTLM", "Kerberos", "SQL"
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaConnection -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output with expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -65,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "MostRecentSqlHandle"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

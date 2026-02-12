@@ -55,6 +55,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "ensure command works" {
+        BeforeAll {
+            $outputFgName = "dbatoolsci_outfg_$(Get-Random)"
+            $script:outputValidationResult = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup $outputFgName
+        }
+
         It "Creates a filegroup" {
             $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random"
             $results.Parent.Name | Should -Be $db1name
@@ -90,17 +95,10 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "filegroup_pipeline2_$random", "filegroup_pipeline2_$random"
             $results.Parent.Name | Should -Be $db1name, $db2name
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputFgName = "dbatoolsci_outfg_$(Get-Random)"
-            $result = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup $outputFgName
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.FileGroup"
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.FileGroup"
         }
     }
 }

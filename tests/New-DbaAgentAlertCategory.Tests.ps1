@@ -34,8 +34,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "New Agent Alert Category is added properly" {
+        BeforeAll {
+            $outputCatName = "dbatoolsci_outputcat_$(Get-Random)"
+            $script:outputForValidation = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName
+        }
+
         AfterAll {
-            $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1, CategoryTest2 | Remove-DbaAgentAlertCategory
+            $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1, CategoryTest2, $outputCatName | Remove-DbaAgentAlertCategory
         }
 
         It "Should have the right name and category type" {
@@ -58,28 +63,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -WarningAction SilentlyContinue
             $WarnVar | Should -Match "already exists"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputCatName = "dbatoolsci_outputcat_$(Get-Random)"
-            $outputResult = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCatName -ErrorAction SilentlyContinue | Remove-DbaAgentAlertCategory -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
+            $outputResult = $script:outputForValidation
             $outputResult | Should -Not -BeNullOrEmpty
             $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.AlertCategory"
         }
 
         It "Has the expected default display properties" {
+            $outputResult = $script:outputForValidation
             if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "ID", "AlertCount")

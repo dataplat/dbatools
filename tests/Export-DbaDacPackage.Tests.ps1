@@ -101,6 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         BeforeAll {
             $tableExists = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table example
+            $outputValidationResult = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         }
 
         It "exports a dacpac" {
@@ -151,6 +152,25 @@ Describe $CommandName -Tag IntegrationTests {
             Test-Path $results.Path | Should -BeTrue
             if (($results).Path) {
                 Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $outputValidationResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Not -BeNullOrEmpty
+            $defaultProps | Should -Not -Contain "ComputerName" -Because "ComputerName should be excluded from default display"
+            $defaultProps | Should -Not -Contain "InstanceName" -Because "InstanceName should be excluded from default display"
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Path", "Elapsed", "Result")
+            foreach ($prop in $expectedProps) {
+                $outputValidationResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the result object"
             }
         }
     }
@@ -216,37 +236,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestFolder = "$testFolder\output-$(Get-Random)"
-            $null = New-Item $outputTestFolder -ItemType Directory -Force
-            $result = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $outputTestFolder
-        }
-
-        AfterAll {
-            if ($result.Path) {
-                Remove-Item -Path $result.Path -ErrorAction SilentlyContinue
-            }
-            Remove-Item -Path $outputTestFolder -Recurse -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result.PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $defaultProps | Should -Not -BeNullOrEmpty
-            $defaultProps | Should -Not -Contain "ComputerName" -Because "ComputerName should be excluded from default display"
-            $defaultProps | Should -Not -Contain "InstanceName" -Because "InstanceName should be excluded from default display"
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Path", "Elapsed", "Result")
-            foreach ($prop in $expectedProps) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the result object"
-            }
-        }
-    }
 }

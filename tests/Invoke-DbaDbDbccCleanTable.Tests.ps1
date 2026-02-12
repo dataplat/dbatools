@@ -97,6 +97,25 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Object -eq "dbo.dbatoolct_example" | Should -Be $true
             $result.Output.Substring(0, 25) -eq "DBCC execution completed." | Should -Be $true
         }
+
+        It "Returns output as PSCustomObject" {
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 
     Context "Validate BatchSize parameter" {
@@ -118,33 +137,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results for table" {
             $result.Cmd -eq "DBCC CLEANTABLE('tempdb', 'dbo.dbatoolct_example') WITH NO_INFOMSGS" | Should -Be $true
             $result.Output -eq $null | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Invoke-DbaDbDbccCleanTable -SqlInstance $TestConfig.InstanceSingle -Database "tempdb" -Object "dbo.dbatoolct_example"
-        }
-
-        It "Returns output as PSCustomObject" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProperties = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Object",
-                "Cmd",
-                "Output"
-            )
-            foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
         }
     }
 }

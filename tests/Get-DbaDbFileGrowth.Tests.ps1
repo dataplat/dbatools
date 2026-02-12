@@ -24,22 +24,12 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
-        It "returns information about msdb files" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle
-            $result.Database -contains "msdb" | Should -Be $true
-        }
-    }
-
-    Context "Should return file information for only msdb" {
-        It "returns only msdb files" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1
-            $result.Database | Should -Be "msdb"
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle -Database master
+            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "returns information about msdb files" {
+            $result.Database -contains "msdb" | Should -Be $true
         }
 
         It "Returns output of the documented type" {
@@ -73,6 +63,13 @@ Describe $CommandName -Tag IntegrationTests {
             $result[0].psobject.Properties["File"].MemberType | Should -Be "AliasProperty"
             $result[0].psobject.Properties["FileName"] | Should -Not -BeNullOrEmpty
             $result[0].psobject.Properties["FileName"].MemberType | Should -Be "AliasProperty"
+        }
+    }
+
+    Context "Should return file information for only msdb" {
+        It "returns only msdb files" {
+            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1
+            $result.Database | Should -Be "msdb"
         }
     }
 }

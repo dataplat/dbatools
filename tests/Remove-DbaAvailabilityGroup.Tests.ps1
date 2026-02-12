@@ -58,52 +58,25 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
             $results | Should -BeNullorEmpty
         }
-    }
 
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests -Skip:(-not $TestConfig.InstanceHadr) {
-    Context "Output validation" {
-        BeforeAll {
-            $ConfirmPreference = "None"
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            $outputAgName = "dbatoolsci_removeag_output_$(Get-Random)"
-            $splatOutputAg = @{
-                Primary      = $TestConfig.InstanceHadr
-                Name         = $outputAgName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Certificate  = "dbatoolsci_AGCert"
-                Confirm      = $false
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType [PSCustomObject]
             }
-            $null = New-DbaAvailabilityGroup @splatOutputAg
-            $outputResult = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName -Confirm:$false
 
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
-        }
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
 
-        AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName -Confirm:$false -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Status")
-            foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            It "Returns the correct values" {
+                $results[0].Status | Should -Be "Removed"
+                $results[0].AvailabilityGroup | Should -Be $agname
             }
         }
-
-        It "Returns the correct values" {
-            $outputResult[0].Status | Should -Be "Removed"
-            $outputResult[0].AvailabilityGroup | Should -Be $outputAgName
-        }
     }
+
 }

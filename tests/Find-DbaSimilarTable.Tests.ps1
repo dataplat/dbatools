@@ -68,39 +68,14 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.MatchPercent -eq 100 | Should -Be $true
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
-            $outputDb.Query("IF OBJECT_ID('dbatoolsci_outputtbl1') IS NOT NULL DROP TABLE dbatoolsci_outputtbl1")
-            $outputDb.Query("IF OBJECT_ID('dbatoolsci_outputtbl2') IS NOT NULL DROP TABLE dbatoolsci_outputtbl2")
-            $outputDb.Query("CREATE TABLE dbatoolsci_outputtbl1 (id int identity, colA varchar(20), colB int)")
-            $outputDb.Query("CREATE TABLE dbatoolsci_outputtbl2 (id int identity, colA varchar(20), colB int)")
-            $result = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci_outputtbl
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
-            $outputDb.Query("IF OBJECT_ID('dbatoolsci_outputtbl1') IS NOT NULL DROP TABLE dbatoolsci_outputtbl1")
-            $outputDb.Query("IF OBJECT_ID('dbatoolsci_outputtbl2') IS NOT NULL DROP TABLE dbatoolsci_outputtbl2")
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -123,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "MatchingColumnCount"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

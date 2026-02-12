@@ -64,6 +64,24 @@ Describe $CommandName -Tag IntegrationTests {
             $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
             $verifyLogin | Should -BeNullOrEmpty
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Login", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct Status value for a successful removal" {
+                $results.Status | Should -Be "Dropped"
+            }
+        }
     }
 
     Context "Regression test for issue #9163 - Warn when login not found" {
@@ -94,38 +112,6 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $tempLogin -WarningVariable warn -WarningAction SilentlyContinue
             $result.Status | Should -Be "Dropped"
             $warn | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $outputLoginName = "dbatoolsci_outputlogin_$(Get-Random)"
-            $outputSecurePassword = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -Password $outputSecurePassword
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -Confirm:$false
-        }
-
-        AfterAll {
-            $null = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputLoginName -ErrorAction SilentlyContinue | Remove-DbaLogin -Confirm:$false -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Login", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has the correct Status value for a successful removal" {
-            $result.Status | Should -Be "Dropped"
         }
     }
 }

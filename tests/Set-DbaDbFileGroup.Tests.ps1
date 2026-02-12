@@ -62,6 +62,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When setting filegroup properties" {
+        BeforeAll {
+            # Prepare result for output validation using pipeline input
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1name
+            $script:outputForValidation = $outputDb | Set-DbaDbFileGroup -FileGroup $fileGroup1Name -AutoGrowAllFiles -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
 
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
             $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles
@@ -112,9 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            # Use database InputObject approach to avoid pre-existing NullReference in ShouldProcess
-            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1name
-            $outputResult = $outputDb | Set-DbaDbFileGroup -FileGroup $fileGroup1Name -AutoGrowAllFiles -Confirm:$false
+            $outputResult = $script:outputForValidation
         }
 
         It "Returns output of the documented type" {

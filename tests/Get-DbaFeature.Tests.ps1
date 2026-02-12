@@ -22,27 +22,25 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command works" {
-        It "returns a result with the right computername and name is not null" {
-            $results = Get-DbaFeature -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName | Select-Object -First 1
-            $results.ComputerName | Should -Be ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaFeature -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
+            $results = Get-DbaFeature -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
+        }
+
+        It "returns a result with the right computername and name is not null" {
+            $firstResult = $results | Select-Object -First 1
+            $firstResult.ComputerName | Should -Be ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
         }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "Product", "Instance", "InstanceID", "Feature", "Language", "Edition", "Version", "Clustered", "Configured")
             foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

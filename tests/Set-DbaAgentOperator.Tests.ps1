@@ -60,31 +60,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -Be 1
             $results.EmailAddress | Should -Be "new@new.com"
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputOpName = "dbatoolsci_outputop_$(Get-Random)"
-            $outputInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputInstance.ConnectionContext.ExecuteNonQuery("EXEC msdb.dbo.sp_add_operator @name=N'$outputOpName', @enabled=1, @pager_days=0")
-            $outputResult = Set-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator $outputOpName -EmailAddress "outputtest@test.com"
-        }
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
+            }
 
-        AfterAll {
-            $outputInstance.ConnectionContext.ExecuteNonQuery("EXEC msdb.dbo.sp_delete_operator @name=N'$outputOpName'") 2>$null
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
-        }
-
-        It "Has the correct properties on the output object" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "Name"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "EmailAddress"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "PagerDays"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "ID"
+            It "Has the correct properties on the output object" {
+                $results[0].PSObject.Properties.Name | Should -Contain "Name"
+                $results[0].PSObject.Properties.Name | Should -Contain "EmailAddress"
+                $results[0].PSObject.Properties.Name | Should -Contain "PagerDays"
+                $results[0].PSObject.Properties.Name | Should -Contain "ID"
+            }
         }
     }
 }

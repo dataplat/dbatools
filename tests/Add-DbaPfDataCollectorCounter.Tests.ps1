@@ -60,23 +60,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the correct counter name" {
             $results.Name | Should -Be "\LogicalDisk(*)\Avg. Disk Queue Length"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" |
-                Get-DbaPfDataCollector |
-                Get-DbaPfDataCollectorCounter
-        }
 
         It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "DataCollectorSet", "DataCollector", "Name", "FileName")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -84,8 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does not include excluded properties in default display" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "DataCollectorSetXml" -Because "DataCollectorSetXml should be excluded from default display"
             $defaultProps | Should -Not -Contain "Credential" -Because "Credential should be excluded from default display"
             $defaultProps | Should -Not -Contain "CounterObject" -Because "CounterObject should be excluded from default display"

@@ -71,36 +71,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying registered servers" {
-        It "Should complete successfully" {
-            $splatCopy = @{
-                Source      = $TestConfig.InstanceCopy2
-                Destination = $TestConfig.InstanceCopy1
-                CMSGroup    = $groupName
-            }
-            $results = Copy-DbaRegServer @splatCopy
-            $results.Status | Should -Be @("Successful", "Successful")
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            # Copy again with Force to get output for validation
-            $splatCopyOutput = @{
+            $splatCopy = @{
                 Source      = $TestConfig.InstanceCopy2
                 Destination = $TestConfig.InstanceCopy1
                 CMSGroup    = $groupName
                 Force       = $true
             }
-            $outputResult = @(Copy-DbaRegServer @splatCopyOutput)
+            $script:results = Copy-DbaRegServer @splatCopy
+        }
+
+        It "Should complete successfully" {
+            $script:results.Status | Should -Be @("Successful", "Successful")
         }
 
         It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -108,9 +99,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for migration properties" {
-            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
+            $script:results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:results[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $script:results[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
         }
     }
 }

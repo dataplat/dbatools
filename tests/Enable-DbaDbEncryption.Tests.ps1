@@ -86,8 +86,11 @@ Describe $CommandName -Tag IntegrationTests {
 
 }
 
-Describe "$CommandName Output" -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         $outputMastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master |
@@ -120,10 +123,16 @@ Describe "$CommandName Output" -Tag IntegrationTests {
             Force         = $true
             Confirm       = $false
         }
-        $outputResult = @(Enable-DbaDbEncryption @splatOutputEncryption)
+        $script:outputResult = @(Enable-DbaDbEncryption @splatOutputEncryption)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
         if ($outputDelMastercert) {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DROP CERTIFICATE dbatoolsci_enc_outputcert" -ErrorAction SilentlyContinue
@@ -131,17 +140,19 @@ Describe "$CommandName Output" -Tag IntegrationTests {
         if ($outputDelMasterKey) {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DROP MASTER KEY" -ErrorAction SilentlyContinue
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Output validation" {
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
         }
 
         It "Has the expected default display properties" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "DatabaseName", "EncryptionEnabled")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -149,9 +160,9 @@ Describe "$CommandName Output" -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["DatabaseName"].MemberType | Should -Be "AliasProperty"
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.Properties["DatabaseName"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

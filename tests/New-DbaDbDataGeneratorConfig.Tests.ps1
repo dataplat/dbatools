@@ -62,33 +62,25 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command works" {
+        BeforeAll {
+            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath
+        }
 
         It "Should output a file with specific content" {
-            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath
             $configResults.Directory.Name | Should -Be (Split-Path $tempConfigPath -Leaf)
 
             $configResults.FullName | Should -FileContentMatch $dbNameGenerator
 
             $configResults.FullName | Should -FileContentMatch "FirstName"
-
-            $configResults | Remove-Item -ErrorAction SilentlyContinue
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputConfigPath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
-            $null = New-Item -Path $outputConfigPath -ItemType Directory
-            $result = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $outputConfigPath
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputConfigPath -Recurse -ErrorAction SilentlyContinue
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType System.IO.FileInfo
+            $configResults | Should -Not -BeNullOrEmpty
+            $configResults[0] | Should -BeOfType System.IO.FileInfo
+        }
+
+        AfterAll {
+            $configResults | Remove-Item -ErrorAction SilentlyContinue
         }
     }
 }

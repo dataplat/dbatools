@@ -44,24 +44,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return false for VersionNumber -1" {
             $falseResults.Exists | Should -Be $false
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $versionToTest = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).VersionMajor
-            $result = Test-DbaManagementObject -ComputerName $TestConfig.InstanceSingle -VersionNumber $versionToTest
-        }
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $trueResults | Should -Not -BeNullOrEmpty
+                $trueResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            }
 
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
-        }
-
-        It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @("ComputerName", "Version", "Exists")
-            foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            It "Has the expected properties" {
+                $expectedProps = @("ComputerName", "Version", "Exists")
+                foreach ($prop in $expectedProps) {
+                    $trueResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
             }
         }
     }

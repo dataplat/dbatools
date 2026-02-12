@@ -63,29 +63,27 @@ Describe $CommandName -Tag IntegrationTests {
         $result.DeployOptions.CommandTimeout | Should -Be 5
     }
 
-    Context "Output validation" {
-        It "Returns DacExtractOptions for Dacpac Export" {
-            $dacpacExport = New-DbaDacOption -Action Export -Type Dacpac
-            $dacpacExport | Should -Not -BeNullOrEmpty
-            $dacpacExport | Should -BeOfType [Microsoft.SqlServer.Dac.DacExtractOptions]
-        }
+    It "Returns DacExtractOptions for Dacpac Export" {
+        $dacpacExport = New-DbaDacOption -Action Export -Type Dacpac
+        $dacpacExport | Should -Not -BeNullOrEmpty
+        $dacpacExport | Should -BeOfType [Microsoft.SqlServer.Dac.DacExtractOptions]
+    }
 
-        It "Returns DacExportOptions for Bacpac Export" {
-            $bacpacExport = New-DbaDacOption -Action Export -Type Bacpac
-            $bacpacExport | Should -Not -BeNullOrEmpty
-            $bacpacExport | Should -BeOfType [Microsoft.SqlServer.Dac.DacExportOptions]
-        }
+    It "Returns DacExportOptions for Bacpac Export" {
+        $bacpacExport = New-DbaDacOption -Action Export -Type Bacpac
+        $bacpacExport | Should -Not -BeNullOrEmpty
+        $bacpacExport | Should -BeOfType [Microsoft.SqlServer.Dac.DacExportOptions]
+    }
 
-        It "Returns PublishOptions for Dacpac Publish" {
-            $dacpacPublish = New-DbaDacOption -Action Publish -Type Dacpac
-            $dacpacPublish | Should -Not -BeNullOrEmpty
-            $dacpacPublish | Should -BeOfType [Microsoft.SqlServer.Dac.PublishOptions]
-        }
+    It "Returns PublishOptions for Dacpac Publish" {
+        $dacpacPublish = New-DbaDacOption -Action Publish -Type Dacpac
+        $dacpacPublish | Should -Not -BeNullOrEmpty
+        $dacpacPublish | Should -BeOfType [Microsoft.SqlServer.Dac.PublishOptions]
+    }
 
-        It "Returns DacImportOptions for Bacpac Publish" {
-            $bacpacPublish = New-DbaDacOption -Action Publish -Type Bacpac
-            $bacpacPublish | Should -Not -BeNullOrEmpty
-            $bacpacPublish | Should -BeOfType [Microsoft.SqlServer.Dac.DacImportOptions]
-        }
+    It "Returns DacImportOptions for Bacpac Publish" {
+        $bacpacPublish = New-DbaDacOption -Action Publish -Type Bacpac
+        $bacpacPublish | Should -Not -BeNullOrEmpty
+        $bacpacPublish | Should -BeOfType [Microsoft.SqlServer.Dac.DacImportOptions]
     }
 }

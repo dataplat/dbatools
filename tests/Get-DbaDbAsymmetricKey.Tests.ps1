@@ -108,56 +108,15 @@ Describe $CommandName -Tag IntegrationTests {
             $multiResults.Name | Should -Contain $keyName
             $multiResults.Name | Should -Contain $keyName2
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDbName = "dbatoolsci_outvalaskey_$(Get-Random)"
-            $outputKeyName = "dbatoolsci_outputkey"
-            $tOutputPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-
-            $splatOutputMasterKey = @{
-                SqlInstance    = $TestConfig.InstanceSingle
-                Database       = $outputDbName
-                SecurePassword = $tOutputPassword
-                Confirm        = $false
-            }
-            $null = New-DbaDbMasterKey @splatOutputMasterKey
-
-            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -UserName "dbatoolsci_outkeyowner"
-
-            $splatOutputKey = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $outputDbName
-                Name        = $outputKeyName
-                Algorithm   = "Rsa4096"
-                Confirm     = $false
-            }
-            $null = New-DbaDbAsymmetricKey @splatOutputKey
-
-            $result = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Name $outputKeyName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AsymmetricKey"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AsymmetricKey"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

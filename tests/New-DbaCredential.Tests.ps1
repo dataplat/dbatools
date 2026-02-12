@@ -55,8 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "thorcred"
             $results.Identity | Should -Be "thor"
 
-            $results = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity thorsmomma -Password $password
-            $results | Should -Not -Be $null
+            $script:outputForValidation = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity thorsmomma -Password $password
+            $script:outputForValidation | Should -Not -Be $null
         }
 
         It "Gets the newly created credential" {
@@ -87,25 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputIdentity = "dbatoolsci_outputtest_$(Get-Random)"
-            $outputPassword = ConvertTo-SecureString "BigOlPassword!" -AsPlainText -Force
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $outputIdentity, "BigOlPassword!" -ComputerName $TestConfig.InstanceSingle
-            $result = New-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity $outputIdentity -SecurePassword $outputPassword
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            try {
-                (Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity $outputIdentity -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
-            } catch { }
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $outputIdentity -ComputerName $TestConfig.InstanceSingle
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $result = $script:outputForValidation
         }
 
         It "Returns output of the documented type" {

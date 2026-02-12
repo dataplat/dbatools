@@ -105,23 +105,14 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Name | Should -Be TestSchema4
             $schema.Parent.Name | Should -Be $newDbName
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputSchema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema "dbatoolsci_outputtest"
-        }
-        AfterAll {
-            $null = Invoke-DbaQuery -SqlInstance $server1 -Database $newDbName -Query "DROP SCHEMA [dbatoolsci_outputtest]" -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
-            $outputSchema | Should -Not -BeNullOrEmpty
-            $outputSchema[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+            $schema | Should -Not -BeNullOrEmpty
+            $schema[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
         }
 
         It "Has no default display property set since Select-DefaultView is not used" {
-            $outputSchema[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            $schema[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
         }
     }
 }

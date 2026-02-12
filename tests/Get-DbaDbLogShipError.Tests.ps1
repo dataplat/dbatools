@@ -41,19 +41,13 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle)
             $results.Status.Count | Should -BeExactly 0
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle)
-        }
 
         It "Returns no errors on an instance without log shipping" {
-            $result.Count | Should -BeExactly 0
+            $results.Count | Should -BeExactly 0
         }
 
         It "Has the expected output properties when results exist" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no log shipping errors on test instance" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no log shipping errors on test instance" }
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -67,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Message"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
             }
         }
     }

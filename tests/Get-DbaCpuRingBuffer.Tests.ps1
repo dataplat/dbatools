@@ -25,19 +25,16 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     # Skip IntegrationTests on AppVeyor because non-useful info from newly started sql servers.
 
     Context "When retrieving CPU ring buffer data" {
-        It "Returns CPU performance metrics from ring buffer" {
-            $results = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 100)
-            $results.Count | Should -BeGreaterThan 0
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 240)
+            $results = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 100)
+        }
+
+        It "Returns CPU performance metrics from ring buffer" {
+            $results.Count | Should -BeGreaterThan 0
         }
 
         It "Returns output with expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results | Should -Not -BeNullOrEmpty
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -49,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
                 "SystemIdle"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

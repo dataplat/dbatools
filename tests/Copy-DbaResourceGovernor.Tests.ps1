@@ -97,32 +97,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaRgClassifierFunction -SqlInstance $TestConfig.InstanceCopy2
             $results.Name | Should -BeExactly "dbatoolsci_fnRG"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Kill active sessions to allow resource governor reconfiguration
-            Get-DbaProcess -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Program "dbatools PowerShell module - dbatools.io" -ErrorAction SilentlyContinue |
-                Stop-DbaProcess -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
-
-            # Collect output incrementally to capture partial results even if the command fails
-            $outputResult = [System.Collections.ArrayList]::new()
-            try {
-                Copy-DbaResourceGovernor -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -WarningAction SilentlyContinue -ErrorAction SilentlyContinue |
-                    ForEach-Object { $null = $outputResult.Add($PSItem) }
-            } catch {
-                # Ignore - partial output may have been collected
-            }
-        }
 
         It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate - resource governor copy may have failed" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate - resource governor copy may have failed" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -130,10 +113,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for migration properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate - resource governor copy may have failed" }
-            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $results[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
         }
     }
 }

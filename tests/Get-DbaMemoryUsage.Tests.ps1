@@ -48,29 +48,23 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results from simple call" {
             $resultsSimple.Count -gt 0 | Should -BeTrue
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "SqlInstance", "CounterInstance", "Counter", "Pages", "Memory")
             foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist"
             }
         }
 
         It "Has dbasize property for Memory" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].Memory | Should -BeOfType [dbasize]
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].Memory | Should -BeOfType [dbasize]
         }
     }
 }

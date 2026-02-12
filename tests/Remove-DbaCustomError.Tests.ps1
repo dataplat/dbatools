@@ -61,6 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70003) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70003, @lang = 'all'; END")
         $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70004) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70004, @lang = 'all'; END")
         $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70005) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70005, @lang = 'all'; END")
+        $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
         $serverSecondary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
         $serverSecondary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
 
@@ -68,6 +69,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Parameter validation tests" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $serverPrimary.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
+            $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70006 -Severity 1 -MessageText "test_70006_output"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "Message ID validation" {
             { $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 1 -Language "English" } | Should -Throw
             { $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 2147483648 -Language "English" } | Should -Throw
@@ -91,6 +99,11 @@ Describe $CommandName -Tag IntegrationTests {
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70005
             ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70005).Count | Should -Be 0
+        }
+
+        It "Returns no output" {
+            $outputResult = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70006
+            $outputResult | Should -BeNullOrEmpty
         }
     }
 
@@ -133,25 +146,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
-            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
-            $null = New-DbaCustomError -SqlInstance $outputServer -MessageID 70006 -Severity 1 -MessageText "test_70006_output"
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $outputServer.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
-        }
-
-        It "Returns no output" {
-            $outputResult = Remove-DbaCustomError -SqlInstance $outputServer -MessageID 70006
-            $outputResult | Should -BeNullOrEmpty
-        }
-    }
 }

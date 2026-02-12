@@ -61,30 +61,26 @@ Describe $CommandName -Tag IntegrationTests {
         $results | Should -BeNullOrEmpty
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname
-        }
+    It "Returns output of the documented type" {
+        $outputResult = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $outputResult | Should -Not -BeNullOrEmpty
+        $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.MasterKey"
+    }
 
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.MasterKey"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "CreateDate",
-                "DateLastModified",
-                "IsEncryptedByServer"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
+    It "Has the expected default display properties" {
+        $outputResult = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+        $expectedDefaults = @(
+            "ComputerName",
+            "InstanceName",
+            "SqlInstance",
+            "Database",
+            "CreateDate",
+            "DateLastModified",
+            "IsEncryptedByServer"
+        )
+        foreach ($prop in $expectedDefaults) {
+            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
         }
     }
 }

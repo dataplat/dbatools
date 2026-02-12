@@ -75,21 +75,15 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.Total | Should -BeGreaterThan 0
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Measure-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $testResults | Should -Not -BeNullOrEmpty
+            $testResults[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $testResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $testResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -103,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected additional properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $testResults) { Set-ItResult -Skipped -Because "no result to validate" }
             $additionalProps = @(
                 "TotalCount",
                 "Inactive",
@@ -113,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "LogFileGrowthType"
             )
             foreach ($prop in $additionalProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+                $testResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
             }
         }
     }

@@ -66,35 +66,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Move-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group "$group\$group3" -NewGroup Default
             $results.Parent.Name | Should -Be "DatabaseEngineServerGroup"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputGroup = "dbatoolsci-outputgroup-$(Get-Random)"
-            $outputGroupDest = "dbatoolsci-outputdest-$(Get-Random)"
-            # Clean up in case they exist from a previous run
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $outputGroupDest, $outputGroup -ErrorAction SilentlyContinue | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
-            $null = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $outputGroup
-            $null = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $outputGroupDest
-            $outputResult = Move-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $outputGroup -NewGroup $outputGroupDest
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $outputGroupDest, $outputGroup -ErrorAction SilentlyContinue | Remove-DbaRegServerGroup -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.ServerGroup"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.ServerGroup"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "DisplayName", "Description", "ServerGroups", "RegisteredServers")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

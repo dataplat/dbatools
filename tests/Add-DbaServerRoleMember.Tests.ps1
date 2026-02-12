@@ -110,29 +110,9 @@ Describe $CommandName -Tag IntegrationTests {
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
             $roleAfter.EnumMemberNames() | Should -Contain $login2
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestLogin = "dbatoolsci_outputlogin_$(Get-Random)"
-            $outputTestRole = "dbatoolsci_outputrole_$(Get-Random)"
-            $splatOutputLogin = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Login       = $outputTestLogin
-                Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
-            }
-            $null = New-DbaLogin @splatOutputLogin
-            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputTestRole -Owner sa
-        }
-
-        AfterAll {
-            $null = Remove-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputTestRole -Login $outputTestLogin -Confirm:$false -ErrorAction SilentlyContinue
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputTestLogin -ErrorAction SilentlyContinue
-            $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputTestRole -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns no output" {
-            $result = Add-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $outputTestRole -Login $outputTestLogin -Confirm:$false
+            $result = Add-DbaServerRoleMember -SqlInstance $TestConfig.InstanceSingle -ServerRole $fixedServerRoles[0] -Login $login1 -Confirm:$false
             $result | Should -BeNullOrEmpty
         }
     }

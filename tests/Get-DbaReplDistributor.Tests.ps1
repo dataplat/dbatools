@@ -26,21 +26,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaReplDistributor -SqlInstance $TestConfig.InstanceSingle
             $results.DistributorInstalled | Should -Be $false
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaReplDistributor -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Replication.ReplicationServer"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Replication.ReplicationServer"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

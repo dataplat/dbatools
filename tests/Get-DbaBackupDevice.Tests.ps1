@@ -61,20 +61,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a PhysicalLocation of \\.\Tape0" {
             $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaBackupDevice -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.BackupDevice"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.BackupDevice"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

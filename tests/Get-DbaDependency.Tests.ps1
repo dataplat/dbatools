@@ -126,11 +126,28 @@ Describe $CommandName -Tag IntegrationTests {
         $results[0].Tier | Should -Be -1
     }
 
-    It "Test with a table that has child dependencies" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
-        $results.Count | Should -Be 2
-        $results[1].Dependent | Should -Be "dbatoolsci3"
-        $results[1].Tier | Should -Be 1
+    Context "Output validation using dbatoolsci2 table" {
+        BeforeAll {
+            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
+        }
+
+        It "Test with a table that has child dependencies" {
+            $result.Count | Should -Be 2
+            $result[1].Dependent | Should -Be "dbatoolsci3"
+            $result[1].Tier | Should -Be 1
+        }
+
+        It "Returns output of the documented type" {
+            $result | Should -Not -BeNullOrEmpty
+            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.Dependency"
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "ServiceName", "SqlInstance", "Dependent", "Type", "Owner", "IsSchemaBound", "Parent", "ParentType", "Tier", "Object", "Urn", "OriginalResource", "Script")
+            foreach ($prop in $expectedProperties) {
+                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 
     It "Test with a table that has multiple levels of dependencies and use -IncludeSelf" {
@@ -162,23 +179,5 @@ Describe $CommandName -Tag IntegrationTests {
         $results[1].Tier | Should -Be 1
         $results[2].Dependent | Should -Be "dbatoolsci_circrefA"
         $results[2].Tier | Should -Be 2
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.Dependency"
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "ServiceName", "SqlInstance", "Dependent", "Type", "Owner", "IsSchemaBound", "Parent", "ParentType", "Tier", "Object", "Urn", "OriginalResource", "Script")
-            foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
     }
 }

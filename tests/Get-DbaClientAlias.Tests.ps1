@@ -30,20 +30,17 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "gets the alias" {
-        It "returns accurate information" {
-            $results = Get-DbaClientAlias
-            $results.AliasName -contains "dbatoolscialias" | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaClientAlias
+            $results = Get-DbaClientAlias
+        }
+
+        It "returns accurate information" {
+            $results.AliasName -contains "dbatoolscialias" | Should -Be $true
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
@@ -56,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Architecture"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

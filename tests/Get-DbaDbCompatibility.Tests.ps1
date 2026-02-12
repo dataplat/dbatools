@@ -63,16 +63,10 @@ Describe $CommandName -Tag IntegrationTests {
             $masterDbId = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).Id
             $results.DatabaseId | Should -Be $masterDbId
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
@@ -85,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Compatibility"
             )
             foreach ($prop in $expectedProps) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

@@ -65,40 +65,40 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname2 | Remove-DbaDbCheckConstraint
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname2 | Should -BeNullOrEmpty
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputDbName = "dbatoolsci_chkcout_$(Get-Random)"
-            $outputChkcName = "dbatoolsci_chkcval_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName -EnableException
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Query "CREATE TABLE dbo.outputtable(col int CONSTRAINT $outputChkcName CHECK(col > 0));" -EnableException
-            $result = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName | Remove-DbaDbCheckConstraint -Confirm:$false
-        }
-
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the correct properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status", "IsRemoved")
-            foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+        Context "Output validation" {
+            BeforeAll {
+                $outputDbName = "dbatoolsci_chkcout_$(Get-Random)"
+                $outputChkcName = "dbatoolsci_chkcval_$(Get-Random)"
+                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName -EnableException
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Query "CREATE TABLE dbo.outputtable(col int CONSTRAINT $outputChkcName CHECK(col > 0));" -EnableException
+                $result = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName | Remove-DbaDbCheckConstraint -Confirm:$false
             }
-        }
 
-        It "Has the expected values for a successful removal" {
-            $result[0].Status | Should -Be "Dropped"
-            $result[0].IsRemoved | Should -Be $true
-            $result[0].Name | Should -Be $outputChkcName
-            $result[0].ComputerName | Should -Not -BeNullOrEmpty
-            $result[0].InstanceName | Should -Not -BeNullOrEmpty
-            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+            AfterAll {
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            }
+
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the correct properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the expected values for a successful removal" {
+                $result[0].Status | Should -Be "Dropped"
+                $result[0].IsRemoved | Should -Be $true
+                $result[0].Name | Should -Be $outputChkcName
+                $result[0].ComputerName | Should -Not -BeNullOrEmpty
+                $result[0].InstanceName | Should -Not -BeNullOrEmpty
+                $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

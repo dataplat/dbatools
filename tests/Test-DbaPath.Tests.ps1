@@ -50,6 +50,37 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object FilePath -eq $falseTest).FileExists | Should -Be $false
         }
 
+        Context "Output validation" {
+            BeforeAll {
+                # $results from parent Context is available (PSCustomObject from multiple paths)
+                $script:outputValidationResult = $results
+            }
+
+            It "Returns PSCustomObject when given multiple paths" {
+                $script:outputValidationResult | Should -Not -BeNullOrEmpty
+                $script:outputValidationResult[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties on PSCustomObject output" {
+                $expectedProperties = @(
+                    "SqlInstance",
+                    "InstanceName",
+                    "ComputerName",
+                    "FilePath",
+                    "FileExists",
+                    "IsContainer"
+                )
+                foreach ($prop in $expectedProperties) {
+                    $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Returns boolean when given a single path on a single instance" {
+                $singleResult = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest
+                $singleResult | Should -BeOfType [bool]
+            }
+        }
+
         It "Should return multiple results when passed multiple instances" {
             $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Path $falseTest
             foreach ($result in $results) {
@@ -69,37 +100,6 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object FilePath -eq $trueTestPath).FileExists | Should -Be $true
             ($results | Where-Object FilePath -eq $trueTest).IsContainer | Should -Be $false
             ($results | Where-Object FilePath -eq $trueTestPath).IsContainer | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Use multiple paths to get PSCustomObject output (single path returns boolean)
-            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path @($trueTest, $falseTest)
-        }
-
-        It "Returns PSCustomObject when given multiple paths" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties on PSCustomObject output" {
-            $expectedProperties = @(
-                "SqlInstance",
-                "InstanceName",
-                "ComputerName",
-                "FilePath",
-                "FileExists",
-                "IsContainer"
-            )
-            foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Returns boolean when given a single path on a single instance" {
-            $singleResult = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest
-            $singleResult | Should -BeOfType [bool]
         }
     }
 }

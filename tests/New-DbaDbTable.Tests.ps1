@@ -102,16 +102,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should create the table" {
-        BeforeEach {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $map = @{
                 Name      = 'test'
                 Type      = 'varchar'
                 MaxLength = 20
                 Nullable  = $true
             }
+            $script:outputValidationResult = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $tablename -ColumnMap $map
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         It "Creates the table" {
-            (New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $tablename -ColumnMap $map).Name | Should -Contain $tablename
+            $script:outputValidationResult.Name | Should -Contain $tablename
         }
         It "Really created it" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname).Name | Should -Contain $tablename
@@ -263,14 +266,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputTableName = "dbatoolsci_output_$(Get-Random)"
-            $outputMap = @{
-                Name      = "testcol"
-                Type      = "varchar"
-                MaxLength = 20
-                Nullable  = $true
-            }
-            $outputResult = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name $outputTableName -ColumnMap $outputMap
+            $outputResult = $script:outputValidationResult
         }
 
         It "Returns output of the documented type" {

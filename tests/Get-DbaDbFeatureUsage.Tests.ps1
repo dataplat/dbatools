@@ -69,31 +69,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has the Feature Compression" {
             $results.Feature | Should -Be "Compression"
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType System.Data.DataRow
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Feature", "Database")
+            foreach ($prop in $expectedProps) {
+                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "Gets Feature Usage using -ExcludeDatabase" {
         It "Gets results" {
             $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname
             $results.database | Should -Not -Contain $dbname
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = @(Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -Database $dbname)
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType System.Data.DataRow
-        }
-
-        It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Feature", "Database")
-            foreach ($prop in $expectedProps) {
-                $result[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present"
-            }
         }
     }
 }

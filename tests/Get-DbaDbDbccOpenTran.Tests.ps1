@@ -34,6 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Field",
                 "Data"
             )
+            $resultForMaster = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
         It "returns results for DBCC OPENTRAN" {
@@ -61,16 +62,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Database | Get-Unique | Should -Be "tempDB"
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $resultForMaster | Should -Not -BeNullOrEmpty
+            $resultForMaster[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
@@ -86,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Data"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
+                $resultForMaster[0].PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

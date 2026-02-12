@@ -63,56 +63,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying server triggers between instances" {
-        It "Should report successful copy operation" {
+        BeforeAll {
             $splatCopy = @{
                 Source        = $TestConfig.InstanceCopy1
                 Destination   = $TestConfig.InstanceCopy2
                 WarningAction = "SilentlyContinue"
             }
             $results = Copy-DbaInstanceTrigger @splatCopy
+        }
+
+        It "Should report successful copy operation" {
             $results.Status | Should -BeExactly "Successful"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Create a dedicated trigger on source for output validation
-            $outputTriggerName = "dbatoolsci_outputtrigger"
-            $outputTriggerSql = "CREATE TRIGGER [$outputTriggerName] ON ALL SERVER FOR LOGON AS PRINT 'hello'"
-
-            $outputSourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-            try { $outputSourceServer.Query("DROP TRIGGER [$outputTriggerName] ON ALL SERVER") } catch { }
-            $outputSourceServer.Query($outputTriggerSql)
-
-            try {
-                $outputDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-                $outputDestServer.Query("IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = '$outputTriggerName') DROP TRIGGER [$outputTriggerName] ON ALL SERVER")
-            } catch { }
-
-            $splatOutputCopy = @{
-                Source        = $TestConfig.InstanceCopy1
-                Destination   = $TestConfig.InstanceCopy2
-                ServerTrigger = $outputTriggerName
-                WarningAction = "SilentlyContinue"
-            }
-            $outputResult = Copy-DbaInstanceTrigger @splatOutputCopy
-        }
-        AfterAll {
-            try { $outputSourceServer.Query("DROP TRIGGER [$outputTriggerName] ON ALL SERVER") } catch { }
-            try {
-                $outputDestCleanup = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-                $outputDestCleanup.Query("DROP TRIGGER [$outputTriggerName] ON ALL SERVER")
-            } catch { }
         }
 
         It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $results) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -120,11 +91,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for key properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
-            $outputResult[0].Type | Should -BeExactly "Server Trigger"
-            $outputResult[0].Status | Should -Not -BeNullOrEmpty
-            $outputResult[0].SourceServer | Should -Not -BeNullOrEmpty
-            $outputResult[0].DestinationServer | Should -Not -BeNullOrEmpty
+            if (-not $results) { Set-ItResult -Skipped -Because "copy operation returned no results (version mismatch or connectivity issue)" }
+            $results[0].Type | Should -BeExactly "Server Trigger"
+            $results[0].Status | Should -Not -BeNullOrEmpty
+            $results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
         }
     }
 }

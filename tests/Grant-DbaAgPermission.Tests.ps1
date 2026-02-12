@@ -63,49 +63,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
             $results.Status | Should -Be "Success"
         }
-    }
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceHadr -InputFile "$($TestConfig.appveyorlabrepo)\sql2008-scripts\logins.sql" -ErrorAction SilentlyContinue
-
-            $outputAgName = "dbatoolsci_ag_outputval"
-            $splatOutputAg = @{
-                Primary      = $TestConfig.InstanceHadr
-                Name         = $outputAgName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Certificate  = "dbatoolsci_AGCert"
-            }
-            $null = New-DbaAvailabilityGroup @splatOutputAg
-
-            $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceHadr -Login tester | Grant-DbaAgPermission -Type EndPoint
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -116,14 +81,14 @@ Describe "$CommandName Output" -Tag IntegrationTests {
                 "Status"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has correct values for Type and Status" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].Type | Should -Be "Grant"
-            $result[0].Status | Should -Be "Success"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].Type | Should -Be "Grant"
+            $results[0].Status | Should -Be "Success"
         }
     }
 }

@@ -49,25 +49,17 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $verifyResults = Get-DbaComputerCertificate -Thumbprint $thumbprint
             $verifyResults | Should -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -EnableException
-            $outputThumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            $outputResult = Remove-DbaComputerCertificate -Thumbprint $outputThumbprint
-        }
 
         It "Returns output of type PSCustomObject" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "Store", "Folder", "Thumbprint", "Status")
             foreach ($prop in $expectedProps) {
-                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

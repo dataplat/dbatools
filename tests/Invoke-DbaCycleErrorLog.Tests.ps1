@@ -42,16 +42,10 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should cycle instance error log" {
             $results.LogType | Should -Be "instance"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -Type instance
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the correct properties" {
@@ -64,12 +58,12 @@ Describe $CommandName -Tag IntegrationTests {
                 "Notes"
             )
             foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+                $results.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has no Select-DefaultView properties" {
-            $result.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            $results.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
         }
     }
 }

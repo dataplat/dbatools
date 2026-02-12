@@ -45,6 +45,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command finds user objects" {
+        BeforeAll {
+            $script:outputForValidation = @(Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -Pattern UserLogin1)
+        }
+
         It "Should find user databases without pattern" {
             $results = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle
 
@@ -65,24 +69,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be UserDB1
             $results.Owner | Should -Be UserLogin1
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = @(Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -Pattern UserLogin1)
-        }
 
         It "Returns results" {
-            $result | Should -Not -BeNullOrEmpty
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output of type PSCustomObject" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            $script:outputForValidation[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -93,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Parent"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $script:outputForValidation[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

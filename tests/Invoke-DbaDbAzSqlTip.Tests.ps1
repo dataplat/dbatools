@@ -62,31 +62,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
         It "Database name should be 'test'" {
             $results.Database | Should -Be "test"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $securePassword = ConvertTo-SecureString $env:azuredbpasswd -AsPlainText -Force
-            $splatCredential = @{
-                UserName    = $TestConfig.azuresqldblogin
-                Password    = $securePassword
-                ErrorAction = "Stop"
-            }
-            $cred = New-Object System.Management.Automation.PSCredential @splatCredential
-
-            $splatInvokeTips = @{
-                SqlInstance     = $TestConfig.azureserver
-                Database        = "test"
-                SqlCredential   = $cred
-                ReturnAllTips   = $true
-                EnableException = $true
-            }
-            $result = Invoke-DbaDbAzSqlTip @splatInvokeTips
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [PSCustomObject]
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the correct properties" {
@@ -102,12 +81,12 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
                 "details"
             )
             foreach ($prop in $expectedProperties) {
-                $result[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has no Select-DefaultView properties" {
-            $result[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            $results[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
         }
     }
 }

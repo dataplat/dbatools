@@ -72,47 +72,22 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }).Count
             $agentCount | Should -BeGreaterThan 0
         }
-
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDatabase = "dbatoolsci_sqlwatch_output_$(Get-Random)"
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputServer.Query("CREATE DATABASE $outputDatabase")
-
-            $outputResult = Install-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
-
         It "Has the expected properties" {
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status", "DashboardPath")
             foreach ($prop in $expectedProps) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
-
         It "Has correct values for standard properties" {
-            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
-            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
-            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
-            $outputResult[0].Database | Should -Be $outputDatabase
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $results[0].Database | Should -Be $database
         }
+
     }
 }

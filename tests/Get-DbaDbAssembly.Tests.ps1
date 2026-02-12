@@ -45,21 +45,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has a version matching the instance" {
             $assemblyResults.Version | Should -BeExactly $masterDatabase.assemblies.Version
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbAssembly -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.SqlAssembly"
+            $assemblyResults | Should -Not -BeNullOrEmpty
+            $assemblyResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.SqlAssembly"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $assemblyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $assemblyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -79,9 +73,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias property SecurityLevel" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["SecurityLevel"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["SecurityLevel"].MemberType | Should -Be "AliasProperty"
+            if (-not $assemblyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $assemblyResults[0].psobject.Properties["SecurityLevel"] | Should -Not -BeNullOrEmpty
+            $assemblyResults[0].psobject.Properties["SecurityLevel"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

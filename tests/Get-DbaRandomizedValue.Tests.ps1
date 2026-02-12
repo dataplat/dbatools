@@ -51,9 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.Length | Should -Be 5
         }
-    }
 
-    Context "Output validation" {
         It "Returns a string when using varchar DataType" {
             $result = Get-DbaRandomizedValue -DataType varchar
             $result | Should -Not -BeNullOrEmpty

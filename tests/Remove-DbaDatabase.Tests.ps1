@@ -52,13 +52,43 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Should remove user databases and return useful errors if it cannot." {
-        It "Should remove a non system database." {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Capture output for validation
             Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore
             Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Stop-DbaProcess
             Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -WithReplace
-            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore).IsAccessible | Should -BeTrue
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore
+            $outputTestDb = "singlerestore"
+            $script:removeResult = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should remove a non system database." {
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Should -BeNullOrEmpty
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:removeResult | Should -Not -BeNullOrEmpty
+                $script:removeResult | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $script:removeResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the correct Status for a successful drop" {
+                $script:removeResult.Status | Should -Be "Dropped"
+            }
+
+            It "Has the correct Database name" {
+                $script:removeResult.Database | Should -Be $outputTestDb
+            }
         }
     }
     Context "Should remove restoring database and return useful errors if it cannot." {
@@ -69,37 +99,6 @@ Describe $CommandName -Tag IntegrationTests {
             (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Databases['singlerestore'].IsAccessible | Should -BeFalse
             Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Should -BeNullOrEmpty
-        }
-    }
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputTestDb = "dbatoolsci_removedb_output_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
-            $result = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -Confirm:$false
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has the correct Status for a successful drop" {
-            $result.Status | Should -Be "Dropped"
-        }
-
-        It "Has the correct Database name" {
-            $result.Database | Should -Be $outputTestDb
         }
     }
 }

@@ -73,6 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets Changed Extents for Single Database" {
         BeforeAll {
             $singleDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            # Store for reuse in output validation
+            $script:outputForValidation = $singleDbResults
         }
 
         It "Gets results" {
@@ -90,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputResult = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle -Database master
+            $outputResult = $script:outputForValidation
         }
 
         It "Returns output as PSCustomObject" {

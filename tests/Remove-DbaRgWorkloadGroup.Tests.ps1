@@ -33,6 +33,16 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
 
+            # Capture output for validation
+            $outputWklGroupName = "dbatoolsci_outputwklgroup_$(Get-Random)"
+            $splatNewOutputWklGroup = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $outputWklGroupName
+                Force         = $true
+            }
+            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
+            $script:outputForValidation = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWklGroupName
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -127,45 +137,28 @@ Describe $CommandName -Tag IntegrationTests {
             $result2.IsRemoved | Should -Be $true
             $result3 | Should -Be $null
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-
-            $outputWklGroupName = "dbatoolsci_outputwklgroup_$(Get-Random)"
-            $splatNewOutputWklGroup = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                WorkloadGroup = $outputWklGroupName
-                Force         = $true
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType [PSCustomObject]
             }
-            $null = New-DbaRgWorkloadGroup @splatNewOutputWklGroup
-            $result = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWklGroupName
 
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
+                foreach ($prop in $expectedProperties) {
+                    $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
             }
-        }
 
-        It "Has the correct values for a successful removal" {
-            $result.Status | Should -Be "Dropped"
-            $result.IsRemoved | Should -BeTrue
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
-            $result.Name | Should -Be $outputWklGroupName
+            It "Has the correct values for a successful removal" {
+                $script:outputForValidation.Status | Should -Be "Dropped"
+                $script:outputForValidation.IsRemoved | Should -BeTrue
+                $script:outputForValidation.ComputerName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.InstanceName | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.SqlInstance | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.Name | Should -Be $outputWklGroupName
+            }
         }
     }
 }

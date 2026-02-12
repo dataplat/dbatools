@@ -55,21 +55,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Find-DbaCommand -Pattern snapshot -Rebuild)
             $results.Count | Should -BeGreaterThan 5
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = @(Find-DbaCommand -Pattern "snapshot")
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $results = @(Find-DbaCommand -Pattern "snapshot")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = @(Find-DbaCommand -Pattern "snapshot")
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "CommandName",
                 "Synopsis"

@@ -40,25 +40,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results.InstanceAccessLevel | Should -Be 0
             $results.ServiceAccessLevel | Should -Be 0
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Enable filestream first so we can test disabling it
-            $null = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
-            $outputResult = Disable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force
-        }
 
         It "Returns output with expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
-            $outputResult[0].InstanceName | Should -Not -BeNullOrEmpty
-            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

@@ -72,55 +72,28 @@ Describe $CommandName -Tag IntegrationTests {
             $testDatabase.Refresh()
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the correct properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
+            }
+
+            It "Has the expected values" {
+                $results.Status | Should -Be "Success"
+                $results.Database | Should -Be $testDatabase.Name
+                $results.ComputerName | Should -Not -BeNullOrEmpty
+                $results.InstanceName | Should -Not -BeNullOrEmpty
+                $results.SqlInstance | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $outputEncPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $outputMasterCertName = "dbatoolsci_enckeyout_$(Get-Random)"
-            $outputMasterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master -EnableException | Where-Object Name -notmatch "##" | Select-Object -First 1
-            if (-not $outputMasterCert) {
-                $deleteOutputMasterCert = $true
-                $outputMasterCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Name $outputMasterCertName -Database master -EnableException
-            }
-
-            $outputEncDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -EnableException
-            $outputEncDb | New-DbaDbMasterKey -SecurePassword $outputEncPasswd -Confirm:$false -EnableException
-            $outputEncDb | New-DbaDbCertificate -EnableException
-            $null = $outputEncDb | New-DbaDbEncryptionKey -EncryptorName $outputMasterCert.Name -Force -EnableException
-            $result = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $outputEncDb.Name -Confirm:$false -EnableException
-        }
-
-        AfterAll {
-            if ($outputEncDb) {
-                $outputEncDb | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
-            }
-            if ($deleteOutputMasterCert) {
-                Remove-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master -Certificate $outputMasterCertName -Confirm:$false -ErrorAction SilentlyContinue
-            }
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the correct properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has the expected values" {
-            $result.Status | Should -Be "Success"
-            $result.Database | Should -Be $outputEncDb.Name
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
-        }
-    }
 }

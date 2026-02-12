@@ -104,48 +104,14 @@ Describe $CommandName -Tag IntegrationTests {
             $roleResults = Get-DbaServerRole @splatGetRole
             $roleResults.Name | Should -Contain $testRoleName
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestRole = "dbatoolsci_OutputRole_$(Get-Random)"
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputSourceConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-            $outputSourceConn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$outputTestRole' AND type = 'R') DROP SERVER ROLE [$outputTestRole]")
-            $outputSourceConn.Query("CREATE SERVER ROLE [$outputTestRole]")
-
-            $outputDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-            $outputDestConn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$outputTestRole' AND type = 'R') DROP SERVER ROLE [$outputTestRole]")
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatOutputCopy = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                ServerRole  = $outputTestRole
-            }
-            $result = @(Copy-DbaServerRole @splatOutputCopy | Where-Object { $null -ne $PSItem })
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            foreach ($inst in @($TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2)) {
-                $conn = Connect-DbaInstance -SqlInstance $inst
-                $conn.Query("IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$outputTestRole' AND type = 'R') DROP SERVER ROLE [$outputTestRole]") | Out-Null
-            }
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            $copyResults | Should -Not -BeNullOrEmpty
+            $copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -153,10 +119,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected values for standard migration properties" {
-            $result[0].Type | Should -Be "Server Role"
-            $result[0].Status | Should -Be "Successful"
-            $result[0].SourceServer | Should -Not -BeNullOrEmpty
-            $result[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $copyResults[0].Type | Should -Be "Server Role"
+            $copyResults[0].Status | Should -Be "Successful"
+            $copyResults[0].SourceServer | Should -Not -BeNullOrEmpty
+            $copyResults[0].DestinationServer | Should -Not -BeNullOrEmpty
         }
     }
 }

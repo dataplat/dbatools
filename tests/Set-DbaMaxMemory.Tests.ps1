@@ -43,31 +43,27 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.MaxValue | Should -Be 1024
             }
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1 -Max 1024 -WarningAction SilentlyContinue
-        }
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $multiInstanceResults | Should -Not -BeNullOrEmpty
+                $multiInstanceResults | Should -BeOfType [PSCustomObject]
+            }
 
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Total",
-                "MaxValue",
-                "PreviousMaxValue"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                if (-not $multiInstanceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $multiInstanceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Total",
+                    "MaxValue",
+                    "PreviousMaxValue"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

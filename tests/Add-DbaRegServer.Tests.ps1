@@ -71,6 +71,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Adds a registered server with non-null SqlInstance" {
             $results1.SqlInstance | Should -Not -BeNullOrEmpty
         }
+
+        It "Returns output of the documented type" {
+            $results1 | Should -Not -BeNullOrEmpty
+            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results1) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "When adding a registered server with extended properties" {
@@ -100,30 +114,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds a registered server with non-null SqlInstance" {
             $results2.SqlInstance | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName "dbatoolsci-outputtest"
-        }
-
-        AfterAll {
-            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci-outputtest" | Remove-DbaRegServer -Confirm:$false -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("Name", "ServerName", "Group", "Description", "Source")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
         }
     }
 }

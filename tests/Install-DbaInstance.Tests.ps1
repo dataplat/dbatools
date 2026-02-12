@@ -81,6 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Validate installs of each version" {
         BeforeAll {
             $cred = [PSCredential]::new("foo", (ConvertTo-SecureString "bar" -Force -AsPlainText))
+            $script:outputResult = $null
         }
 
         It "Should install SQL<version> with all features enabled" -TestCases @(
@@ -118,6 +119,11 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Notes | Should -BeNullOrEmpty
             if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
+            }
+
+            # Capture output for validation tests
+            if ($version -eq "2019") {
+                $script:outputResult = $result
             }
         }
 
@@ -221,6 +227,11 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Configuration.$mainNode.SQLSVCACCOUNT | Should -Be "foo\bar"
             if ($version -in "2016", "2017", "2019", "2022", "2025") {
                 $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
+            }
+
+            # Reuse output for validation if not already captured
+            if (-not $script:outputResult -and $version -eq "2019") {
+                $script:outputResult = $result
             }
         }
 
@@ -330,34 +341,15 @@ Describe $CommandName -Tag IntegrationTests {
                 "ADV_SSMS" | Should -Not -BeIn $result.Configuration.$mainNode.FEATURES
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Create a dummy Configuration.ini for output validation
-            $mainNode = "OPTIONS"
-            @(
-                "[$mainNode]"
-                "SQLSVCACCOUNT=""foo\bar"""
-                "FEATURES=""SQLEngine,AS"""
-                "ACTION=""Install"""
-            ) | Set-Content -Path TestDrive:\Configuration.ini -Force
-
-            try {
-                $outputResult = Install-DbaInstance -Version 2019 -Path TestDrive: -EnableException -Feature All
-            } catch {
-                $outputResult = $null
-            }
-        }
 
         It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult | Should -BeOfType PSCustomObject
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "Version", "Port", "Successful", "Restarted", "Installer", "ExitCode", "LogFile", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -365,10 +357,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected additional properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputResult | Should -Not -BeNullOrEmpty
             $additionalProps = @("SACredential", "Configuration", "ExitMessage", "Log", "ConfigurationFile")
             foreach ($prop in $additionalProps) {
-                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $script:outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

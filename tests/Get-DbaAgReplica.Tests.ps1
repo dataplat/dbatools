@@ -56,8 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "gets ag replicas" {
+        BeforeAll {
+            $script:outputForValidation = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr
+        }
+
         It "returns results with proper data" {
-            $results = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr
+            $results = $script:outputForValidation
             $results.AvailabilityGroup | Should -Contain $agName
             $results.Role | Should -Contain "Primary"
             $results.AvailabilityMode | Should -Contain "SynchronousCommit"
@@ -82,19 +86,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr
-        }
 
         It "Returns output of the documented type" {
+            $result = $script:outputForValidation
             if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityReplica"
         }
 
         It "Has the expected default display properties" {
+            $result = $script:outputForValidation
             if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(

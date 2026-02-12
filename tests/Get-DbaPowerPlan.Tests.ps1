@@ -23,37 +23,25 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
-        It "Should return result for the server" {
-            $results = Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle
-            $results | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = @(Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle)
+            $results = @(Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle)
+            $resultList = @(Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle -List)
         }
 
-        It "Returns output" {
-            $result | Should -Not -BeNullOrEmpty
+        It "Should return result for the server" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "PowerPlan")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
             }
         }
-    }
 
-    Context "Output validation with -List" {
-        BeforeAll {
-            $resultList = @(Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle -List)
-        }
-
-        It "Returns output" {
+        It "Returns output with -List" {
             $resultList | Should -Not -BeNullOrEmpty
         }
 

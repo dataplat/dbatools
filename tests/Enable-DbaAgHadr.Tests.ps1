@@ -45,22 +45,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
             $results.IsHadrEnabled | Should -BeTrue
         }
-    }
-
-    Context "Output validation" -Skip:(-not $TestConfig.InstanceHadr) {
-        BeforeAll {
-            $outputResult = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "IsHadrEnabled")
             foreach ($prop in $expectedProperties) {
-                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

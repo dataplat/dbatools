@@ -26,13 +26,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    It "generates a new certificate" {
-        $files = New-DbaComputerCertificateSigningRequest
-        $files.Count | Should -Be 2
-        $filesToRemove += $files
-    }
-
-    Context "Output validation" {
+    Context "Certificate generation" {
         BeforeAll {
             $outputPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
             $null = New-Item -Path $outputPath -ItemType Directory -Force
@@ -41,6 +35,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+        }
+
+        It "generates a new certificate" {
+            $result.Count | Should -Be 2
         }
 
         It "Returns output of the documented type" {

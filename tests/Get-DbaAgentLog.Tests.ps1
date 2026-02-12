@@ -39,21 +39,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgentLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+            $results[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "LogDate", "ProcessInfo", "Text")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

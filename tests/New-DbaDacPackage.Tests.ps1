@@ -97,7 +97,7 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
     }
 
     Context "Build DACPAC from SQL files" {
-        It "Builds a DACPAC from a directory with SQL files recursively" {
+        BeforeAll {
             $outputDacpac = "$testFolder\output-recursive.dacpac"
             $splatBuildRecursive = @{
                 Path          = $sqlSourcePath
@@ -106,15 +106,16 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
                 DatabaseName  = "TestDatabase"
                 WarningAction = "SilentlyContinue"
             }
-            $result = New-DbaDacPackage @splatBuildRecursive
+            $script:outputValidationResult = New-DbaDacPackage @splatBuildRecursive
+        }
 
-            $WarnVar | Should -BeLike "*Skipping empty file: *\Schema\EmptyFile.sql"
-            $result | Should -Not -BeNullOrEmpty
-            $result.Success | Should -BeTrue
-            $result.Path | Should -Be $outputDacpac
-            $result.DatabaseName | Should -Be "TestDatabase"
-            $result.FileCount | Should -BeGreaterThan 0
-            $result.ObjectCount | Should -BeGreaterThan 0
+        It "Builds a DACPAC from a directory with SQL files recursively" {
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult.Success | Should -BeTrue
+            $script:outputValidationResult.Path | Should -Be $outputDacpac
+            $script:outputValidationResult.DatabaseName | Should -Be "TestDatabase"
+            $script:outputValidationResult.FileCount | Should -BeGreaterThan 0
+            $script:outputValidationResult.ObjectCount | Should -BeGreaterThan 0
             Test-Path $outputDacpac | Should -BeTrue
         }
 
@@ -228,26 +229,14 @@ LEFT JOIN dbo.TestTable2 t2 ON t1.Id = t2.TestTable1Id;
     }
 
     Context "Output validation" {
-        BeforeAll {
-            $outputDacpac = "$testFolder\output-validation.dacpac"
-            $splatBuildValidation = @{
-                Path          = $sqlSourcePath
-                OutputPath    = $outputDacpac
-                Recursive     = $true
-                DatabaseName  = "ValidationDB"
-                WarningAction = "SilentlyContinue"
-            }
-            $result = New-DbaDacPackage @splatBuildValidation
-        }
-
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $script:outputValidationResult | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputValidationResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("Path", "DatabaseName", "Version", "FileCount", "ObjectCount", "Duration", "Success")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

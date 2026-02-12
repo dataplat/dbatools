@@ -77,20 +77,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Be $databaseName2
             $results.DatabaseId | Should -Be $db2.Id
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType System.Data.DataRow
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType System.Data.DataRow
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
+            $results | Should -Not -BeNullOrEmpty
             $expectedProps = @(
                 "DatabaseName",
                 "DatabaseId",
@@ -102,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "TypeDesc"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
             }
         }
     }

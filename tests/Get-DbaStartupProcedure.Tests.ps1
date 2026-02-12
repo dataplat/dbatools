@@ -53,27 +53,6 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
-    }
-
-    Context "When filtering by StartupProcedure parameter" {
-        It "Returns correct results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure $startupProc
-            $result.Schema -eq "dbo" | Should -Be $true
-            $result.Name -eq "StartUpProc$random" | Should -Be $true
-        }
-    }
-
-    Context "When filtering by incorrect StartupProcedure parameter" {
-        It "Returns no results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure "Not.Here"
-            $null -eq $result | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
             $result | Should -Not -BeNullOrEmpty
@@ -107,4 +86,20 @@ Describe $CommandName -Tag IntegrationTests {
             $result[0].psobject.Properties["ObjectId"].MemberType | Should -Be "AliasProperty"
         }
     }
+
+    Context "When filtering by StartupProcedure parameter" {
+        It "Returns correct results" {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure $startupProc
+            $result.Schema -eq "dbo" | Should -Be $true
+            $result.Name -eq "StartUpProc$random" | Should -Be $true
+        }
+    }
+
+    Context "When filtering by incorrect StartupProcedure parameter" {
+        It "Returns no results" {
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure "Not.Here"
+            $null -eq $result | Should -Be $true
+        }
+    }
+
 }

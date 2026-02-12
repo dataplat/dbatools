@@ -68,14 +68,18 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Can backup a database master key" {
-        It "Backs up the database master key" {
+        BeforeAll {
             $splatBackup = @{
                 SqlInstance    = $testInstance
                 Database       = $testDatabase
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
             }
-            $results = Backup-DbaDbMasterKey @splatBackup
+            $script:outputForValidation = Backup-DbaDbMasterKey @splatBackup
+        }
+
+        It "Backs up the database master key" {
+            $results = $script:outputForValidation
             $results | Should -Not -BeNullOrEmpty
             $results.Database | Should -Be $testDatabase
             $results.Status | Should -Be "Success"
@@ -102,25 +106,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             # File will be cleaned up with the backupPath directory in AfterAll
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputValidation = @{
-                SqlInstance    = $testInstance
-                Database       = $testDatabase
-                SecurePassword = $masterKeyPass
-                Path           = $backupPath
-            }
-            $result = Backup-DbaDbMasterKey @splatOutputValidation
-        }
 
         It "Returns output of the documented type" {
+            $result = $script:outputForValidation
             $result | Should -Not -BeNullOrEmpty
             $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.MasterKey"
         }
 
         It "Has the expected default display properties" {
+            $result = $script:outputForValidation
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Path", "Status")
             foreach ($prop in $expectedDefaults) {
@@ -129,6 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
+            $result = $script:outputForValidation
             $result.psobject.Properties["Path"] | Should -Not -BeNullOrEmpty
             $result.psobject.Properties["Path"].MemberType | Should -Be "AliasProperty"
         }

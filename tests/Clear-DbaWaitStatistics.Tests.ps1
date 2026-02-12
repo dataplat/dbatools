@@ -40,26 +40,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns success" {
             $clearResults.Status | Should -Be "Success"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputValidation = @{
-                SqlInstance = $TestConfig.InstanceSingle
-            }
-            $result = @(Clear-DbaWaitStatistics @splatOutputValidation | Where-Object { $null -ne $PSItem })
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $clearResults | Should -Not -BeNullOrEmpty
+            $clearResults[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $clearResults | Should -Not -BeNullOrEmpty
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Status")
             foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $clearResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

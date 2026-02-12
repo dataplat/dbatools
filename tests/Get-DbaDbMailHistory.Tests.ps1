@@ -89,6 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets Db Mail History" {
         BeforeAll {
             $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Where-Object { $PSItem.Subject -eq "Test Job" }
+            $resultForValidation = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Select-Object -First 1
         }
 
         It "Gets results" {
@@ -101,6 +102,36 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have recipient of dbatoolssci@dbatools.io" {
             $results.recipients | Should -Be "dbatoolssci@dbatools.io"
+        }
+
+        It "Returns output of the documented type" {
+            $resultForValidation | Should -Not -BeNullOrEmpty
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $resultForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $resultForValidation.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Profile",
+                "Recipients",
+                "CopyRecipients",
+                "BlindCopyRecipients",
+                "Subject",
+                "Importance",
+                "Sensitivity",
+                "FileAttachments",
+                "AttachmentEncoding",
+                "SendRequestDate",
+                "SendRequestUser",
+                "SentStatus",
+                "SentDate"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
         }
     }
 
@@ -144,39 +175,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Select-Object -First 1
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Profile",
-                "Recipients",
-                "CopyRecipients",
-                "BlindCopyRecipients",
-                "Subject",
-                "Importance",
-                "Sensitivity",
-                "FileAttachments",
-                "AttachmentEncoding",
-                "SendRequestDate",
-                "SendRequestUser",
-                "SentStatus",
-                "SentDate"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-    }
 }

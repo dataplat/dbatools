@@ -48,9 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns results for DBCC PROCCACHE" {
             $result | Should -Not -BeNullOrEmpty
         }
-    }
 
-    Context "Output validation" {
         It "Returns output of the documented type" {
             $result | Should -Not -BeNullOrEmpty
             $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"

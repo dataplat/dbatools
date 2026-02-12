@@ -50,6 +50,20 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying custom errors" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Store output for validation context
+            $splatCopyValidation = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                CustomError = 60000
+            }
+            $script:outputForValidation = Copy-DbaCustomError @splatCopyValidation | Where-Object { $null -ne $PSItem }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         BeforeEach {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -94,35 +108,15 @@ Describe $CommandName -Tag IntegrationTests {
             $errorResults = Get-DbaCustomError -SqlInstance $TestConfig.InstanceCopy1
             $errorResults.ID | Should -Contain 60000
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Ensure source custom error exists for this context
-            $outputSourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -Database master
-            $outputSourceServer.Query("IF NOT EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_addmessage @msgnum = 60000, @severity = 16, @msgtext = N'The item named %s already exists in %s.', @lang = 'us_english'")
-
-            # Clean destination to ensure a fresh copy
-            $outputDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -Database master
-            $outputDestServer.Query("IF EXISTS (SELECT 1 FROM sys.messages WHERE message_id = 60000) EXEC sp_dropmessage @msgnum = 60000, @lang = 'all'")
-
-            $splatCopyValidation = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                CustomError = 60000
-            }
-            # Filter out null entries that may come from internal Connect-DbaInstance calls
-            $result = Copy-DbaCustomError @splatCopyValidation | Where-Object { $null -ne $PSItem }
-        }
 
         It "Returns output with the expected TypeName" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

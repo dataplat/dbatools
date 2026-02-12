@@ -32,35 +32,32 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should return file information for a single database" {
-        It "returns information about tempdb" {
+        BeforeAll {
             $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        }
+
+        It "returns information about tempdb" {
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $false
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [PSCustomObject]
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "FileMapping")
             foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
 
         It "Has a FileMapping property that is a hashtable" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].FileMapping | Should -BeOfType [hashtable]
-            $result[0].FileMapping.Count | Should -BeGreaterThan 0
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].FileMapping | Should -BeOfType [hashtable]
+            $results[0].FileMapping.Count | Should -BeGreaterThan 0
         }
     }
 }

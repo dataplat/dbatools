@@ -109,8 +109,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $testSQLinstance = $false
 
-            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
-
             if ( ($null -ne $results) ) {
                 $row = $null
                 # if one row is returned $results will be a System.Data.DataRow, otherwise it will be an object[] of System.Data.DataRow
@@ -133,42 +131,10 @@ Describe $CommandName -Tag IntegrationTests {
 
             $testSQLinstance | Should -Be $true
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputRandom = Get-Random
-            $outputDbName = "dbatoolsci_output_$outputRandom"
-            $outputTableName = "dbatoolsci_table_$outputRandom"
-            $outputIndexName = "dbatoolsci_index_$outputRandom"
-
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputSql = "USE $outputDbName;
-                    CREATE TABLE $outputTableName (ID INTEGER);
-                    CREATE INDEX $outputIndexName ON $outputTableName (ID);
-                    INSERT INTO $outputTableName (ID) VALUES (1);
-                    SELECT ID FROM $outputTableName;
-                    WAITFOR DELAY '00:00:05';"
-            $null = $outputServer.Query($outputSql)
-
-            $result = @(Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10)
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [System.Data.DataRow]
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [System.Data.DataRow]
         }
 
         It "Has the expected properties" {
@@ -191,7 +157,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "IndexSizeMB",
                 "RowCount"
             )
-            $propNames = @($result[0] | Get-Member -MemberType Property | ForEach-Object { $PSItem.Name })
+            $propNames = @($results[0] | Get-Member -MemberType Property | ForEach-Object { $PSItem.Name })
             foreach ($prop in $expectedProps) {
                 $propNames | Should -Contain $prop -Because "property '$prop' should be present in the output"
             }

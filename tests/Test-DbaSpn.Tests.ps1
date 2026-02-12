@@ -37,21 +37,15 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.IsSet | Should -BeOfType [bool]
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Test-DbaSpn -ComputerName $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the expected default display properties excluding Credential and DomainName" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "Credential" -Because "Credential should be excluded from default display"
             $defaultProps | Should -Not -Contain "DomainName" -Because "DomainName should be excluded from default display"
         }

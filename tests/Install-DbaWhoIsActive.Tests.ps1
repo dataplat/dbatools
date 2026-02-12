@@ -47,8 +47,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     }
 
     Context "Should install sp_WhoIsActive" {
-        It "Should output correct results" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should output correct results" {
+            $installResults.Database | Should -Be $dbName
+            $installResults.Name | Should -Be "sp_WhoisActive"
+            $installResults.Status | Should -Be "Installed"
+        }
+
+        It "Returns output of the documented type" {
+            $installResults | Should -Not -BeNullOrEmpty
+            $installResults | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Version", "Status")
+            foreach ($prop in $expectedProps) {
+                $installResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
+
+        It "Has correct values for standard properties" {
+            $installResults.ComputerName | Should -Not -BeNullOrEmpty
+            $installResults.InstanceName | Should -Not -BeNullOrEmpty
+            $installResults.SqlInstance | Should -Not -BeNullOrEmpty
             $installResults.Database | Should -Be $dbName
             $installResults.Name | Should -Be "sp_WhoisActive"
             $installResults.Status | Should -Be "Installed"
@@ -61,46 +87,6 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $updateResults.Database | Should -Be $dbName
             $updateResults.Name | Should -Be "sp_WhoisActive"
             $updateResults.Status | Should -Be "Updated"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDbName = "dbatoolsci_whoisactive_output_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-            $result = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Version", "Status")
-            foreach ($prop in $expectedProps) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
-        }
-
-        It "Has correct values for standard properties" {
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
-            $result.Database | Should -Be $outputDbName
-            $result.Name | Should -Be "sp_WhoisActive"
-            $result.Status | Should -Be "Installed"
         }
     }
 }

@@ -146,53 +146,53 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Name | Should -Be "TestSchema1"
             $schema.Parent.Name | Should -Be $newDbName
         }
-    }
-}
 
-Describe "$CommandName output validation" -Tag IntegrationTests {
-    BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $outputRandom = Get-Random
-        $outputDbName = "dbatoolsci_schemaout_$outputRandom"
-        $outputUser1 = "dbatoolsci_user1_$outputRandom"
-        $outputUser2 = "dbatoolsci_user2_$outputRandom"
-        $outputPwd = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
+                $outputRandom = Get-Random
+                $script:outputDbName = "dbatoolsci_schemaout_$outputRandom"
+                $script:outputUser1 = "dbatoolsci_user1_$outputRandom"
+                $script:outputUser2 = "dbatoolsci_user2_$outputRandom"
+                $outputPwd = ConvertTo-SecureString "MyV3ry`$ecur3P@ssw0rd" -AsPlainText -Force
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser1, $outputUser2 -Password $outputPwd -Force
-        $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputUser1
-        $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Login $outputUser2
-        $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $outputUser1
+                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $script:outputDbName
+                $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $script:outputUser1, $script:outputUser2 -Password $outputPwd -Force
+                $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $script:outputDbName -Login $script:outputUser1
+                $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $script:outputDbName -Login $script:outputUser2
+                $null = New-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $script:outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $script:outputUser1
 
-        $outputResult = Set-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $outputUser2
+                $script:outputResult = Set-DbaDbSchema -SqlInstance $TestConfig.InstanceSingle -Database $script:outputDbName -Schema "dbatoolsci_outputschema" -SchemaOwner $script:outputUser2
 
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
 
-    AfterAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -ErrorAction SilentlyContinue -Confirm:$false
-        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser1, $outputUser2 -ErrorAction SilentlyContinue -Confirm:$false
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
+            AfterAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $script:outputDbName -ErrorAction SilentlyContinue -Confirm:$false
+                Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $script:outputUser1, $script:outputUser2 -ErrorAction SilentlyContinue -Confirm:$false
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
 
-    It "Returns output of the documented type" {
-        $outputResult | Should -Not -BeNullOrEmpty
-        $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
-    }
+            It "Returns output of the documented type" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+            }
 
-    It "Has the expected default display properties" {
-        $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-        $expectedDefaults = @(
-            "ComputerName",
-            "InstanceName",
-            "SqlInstance",
-            "Name",
-            "IsSystemObject"
-        )
-        foreach ($prop in $expectedDefaults) {
-            $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "IsSystemObject"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 }

@@ -31,6 +31,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            $script:outputForValidation = Test-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
         It "Should return a result" {
             $results = Test-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
@@ -45,23 +49,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Test-DbaDbCompatibility -ExcludeDatabase Master -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $result = Test-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0] | Should -BeOfType PSCustomObject
+            }
 
-        It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "ServerLevel", "Database", "DatabaseCompatibility", "IsEqual")
-            foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "ServerLevel", "Database", "DatabaseCompatibility", "IsEqual")
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
             }
         }
     }

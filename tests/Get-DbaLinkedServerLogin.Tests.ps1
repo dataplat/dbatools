@@ -179,19 +179,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
-        }
 
         It "Returns output of the documented type" {
+            $result = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $result | Should -Not -BeNullOrEmpty
             $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServerLogin"
         }
 
         It "Has the expected default display properties" {
+            $result = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "RemoteUser", "Impersonate")
             foreach ($prop in $expectedDefaults) {

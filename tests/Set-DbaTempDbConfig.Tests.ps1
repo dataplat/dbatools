@@ -123,43 +123,47 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
         }
-    }
 
-    Context "Output validation" {
-        It "Returns string array when using -OutputScriptOnly" {
-            $scriptResult = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
-            $scriptResult | Should -Not -BeNullOrEmpty
-            $scriptResult | Should -BeOfType [string]
-        }
-
-        It "Returns PSCustomObject with expected properties when executing" {
-            $executeResult = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath $tempdbDataFilePath -WarningAction SilentlyContinue
-            if (-not $executeResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "DataFileCount",
-                "DataFileSize",
-                "SingleDataFileSize",
-                "LogSize",
-                "DataPath",
-                "LogPath",
-                "DataFileGrowth",
-                "LogFileGrowth"
-            )
-            foreach ($prop in $expectedProps) {
-                $executeResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+        Context "Output validation" {
+            BeforeAll {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+                $scriptResult = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
+                $executeResult = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath $tempdbDataFilePath -WarningAction SilentlyContinue
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
-        }
 
-        It "Has dbasize typed properties for size values" {
-            $executeResult = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath $tempdbDataFilePath -WarningAction SilentlyContinue
-            if (-not $executeResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $executeResult.DataFileSize.GetType().Name | Should -Be "Size"
-            $executeResult.SingleDataFileSize.GetType().Name | Should -Be "Size"
-            $executeResult.DataFileGrowth.GetType().Name | Should -Be "Size"
-            $executeResult.LogFileGrowth.GetType().Name | Should -Be "Size"
+            It "Returns string array when using -OutputScriptOnly" {
+                $scriptResult | Should -Not -BeNullOrEmpty
+                $scriptResult | Should -BeOfType [string]
+            }
+
+            It "Returns PSCustomObject with expected properties when executing" {
+                if (-not $executeResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "DataFileCount",
+                    "DataFileSize",
+                    "SingleDataFileSize",
+                    "LogSize",
+                    "DataPath",
+                    "LogPath",
+                    "DataFileGrowth",
+                    "LogFileGrowth"
+                )
+                foreach ($prop in $expectedProps) {
+                    $executeResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has dbasize typed properties for size values" {
+                if (-not $executeResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $executeResult.DataFileSize.GetType().Name | Should -Be "Size"
+                $executeResult.SingleDataFileSize.GetType().Name | Should -Be "Size"
+                $executeResult.DataFileGrowth.GetType().Name | Should -Be "Size"
+                $executeResult.LogFileGrowth.GetType().Name | Should -Be "Size"
+            }
         }
     }
 }

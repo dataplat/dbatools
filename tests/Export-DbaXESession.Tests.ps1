@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
+            $result = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {
@@ -73,6 +73,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+
+        It "Returns System.IO.FileInfo when writing to file" {
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType System.IO.FileInfo
         }
     }
 
@@ -97,6 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Remove previous output file if exists
             Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
             $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health | Export-DbaXESession -FilePath $outputFile
+            $resultPassthru = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -Passthru
         }
 
         It "Exports results to one sql file" {
@@ -105,22 +111,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputFileValidation = "$backupPath\Dbatoolsci_XE_OutputValidation.sql"
-            $resultFile = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -FilePath $outputFileValidation
-            $resultPassthru = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -Passthru
-        }
-        AfterAll {
-            Remove-Item -Path $outputFileValidation -ErrorAction SilentlyContinue
-        }
-
-        It "Returns System.IO.FileInfo when writing to file" {
-            $resultFile | Should -Not -BeNullOrEmpty
-            $resultFile | Should -BeOfType System.IO.FileInfo
         }
 
         It "Returns System.String when using -Passthru" {

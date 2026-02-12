@@ -61,9 +61,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When creating workload groups" {
+        BeforeAll {
+            # Prepare output for validation tests
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputWorkloadGroup = "dbatoolsci_outputwkl"
+            $splatNewOutputWkl = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                WorkloadGroup = $outputWorkloadGroup
+                Force         = $true
+            }
+            $script:outputValidationResult = New-DbaRgWorkloadGroup @splatNewOutputWkl
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         AfterEach {
             # Clean up after each test
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $testWorkloadGroup, $testWorkloadGroup2 -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            # Clean up output validation workload group
+            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWorkloadGroup -ErrorAction SilentlyContinue
         }
 
         It "Creates a workload group in default resource pool" {
@@ -161,19 +179,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Output validation" {
         BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-            $outputWorkloadGroup = "dbatoolsci_outputwkl"
-            $splatNewOutputWkl = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                WorkloadGroup = $outputWorkloadGroup
-                Force         = $true
-            }
-            $result = New-DbaRgWorkloadGroup @splatNewOutputWkl
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-        AfterAll {
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $outputWorkloadGroup -ErrorAction SilentlyContinue
+            $result = $script:outputValidationResult
         }
 
         It "Returns output of the documented type" {

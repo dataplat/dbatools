@@ -55,32 +55,30 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Engine, Agent
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            try {
-                $restartServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart -ErrorAction Stop
-                $restartInstanceName = $restartServer.ServiceName
-                $result = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $restartInstanceName -Type Agent
-                # Restart agent after capturing the result
-                $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $restartInstanceName -Type Agent
-            } catch {
-                $result = $null
+        Context "Output validation" {
+            BeforeAll {
+                try {
+                    $result = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+                    # Restart agent after capturing the result
+                    $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+                } catch {
+                    $result = $null
+                }
             }
-        }
 
-        It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
-            $result[0].PSObject.TypeNames | Should -Contain "dbatools.DbaSqlService"
-        }
+            It "Returns output of the documented type" {
+                if (-not $result) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
+                $result[0].PSObject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+            }
 
-        It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "ServiceName", "InstanceName", "ServiceType", "State", "Status", "Message")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                if (-not $result) { Set-ItResult -Skipped -Because "InstanceRestart is not available" }
+                $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "ServiceName", "InstanceName", "ServiceType", "State", "Status", "Message")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

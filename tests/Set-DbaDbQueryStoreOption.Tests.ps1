@@ -79,6 +79,8 @@ Describe $CommandName -Tag IntegrationTests {
                 if ($server.VersionMajor -ge 13) {
                     $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should -Be 901
+                    # Store for output validation
+                    $script:outputForValidation = $results
                 }
             }
         }
@@ -104,25 +106,16 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
-            if ($server.VersionMajor -ge 13) {
-                $result = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database dbatoolsciqs -State ReadWrite -FlushInterval 900
-            }
-        }
 
         It "Returns output of the documented type" {
-            if ($server.VersionMajor -lt 13) { Set-ItResult -Skipped -Because "Query Store requires SQL Server 2016+" }
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result = $script:outputForValidation
+            if ($result.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
             $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.QueryStoreOptions"
         }
 
         It "Has the expected default display properties" {
-            if ($server.VersionMajor -lt 13) { Set-ItResult -Skipped -Because "Query Store requires SQL Server 2016+" }
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result = $script:outputForValidation
+            if ($result.Count -eq 0) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",

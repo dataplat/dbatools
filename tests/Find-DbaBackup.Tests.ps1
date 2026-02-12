@@ -192,31 +192,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
             $results.Count | Should -BeExactly 5
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestPath = "TestDrive:\sqlbackups_outputval"
-            if (-not (Test-Path $outputTestPath)) {
-                $null = New-Item -Path $outputTestPath -ItemType Container
-            }
-            $filepath = Join-Path $outputTestPath "dbatoolsci_outputval.bak"
-            Set-Content $filepath -Value "."
-            (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-1)
-            $result = @(Find-DbaBackup -Path $outputTestPath -BackupFileExtension "bak" -RetentionPeriod "0d")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [System.IO.FileInfo]
+            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [System.IO.FileInfo]
         }
 
         It "Has the expected file properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].FullName | Should -Not -BeNullOrEmpty
-            $result[0].Name | Should -Not -BeNullOrEmpty
-            $result[0].Extension | Should -Be ".bak"
-            $result[0].LastWriteTime | Should -Not -BeNullOrEmpty
+            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].FullName | Should -Not -BeNullOrEmpty
+            $results[0].Name | Should -Not -BeNullOrEmpty
+            $results[0].Extension | Should -Be ".bak"
+            $results[0].LastWriteTime | Should -Not -BeNullOrEmpty
         }
     }
 }

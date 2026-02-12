@@ -59,21 +59,15 @@ Describe $CommandName -Tag IntegrationTests {
                 $row.value | Should -BeIn $mailSettings.Values
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbMail -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.SqlMail"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.SqlMail"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Profiles", "Accounts", "ConfigurationValues", "Properties")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

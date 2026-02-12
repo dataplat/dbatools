@@ -98,37 +98,16 @@ Describe $CommandName -Tag IntegrationTests {
             $ExpectedPropsDefault = "ComputerName", "CreateDate", "InstanceName", "Name", "SnapshotOf", "SqlInstance", "DiskUsage"
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDb = "dbatoolsci_SnapOutput"
-            $outputSnap = "dbatoolsci_SnapOutput_snap"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDb
-            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $outputDb -Name $outputSnap -WarningAction SilentlyContinue
-            $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot $outputSnap
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot $outputSnap -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDb -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "SnapshotOf", "CreateDate", "DiskUsage")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -136,8 +115,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias property SnapshotOf" {
-            $result[0].psobject.Properties["SnapshotOf"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["SnapshotOf"].MemberType | Should -Be "AliasProperty"
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $results[0].psobject.Properties["SnapshotOf"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["SnapshotOf"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

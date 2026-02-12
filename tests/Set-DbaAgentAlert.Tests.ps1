@@ -70,47 +70,38 @@ Describe $CommandName -Tag IntegrationTests {
                 Alert       = "dbatoolsci test alert"
                 NewName     = "dbatoolsci test alert NEW"
             }
-            $results = Set-DbaAgentAlert @splatRename
-            $results.Name | Should -Be "dbatoolsci test alert NEW"
+            $script:outputForValidation = Set-DbaAgentAlert @splatRename
+            $script:outputForValidation.Name | Should -Be "dbatoolsci test alert NEW"
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputTest = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Alert       = "dbatoolsci test alert NEW"
-                Enabled     = $true
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Alert"
             }
-            $outputResult = Set-DbaAgentAlert @splatOutputTest
-        }
 
-        It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Alert"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "SqlInstance",
-                "InstanceName",
-                "Name",
-                "ID",
-                "JobName",
-                "AlertType",
-                "CategoryName",
-                "Severity",
-                "MessageId",
-                "IsEnabled",
-                "DelayBetweenResponses",
-                "LastRaised",
-                "OccurrenceCount"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "SqlInstance",
+                    "InstanceName",
+                    "Name",
+                    "ID",
+                    "JobName",
+                    "AlertType",
+                    "CategoryName",
+                    "Severity",
+                    "MessageId",
+                    "IsEnabled",
+                    "DelayBetweenResponses",
+                    "LastRaised",
+                    "OccurrenceCount"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

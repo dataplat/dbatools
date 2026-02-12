@@ -66,23 +66,10 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
             $results.Name | Should -Be "$sessionName.xml"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputValidationPath = "$($TestConfig.Temp)\$CommandName-OutputValidation-$(Get-Random)"
-            $null = New-Item -Path $outputValidationPath -ItemType Directory
-            # The session already exists from the prior context, so use Get-DbaXESession to get it
-            $validationSession = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $sessionName
-            $resultFile = $validationSession | Export-DbaXESessionTemplate -Path $outputValidationPath
-        }
-        AfterAll {
-            Remove-Item -Path $outputValidationPath -Recurse -ErrorAction SilentlyContinue
-        }
 
         It "Returns System.IO.FileInfo" {
-            $resultFile | Should -Not -BeNullOrEmpty
-            $resultFile | Should -BeOfType System.IO.FileInfo
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType System.IO.FileInfo
         }
     }
 }

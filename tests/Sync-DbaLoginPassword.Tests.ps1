@@ -221,44 +221,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SourceServer.Count | Should -Be 1
             $results.Login | Should -Be $loginName1
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputSync = @{
-                Source      = $primaryInstance
-                Destination = $secondaryInstance
-                Login       = $loginName1
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
             }
-            $outputResult = Sync-DbaLoginPassword @splatOutputSync
-        }
 
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("SourceServer", "DestinationServer", "Login", "Status", "Notes")
-            foreach ($prop in $expectedProperties) {
-                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            It "Has the expected properties" {
+                $expectedProperties = @("SourceServer", "DestinationServer", "Login", "Status", "Notes")
+                foreach ($prop in $expectedProperties) {
+                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
             }
-        }
 
-        It "Has SourceServer populated" {
-            $outputResult.SourceServer | Should -Not -BeNullOrEmpty
-        }
+            It "Has SourceServer populated" {
+                $result.SourceServer | Should -Not -BeNullOrEmpty
+            }
 
-        It "Has DestinationServer populated" {
-            $outputResult.DestinationServer | Should -Not -BeNullOrEmpty
-        }
+            It "Has DestinationServer populated" {
+                $result.DestinationServer | Should -Not -BeNullOrEmpty
+            }
 
-        It "Has Login populated" {
-            $outputResult.Login | Should -Be $loginName1
-        }
+            It "Has Login populated" {
+                $result.Login | Should -Be $loginName1
+            }
 
-        It "Has a valid Status value" {
-            $outputResult.Status | Should -BeIn @("Success", "Failed")
+            It "Has a valid Status value" {
+                $result.Status | Should -BeIn @("Success", "Failed")
+            }
         }
     }
 }

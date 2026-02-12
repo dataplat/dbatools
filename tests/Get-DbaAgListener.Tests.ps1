@@ -63,25 +63,22 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When getting AG listeners" {
-        It "Returns results with proper data" {
-            $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
-            $results.PortNumber | Should -Contain 14330
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
+            $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
+        }
+
+        It "Returns results with proper data" {
+            $results.PortNumber | Should -Contain 14330
         }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

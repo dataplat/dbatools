@@ -76,56 +76,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityGroup | Should -Be $agname
             $results.AvailabilityDatabases.Name | Should -Not -Contain $dbname
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDbName = "dbatoolsci_removeagdb_output-$(Get-Random)"
-            $outputAgName = "dbatoolsci_removeagdb_outputag"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $outputDbName
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $outputDbName | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$outputDbName.bak"
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $outputDbName | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$outputDbName.trn" -Type Log
-
-            $splatOutputAg = @{
-                Primary       = $TestConfig.InstanceHadr
-                Name          = $outputAgName
-                ClusterType   = "None"
-                FailoverMode  = "Manual"
-                Database      = $outputDbName
-                Certificate   = "dbatoolsci_AGCert"
-                UseLastBackup = $true
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results | Should -BeOfType [PSCustomObject]
             }
-            $null = New-DbaAvailabilityGroup @splatOutputAg
 
-            $result = Remove-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $outputDbName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName -ErrorAction SilentlyContinue
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-            Remove-Item -Path "$($TestConfig.Temp)\$outputDbName.bak", "$($TestConfig.Temp)\$outputDbName.trn" -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Database", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            It "Has the expected properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Database", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
             }
-        }
 
-        It "Returns the correct Status value" {
-            $result | Should -Not -BeNullOrEmpty
-            $result.Status | Should -Be "Removed"
+            It "Returns the correct Status value" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.Status | Should -Be "Removed"
+            }
         }
     }
 }

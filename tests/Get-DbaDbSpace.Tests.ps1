@@ -88,27 +88,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a physical path for $dbName" {
             $databaseResults[0].PhysicalName | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
-        It "Gets no results for excluded database" {
-            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
-            $excludeResults.Database | Should -Not -Contain $dbName
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $dbName)
-        }
 
         It "Returns output of the expected type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $databaseResults[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -129,13 +116,20 @@ Describe $CommandName -Tag IntegrationTests {
                 "UnusableSpace"
             )
             foreach ($prop in $expectedProps) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $databaseResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
 
         It "Has no default display property set since Select-DefaultView is not used" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            if (-not $databaseResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $databaseResults[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
+        It "Gets no results for excluded database" {
+            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
+            $excludeResults.Database | Should -Not -Contain $dbName
         }
     }
 }

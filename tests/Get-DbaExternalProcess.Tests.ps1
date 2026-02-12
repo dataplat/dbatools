@@ -75,30 +75,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Can get an external process" {
-        It "returns a process" {
+        BeforeAll {
             Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
+            $script:allProcesses = Get-DbaExternalProcess -ComputerName $computerName
+        }
+
+        It "returns a process" {
+            $results = $script:allProcesses | Where-Object Name -eq "cmd.exe"
             Start-Sleep -Seconds 5
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            Start-Sleep -Seconds 1
-            $result = Get-DbaExternalProcess -ComputerName $computerName
-        }
 
         It "Returns output of the expected type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no external processes found" }
-            $result[0] | Should -BeOfType PSCustomObject
+            if (-not $script:allProcesses) { Set-ItResult -Skipped -Because "no external processes found" }
+            $script:allProcesses[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no external processes found" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:allProcesses) { Set-ItResult -Skipped -Because "no external processes found" }
+            $defaultProps = $script:allProcesses[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "ProcessId",

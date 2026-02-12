@@ -122,7 +122,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -FilePath $outputFile
+            $resultFileValidation = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -FilePath $outputFile
+            $script:outputValidationFile = $resultFileValidation
         }
 
         It "Exports results to one sql file" {
@@ -132,9 +133,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
+
+        It "Returns System.IO.FileInfo when writing to file" {
+            $script:outputValidationFile | Should -Not -BeNullOrEmpty
+            $script:outputValidationFile | Should -BeOfType System.IO.FileInfo
+        }
     }
 
     Context "Respects options specified in the ScriptingOptionsObject parameter" {
+        BeforeAll {
+            $script:resultPassthru = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru
+        }
+
         It "Excludes database context" {
             $scriptingOptions = New-DbaScriptingOption
             $scriptingOptions.IncludeDatabaseContext = $false
@@ -165,6 +175,11 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -BeLike "*CREATE USER ``[{templateUser}``] FOR LOGIN ``[{templateLogin}``]*"
             $results | Should -BeLike "*GRANT SELECT ON OBJECT::``[dbo``].``[$table``] TO ``[{templateUser}``]*"
             $results | Should -BeLike "*ALTER ROLE ``[$role``] ADD MEMBER ``[{templateUser}``]*"
+        }
+
+        It "Returns System.String when using -Passthru" {
+            $script:resultPassthru | Should -Not -BeNullOrEmpty
+            $script:resultPassthru | Should -BeOfType [System.String]
         }
     }
 
@@ -214,27 +229,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $content | Should -BeLike "*ALTER ROLE [[]$role03] ADD MEMBER [[]$user02]*"
                 $content | Should -Not -BeLike "*ALTER ROLE [[]$role01]*"
             }
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputFileValidation = "$($TestConfig.Temp)\Dbatoolsci_user_OutputValidation.sql"
-            $resultFile = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -FilePath $outputFileValidation
-            $resultPassthru = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru
-        }
-        AfterAll {
-            Remove-Item -Path $outputFileValidation -ErrorAction SilentlyContinue
-        }
-
-        It "Returns System.IO.FileInfo when writing to file" {
-            $resultFile | Should -Not -BeNullOrEmpty
-            $resultFile | Should -BeOfType System.IO.FileInfo
-        }
-
-        It "Returns System.String when using -Passthru" {
-            $resultPassthru | Should -Not -BeNullOrEmpty
-            $resultPassthru | Should -BeOfType [System.String]
         }
     }
 }

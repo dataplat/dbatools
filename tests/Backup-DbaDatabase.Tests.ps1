@@ -127,6 +127,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Database ID should be returned" {
             $results.DatabaseID | Should -Be 1
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
+        }
+
+        It "Has the expected default display properties" {
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            # Select-DefaultView uses -ExcludeProperty, so these should NOT be in the default set
+            $excludedOnSuccess = @("FullName", "FileList", "SoftwareVersionMajor", "Notes", "FirstLsn", "DatabaseBackupLsn", "CheckpointLsn", "LastLsn", "BackupSetId", "LastRecoveryForkGuid")
+            foreach ($prop in $excludedOnSuccess) {
+                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
+            }
+            # Key properties that SHOULD be in the default set
+            $expectedInDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Type", "TotalSize", "DeviceType", "Duration", "Start", "End", "BackupComplete", "BackupFile", "BackupFilesCount", "BackupFolder", "BackupPath")
+            foreach ($prop in $expectedInDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "Database should backup 2 databases" {
@@ -559,28 +578,4 @@ go
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Database.BackupHistory"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            # Select-DefaultView uses -ExcludeProperty, so these should NOT be in the default set
-            $excludedOnSuccess = @("FullName", "FileList", "SoftwareVersionMajor", "Notes", "FirstLsn", "DatabaseBackupLsn", "CheckpointLsn", "LastLsn", "BackupSetId", "LastRecoveryForkGuid")
-            foreach ($prop in $excludedOnSuccess) {
-                $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"
-            }
-            # Key properties that SHOULD be in the default set
-            $expectedInDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Type", "TotalSize", "DeviceType", "Duration", "Start", "End", "BackupComplete", "BackupFile", "BackupFilesCount", "BackupFolder", "BackupPath")
-            foreach ($prop in $expectedInDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-    }
 }

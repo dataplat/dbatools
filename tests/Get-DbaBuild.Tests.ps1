@@ -235,6 +235,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Test retrieving version from instances" {
+        BeforeAll {
+            $resultFromBuild = Get-DbaBuild -Build "13.0.6300"
+        }
+
         It "Should return an exact match" {
             $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             $results | Should -Not -BeNullOrEmpty
@@ -266,23 +270,18 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $resultFromInstance = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1
-            $resultFromBuild = Get-DbaBuild -Build "13.0.6300"
-        }
 
         It "Returns output of the documented type from SqlInstance" {
-            $resultFromInstance | Should -Not -BeNullOrEmpty
-            $resultFromInstance[0] | Should -BeOfType PSCustomObject
+            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties from SqlInstance query" {
+            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
             $expectedProps = @("SqlInstance", "Build", "NameLevel", "SPLevel", "CULevel", "KBLevel", "BuildLevel", "SupportedUntil", "MatchType", "Warning")
             foreach ($prop in $expectedProps) {
-                $resultFromInstance[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
 

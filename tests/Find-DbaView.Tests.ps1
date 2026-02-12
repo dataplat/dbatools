@@ -67,6 +67,7 @@ AS
     FROM [master].[sys].[syslogins];
 "@
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewdb" -Query $DatabaseView
+            $result = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci_sysadmin -Database "dbatoolsci_viewdb"
         }
 
         AfterAll {
@@ -87,24 +88,6 @@ AS
         It "Should find no results when Excluding dbatoolsci_viewdb" {
             $results = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatools* -ExcludeDatabase "dbatoolsci_viewdb"
             $results | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name "dbatoolsci_viewoutput"
-            $outputView = @"
-CREATE VIEW dbo.v_dbatoolsci_outputtest
-AS
-    SELECT [sid],[loginname],[sysadmin]
-    FROM [master].[sys].[syslogins];
-"@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewoutput" -Query $outputView
-            $result = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci_outputtest -Database "dbatoolsci_viewoutput"
-        }
-
-        AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_viewoutput" -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Returns output of the documented type" {

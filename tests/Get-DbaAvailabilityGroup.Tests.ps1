@@ -65,21 +65,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroup"
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AvailabilityGroup"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -100,16 +96,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["AvailabilityGroup"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["AvailabilityGroup"].MemberType | Should -Be "AliasProperty"
-            $result[0].psobject.Properties["PrimaryReplica"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["PrimaryReplica"].MemberType | Should -Be "AliasProperty"
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["AvailabilityGroup"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["AvailabilityGroup"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["PrimaryReplica"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["PrimaryReplica"].MemberType | Should -Be "AliasProperty"
         }
 
         It "Has the expected default display properties with IsPrimary" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $resultIsPrimary = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -IsPrimary
+            if (-not $resultIsPrimary) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $resultIsPrimary[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",

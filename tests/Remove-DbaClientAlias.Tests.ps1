@@ -41,13 +41,33 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "removes the alias and shows computername" {
-                $results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
-                $results.ComputerName | Should -Not -BeNullOrEmpty
+                $script:results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
+                $script:results.ComputerName | Should -Not -BeNullOrEmpty
             }
 
             It "alias is not included in results" {
                 $aliases = Get-DbaClientAlias
                 $aliases.AliasName -notcontains "dbatoolscialias1" | Should -Be $true
+            }
+
+            Context "Output validation" {
+                It "Returns output of the documented type" {
+                    $script:results | Should -Not -BeNullOrEmpty
+                    $script:results[0] | Should -BeOfType [PSCustomObject]
+                }
+
+                It "Has the expected properties" {
+                    $expectedProperties = @("ComputerName", "Architecture", "Alias", "Status")
+                    foreach ($prop in $expectedProperties) {
+                        $script:results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                    }
+                }
+
+                It "Returns the correct values" {
+                    $script:results[0].Status | Should -Be "Removed"
+                    $script:results[0].Alias | Should -Be "dbatoolscialias1"
+                    $script:results[0].ComputerName | Should -Not -BeNullOrEmpty
+                }
             }
         }
 
@@ -99,35 +119,6 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = Remove-DbaClientAlias -Alias dbatoolscialias5 -WarningAction SilentlyContinue
                 $PSDefaultParameterValues = $defaultParamValues
                 $buffer.Count -ge 4 | Should -Be $true
-            }
-        }
-
-        Context "Output validation" {
-            BeforeAll {
-                $null = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolsci_outputalias -Verbose:$false
-                $outputResult = Remove-DbaClientAlias -Alias dbatoolsci_outputalias -Verbose:$false
-            }
-
-            AfterAll {
-                $null = Remove-DbaClientAlias -Alias dbatoolsci_outputalias -Verbose:$false -ErrorAction SilentlyContinue
-            }
-
-            It "Returns output of the documented type" {
-                $outputResult | Should -Not -BeNullOrEmpty
-                $outputResult[0] | Should -BeOfType [PSCustomObject]
-            }
-
-            It "Has the expected properties" {
-                $expectedProperties = @("ComputerName", "Architecture", "Alias", "Status")
-                foreach ($prop in $expectedProperties) {
-                    $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-                }
-            }
-
-            It "Returns the correct values" {
-                $outputResult[0].Status | Should -Be "Removed"
-                $outputResult[0].Alias | Should -Be "dbatoolsci_outputalias"
-                $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
             }
         }
     }

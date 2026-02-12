@@ -62,9 +62,31 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Creating a new SQL Server Agent alert" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $outputAlertName = "dbatoolsci_outputalert_$(Get-Random)"
+            # Clean up in case it exists from a previous run
+            Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1 -Alert $outputAlertName -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
+            $splatOutputAlert = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                Alert                 = $outputAlertName
+                Severity              = 22
+                DelayBetweenResponses = 60
+                EnableException       = $true
+            }
+            $script:outputResult = New-DbaAgentAlert @splatOutputAlert
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         BeforeEach {
             # Clean up alerts before each test to ensure clean state
             Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Alert $testAlertNames -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1 -Alert $outputAlertName -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Should create a new alert with severity" {
@@ -112,39 +134,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti2 -Alert $splatMessageAlert.Alert | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputAlertName = "dbatoolsci_outputalert_$(Get-Random)"
-            # Clean up in case it exists from a previous run
-            Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1 -Alert $outputAlertName -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
-            $splatOutputAlert = @{
-                SqlInstance           = $TestConfig.InstanceMulti1
-                Alert                 = $outputAlertName
-                Severity              = 22
-                DelayBetweenResponses = 60
-                EnableException       = $true
-            }
-            $outputResult = New-DbaAgentAlert @splatOutputAlert
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1 -Alert $outputAlertName -ErrorAction SilentlyContinue | Remove-DbaAgentAlert -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Alert"
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Alert"
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "MessageId", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

@@ -104,6 +104,12 @@ Describe $CommandName -Tag IntegrationTests {
         It "should export text matching rule name '$ruleName'" {
             $script -match $ruleName | Should -Be $true
         }
+
+        It "Returns strings when using -PassThru" {
+            $resultPassThru = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -PassThru
+            $resultPassThru | Should -Not -BeNullOrEmpty
+            $resultPassThru[0] | Should -BeOfType System.String
+        }
     }
 
     Context "works as expected with filename" {
@@ -138,6 +144,14 @@ Describe $CommandName -Tag IntegrationTests {
         It "should export text matching scalar function name '$ruleName'" {
             $file -match $ruleName | Should -Be $true
         }
+
+        It "Returns a file when using -FilePath" {
+            $outputFilePath = "$backupPath\dbatoolsci_outputvalidation_$(Get-Random).sql"
+            $resultFile = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFilePath
+            $resultFile | Should -Not -BeNullOrEmpty
+            $resultFile | Should -BeOfType System.IO.FileInfo
+            Remove-Item -Path $outputFilePath -ErrorAction SilentlyContinue
+        }
     }
 
     Context "ScriptingOptionsObject parameter works correctly" {
@@ -151,22 +165,6 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $script = Export-DbaSysDbUserObject @splatExport | Out-String
             $script -match "IF NOT EXISTS" | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        It "Returns strings when using -PassThru" {
-            $resultPassThru = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -PassThru
-            $resultPassThru | Should -Not -BeNullOrEmpty
-            $resultPassThru[0] | Should -BeOfType System.String
-        }
-
-        It "Returns a file when using -FilePath" {
-            $outputFilePath = "$backupPath\dbatoolsci_outputvalidation_$(Get-Random).sql"
-            $resultFile = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFilePath
-            $resultFile | Should -Not -BeNullOrEmpty
-            $resultFile | Should -BeOfType System.IO.FileInfo
-            Remove-Item -Path $outputFilePath -ErrorAction SilentlyContinue
         }
     }
 }

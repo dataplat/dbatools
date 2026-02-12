@@ -54,19 +54,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle
             $results.Name | Should -Contain "dbatoolsci test alert"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle -Alert "dbatoolsci test alert"
-        }
 
         It "Returns output of the documented type" {
+            $result = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle -Alert "dbatoolsci test alert"
             $result | Should -Not -BeNullOrEmpty
             $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Alert"
         }
 
         It "Has the expected default display properties" {
+            $result = Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceSingle -Alert "dbatoolsci test alert"
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",

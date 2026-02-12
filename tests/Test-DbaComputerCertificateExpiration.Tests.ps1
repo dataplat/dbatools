@@ -41,42 +41,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $results | Select-Object -ExpandProperty Note | Should -Be "This certificate has expired and is no longer valid"
             $results.Thumbprint | Should -Be $thumbprint
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
-            $result = Test-DbaComputerCertificateExpiration -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-        }
-        AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint "29C469578D6C6211076A09CEE5C5797EEA0C2713" -ErrorAction SilentlyContinue
-        }
+        Context "Output validation" {
+            It "Returns output with expected properties" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.ExpiredOrExpiring | Should -BeTrue
+                $results.Note | Should -Not -BeNullOrEmpty
+            }
 
-        It "Returns output with expected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $result.ExpiredOrExpiring | Should -BeTrue
-            $result.Note | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "Store",
-                "Folder",
-                "Name",
-                "DnsNameList",
-                "Thumbprint",
-                "NotBefore",
-                "NotAfter",
-                "Subject",
-                "Issuer",
-                "Algorithm",
-                "ExpiredOrExpiring",
-                "Note"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "Store",
+                    "Folder",
+                    "Name",
+                    "DnsNameList",
+                    "Thumbprint",
+                    "NotBefore",
+                    "NotAfter",
+                    "Subject",
+                    "Issuer",
+                    "Algorithm",
+                    "ExpiredOrExpiring",
+                    "Note"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }

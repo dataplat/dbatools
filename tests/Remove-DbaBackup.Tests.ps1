@@ -86,6 +86,13 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
             (Get-ChildItem -Path $testPath -File -Recurse).Count | Should -Be 0
         }
+
+        Context "Output validation" {
+            It "Returns no output" {
+                $result = Remove-DbaBackup -Path $testPath -BackupFileExtension bak -RetentionPeriod "0d"
+                $result | Should -BeNullOrEmpty
+            }
+        }
     }
 
     Context "Extension-specific file removal" {
@@ -151,22 +158,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputTestPath = "TestDrive:\sqlbackups-output-$(Get-Random)"
-            $null = New-Item -Path $outputTestPath -ItemType Directory
-            $filepath = Join-Path $outputTestPath "dbatoolsci_output_backup.bak"
-            Set-Content $filepath -Value "."
-            (Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputTestPath -Recurse -ErrorAction SilentlyContinue
-        }
-
-        It "Returns no output" {
-            $result = Remove-DbaBackup -Path $outputTestPath -BackupFileExtension bak -RetentionPeriod "0d"
-            $result | Should -BeNullOrEmpty
-        }
-    }
 }

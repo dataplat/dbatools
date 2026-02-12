@@ -56,6 +56,33 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return true if Creation Date of Master is '4/8/2003 9:13:36 AM'" {
             $($results.CreateDate.ToFileTimeutc()[0]) -eq 126942668163900000 | Should -Be $true
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProps = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Id",
+                "Size",
+                "Owner",
+                "CreateDate",
+                "ServiceBrokerGuid",
+                "Tables",
+                "StoredProcedures",
+                "Views",
+                "ExtendedProperties"
+            )
+            foreach ($prop in $expectedProps) {
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
     }
 
     Context "Multiple instances" {
@@ -75,39 +102,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return true if Database Found via Property Filter" {
             $results.ServiceBrokerGuid | Should -BeLike "*-0000-0000-000000000000"
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Pattern Master
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Name",
-                "Id",
-                "Size",
-                "Owner",
-                "CreateDate",
-                "ServiceBrokerGuid",
-                "Tables",
-                "StoredProcedures",
-                "Views",
-                "ExtendedProperties"
-            )
-            foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
-            }
         }
     }
 }

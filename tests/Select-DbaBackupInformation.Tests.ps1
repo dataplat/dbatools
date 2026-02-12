@@ -46,6 +46,22 @@ Describe $CommandName -Tag IntegrationTests {
             It "Should return 5 log backups" {
                 ($Output | Where-Object BackupTypeDescription -eq "Transaction Log" | Measure-Object).count | Should -Be 5
             }
+
+            Context "Output validation" {
+                It "Returns output with expected backup properties" {
+                    $Output | Should -Not -BeNullOrEmpty
+                    $props = $Output[0].psobject.Properties.Name
+                    $props | Should -Contain "Database" -Because "property 'Database' should be present on output"
+                    $props | Should -Contain "FirstLsn" -Because "property 'FirstLsn' should be present on output"
+                    $props | Should -Contain "LastLsn" -Because "property 'LastLsn' should be present on output"
+                    $props | Should -Contain "FullName" -Because "property 'FullName' should be present on output"
+                }
+
+                It "Adds RestoreTime property to output objects" {
+                    $Output | Should -Not -BeNullOrEmpty
+                    $Output[0].psobject.Properties.Name | Should -Contain "RestoreTime" -Because "Select-DbaBackupInformation adds RestoreTime via Add-Member"
+                }
+            }
         }
 
         Context "AG  Diff Restore" {
@@ -313,27 +329,5 @@ Describe $CommandName -Tag IntegrationTests {
                 ($redo_start_lsn -ge $tmp.FirstLsn -and $redo_start_lsn -le $tmp.LastLsn) | Should -Be $true
             }
         }
-        Context "Output validation" {
-            BeforeAll {
-                $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
-                $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-                $outputResult = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
-            }
-
-            It "Returns output with expected backup properties" {
-                $outputResult | Should -Not -BeNullOrEmpty
-                $props = $outputResult[0].psobject.Properties.Name
-                $props | Should -Contain "Database" -Because "property 'Database' should be present on output"
-                $props | Should -Contain "FirstLsn" -Because "property 'FirstLsn' should be present on output"
-                $props | Should -Contain "LastLsn" -Because "property 'LastLsn' should be present on output"
-                $props | Should -Contain "FullName" -Because "property 'FullName' should be present on output"
-            }
-
-            It "Adds RestoreTime property to output objects" {
-                $outputResult | Should -Not -BeNullOrEmpty
-                $outputResult[0].psobject.Properties.Name | Should -Contain "RestoreTime" -Because "Select-DbaBackupInformation adds RestoreTime via Add-Member"
-            }
-        }
-
-    }
+}
 }

@@ -33,23 +33,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Verifying command output" {
-        It "returns some results with Raw parameter" {
-            $results = $xeSession | Read-DbaXEFile -Raw
-            $results | Should -Not -BeNullOrEmpty
-        }
-
-        It "returns some results without Raw parameter" {
-            $results = $xeSession | Read-DbaXEFile
-            $results | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
             $allDefault = @($xeSession | Read-DbaXEFile)
             $resultDefault = @($allDefault | Select-Object -First 3)
             $allRaw = @($xeSession | Read-DbaXEFile -Raw)
             $resultRaw = @($allRaw | Select-Object -First 3)
+        }
+
+        It "returns some results with Raw parameter" {
+            $allRaw | Should -Not -BeNullOrEmpty
+        }
+
+        It "returns some results without Raw parameter" {
+            $allDefault | Should -Not -BeNullOrEmpty
         }
 
         It "Returns PSCustomObject by default" {

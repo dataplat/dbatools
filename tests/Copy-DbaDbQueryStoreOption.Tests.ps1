@@ -116,42 +116,6 @@ Describe $CommandName -Tag IntegrationTests {
             $db4QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db4Name
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputSrcDbName = "dbatoolsci_qsoutput_src_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputSrcDbName
-
-            $outputDestDbName = "dbatoolsci_qsoutput_dest_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDestDbName
-
-            $splatSetQsState = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                Database      = $outputSrcDbName
-                State         = "ReadWrite"
-                FlushInterval = 901
-            }
-            $null = Set-DbaDbQueryStoreOption @splatSetQsState
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatCopyOutput = @{
-                Source              = $TestConfig.InstanceSingle
-                SourceDatabase      = $outputSrcDbName
-                Destination         = $TestConfig.InstanceSingle
-                DestinationDatabase = $outputDestDbName
-            }
-            $result = Copy-DbaDbQueryStoreOption @splatCopyOutput
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputSrcDbName, $outputDestDbName -Confirm:$false -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output with the expected TypeName" {
             $result | Should -Not -BeNullOrEmpty

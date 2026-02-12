@@ -91,44 +91,24 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
             $expectedProps = "ComputerName,InstanceName,SqlInstance,DatabaseName,User,Status".Split(",")
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
+
+        It "Returns output of the documented type" {
+            $repairResults | Should -Not -BeNullOrEmpty
+            $repairResults[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "DatabaseName", "User", "Status")
+            foreach ($prop in $expectedProps) {
+                $repairResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "When running repair again" {
         It "does not find any other orphan" {
             $secondRepairResults = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan
             $secondRepairResults | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            # Create a fresh orphan for output validation
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "CREATE LOGIN [dbatoolsci_orphan_ov] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;"
-            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "CREATE USER [dbatoolsci_orphan_ov] FROM LOGIN [dbatoolsci_orphan_ov];" -Database dbatoolsci_orphan
-            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "DROP LOGIN [dbatoolsci_orphan_ov];"
-            $null = Invoke-DbaQuery -SqlInstance $outputServer -Query "CREATE LOGIN [dbatoolsci_orphan_ov] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;"
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $outputResult = Repair-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan
-        }
-
-        AfterAll {
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP LOGIN [dbatoolsci_orphan_ov];" -ErrorAction SilentlyContinue
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP USER [dbatoolsci_orphan_ov];" -Database dbatoolsci_orphan -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "DatabaseName", "User", "Status")
-            foreach ($prop in $expectedProps) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
         }
     }
 }

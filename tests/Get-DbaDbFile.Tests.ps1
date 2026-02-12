@@ -59,40 +59,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Physical name is populated" {
-        It "Master returns proper results" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
-            $result = $results | Where-Object LogicalName -eq "master"
-            $result.PhysicalName -match "master.mdf" | Should -Be $true
-            $result = $results | Where-Object LogicalName -eq "mastlog"
-            $result.PhysicalName -match "mastlog.ldf" | Should -Be $true
-        }
-    }
-
-    Context "Database ID is populated" {
-        It "Returns proper results for the master db" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
-            $results.DatabaseID | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).ID
-        }
-
-        It "Uses a pipeline input and returns proper results for the tempdb" {
-            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
-            $results = $tempDB | Get-DbaDbFile
-            $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+            $script:dbFileResults = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+        }
+
+        It "Master returns proper results" {
+            $result = $script:dbFileResults | Where-Object LogicalName -eq "master"
+            $result.PhysicalName -match "master.mdf" | Should -Be $true
+            $result = $script:dbFileResults | Where-Object LogicalName -eq "mastlog"
+            $result.PhysicalName -match "mastlog.ldf" | Should -Be $true
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
+            $script:dbFileResults | Should -Not -BeNullOrEmpty
+            $script:dbFileResults[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $result | Should -Not -BeNullOrEmpty
+            $script:dbFileResults | Should -Not -BeNullOrEmpty
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -129,8 +113,22 @@ Describe $CommandName -Tag IntegrationTests {
                 "FileGroupReadOnly"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                $script:dbFileResults[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }
+
+    Context "Database ID is populated" {
+        It "Returns proper results for the master db" {
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+            $results.DatabaseID | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).ID
+        }
+
+        It "Uses a pipeline input and returns proper results for the tempdb" {
+            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $results = $tempDB | Get-DbaDbFile
+            $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
+        }
+    }
+
 }

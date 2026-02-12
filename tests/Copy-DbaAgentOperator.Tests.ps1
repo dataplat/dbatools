@@ -66,6 +66,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying operators" {
+        BeforeAll {
+            $splatCopyOperators = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Operator    = @($operatorName1, $operatorName2)
+            }
+            $validationResults = Copy-DbaAgentOperator @splatCopyOperators
+        }
+
         It "Returns two copied operators" {
             $splatCopyOperators = @{
                 Source      = $TestConfig.InstanceCopy1
@@ -86,26 +95,15 @@ Describe $CommandName -Tag IntegrationTests {
             $copyResult = Copy-DbaAgentOperator @splatCopyExisting
             $copyResult.Status | Should -Be "Skipped"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputValidation = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Operator    = $operatorName1
-            }
-            $result = Copy-DbaAgentOperator @splatOutputValidation
-        }
 
         It "Returns output with the expected TypeName" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $validationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $validationResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $validationResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $validationResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

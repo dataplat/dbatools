@@ -73,50 +73,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "creates the catalog" -Skip:(-not $shouldRunTests) {
             $results.Created | Should -Be $true
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputDatabase = "SSISDB"
-            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase
-            $outputResult = $null
-            $outputShouldRun = $false
-
-            if (-not $outputDb) {
-                $outputPassword = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-                $outputResult = New-DbaSsisCatalog -SqlInstance $TestConfig.InstanceSingle -Password $outputPassword -WarningAction SilentlyContinue -WarningVariable outputWarn
-
-                if ($outputWarn -match "not running") {
-                    $outputShouldRun = $false
-                } else {
-                    $outputShouldRun = $true
-                }
-            }
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        It "Returns output of the documented type" -Skip:(-not $shouldRunTests) {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType [PSCustomObject]
         }
 
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            if ($outputShouldRun -and $outputDatabase) {
-                Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDatabase -ErrorAction SilentlyContinue
-            }
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" -Skip:(-not $outputShouldRun) {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" -Skip:(-not $outputShouldRun) {
+        It "Has the expected properties" -Skip:(-not $shouldRunTests) {
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "SsisCatalog", "Created")
             foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

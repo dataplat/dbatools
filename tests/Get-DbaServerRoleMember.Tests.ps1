@@ -87,32 +87,15 @@ Describe $CommandName -Tag IntegrationTests {
             $uniqueInstances = $result.SqlInstance | Select-Object -Unique
             $uniqueInstances.Count | Should -BeExactly 2
         }
-    }
-
-    AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -ErrorAction SilentlyContinue
-        Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -ErrorAction SilentlyContinue
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            # sysadmin always has at least sa as a member, so this is safe to query without setup
-            $result = Get-DbaServerRoleMember -SqlInstance $TestConfig.InstanceMulti2 -ServerRole "sysadmin"
-        }
 
         It "Returns output of the expected type" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2
             $result | Should -Not -BeNullOrEmpty
             $result[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
+            $result = Get-DbaServerRoleMember -SqlInstance $server2
             $result | Should -Not -BeNullOrEmpty
             $expectedProperties = @(
                 "ComputerName",
@@ -127,5 +110,15 @@ Describe "$CommandName Output" -Tag IntegrationTests {
                 $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        Remove-DbaLogin -SqlInstance $server2 -Login $testLogin -Force -ErrorAction SilentlyContinue
+        Remove-DbaLogin -SqlInstance $server1 -Login $testLogin -Force -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 }

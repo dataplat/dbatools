@@ -106,6 +106,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Get last history for all databases" {
         BeforeAll {
             $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle
+            # Capture output for validation
+            $script:outputResult = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database master -LastFull
         }
 
         It "Should be more than one database" {
@@ -242,16 +244,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputBackupDir = "$($TestConfig.Temp)\dbatoolsci_outputhistory"
-            if (-not (Test-Path $outputBackupDir)) {
-                $null = New-Item -ItemType Directory -Path $outputBackupDir
-            }
-            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master -Type Full -FilePath "$outputBackupDir\master_output.bak"
-            $outputResult = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database master -LastFull
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputBackupDir -Recurse -ErrorAction SilentlyContinue
+            $outputResult = $script:outputResult
         }
 
         It "Returns output of the documented type" {

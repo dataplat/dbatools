@@ -63,6 +63,26 @@ Describe $CommandName -Tag IntegrationTests {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
+
+        It "Returns output as PSCustomObject" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $result[0] | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Cmd",
+                "Output"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
     }
 
     Context "Validate returns results" {
@@ -77,29 +97,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Invoke-DbaDbDbccUpdateUsage -SqlInstance $TestConfig.InstanceSingle -Database $dbname
-        }
-
-        It "Returns output as PSCustomObject" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProperties = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Cmd",
-                "Output"
-            )
-            foreach ($prop in $expectedProperties) {
-                $outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-    }
 }

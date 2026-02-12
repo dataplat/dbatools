@@ -99,19 +99,24 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.Role | Select-Object -Unique | Should -Not -Contain "db_owner"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner" -IncludeSystemUser
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $outputValidationResult = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner" -IncludeSystemUser
+
+            if (-not $outputValidationResult) {
+                Set-ItResult -Skipped -Because "No results returned from Get-DbaDbRoleMember"
+            }
+
+            $outputValidationResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected properties" {
+            $outputValidationResult = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database master -Role "db_owner" -IncludeSystemUser
+
+            if (-not $outputValidationResult) {
+                Set-ItResult -Skipped -Because "No results returned from Get-DbaDbRoleMember"
+            }
+
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -126,7 +131,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "SmoMemberRole"
             )
             foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $outputValidationResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

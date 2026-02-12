@@ -107,20 +107,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ReplicaServerName | Should -Not -BeNullOrEmpty
             $results.ReplicaRole | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
-        }
 
         It "Returns output of type PSCustomObject" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0] | Should -BeOfType PSCustomObject
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
+            $results | Should -Not -BeNullOrEmpty
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has all documented properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -Database $dbName
+            $results | Should -Not -BeNullOrEmpty
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -162,7 +158,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "LastSentLSN",
                 "LastSentTime"
             )
-            $actualProperties = $result[0].psobject.Properties.Name
+            $actualProperties = $results[0].psobject.Properties.Name
             foreach ($prop in $expectedProperties) {
                 $actualProperties | Should -Contain $prop -Because "property '$prop' should be present"
             }

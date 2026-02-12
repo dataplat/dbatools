@@ -87,28 +87,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Impersonate for authentication" {
             $results.Impersonate | Should -Be $true
         }
-    }
-
-    Context "Gets Linked Servers using -ExcludeLinkedServer" {
-        It "Gets results" {
-            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -ExcludeLinkedServer $TestConfig.InstanceMulti2
-            $results | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -LinkedServer $TestConfig.InstanceMulti2
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServer"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.LinkedServer"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -128,18 +115,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["RemoteServer"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["RemoteServer"].MemberType | Should -Be "AliasProperty"
-            $result[0].psobject.Properties["Publisher"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Publisher"].MemberType | Should -Be "AliasProperty"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["RemoteServer"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["RemoteServer"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["Publisher"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Publisher"].MemberType | Should -Be "AliasProperty"
         }
 
         It "Has valid values for standard connection properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].ComputerName | Should -Not -BeNullOrEmpty
-            $result[0].InstanceName | Should -Not -BeNullOrEmpty
-            $result[0].SqlInstance | Should -Not -BeNullOrEmpty
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Gets Linked Servers using -ExcludeLinkedServer" {
+        It "Gets results" {
+            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -ExcludeLinkedServer $TestConfig.InstanceMulti2
+            $results | Should -BeNullOrEmpty
         }
     }
 }

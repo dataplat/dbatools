@@ -73,27 +73,15 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.InitialSize -gt $result.CurrentSize
             }
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputDbName = "dbatoolsci_expandoutput_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-            $outputResult = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -TargetLogSize 128
-        }
-
-        AfterAll {
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Has the expected default display properties excluding LogFileCount" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "ID", "Name", "InitialSize", "CurrentSize", "InitialVLFCount", "CurrentVLFCount")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -102,8 +90,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has LogFileCount as a non-default property" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].LogFileCount | Should -Not -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].LogFileCount | Should -Not -BeNullOrEmpty
         }
     }
 }

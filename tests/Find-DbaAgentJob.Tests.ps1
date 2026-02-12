@@ -113,29 +113,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job *dbatoolsci*, *dbatoolsregr* -ExcludeJobName dbatoolsci_testjob_disabled
             $results | Should -HaveCount 2
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_outputval
-            if (-not $result) {
-                $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_testjob_outputval" -OwnerLogin "sa"
-                $result = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_outputval
-            }
-        }
-
-        AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "dbatoolsci_testjob_outputval" -Confirm:$false -ErrorAction SilentlyContinue
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
         }
 
         It "Has the expected default display properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
+            $results | Should -Not -BeNullOrEmpty
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -159,11 +147,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
-            $result[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+            $results[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

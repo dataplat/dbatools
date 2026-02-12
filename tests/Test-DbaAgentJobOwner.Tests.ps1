@@ -51,43 +51,39 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should find $notSaJob owner doesn't match default sa" {
             $($results | Where-Object { $_.Job -eq $notSaJob }).OwnerMatch | Should -Be $False
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("Server", "Job", "JobType", "CurrentOwner", "TargetOwner", "OwnerMatch")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has Server property populated" {
+                $results[0].Server | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has Job property populated" {
+                $results[0].Job | Should -Not -BeNullOrEmpty
+            }
+
+            It "Has OwnerMatch as boolean" {
+                $results[0].OwnerMatch | Should -BeOfType [bool]
+            }
+        }
     }
 
     Context "Exclusions work" {
         It "Should exclude $notSaJob job" {
             $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -ExcludeJob $notSaJob
             $results.job | Should -Not -Match $notSaJob
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResults = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $saJob, $notSaJob
-        }
-
-        It "Returns output of the documented type" {
-            $outputResults | Should -Not -BeNullOrEmpty
-            $outputResults[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $outputResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("Server", "Job", "JobType", "CurrentOwner", "TargetOwner", "OwnerMatch")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-
-        It "Has Server property populated" {
-            $outputResults[0].Server | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has Job property populated" {
-            $outputResults[0].Job | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has OwnerMatch as boolean" {
-            $outputResults[0].OwnerMatch | Should -BeOfType [bool]
         }
     }
 }

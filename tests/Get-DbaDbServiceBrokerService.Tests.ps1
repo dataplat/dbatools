@@ -75,21 +75,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have a queuename of $testQueueName" {
             $testResults.QueueName | Should -Be $testQueueName
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeSystemService:$true
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Broker.BrokerService"
+            $testResults[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Broker.BrokerService"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $testResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",
@@ -107,9 +99,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties["ServiceID"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["ServiceID"].MemberType | Should -Be "AliasProperty"
+            $testResults[0].psobject.Properties["ServiceID"] | Should -Not -BeNullOrEmpty
+            $testResults[0].psobject.Properties["ServiceID"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

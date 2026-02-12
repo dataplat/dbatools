@@ -72,43 +72,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $computerName
         }
-    }
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            $outputCollectorSetName = "Long Running Queries"
-            $outputComputerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
-
-            $null = Get-DbaPfDataCollectorSet -ComputerName $outputComputerName -CollectorSet $outputCollectorSetName | Remove-DbaPfDataCollectorSet
-
-            $outputResult = Import-DbaPfDataCollectorSetTemplate -ComputerName $outputComputerName -Template $outputCollectorSetName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            $null = Get-DbaPfDataCollectorSet -ComputerName $outputComputerName -CollectorSet $outputCollectorSetName | Remove-DbaPfDataCollectorSet -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
-        }
 
         It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0] | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "Name",
@@ -141,9 +113,9 @@ Describe "$CommandName Output" -Tag IntegrationTests {
         }
 
         It "Has correct Name and ComputerName values" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].Name | Should -Be $outputCollectorSetName
-            $outputResult[0].ComputerName | Should -Be $outputComputerName
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].Name | Should -Be $collectorSetName
+            $results[0].ComputerName | Should -Be $computerName
         }
     }
 }

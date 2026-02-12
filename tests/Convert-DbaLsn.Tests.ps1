@@ -49,21 +49,15 @@ Describe $CommandName -Tag UnitTests {
         It "Should convert to 20000000024300001" {
             $hexResults.Numeric | Should -Be 20000000024300001
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Convert-DbaLSN -LSN "00000014:000000f3:0001"
-        }
 
         It "Returns output of type PSCustomObject" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
+            $hexResults | Should -Not -BeNullOrEmpty
+            $hexResults | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $result.PSObject.Properties.Name | Should -Contain "Hexadecimal"
-            $result.PSObject.Properties.Name | Should -Contain "Numeric"
+            $hexResults.PSObject.Properties.Name | Should -Contain "Hexadecimal"
+            $hexResults.PSObject.Properties.Name | Should -Contain "Numeric"
         }
     }
 }

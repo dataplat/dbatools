@@ -58,6 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "Cmd", "IdentityValue", "ColumnValue", "Output"
             $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1, $tableName2
+            $script:outputForValidation = $result[0]
         }
 
         It "Should return property: <_>" -ForEach $props {
@@ -83,20 +84,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Output validation" {
-        BeforeAll {
-            $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1
-        }
-
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result | Should -BeOfType PSCustomObject
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "Cmd", "IdentityValue", "ColumnValue", "Output")
             foreach ($prop in $expectedProps) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

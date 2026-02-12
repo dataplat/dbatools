@@ -83,49 +83,15 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
             $results.DatabaseId | Select-Object -Unique | Should -Be $db1.ID
         }
         #>
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputRandom = Get-Random
-            $outputDbName = "dbatoolsci_output_$outputRandom"
-            $outputDb = New-DbaDatabase -SqlInstance $outputServer -Name $outputDbName
-
-            $outputSql = @"
-CREATE TABLE Tab1 (ID INTEGER);
-
-INSERT INTO Tab1 (ID)
-SELECT
-    1
-FROM
-    sys.all_objects a
-CROSS JOIN
-    sys.all_objects b;
-"@
-
-            $null = $outputDb.Query($outputSql)
-            $result = Find-DbaDbGrowthEvent -SqlInstance $outputServer -Database $outputDbName -EventType Growth
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $outputDb | Remove-DbaDatabase -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
-            $result[0] | Should -BeOfType [System.Data.DataRow]
+            if (-not $results) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
+            $results[0] | Should -BeOfType [System.Data.DataRow]
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no growth events found in default trace" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

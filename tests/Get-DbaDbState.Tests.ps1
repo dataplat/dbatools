@@ -175,34 +175,15 @@ Describe $CommandName -Tag IntegrationTests {
             )
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputTestDb = "dbatoolsci_dbstate_output"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDb
-
-            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDb -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output as PSCustomObject" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
             $result | Should -Not -BeNullOrEmpty
             $result[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the expected default display properties" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("SqlInstance", "InstanceName", "ComputerName", "DatabaseName", "RW", "Status", "Access")
             foreach ($prop in $expectedDefaults) {
@@ -211,11 +192,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Does not include Database in default display (excluded via Select-DefaultView)" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "Database" -Because "Database is excluded via Select-DefaultView -ExcludeProperty"
         }
 
         It "Has the Database property available for programmatic access" {
+            $result = Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1
             $result[0].psobject.Properties["Database"] | Should -Not -BeNullOrEmpty
         }
     }

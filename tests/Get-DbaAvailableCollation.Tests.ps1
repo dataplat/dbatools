@@ -22,24 +22,21 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Available Collations" {
-        It "finds a collation that matches Slovenian" {
-            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
-            ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
-            $result = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "finds a collation that matches Slovenian" {
+            ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "System.Data.DataRow"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

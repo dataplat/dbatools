@@ -201,6 +201,9 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
         $results.length | Should -BeGreaterThan 0
 
+        # Store results for output validation context
+        $script:outputForValidation = $results
+
         # parse the exact format of the date
         $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").length
         $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
@@ -380,15 +383,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputValidationDir = "$($TestConfig.Temp)\$CommandName-outputvalidation-$(Get-Random)"
-            if (-not (Test-Path $outputValidationDir -PathType Container)) {
-                $null = New-Item -Path $outputValidationDir -ItemType Container
-            }
-            $outputResult = Export-DbaInstance -SqlInstance $testServer -Path $outputValidationDir -Exclude "Audits", "AvailabilityGroups", "BackupDevices", "CentralManagementServer", "Credentials", "CustomErrors", "DatabaseMail", "Databases", "Endpoints", "ExtendedEvents", "LinkedServers", "Logins", "PolicyManagement", "ReplicationSettings", "ResourceGovernor", "ServerAuditSpecifications", "ServerRoles", "SysDbUserObjects", "SystemTriggers", "OleDbProvider"
-        }
-
-        AfterAll {
-            Remove-Item -Path $outputValidationDir -Recurse -Force -ErrorAction SilentlyContinue
+            $outputResult = $script:outputForValidation
         }
 
         It "Returns output" {

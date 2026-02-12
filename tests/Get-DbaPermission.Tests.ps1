@@ -97,6 +97,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "parameters work" {
+        BeforeAll {
+            $outputValidationResult = Get-DbaPermission -SqlInstance $server -Database "master"
+        }
+
         It "returns server level permissions with -IncludeServerLevel" -Skip:$env:appveyor {
             # Skip It on AppVeyor because test failes with "Invalid object name 'sys.availability_replicas'"
 
@@ -121,6 +125,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "DENY" -and $PSItem.PermissionName -in ("DELETE", "INSERT", "UPDATE") } | Should -HaveCount 3
             $results | Where-Object { $PSItem.Securable -eq "dbo.$tableName1" -and $PSItem.PermState -eq "GRANT" -and $PSItem.PermissionName -eq "SELECT" } | Should -HaveCount 1
         }
+
+        It "Returns output of the documented type" {
+            $outputValidationResult | Should -Not -BeNullOrEmpty
+            $outputValidationResult[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Has the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "PermState", "PermissionName", "SecurableType", "Securable", "Grantee", "GranteeType", "RevokeStatement", "GrantStatement")
+            foreach ($prop in $expectedProps) {
+                $outputValidationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+            }
+        }
     }
 
     # See https://github.com/dataplat/dbatools/issues/6744
@@ -138,24 +154,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser1 -and $PSItem.GranteeType -eq "SCHEMA OWNER" } | Should -HaveCount 1
             $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser2 -and $PSItem.GranteeType -eq "SQL_USER" } | Should -HaveCount 1
 
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaPermission -SqlInstance $TestConfig.InstanceSingle -Database master
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [System.Data.DataRow]
-        }
-
-        It "Has the expected properties" {
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "PermState", "PermissionName", "SecurableType", "Securable", "Grantee", "GranteeType", "RevokeStatement", "GrantStatement")
-            foreach ($prop in $expectedProps) {
-                $result[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present on the output object"
-            }
         }
     }
 }

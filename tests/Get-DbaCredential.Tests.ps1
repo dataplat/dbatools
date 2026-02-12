@@ -96,21 +96,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaCredential @splatMultipleCreds
             $results.Count | Should -BeGreaterThan 1
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor"
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Credential"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Credential"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thor"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ID", "Name", "Identity", "MappedClassType", "ProviderName")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

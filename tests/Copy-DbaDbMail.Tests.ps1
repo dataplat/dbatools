@@ -105,6 +105,20 @@ Describe $CommandName -Tag IntegrationTests {
             $result.DestinationServer | Should -Be $TestConfig.InstanceCopy2
             $result.Status | Should -Be "Successful"
         }
+
+        It "Returns output of the expected type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
     }
 
     Context "When copying MailServers specifically" {
@@ -163,51 +177,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should verify Database Mail XPs is enabled on destination" {
             $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name "Database Mail XPs"
             $destConfig.ConfiguredValue | Should -Be 1
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
-
-            $outputAccountName = "dbatoolsci_output_$(Get-Random)"
-
-            $splatOutputAccount = @{
-                SqlInstance    = $TestConfig.InstanceCopy1
-                Name           = $outputAccountName
-                Description    = "Output test mail account"
-                EmailAddress   = "dbatoolsci_output@dbatools.io"
-                DisplayName    = "dbatoolsci output test"
-                ReplyToAddress = "no-reply@dbatools.io"
-                MailServer     = "smtp.dbatools.io"
-            }
-            $null = New-DbaDbMailAccount @splatOutputAccount -Force
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
-
-            $result = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Query "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$outputAccountName';" -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
         }
     }
 }

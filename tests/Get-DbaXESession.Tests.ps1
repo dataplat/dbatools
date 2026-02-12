@@ -23,29 +23,26 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command output" {
+        BeforeAll {
+            $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
+        }
+
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle
-            $results.Count -gt 1 | Should -Be $true
+            $multiResults = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle
+            $multiResults.Count -gt 1 | Should -Be $true
         }
 
         It "returns only the system_health session" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             $results.Name -eq "system_health" | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
         }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.XEvent.Session"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

@@ -121,6 +121,7 @@ select TraceID=@TraceID
     Context "Test Removing Trace" {
         BeforeAll {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace
+            $script:outputForValidation = $results | Where-Object { $null -ne $PSItem -and $PSItem.PSObject.Properties.Name -contains "Status" }
         }
 
         It "returns the right values" {
@@ -131,48 +132,22 @@ select TraceID=@TraceID
         It "doesn't return any result for trace file id $($traceid)" {
             Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $outputTracePath = "$($TestConfig.Temp)\$CommandName-output-$(Get-Random)"
-            $null = New-Item -Path $outputTracePath -ItemType Directory
+        Context "Output validation" {
+            BeforeAll {
+                $result = $script:outputForValidation
+            }
 
-            $outputSql = @"
-declare @rc int
-declare @TraceID int
-declare @maxfilesize bigint
-set @maxfilesize = 5
-exec @rc = sp_trace_create @TraceID output, 0, N'$outputTracePath\temptrace', @maxfilesize, NULL
-declare @on bit
-set @on = 1
-exec sp_trace_setevent @TraceID, 14, 1, @on
-exec sp_trace_setevent @TraceID, 14, 9, @on
-exec sp_trace_setevent @TraceID, 14, 10, @on
-exec sp_trace_setstatus @TraceID, 1
-select TraceID=@TraceID
-"@
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputTraceId = ($outputServer.Query($outputSql)).TraceID
-            $outputRaw = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $outputTraceId | Remove-DbaTrace
-            $result = $outputRaw | Where-Object { $null -ne $PSItem -and $PSItem.PSObject.Properties.Name -contains "Status" }
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
+            It "Returns output of the documented type" {
+                $result | Should -Not -BeNullOrEmpty
+                $result | Should -BeOfType PSCustomObject
+            }
 
-        AfterAll {
-            Remove-Item -Path $outputTracePath -Recurse -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            It "Has the expected properties" {
+                $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Status")
+                foreach ($prop in $expectedProperties) {
+                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                }
             }
         }
     }

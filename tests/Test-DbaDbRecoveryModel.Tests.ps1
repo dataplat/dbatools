@@ -50,9 +50,28 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Default Execution" {
-        It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
+        BeforeAll {
             $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+        }
+
+        It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
             $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
+        }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "ConfiguredRecoveryModel", "ActualRecoveryModel")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
         }
     }
 
@@ -100,26 +119,4 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-}
-
-Describe "$CommandName Output" -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Full -Database model
-        }
-
-        It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "ConfiguredRecoveryModel", "ActualRecoveryModel")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-    }
 }

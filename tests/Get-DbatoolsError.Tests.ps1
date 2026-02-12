@@ -23,20 +23,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets an error" {
-        It "returns a dbatools error" {
-            try {
-                $null = Connect-DbaInstance -SqlInstance "nothing" -ConnectTimeout 1 -ErrorAction Stop
-            } catch { }
-            Get-DbatoolsError | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
             try {
                 $null = Connect-DbaInstance -SqlInstance "dbatoolsci_fakeinst" -ConnectTimeout 1 -ErrorAction Stop
             } catch { }
             $result = Get-DbatoolsError -First 1
+        }
+
+        It "returns a dbatools error" {
+            $result | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output with expected properties" {

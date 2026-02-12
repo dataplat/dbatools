@@ -27,24 +27,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbatoolsConfig -FullName sql.connection.timeout
             $results.Value | Should -BeOfType [int]
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbatoolsConfig -FullName sql.connection.timeout
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
+            $results | Should -Not -BeNullOrEmpty
+            $results[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Configuration.Config"
         }
 
         It "Has the expected properties" {
-            $result[0].psobject.Properties.Name | Should -Contain "Module"
-            $result[0].psobject.Properties.Name | Should -Contain "Name"
-            $result[0].psobject.Properties.Name | Should -Contain "Value"
-            $result[0].psobject.Properties.Name | Should -Contain "Description"
-            $result[0].psobject.Properties.Name | Should -Contain "Hidden"
+            $results[0].psobject.Properties.Name | Should -Contain "Module"
+            $results[0].psobject.Properties.Name | Should -Contain "Name"
+            $results[0].psobject.Properties.Name | Should -Contain "Value"
+            $results[0].psobject.Properties.Name | Should -Contain "Description"
+            $results[0].psobject.Properties.Name | Should -Contain "Hidden"
         }
     }
 }

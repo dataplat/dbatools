@@ -67,6 +67,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should remove just one database" {
             $results.Database | Should -Be $dbName
         }
+
+        It "Returns output of the documented type" {
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
+        }
+
+        It "Has the expected properties" {
+            $results | Should -Not -BeNullOrEmpty
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "DetachResult")
+            foreach ($prop in $expectedProperties) {
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            }
+        }
     }
 
     Context "When detaching databases with snapshots" {
@@ -114,42 +127,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-
-            $outputDbName = "dbatoolsci_dismount_output"
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName | Remove-DbaDatabase
-            $outputDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputDbName
-
-            $outputFileStructure = New-Object System.Collections.Specialized.StringCollection
-            foreach ($file in (Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName).PhysicalName) {
-                $null = $outputFileStructure.Add($file)
-            }
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $outputResult = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Force
-        }
-
-        AfterAll {
-            $null = Mount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -FileStructure $outputFileStructure -ErrorAction SilentlyContinue
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName | Remove-DbaDatabase -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "DetachResult")
-            foreach ($prop in $expectedProperties) {
-                $outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
-        }
-    }
 }

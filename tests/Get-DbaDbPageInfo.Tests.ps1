@@ -70,28 +70,24 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Count Pages" {
+        BeforeAll {
+            $result = @(Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname)
+        }
+
         It "returns the proper results" {
-            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             @($result).Count | Should -Be 9
             @($result | Where-Object IsAllocated -eq $false).Count | Should -Be 5
             @($result | Where-Object IsAllocated -eq $true).Count | Should -Be 4
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = @(Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname)
-        }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType System.Data.DataRow
+            $result | Should -Not -BeNullOrEmpty
+            $result[0] | Should -BeOfType System.Data.DataRow
         }
 
         It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Table", "PageType", "PageFreePercent", "IsAllocated", "IsMixedPage")
-            $actualProps = $outputResult[0].PSObject.Properties.Name
+            $actualProps = $result[0].PSObject.Properties.Name
             foreach ($prop in $expectedProps) {
                 $actualProps | Should -Contain $prop -Because "property '$prop' should be in the result set"
             }

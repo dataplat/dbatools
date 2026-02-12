@@ -73,12 +73,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns correct results" {
             $result[0].IdentityValue | Should -BeExactly 125
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table "dbo.dbatoolsci_example"
-        }
 
         It "Returns output of the documented type" {
             $result | Should -Not -BeNullOrEmpty

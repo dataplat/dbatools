@@ -32,26 +32,11 @@ Describe $CommandName -Tag IntegrationTests {
             # We only run this on Azure as there is this collector set running:
             $null = Stop-DbaPfDataCollectorSet -CollectorSet RTEvents
 
-            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "returns a result with the right computername and name is not null" {
-            $results = Start-DbaPfDataCollectorSet -CollectorSet RTEvents
-
-            $WarnVar | Should -BeNullOrEmpty
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
-            $results.Name | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Clean up any leftover from previous runs
+            # Clean up any leftover from previous output validation runs
             $null = Stop-DbaPfDataCollectorSet -CollectorSet "dbatoolsci_PerfOutput" -ErrorAction SilentlyContinue
             try { $null = Remove-DbaPfDataCollectorSet -CollectorSet "dbatoolsci_PerfOutput" -ErrorAction SilentlyContinue } catch { }
 
-            # Create a collector set using COM object with XML
+            # Create a collector set using COM object with XML for output validation
             $pfXml = @"
 <DataCollectorSet>
     <Status>0</Status>
@@ -88,11 +73,22 @@ Describe $CommandName -Tag IntegrationTests {
             if ($pfSetupSuccess) {
                 $outputResult = Start-DbaPfDataCollectorSet -CollectorSet "dbatoolsci_PerfOutput"
             }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $null = Stop-DbaPfDataCollectorSet -CollectorSet "dbatoolsci_PerfOutput" -ErrorAction SilentlyContinue
             try { $null = Remove-DbaPfDataCollectorSet -CollectorSet "dbatoolsci_PerfOutput" -ErrorAction SilentlyContinue } catch { }
+        }
+
+        It "returns a result with the right computername and name is not null" {
+            $results = Start-DbaPfDataCollectorSet -CollectorSet RTEvents
+
+            $WarnVar | Should -BeNullOrEmpty
+            $results.ComputerName | Should -Be $env:COMPUTERNAME
+            $results.Name | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output with expected properties" {

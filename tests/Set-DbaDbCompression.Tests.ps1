@@ -124,13 +124,58 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command sets compression to Row all objects" {
         BeforeAll {
-            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Row
+            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None
+            $outputResult = @(Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Row)
             $rowResults = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         }
 
         It "Should set all objects to Row compression" {
             foreach ($row in $rowResults) {
                 $row.DataCompression | Should -Be "Row"
+            }
+        }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $outputResult | Should -Not -BeNullOrEmpty
+                $outputResult[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "Schema",
+                    "TableName",
+                    "IndexName",
+                    "Partition",
+                    "IndexID",
+                    "IndexType",
+                    "PercentScan",
+                    "PercentUpdate",
+                    "RowEstimatePercentOriginal",
+                    "PageEstimatePercentOriginal",
+                    "CompressionTypeRecommendation",
+                    "SizeCurrent",
+                    "SizeRequested",
+                    "PercentCompression",
+                    "AlreadyProcessed"
+                )
+                foreach ($prop in $expectedProps) {
+                    $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has correct values for key properties" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $outputResult[0].Database | Should -Be $dbName
+                $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
+                $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
+                $outputResult[0].AlreadyProcessed | Should -Be "True"
+                $outputResult[0].CompressionTypeRecommendation | Should -Be "ROW"
             }
         }
     }
@@ -158,56 +203,6 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($row in $noneResults) {
                 $row.DataCompression | Should -Be "None"
             }
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            # Reset compression to None first so Row compression will produce output
-            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None
-            $outputResult = @(Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Row)
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Schema",
-                "TableName",
-                "IndexName",
-                "Partition",
-                "IndexID",
-                "IndexType",
-                "PercentScan",
-                "PercentUpdate",
-                "RowEstimatePercentOriginal",
-                "PageEstimatePercentOriginal",
-                "CompressionTypeRecommendation",
-                "SizeCurrent",
-                "SizeRequested",
-                "PercentCompression",
-                "AlreadyProcessed"
-            )
-            foreach ($prop in $expectedProps) {
-                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
-        }
-
-        It "Has correct values for key properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].Database | Should -Be $dbName
-            $outputResult[0].ComputerName | Should -Not -BeNullOrEmpty
-            $outputResult[0].SqlInstance | Should -Not -BeNullOrEmpty
-            $outputResult[0].AlreadyProcessed | Should -Be "True"
-            $outputResult[0].CompressionTypeRecommendation | Should -Be "ROW"
         }
     }
 }

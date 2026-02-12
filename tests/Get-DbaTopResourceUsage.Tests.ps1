@@ -74,22 +74,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "No results for excluded database" {
             $resultsExcluded.Database -notcontains "master" | Should -Be $true
         }
-    }
 
-    Context "Output validation" {
         It "Returns output of PSCustomObject type" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $results[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Excludes QueryPlan from default display properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "QueryPlan" -Because "QueryPlan is excluded via Select-DefaultView -ExcludeProperty"
         }
 
         It "Has QueryPlan available as a non-default property" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $results[0].PSObject.Properties.Name | Should -Contain "QueryPlan" -Because "QueryPlan should still be accessible via Select-Object *"
         }
     }

@@ -67,6 +67,32 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
         }
+
+        It "Returns output of the documented type" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+        }
+
+        It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedDefaults = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            foreach ($prop in $expectedDefaults) {
+                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            }
+        }
+
+        It "Has working alias properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
+            $results[0].psobject.Properties["DatabaseName"].MemberType | Should -Be "AliasProperty"
+        }
     }
 
     Context "When disabling encryption via parameters" {
@@ -87,78 +113,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*:Confirm"] = $false
-            $outputPasswd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-
-            # Ensure master database has a master key for TDE certificate
-            $masterMasterKey = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master
-            if (-not $masterMasterKey) {
-                $delMasterMasterKey = $true
-                $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master -SecurePassword $outputPasswd
-            }
-
-            # Get or create a certificate in master for TDE
-            $outputMasterCert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master |
-                Where-Object Name -notmatch "##" |
-                Select-Object -First 1
-            if (-not $outputMasterCert) {
-                $delOutputMasterCert = $true
-                $outputMasterCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
-            }
-
-            # Create and configure test database for output validation
-            $outputTestDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
-            if ($outputTestDb) {
-                $outputTestDb | New-DbaDbMasterKey -SecurePassword $outputPasswd
-                $outputTestDb | New-DbaDbCertificate
-                $outputTestDb | New-DbaDbEncryptionKey -Force
-                $outputTestDb | Enable-DbaDbEncryption -EncryptorName $outputMasterCert.Name -Force
-                Start-Sleep -Seconds 10 # Allow encryption to complete
-                $outputResult = $outputTestDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop
-            }
-        }
-
-        AfterAll {
-            if ($outputTestDb) {
-                $outputTestDb | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
-            }
-            if ($delOutputMasterCert) {
-                $outputMasterCert | Remove-DbaDbCertificate -Confirm:$false -ErrorAction SilentlyContinue
-            }
-            if ($delMasterMasterKey) {
-                Remove-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master -Confirm:$false -ErrorAction SilentlyContinue
-            }
-        }
-
-        It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "DatabaseName",
-                "EncryptionEnabled"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
-        }
-
-        It "Has working alias properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.Properties["DatabaseName"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["DatabaseName"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

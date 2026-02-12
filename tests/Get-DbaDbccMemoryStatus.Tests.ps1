@@ -59,15 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $p.Name | Should -Be $prop
             }
         }
-    }
 
-    Context "Command returns proper info" {
-        It "returns results for DBCC MEMORYSTATUS" {
-            $memoryStatusResults.Count | Should -BeGreaterThan 0
-        }
-    }
-
-    Context "Output validation" {
         It "Returns output of the documented type" {
             $memoryStatusResults | Should -Not -BeNullOrEmpty
             $memoryStatusResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
@@ -89,6 +81,12 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($prop in $expectedProperties) {
                 $memoryStatusResults[0].psobject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist"
             }
+        }
+    }
+
+    Context "Command returns proper info" {
+        It "returns results for DBCC MEMORYSTATUS" {
+            $memoryStatusResults.Count | Should -BeGreaterThan 0
         }
     }
 }

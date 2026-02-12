@@ -28,14 +28,12 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Returns proper information" {
-        It "Returns a bias that's an int" {
-            (Get-DbaCmObject -ClassName Win32_TimeZone).Bias | Should -BeOfType [int]
-        }
-    }
-
-    Context "Output validation" {
         BeforeAll {
             $result = Get-DbaCmObject -ClassName Win32_TimeZone
+        }
+
+        It "Returns a bias that's an int" {
+            (Get-DbaCmObject -ClassName Win32_TimeZone).Bias | Should -BeOfType [int]
         }
 
         It "Returns output of the expected type" {

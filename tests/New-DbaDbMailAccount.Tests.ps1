@@ -82,6 +82,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have MailServer of '[smtp.dbatools.io]' " -Skip {
             $results.MailServers | Should -Be "[smtp.dbatools.io]"
         }
+
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailAccount"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Id",
+                    "Name",
+                    "DisplayName",
+                    "Description",
+                    "EmailAddress",
+                    "ReplyToAddress",
+                    "IsBusyAccount",
+                    "MailServers"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+        }
     }
     Context "Gets DbMail when using -Account" {
         BeforeAll {
@@ -111,50 +139,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets no results" {
             $results = Get-DbaDbMailAccount -SqlInstance $server -ExcludeAccount $accountName
             $results | Should -BeNullOrEmpty
-        }
-    }
-    Context "Output validation" {
-        BeforeAll {
-            $outputAccountName = "dbatoolsci_output_$(Get-Random)"
-            $splatOutputAccount = @{
-                SqlInstance    = $TestConfig.InstanceSingle
-                Account        = $outputAccountName
-                EmailAddress   = "dbatoolsci_output@dbatools.net"
-                DisplayName    = "dbatoolsci output test"
-                Description    = "Output validation test account"
-                ReplyToAddress = "no-reply-output@dbatools.net"
-            }
-            $result = New-DbaDbMailAccount @splatOutputAccount
-        }
-        AfterAll {
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputServer.Query("EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$outputAccountName';")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailAccount"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Id",
-                "Name",
-                "DisplayName",
-                "Description",
-                "EmailAddress",
-                "ReplyToAddress",
-                "IsBusyAccount",
-                "MailServers"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
-            }
         }
     }
 }

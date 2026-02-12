@@ -44,22 +44,16 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has valid SizeInGB property" {
             $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Computer.DiskSpace"
+            $allResults | Should -Not -BeNullOrEmpty
+            $allResults[0].psobject.TypeNames | Should -Contain "Dataplat.Dbatools.Computer.DiskSpace"
         }
 
         It "Has the expected properties" {
             $expectedProperties = @("ComputerName", "Name", "Label", "Capacity", "Free", "BlockSize", "FileSystem", "Type", "SizeInBytes", "FreeInBytes", "SizeInKB", "FreeInKB", "SizeInMB", "FreeInMB", "SizeInGB", "FreeInGB", "SizeInTB", "FreeInTB", "SizeInPB", "FreeInPB")
             foreach ($prop in $expectedProperties) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $allResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

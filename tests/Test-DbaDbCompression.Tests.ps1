@@ -67,6 +67,31 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should suggest ROW compression for table with more updates" {
             $($results | Where-Object { $_.TableName -eq "sysallparams" }).CompressionTypeRecommendation | Should -Be "ROW"
         }
+
+        Context "Output validation" {
+            It "Returns output of the expected type" {
+                $results | Should -Not -BeNullOrEmpty
+                $results[0] | Should -BeOfType PSCustomObject
+            }
+
+            It "Has the expected properties" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "TableName", "IndexName", "Partition", "IndexID", "IndexType", "PercentScan", "PercentUpdate", "RowEstimatePercentOriginal", "PageEstimatePercentOriginal", "CompressionTypeRecommendation", "SizeCurrent", "SizeRequested", "PercentCompression")
+                foreach ($prop in $expectedProps) {
+                    $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
+            }
+
+            It "Has SizeCurrent as DbaSize type" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $results[0].SizeCurrent | Should -BeOfType [Dataplat.Dbatools.Utility.Size]
+            }
+
+            It "Has SizeRequested as DbaSize type" {
+                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $results[0].SizeRequested | Should -BeOfType [Dataplat.Dbatools.Utility.Size]
+            }
+        }
     }
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
@@ -100,35 +125,6 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Test-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $table
             $results | Should -Not -Be $null
             $results[0].CompressionTypeRecommendation | Should -Be '?'
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Test-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table syscols
-        }
-
-        It "Returns output of the expected type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "TableName", "IndexName", "Partition", "IndexID", "IndexType", "PercentScan", "PercentUpdate", "RowEstimatePercentOriginal", "PageEstimatePercentOriginal", "CompressionTypeRecommendation", "SizeCurrent", "SizeRequested", "PercentCompression")
-            foreach ($prop in $expectedProps) {
-                $result[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
-            }
-        }
-
-        It "Has SizeCurrent as DbaSize type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].SizeCurrent | Should -BeOfType [Dataplat.Dbatools.Utility.Size]
-        }
-
-        It "Has SizeRequested as DbaSize type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].SizeRequested | Should -BeOfType [Dataplat.Dbatools.Utility.Size]
         }
     }
 }

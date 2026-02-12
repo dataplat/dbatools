@@ -42,6 +42,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Capture output for validation
+            $script:outputForValidation = $null
         }
 
         It "Sets a resource pool" {
@@ -85,6 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $result = Set-DbaRgResourcePool @splatSetResourcePool
+            $script:outputForValidation = $result
 
             $result.Name | Should -Be $resourcePoolName
             $result.MaximumCpuPercentage | Should -Be $splatSetResourcePool.MaximumCpuPercentage
@@ -169,61 +173,36 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal -ErrorAction SilentlyContinue
             $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
-
-            $outputPoolName = "dbatoolsci_outputpool"
-            $splatNewOutputPool = @{
-                SqlInstance             = $TestConfig.InstanceSingle
-                ResourcePool            = $outputPoolName
-                MaximumCpuPercentage    = 100
-                MaximumMemoryPercentage = 100
-                MaximumIOPSPerVolume    = 100
-                CapCpuPercent           = 100
-                Force                   = $true
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ResourcePool"
             }
-            $null = New-DbaRgResourcePool @splatNewOutputPool
 
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $result = Set-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $outputPoolName -MaximumCpuPercentage 99
-        }
-
-        AfterAll {
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $outputPoolName -Type Internal -ErrorAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ResourcePool"
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Id",
-                "Name",
-                "CapCpuPercentage",
-                "IsSystemObject",
-                "MaximumCpuPercentage",
-                "MaximumIopsPerVolume",
-                "MaximumMemoryPercentage",
-                "MinimumCpuPercentage",
-                "MinimumIopsPerVolume",
-                "MinimumMemoryPercentage",
-                "WorkloadGroups"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+            It "Has the expected default display properties" {
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Id",
+                    "Name",
+                    "CapCpuPercentage",
+                    "IsSystemObject",
+                    "MaximumCpuPercentage",
+                    "MaximumIopsPerVolume",
+                    "MaximumMemoryPercentage",
+                    "MinimumCpuPercentage",
+                    "MinimumIopsPerVolume",
+                    "MinimumMemoryPercentage",
+                    "WorkloadGroups"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
             }
         }
     }
+
 }

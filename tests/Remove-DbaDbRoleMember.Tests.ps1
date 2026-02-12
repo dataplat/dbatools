@@ -123,7 +123,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Removes Role for User" {
             $roleDB = Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase -Role $testRole
-            Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $testRole -User "User1" -Database $testDatabase
+            $script:outputValidationResult = Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $testRole -User "User1" -Database $testDatabase
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $contextServer -Database $testDatabase -Role $testRole
 
             $roleDB.UserName | Should -Be "User1"
@@ -151,23 +151,11 @@ Describe $CommandName -Tag IntegrationTests {
             $roleDB.UserName -contains "User2" | Should -Be $true
             $roleDBAfter.UserName -contains "User2" | Should -Be $false
         }
-    }
 
-    Context "Output validation" {
-        It "Returns no output" {
-            $outputRole = "dbatoolssci_outval_$(Get-Random)"
-            $outputUser = "dbatoolssci_outusr_$(Get-Random)"
-            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser -Password ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
-            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase -Login $outputUser -Username $outputUser
-            $null = $serverInstance.Query("CREATE ROLE [$outputRole]", $testDatabase)
-            $null = $serverInstance.Query("ALTER ROLE [$outputRole] ADD MEMBER [$outputUser]", $testDatabase)
-            $result = Remove-DbaDbRoleMember -SqlInstance $TestConfig.InstanceSingle -Role $outputRole -User $outputUser -Database $testDatabase -Confirm:$false
-            $result | Should -BeNullOrEmpty
-
-            # Cleanup
-            $null = $serverInstance.Query("DROP ROLE [$outputRole]", $testDatabase)
-            $null = $serverInstance.Query("DROP USER [$outputUser]", $testDatabase)
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $outputUser -Confirm:$false -ErrorAction SilentlyContinue
+        Context "Output validation" {
+            It "Returns no output" {
+                $script:outputValidationResult | Should -BeNullOrEmpty
+            }
         }
     }
 }

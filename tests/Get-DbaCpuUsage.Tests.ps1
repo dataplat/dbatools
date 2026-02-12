@@ -28,23 +28,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaCpuUsage -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaCpuUsage -SqlInstance $TestConfig.InstanceSingle
-        }
 
         It "Returns output with expected properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result[0].psobject.Properties.Name | Should -Contain "ComputerName"
-            $result[0].psobject.Properties.Name | Should -Contain "SqlInstance"
-            $result[0].psobject.Properties.Name | Should -Contain "Spid"
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results[0].psobject.Properties.Name | Should -Contain "ComputerName"
+            $results[0].psobject.Properties.Name | Should -Contain "SqlInstance"
+            $results[0].psobject.Properties.Name | Should -Contain "Spid"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

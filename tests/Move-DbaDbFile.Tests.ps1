@@ -86,6 +86,13 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $structureResults = Move-DbaDbFile @splatFileStructure
+
+            $splatStructure = @{
+                SqlInstance       = $TestConfig.InstanceSingle
+                Database          = "dbatoolsci_MoveDbFile_2DataFiles"
+                FileStructureOnly = $true
+            }
+            $script:structureOutput = Move-DbaDbFile @splatStructure
         }
 
         It "Should have Results" {
@@ -96,6 +103,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should not have filename and/or extensions" {
             $structureResults | Should -Not -BeLike "*mdf*"
+        }
+
+        Context "Output validation for FileStructureOnly" {
+            It "Returns a string when using FileStructureOnly" {
+                $script:structureOutput | Should -Not -BeNullOrEmpty
+                $script:structureOutput | Should -BeOfType [string]
+            }
+
+            It "Contains the expected hashtable format" {
+                $script:structureOutput | Should -BeLike "*fileToMove*"
+            }
         }
     }
 
@@ -254,26 +272,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
-        }
-    }
-
-    Context "Output validation for FileStructureOnly" {
-        BeforeAll {
-            $splatStructure = @{
-                SqlInstance       = $TestConfig.InstanceSingle
-                Database          = "dbatoolsci_MoveDbFile_2DataFiles"
-                FileStructureOnly = $true
-            }
-            $structureOutput = Move-DbaDbFile @splatStructure
-        }
-
-        It "Returns a string when using FileStructureOnly" {
-            $structureOutput | Should -Not -BeNullOrEmpty
-            $structureOutput | Should -BeOfType [string]
-        }
-
-        It "Contains the expected hashtable format" {
-            $structureOutput | Should -BeLike "*fileToMove*"
         }
     }
 

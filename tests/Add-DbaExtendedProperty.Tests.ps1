@@ -55,34 +55,27 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When adding extended properties" {
-        It "Adds an extended property to the database" {
+        BeforeAll {
             $splatExtendedProperty = @{
                 Name  = "Test_Database_Name"
                 Value = "Sup"
             }
-            $ep = $db | Add-DbaExtendedProperty @splatExtendedProperty
-            $ep.Name | Should -Be "Test_Database_Name"
-            $ep.ParentName | Should -Be $db.Name
-            $ep.Value | Should -Be "Sup"
+            $script:epResult = $db | Add-DbaExtendedProperty @splatExtendedProperty
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $splatOutputEp = @{
-                Name  = "dbatoolsci_OutputTest"
-                Value = "OutputValidation"
-            }
-            $outputResult = $db | Add-DbaExtendedProperty @splatOutputEp
+        It "Adds an extended property to the database" {
+            $script:epResult.Name | Should -Be "Test_Database_Name"
+            $script:epResult.ParentName | Should -Be $db.Name
+            $script:epResult.Value | Should -Be "Sup"
         }
 
         It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ExtendedProperty"
+            $script:epResult | Should -Not -BeNullOrEmpty
+            $script:epResult.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ExtendedProperty"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $outputResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:epResult.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "ParentName", "Type", "Name", "Value")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

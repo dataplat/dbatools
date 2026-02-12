@@ -58,10 +58,34 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Remove a certificate" {
-            $removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
+            $script:removeResults = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
             $getResults = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname -Database $database
             $getResults | Should -HaveCount 0
-            $removeResults.Status | Should -Be "Success"
+            $script:removeResults.Status | Should -Be "Success"
+        }
+
+        It "Returns output of the documented type" {
+            $script:removeResults | Should -Not -BeNullOrEmpty
+            $script:removeResults | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Has the expected properties" {
+            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
+            foreach ($prop in $expectedProperties) {
+                $script:removeResults.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
+        }
+
+        It "Has the correct Status for a successful removal" {
+            $script:removeResults.Status | Should -Be "Success"
+        }
+
+        It "Has the correct Name" {
+            $script:removeResults.Name | Should -Be $keyname
+        }
+
+        It "Has the correct Database" {
+            $script:removeResults.Database | Should -Be $database
         }
     }
     Context "Remove a specific certificate" {
@@ -89,46 +113,6 @@ Describe $CommandName -Tag IntegrationTests {
             $getResults[0].Name | Should -Be $keyname2
             $removeResults.Status | Should -Be "Success"
             $removeResults.Name | Should -Be $keyname
-        }
-    }
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputKeyName = "dbatoolsci_asymkey_output_$(Get-Random)"
-            # Create master key via SQL to avoid ShouldProcess issues in New-DbaDbMasterKey
-            $hasMasterKey = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $database -Query "SELECT COUNT(*) AS cnt FROM sys.symmetric_keys WHERE name = '##MS_DatabaseMasterKey##'" -As SingleValue
-            if ($hasMasterKey -eq 0) {
-                Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $database -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'ThisIsThePassword1'"
-            }
-            $null = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $outputKeyName -Database $database
-            $result = Remove-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $outputKeyName -Database $database -Confirm:$false
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Name", "Status")
-            foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
-        }
-
-        It "Has the correct Status for a successful removal" {
-            $result.Status | Should -Be "Success"
-        }
-
-        It "Has the correct Name" {
-            $result.Name | Should -Be $outputKeyName
-        }
-
-        It "Has the correct Database" {
-            $result.Database | Should -Be $database
         }
     }
 }

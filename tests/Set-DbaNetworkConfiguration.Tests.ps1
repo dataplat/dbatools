@@ -71,6 +71,36 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should Return a Change" {
             $pipedResults.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
         }
+
+        Context "Output validation" {
+            BeforeAll {
+                $netConfOutput = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+                $netConfOutput.TcpIpProperties.KeepAlive = 45000
+                $outputResult = $netConfOutput | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
+            }
+
+            It "Returns output of the documented type" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $outputResult | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Has the expected properties" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "ComputerName"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "InstanceName"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "SqlInstance"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "Changes"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "RestartNeeded"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "Restarted"
+            }
+
+            It "Returns correct data types for properties" {
+                if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $outputResult[0].ComputerName | Should -BeOfType [string]
+                $outputResult[0].RestartNeeded | Should -BeOfType [bool]
+                $outputResult[0].Restarted | Should -BeOfType [bool]
+            }
+        }
     }
 
     Context "Command works with commandline input" {
@@ -92,33 +122,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Output validation" {
-        BeforeAll {
-            $netConfOutput = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
-            $netConfOutput.TcpIpProperties.KeepAlive = 45000
-            $outputResult = $netConfOutput | Set-DbaNetworkConfiguration -Confirm:$false -WarningAction SilentlyContinue
-        }
-
-        It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "ComputerName"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "InstanceName"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "SqlInstance"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "Changes"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "RestartNeeded"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "Restarted"
-        }
-
-        It "Returns correct data types for properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].ComputerName | Should -BeOfType [string]
-            $outputResult[0].RestartNeeded | Should -BeOfType [bool]
-            $outputResult[0].Restarted | Should -BeOfType [bool]
-        }
-    }
 }

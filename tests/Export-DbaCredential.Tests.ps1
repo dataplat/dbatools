@@ -169,7 +169,7 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath        = $excludePasswordFilePath
                 ExcludePassword = $true
             }
-            $null = Export-DbaCredential @splatExportNoPassword
+            $result = Export-DbaCredential @splatExportNoPassword
             $excludePasswordResults = Get-Content -Path $excludePasswordFilePath
         }
 
@@ -184,19 +184,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not have the password" {
             $excludePasswordResults | Should -Not -Match "ReallyT3rrible!"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputFilePath = "$backupPath\dbatoolsci_outputtest_$(Get-Random).sql"
-            $splatOutputTest = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                Identity        = $captainCredIdentity
-                FilePath        = $outputFilePath
-                ExcludePassword = $true
-            }
-            $result = Export-DbaCredential @splatOutputTest
-        }
 
         It "Returns output of the documented type" {
             $result | Should -Not -BeNullOrEmpty
@@ -204,7 +191,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns the exported file path" {
-            $result.FullName | Should -Be $outputFilePath
+            $result.FullName | Should -Be $excludePasswordFilePath
             Test-Path $result.FullName | Should -BeTrue
         }
 

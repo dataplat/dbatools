@@ -63,59 +63,26 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Remove-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -Listener $agListener.Name
             $results.Status | Should -Be "Removed"
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $outputAgName = "dbatoolsci_ag_outputlistener"
-            $splatOutputAg = @{
-                Primary      = $TestConfig.InstanceHadr
-                Name         = $outputAgName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Certificate  = "dbatoolsci_AGCert"
-            }
-            $outputAg = New-DbaAvailabilityGroup @splatOutputAg
-
-            $splatOutputListener = @{
-                IPAddress = "127.0.20.2"
-                Port      = 14331
-            }
-            $outputAgListener = $outputAg | Add-DbaAgListener @splatOutputListener
-            $result = Remove-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -Listener $outputAgListener.Name -Confirm:$false
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $outputAgName -ErrorAction SilentlyContinue
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "AvailabilityGroup", "Listener", "Status")
             foreach ($prop in $expectedProperties) {
-                $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has correct values for removal output" {
-            $result.Status | Should -Be "Removed"
-            $result.AvailabilityGroup | Should -Be $outputAgName
-            $result.Listener | Should -Be $outputAgListener.Name
-            $result.ComputerName | Should -Not -BeNullOrEmpty
-            $result.InstanceName | Should -Not -BeNullOrEmpty
-            $result.SqlInstance | Should -Not -BeNullOrEmpty
+            $results.Status | Should -Be "Removed"
+            $results.AvailabilityGroup | Should -Be $agName
+            $results.Listener | Should -Be $agListener.Name
+            $results.ComputerName | Should -Not -BeNullOrEmpty
+            $results.InstanceName | Should -Not -BeNullOrEmpty
+            $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
     }
 }

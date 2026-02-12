@@ -53,23 +53,15 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "returns all certificates and at least one has the specified EnhancedKeyUsageList" {
             "$($allCertificates.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -Be $true
         }
-    }
-}
-
-Describe $CommandName -Tag IntegrationTests {
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaComputerCertificate
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
-            $result[0].psobject.TypeNames | Should -Contain "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+            if (-not $allCertificates) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
+            $allCertificates[0].psobject.TypeNames | Should -Contain "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $allCertificates) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
+            $defaultProps = $allCertificates[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "Store",
@@ -89,12 +81,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the added NoteProperties from Add-Member" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
-            $result[0].psobject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Algorithm"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Name"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Store"] | Should -Not -BeNullOrEmpty
-            $result[0].psobject.Properties["Folder"] | Should -Not -BeNullOrEmpty
+            if (-not $allCertificates) { Set-ItResult -Skipped -Because "no certificates found on this machine" }
+            $allCertificates[0].psobject.Properties["ComputerName"] | Should -Not -BeNullOrEmpty
+            $allCertificates[0].psobject.Properties["Algorithm"] | Should -Not -BeNullOrEmpty
+            $allCertificates[0].psobject.Properties["Name"] | Should -Not -BeNullOrEmpty
+            $allCertificates[0].psobject.Properties["Store"] | Should -Not -BeNullOrEmpty
+            $allCertificates[0].psobject.Properties["Folder"] | Should -Not -BeNullOrEmpty
         }
     }
 }

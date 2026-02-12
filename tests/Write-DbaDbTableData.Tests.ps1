@@ -115,9 +115,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Output validation" {
+        BeforeAll {
+            $script:outputForValidation = Get-ChildItem | Select-Object -First 1 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table "dbatoolsci_outputtest" -AutoCreateTable
+        }
+
         It "Returns no output" {
-            $result = Get-ChildItem | Select-Object -First 1 Name, Length, LastWriteTime | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table "dbatoolsci_outputtest" -AutoCreateTable
-            $result | Should -BeNullOrEmpty
+            $script:outputForValidation | Should -BeNullOrEmpty
         }
     }
 }

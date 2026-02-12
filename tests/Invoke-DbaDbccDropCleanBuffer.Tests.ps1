@@ -39,28 +39,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $p.Name | Should -Be $prop
             }
         }
-    }
-
-    Context "Works correctly" {
-        It "returns results" {
-            $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -Be $true
-        }
-
-        It "returns the right results for -NoInformationalMessages" {
-            $noInfoResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle -NoInformationalMessages
-            $noInfoResult.Cmd -match "DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS" | Should -Be $true
-            $noInfoResult.Output -eq $null | Should -Be $true
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
-        }
 
         It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType [PSCustomObject]
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType [PSCustomObject]
         }
 
         It "Has the correct properties" {
@@ -72,12 +54,24 @@ Describe $CommandName -Tag IntegrationTests {
                 "Output"
             )
             foreach ($prop in $expectedProperties) {
-                $outputResult.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
+                $result.PSObject.Properties[$prop] | Should -Not -BeNullOrEmpty -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has no Select-DefaultView properties" {
-            $outputResult.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            $result.PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Works correctly" {
+        It "returns results" {
+            $result.Output -match "DBCC execution completed. If DBCC printed error messages, contact your system administrator." | Should -Be $true
+        }
+
+        It "returns the right results for -NoInformationalMessages" {
+            $noInfoResult = Invoke-DbaDbccDropCleanBuffer -SqlInstance $TestConfig.InstanceSingle -NoInformationalMessages
+            $noInfoResult.Cmd -match "DBCC DROPCLEANBUFFERS WITH NO_INFOMSGS" | Should -Be $true
+            $noInfoResult.Output -eq $null | Should -Be $true
         }
     }
 }

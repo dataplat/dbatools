@@ -47,6 +47,14 @@ Describe $CommandName -Tag IntegrationTests {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
         $null = $db.Query("CREATE PROCEDURE dbo.dbatoolsci_procedure_example @p1 [INT] = 0 AS BEGIN SET NOCOUNT OFF; SELECT TestColumn = @p1; END")
 
+        # Capture output validation results for later reuse
+        $script:resultDataRow = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr")
+        $script:resultDataSet = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataSet
+        $script:resultPSObject = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As PSObject)
+        $script:resultSingleValue = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 42" -As SingleValue
+        $script:resultDataTable = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataTable
+        $script:resultAppend = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -AppendServerInstance)
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
@@ -403,42 +411,33 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
     }
 
     Context "Output validation" {
-        BeforeAll {
-            $resultDataRow = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr")
-            $resultDataSet = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataSet
-            $resultPSObject = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As PSObject)
-            $resultSingleValue = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 42" -As SingleValue
-        }
-
         It "Returns DataRow by default" {
-            $resultDataRow | Should -Not -BeNullOrEmpty
-            $resultDataRow[0] | Should -BeOfType [System.Data.DataRow]
+            $script:resultDataRow | Should -Not -BeNullOrEmpty
+            $script:resultDataRow[0] | Should -BeOfType [System.Data.DataRow]
         }
 
         It "Returns DataTable when -As DataTable is specified" {
-            $resultDataTable = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -As DataTable
-            $resultDataTable | Should -Not -BeNullOrEmpty
-            $resultDataTable.GetType().Name | Should -Be "DataTable"
+            $script:resultDataTable | Should -Not -BeNullOrEmpty
+            $script:resultDataTable.GetType().Name | Should -Be "DataTable"
         }
 
         It "Returns DataSet when -As DataSet is specified" {
-            $resultDataSet | Should -Not -BeNullOrEmpty
-            $resultDataSet | Should -BeOfType [System.Data.DataSet]
+            $script:resultDataSet | Should -Not -BeNullOrEmpty
+            $script:resultDataSet | Should -BeOfType [System.Data.DataSet]
         }
 
         It "Returns PSObject when -As PSObject is specified" {
-            $resultPSObject | Should -Not -BeNullOrEmpty
-            $resultPSObject[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
+            $script:resultPSObject | Should -Not -BeNullOrEmpty
+            $script:resultPSObject[0].PSObject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
         }
 
         It "Returns a single value when -As SingleValue is specified" {
-            $resultSingleValue | Should -Be 42
+            $script:resultSingleValue | Should -Be 42
         }
 
         It "Includes ServerInstance property when -AppendServerInstance is specified" {
-            $resultAppend = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT 1 AS TestCol, 'hello' AS TestStr" -AppendServerInstance)
-            $resultAppend | Should -Not -BeNullOrEmpty
-            $resultAppend[0].PSObject.Properties.Name | Should -Contain "ServerInstance"
+            $script:resultAppend | Should -Not -BeNullOrEmpty
+            $script:resultAppend[0].PSObject.Properties.Name | Should -Contain "ServerInstance"
         }
     }
 }

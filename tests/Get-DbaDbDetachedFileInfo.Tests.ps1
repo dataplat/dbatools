@@ -63,16 +63,10 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Log files" {
             $results.LogFiles | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Get-DbaDbDetachedFileInfo -SqlInstance $TestConfig.InstanceSingle -Path $path
-        }
 
         It "Returns output of the expected type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType PSCustomObject
+            $results | Should -Not -BeNullOrEmpty
+            $results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
@@ -88,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "LogFiles"
             )
             foreach ($prop in $expectedProperties) {
-                $outputResult.PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
+                $results.PSObject.Properties[$prop].Name | Should -Be $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

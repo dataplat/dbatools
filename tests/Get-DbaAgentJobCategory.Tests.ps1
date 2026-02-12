@@ -30,6 +30,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
 
+            # Get all categories for output validation
+            $result = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -56,12 +59,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should get at least 1 LocalJob" {
             $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -CategoryType LocalJob | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeGreaterThan 1
-        }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Returns output of the documented type" {

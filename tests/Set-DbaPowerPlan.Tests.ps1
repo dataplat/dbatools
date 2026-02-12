@@ -38,8 +38,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command actually works" {
+        BeforeAll {
+            # Capture output for output validation Its
+            $script:outputForValidation = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
+        }
+
         It "Should return result for the server" {
-            $results = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
+            $results = $script:outputForValidation
             $results | Should -Not -BeNullOrEmpty
             $results.ActivePowerPlan | Should -Be "High Performance"
             $results.IsChanged | Should -Be $true
@@ -72,29 +77,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ActivePowerPlan | Should -Be "Balanced"
             $results.IsChanged | Should -Be $true
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult | Should -BeOfType [PSCustomObject]
-        }
-
-        It "Has the expected default display properties" {
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "PreviousPowerPlan", "ActivePowerPlan", "IsChanged")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                $outputResult = $script:outputForValidation
+                $outputResult | Should -Not -BeNullOrEmpty
+                $outputResult | Should -BeOfType [PSCustomObject]
             }
-        }
 
-        It "Has additional properties beyond the default display set" {
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "PreviousInstanceId"
-            $outputResult[0].PSObject.Properties.Name | Should -Contain "ActiveInstanceId"
+            It "Has the expected default display properties" {
+                $outputResult = $script:outputForValidation
+                $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "PreviousPowerPlan", "ActivePowerPlan", "IsChanged")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has additional properties beyond the default display set" {
+                $outputResult = $script:outputForValidation
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "PreviousInstanceId"
+                $outputResult[0].PSObject.Properties.Name | Should -Contain "ActiveInstanceId"
+            }
         }
     }
 }

@@ -35,21 +35,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ComputerName | Should -Be $env:COMPUTERNAME
             $results.Name | Should -Not -BeNullOrEmpty
         }
-    }
-
-    Context "Output validation" {
-        BeforeAll {
-            $result = Get-DbaPfDataCollectorCounterSample | Select-Object -First 1
-        }
 
         It "Returns output of the documented type" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $result | Should -BeOfType PSCustomObject
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "DataCollectorSet",
@@ -75,8 +69,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected excluded properties available" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $excludedProps = @("Sample", "CounterSampleObject")
             foreach ($prop in $excludedProps) {
                 $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"

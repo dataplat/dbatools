@@ -146,6 +146,25 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Installer | Should -Be "dummy"
             $result.Notes | Should -BeLike "Restart is required for computer * to finish the installation of SQL2017RTMCU12"
             $result.ExtractPath | Should -BeLike "*\dbatools_KB*Extract_*"
+
+            # Output validation
+            $expectedProperties = @(
+                "TargetLevel",
+                "KB",
+                "Installer",
+                "MajorVersion",
+                "Build",
+                "InstanceName",
+                "Successful",
+                "Restarted",
+                "ExitCode",
+                "ExtractPath",
+                "Log",
+                "Notes"
+            )
+            foreach ($prop in $expectedProperties) {
+                $result.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+            }
         }
         It "Should mock-upgrade 2008 to SP3CU7" {
             $results = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Restart $true -EnableException -Action $doubleAction
@@ -195,30 +214,6 @@ Describe $CommandName -Tag IntegrationTests {
             $warVar | Should -BeLike "*failed with exit code 12345*"
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
-        }
-    }
-
-    Context "Output validation" {
-        It "Returns output with the expected properties" {
-            $resultOutput = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction
-            $resultOutput | Should -Not -BeNullOrEmpty
-            $expectedProperties = @(
-                "TargetLevel",
-                "KB",
-                "Installer",
-                "MajorVersion",
-                "Build",
-                "InstanceName",
-                "Successful",
-                "Restarted",
-                "ExitCode",
-                "ExtractPath",
-                "Log",
-                "Notes"
-            )
-            foreach ($prop in $expectedProperties) {
-                $resultOutput.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
-            }
         }
     }
 }

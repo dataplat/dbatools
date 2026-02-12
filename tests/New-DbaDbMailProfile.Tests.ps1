@@ -81,32 +81,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have Description of $description " {
             $results.description | Should -Be $description
         }
-    }
-    Context "Output validation" {
-        BeforeAll {
-            $outputProfileName = "dbatoolsci_outputprofile_$(Get-Random)"
-            $splatOutputProfile = @{
-                SqlInstance         = $TestConfig.InstanceSingle
-                Profile             = $outputProfileName
-                Description         = "Output validation test profile"
-                MailAccountName     = $mailaccountname
-                MailAccountPriority = 1
-            }
-            $result = New-DbaDbMailProfile @splatOutputProfile
-        }
-        AfterAll {
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $outputServer.Query("EXEC msdb.dbo.sysmail_delete_profile_sp @profile_name = '$outputProfileName';")
-        }
 
         It "Returns output of the documented type" {
-            $result | Should -Not -BeNullOrEmpty
-            $result.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailProfile"
+            $results | Should -Not -BeNullOrEmpty
+            $results.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Mail.MailProfile"
         }
 
         It "Has the expected default display properties" {
-            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

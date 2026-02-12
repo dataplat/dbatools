@@ -63,32 +63,26 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have only one result for database name of dbatoolsci_testMaxDop" -Skip:(-not $setupSuccessful) {
             @($testResults | Where-Object Database -eq $testDbName).Count | Should -Be 1
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputResult = Test-DbaMaxDop -SqlInstance $TestConfig.InstanceSingle
-        }
-
-        It "Returns output of the documented type" {
-            $outputResult | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseMaxDop", "CurrentInstanceMaxDop", "RecommendedMaxDop", "Notes")
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        Context "Output validation" {
+            It "Returns output of the documented type" -Skip:(-not $setupSuccessful) {
+                $testResults | Should -Not -BeNullOrEmpty
+                $testResults[0].psobject.TypeNames | Should -Contain "System.Management.Automation.PSCustomObject"
             }
-        }
 
-        It "Has the expected additional properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $additionalProps = @("InstanceVersion", "NumaNodes", "NumberOfCores")
-            foreach ($prop in $additionalProps) {
-                $outputResult[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+            It "Has the expected default display properties" -Skip:(-not $setupSuccessful) {
+                $defaultProps = $testResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseMaxDop", "CurrentInstanceMaxDop", "RecommendedMaxDop", "Notes")
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has the expected additional properties" -Skip:(-not $setupSuccessful) {
+                $additionalProps = @("InstanceVersion", "NumaNodes", "NumberOfCores")
+                foreach ($prop in $additionalProps) {
+                    $testResults[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+                }
             }
         }
     }

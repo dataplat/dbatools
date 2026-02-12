@@ -118,57 +118,61 @@ Describe $CommandName -Tag IntegrationTests {
             $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Name $db2_snap1 -ErrorAction SilentlyContinue
-            $outputResult = Restore-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Force
-        }
-
-        It "Returns output that is not null" {
-            $outputResult | Should -Not -BeNullOrEmpty
-        }
-
-        It "Returns output of the documented type" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
-        }
-
-        It "Has the expected default display properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Name",
-                "Status",
-                "IsAccessible",
-                "RecoveryModel",
-                "LogReuseWaitStatus",
-                "SizeMB",
-                "Compatibility",
-                "Collation",
-                "Owner",
-                "Encrypted",
-                "LastFullBackup",
-                "LastDiffBackup",
-                "LastLogBackup"
-            )
-            foreach ($prop in $expectedDefaults) {
-                $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+        Context "Output validation" {
+            BeforeAll {
+                $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Name $db2_snap1 -ErrorAction SilentlyContinue
+                $script:outputResult = Restore-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Force
             }
-        }
 
-        It "Has working alias properties" {
-            if (-not $outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
-            $outputResult[0].psobject.Properties["SizeMB"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["SizeMB"].MemberType | Should -Be "AliasProperty"
-            $outputResult[0].psobject.Properties["Compatibility"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["Compatibility"].MemberType | Should -Be "AliasProperty"
-            $outputResult[0].psobject.Properties["Encrypted"] | Should -Not -BeNullOrEmpty
-            $outputResult[0].psobject.Properties["Encrypted"].MemberType | Should -Be "AliasProperty"
+            AfterAll {
+                Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -ErrorAction SilentlyContinue
+            }
+
+            It "Returns output that is not null" {
+                $script:outputResult | Should -Not -BeNullOrEmpty
+            }
+
+            It "Returns output of the documented type" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputResult[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Database"
+            }
+
+            It "Has the expected default display properties" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $expectedDefaults = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Name",
+                    "Status",
+                    "IsAccessible",
+                    "RecoveryModel",
+                    "LogReuseWaitStatus",
+                    "SizeMB",
+                    "Compatibility",
+                    "Collation",
+                    "Owner",
+                    "Encrypted",
+                    "LastFullBackup",
+                    "LastDiffBackup",
+                    "LastLogBackup"
+                )
+                foreach ($prop in $expectedDefaults) {
+                    $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
+                }
+            }
+
+            It "Has working alias properties" {
+                if (-not $script:outputResult) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputResult[0].psobject.Properties["SizeMB"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["SizeMB"].MemberType | Should -Be "AliasProperty"
+                $script:outputResult[0].psobject.Properties["Compatibility"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["Compatibility"].MemberType | Should -Be "AliasProperty"
+                $script:outputResult[0].psobject.Properties["Encrypted"] | Should -Not -BeNullOrEmpty
+                $script:outputResult[0].psobject.Properties["Encrypted"].MemberType | Should -Be "AliasProperty"
+            }
         }
     }
 }
