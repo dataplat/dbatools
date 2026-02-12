@@ -16,11 +16,11 @@ Import-Module C:\gallery\dbatools.library
 $TestConfig = Get-TestConfig
 
 # 3. Now you can use $TestConfig properties in your tests
-$TestConfig.instance1    # First test SQL instance
-$TestConfig.instance2    # Second test SQL instance
-$TestConfig.instance3    # Third test SQL instance
-$TestConfig.SqlCred      # Test credentials, all connections need this
-$TestConfig.Temp         # Temp directory for test files
+$TestConfig.InstanceSingle    # Test SQL instance for tests that only need one instance
+$TestConfig.InstanceMulti1    # First test SQL instance for tests that need multiple instances
+$TestConfig.InstanceMulti2    # Second test SQL instance for tests that need multiple instances
+$TestConfig.SqlCred           # Test credentials, all connections need this
+$TestConfig.Temp              # Temp directory for test files
 # 4. Set the default paras for sqlcred
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 ```

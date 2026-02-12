@@ -209,7 +209,77 @@ function Get-DbaDbTable {
                 $null = $properties.Add('IsEdge')
             }
 
-            $db.Tables.ClearAndInitialize('', [string[]]$properties)
+            # Build URN filter for server-side filtering when -Table or -Schema is specified
+            # This avoids loading ALL tables when only specific ones are requested
+            $urnFilter = ''
+            if ($fqTns -or $Schema) {
+                $filterConditions = [System.Collections.ArrayList]@()
+
+                # Add schema filter conditions from -Schema parameter
+                if ($Schema) {
+                    $schemaConditions = [System.Collections.ArrayList]@()
+                    foreach ($s in $Schema) {
+                        $null = $schemaConditions.Add("@Schema='$s'")
+                    }
+                    if ($schemaConditions.Count -eq 1) {
+                        $null = $filterConditions.Add($schemaConditions[0])
+                    } elseif ($schemaConditions.Count -gt 1) {
+                        $null = $filterConditions.Add("($($schemaConditions -join ' or '))")
+                    }
+                }
+
+                # Add table name filter conditions from -Table parameter
+                if ($fqTns) {
+                    $tableConditions = [System.Collections.ArrayList]@()
+                    foreach ($fqTn in $fqTns) {
+                        # Skip if database is specified and doesn't match current database
+                        if ($fqTn.Database -and $fqTn.Database -ne $db.Name) {
+                            continue
+                        }
+
+                        # Only add the table name filter, schema is handled above via -Schema parameter
+                        # or from the parsed table name if -Schema was not specified
+                        $tableParts = [System.Collections.ArrayList]@()
+
+                        # Add schema from table name only if -Schema parameter was not specified
+                        if ($fqTn.Schema -and -not $Schema) {
+                            $null = $tableParts.Add("@Schema='$($fqTn.Schema)'")
+                        }
+
+                        if ($fqTn.Table) {
+                            $null = $tableParts.Add("@Name='$($fqTn.Table)'")
+                        }
+
+                        if ($tableParts.Count -gt 0) {
+                            if ($tableParts.Count -eq 1) {
+                                $null = $tableConditions.Add($tableParts[0])
+                            } else {
+                                $null = $tableConditions.Add("($($tableParts -join ' and '))")
+                            }
+                        }
+                    }
+
+                    if ($tableConditions.Count -gt 0) {
+                        if ($tableConditions.Count -eq 1) {
+                            $null = $filterConditions.Add($tableConditions[0])
+                        } else {
+                            $null = $filterConditions.Add("($($tableConditions -join ' or '))")
+                        }
+                    }
+                }
+
+                if ($filterConditions.Count -gt 0) {
+                    # ClearAndInitialize expects XPath-style filter WITH outer brackets
+                    # e.g., "[@Schema='dispo' and @Name='t_auftraege']"
+                    # See: https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.smocollectionbase.clearandinitialize
+                    $urnFilter = "[$($filterConditions -join ' and ')]"
+                    Write-Message -Level Verbose -Message "Using URN filter: $urnFilter"
+                }
+            }
+
+            if (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize') {
+                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+            }
 
             if ($fqTns) {
                 $tables = @()

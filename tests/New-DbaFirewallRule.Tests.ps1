@@ -25,6 +25,10 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    # The context "RuleType Port (traditional port-based rules)" does not work with dynamic ports.
+    # So we test at discovery time if dynamic ports are used and skip the tests if so.
+    $isUsingDynamicPort = (Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpAddresses).TcpDynamicPorts -ne ''
+
     Context "RuleType Program (default - executable-based rules)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -102,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "RuleType Port (traditional port-based rules)" {
+    Context "RuleType Port (traditional port-based rules)" -Skip:$isUsingDynamicPort {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 

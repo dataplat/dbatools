@@ -130,24 +130,18 @@ You can inspect/copy/cannibalize existing tests. You'll see that every test file
 
 ## AppVeyor Environment
 
-AppVeyor is hooked up to test any commit, including PRs. Each commit triggers 5 builds, each referred to as a "scenario". We have the scenarios setup where the dbatools log is published as an artifact should you need to view why test are failing.
+AppVeyor is hooked up to test any commit, including PRs. Each commit triggers several builds, each referred to as a "scenario". We have the scenarios setup where the dbatools log is published as an artifact should you need to view why test are failing.
 
-- 2008R2 : a server with a single SQL Server 2008 R2 Express Edition instance available ($script:instance1)
-- 2016 : a server with a single SQL Server 2016 Developer Edition instance available ($script:instance2)
-- 2016_service: used to test service restarts
-- 2016_2017 : a server with two instances available, 2016 and 2017 Developer Edition
-- default: a server with two instances available, one SQL Server 2008 R2 Express Edition and a SQL Server 2016 Developer Edition
+- SINGLE: a server with a single SQL Server 2022 instance available ($TestConfig.InstanceSingle)
+- MULTI: a server with two instances (SQL Server 2022 and SQL Server 2017) available for tests that need multiple instances ($TestConfig.InstanceMulti1 and $TestConfig.InstanceMulti2)
+- COPY: a server with two instances (SQL Server 2017 and SQL Server 2022) available for tests that need multiple instances ($TestConfig.InstanceCopy1 and $TestConfig.InstanceCopy2)
+- HADR: a single SQL Server 2022 instance available with Hadr configured ($TestConfig.InstanceHadr)
+- RESTART: used to test service restarts ($TestConfig.InstanceRestart)
+- 2008R2SP2Express: a server with a single SQL Server 2008 R2 Express Edition available to test some commands against an old version ($TestConfig.InstanceSingle)
+- default: a server with no instance for all tests that don't need a running instance
 
 Builds are split among "scenario"(s) because not every test requires everything to be up and running, and resources on AppVeyor are constrained.
-
-Ideally:
-
-1. Whenever possible, write UnitTests.
-2. You should write IntegrationTests ideally running in **EITHER** the 2008R2 or the 2016 "scenario".
-3. Default and 2016_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
-4. If you want to write tests that, e.g, target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
-
-AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of combinations of `$script:instance1`, `$script:instance2` and `$script:instance3`. If you need to fall into case (4), write two test files, e.g. _Get-DbaFoo.first.Tests.ps1_ (targeting `$script:instance1` only) and _Get-DbaFoo.second.Tests.ps1_ (targeting `$script:instance2` only).
+AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of $TestConfig.Instance*.
 
 Most PRs will target `public/*.ps1` files to add functionality or resolve bugs.
 Our test runner will try and figure out what tests needs to be run based on the files modified in the PR, plus all the dependencies.

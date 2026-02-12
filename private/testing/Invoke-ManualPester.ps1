@@ -14,7 +14,7 @@ function Invoke-ManualPester {
 
 .PARAMETER Show
     Gets passed down to Pester's -Show parameter (useful if you want to reduce verbosity)
-    Valid values are: None, Default, Passed, Failed, Pending, Skipped, Inconclusive, Describe, Context, Summary, Header, All, Fails
+    Valid values are: None, Normal, Detailed, Diagnostic
 
 .PARAMETER PassThru
     Gets passed down to Pester's -PassThru parameter (useful if you want to return an object to analyze)
