@@ -277,7 +277,9 @@ function Get-DbaDbTable {
                 }
             }
 
-            $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+            if (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize') {
+                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+            }
 
             if ($fqTns) {
                 $tables = @()

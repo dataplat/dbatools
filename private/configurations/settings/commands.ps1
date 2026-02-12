@@ -16,3 +16,6 @@ Set-DbatoolsConfig -FullName 'commands.initialize-credssp.bypass' -Value $false 
 
 # Test-ElevationRequirement
 Set-DbatoolsConfig -FullName 'commands.test-elevationrequirement.disable' -Value $false -Initialize -Validation bool -Description "Disable elevation (run as admin) requirement"
+
+# Get-DbaDbTable
+Set-DbatoolsConfig -FullName 'commands.get-dbadbtable.clearandinitialize' -Value $false -Initialize -Validation bool -Description "Controls whether Get-DbaDbTable uses ClearAndInitialize to load all table properties in one optimized query. Set to true to enable the optimization, which loads all properties in a single query but clears already loaded SMO properties. Keep at false when reusing SMO objects across multiple calls (e.g. in Copy-DbaDbTableData)."
