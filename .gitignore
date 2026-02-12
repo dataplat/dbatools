@@ -60,3 +60,4 @@ allcommands.ps1
 /.shadowgit.git
 /.claude
 publish.ps1
+nul
