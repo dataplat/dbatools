@@ -133,19 +133,64 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "is now in a stopped state" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace -Confirm:$false
+            $script:outputForValidation = $results
             $results.Id | Should -Be $traceid
             $results.IsRunning | Should -BeFalse
-            $script:outputForValidation = $results
         }
 
         Context "Output validation" {
+            BeforeAll {
+                # Create a separate trace for output validation so we have a fresh running trace to stop
+                $outputTracePath = "$($TestConfig.Temp)\$CommandName-outputval-$(Get-Random)"
+                $null = New-Item -Path $outputTracePath -ItemType Directory
+
+                $outputSql = "-- Create a Queue
+                declare @rc int
+                declare @TraceID int
+                declare @maxfilesize bigint
+                set @maxfilesize = 5
+                exec @rc = sp_trace_create @TraceID output, 0, N'$outputTracePath\temptrace', @maxfilesize, NULL
+
+                -- Set the events
+                declare @on bit
+                set @on = 1
+                exec sp_trace_setevent @TraceID, 14, 1, @on
+                exec sp_trace_setevent @TraceID, 14, 9, @on
+                exec sp_trace_setevent @TraceID, 14, 10, @on
+                exec sp_trace_setevent @TraceID, 14, 11, @on
+                exec sp_trace_setevent @TraceID, 14, 6, @on
+                exec sp_trace_setevent @TraceID, 14, 12, @on
+                exec sp_trace_setevent @TraceID, 14, 14, @on
+
+                -- Set the trace status to start
+                exec sp_trace_setstatus @TraceID, 1
+
+                -- display trace id for future references
+                select TraceID=@TraceID"
+                $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $outputTraceId = ($outputServer.Query($outputSql)).TraceID
+
+                # Stop the trace and capture output for validation
+                $script:outputForValidation = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $outputTraceId | Stop-DbaTrace -Confirm:$false
+            }
+
+            AfterAll {
+                $null = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $outputTraceId -ErrorAction SilentlyContinue
+                Remove-Item -Path $outputTracePath -Recurse -ErrorAction SilentlyContinue
+            }
+
             It "Returns output" {
+                if (-not $script:outputForValidation) {
+                    Set-ItResult -Skipped -Because "trace may have already been stopped or removed in CI"
+                }
                 $script:outputForValidation | Should -Not -BeNullOrEmpty
             }
 
             It "Returns output with expected properties" {
-                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                if (-not $script:outputForValidation) {
+                    Set-ItResult -Skipped -Because "trace may have already been stopped or removed in CI"
+                }
                 $propertyNames = @($script:outputForValidation)[0].PSObject.Properties.Name
                 $propertyNames | Should -Contain "ComputerName"
                 $propertyNames | Should -Contain "InstanceName"
@@ -155,7 +200,9 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "Has the correct excluded properties from default display" {
-                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                if (-not $script:outputForValidation) {
+                    Set-ItResult -Skipped -Because "trace may have already been stopped or removed in CI"
+                }
                 $defaultProps = @($script:outputForValidation)[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
                 $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
@@ -163,7 +210,9 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "Shows the trace as stopped" {
-                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                if (-not $script:outputForValidation) {
+                    Set-ItResult -Skipped -Because "trace may have already been stopped or removed in CI"
+                }
                 @($script:outputForValidation)[0].IsRunning | Should -BeFalse
             }
         }

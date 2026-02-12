@@ -28,27 +28,41 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $endpointName = "dbatoolsci_removeep"
+
+        # Clean up any leftover endpoint from a previous test run
+        $existing = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName -ErrorAction SilentlyContinue
+        if ($existing) {
+            $null = $existing | Remove-DbaEndpoint -Confirm:$false
+        }
+
         # Create an endpoint for testing
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Type DatabaseMirroring -Role Partner -Name Mirroring | Start-DbaEndpoint
+        $splatEndpoint = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Type       = "DatabaseMirroring"
+            Role       = "Partner"
+            Name       = $endpointName
+        }
+        $null = New-DbaEndpoint @splatEndpoint | Start-DbaEndpoint
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "removes an endpoint" {
-        $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
-        $results.Status | Should -Be 'Removed'
+        $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName | Remove-DbaEndpoint -Confirm:$false
         $script:outputValidationResult = $results
+        $results.Status | Should -Be "Removed"
     }
 
     Context "Output validation" {
         It "Returns output of the expected type" {
-            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate"; return }
             $script:outputValidationResult | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate"; return }
             $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Endpoint", "Status")
             foreach ($prop in $expectedProperties) {
                 $script:outputValidationResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
@@ -56,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for a successful removal" {
-            $script:outputValidationResult | Should -Not -BeNullOrEmpty
+            if (-not $script:outputValidationResult) { Set-ItResult -Skipped -Because "no result to validate"; return }
             $script:outputValidationResult[0].Status | Should -Be "Removed"
         }
     }

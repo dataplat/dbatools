@@ -201,9 +201,6 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
         $results.length | Should -BeGreaterThan 0
 
-        # Store results for output validation context
-        $script:outputForValidation = $results
-
         # parse the exact format of the date
         $indexOfDateTimeStamp = $results[0].Directory.Name.Split("-").length
         $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
@@ -383,7 +380,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Output validation" {
         BeforeAll {
-            $outputResult = $script:outputForValidation
+            $outputResult = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude "AgentServer", "Audits", "AvailabilityGroups", "BackupDevices", "CentralManagementServer", "Credentials", "CustomErrors", "DatabaseMail", "Databases", "Endpoints", "ExtendedEvents", "LinkedServers", "Logins", "PolicyManagement", "ReplicationSettings", "ResourceGovernor", "ServerAuditSpecifications", "ServerRoles", "SysDbUserObjects", "SystemTriggers", "OleDbProvider"
+        }
+
+        AfterAll {
+            if ($outputResult -and $outputResult.Count -gt 0) {
+                Remove-Item -Path $outputResult[0].Directory.FullName -Force -Recurse -ErrorAction SilentlyContinue
+            }
         }
 
         It "Returns output" {

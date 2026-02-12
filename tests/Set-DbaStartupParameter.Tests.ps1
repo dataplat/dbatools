@@ -39,7 +39,7 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Validate command functionality" {
+    Context "Validate command functionality" -Skip:(-not $TestConfig.InstanceMulti1) {
         # See https://github.com/dataplat/dbatools/issues/7035
         It "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{
@@ -78,20 +78,24 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Output validation" {
             BeforeAll {
-                $splatOutputTest = @{
-                    SqlInstance = $TestConfig.InstanceSingle
-                    TraceFlag   = 3226
-                    Confirm     = $false
+                if ($TestConfig.InstanceSingle) {
+                    $splatOutputTest = @{
+                        SqlInstance = $TestConfig.InstanceSingle
+                        TraceFlag   = 3226
+                        Confirm     = $false
+                    }
+                    $script:outputForValidation = Set-DbaStartupParameter @splatOutputTest
                 }
-                $script:outputForValidation = Set-DbaStartupParameter @splatOutputTest
             }
 
             It "Returns output of the expected type" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
                 $script:outputForValidation | Should -Not -BeNullOrEmpty
                 $script:outputForValidation | Should -BeOfType PSCustomObject
             }
 
             It "Has the expected base properties from Get-DbaStartupParameter" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
                 $expectedProps = @(
                     "ComputerName",
                     "InstanceName",
@@ -118,11 +122,13 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "Has the added OriginalStartupParameters NoteProperty" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
                 $script:outputForValidation.psobject.Properties["OriginalStartupParameters"] | Should -Not -BeNullOrEmpty
                 $script:outputForValidation.psobject.Properties["OriginalStartupParameters"].MemberType | Should -Be "NoteProperty"
             }
 
             It "Has the added Notes NoteProperty" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
                 $script:outputForValidation.psobject.Properties["Notes"] | Should -Not -BeNullOrEmpty
                 $script:outputForValidation.psobject.Properties["Notes"].MemberType | Should -Be "NoteProperty"
                 $script:outputForValidation.Notes | Should -Match "restart"

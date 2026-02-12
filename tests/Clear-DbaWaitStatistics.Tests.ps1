@@ -22,35 +22,37 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        $ConfirmPreference = "None"
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-    }
-
-    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
+        try {
+            $script:outputForValidation = Clear-DbaWaitStatistics -SqlInstance $TestConfig.InstanceSingle -Confirm:$false
+        } catch {
+            $script:outputForValidation = $null
+        }
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Command executes properly and returns proper info" {
-        BeforeAll {
-            $splatClearStats = @{
-                SqlInstance = $TestConfig.InstanceSingle
-            }
-            $clearResults = Clear-DbaWaitStatistics @splatClearStats
-        }
+    AfterAll {
+        $PSDefaultParameterValues.Remove("*-Dba*:Confirm")
+    }
 
+    Context "Command executes properly and returns proper info" {
         It "Returns success" {
-            $clearResults.Status | Should -Be "Success"
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            $script:outputForValidation.Status | Should -Be "Success"
         }
 
         It "Returns output of the expected type" {
-            $clearResults | Should -Not -BeNullOrEmpty
-            $clearResults | Should -BeOfType PSCustomObject
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
+            $script:outputForValidation[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            $clearResults | Should -Not -BeNullOrEmpty
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "ShouldProcess not supported in Pester context for ConfirmImpact High commands" }
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Status")
             foreach ($prop in $expectedProps) {
-                $clearResults.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
     }

@@ -90,67 +90,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Corrupt a single database" {
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
+            $script:outputForValidation = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption
+            $script:outputForValidation | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
         }
 
         It "Causes DBCC CHECKDB to fail" {
             $checkDbResult = Start-DbccCheck -Server $serverConnection -dbname $dbNameCorruption
             $checkDbResult | Should -Not -Be "Success"
         }
-    }
 
-    Context "Output validation" {
-        BeforeAll {
-            $outputDbName = "dbatoolsci_corruptionoutput"
-            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $null = $outputServer.Query("CREATE DATABASE [$outputDbName]")
-            $outputDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName
-            $null = $outputDb.Query("
-                CREATE TABLE dbo.[OutputTest] (id int);
-                INSERT dbo.[OutputTest]
-                SELECT TOP 1000 1
-                FROM sys.objects")
-
-            $corruptionResult = $null
-            try {
-                $corruptionResult = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $outputDbName -Table OutputTest -Confirm:$false -WarningAction SilentlyContinue -ErrorAction Stop
-            } catch {
-                # Command may fail in certain test environments
+        Context "Output validation" {
+            It "Returns output of the documented type" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+                $script:outputForValidation[0] | Should -BeOfType PSCustomObject
             }
-        }
 
-        AfterAll {
-            try {
-                $cleanServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-                $cleanServer.Query("IF DB_ID('dbatoolsci_corruptionoutput') IS NOT NULL BEGIN ALTER DATABASE [dbatoolsci_corruptionoutput] SET MULTI_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [dbatoolsci_corruptionoutput]; END")
-            } catch {
-                # Ignore cleanup errors
+            It "Has the expected properties" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+                $expectedProps = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "Table",
+                    "Status"
+                )
+                foreach ($prop in $expectedProps) {
+                    $script:outputForValidation[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                }
             }
-        }
 
-        It "Returns output of the documented type" {
-            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
-            $corruptionResult | Should -BeOfType PSCustomObject
-        }
-
-        It "Has the expected properties" {
-            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
-            $expectedProps = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Table",
-                "Status"
-            )
-            foreach ($prop in $expectedProps) {
-                $corruptionResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+            It "Returns the correct status" {
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+                $script:outputForValidation[0].Status | Should -Be "Corrupted"
             }
-        }
-
-        It "Returns the correct status" {
-            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
-            $corruptionResult.Status | Should -Be "Corrupted"
         }
     }
 }

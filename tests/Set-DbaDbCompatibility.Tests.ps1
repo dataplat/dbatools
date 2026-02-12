@@ -50,12 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
         $resultNotMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $dbNameNotMatches -Verbose 4>&1
         $verboseSetMsg = "*Performing the operation `"Setting*Compatibility Level*"
 
-        # Reset compatibility level back to previous so we can capture clean output for validation
-        $sqlCn.Query("ALTER DATABASE $dbNameNotMatches SET COMPATIBILITY_LEVEL = $($previousCompatLevel)")
-        $sqlCn.Refresh()
-        $sqlCn.Databases.Refresh()
-        # Capture clean output (without verbose) for output validation
-        $script:outputForValidation = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database $dbNameNotMatches
+        # Extract PSCustomObject output from the 4>&1 capture for output validation (filter out VerboseRecord)
+        $script:outputForValidation = $resultNotMatches | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] }
     }
     AfterAll {
         $sqlCn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
