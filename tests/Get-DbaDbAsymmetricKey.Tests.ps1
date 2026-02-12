@@ -75,12 +75,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Create new key in GetAsKey called test4" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyName -Database $databaseName
-            $results.Database | Should -Be $databaseName
-            $results.DatabaseId | Should -Be $newDatabase.ID
-            $results.Name | Should -Be $keyName
-            $results.Owner | Should -Be $dbUser
-            $results | Should -HaveCount 1
+            $script:results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyName -Database $databaseName
+            $script:results.Database | Should -Be $databaseName
+            $script:results.DatabaseId | Should -Be $newDatabase.ID
+            $script:results.Name | Should -Be $keyName
+            $script:results.Owner | Should -Be $dbUser
+            $script:results | Should -HaveCount 1
         }
 
         It "Should work with a piped database" {
@@ -110,13 +110,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AsymmetricKey"
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.AsymmetricKey"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

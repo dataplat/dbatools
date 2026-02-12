@@ -113,11 +113,11 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination = $secondaryInstance
                 Login       = $loginName1
             }
-            $result = Sync-DbaLoginPassword @splatSync
+            $script:outputForValidation = Sync-DbaLoginPassword @splatSync
 
-            $result | Should -Not -BeNullOrEmpty
-            $result.Login | Should -Be $loginName1
-            $result.Status | Should -Be "Success"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation.Login | Should -Be $loginName1
+            $script:outputForValidation.Status | Should -Be "Success"
         }
 
         It "Should sync passwords for multiple logins" {
@@ -224,31 +224,31 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $result | Should -Not -BeNullOrEmpty
-                $result | Should -BeOfType PSCustomObject
+                $script:outputForValidation | Should -Not -BeNullOrEmpty
+                $script:outputForValidation | Should -BeOfType PSCustomObject
             }
 
             It "Has the expected properties" {
                 $expectedProperties = @("SourceServer", "DestinationServer", "Login", "Status", "Notes")
                 foreach ($prop in $expectedProperties) {
-                    $result.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                    $script:outputForValidation.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
                 }
             }
 
             It "Has SourceServer populated" {
-                $result.SourceServer | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.SourceServer | Should -Not -BeNullOrEmpty
             }
 
             It "Has DestinationServer populated" {
-                $result.DestinationServer | Should -Not -BeNullOrEmpty
+                $script:outputForValidation.DestinationServer | Should -Not -BeNullOrEmpty
             }
 
             It "Has Login populated" {
-                $result.Login | Should -Be $loginName1
+                $script:outputForValidation.Login | Should -Be $loginName1
             }
 
             It "Has a valid Status value" {
-                $result.Status | Should -BeIn @("Success", "Failed")
+                $script:outputForValidation.Status | Should -BeIn @("Success", "Failed")
             }
         }
     }

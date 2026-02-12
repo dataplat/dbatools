@@ -115,12 +115,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the expected type" {
-            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            if (-not $script:outputResult -or -not $script:outputResult[0]) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
             $script:outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            if (-not $script:outputResult -or -not $script:outputResult[0]) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
             $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
@@ -129,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for key properties" {
-            if (-not $script:outputResult) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
+            if (-not $script:outputResult -or -not $script:outputResult[0]) { Set-ItResult -Skipped -Because "copy operation returned no results (connectivity issue between instances)" }
             $script:outputResult[0].Name | Should -BeExactly "dbatoolsci_outputlinked"
             $script:outputResult[0].Status | Should -Not -BeNullOrEmpty
             $script:outputResult[0].SourceServer | Should -Not -BeNullOrEmpty

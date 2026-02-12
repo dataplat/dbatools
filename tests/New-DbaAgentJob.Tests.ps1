@@ -61,9 +61,9 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "New Agent Job is added properly" {
         It "Should have the right name and description" {
-            $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription
-            $results.Name | Should -Be $jobName
-            $results.Description | Should -Be $jobDescription
+            $script:results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription
+            $script:results.Name | Should -Be $jobName
+            $script:results.Description | Should -Be $jobDescription
         }
 
         It "Should actually for sure exist" {
@@ -78,13 +78,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Job"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Category", "OwnerLoginName", "CurrentRunStatus", "CurrentRunRetryAttempt", "Enabled", "LastRunDate", "LastRunOutcome", "HasSchedule", "OperatorToEmail", "CreateDate")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -92,11 +92,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $results[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
-            $results[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
-            $results[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
-            $results[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results[0].psobject.Properties["Enabled"] | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.Properties["Enabled"].MemberType | Should -Be "AliasProperty"
+            $script:results[0].psobject.Properties["CreateDate"] | Should -Not -BeNullOrEmpty
+            $script:results[0].psobject.Properties["CreateDate"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

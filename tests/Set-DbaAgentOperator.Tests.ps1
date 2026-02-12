@@ -56,22 +56,22 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Set works" {
         It "Should change the name and email" {
             $results = Get-DbaAgentOperator -SqlInstance $InstanceSingle -Operator "dbatools dba" | Set-DbaAgentOperator -Name new -EmailAddress new@new.com
-            $results = Get-DbaAgentOperator -SqlInstance $InstanceSingle -Operator new
-            $results.Count | Should -Be 1
-            $results.EmailAddress | Should -Be "new@new.com"
+            $script:results = Get-DbaAgentOperator -SqlInstance $InstanceSingle -Operator new
+            $script:results.Count | Should -Be 1
+            $script:results.EmailAddress | Should -Be "new@new.com"
         }
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
+                $script:results | Should -Not -BeNullOrEmpty
+                $script:results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.Operator"
             }
 
             It "Has the correct properties on the output object" {
-                $results[0].PSObject.Properties.Name | Should -Contain "Name"
-                $results[0].PSObject.Properties.Name | Should -Contain "EmailAddress"
-                $results[0].PSObject.Properties.Name | Should -Contain "PagerDays"
-                $results[0].PSObject.Properties.Name | Should -Contain "ID"
+                $script:results[0].PSObject.Properties.Name | Should -Contain "Name"
+                $script:results[0].PSObject.Properties.Name | Should -Contain "EmailAddress"
+                $script:results[0].PSObject.Properties.Name | Should -Contain "PagerDays"
+                $script:results[0].PSObject.Properties.Name | Should -Contain "ID"
             }
         }
     }

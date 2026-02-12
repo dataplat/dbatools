@@ -60,6 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "moves a piped group" {
             $results = $newGroup2, $newGroup3 | Move-DbaRegServerGroup -NewGroup $newGroup.Name
             $results.Parent.Name | Should -Be $newGroup.Name, $newGroup.Name
+            $script:outputForValidation = $results
         }
 
         It "moves a manually specified group" {
@@ -68,13 +69,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.ServerGroup"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.RegisteredServers.ServerGroup"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "DisplayName", "Description", "ServerGroups", "RegisteredServers")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

@@ -22,8 +22,11 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When retrieving spinlock statistics" {
-        It "Returns spinlock contention metrics from SQL Server" {
+        BeforeAll {
             $results = @(Get-DbaSpinLockStatistic -SqlInstance $TestConfig.InstanceSingle)
+        }
+
+        It "Returns spinlock contention metrics from SQL Server" {
             $results.Count | Should -BeGreaterThan 0
         }
 

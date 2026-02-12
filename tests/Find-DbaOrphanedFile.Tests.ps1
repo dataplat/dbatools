@@ -85,6 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Has the correct properties" {
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Force
             $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
+            $script:outputForValidation = $results
             $ExpectedStdProps = "ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename".Split(",")
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedStdProps | Sort-Object)
             $ExpectedProps = "ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server".Split(",")
@@ -128,15 +129,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the expected type" {
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
-            $results | Should -Not -BeNullOrEmpty
-            $results[0] | Should -BeOfType PSCustomObject
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            $results = Find-DbaOrphanedFile -SqlInstance $TestConfig.InstanceSingle
-            $results | Should -Not -BeNullOrEmpty
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Filename", "RemoteFilename")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

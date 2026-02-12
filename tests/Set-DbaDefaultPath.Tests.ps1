@@ -46,19 +46,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Backup returns the correct value" {
             $results = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $TestConfig.Temp
             $results.Backup | Should -BeExactly $TestConfig.Temp
+            $script:outputResult = $results
         }
 
         Context "Output validation" {
             It "Returns output of the expected type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType PSCustomObject
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult | Should -BeOfType PSCustomObject
             }
 
             It "Has the expected properties" {
-                $results | Should -Not -BeNullOrEmpty
+                $script:outputResult | Should -Not -BeNullOrEmpty
                 $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Data", "Log", "Backup")
                 foreach ($prop in $expectedProps) {
-                    $results.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
+                    $script:outputResult.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be present"
                 }
             }
         }

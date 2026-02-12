@@ -59,6 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should successfully remove the login" {
             $results = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
             $results.Status | Should -Be "Dropped"
+            $script:outputResult = $results
 
             # Verify the login was actually removed
             $verifyLogin = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
@@ -67,19 +68,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType PSCustomObject
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult | Should -BeOfType PSCustomObject
             }
 
             It "Has the expected properties" {
                 $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Login", "Status")
                 foreach ($prop in $expectedProperties) {
-                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                    $script:outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
                 }
             }
 
             It "Has the correct Status value for a successful removal" {
-                $results.Status | Should -Be "Dropped"
+                $script:outputResult.Status | Should -Be "Dropped"
             }
         }
     }

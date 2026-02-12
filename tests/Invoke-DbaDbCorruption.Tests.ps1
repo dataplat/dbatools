@@ -129,12 +129,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
             $corruptionResult | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
-            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
             $expectedProps = @(
                 "ComputerName",
                 "InstanceName",
@@ -149,7 +149,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns the correct status" {
-            if ($null -eq $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
+            if (-not $corruptionResult) { Set-ItResult -Skipped -Because "corruption command did not return a result" }
             $corruptionResult.Status | Should -Be "Corrupted"
         }
     }

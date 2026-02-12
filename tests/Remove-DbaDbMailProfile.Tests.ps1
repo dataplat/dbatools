@@ -75,20 +75,20 @@ Describe $CommandName -Tag IntegrationTests {
         Context "Output validation" {
             It "Returns output of the documented type" {
                 $script:outputResult | Should -Not -BeNullOrEmpty
-                $script:outputResult | Should -BeOfType [PSCustomObject]
+                $script:outputResult[0] | Should -BeOfType [PSCustomObject]
             }
 
             It "Has the expected properties" {
                 $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Status", "IsRemoved")
                 foreach ($prop in $expectedProps) {
-                    $script:outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                    $script:outputResult[0].PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
                 }
             }
 
             It "Has correct values for a successful removal" {
-                $script:outputResult.Name | Should -BeOfType [System.String]
-                $script:outputResult.Status | Should -Be "Dropped"
-                $script:outputResult.IsRemoved | Should -BeTrue
+                $script:outputResult[0].Name | Should -BeOfType [System.String]
+                $script:outputResult[0].Status | Should -Be "Dropped"
+                $script:outputResult[0].IsRemoved | Should -BeTrue
             }
         }
     }

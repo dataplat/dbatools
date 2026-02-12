@@ -75,28 +75,28 @@ Describe $CommandName -Tag IntegrationTests {
                 Database           = "dbatoolscopycred"
                 SharedPath         = $backupPath
             }
-            $results = Copy-DbaDbCertificate @splatCopyCert
+            $script:results = Copy-DbaDbCertificate @splatCopyCert
 
-            $results.Notes | Should -BeNullOrEmpty
-            $results.Status | Should -Be "Successful"
+            $script:results.Notes | Should -BeNullOrEmpty
+            $script:results.Status | Should -Be "Successful"
 
             $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbatoolscopycred
             $destDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbatoolscopycred
 
-            $results.SourceDatabaseID | Should -Be $sourceDb.ID
-            $results.DestinationDatabaseID | Should -Be $destDb.ID
+            $script:results.SourceDatabaseID | Should -Be $sourceDb.ID
+            $script:results.DestinationDatabaseID | Should -Be $destDb.ID
 
             Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy2 -Database dbatoolscopycred -Certificate $certificateName | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output of the expected type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -104,11 +104,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected additional properties" {
-            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-            $results[0].psobject.Properties.Name | Should -Contain "SourceDatabase"
-            $results[0].psobject.Properties.Name | Should -Contain "SourceDatabaseID"
-            $results[0].psobject.Properties.Name | Should -Contain "DestinationDatabase"
-            $results[0].psobject.Properties.Name | Should -Contain "DestinationDatabaseID"
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results[0].psobject.Properties.Name | Should -Contain "SourceDatabase"
+            $script:results[0].psobject.Properties.Name | Should -Contain "SourceDatabaseID"
+            $script:results[0].psobject.Properties.Name | Should -Contain "DestinationDatabase"
+            $script:results[0].psobject.Properties.Name | Should -Contain "DestinationDatabaseID"
         }
     }
 }

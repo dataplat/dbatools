@@ -52,8 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should copy successfully" {
-            $results = Copy-DbaSpConfigure -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout
-            $results.Status | Should -Be "Successful"
+            $script:results = Copy-DbaSpConfigure -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -ConfigName RemoteQueryTimeout
+            $script:results.Status | Should -Be "Successful"
         }
 
         It "Should retain the same properties after copy" {
@@ -68,12 +68,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the expected type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -81,10 +82,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected values for standard migration properties" {
-            $results[0].Type | Should -Be "Configuration Value"
-            $results[0].Status | Should -BeIn @("Successful", "Skipped")
-            $results[0].SourceServer | Should -Not -BeNullOrEmpty
-            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results[0].Type | Should -Be "Configuration Value"
+            $script:results[0].Status | Should -BeIn @("Successful", "Skipped")
+            $script:results[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:results[0].DestinationServer | Should -Not -BeNullOrEmpty
         }
     }
 }

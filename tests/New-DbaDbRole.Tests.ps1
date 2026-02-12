@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Has the expected default display properties" {
             $defaultProps = $script:outputRole[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Name", "Parent", "Owner")
+            $expectedDefaults = @("ComputerName", "InstanceName", "Database", "Name", "IsFixedRole")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
             }

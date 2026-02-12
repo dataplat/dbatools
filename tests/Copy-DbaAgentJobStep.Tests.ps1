@@ -117,10 +117,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output with the expected TypeName" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
+            if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {

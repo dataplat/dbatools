@@ -99,20 +99,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "supports piping databases" {
-            $schema = Get-DbaDatabase -SqlInstance $server1 -Database $newDbName | New-DbaDbSchema -Schema TestSchema4
-            $schema.Count | Should -Be 1
-            $schema.Owner | Should -Be dbo
-            $schema.Name | Should -Be TestSchema4
-            $schema.Parent.Name | Should -Be $newDbName
+            $script:outputForValidation = Get-DbaDatabase -SqlInstance $server1 -Database $newDbName | New-DbaDbSchema -Schema TestSchema4
+            $script:outputForValidation.Count | Should -Be 1
+            $script:outputForValidation.Owner | Should -Be dbo
+            $script:outputForValidation.Name | Should -Be TestSchema4
+            $script:outputForValidation.Parent.Name | Should -Be $newDbName
         }
 
         It "Returns output of the documented type" {
-            $schema | Should -Not -BeNullOrEmpty
-            $schema[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Schema"
         }
 
         It "Has no default display property set since Select-DefaultView is not used" {
-            $schema[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
+            $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet | Should -BeNullOrEmpty
         }
     }
 }

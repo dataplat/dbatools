@@ -67,6 +67,7 @@ DROP LOGIN [$DBUserName2];
         BeforeAll {
             $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -eq $DBUserName | Select-Object *
             $results2 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle
+            $script:outputForValidation = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master -User $DBUserName
 
             $resultsByUser = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master -User $DBUserName2
             $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -User $DBUserName, $DBUserName2
@@ -125,12 +126,12 @@ DROP LOGIN [$DBUserName2];
         }
 
         It "Returns output of the documented type" {
-            $results1 | Should -Not -BeNullOrEmpty
-            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.User"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

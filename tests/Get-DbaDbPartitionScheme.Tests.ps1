@@ -76,6 +76,7 @@ DROP PARTITION FUNCTION [$PFName];
         BeforeAll {
             $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object *
             $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle
+            $script:outputForValidation = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
         It "Should execute and return results" {
@@ -103,13 +104,13 @@ DROP PARTITION FUNCTION [$PFName];
         }
 
         It "Returns output of the documented type" {
-            if (-not $results1) { Set-ItResult -Skipped -Because "no result to validate" }
-            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionScheme"
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionScheme"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results1) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

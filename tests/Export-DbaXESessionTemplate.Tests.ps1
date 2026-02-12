@@ -65,11 +65,12 @@ Describe $CommandName -Tag IntegrationTests {
             $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template "Profiler TSQL Duration"
             $results = $session | Export-DbaXESessionTemplate -Path $tempPath
             $results.Name | Should -Be "$sessionName.xml"
+            $script:exportResults = $results
         }
 
         It "Returns System.IO.FileInfo" {
-            $results | Should -Not -BeNullOrEmpty
-            $results | Should -BeOfType System.IO.FileInfo
+            $script:exportResults | Should -Not -BeNullOrEmpty
+            $script:exportResults | Should -BeOfType System.IO.FileInfo
         }
     }
 }

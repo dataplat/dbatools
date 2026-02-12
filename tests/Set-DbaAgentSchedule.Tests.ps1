@@ -85,9 +85,8 @@ Describe $CommandName -Tag IntegrationTests {
                 EndTime                   = "221100"
             }
 
-            $null = Set-DbaAgentSchedule @splatSetSchedule
-            $renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
             $script:outputForValidation = Set-DbaAgentSchedule @splatSetSchedule
+            $renameScheduleResults = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -like "dbatools*"
         }
 
         AfterAll {

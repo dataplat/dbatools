@@ -72,17 +72,14 @@ Describe $CommandName -Tag IntegrationTests {
                 $encrypted = ($dbState.encryption_state -eq 3)
             } while (-not $encrypted -and $elapsed -lt $timeout)
 
-            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn
+            $script:outputForValidation = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn
             $warn | Should -BeNullOrEmpty
-            foreach ($result in $results) {
+            foreach ($result in $script:outputForValidation) {
                 $result.EncryptionEnabled | Should -Be $false
             }
         }
 
         Context "Output validation" {
-            BeforeAll {
-                $script:outputForValidation = $results
-            }
 
             It "Returns output with results" {
                 $script:outputForValidation | Should -Not -BeNullOrEmpty

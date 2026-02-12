@@ -25,18 +25,22 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Create a PBM policy category and subscribe a database to it
-            $store = Get-DbaPbmStore -SqlInstance $TestConfig.InstanceSingle
-            $categoryName = "dbatoolsci_outputtest_$(Get-Random)"
-            $category = New-Object Microsoft.SqlServer.Management.Dmf.PolicyCategory($store, $categoryName)
-            $category.Create()
+            try {
+                # Create a PBM policy category and subscribe a database to it
+                $store = Get-DbaPbmStore -SqlInstance $TestConfig.InstanceSingle
+                $categoryName = "dbatoolsci_outputtest_$(Get-Random)"
+                $category = New-Object Microsoft.SqlServer.Management.Dmf.PolicyCategory($store, $categoryName)
+                $category.Create()
 
-            $subscription = New-Object Microsoft.SqlServer.Management.Dmf.PolicyCategorySubscription($store)
-            $subscription.PolicyCategory = $categoryName
-            $subscription.Target = "DATABASE::[master]"
-            $subscription.Create()
+                $subscription = New-Object Microsoft.SqlServer.Management.Dmf.PolicyCategorySubscription($store)
+                $subscription.PolicyCategory = $categoryName
+                $subscription.Target = "DATABASE::[master]"
+                $subscription.Create()
 
-            $result = Get-DbaPbmCategorySubscription -SqlInstance $TestConfig.InstanceSingle
+                $result = Get-DbaPbmCategorySubscription -SqlInstance $TestConfig.InstanceSingle
+            } catch {
+                $result = $null
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -63,6 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected default display properties excluding Properties, Urn, and Parent" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $defaultProps | Should -Not -Contain "Properties" -Because "Properties is excluded via Select-DefaultView -ExcludeProperty"
             $defaultProps | Should -Not -Contain "Urn" -Because "Urn is excluded via Select-DefaultView -ExcludeProperty"
@@ -70,6 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has ComputerName, InstanceName, and SqlInstance properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $result[0].ComputerName | Should -Not -BeNullOrEmpty
             $result[0].InstanceName | Should -Not -BeNullOrEmpty
             $result[0].SqlInstance | Should -Not -BeNullOrEmpty

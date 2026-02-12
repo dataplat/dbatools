@@ -74,6 +74,7 @@ END;
         BeforeAll {
             $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -Database master -Name dbatoolssci_ISOweek | Select-Object *
             $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle
+            $script:outputForValidation = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -Database master -Name dbatoolssci_ISOweek
         }
 
         It "Should execute and return results" {
@@ -102,12 +103,12 @@ END;
         }
 
         It "Returns output of the documented type" {
-            $results1 | Should -Not -BeNullOrEmpty
-            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedFunction"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.UserDefinedFunction"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "InstanceName",

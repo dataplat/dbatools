@@ -146,16 +146,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             It "Returns output with expected properties" {
                 if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
-                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "ComputerName"
-                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "InstanceName"
-                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "SqlInstance"
-                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "Id"
-                $script:outputForValidation[0].PSObject.Properties.Name | Should -Contain "IsRunning"
+                $propertyNames = @($script:outputForValidation)[0].PSObject.Properties.Name
+                $propertyNames | Should -Contain "ComputerName"
+                $propertyNames | Should -Contain "InstanceName"
+                $propertyNames | Should -Contain "SqlInstance"
+                $propertyNames | Should -Contain "Id"
+                $propertyNames | Should -Contain "IsRunning"
             }
 
             It "Has the correct excluded properties from default display" {
                 if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
-                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps = @($script:outputForValidation)[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $defaultProps | Should -Not -Contain "Parent" -Because "Parent should be excluded from default display"
                 $defaultProps | Should -Not -Contain "RemotePath" -Because "RemotePath should be excluded from default display"
                 $defaultProps | Should -Not -Contain "SqlCredential" -Because "SqlCredential should be excluded from default display"
@@ -163,7 +164,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             It "Shows the trace as stopped" {
                 if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
-                $script:outputForValidation[0].IsRunning | Should -BeFalse
+                @($script:outputForValidation)[0].IsRunning | Should -BeFalse
             }
         }
     }

@@ -45,16 +45,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return multiple results when passed multiple paths" {
-            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest, $falseTest
-            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
-            ($results | Where-Object FilePath -eq $falseTest).FileExists | Should -Be $false
+            $script:outputValidationResult = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest, $falseTest
+            ($script:outputValidationResult | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
+            ($script:outputValidationResult | Where-Object FilePath -eq $falseTest).FileExists | Should -Be $false
         }
 
         Context "Output validation" {
-            BeforeAll {
-                # $results from parent Context is available (PSCustomObject from multiple paths)
-                $script:outputValidationResult = $results
-            }
 
             It "Returns PSCustomObject when given multiple paths" {
                 $script:outputValidationResult | Should -Not -BeNullOrEmpty

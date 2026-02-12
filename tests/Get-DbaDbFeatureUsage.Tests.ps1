@@ -72,14 +72,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns output of the documented type" {
             $results | Should -Not -BeNullOrEmpty
-            $results[0] | Should -BeOfType System.Data.DataRow
+            @($results)[0] | Should -BeOfType System.Data.DataRow
         }
 
         It "Has the expected properties" {
             $results | Should -Not -BeNullOrEmpty
             $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Id", "Feature", "Database")
             foreach ($prop in $expectedProps) {
-                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present"
+                @($results)[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present"
             }
         }
     }

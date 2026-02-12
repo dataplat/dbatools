@@ -115,16 +115,18 @@ Describe $CommandName -Tag IntegrationTests {
 
             $db4QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db4Name
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
+
+            $script:outputResult = $result
         }
 
         It "Returns output with the expected TypeName" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $result | Should -Not -BeNullOrEmpty
-            $defaultProps = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $defaultProps = $script:outputResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

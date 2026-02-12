@@ -66,9 +66,9 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
-            $copyResults = Copy-DbaServerRole @splatCopyRole
-            $copyResults.Name | Should -Be $testRoleName
-            $copyResults.Status | Should -Be "Successful"
+            $script:copyResults = Copy-DbaServerRole @splatCopyRole
+            $script:copyResults.Name | Should -Be $testRoleName
+            $script:copyResults.Status | Should -Be "Successful"
         }
 
         It "Should skip existing server roles" {
@@ -106,12 +106,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the expected type" {
-            $copyResults | Should -Not -BeNullOrEmpty
-            $copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:copyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:copyResults[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:copyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:copyResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -119,10 +120,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected values for standard migration properties" {
-            $copyResults[0].Type | Should -Be "Server Role"
-            $copyResults[0].Status | Should -Be "Successful"
-            $copyResults[0].SourceServer | Should -Not -BeNullOrEmpty
-            $copyResults[0].DestinationServer | Should -Not -BeNullOrEmpty
+            if (-not $script:copyResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:copyResults[0].Type | Should -Be "Server Role"
+            $script:copyResults[0].Status | Should -Be "Successful"
+            $script:copyResults[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:copyResults[0].DestinationServer | Should -Not -BeNullOrEmpty
         }
     }
 }

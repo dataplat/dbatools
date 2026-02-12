@@ -52,13 +52,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When removing views" {
-        BeforeAll {
-            $script:outputForValidation = Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1 -Confirm:$false
-        }
-
         It "removes a view" {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1
+            $script:outputForValidation = Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1 -Confirm:$false
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -BeNullOrEmpty
         }
 

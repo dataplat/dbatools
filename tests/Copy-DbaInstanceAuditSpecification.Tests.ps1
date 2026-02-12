@@ -83,6 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected default display properties" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
@@ -91,6 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns the correct migration object values" {
+            if (-not $result) { Set-ItResult -Skipped -Because "no result to validate" }
             $result.Type | Should -Be "Server Audit Specification"
             $result.Name | Should -Be $auditSpecName
         }

@@ -56,11 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Invoke-DbaDiagnosticQuery @splatInvoke | Export-DbaDiagnosticQuery -Path $backupPath
             (Get-ChildItem $backupPath).Count | Should -BeExactly 1
+            $script:outputResult = $result
         }
 
         It "Returns output of type System.IO.FileInfo" {
-            $result | Should -Not -BeNullOrEmpty
-            $result[0] | Should -BeOfType [System.IO.FileInfo]
+            $script:outputResult | Should -Not -BeNullOrEmpty
+            $script:outputResult[0] | Should -BeOfType [System.IO.FileInfo]
         }
     }
 }

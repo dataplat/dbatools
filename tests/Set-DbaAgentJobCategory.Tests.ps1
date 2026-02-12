@@ -61,18 +61,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Change the name of the job category" {
-            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -NewName CategoryTest2
-            $results.Name | Should -Be "CategoryTest2"
+            $script:results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -NewName CategoryTest2
+            $script:results.Name | Should -Be "CategoryTest2"
         }
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobCategory"
+                $script:results | Should -Not -BeNullOrEmpty
+                $script:results[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Agent.JobCategory"
             }
 
             It "Has the expected default display properties" {
-                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                $defaultProps = $script:results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $expectedDefaults = @(
                     "ComputerName",
                     "InstanceName",

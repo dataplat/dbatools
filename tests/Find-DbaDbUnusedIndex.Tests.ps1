@@ -109,6 +109,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $testSQLinstance = $false
 
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+            $script:outputForValidation = $results
+
             if ( ($null -ne $results) ) {
                 $row = $null
                 # if one row is returned $results will be a System.Data.DataRow, otherwise it will be an object[] of System.Data.DataRow
@@ -133,8 +136,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0] | Should -BeOfType [System.Data.DataRow]
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0] | Should -BeOfType [System.Data.DataRow]
         }
 
         It "Has the expected properties" {
@@ -157,7 +160,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "IndexSizeMB",
                 "RowCount"
             )
-            $propNames = @($results[0] | Get-Member -MemberType Property | ForEach-Object { $PSItem.Name })
+            $propNames = @($script:outputForValidation[0] | Get-Member -MemberType Property | ForEach-Object { $PSItem.Name })
             foreach ($prop in $expectedProps) {
                 $propNames | Should -Contain $prop -Because "property '$prop' should be present in the output"
             }

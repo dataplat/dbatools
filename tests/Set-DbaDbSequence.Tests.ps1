@@ -122,7 +122,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -CacheSize 1000
             $sequence.Name | Should -Be "Sequence1_$random"
-            $sequence.Schema | Should -Be "Schema_$raw"
+            $sequence.Schema | Should -Be "Schema_$random"
             $sequence.SequenceCacheType | Should -Be CacheWithSize
             $sequence.CacheSize | Should -Be 1000
             $sequence.Parent.Name | Should -Be $newDbName

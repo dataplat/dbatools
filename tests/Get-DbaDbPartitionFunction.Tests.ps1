@@ -48,6 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $results1 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object *
             $results2 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle
+            $script:outputForValidation = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
         It "Should execute and return results" {
@@ -75,13 +76,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $results1 | Should -Not -BeNullOrEmpty
-            $results1[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionFunction"
+            $script:outputForValidation | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.PartitionFunction"
         }
 
         It "Has the expected default display properties" {
-            if (-not $results1) { Set-ItResult -Skipped -Because "no result to validate" }
-            $defaultProps = $results1[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "CreateDate", "Name", "NumberOfPartitions")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"

@@ -64,21 +64,21 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Apply to multiple instances" {
         It "Returns MaxDop 2 for each instance" {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -MaxDop 2
-            foreach ($result in $results) {
+            $script:instanceResults = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -MaxDop 2
+            foreach ($result in $script:instanceResults) {
                 $result.CurrentInstanceMaxDop | Should -Be 2
             }
         }
 
         Context "Output validation for instance-level" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType [PSCustomObject]
+                $script:instanceResults | Should -Not -BeNullOrEmpty
+                $script:instanceResults | Should -BeOfType [PSCustomObject]
             }
 
             It "Has the expected default display properties" {
-                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                if (-not $script:instanceResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:instanceResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $expectedDefaults = @(
                     "ComputerName",
                     "InstanceName",
@@ -95,21 +95,21 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Connects to 2016+ instance and apply configuration to single database" {
         It "Returns 4 for each database" {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti2 -MaxDop 4 -Database $singledb
-            foreach ($result in $results) {
+            $script:dbResults = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti2 -MaxDop 4 -Database $singledb
+            foreach ($result in $script:dbResults) {
                 $result.DatabaseMaxDop | Should -Be 4
             }
         }
 
         Context "Output validation for database-level" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType [PSCustomObject]
+                $script:dbResults | Should -Not -BeNullOrEmpty
+                $script:dbResults | Should -BeOfType [PSCustomObject]
             }
 
             It "Has the expected default display properties" {
-                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                if (-not $script:dbResults) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:dbResults[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 # InstanceName, Database, PreviousDatabaseMaxDopValue are standard properties
                 # CurrentDatabaseMaxDopValue is a calculated property (hashtable) so it shows as System.Collections.Hashtable
                 $defaultProps | Should -Contain "InstanceName" -Because "property 'InstanceName' should be in the default display set"

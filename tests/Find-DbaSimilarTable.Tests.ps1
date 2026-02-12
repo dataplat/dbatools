@@ -37,6 +37,8 @@ Describe $CommandName -Tag IntegrationTests {
             $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
             $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
 
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
+
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -54,16 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns at least two rows" {
             # not an exact count because who knows
-            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
-
             $results.Status.Count -ge 2 | Should -Be $true
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID
         }
 
         It "matches 100% for the test tables" {
-            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
-
             foreach ($result in $results) {
                 $result.MatchPercent -eq 100 | Should -Be $true
             }

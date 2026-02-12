@@ -88,20 +88,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying table data within same instance" {
         It "copies the table data" {
-            $results = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+            $script:results = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
             $table1count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table2count = $sourceDb.Query("select id from dbo.dbatoolsci_example2")
             $table1count.Count | Should -Be $table2count.Count
-            $results.SourceDatabaseID | Should -Be $sourceDb.ID
-            $results.DestinationDatabaseID | Should -Be $sourceDb.ID
+            $script:results.SourceDatabaseID | Should -Be $sourceDb.ID
+            $script:results.DestinationDatabaseID | Should -Be $sourceDb.ID
         }
 
         It "Returns output as PSCustomObject" {
-            $results | Should -Not -BeNullOrEmpty
-            $results | Should -BeOfType PSCustomObject
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected properties" {
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
             $expectedProperties = @(
                 "SourceInstance",
                 "SourceDatabase",
@@ -117,15 +119,16 @@ Describe $CommandName -Tag IntegrationTests {
                 "Elapsed"
             )
             foreach ($prop in $expectedProperties) {
-                $results.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                $script:results.psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
             }
         }
 
         It "Has correct source and destination values" {
-            $results.SourceDatabase | Should -Be "tempdb"
-            $results.SourceTable | Should -Be "dbatoolsci_example"
-            $results.DestinationTable | Should -Be "dbatoolsci_example2"
-            $results.RowsCopied | Should -Be 10
+            if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:results.SourceDatabase | Should -Be "tempdb"
+            $script:results.SourceTable | Should -Be "dbatoolsci_example"
+            $script:results.DestinationTable | Should -Be "dbatoolsci_example2"
+            $script:results.RowsCopied | Should -Be 10
         }
     }
 

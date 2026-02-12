@@ -48,8 +48,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When retrieving all startup procedures" {
-        It "Returns correct results" {
+        BeforeAll {
             $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns correct results" {
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }

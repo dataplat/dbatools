@@ -55,6 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Sets the database owner on a specific database" {
             $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName -TargetLogin $owner
             $results.Owner | Should -Be $owner
+            $script:outputResult = $results
         }
         It "Check it actually set the owner" {
             $svr.Databases[$dbname].refresh()
@@ -63,14 +64,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType PSCustomObject
+                $script:outputResult | Should -Not -BeNullOrEmpty
+                $script:outputResult | Should -BeOfType PSCustomObject
             }
 
             It "Has the expected properties" {
                 $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Owner")
                 foreach ($prop in $expectedProps) {
-                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                    $script:outputResult.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
                 }
             }
         }

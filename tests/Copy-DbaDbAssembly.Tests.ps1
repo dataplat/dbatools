@@ -36,10 +36,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $assemblyHashBytes = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly -Query "SELECT HASHBYTES('SHA2_512', content) FROM sys.assembly_files WHERE name = 'resolveDNS'" -As SingleValue
         $assemblyHashHex = "0x$(($assemblyHashBytes | ForEach-Object ToString X2) -join '')"
         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "DECLARE @assemblyHash VARBINARY(64) = $assemblyHashHex, @assemblyName NVARCHAR(4000) = 'resolveDNS'; EXEC sys.sp_add_trusted_assembly @hash = @assemblyHash, @description = @assemblyName"
-
-        # Create output validation result - reuse for later output validation tests
-        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly -Query "IF EXISTS (SELECT 1 FROM sys.assemblies WHERE name = 'resolveDNS') DROP ASSEMBLY resolveDNS" -ErrorAction SilentlyContinue
-        $script:outputForValidation = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS
     }
 
     AfterAll {
@@ -50,12 +46,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "copies the sample database assembly" {
-        $results = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS
-        $results.Name | Should -Be resolveDns
-        $results.Status | Should -Be Successful
-        $results.Type | Should -Be "Database Assembly"
-        $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly).ID
-        $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly).ID
+        $script:outputForValidation = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS
+        $script:outputForValidation.Name | Should -Be resolveDns
+        $script:outputForValidation.Status | Should -Be Successful
+        $script:outputForValidation.Type | Should -Be "Database Assembly"
+        $script:outputForValidation.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly).ID
+        $script:outputForValidation.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly).ID
     }
 
     It "excludes an assembly" {

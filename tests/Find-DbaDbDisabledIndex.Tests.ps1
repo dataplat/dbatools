@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns output of the documented type" {
             $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
             $results | Should -Not -BeNullOrEmpty
-            $results[0] | Should -BeOfType System.Data.DataRow
+            @($results)[0] | Should -BeOfType System.Data.DataRow
         }
 
         It "Has the expected properties" {
@@ -98,7 +98,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "TypeDesc"
             )
             foreach ($prop in $expectedProps) {
-                $results[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
+                @($results)[0].Table.Columns.ColumnName | Should -Contain $prop -Because "property '$prop' should be present on the output object"
             }
         }
     }

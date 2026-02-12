@@ -79,20 +79,20 @@ Describe $CommandName -Tag IntegrationTests {
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
             }
-            $results = Backup-DbaDbCertificate @splatBackupCert
+            $script:results = Backup-DbaDbCertificate @splatBackupCert
 
-            $results.Certificate | Should -Be $cert1.Name
-            $results.Status | Should -BeExactly "Success"
-            $results.DatabaseID | Should -Be $db1.ID
+            $script:results.Certificate | Should -Be $cert1.Name
+            $script:results.Status | Should -BeExactly "Success"
+            $script:results.DatabaseID | Should -Be $db1.ID
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results | Should -BeOfType PSCustomObject
+            $script:results | Should -Not -BeNullOrEmpty
+            $script:results | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseID", "Certificate", "Path", "Key", "Status")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -100,7 +100,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the expected excluded properties" {
-            $defaultProps = $results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps = $script:results.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $excludedProps = @("exportPathCert", "exportPathKey", "ExportPath", "ExportKey")
             foreach ($prop in $excludedProps) {
                 $defaultProps | Should -Not -Contain $prop -Because "property '$prop' should be excluded from the default display set"

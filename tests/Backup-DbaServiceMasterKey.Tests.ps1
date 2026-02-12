@@ -72,6 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
             $backupResults = Backup-DbaServiceMasterKey @splatBackup
             $backupResults.Status | Should -Be "Success"
             $smkBackupPath = $backupResults.Path
+            $script:backupResults = $backupResults
         }
 
         It "backs up the SMK with a specific filename (see #9483)" {
@@ -89,12 +90,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the documented type" {
-            $backupResults | Should -Not -BeNullOrEmpty
-            $backupResults.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServiceMasterKey"
+            $script:backupResults | Should -Not -BeNullOrEmpty
+            $script:backupResults.psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.ServiceMasterKey"
         }
 
         It "Has the expected default display properties" {
-            $defaultProps = $backupResults.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:backupResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:backupResults.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Path", "Status")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -102,8 +104,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has working alias properties" {
-            $backupResults.psobject.Properties["Path"] | Should -Not -BeNullOrEmpty
-            $backupResults.psobject.Properties["Path"].MemberType | Should -Be "AliasProperty"
+            if (-not $script:backupResults) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:backupResults.psobject.Properties["Path"] | Should -Not -BeNullOrEmpty
+            $script:backupResults.psobject.Properties["Path"].MemberType | Should -Be "AliasProperty"
         }
     }
 }

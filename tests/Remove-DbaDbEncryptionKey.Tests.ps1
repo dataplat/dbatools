@@ -67,31 +67,31 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "should remove encryption key on a database" {
             $null = $testDatabase | New-DbaDbEncryptionKey -Force
-            $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase.Name
-            $results.Status | Should -Be "Success"
+            $script:results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase.Name
+            $script:results.Status | Should -Be "Success"
             $testDatabase.Refresh()
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
 
         Context "Output validation" {
             It "Returns output of the documented type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results | Should -BeOfType PSCustomObject
+                $script:results | Should -Not -BeNullOrEmpty
+                $script:results | Should -BeOfType PSCustomObject
             }
 
             It "Has the correct properties" {
                 $expectedProperties = @("ComputerName", "InstanceName", "SqlInstance", "Database", "Status")
                 foreach ($prop in $expectedProperties) {
-                    $results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
+                    $script:results.PSObject.Properties.Name | Should -Contain $prop -Because "property '$prop' should exist on the output object"
                 }
             }
 
             It "Has the expected values" {
-                $results.Status | Should -Be "Success"
-                $results.Database | Should -Be $testDatabase.Name
-                $results.ComputerName | Should -Not -BeNullOrEmpty
-                $results.InstanceName | Should -Not -BeNullOrEmpty
-                $results.SqlInstance | Should -Not -BeNullOrEmpty
+                $script:results.Status | Should -Be "Success"
+                $script:results.Database | Should -Be $testDatabase.Name
+                $script:results.ComputerName | Should -Not -BeNullOrEmpty
+                $script:results.InstanceName | Should -Not -BeNullOrEmpty
+                $script:results.SqlInstance | Should -Not -BeNullOrEmpty
             }
         }
     }

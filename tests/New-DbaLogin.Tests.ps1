@@ -135,6 +135,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         }
+        AfterAll {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
 
         It "Should be created successfully - Hashed password" {
             $script:outputValidationResult = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force

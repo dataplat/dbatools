@@ -25,24 +25,24 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "returns the proper transport" {
         It "returns ntlm auth scheme" {
-            $results = Test-DbaConnectionAuthScheme -SqlInstance $TestConfig.InstanceSingle
+            $script:results = Test-DbaConnectionAuthScheme -SqlInstance $TestConfig.InstanceSingle
             if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
-                $results.AuthScheme | Should -Be 'ntlm'
+                $script:results.AuthScheme | Should -Be 'ntlm'
             } else {
-                $results.AuthScheme | Should -Be 'KERBEROS'
+                $script:results.AuthScheme | Should -Be 'KERBEROS'
             }
 
         }
 
         Context "Output validation" {
             It "Returns output of the expected type" {
-                $results | Should -Not -BeNullOrEmpty
-                $results[0] | Should -BeOfType System.Data.DataRow
+                $script:results | Should -Not -BeNullOrEmpty
+                @($script:results)[0] | Should -BeOfType System.Data.DataRow
             }
 
             It "Has the expected default display properties" {
-                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
-                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = @($script:results)[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $expectedDefaults = @("ComputerName", "InstanceName", "SqlInstance", "Transport", "AuthScheme")
                 foreach ($prop in $expectedDefaults) {
                     $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -50,10 +50,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "Has all additional properties available" {
-                if (-not $results) { Set-ItResult -Skipped -Because "no result to validate" }
+                if (-not $script:results) { Set-ItResult -Skipped -Because "no result to validate" }
                 $expectedProps = @("SessionId", "MostRecentSessionId", "ConnectTime", "ProtocolType", "ProtocolVersion", "EndpointId", "EncryptOption", "NodeAffinity", "NumReads", "NumWrites", "LastRead", "LastWrite", "PacketSize", "ClientNetworkAddress", "ClientTcpPort", "ServerNetworkAddress", "ServerTcpPort", "ConnectionId", "ParentConnectionId", "MostRecentSqlHandle")
                 foreach ($prop in $expectedProps) {
-                    $results[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
+                    @($script:results)[0].psobject.Properties.Name | Should -Contain $prop -Because "property '$prop' should be available"
                 }
             }
         }

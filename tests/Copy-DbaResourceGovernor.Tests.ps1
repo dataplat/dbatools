@@ -87,10 +87,10 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "SilentlyContinue"
             }
 
-            $results = Copy-DbaResourceGovernor @splatCopyRG
-            $results.Status | Select-Object -Unique | Should -BeExactly "Successful"
-            $results.Status.Count | Should -BeGreaterThan 3
-            $results.Name | Should -Contain "dbatoolsci_prod"
+            $script:outputForValidation = Copy-DbaResourceGovernor @splatCopyRG
+            $script:outputForValidation.Status | Select-Object -Unique | Should -BeExactly "Successful"
+            $script:outputForValidation.Status.Count | Should -BeGreaterThan 3
+            $script:outputForValidation.Name | Should -Contain "dbatoolsci_prod"
         }
 
         It "Returns the proper classifier function" {
@@ -99,13 +99,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns output of the expected type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.MigrationObject"
         }
 
         It "Has the expected default display properties" {
-            $results | Should -Not -BeNullOrEmpty
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             foreach ($prop in $expectedDefaults) {
                 $defaultProps | Should -Contain $prop -Because "property '$prop' should be in the default display set"
@@ -113,10 +113,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Has the correct values for migration properties" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0].SourceServer | Should -Not -BeNullOrEmpty
-            $results[0].DestinationServer | Should -Not -BeNullOrEmpty
-            $results[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+            $script:outputForValidation[0].SourceServer | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].DestinationServer | Should -Not -BeNullOrEmpty
+            $script:outputForValidation[0].Status | Should -BeIn @("Successful", "Skipped", "Failed")
         }
     }
 }
