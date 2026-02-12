@@ -1,15 +1,43 @@
 function Get-DecryptedObject {
     <#
-            .SYNOPSIS
-                Internal function.
+    .SYNOPSIS
+        Internal function.
 
-                This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
-                Antti Rantasaari 2014, NetSPI
-                License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+    .DESCRIPTION
+        Decrypts credentials or linked server passwords from a SQL Server instance using the service master key.
+        This is necessary because SQL Server does not allow retrieval of plaintext passwords for security reasons.
+        By leveraging the service master key and the encryption mechanism used by SQL Server, this function can extract the actual passwords for credentials and linked servers.
+
+        This function is used by the following public functions:
+        - Copy-DbaCredential
+        - Copy-DbaDbMail
+        - Copy-DbaLinkedServer
+        - Export-DbaCredential
+        - Export-DbaLinkedServer
+
+        This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+        Antti Rantasaari 2014, NetSPI
+        License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+
+    .PARAMETER SqlInstance
+        Dedicated admin connection (DAC) to the SQL Server instance.
+
+    .PARAMETER Credential
+        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+
+    .PARAMETER Type
+        LinkedServer or Credential - what type of object to decrypt.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     #>
     param (
         [Parameter(Mandatory)]
         [Microsoft.SqlServer.Management.Smo.Server]$SqlInstance,
+        [pscredential]$Credential,
         [Parameter(Mandatory)]
         [ValidateSet("LinkedServer", "Credential")]
         [string]$Type,
@@ -17,16 +45,16 @@ function Get-DecryptedObject {
     )
 
     $server = $SqlInstance
-    $sourceName = $server.Name
+    $sourceName = $server.DomainInstanceName
 
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
     try {
-        $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x0300000001"
+        $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x0300000001"
         $smkBytes = $server.Query($sql).smk
         if (-not $smkBytes) {
-            $sql = "SELECT SUBSTRING(crypt_property,9,LEN(crypt_property)-8) AS smk FROM sys.key_encryptions WHERE key_id=102 AND thumbprint=0x03"
+            $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x03"
             $smkBytes = $server.Query($sql).smk
         }
     } catch {
@@ -39,7 +67,7 @@ function Get-DecryptedObject {
 
     Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
-        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $serviceInstanceId, $smkBytes {
+        $serviceKey = Invoke-Command2 -Raw -ComputerName $fullComputerName -Credential $Credential -ArgumentList $serviceInstanceId, $smkBytes {
             $serviceInstanceId = $args[0]
             $smkBytes = $args[1]
             Add-Type -AssemblyName System.Security
@@ -71,33 +99,37 @@ function Get-DecryptedObject {
         $ivlen = 16
     }
 
-    <# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
-
     $sql = switch ($Type) {
         "LinkedServer" {
-            "SELECT sysservers.srvname,
-                syslnklgns.name,
-                SUBSTRING(syslnklgns.pwdhash,5,$ivlen) iv,
-                SUBSTRING(syslnklgns.pwdhash,$($ivlen + 5),
-                LEN(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+            "SELECT sysservers.srvname AS Name,
+                NULL AS Quotename,
+                syslnklgns.name AS [Identity],
+                SUBSTRING(syslnklgns.pwdhash, 5, $ivlen) AS iv,
+                SUBSTRING(syslnklgns.pwdhash, $($ivlen + 5), LEN(syslnklgns.pwdhash) - $($ivlen + 4)) AS pass,
+                NULL AS MappedClassType,
+                NULL AS ProviderName
             FROM master.sys.syslnklgns
                 INNER JOIN master.sys.sysservers
-                ON syslnklgns.srvid=sysservers.srvid
-            WHERE LEN(pwdhash) > 0"
+                ON syslnklgns.srvid = sysservers.srvid
+            WHERE LEN(syslnklgns.pwdhash) > 0"
         }
         "Credential" {
-            #"SELECT name,QUOTENAME(name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid WHERE valclass=28 AND valnum=2"
-            "SELECT cred.name,QUOTENAME(cred.name) quotename,credential_identity,SUBSTRING(imageval,5,$ivlen) iv, SUBSTRING(imageval,$($ivlen + 5),LEN(imageval)-$($ivlen + 4)) pass,target_type AS 'mappedClassType', cp.name AS 'ProviderName' FROM sys.credentials cred INNER JOIN sys.sysobjvalues obj ON cred.credential_id = obj.objid LEFT OUTER JOIN sys.cryptographic_providers cp ON cred.target_id = cp.provider_id WHERE valclass=28 AND valnum=2"
+            "SELECT cred.name AS Name,
+                QUOTENAME(cred.name) AS Quotename,
+                cred.credential_identity AS [Identity],
+                SUBSTRING(obj.imageval, 5, $ivlen) AS iv,
+                SUBSTRING(obj.imageval, $($ivlen + 5), LEN(obj.imageval) - $($ivlen + 4)) AS pass,
+                cred.target_type AS MappedClassType,
+                cp.name AS ProviderName
+            FROM sys.credentials cred
+                INNER JOIN sys.sysobjvalues obj
+                ON cred.credential_id = obj.objid
+                LEFT OUTER JOIN sys.cryptographic_providers cp
+                ON cred.target_id = cp.provider_id
+            WHERE valclass = 28
+                AND valnum = 2"
         }
     }
-
-    Write-Message -Level Debug -Message $sql
-
-    <#
-        Query link server password information from the Db.
-        Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
-        Ignore links with blank credentials (integrated auth ?)
-    #>
 
     Write-Message -Level Verbose -Message "Query password information from the Db."
 
@@ -188,24 +220,13 @@ function Get-DecryptedObject {
         $i = 8; foreach ($b in $decrypted) { if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
         $decrypted = $decrypted[8 .. $i]
 
-        if ($Type -eq "LinkedServer") {
-            $name = $result.srvname
-            $quotename = $null
-            $identity = $result.Name
-        } else {
-            $name = $result.name
-            $quotename = $result.quotename
-            $identity = $result.credential_identity
-            $mappedClassType = $result.mappedClassType
-            $ProviderName = $result.ProviderName
-        }
-        [pscustomobject]@{
-            Name            = $name
-            Quotename       = $quotename
-            Identity        = $identity
+        [PSCustomObject]@{
+            Name            = $result.Name
+            Quotename       = $result.Quotename
+            Identity        = $result.Identity
             Password        = $encode.GetString($decrypted)
-            MappedClassType = $mappedClassType
-            ProviderName    = $ProviderName
+            MappedClassType = $result.MappedClassType
+            ProviderName    = $result.ProviderName
         }
     }
 }
