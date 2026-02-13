@@ -32,6 +32,11 @@ function Copy-DbaDbMail {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER Type
         Limits migration to specific Database Mail component types instead of copying everything. Choose 'ConfigurationValues' for global settings like retry attempts and file size limits, 'Profiles' for mail profile definitions, 'Accounts' for SMTP account configurations, or 'MailServers' for SMTP server details.
         Use this when you only need to sync specific components or when troubleshooting individual Database Mail layers.
@@ -107,13 +112,14 @@ function Copy-DbaDbMail {
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
+        [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'SpecificTypes')]
         [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
         [string[]]$Type,
-        [PSCredential]$SourceSqlCredential,
-        [PSCredential]$DestinationSqlCredential,
         [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
@@ -301,7 +307,7 @@ function Copy-DbaDbMail {
                 $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
                 $credentialAccounts = @($sourceServer.Query($sql))
                 if ($credentialAccounts.Count -gt 0) {
-                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException | Where-Object { $_.Name -in $credentialAccounts.credential_name }
                 }
             }
 
@@ -379,15 +385,28 @@ function Copy-DbaDbMail {
         }
 
         try {
-            if ($ExcludePassword) {
-                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-                $sourceServerName = $sourceServer.Name
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                    $sourceServer = $Source.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } else {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                $sourceServerName = $sourceServer.Name -replace '^ADMIN:', ''
+                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
+            $sourceServerName = $sourceServer.DomainInstanceName
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -505,7 +524,7 @@ function Copy-DbaDbMail {
         }
     }
     end {
-        if (-not $ExcludePassword) {
+        if ($dacOpened) {
             $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }

@@ -12,10 +12,11 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "Source",
-                "Destination",
-                "Type",
                 "SourceSqlCredential",
+                "Destination",
                 "DestinationSqlCredential",
+                "Credential",
+                "Type",
                 "Force",
                 "ExcludePassword",
                 "EnableException"
