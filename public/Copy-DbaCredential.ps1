@@ -36,7 +36,9 @@ function Copy-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
 
     .PARAMETER Name
         Specifies the credential names to copy from the source server. Does not supports wildcards for pattern matching.
@@ -149,12 +151,26 @@ function Copy-DbaCredential {
         if ($Force) { $ConfirmPreference = 'none' }
 
         try {
-            if ($ExcludePassword) {
-                Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                    $sourceServer = $Source.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } else {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -164,7 +180,7 @@ function Copy-DbaCredential {
         if (-not $ExcludePassword) {
             Write-Message -Level Verbose -Message "Decrypting all Credential logins and passwords on $($sourceServer.Name)"
             try {
-                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
+                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException
             } catch {
                 Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
                 return
@@ -259,9 +275,7 @@ function Copy-DbaCredential {
         }
     }
     end {
-        # Disconnect is important because it is a DAC
-        # Disconnect in case of WhatIf, as we opened the connection
-        if (-not $ExcludePassword) {
+        if ($dacOpened) {
             $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
