@@ -548,9 +548,7 @@ function Start-DbaDbEncryption {
                             Error             = $_.Exception.Message
                         }
                     } finally {
-                        if ($server) {
-                            Disconnect-DbaInstance -SqlInstance $server
-                        }
+                        $null = $server | Disconnect-DbaInstance
                     }
                 }
 
