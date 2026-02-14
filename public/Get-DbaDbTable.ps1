@@ -210,9 +210,10 @@ function Get-DbaDbTable {
             }
 
             # Build URN filter for server-side filtering when -Table or -Schema is specified
+            # and the ClearAndInitialize optimization is enabled via config.
             # This avoids loading ALL tables when only specific ones are requested
             $urnFilter = ''
-            if ($fqTns -or $Schema) {
+            if (($fqTns -or $Schema) -and (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize')) {
                 $filterConditions = [System.Collections.ArrayList]@()
 
                 # Add schema filter conditions from -Schema parameter
@@ -277,9 +278,7 @@ function Get-DbaDbTable {
                 }
             }
 
-            if (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize') {
-                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
-            }
+            $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
 
             if ($fqTns) {
                 $tables = @()
