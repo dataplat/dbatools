@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command returns correct certificate information" {
         BeforeAll {
-            $certificate = New-DbaComputerCertificate -ComputerName $TestConfig.InstanceSingle -SelfSigned -EnableException
+            $certificate = New-DbaComputerCertificate -ComputerName $TestConfig.InstanceSingle -SelfSigned -KeyLength 2048 -HashAlgorithm Sha256 -EnableException
             $results = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableException
         }
 
