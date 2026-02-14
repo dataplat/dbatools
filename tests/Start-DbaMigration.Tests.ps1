@@ -13,6 +13,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "Source",
                 "Destination",
+                "Credential",
                 "DetachAttach",
                 "Reattach",
                 "BackupRestore",
@@ -33,6 +34,7 @@ Describe $CommandName -Tag UnitTests {
                 "KeepCDC",
                 "KeepReplication",
                 "Continue",
+                "ExcludePassword",
                 "Force",
                 "AzureCredential",
                 "MasterKeyPassword",
