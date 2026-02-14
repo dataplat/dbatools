@@ -304,6 +304,7 @@ function Get-DbaNetworkConfiguration {
                         TcpIpProperties     = $netConf.TcpIpProperties
                         TcpIpAddresses      = $netConf.TcpIpAddresses
                         Certificate         = $netConf.Certificate
+                        SuitableCertificate = $netConf.SuitableCertificate
                         Advanced            = $netConf.Advanced
                     }
                 } elseif ($OutputType -eq 'ServerProtocols') {

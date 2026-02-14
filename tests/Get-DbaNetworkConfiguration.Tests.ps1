@@ -44,6 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "TcpIpProperties",
                 "TcpIpAddresses",
                 "Certificate",
+                "SuitableCertificate",
                 "Advanced"
             )
             ($resultsFull.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsFull | Sort-Object)
@@ -57,6 +58,21 @@ Describe $CommandName -Tag IntegrationTests {
                 "ListenAll"
             )
             ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedPropsTcpIpProperties | Sort-Object)
+        }
+    }
+
+    Context "Command returns correct certificate information" {
+        BeforeAll {
+            $certificate = New-DbaComputerCertificate -ComputerName $TestConfig.InstanceSingle -SelfSigned -KeyLength 2048 -HashAlgorithm Sha256 -EnableException
+            $results = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        AfterAll {
+            $null = Remove-DbaComputerCertificate -Thumbprint $certificate.Thumbprint -EnableException
+        }
+
+        It "Should return a suitable certificate thumbprint" {
+            $results.SuitableCertificate.Thumbprint | Should -Contain $certificate.Thumbprint
         }
     }
 }
