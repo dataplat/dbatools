@@ -30,6 +30,11 @@ function Copy-DbaLinkedServer {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER LinkedServer
         Specifies which linked servers to copy from the source instance. Accepts an array of linked server names.
         Use this when you only need to migrate specific linked servers rather than all of them.
@@ -113,6 +118,7 @@ function Copy-DbaLinkedServer {
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
+        [PSCredential]$Credential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
@@ -122,7 +128,7 @@ function Copy-DbaLinkedServer {
     )
     begin {
         if (-not $script:isWindows) {
-            Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
+            Stop-Function -Message "Copy-DbaLinkedServer is only supported on Windows"
             return
         }
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
@@ -146,7 +152,7 @@ function Copy-DbaLinkedServer {
                     }
                 }
             } else {
-                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type LinkedServer -EnableException
             }
 
             $serverlist = $sourceServer.LinkedServers
@@ -295,34 +301,30 @@ function Copy-DbaLinkedServer {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
 
-        if (-not $ExcludePassword) {
-            try {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-                return
-            }
-        } else {
-            try {
-                Write-Message -Level Verbose -Message "Connecting without DAC since -ExcludePassword is specified."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-                return
-            }
-        }
-        if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
-            return
-        }
-
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source."
-        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source
         try {
-            $null = Invoke-Command2 -ComputerName $resolvedComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                    $sourceServer = $Source.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
+            } else {
+                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $Source." -Target $resolvedComputerName -ErrorRecord $_
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
@@ -344,8 +346,8 @@ function Copy-DbaLinkedServer {
         }
     }
     end {
-        # Disconnect is important because it is a DAC
-        # Disconnect in case of WhatIf, as we opened the connection
-        $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        if ($dacOpened) {
+            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        }
     }
 }
