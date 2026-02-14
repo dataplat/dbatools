@@ -20,6 +20,11 @@ function Export-DbaCredential {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER Path
         Specifies the directory where the exported T-SQL script file will be saved. Defaults to the configured DbatoolsExport path.
         Use this when you want to control where credential scripts are stored for organization or compliance requirements.
@@ -82,6 +87,7 @@ function Export-DbaCredential {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
@@ -104,12 +110,26 @@ function Export-DbaCredential {
 
         foreach ($instance in $SqlInstance) {
             try {
-                if ($ExcludePassword) {
-                    Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
                 } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -127,7 +147,7 @@ function Export-DbaCredential {
                     }
                 }
             } else {
-                $credentials = Get-DecryptedObject -SqlInstance $server -Type Credential
+                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException
             }
 
             if ($Identity) {
@@ -170,8 +190,7 @@ function Export-DbaCredential {
                 }
             }
 
-            # Disconnect DAC connection if it was opened
-            if (-not $ExcludePassword) {
+            if ($dacOpened) {
                 $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
