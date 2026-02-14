@@ -197,7 +197,17 @@ function Invoke-DbaDbDecryptObject {
 
             # Try to connect to instance
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -DedicatedAdminConnection
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+                $dacOpened = $false
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection."
+                    $server = $instance.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -368,7 +378,9 @@ function Invoke-DbaDbDecryptObject {
                     }
                 }
             }
-            $null = $server | Disconnect-DbaInstance
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            }
         }
     }
     end {
