@@ -312,6 +312,11 @@ function Install-DbaMaintenanceSolution {
             return
         }
 
+        if ($BackupLocation -eq "NUL" -and $Verify) {
+            Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or turn off Verify."
+            return
+        }
+
         if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
             Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
             return
