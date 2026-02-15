@@ -81,7 +81,7 @@ function Find-DbaDbGrowthEvent {
         - EventClass: The trace event class (92 = Data File Auto Grow, 93 = Log File Auto Grow, 94 = Data File Auto Shrink, 95 = Log File Auto Shrink)
         - DatabaseName: The name of the database that experienced the growth/shrink event
         - Filename: The path and name of the database file that was resized
-        - Duration: The duration of the event in seconds (milliseconds converted to seconds)
+        - Duration: The duration of the event in milliseconds
         - StartTime: The date and time when the event started (UTC by default, local time if -UseLocalTime is specified)
         - EndTime: The date and time when the event ended (UTC by default, local time if -UseLocalTime is specified)
         - ChangeInSize: The size change during the event in megabytes (MB)
