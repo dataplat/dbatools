@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "copies the sample database assembly" {
-        $results = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS
+        $results = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS -OutVariable "global:dbatoolsciOutput"
         $results.Name | Should -Be resolveDns
         $results.Status | Should -Be Successful
         $results.Type | Should -Be "Database Assembly"
@@ -70,5 +70,38 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.Type | Should -Be "Database Assembly"
         $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database dbclrassembly).ID
         $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database dbclrassembly).ID
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
