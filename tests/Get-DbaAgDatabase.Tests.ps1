@@ -76,10 +76,42 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "When getting AG database" {
         It "Returns correct database information" {
-            $results = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
+            $results = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName -OutVariable "global:dbatoolsciOutput"
             $results.AvailabilityGroup | Should -Be $agName
             $results.Name | Should -Be $dbName
             $results.LocalReplicaRole | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityDatabase]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "LocalReplicaRole",
+                "Name",
+                "SynchronizationState",
+                "IsFailoverReady",
+                "IsJoined",
+                "IsSuspended"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityDatabase"
         }
     }
 }
