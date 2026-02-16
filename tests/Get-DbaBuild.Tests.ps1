@@ -236,7 +236,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Test retrieving version from instances" {
         It "Should return an exact match" {
-            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $results = Get-DbaBuild -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {
                 $r.MatchType | Should -Be "Exact"
@@ -265,6 +265,38 @@ Describe $CommandName -Tag IntegrationTests {
                     $v.CULevel | Should -Be $r.CULevel
                 }
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SqlInstance",
+                "Build",
+                "NameLevel",
+                "SPLevel",
+                "CULevel",
+                "KBLevel",
+                "BuildLevel",
+                "SupportedUntil",
+                "MatchType",
+                "Warning"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
