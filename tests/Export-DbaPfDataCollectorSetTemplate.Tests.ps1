@@ -48,13 +48,28 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Verifying command returns all the required results" {
         It "returns a file system object using piped input" {
-            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate
+            $results = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate -OutVariable "global:dbatoolsciOutput"
             $results.BaseName | Should -Be "Long Running Queries"
         }
 
         It "returns a file system object using direct parameter" {
             $results = Export-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries"
             $results.BaseName | Should -Be "Long Running Queries"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
