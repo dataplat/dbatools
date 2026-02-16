@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace" {
         BeforeAll {
-            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle | Where-Object Database -eq $dbName)
+            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Database -eq $dbName)
         }
 
         It "Gets results" {
@@ -94,6 +94,45 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets no results for excluded database" {
             $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
             $excludeResults.Database | Should -Not -Contain $dbName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileName",
+                "FileGroup",
+                "PhysicalName",
+                "FileType",
+                "UsedSpace",
+                "FreeSpace",
+                "FileSize",
+                "PercentUsed",
+                "AutoGrowth",
+                "AutoGrowType",
+                "SpaceUntilMaxSize",
+                "AutoGrowthPossible",
+                "UnusableSpace"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
