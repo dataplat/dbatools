@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Settings" {
         BeforeAll {
-            $results = Get-DbaDbMail -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbMail -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Gets results" {
@@ -58,6 +58,35 @@ Describe $CommandName -Tag IntegrationTests {
                 $row.name | Should -BeIn $mailSettings.Keys
                 $row.value | Should -BeIn $mailSettings.Values
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.SqlMail]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Profiles",
+                "Accounts",
+                "ConfigurationValues",
+                "Properties"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Mail\.SqlMail"
         }
     }
 }
