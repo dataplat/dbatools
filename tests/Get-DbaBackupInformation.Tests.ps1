@@ -121,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceSingle
                 Path        = $DestBackupDir
             }
-            $results = Get-DbaBackupInformation @splatAllBackups
+            $results = Get-DbaBackupInformation @splatAllBackups -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should be 6 backups returned" {
@@ -265,6 +265,61 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $resultsSanLog = Get-DbaBackupInformation @splatNoMaintenanceWithIgnore 3> $null
             $resultsSanLog.Count | Should -BeExactly 3
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput | Should -Not -BeNullOrEmpty
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Database.BackupHistory]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroupName",
+                "Database",
+                "DatabaseId",
+                "UserName",
+                "Start",
+                "End",
+                "Duration",
+                "Path",
+                "TotalSize",
+                "CompressedBackupSize",
+                "CompressionRatio",
+                "Type",
+                "BackupSetId",
+                "DeviceType",
+                "Software",
+                "FullName",
+                "FileList",
+                "Position",
+                "FirstLsn",
+                "DatabaseBackupLsn",
+                "CheckpointLsn",
+                "LastLsn",
+                "SoftwareVersionMajor",
+                "IsCopyOnly",
+                "LastRecoveryForkGUID",
+                "RecoveryModel",
+                "KeyAlgorithm",
+                "EncryptorThumbprint",
+                "EncryptorType"
+            )
+            $propertyNames = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $propertyNames | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
         }
     }
 }
