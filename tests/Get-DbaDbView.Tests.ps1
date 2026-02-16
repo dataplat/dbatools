@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            $results = Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database tempdb -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have standard properties" {
@@ -110,6 +110,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $TestConfig.InstanceSingle | Get-DbaDbView -Database tempdb -Schema "someschema"
             ($results | Where-Object Name -eq $viewNameWithSchema).Name | Should -Be $viewNameWithSchema
             @($results | Where-Object Schema -ne "someschema").Count | Should -Be 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.View]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "CreateDate",
+                "DateLastModified",
+                "Name"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.View"
         }
     }
 }
