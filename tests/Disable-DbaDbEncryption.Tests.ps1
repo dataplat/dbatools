@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling encryption via pipeline" {
         BeforeAll {
             Start-Sleep -Seconds 10 # Allow encryption to complete
-            $results = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn 3> $null
+            $results = $testDb | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn -OutVariable "global:dbatoolsciOutput" 3> $null
         }
 
         It "Should complete without warnings" {
@@ -87,6 +87,33 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should disable encryption" {
             $results.EncryptionEnabled | Should -Be $false
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
         }
     }
 }
