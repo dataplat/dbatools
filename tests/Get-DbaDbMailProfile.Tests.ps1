@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Profile" {
         BeforeAll {
-            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 | Where-Object Name -eq $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 -OutVariable "global:dbatoolsciOutput" | Where-Object Name -eq $profilename
             $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object Name -eq $profilename
         }
 
@@ -97,6 +97,36 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets no results" {
             $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 -ExcludeProfile $profilename
             $results.Name | Should -Not -Contain $profilename
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.MailProfile]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "Description",
+                "ForceDeleteForActiveProfiles",
+                "IsBusyProfile"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Mail\.MailProfile"
         }
     }
 }
