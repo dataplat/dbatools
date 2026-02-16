@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Linked Servers" {
         BeforeAll {
-            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 | Where-Object Name -eq $TestConfig.InstanceMulti2
+            $results = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -OutVariable "global:dbatoolsciOutput" | Where-Object Name -eq $TestConfig.InstanceMulti2
         }
 
         It "Gets results" {
@@ -93,6 +93,39 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets results" {
             $results = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceMulti1 -ExcludeLinkedServer $TestConfig.InstanceMulti2
             $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LinkedServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteServer",
+                "ProductName",
+                "Impersonate",
+                "RemoteUser",
+                "Publisher",
+                "Distributor",
+                "DateLastModified"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.LinkedServer"
         }
     }
 }
