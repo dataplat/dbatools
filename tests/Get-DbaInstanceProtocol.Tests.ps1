@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $allResults = Get-DbaInstanceProtocol -ComputerName $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $allResults = Get-DbaInstanceProtocol -ComputerName $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -OutVariable "global:dbatoolsciOutput"
             $tcpResults = $allResults | Where-Object Name -eq "Tcp"
         }
 
@@ -35,6 +35,34 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $tcpResults) {
                 $result.Name -eq "Tcp" | Should -Be $true
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.Management.Infrastructure.CimInstance]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "DisplayName",
+                "Name",
+                "MultiIP",
+                "IsEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "ServerNetworkProtocol"
         }
     }
 }
