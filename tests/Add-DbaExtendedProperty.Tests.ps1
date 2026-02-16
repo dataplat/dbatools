@@ -60,10 +60,39 @@ Describe $CommandName -Tag IntegrationTests {
                 Name  = "Test_Database_Name"
                 Value = "Sup"
             }
-            $ep = $db | Add-DbaExtendedProperty @splatExtendedProperty
+            $ep = $db | Add-DbaExtendedProperty @splatExtendedProperty -OutVariable "global:dbatoolsciOutput"
             $ep.Name | Should -Be "Test_Database_Name"
             $ep.ParentName | Should -Be $db.Name
             $ep.Value | Should -Be "Sup"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExtendedProperty]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ParentName",
+                "Type",
+                "Name",
+                "Value"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ExtendedProperty"
         }
     }
 }
