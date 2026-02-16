@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns at least two rows" {
             # not an exact count because who knows
-            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -OutVariable "global:dbatoolsciOutput" | Where-Object Table -Match dbatoolsci
 
             $results.Status.Count -ge 2 | Should -Be $true
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
@@ -67,6 +67,47 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.MatchPercent -eq 100 | Should -Be $true
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Table",
+                "MatchingTable",
+                "MatchPercent",
+                "OriginalDatabaseName",
+                "OriginalDatabaseId",
+                "OriginalSchemaName",
+                "OriginalTableName",
+                "OriginalTableNameRankInDB",
+                "OriginalTableType",
+                "OriginalColumnCount",
+                "MatchingDatabaseName",
+                "MatchingDatabaseId",
+                "MatchingSchemaName",
+                "MatchingTableName",
+                "MatchingTableType",
+                "MatchingColumnCount"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
