@@ -77,8 +77,45 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination = $TestConfig.InstanceCopy1
                 CMSGroup    = $groupName
             }
-            $results = Copy-DbaRegServer @splatCopy
+            $results = Copy-DbaRegServer @splatCopy -OutVariable "global:dbatoolsciOutput"
             $results.Status | Should -Be @("Successful", "Successful")
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = ($global:dbatoolsciOutput | Where-Object { $null -ne $PSItem })[0]
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $outputItem.PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "MigrationObject"
         }
     }
 }

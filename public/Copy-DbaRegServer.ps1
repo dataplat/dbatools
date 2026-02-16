@@ -59,7 +59,7 @@ function Copy-DbaRegServer {
         https://dbatools.io/Copy-DbaRegServer
 
     .OUTPUTS
-        PSCustomObject
+        dbatools.MigrationObject
 
         Returns one object per migration action (group creation, instance addition, etc.). The command returns multiple objects representing the status of different CMS components being migrated.
 
