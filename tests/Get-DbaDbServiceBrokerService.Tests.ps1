@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the service broker service" {
         BeforeAll {
-            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeSystemService:$true
+            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeSystemService:$true -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Gets results" {
@@ -74,6 +74,37 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have a queuename of $testQueueName" {
             $testResults.QueueName | Should -Be $testQueueName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Broker.BrokerService]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Owner",
+                "ServiceID",
+                "Name",
+                "QueueSchema",
+                "QueueName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Broker\.BrokerService"
         }
     }
 }
