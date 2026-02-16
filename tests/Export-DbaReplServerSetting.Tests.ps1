@@ -27,8 +27,35 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When exporting replication settings with Passthru" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $results = Export-DbaReplServerSetting -SqlInstance $TestConfig.InstanceSingle -Passthru -OutVariable "global:dbatoolsciOutput"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should return T-SQL script content" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should contain sp_dropdistributor call" {
+            "$results" | Should -Match "sp_dropdistributor"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.String"
+        }
+    }
+}
