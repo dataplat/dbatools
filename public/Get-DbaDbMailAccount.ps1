@@ -45,7 +45,7 @@ function Get-DbaDbMailAccount {
         https://dbatools.io/Get-DbaDbMailAccount
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Mail.SqlMailAccount
+        Microsoft.SqlServer.Management.Smo.Mail.MailAccount
 
         Returns one or more Database Mail account objects from the target SQL Server instance(s). Each account object includes configuration details for sending emails through Database Mail.
 
