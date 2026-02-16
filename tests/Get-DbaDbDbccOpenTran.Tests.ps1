@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns results for DBCC OPENTRAN" {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $result | Should -Not -BeNullOrEmpty
         }
 
@@ -60,6 +60,37 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Get-Unique | Should -Be "tempDB"
             $result.DatabaseId | Get-Unique | Should -Be $tempDB.Id
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Cmd",
+                "Output",
+                "Field",
+                "Data"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
