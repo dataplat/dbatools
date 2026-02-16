@@ -75,7 +75,7 @@ DROP PARTITION FUNCTION [$PFName];
     Context "Partition Schemes are correctly located" {
         BeforeAll {
             $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object *
-            $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle
+            $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should execute and return results" {
@@ -100,6 +100,34 @@ DROP PARTITION FUNCTION [$PFName];
 
         It "Should not Throw an Error" {
             { Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master } | Should -Not -Throw
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.PartitionScheme]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "PartitionFunction"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.PartitionScheme"
         }
     }
 }
