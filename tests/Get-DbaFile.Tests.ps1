@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find the new database file" {
-            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             ($results.Filename -match "dbatoolsci").Count | Should -BeGreaterThan 0
         }
 
@@ -60,6 +60,42 @@ Describe $CommandName -Tag IntegrationTests {
             $masterPath = $server.MasterDBPath
             $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -Path $masterPath
             ($results.Filename -match "master.mdf").Count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Filename",
+                "RemoteFilename"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "SqlInstance",
+                "Filename"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
