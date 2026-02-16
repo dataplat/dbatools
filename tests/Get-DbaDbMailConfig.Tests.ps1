@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Settings" {
         BeforeAll {
-            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $mailSettings = @{
                 AccountRetryAttempts           = "1"
                 AccountRetryDelay              = "60"
@@ -99,6 +99,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have Description 'Extensions not allowed in outgoing mails'" {
             $results.description | Should -BeExactly "Extensions not allowed in outgoing mails"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.ConfigurationValue]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Value",
+                "Description"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Mail\.ConfigurationValue"
         }
     }
 }
