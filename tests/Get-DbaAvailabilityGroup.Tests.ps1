@@ -57,13 +57,47 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When retrieving availability groups" {
         It "Returns results with proper data" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -OutVariable "global:dbatoolsciOutput"
             $results.AvailabilityGroup | Should -Contain $agName
         }
 
         It "Returns a single result when specifying availability group name" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
             $results.AvailabilityGroup | Should -Be $agName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LocalReplicaRole",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ClusterType",
+                "DtcSupportEnabled",
+                "AutomatedBackupPreference",
+                "AvailabilityReplicas",
+                "AvailabilityDatabases",
+                "AvailabilityGroupListeners"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityGroup"
         }
     }
 }
