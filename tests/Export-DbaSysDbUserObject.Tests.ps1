@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "works as expected with filename" {
         BeforeAll {
             $filePath = "$backupPath\objects_$random.sql"
-            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath
+            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath -OutVariable "global:dbatoolsciOutput"
             $file = Get-Content $filePath | Out-String
         }
 
@@ -145,12 +145,27 @@ Describe $CommandName -Tag IntegrationTests {
             $scriptOpts = New-DbaScriptingOption
             $scriptOpts.IncludeIfNotExists = $true
             $splatExport = @{
-                SqlInstance           = $TestConfig.InstanceSingle
+                SqlInstance            = $TestConfig.InstanceSingle
                 ScriptingOptionsObject = $scriptOpts
-                PassThru              = $true
+                PassThru               = $true
             }
             $script = Export-DbaSysDbUserObject @splatExport | Out-String
             $script -match "IF NOT EXISTS" | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
