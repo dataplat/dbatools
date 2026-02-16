@@ -66,13 +66,16 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When copying operators" {
-        It "Returns two copied operators" {
+        BeforeAll {
             $splatCopyOperators = @{
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
                 Operator    = @($operatorName1, $operatorName2)
             }
             $results = Copy-DbaAgentOperator @splatCopyOperators
+        }
+
+        It "Returns two copied operators" {
             $results.Status.Count | Should -Be 2
             $results.Status | Should -Be @("Successful", "Successful")
         }
@@ -85,6 +88,44 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $copyResult = Copy-DbaAgentOperator @splatCopyExisting
             $copyResult.Status | Should -Be "Skipped"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputValidation = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Operator    = $operatorName1
+            }
+            $output = Copy-DbaAgentOperator @splatOutputValidation
+        }
+
+        It "Should return a PSCustomObject" {
+            $output[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $output[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $output[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
