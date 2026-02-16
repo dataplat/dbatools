@@ -59,7 +59,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets Database Trigger" {
         BeforeAll {
-            $allResults = Get-DbaDbTrigger -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "dbatoolsci_safety"
+            $allResults = Get-DbaDbTrigger -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Name -eq "dbatoolsci_safety"
         }
 
         It "Gets results" {
@@ -100,6 +100,34 @@ CREATE TRIGGER dbatoolsci_safety
 
         It "Gets no results" {
             $excludeResults | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseDdlTrigger]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "IsEnabled",
+                "DateLastModified"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.DatabaseDdlTrigger"
         }
     }
 }
