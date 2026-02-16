@@ -45,7 +45,7 @@ function Get-DbaDbServiceBrokerQueue {
         https://dbatools.io/Get-DbaDbServiceBrokerQueue
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.ServiceBrokerQueue
+        Microsoft.SqlServer.Management.Smo.Broker.ServiceQueue
 
         Returns one ServiceBrokerQueue object per queue found across the specified databases. System queues are included by default but can be excluded using the -ExcludeSystemQueue parameter.
 
