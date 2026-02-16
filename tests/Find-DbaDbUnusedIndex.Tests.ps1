@@ -57,7 +57,15 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find the 'unused' index on each test sql instance" {
-            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+            $splatFind = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                IgnoreUptime = $true
+                Seeks       = 10
+                Scans       = 10
+                Lookups     = 10
+            }
+            $results = Find-DbaDbUnusedIndex @splatFind -OutVariable "global:dbatoolsciOutput"
             $results.Database | Should -Be $dbName
             $results.DatabaseId | Should -Be $newDB.Id
 
@@ -132,6 +140,58 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $testSQLinstance | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Table",
+                "ObjectId",
+                "IndexName",
+                "IndexId",
+                "TypeDesc",
+                "UserSeeks",
+                "UserScans",
+                "UserLookups",
+                "UserUpdates",
+                "LastUserSeek",
+                "LastUserScan",
+                "LastUserLookup",
+                "LastUserUpdate",
+                "SystemSeeks",
+                "SystemScans",
+                "SystemLookup",
+                "SystemUpdates",
+                "LastSystemSeek",
+                "LastSystemScan",
+                "LastSystemLookup",
+                "LastSystemUpdate",
+                "IndexSizeMB",
+                "RowCount",
+                "CompressionDescription"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name | Where-Object { $PSItem -notin "RowError", "RowState", "ItemArray", "HasErrors" }
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
