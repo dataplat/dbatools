@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
+            $null = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Exports results to one sql file" {
@@ -130,6 +130,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "should include GRANT VIEW ANY DATABASE" {
             $results -match "GRANT VIEW ANY DATABASE TO \[$svRole\];" | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
