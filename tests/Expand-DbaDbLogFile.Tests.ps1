@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Ensure command functionality" {
         BeforeAll {
-            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -TargetLogSize 128
+            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -TargetLogSize 128 -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have correct properties" {
@@ -72,6 +72,58 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.InitialSize -gt $result.CurrentSize
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "ID",
+                "Name",
+                "LogFileCount",
+                "InitialSize",
+                "CurrentSize",
+                "InitialVLFCount",
+                "CurrentVLFCount"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "ID",
+                "Name",
+                "InitialSize",
+                "CurrentSize",
+                "InitialVLFCount",
+                "CurrentVLFCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
