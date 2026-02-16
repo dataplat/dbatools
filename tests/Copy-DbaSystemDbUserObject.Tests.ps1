@@ -80,7 +80,7 @@ AS
 
     Context "When copying objects to the same instance" {
         It "Should execute successfully with default parameters" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
         }
 
@@ -92,6 +92,39 @@ AS
         It "Should execute successfully with -Force parameter" {
             $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Force
             $results | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
