@@ -66,7 +66,7 @@ DROP LOGIN [$DBUserName2];
     Context "Users are correctly located" {
         BeforeAll {
             $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -eq $DBUserName | Select-Object *
-            $results2 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle
+            $results2 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
 
             $resultsByUser = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database master -User $DBUserName2
             $resultsByMultipleUser = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -User $DBUserName, $DBUserName2
@@ -122,6 +122,41 @@ DROP LOGIN [$DBUserName2];
         It "Should return two specific users for the given logins" {
             $resultsByMultipleLogin.Name | Should -Be $dbUserName, $dbUserName2
             $resultsByMultipleLogin.Database | Should -Be "master", "master"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.User]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "Login",
+                "LoginType",
+                "AuthenticationType",
+                "State",
+                "HasDbAccess",
+                "DefaultSchema"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.User"
         }
     }
 }
