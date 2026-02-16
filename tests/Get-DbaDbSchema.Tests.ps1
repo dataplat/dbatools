@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "get a schema by name from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema $schemaName -OutVariable "global:dbatoolsciOutput"
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be $schemaName
             $schemas.DatabaseName | Should -Be $newDbName
@@ -157,6 +157,33 @@ Describe $CommandName -Tag IntegrationTests {
 
             $schemas = Get-DbaDbSchema -SqlInstance $server2 -Database $newDbName -Schema $schemaName2
             $schemas | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Schema]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "IsSystemObject"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Schema"
         }
     }
 }
