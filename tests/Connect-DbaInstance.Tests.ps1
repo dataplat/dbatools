@@ -114,7 +114,7 @@ Describe $CommandName -Tag IntegrationTests {
                 StatementTimeout         = 0
                 ApplicationIntent        = "ReadOnly"
             }
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 @params
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 @params -OutVariable "global:dbatoolsciOutput"
         }
 
         It "returns the proper name" {
@@ -292,6 +292,36 @@ Describe $CommandName -Tag IntegrationTests {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Server]
+        }
+
+        It "Should have the dbatools-specific NoteProperties" {
+            $expectedNoteProperties = @(
+                "ComputerName",
+                "IsAzure",
+                "DbaInstanceName",
+                "SqlInstance",
+                "NetPort",
+                "ConnectedAs"
+            )
+            $noteProperties = $global:dbatoolsciOutput[0].PSObject.Properties | Where-Object MemberType -eq "NoteProperty" | Select-Object -ExpandProperty Name
+            $expectedNoteProperties | ForEach-Object {
+                $noteProperties | Should -Contain $PSItem
+            }
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Server"
         }
     }
 }
