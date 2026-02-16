@@ -29,7 +29,22 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Returns proper information" {
         It "Returns a bias that's an int" {
-            (Get-DbaCmObject -ClassName Win32_TimeZone).Bias | Should -BeOfType [int]
+            (Get-DbaCmObject -ClassName Win32_TimeZone -OutVariable "global:dbatoolsciOutput").Bias | Should -BeOfType [int]
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a CimInstance or ManagementObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.Management.Infrastructure.CimInstance]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "ManagementObject|CimInstance"
         }
     }
 }
