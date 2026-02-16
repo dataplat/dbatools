@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests -Skip {
 
     It "returns more than one database" {
         $null = Invoke-DbaDbMirroring -Primary $TestConfig.InstanceMulti1 -Mirror $TestConfig.InstanceMulti2 -Database $db1, $db2 -Force -SharedPath $TestConfig.Temp -WarningAction Continue
-        @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti2).Count | Should -Be 2
+        @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti2 -OutVariable "global:dbatoolsciOutput").Count | Should -Be 2
     }
 
 
@@ -71,5 +71,43 @@ Describe $CommandName -Tag IntegrationTests -Skip {
 
     It "returns 2x1 database" {
         @(Get-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $db2).Count | Should -Be 2
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "MirroringSafetyLevel",
+                "MirroringStatus",
+                "MirroringPartner",
+                "MirroringPartnerInstance",
+                "MirroringFailoverLogSequenceNumber",
+                "MirroringID",
+                "MirroringRedoQueueMaxSize",
+                "MirroringRoleSequence",
+                "MirroringSafetySequence",
+                "MirroringTimeout",
+                "MirroringWitness",
+                "MirroringWitnessStatus"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
+        }
     }
 }
