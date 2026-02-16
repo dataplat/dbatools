@@ -27,9 +27,11 @@ function Restore-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the location of backup files to restore from, supporting local drives, UNC paths, or Azure blob storage URLs.
+        Specifies the location of backup files to restore from, supporting local drives, UNC paths, Azure blob storage URLs, or S3 URLs.
         Use this when you need to restore from a specific backup location or when piping backup files from Get-ChildItem.
         Accepts multiple comma-separated paths for complex restore scenarios spanning multiple locations.
+
+        For S3 storage (SQL Server 2022+): S3 bucket contents cannot be enumerated using T-SQL. You must provide explicit file paths or use PowerShell's Get-S3Object cmdlet (from AWS.Tools.S3 module) to retrieve the list of backup files first, then pass them to this command. See examples for S3 usage patterns.
 
     .PARAMETER DatabaseName
         Defines the target database name for the restored database when different from the original name.
@@ -164,7 +166,7 @@ function Restore-DbaDatabase {
         Use this for log shipping secondary servers or when you need read-only access during restore operations.
         The directory must exist and be writable by the SQL Server service account for undo file creation.
 
-    .PARAMETER StorageCredential
+.PARAMETER StorageCredential
         Specifies the SQL Server credential name for authenticating to Azure blob storage or S3-compatible object storage during restore operations.
         Use this when restoring from Azure blob storage or S3 backups that require authentication.
         For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
@@ -329,7 +331,7 @@ function Restore-DbaDatabase {
         c:\DataFiles and all the log files into c:\LogFiles
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -StorageCredential MyAzureCredential
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential
 
         Will restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\instance1. The connection to Azure will be made using the
         credential MyAzureCredential held on instance Server1\instance1
@@ -344,7 +346,7 @@ function Restore-DbaDatabase {
 
         Will restore the backup from S3-compatible storage to sql2022. Requires SQL Server 2022 or higher. The credential must be configured with Identity = 'S3 Access Key' and Secret containing the access key and secret key.
 
-    .EXAMPLE
+        .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
@@ -429,6 +431,18 @@ function Restore-DbaDatabase {
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
         Note that Date time needs to be specified in your local SQL Server culture
+
+    .EXAMPLE
+        PS C:\> # Restore from S3 storage folder (SQL Server 2022+)
+        PS C:\> # First, enumerate S3 bucket contents using AWS PowerShell module - You need to be authenticated!
+        PS C:\> $s3Files = Get-S3Object -BucketName "mybucket" -KeyPrefix "backups/AdventureWorks/" -Region "us-west-2"
+        PS C:\> $backupPaths = $s3Files | Where-Object { $_.Key -match '\.(bak|trn|dif)$' } | ForEach-Object { "s3://mybucket.s3.us-west-2.amazonaws.com/$($_.Key)" }
+        PS C:\>
+        PS C:\> # Then restore using the enumerated file paths
+        PS C:\> Restore-DbaDatabase -SqlInstance sql2022 -Path $backupPaths -StorageCredential MyS3Credential
+
+        Demonstrates the recommended workflow for restoring from S3 storage. Since SQL Server cannot enumerate S3 bucket contents via T-SQL, you must first use PowerShell's Get-S3Object cmdlet to list backup files, then pass the full S3 URLs to Restore-DbaDatabase.
+        The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]

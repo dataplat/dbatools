@@ -544,9 +544,8 @@ function Install-DbaMaintenanceSolution {
                         Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
                         $sql = $fileContents[$file]
                         try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Invoke($query)
-                            }
+                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
                         } catch {
                             $result = "Failed"
                             Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
@@ -807,7 +806,7 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            if ($query) {
+            if ($sql) {
                 # then whatif wasn't passed
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName

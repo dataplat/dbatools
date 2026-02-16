@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 1, 2026
+-- Last Modified: February 2, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -41,7 +41,7 @@
 --******************************************************************************
 
 -- Check the major product version to see if it is SQL Server 2016 SP2 or greater
-IF EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '13%')
+IF EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajorVersion')) LIKE '13%')
 	BEGIN
 		IF CONVERT(int, SERVERPROPERTY('ProductBuild')) >= 5026
 			PRINT N'You have the correct Service Pack of SQL Server 2016 for this diagnostic information script';

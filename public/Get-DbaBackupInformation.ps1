@@ -262,8 +262,9 @@ function Get-DbaBackupInformation {
         } else {
             $Files = @()
             $groupResults = @()
+
             # Detect cloud storage URLs (Azure http:// or S3 s3://)
-            if ($Path[0] -match 'http' -or $Path[0] -match 's3') { $NoXpDirTree = $true }
+            if ($Path[0] -match '^https?://' -or $Path[0] -match '^s3://') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
