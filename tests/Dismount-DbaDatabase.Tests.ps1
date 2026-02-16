@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When detaching a single database" {
         BeforeAll {
-            $results = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Force
+            $results = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Force -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should complete successfully" {
@@ -111,6 +111,34 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
             $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbDetached
             $result | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "DetachResult"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
