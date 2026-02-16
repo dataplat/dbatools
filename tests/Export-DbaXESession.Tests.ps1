@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
+            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Exports results to one sql file" {
@@ -105,6 +105,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
