@@ -33,7 +33,7 @@ function Get-DbaInstanceTrigger {
         https://dbatools.io/Get-DbaInstanceTrigger
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Trigger
+        Microsoft.SqlServer.Management.Smo.ServerDdlTrigger
 
         Returns one Trigger object per server-level DDL trigger on the specified instance(s).
 
