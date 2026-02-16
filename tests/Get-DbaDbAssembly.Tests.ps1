@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting database assemblies" {
         BeforeAll {
-            $assemblyResults = Get-DbaDbAssembly -SqlInstance $TestConfig.InstanceSingle | Where-Object { $PSItem.parent.name -eq "master" }
+            $assemblyResults = Get-DbaDbAssembly -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object { $PSItem.parent.name -eq "master" }
             $masterDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
@@ -44,6 +44,39 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Has a version matching the instance" {
             $assemblyResults.Version | Should -BeExactly $masterDatabase.assemblies.Version
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.SqlAssembly]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ID",
+                "Name",
+                "Owner",
+                "SecurityLevel",
+                "CreateDate",
+                "IsSystemObject",
+                "Version"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo"
         }
     }
 }
