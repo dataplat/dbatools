@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Pattern Master
+            $results = Find-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Pattern Master -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should return correct properties" {
@@ -75,6 +75,41 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return true if Database Found via Property Filter" {
             $results.ServiceBrokerGuid | Should -BeLike "*-0000-0000-000000000000"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Id",
+                "Size",
+                "Owner",
+                "CreateDate",
+                "ServiceBrokerGuid",
+                "Tables",
+                "StoredProcedures",
+                "Views",
+                "ExtendedProperties"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
