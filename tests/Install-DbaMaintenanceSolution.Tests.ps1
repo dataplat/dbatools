@@ -925,7 +925,7 @@ Describe $CommandName -Tag IntegrationTests {
             $splatConfigure = @{
                 SqlInstance     = $TestConfig.InstanceMulti2
                 ConfigName      = 'BackupChecksumDefault'
-                Value           = 1
+                Value           = 0
                 WarningAction   = 'SilentlyContinue'
                 EnableException = $false
             }
