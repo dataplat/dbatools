@@ -77,13 +77,49 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         It "should get an encryption key on a database using piping" {
-            $encryptionKeyResults = $testDb | Get-DbaDbEncryptionKey
+            $encryptionKeyResults = $testDb | Get-DbaDbEncryptionKey -OutVariable "global:dbatoolsciOutput"
             $encryptionKeyResults.EncryptionType | Should -Be "ServerCertificate"
         }
 
         It "should get an encryption key on a database" {
             $encryptionKeyResults = Get-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $encryptionKeyResults.EncryptionType | Should -Be "ServerCertificate"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "EncryptionAlgorithm",
+                "EncryptionState",
+                "EncryptionType",
+                "EncryptorName",
+                "ModifyDate",
+                "OpenedDate",
+                "RegenerateDate",
+                "SetDate",
+                "Thumbprint"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.DatabaseEncryptionKey"
         }
     }
 }
