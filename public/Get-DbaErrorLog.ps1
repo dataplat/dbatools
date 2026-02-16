@@ -57,9 +57,9 @@ function Get-DbaErrorLog {
         https://dbatools.io/Get-DbaErrorLog
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.LogFileEntry
+        System.Data.DataRow
 
-        Returns one LogFileEntry object per error log entry found. If multiple log numbers are specified, all entries from all requested log files are returned. Entries are processed in reverse log order (newest logs first) to prioritize recent activity.
+        Returns one DataRow object per error log entry found. If multiple log numbers are specified, all entries from all requested log files are returned. Entries are processed in reverse log order (newest logs first) to prioritize recent activity.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance

@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Has the correct default properties" {
             $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "LogDate", "Source", "Text"
-            $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0
+            $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 0 -OutVariable "global:dbatoolsciOutput"
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
         }
 
@@ -121,6 +121,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns filtered result for [LogNumber = 1] and [Before = $beforeFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceSingle -LogNumber 1 -Before $beforeFilter
             { $results[-1].LogDate -le $beforeFilter } | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogDate",
+                "Source",
+                "Text"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
