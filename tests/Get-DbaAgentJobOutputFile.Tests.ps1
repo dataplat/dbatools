@@ -123,3 +123,81 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $jobName = "dbatoolsci_outputfile_$(Get-Random)"
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+        $splatJobStep = @{
+            SqlInstance    = $TestConfig.InstanceSingle
+            Job            = $jobName
+            StepName       = "Step 1"
+            Subsystem      = "TransactSql"
+            Command        = "SELECT 1"
+            OutputFileName = "dbatoolsci_output.txt"
+        }
+        $null = New-DbaAgentJobStep @splatJobStep
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Confirm:$false -ErrorAction SilentlyContinue
+    }
+
+    Context "When getting output files" {
+        It "Should return output file info for the test job" {
+            $results = Get-DbaAgentJobOutputFile -SqlInstance $TestConfig.InstanceSingle -Job $jobName -OutVariable "global:dbatoolsciOutput"
+            $results | Should -Not -BeNullOrEmpty
+            $results.Job | Should -Be $jobName
+            $results.OutputFileName | Should -Be "dbatoolsci_output.txt"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Job",
+                "JobStep",
+                "OutputFileName",
+                "RemoteOutputFileName",
+                "StepId"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Job",
+                "JobStep",
+                "OutputFileName",
+                "RemoteOutputFileName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
