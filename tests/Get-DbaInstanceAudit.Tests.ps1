@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -Be $null
         }
 
@@ -70,6 +70,41 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit LoginAudit
             $results.Name | Should -Be "LoginAudit"
             $results.Enabled | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Audit]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "IsEnabled",
+                "OnFailure",
+                "MaximumFiles",
+                "MaximumFileSize",
+                "MaximumFileSizeUnit",
+                "MaximumRolloverFiles",
+                "QueueDelay",
+                "ReserveDiskSpace",
+                "FullName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Audit"
         }
     }
 }
