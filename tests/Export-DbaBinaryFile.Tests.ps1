@@ -96,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = "tempdb"
                 Path        = $exportPath
             }
-            $results = Export-DbaBinaryFile @splatExport
+            $results = Export-DbaBinaryFile @splatExport -OutVariable "global:dbatoolsciOutput"
 
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
@@ -107,6 +107,21 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results.Name.Count | Should -BeExactly 3
             $results.Name | Should -Be @("adalsql.msi", "localhost.crt", "localhost.pfx")
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
