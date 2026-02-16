@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Successfully gets job when using Job param" {
-            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+            $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobName -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Contain "dbatoolsci_jobstep1"
         }
 
@@ -55,6 +55,37 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Disabled
             $results = Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -ExcludeDisabledJobs
             $results.Name | Should -Not -Contain "dbatoolsci_jobstep1"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobStep]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AgentJob",
+                "Name",
+                "SubSystem",
+                "LastRunDate",
+                "LastRunOutcome",
+                "State"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobStep"
         }
     }
 }
