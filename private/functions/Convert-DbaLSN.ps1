@@ -11,6 +11,9 @@ function Convert-DbaLSN {
     .PARAMETER LSN
         The LSN value to be converted
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
     .EXAMPLE
         PS C:\ $output = Convert-DbaLSN -LSN 0000002f:000044aa:002b
 

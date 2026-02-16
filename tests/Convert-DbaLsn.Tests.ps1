@@ -21,7 +21,7 @@ Describe $CommandName -Tag UnitTests {
     Context "Converts Numeric LSN to Hex" {
         BeforeAll {
             $numericLSN = "00000000020000000024300001"
-            $convertResults = Convert-DbaLSN -LSN $numericLSN
+            $convertResults = Convert-DbaLSN -LSN $numericLSN -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should convert to 00000014:000000f3:0001" {
@@ -48,6 +48,30 @@ Describe $CommandName -Tag UnitTests {
 
         It "Should convert to 20000000024300001" {
             $hexResults.Numeric | Should -Be 20000000024300001
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Hexadecimal",
+                "Numeric"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
