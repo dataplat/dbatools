@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "should create an xml file" {
-        $results = $newServer | Export-DbaRegServer
+        $results = $newServer | Export-DbaRegServer -OutVariable "global:dbatoolsciOutput"
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.Extension -eq ".xml" | Should -Be $true
     }
@@ -174,5 +174,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         $fileText | Should -Match $group
         $fileText | Should -Not -Match $group2
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
+        }
     }
 }
