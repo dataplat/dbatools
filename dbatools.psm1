@@ -1175,8 +1175,8 @@ if (Test-Path -Path Variable:global:psISE) {
 }
 Write-ImportTime -Text "Checking for some ISE stuff"
 
-# Create collection for servers
-$script:connectionhash = @{ }
+# Create collection for servers - uses the C# static dictionary for cross-language access
+$script:connectionhash = [Dataplat.Dbatools.Connection.ConnectionHost]::ConnectionHash
 
 
 if (Get-DbatoolsConfigValue -FullName Import.EncryptionMessageCheck) {

@@ -721,7 +721,6 @@
         'Set-DbaExtendedProperty',
         'Add-DbaExtendedProperty',
         'Get-DbaOleDbProvider',
-        'Get-DbaConnectedInstance',
         'Disconnect-DbaInstance',
         'Set-DbaDefaultPath',
         'Remove-DbaDbUdf',
@@ -759,7 +758,8 @@
     # Cmdlets to export from this module
     CmdletsToExport    = @(
         'Select-DbaObject',
-        'Set-DbatoolsConfig'
+        'Set-DbatoolsConfig',
+        'Get-DbaConnectedInstance'
     )
 
     # Variables to export from this module
