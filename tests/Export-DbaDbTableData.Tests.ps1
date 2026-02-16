@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "exports the table data" {
             $escaped = [regex]::escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)")
             $secondescaped = [regex]::escape("INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],")
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru -OutVariable "global:dbatoolsciOutput"
             "$results" | Should -Match $escaped
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $secondescaped
@@ -75,6 +75,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
             "$results" | Should -Match $escaped
             "$results" | Should -Match $secondescaped
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.String|System\.IO\.FileInfo"
         }
     }
 }
