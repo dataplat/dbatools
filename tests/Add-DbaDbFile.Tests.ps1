@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = $dbName
                 FileGroup   = $fgName
             }
-            $result = Add-DbaDbFile @splatAddFile
+            $result = Add-DbaDbFile @splatAddFile -OutVariable "global:dbatoolsciOutput"
             $result.Name | Should -Not -BeNullOrEmpty
             $result.Parent.Name | Should -Be $fgName
         }
@@ -141,6 +141,21 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaDatabase @splatGetDb | Add-DbaDbFile -FileGroup $fgName -FileName "pipelinefile_$random"
             $result.Name | Should -Be "pipelinefile_$random"
             $result.Parent.Name | Should -Be $fgName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DataFile]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.DataFile"
         }
     }
 }
