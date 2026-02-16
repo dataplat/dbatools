@@ -170,7 +170,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if one output file per user was created" {
         BeforeAll {
-            $null = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $outputPath
+            $null = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $outputPath -OutVariable "global:dbatoolsciOutput"
             $exportedFiles = @(Get-ChildItem $outputPath)
             $userCount = @(Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Where-Object { $PSItem.Name -notin @("dbo", "guest", "sys", "INFORMATION_SCHEMA") }).Count
         }
@@ -214,6 +214,21 @@ Describe $CommandName -Tag IntegrationTests {
                 $content | Should -BeLike "*ALTER ROLE [[]$role03] ADD MEMBER [[]$user02]*"
                 $content | Should -Not -BeLike "*ALTER ROLE [[]$role01]*"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }

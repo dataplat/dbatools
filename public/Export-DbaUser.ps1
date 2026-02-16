@@ -159,7 +159,7 @@ function Export-DbaUser {
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    [OutputType([String])]
+    [OutputType([String], [System.IO.FileInfo])]
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
