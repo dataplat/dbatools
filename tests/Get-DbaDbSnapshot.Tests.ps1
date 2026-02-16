@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Gets all snapshots by default" {
-            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             ($results | Where-Object Name -Like "dbatoolsci_GetSnap*").Count | Should -Be 3
         }
 
@@ -97,6 +97,35 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2
             $ExpectedPropsDefault = "ComputerName", "CreateDate", "InstanceName", "Name", "SnapshotOf", "SqlInstance", "DiskUsage"
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "SnapshotOf",
+                "CreateDate",
+                "DiskUsage"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
         }
     }
 }
