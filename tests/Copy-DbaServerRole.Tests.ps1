@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination = $TestConfig.InstanceCopy2
                 ServerRole  = $testRoleName
             }
-            $copyResults = Copy-DbaServerRole @splatCopyRole
+            $copyResults = Copy-DbaServerRole @splatCopyRole -OutVariable "global:dbatoolsciOutput"
             $copyResults.Name | Should -Be $testRoleName
             $copyResults.Status | Should -Be "Successful"
         }
@@ -103,6 +103,39 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $roleResults = Get-DbaServerRole @splatGetRole
             $roleResults.Name | Should -Contain $testRoleName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
