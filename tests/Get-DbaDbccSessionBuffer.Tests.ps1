@@ -62,8 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
                 "Buffer",
                 "HexBuffer"
             )
-            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All
-            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All
+            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All -OutVariable "global:dbatoolsciOutputInputBuffer"
+            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All -OutVariable "global:dbatoolsciOutputOutputBuffer"
         }
 
         It "Returns results for InputBuffer" {
@@ -96,6 +96,65 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns results for OutputBuffer with correct SessionId" {
             $resultOutputBuffer.SessionId | Should -Be $spid
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutputInputBuffer = $null
+            $global:dbatoolsciOutputOutputBuffer = $null
+        }
+
+        It "Should return a PSCustomObject for InputBuffer" {
+            $global:dbatoolsciOutputInputBuffer[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should return a PSCustomObject for OutputBuffer" {
+            $global:dbatoolsciOutputOutputBuffer[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties for InputBuffer" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SessionId",
+                "EventType",
+                "Parameters",
+                "EventInfo"
+            )
+            $actualProperties = $global:dbatoolsciOutputInputBuffer[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the expected properties for OutputBuffer" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SessionId",
+                "Buffer",
+                "HexBuffer"
+            )
+            $actualProperties = $global:dbatoolsciOutputOutputBuffer[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns for OutputBuffer" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SessionId",
+                "Buffer"
+            )
+            $defaultColumns = $global:dbatoolsciOutputOutputBuffer[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
