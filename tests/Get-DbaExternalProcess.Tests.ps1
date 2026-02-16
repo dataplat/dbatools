@@ -77,11 +77,55 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can get an external process" {
         It "returns a process" {
             Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
+            $results = Get-DbaExternalProcess -ComputerName $computerName -OutVariable "global:dbatoolsciOutput" | Where-Object Name -eq "cmd.exe"
             Start-Sleep -Seconds 5
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "Credential",
+                "ProcessId",
+                "Name",
+                "HandleCount",
+                "WorkingSetSize",
+                "VirtualSize",
+                "CimObject"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "ProcessId",
+                "Name",
+                "HandleCount",
+                "WorkingSetSize",
+                "VirtualSize",
+                "CimObject"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
