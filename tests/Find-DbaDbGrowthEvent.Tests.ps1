@@ -67,7 +67,7 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
         }
 
         It "Should find auto growth events in the default trace" {
-            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName1 -EventType Growth
+            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName1 -EventType Growth -OutVariable "global:dbatoolsciOutput"
             @($results | Where-Object EventClass -in 92, 93).Count | Should -BeGreaterThan 0
             $results.DatabaseName | Select-Object -Unique | Should -Be $databaseName1
             $results.DatabaseId | Select-Object -Unique | Should -Be $db1.ID
@@ -83,5 +83,62 @@ DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
             $results.DatabaseId | Select-Object -Unique | Should -Be $db1.ID
         }
         #>
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "OrderRank",
+                "EventClass",
+                "DatabaseName",
+                "DatabaseId",
+                "Filename",
+                "Duration",
+                "StartTime",
+                "EndTime",
+                "ChangeInSize",
+                "ApplicationName",
+                "HostName",
+                "SessionLoginName",
+                "SPID"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].Table.Columns.ColumnName
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "EventClass",
+                "DatabaseName",
+                "Filename",
+                "Duration",
+                "StartTime",
+                "EndTime",
+                "ChangeInSize",
+                "ApplicationName",
+                "HostName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
