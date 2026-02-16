@@ -392,3 +392,53 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Returns job history" {
+        BeforeAll {
+            $results = @(Get-DbaAgentJobHistory -SqlInstance $TestConfig.instance2 -OutVariable "global:dbatoolsciOutput")
+        }
+
+        It "Should return results from instance with job history" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct base type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.AgentJobHistory"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Job",
+                "StepName",
+                "RunDate",
+                "StartDate",
+                "EndDate",
+                "Duration",
+                "Status",
+                "OperatorEmailed",
+                "Message"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
+        }
+    }
+}

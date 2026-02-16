@@ -71,9 +71,9 @@ function Get-DbaAgentJobHistory {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Agent.JobExecutionHistory
+        System.Data.DataRow
 
-        Returns one execution history record per job execution, with calculated fields added for easier interpretation. Each record represents either a job-level summary (StepID = 0) or individual step execution within a job.
+        Returns one execution history record per job execution (from EnumJobHistory()), with calculated fields added for easier interpretation. Each record represents either a job-level summary (StepID = 0) or individual step execution within a job. Objects are decorated with a custom type name of dbatools.AgentJobHistory.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
@@ -93,7 +93,7 @@ function Get-DbaAgentJobHistory {
         - OutputFileName: Resolved output file path with SQL Agent token placeholders replaced
         - RemoteOutputFileName: UNC path to the output file on the remote server
 
-        All additional SMO JobExecutionHistory properties are accessible (not displayed by default):
+        All additional DataRow properties are accessible (not displayed by default):
         - JobID: Unique identifier for the job
         - StepID: Step number (0 = job level, >0 = step level)
         - Retries: Number of retries for this execution
