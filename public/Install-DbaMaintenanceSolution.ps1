@@ -102,7 +102,7 @@ function Install-DbaMaintenanceSolution {
         Only applies when InstallJobs is specified.
 
     .PARAMETER ModificationLevel
-        Specifies minimum modification percentage required before ChangeBackupType converts a differential or log backup to full backup.
+        Specifies minimum modification percentage required before ChangeBackupType converts a differential backup to full backup.
         Valid range: 0-100. Use this with ChangeBackupType to control when backup type changes occur based on data modification levels.
         Only applies when InstallJobs is specified.
 
@@ -761,7 +761,7 @@ function Install-DbaMaintenanceSolution {
                         }
 
                         # Add ModificationLevel parameter for jobs with ChangeBackupType
-                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF|LOG")) {
+                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF")) {
                             if ($modifiedCommand -notmatch "@ModificationLevel") {
                                 $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ModificationLevel = $ModificationLevel"
                             }
