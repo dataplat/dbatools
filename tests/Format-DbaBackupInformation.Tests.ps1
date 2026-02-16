@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Rename a Database" {
         BeforeAll {
             $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-            $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester'
+            $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester' -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have a database name of Pester" {
@@ -208,6 +208,56 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should not have moved all backup files to c:\backups" {
             ($output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object { $_ -eq 'c:\backups' }).count | Should -Be $history.count
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Start",
+                "End",
+                "Duration",
+                "Path",
+                "TotalSize",
+                "Type",
+                "BackupSetId",
+                "DeviceType",
+                "Software",
+                "FullName",
+                "FileList",
+                "Position",
+                "FirstLsn",
+                "DatabaseBackupLsn",
+                "CheckpointLsn",
+                "LastLsn",
+                "SoftwareVersionMajor",
+                "IsCopyOnly",
+                "LastRecoveryForkGUID",
+                "UserName",
+                "OriginalDatabase",
+                "OriginalFileList",
+                "OriginalFullName",
+                "IsVerified"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
         }
     }
 }
