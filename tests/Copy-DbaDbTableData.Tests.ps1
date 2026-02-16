@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying table data within same instance" {
         It "copies the table data" {
-            $results = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+            $results = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2 -OutVariable "global:dbatoolsciOutput"
             $table1count = $sourceDb.Query("select id from dbo.dbatoolsci_example")
             $table2count = $sourceDb.Query("select id from dbo.dbatoolsci_example2")
             $table1count.Count | Should -Be $table2count.Count
@@ -252,6 +252,40 @@ Describe $CommandName -Tag IntegrationTests {
                 $sourceData[$i].id | Should -Be $destData[$i].id
                 $sourceData[$i].data_hash | Should -Be $destData[$i].data_hash
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
