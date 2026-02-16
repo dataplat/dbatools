@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Create new key in GetAsKey called test4" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyName -Database $databaseName
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyName -Database $databaseName -OutVariable "global:dbatoolsciOutput"
             $results.Database | Should -Be $databaseName
             $results.DatabaseId | Should -Be $newDatabase.ID
             $results.Name | Should -Be $keyName
@@ -107,6 +107,38 @@ Describe $CommandName -Tag IntegrationTests {
             $multiResults | Should -HaveCount 2
             $multiResults.Name | Should -Contain $keyName
             $multiResults.Name | Should -Contain $keyName2
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AsymmetricKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Owner",
+                "KeyEncryptionAlgorithm",
+                "KeyLength",
+                "PrivateKeyEncryptionType",
+                "Thumbprint"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AsymmetricKey"
         }
     }
 }
