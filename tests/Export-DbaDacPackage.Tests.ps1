@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
     # See https://github.com/dataplat/dbatools/issues/7038
     Context "Ensure the database name is part of the generated filename" {
         It "Database name is included in the output filename" {
-            $result = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $testFolder
+            $result = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Path $testFolder -OutVariable "global:dbatoolsciOutput"
             $result.Path | Should -BeLike "*$($dbName)*"
         }
 
@@ -213,6 +213,47 @@ Describe $CommandName -Tag IntegrationTests {
             if (($results).Path) {
                 Remove-Item -Path ($results).Path -ErrorAction SilentlyContinue
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Path",
+                "Elapsed",
+                "Result"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "SqlInstance",
+                "Database",
+                "Path",
+                "Elapsed",
+                "Result"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
