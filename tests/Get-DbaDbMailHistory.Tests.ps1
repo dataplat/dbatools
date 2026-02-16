@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail History" {
         BeforeAll {
-            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle | Where-Object { $PSItem.Subject -eq "Test Job" }
+            $results = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object { $PSItem.Subject -eq "Test Job" }
         }
 
         It "Gets results" {
@@ -141,6 +141,87 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have a SendRequestDate greater than 2018-01-01" {
             $results.SendRequestDate | Should -BeGreaterThan "2018-01-01"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MailItemId",
+                "ProfileId",
+                "Profile",
+                "Recipients",
+                "CopyRecipients",
+                "BlindCopyRecipients",
+                "Subject",
+                "Body",
+                "BodyFormat",
+                "Importance",
+                "Sensitivity",
+                "FileAttachments",
+                "AttachmentEncoding",
+                "Query",
+                "ExecuteQueryDatabase",
+                "AttachQueryResultAsFile",
+                "QueryResultHeader",
+                "QueryResultWidth",
+                "QueryResultSeparator",
+                "ExcludeQueryOutput",
+                "AppendQueryError",
+                "SendRequestDate",
+                "SendRequestUser",
+                "SentAccountId",
+                "SentStatus",
+                "SentDate",
+                "LastModDate",
+                "LastModUser",
+                "RowError",
+                "RowState",
+                "Table",
+                "ItemArray",
+                "HasErrors"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Profile",
+                "Recipients",
+                "CopyRecipients",
+                "BlindCopyRecipients",
+                "Subject",
+                "Importance",
+                "Sensitivity",
+                "FileAttachments",
+                "AttachmentEncoding",
+                "SendRequestDate",
+                "SendRequestUser",
+                "SentStatus",
+                "SentDate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
