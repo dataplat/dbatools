@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns only check constraints from selected DB with -Database" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
+            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -OutVariable "global:dbatoolsciOutput"
             $results | Where-Object { $PSItem.Database -ne "master" } | Should -HaveCount 1
             $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName).Id
         }
@@ -75,6 +75,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should exclude system tables" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database master -ExcludeSystemTable
             $results | Where-Object Name -eq "spt_fallback_db" | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Check]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Parent",
+                "ID",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "IsEnabled",
+                "IsChecked",
+                "NotForReplication",
+                "Text",
+                "State"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Check"
         }
     }
 }
