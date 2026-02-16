@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should export all credentials" {
         BeforeAll {
-            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle
+            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $exportResults = Get-Content -Path $exportFile -Raw
         }
 
@@ -184,6 +184,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not have the password" {
             $excludePasswordResults | Should -Not -Match "ReallyT3rrible!"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
