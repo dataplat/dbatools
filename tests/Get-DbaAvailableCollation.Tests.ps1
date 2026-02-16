@@ -23,8 +23,39 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Available Collations" {
         It "finds a collation that matches Slovenian" {
-            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaAvailableCollation -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             ($results.Name -match "Slovenian").Count | Should -BeGreaterThan 10
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "CodePage",
+                "CodePageName",
+                "LocaleID",
+                "LocaleName",
+                "Description"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }

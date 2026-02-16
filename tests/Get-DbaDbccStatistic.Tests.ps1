@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "UnfilteredRows",
                 "PersistedSamplePercent"
             )
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatHeader
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatHeader -OutVariable "global:dbatoolsciOutput"
         }
 
         It "returns correct results" {
@@ -193,6 +193,46 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns results" {
             $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Object $tableName2 -Target "TestStat2" -Option DensityVector
             $result.Count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties for StatHeader" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Target",
+                "Cmd",
+                "Name",
+                "Updated",
+                "Rows",
+                "RowsSampled",
+                "Steps",
+                "Density",
+                "AverageKeyLength",
+                "StringIndex",
+                "FilterExpression",
+                "UnfilteredRows",
+                "PersistedSamplePercent"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

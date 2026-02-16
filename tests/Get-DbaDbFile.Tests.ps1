@@ -34,7 +34,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
         It "Returns information about tempdb files" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Database -contains "tempdb" | Should -Be $true
         }
     }
@@ -78,6 +78,61 @@ Describe $CommandName -Tag IntegrationTests {
             $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $results = $tempDB | Get-DbaDbFile
             $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseID",
+                "FileGroupName",
+                "ID",
+                "Type",
+                "TypeDescription",
+                "LogicalName",
+                "PhysicalName",
+                "State",
+                "MaxSize",
+                "Growth",
+                "GrowthType",
+                "NextGrowthEventSize",
+                "Size",
+                "UsedSpace",
+                "AvailableSpace",
+                "IsOffline",
+                "IsReadOnly",
+                "IsReadOnlyMedia",
+                "IsSparse",
+                "NumberOfDiskWrites",
+                "NumberOfDiskReads",
+                "ReadFromDisk",
+                "WrittenToDisk",
+                "VolumeFreeSpace",
+                "FileGroupDataSpaceId",
+                "FileGroupType",
+                "FileGroupTypeDescription",
+                "FileGroupDefault",
+                "FileGroupReadOnly"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get credentials" {
         It "Should get just one credential with the proper properties when using Identity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thorsmomma" -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "thorsmomma"
             $results.Identity | Should -Be "thorsmomma"
         }
@@ -95,6 +95,36 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Get-DbaCredential @splatMultipleCreds
             $results.Count | Should -BeGreaterThan 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Credential]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "Identity",
+                "MappedClassType",
+                "ProviderName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Credential"
         }
     }
 }

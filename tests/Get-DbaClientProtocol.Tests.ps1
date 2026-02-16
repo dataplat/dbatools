@@ -25,9 +25,32 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $env:appveyor) {
 
     Context "Get some client protocols" {
         It "Should return some protocols" {
-            $results = @(Get-DbaClientProtocol)
+            $results = @(Get-DbaClientProtocol -OutVariable "global:dbatoolsciOutput")
             $results.Status.Count | Should -BeGreaterThan 1
             $results | Where-Object ProtocolDisplayName -eq "TCP/IP" | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "DisplayName",
+                "DLL",
+                "Order",
+                "IsEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "ClientNetworkProtocol"
         }
     }
 }

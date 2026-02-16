@@ -52,4 +52,48 @@ Describe $CommandName -Tag IntegrationTests {
             ($results.Name -match "dbatoolsci").Count -gt 0 | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatEncryption = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                Database         = "master"
+                EnableException  = $true
+            }
+            $global:dbatoolsciOutput = @(Get-DbaDbEncryption @splatEncryption)
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Encryption",
+                "Name",
+                "LastBackup",
+                "PrivateKeyEncryptionType",
+                "EncryptionAlgorithm",
+                "KeyLength",
+                "Owner",
+                "Object",
+                "ExpirationDate"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }

@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets compatibility for multiple databases" {
         BeforeAll {
-            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Gets results" {
@@ -62,6 +62,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Compatibility | Should -Be $compatibilityLevel
             $masterDbId = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).Id
             $results.DatabaseId | Should -Be $masterDbId
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Compatibility"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

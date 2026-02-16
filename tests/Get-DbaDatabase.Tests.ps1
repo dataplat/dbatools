@@ -39,7 +39,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Count system databases on localhost" {
         It "reports the right number of databases" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser -OutVariable "global:dbatoolsciOutput"
             $results.Count | Should -Be 4
         }
     }
@@ -126,6 +126,44 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return no results for non-matching pattern" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^nonexistent_"
             $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsAccessible",
+                "RecoveryModel",
+                "LogReuseWaitStatus",
+                "SizeMB",
+                "Compatibility",
+                "Collation",
+                "Owner",
+                "Encrypted",
+                "LastFullBackup",
+                "LastDiffBackup",
+                "LastLogBackup"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
         }
     }
 }
