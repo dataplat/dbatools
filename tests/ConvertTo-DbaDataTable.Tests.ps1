@@ -46,7 +46,7 @@ Describe $CommandName -Tag UnitTests, "DataTableOutput" {
         }
 
         Add-Member -Force -InputObject $obj -MemberType NoteProperty -Name myObject -Value $innedobj
-        $result = ConvertTo-DbaDataTable -InputObject $obj
+        $result = ConvertTo-DbaDataTable -InputObject $obj -OutVariable "global:dbatoolsciOutput"
 
         $firstRow = $result[0].Rows[0]
     }
@@ -195,6 +195,42 @@ Describe $CommandName -Tag UnitTests, "DataTableOutput" {
         It "Has the following dbadatetimeArray converted to strings: 2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000" {
             $string = "2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000"
             $firstRow.dbadatetimeArray -eq $string | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0].GetType().FullName | Should -Be "System.Data.DataTable"
+        }
+
+        It "Should have columns matching input object properties" {
+            $expectedColumns = @(
+                "char",
+                "datetime",
+                "dbadatetime",
+                "dbadatetimeArray",
+                "false",
+                "guid",
+                "inlining",
+                "inlining2",
+                "myObject",
+                "null",
+                "string",
+                "timespan",
+                "true",
+                "UInt64"
+            )
+            $actualColumns = $global:dbatoolsciOutput[0].Columns.ColumnName | Sort-Object
+            Compare-Object -ReferenceObject ($expectedColumns | Sort-Object) -DifferenceObject $actualColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataTable"
         }
     }
 }
