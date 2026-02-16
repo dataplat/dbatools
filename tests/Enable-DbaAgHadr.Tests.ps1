@@ -42,8 +42,34 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling HADR" {
         It "Successfully enables HADR" {
-            $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
+            $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force -OutVariable "global:dbatoolsciOutput"
             $results.IsHadrEnabled | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "IsHadrEnabled"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
