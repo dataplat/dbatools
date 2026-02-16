@@ -78,7 +78,7 @@ CREATE TRIGGER $triggerviewname
 
     Context "Gets Table Trigger" {
         BeforeAll {
-            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $systemDbs.Name | Where-Object Name -eq "dbatoolsci_triggerontable"
+            $results = Get-DbaDbObjectTrigger -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $systemDbs.Name -OutVariable "global:dbatoolsciOutput" | Where-Object Name -eq "dbatoolsci_triggerontable"
         }
         It "Gets results" {
             $results | Should -Not -Be $null
@@ -210,6 +210,35 @@ CREATE TRIGGER $triggerviewname
         }
         It "Should be a View trigger" {
             $results.Parent.GetType().Name | Should -Be "View"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Trigger]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Parent",
+                "IsEnabled",
+                "DateLastModified"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Trigger"
         }
     }
 }
