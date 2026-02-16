@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Parameters are returned correctly" {
         BeforeAll {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Has the correct default properties" {
@@ -141,6 +141,44 @@ Describe $CommandName -Tag IntegrationTests {
                 "UserData"
             )
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ForeignKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "ID",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "IsEnabled",
+                "IsChecked",
+                "NotForReplication",
+                "ReferencedKey",
+                "ReferencedTable",
+                "ReferencedTableSchema"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ForeignKey"
         }
     }
 }
