@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
 
         It "finds an extended property on an instance" {
-            $ep = Get-DbaExtendedProperty -SqlInstance $server2
+            $ep = Get-DbaExtendedProperty -SqlInstance $server2 -OutVariable "global:dbatoolsciOutput"
             $ep.Count | Should -BeGreaterThan 0
         }
 
@@ -66,6 +66,35 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports piping databases" {
             $ep = $db | Get-DbaExtendedProperty -Name dbatoolz
             $ep.Name | Should -Be "dbatoolz"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ExtendedProperty]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ParentName",
+                "Type",
+                "Name",
+                "Value"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ExtendedProperty"
         }
     }
 }
