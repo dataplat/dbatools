@@ -55,7 +55,7 @@ if (-not $env:appveyor) {
             }
 
             It "Returns the right default encryption algorithm" {
-                "$(($defaultCert | Select-Object @{n="SignatureAlgorithm";e={$PSItem.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match "sha1RSA" | Should -BeTrue
+                "$(($defaultCert | Select-Object @{n="SignatureAlgorithm";e={$PSItem.SignatureAlgorithm.FriendlyName}})).SignatureAlgorithm)" -match "sha256RSA" | Should -BeTrue
             }
 
             It "Returns the right default one year expiry date" {

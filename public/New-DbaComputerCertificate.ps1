@@ -6,7 +6,7 @@ function New-DbaComputerCertificate {
     .DESCRIPTION
         Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.
 
-        By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
+        By default, a key with a length of 2048 bits and a friendly name of "SQL Server" is generated.
 
         This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
 
@@ -59,8 +59,8 @@ function New-DbaComputerCertificate {
 
     .PARAMETER KeyLength
         Specifies the RSA key size in bits for the certificate's private key.
-        Defaults to 1024 bits, though 2048 or 4096 bits provide better security for production environments.
-        Longer keys provide stronger encryption but may slightly impact performance during SSL handshakes.
+        Defaults to 2048 bits which meets current industry security standards for production environments.
+        4096 bits can be used for high-security environments, though it may slightly impact performance during SSL handshakes.
 
     .PARAMETER Store
         Specifies the certificate store location where the certificate will be installed.
@@ -90,8 +90,8 @@ function New-DbaComputerCertificate {
 
     .PARAMETER HashAlgorithm
         Specifies the cryptographic hash algorithm used for certificate signing.
-        Defaults to "sha1" for compatibility, though "Sha256" or higher is recommended for production security.
-        Modern browsers and applications prefer SHA-256 or higher; avoid MD5 and MD4 for security reasons.
+        Defaults to "Sha256" which meets current industry security standards for production environments.
+        SHA-384 and SHA-512 provide even stronger security for high-security environments.
 
     .PARAMETER MonthsValid
         Specifies how many months the self-signed certificate remains valid from the creation date.
@@ -149,12 +149,12 @@ function New-DbaComputerCertificate {
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate
 
-        Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 1024.
+        Creates a computer certificate signed by the local domain CA for the local machine with the keylength of 2048 and SHA-256 hashing.
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate -ComputerName Server1
 
-        Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 1024.
+        Creates a computer certificate signed by the local domain CA _on the local machine_ for server1 with the keylength of 2048 and SHA-256 hashing.
 
         The certificate is then copied to the new machine over WinRM and imported.
 
@@ -194,7 +194,7 @@ function New-DbaComputerCertificate {
         [securestring]$SecurePassword,
         [string]$FriendlyName = "SQL Server",
         [string]$CertificateTemplate = "WebServer",
-        [int]$KeyLength = 1024,
+        [int]$KeyLength = 2048,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
         [ValidateSet("EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected", "NonExportable")]
@@ -202,8 +202,8 @@ function New-DbaComputerCertificate {
         [string[]]$Dns,
         [switch]$SelfSigned,
         [switch]$EnableException,
-        [ValidateSet("Sha256", "sha384", "sha512", "sha1", "md5", "md4", "md2")]
-        [string]$HashAlgorithm = "sha1",
+        [ValidateSet("Sha256", "sha384", "sha512")]
+        [string]$HashAlgorithm = "Sha256",
         [int]$MonthsValid = 12
     )
     begin {
@@ -378,7 +378,12 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "Subject = ""CN=$fqdn"""
                 Add-Content $certCfg "KeySpec = 1"
                 Add-Content $certCfg "KeyLength = $KeyLength"
-                Add-Content $certCfg "Exportable = TRUE"
+                # Set Exportable based on Flag parameter - if NonExportable is specified, set to FALSE
+                if ("NonExportable" -in $Flag) {
+                    Add-Content $certCfg "Exportable = FALSE"
+                } else {
+                    Add-Content $certCfg "Exportable = TRUE"
+                }
                 Add-Content $certCfg "MachineKeySet = TRUE"
                 Add-Content $certCfg "FriendlyName=""$FriendlyName"""
                 Add-Content $certCfg "SMIME = False"
