@@ -65,7 +65,7 @@ function Get-DbaAgentJob {
         https://dbatools.io/Get-DbaAgentJob
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Job
+        Microsoft.SqlServer.Management.Smo.Agent.Job
 
         Returns one SQL Agent Job object per job matching the specified criteria. Each object represents a SQL Server Agent job with its configuration and execution status.
 
