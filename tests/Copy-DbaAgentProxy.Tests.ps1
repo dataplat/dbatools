@@ -78,6 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return one successful result" {
+            $global:dbatoolsciOutput = $copyResults
             $copyResults.Status.Count | Should -Be 1
             $copyResults.Status | Should -Be "Successful"
         }
@@ -85,6 +86,43 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should create the proxy on the destination" {
             $proxyResults = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceCopy2 -Proxy "dbatoolsci_agentproxy"
             $proxyResults.Name | Should -Be "dbatoolsci_agentproxy"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object Status
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $outputItem.PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
