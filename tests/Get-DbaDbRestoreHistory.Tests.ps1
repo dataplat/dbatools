@@ -42,9 +42,13 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname1 = "dbatoolsci_restorehistory1_$random"
         $dbname2 = "dbatoolsci_restorehistory2_$random"
 
+        $sourceBak = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+        $remoteBak = "$backupPath\singlerestore.bak"
+        Copy-Item -Path $sourceBak -Destination $remoteBak
+
         $splatRestore1 = @{
             SqlInstance           = $TestConfig.InstanceSingle
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            Path                  = $remoteBak
             DatabaseName          = $dbname1
             DestinationFilePrefix = $dbname1
         }
@@ -52,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatRestore2 = @{
             SqlInstance           = $TestConfig.InstanceSingle
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            Path                  = $remoteBak
             DatabaseName          = $dbname2
             DestinationFilePrefix = $dbname2
         }
@@ -60,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $splatRestore3 = @{
             SqlInstance           = $TestConfig.InstanceSingle
-            Path                  = "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            Path                  = $remoteBak
             DatabaseName          = $dbname2
             DestinationFilePrefix = "rsh_pre_$dbname2"
             WithReplace           = $true
@@ -97,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get last restore history for single database" {
         BeforeAll {
-            $results = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Last)
+            $results = @(Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -Last -OutVariable "global:dbatoolsciOutput")
         }
 
         It "Results holds 1 object" {
@@ -106,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return the full restore with the correct properties" {
             $results[0].RestoreType | Should -Be "Database"
-            $results[0].From | Should -Be "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            $results[0].From | Should -BeLike "*singlerestore.bak"
             $results[0].To | Should -Match "\\rsh_pre_$dbname2"
         }
     }
@@ -123,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return the full restore with the correct properties" {
             $results.RestoreType | Should -Contain "Database"
             $results.RestoreType | Should -Contain "Log"
-            $results.From | Should -Contain "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+            $results.From | Where-Object { $PSItem -like "*singlerestore.bak" } | Should -Not -BeNullOrEmpty
             $results.From | Should -Contain $logBackup.BackupPath
             ($results | Where-Object Database -eq $dbname1).To | Should -Match "\\$dbname1"
             ($results | Where-Object Database -eq $dbname2).To | Should -Match "\\rsh_pre_$dbname2"
@@ -206,6 +210,65 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbRestoreHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -RestoreType Log
             $results.Database | Should -Be $dbname1
             $results.RestoreType | Should -Be Log
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Username",
+                "RestoreType",
+                "Date",
+                "From",
+                "To",
+                "first_lsn",
+                "last_lsn",
+                "checkpoint_lsn",
+                "database_backup_lsn",
+                "backup_finish_date",
+                "BackupFinishDate",
+                "RowError",
+                "RowState",
+                "Table",
+                "ItemArray",
+                "HasErrors"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Username",
+                "RestoreType",
+                "Date",
+                "From",
+                "To",
+                "BackupFinishDate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
