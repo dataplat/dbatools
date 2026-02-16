@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command gets agent log" {
         It "Returns results" {
-            $results = Get-DbaAgentLog -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaAgentLog -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
 
             $results | Should -Not -BeNullOrEmpty
             ($results | Select-Object -First 1).LogDate | Should -BeOfType DateTime
@@ -38,6 +38,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Results are not empty" {
             $results | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogDate",
+                "ProcessInfo",
+                "Text"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
