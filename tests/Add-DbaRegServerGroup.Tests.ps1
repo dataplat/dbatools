@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceSingle
                 Name        = $group
             }
-            $results = Add-DbaRegServerGroup @splatAddGroup
+            $results = Add-DbaRegServerGroup @splatAddGroup -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $group
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
@@ -106,6 +106,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $descriptionUpdated
             $results.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "DisplayName",
+                "Description",
+                "ServerGroups",
+                "RegisteredServers"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.RegisteredServers\.ServerGroup"
         }
     }
 }
