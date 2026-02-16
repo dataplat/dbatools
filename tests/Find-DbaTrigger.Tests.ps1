@@ -102,7 +102,7 @@ GO
         }
 
         It "Should find a specific Trigger at the Database Level" {
-            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -TriggerLevel Database
+            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -TriggerLevel Database -OutVariable "global:dbatoolsciOutput"
             $results.TriggerLevel | Should -Be "Database"
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
         }
@@ -132,6 +132,59 @@ GO
             $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -TriggerLevel All
             $results.name | Should -Be @("dbatoolsci_safety", "dbatoolsci_reminder1")
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "SqlInstance",
+                "TriggerLevel",
+                "Database",
+                "DatabaseId",
+                "Object",
+                "Name",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "TriggerTextFound",
+                "Trigger",
+                "TriggerFullText"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "SqlInstance",
+                "TriggerLevel",
+                "Database",
+                "DatabaseId",
+                "Object",
+                "Name",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "TriggerTextFound"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
