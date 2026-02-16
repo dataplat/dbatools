@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Does sql instance have a SA account" {
         It "Should report that one account named SA exists" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login sa
+            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login sa -OutVariable "global:dbatoolsciOutput"
             $results.Count | Should -BeExactly 1
         }
     }
@@ -233,6 +233,39 @@ Describe $CommandName -Tag IntegrationTests {
             } else {
                 throw "No logins requiring password change found when expected"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "LoginType",
+                "CreateDate",
+                "LastLogin",
+                "HasAccess",
+                "IsLocked",
+                "IsDisabled",
+                "MustChangePassword"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Login"
         }
     }
 }
