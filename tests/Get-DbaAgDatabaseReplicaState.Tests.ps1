@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "When getting AG database replica state" {
         It "Returns database replica state information" {
-            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+            $results = Get-DbaAgDatabaseReplicaState -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -OutVariable "global:dbatoolsciOutput"
             $results.AvailabilityGroup | Should -Be $agName
             $results.DatabaseName | Should -Contain $dbName
             $results.SynchronizationState | Should -Not -BeNullOrEmpty
@@ -106,6 +106,67 @@ Describe $CommandName -Tag IntegrationTests {
             $results.PrimaryReplica | Should -Not -BeNullOrEmpty
             $results.ReplicaServerName | Should -Not -BeNullOrEmpty
             $results.ReplicaRole | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ReplicaServerName",
+                "ReplicaRole",
+                "ReplicaAvailabilityMode",
+                "ReplicaFailoverMode",
+                "ReplicaConnectionState",
+                "ReplicaJoinState",
+                "ReplicaSynchronizationState",
+                "DatabaseName",
+                "SynchronizationState",
+                "IsFailoverReady",
+                "IsJoined",
+                "IsSuspended",
+                "SuspendReason",
+                "EstimatedRecoveryTime",
+                "EstimatedDataLoss",
+                "SynchronizationPerformance",
+                "LogSendQueueSize",
+                "LogSendRate",
+                "RedoQueueSize",
+                "RedoRate",
+                "FileStreamSendRate",
+                "EndOfLogLSN",
+                "RecoveryLSN",
+                "TruncationLSN",
+                "LastCommitLSN",
+                "LastCommitTime",
+                "LastHardenedLSN",
+                "LastHardenedTime",
+                "LastReceivedLSN",
+                "LastReceivedTime",
+                "LastRedoneLSN",
+                "LastRedoneTime",
+                "LastSentLSN",
+                "LastSentTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
