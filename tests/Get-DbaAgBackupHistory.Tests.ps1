@@ -37,4 +37,85 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-# No Integration Tests, because we don't have an availability group running in AppVeyor
+Describe $CommandName -Tag IntegrationTests {
+    Context "When getting AG backup history" {
+        BeforeAll {
+            $splatAgBackup = @{
+                SqlInstance       = $TestConfig.instance1
+                AvailabilityGroup = "AG01"
+                LastFull          = $true
+            }
+            $result = Get-DbaAgBackupHistory @splatAgBackup -OutVariable "global:dbatoolsciOutput"
+        }
+
+        It "Should return results" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should return results with the correct availability group name" {
+            $result[0].AvailabilityGroupName | Should -Be "AG01"
+        }
+
+        It "Should have valid backup type" {
+            $result | ForEach-Object { $PSItem.Type | Should -Be "Full" }
+        }
+
+        It "Should have database names" {
+            $result | ForEach-Object { $PSItem.Database | Should -Not -BeNullOrEmpty }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Database.BackupHistory]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroupName",
+                "Database",
+                "DatabaseId",
+                "UserName",
+                "Start",
+                "End",
+                "Duration",
+                "Path",
+                "TotalSize",
+                "CompressedBackupSize",
+                "CompressionRatio",
+                "Type",
+                "BackupSetId",
+                "DeviceType",
+                "Software",
+                "FullName",
+                "FileList",
+                "Position",
+                "FirstLsn",
+                "DatabaseBackupLsn",
+                "CheckpointLsn",
+                "LastLsn",
+                "SoftwareVersionMajor",
+                "IsCopyOnly",
+                "LastRecoveryForkGUID",
+                "RecoveryModel",
+                "KeyAlgorithm",
+                "EncryptorThumbprint",
+                "EncryptorType"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
+        }
+    }
+}
