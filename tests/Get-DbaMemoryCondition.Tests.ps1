@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaMemoryCondition -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "returns results" {
@@ -61,6 +61,49 @@ Describe $CommandName -Tag IntegrationTests {
                 "CurrentTime"
             )
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Runtime",
+                "NotificationTime",
+                "NotificationType",
+                "MemoryUtilizationPercent",
+                "TotalPhysicalMemory",
+                "AvailablePhysicalMemory",
+                "TotalPageFile",
+                "AvailablePageFile",
+                "TotalVirtualAddressSpace",
+                "AvailableVirtualAddressSpace",
+                "NodeId",
+                "SQLReservedMemory",
+                "SQLCommittedMemory",
+                "RecordId",
+                "Type",
+                "Indicators",
+                "RecordTime",
+                "CurrentTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
