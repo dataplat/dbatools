@@ -142,7 +142,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should get a linked server login" {
-            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name
             $results.RemoteUser | Should -Be $remoteLoginName
@@ -178,6 +178,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaLinkedServerLogin -SqlInstance $server2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LinkedServerLogin]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteUser",
+                "Impersonate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.LinkedServerLogin"
         }
     }
 }
