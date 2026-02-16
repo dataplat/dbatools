@@ -281,6 +281,9 @@ Remove-Module dbatools -ErrorAction SilentlyContinue
 Import-Module .\dbatools.psd1 -Force
 Import-Module .\dbatools.psm1 -Force  # For internal functions
 
+# Dot-source Invoke-ManualPester so it works from script scope
+. .\private\testing\Invoke-ManualPester.ps1
+
 # Get the test configuration
 $TestConfig = Get-TestConfig
 
@@ -312,9 +315,16 @@ Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 
 ### Method 1: Invoke-ManualPester (Recommended)
 
-The `Invoke-ManualPester` function is a helper designed for local testing:
+The `Invoke-ManualPester` function is a helper designed for local testing.
+
+**Important:** You must dot-source `Invoke-ManualPester.ps1` into your session before calling it. The function re-imports the module internally with `-Force`, which destroys its own nested helper functions if it runs from within the module scope. Dot-sourcing places it in script scope where it survives the reimport.
 
 ```powershell
+# One-time setup for your session
+Import-Module .\dbatools.psd1 -Force
+Import-Module .\dbatools.psm1 -Force
+. .\private\testing\Invoke-ManualPester.ps1
+
 # Run unit tests only (no SQL Server required)
 Invoke-ManualPester -Path Get-DbaDatabase
 
@@ -543,6 +553,7 @@ Copy-Item .\tests\constants.local.ps1.example .\tests\constants.local.ps1
 # === BEFORE EACH TEST SESSION ===
 Import-Module .\dbatools.psd1 -Force
 Import-Module .\dbatools.psm1 -Force
+. .\private\testing\Invoke-ManualPester.ps1
 $TestConfig = Get-TestConfig
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 
