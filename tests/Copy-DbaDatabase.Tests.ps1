@@ -135,7 +135,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Reattach     = $true
                 Force        = $true
             }
-            $detachResults = Copy-DbaDatabase @splatDetachAttach #-WarningAction SilentlyContinue
+            $detachResults = Copy-DbaDatabase @splatDetachAttach -OutVariable "global:dbatoolsciOutput" #-WarningAction SilentlyContinue
         }
 
         It "Should be success" {
@@ -595,6 +595,43 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Set database online again to be able to remove the files on remove of database
             $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceCopy1 -Database $offlineTestDb -Online
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput[0]
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $outputItem.PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 
