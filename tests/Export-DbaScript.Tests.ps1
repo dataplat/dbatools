@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not append when using NoPrefix (#7455)" {
             $tempFile = "$tempPath\msdb-$(Get-Random).txt"
 
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -OutVariable "global:dbatoolsciOutput"
             $linecount1 = (Get-Content $tempFile).Count
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
             $linecount2 = (Get-Content $tempFile).Count
@@ -84,6 +84,21 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
