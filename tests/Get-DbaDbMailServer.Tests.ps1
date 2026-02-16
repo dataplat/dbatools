@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailServer" {
         BeforeAll {
-            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Account -eq $mailAccountName
+            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Account -eq $mailAccountName
         }
 
         It "Gets results" {
@@ -106,6 +106,39 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Gets results" {
             $accountFilterResults | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Mail.MailServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Account",
+                "Name",
+                "Port",
+                "EnableSsl",
+                "ServerType",
+                "UserName",
+                "UseDefaultCredentials",
+                "NoCredentialChange"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Mail\.MailServer"
         }
     }
 }
