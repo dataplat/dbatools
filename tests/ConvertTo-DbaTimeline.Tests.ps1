@@ -20,8 +20,73 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidance.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $splatHistory = @{
+            SqlInstance     = $TestConfig.InstanceSingle
+            StartDate       = (Get-Date).AddDays(-7)
+            ExcludeJobSteps = $true
+        }
+        $history = @(Get-DbaAgentJobHistory @splatHistory | Select-Object -First 5)
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When converting agent job history" {
+        BeforeAll {
+            $results = @($history | ConvertTo-DbaTimeline -OutVariable "global:dbatoolsciOutput")
+        }
+
+        It "Should return three output elements" {
+            $results.Count | Should -Be 3
+        }
+
+        It "Should return HTML header as first element" {
+            $results[0] | Should -BeOfType [System.String]
+            $results[0] | Should -Match "<html>"
+            $results[0] | Should -Match "dataTable\.addRows"
+        }
+
+        It "Should return HTML footer as last element" {
+            $results[-1] | Should -BeOfType [System.String]
+            $results[-1] | Should -Match "</html>"
+            $results[-1] | Should -Match "dbatools"
+        }
+
+        It "Should contain timeline data rows in the body" {
+            $html = $results | Out-String
+            $html | Should -Match "Get-DbaAgentJobHistory"
+        }
+    }
+
+    Context "When using ExcludeRowLabel" {
+        BeforeAll {
+            $resultsNoLabel = @($history | ConvertTo-DbaTimeline -ExcludeRowLabel)
+        }
+
+        It "Should set showRowLabels to false" {
+            $resultsNoLabel[-1] | Should -Match "showRowLabels: false"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
+        }
+
+        It "Should produce valid HTML when combined" {
+            $html = $global:dbatoolsciOutput | Out-String
+            $html | Should -Match "<html>"
+            $html | Should -Match "</html>"
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.String"
+        }
+    }
+}
