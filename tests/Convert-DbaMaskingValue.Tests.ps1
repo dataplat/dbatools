@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Text data types" {
         It "Should return a text value for char data type" {
             $value = "this is just text"
-            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType char
+            $convertedValue = Convert-DbaMaskingValue -Value $value -DataType char -OutVariable "global:dbatoolsciOutput"
             $convertedValue.NewValue | Should -Be "'this is just text'"
         }
 
@@ -111,6 +111,32 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should throw an error when data type is missing" {
             { Convert-DbaMaskingValue -Value "whatever" -EnableException } | Should -Throw "Please enter a data type"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "OriginalValue",
+                "NewValue",
+                "DataType",
+                "ErrorMessage"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
