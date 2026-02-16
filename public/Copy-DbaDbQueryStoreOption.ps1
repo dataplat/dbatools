@@ -70,7 +70,7 @@ function Copy-DbaDbQueryStoreOption {
         https://dbatools.io/Copy-DbaDbQueryStoreOption
 
     .OUTPUTS
-        PSCustomObject
+        dbatools.MigrationObject
 
         Returns one object per destination database processed, representing the status of copying Query Store configuration to that database.
 
