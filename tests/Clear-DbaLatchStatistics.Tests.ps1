@@ -34,11 +34,41 @@ Describe $CommandName -Tag IntegrationTests {
             $splatClearLatch = @{
                 SqlInstance = $TestConfig.InstanceSingle
             }
-            $results = Clear-DbaLatchStatistics @splatClearLatch
+            $results = Clear-DbaLatchStatistics @splatClearLatch -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Returns success" {
             $results.Status | Should -Be "Success"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
