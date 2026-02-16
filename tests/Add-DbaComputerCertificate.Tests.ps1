@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Certificate is added properly" {
         BeforeAll {
-            $results = Add-DbaComputerCertificate -Path $certPath
+            $results = Add-DbaComputerCertificate -Path $certPath -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -138,6 +138,35 @@ Describe $CommandName -Tag IntegrationTests {
             $retrievedCert = Get-DbaComputerCertificate -Thumbprint $script:testThumbprint
             $retrievedCert | Should -Not -BeNullOrEmpty
             $retrievedCert.Subject | Should -Be $script:certSubject
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "FriendlyName",
+                "DnsNameList",
+                "Thumbprint",
+                "NotBefore",
+                "NotAfter",
+                "Subject",
+                "Issuer"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Security\.Cryptography\.X509Certificates\.X509Certificate2"
         }
     }
 }
