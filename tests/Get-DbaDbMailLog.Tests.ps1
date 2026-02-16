@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail Log" {
         BeforeAll {
-            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle | Where-Object Login -eq "dbatools\dbatoolssci"
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Login -eq "dbatools\dbatoolssci"
         }
 
         It "Gets results" {
@@ -105,6 +105,60 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have a LastModDate greater than 2018-01-01" {
             $results.LastModDate | Should -BeGreaterThan "2018-01-01"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogId",
+                "EventType",
+                "LogDate",
+                "Description",
+                "ProcessId",
+                "MailItemId",
+                "AccountId",
+                "LastModDate",
+                "LastModUser",
+                "Login",
+                "RowError",
+                "RowState",
+                "Table",
+                "ItemArray",
+                "HasErrors"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogDate",
+                "EventType",
+                "Description",
+                "Login"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
