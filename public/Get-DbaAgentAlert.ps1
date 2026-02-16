@@ -41,7 +41,7 @@ function Get-DbaAgentAlert {
         https://dbatools.io/Get-DbaAgentAlert
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Alert
+        Microsoft.SqlServer.Management.Smo.Agent.Alert
 
         Returns one Alert object per SQL Agent alert found on the specified instances.
 
