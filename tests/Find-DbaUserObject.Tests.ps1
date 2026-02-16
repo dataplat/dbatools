@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command finds user objects" {
         It "Should find user databases without pattern" {
-            $results = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
 
             $results.Count | Should -BeGreaterOrEqual 2
             $results.Type | Should -Contain Database
@@ -64,6 +64,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Type | Should -Be Database
             $results.Name | Should -Be UserDB1
             $results.Owner | Should -Be UserLogin1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Type",
+                "Owner",
+                "Name",
+                "Parent"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
