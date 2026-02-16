@@ -74,7 +74,7 @@ AS
         }
 
         It "Should find a specific view named v_dbatoolsci_sysadmin" {
-            $results = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatools* -Database "dbatoolsci_viewdb"
+            $results = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatools* -Database "dbatoolsci_viewdb" -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "v_dbatoolsci_sysadmin"
         }
 
@@ -87,6 +87,59 @@ AS
         It "Should find no results when Excluding dbatoolsci_viewdb" {
             $results = Find-DbaView -SqlInstance $TestConfig.InstanceSingle -Pattern dbatools* -ExcludeDatabase "dbatoolsci_viewdb"
             $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "ViewTextFound",
+                "View",
+                "ViewFullText"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "SqlInstance",
+                "Database",
+                "DatabaseId",
+                "Schema",
+                "Name",
+                "Owner",
+                "IsSystemObject",
+                "CreateDate",
+                "LastModified",
+                "ViewTextFound"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
