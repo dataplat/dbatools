@@ -147,7 +147,7 @@ select TraceID=@TraceID
                 SqlInstance = $TestConfig.InstanceSingle
                 Id          = $traceid
             }
-            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
+            $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName -OutVariable "global:dbatoolsciOutput"
             $splatStartSession = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Session     = $sessionName
@@ -159,6 +159,41 @@ select TraceID=@TraceID
             $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.XEvent.Session]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "StartTime",
+                "AutoStart",
+                "State",
+                "Targets",
+                "TargetFile",
+                "Events",
+                "MaxMemory",
+                "MaxEventSize"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.XEvent\.Session"
         }
     }
 }
