@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should get at least 2 categories" {
-            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match "dbatoolsci"
+            $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeGreaterThan 1
         }
 
@@ -56,6 +56,35 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should get at least 1 LocalJob" {
             $results = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -CategoryType LocalJob | Where-Object Name -match "dbatoolsci"
             $results.Count | Should -BeGreaterThan 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobCategory]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "CategoryType",
+                "JobCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobCategory"
         }
     }
 }
