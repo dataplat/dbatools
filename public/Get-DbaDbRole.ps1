@@ -63,9 +63,9 @@ function Get-DbaDbRole {
         https://dbatools.io/Get-DbaDbRole
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Role
+        Microsoft.SqlServer.Management.Smo.DatabaseRole
 
-        Returns one Role object per database role found. The output is filtered based on the -Role, -ExcludeRole, and -ExcludeFixedRole parameters.
+        Returns one DatabaseRole object per database role found. The output is filtered based on the -Role, -ExcludeRole, and -ExcludeFixedRole parameters.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
