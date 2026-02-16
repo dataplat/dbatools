@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find disabled index: $indexName" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             ($results | Where-Object IndexName -eq $indexName).Count | Should -BeExactly 2
             ($results | Where-Object DatabaseName -in $databaseName1, $databaseName2).Count | Should -BeExactly 2
             ($results | Where-Object DatabaseId -in $db1.Id, $db2.Id).Count | Should -BeExactly 2
@@ -76,6 +76,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName2
             $results.DatabaseId | Should -Be $db2.Id
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "DatabaseName",
+                "DatabaseId",
+                "SchemaName",
+                "TableName",
+                "ObjectId",
+                "IndexName",
+                "IndexId",
+                "TypeDesc"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].Table.Columns.ColumnName
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
