@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SecurePassword = $masterKeyPass
                 Path           = $backupPath
             }
-            $results = Backup-DbaDbMasterKey @splatBackup
+            $results = Backup-DbaDbMasterKey @splatBackup -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
             $results.Database | Should -Be $testDatabase
             $results.Status | Should -Be "Success"
@@ -101,6 +101,34 @@ Describe $CommandName -Tag IntegrationTests {
             [IO.Path]::GetFileNameWithoutExtension($results.Path) | Should -Be "dbatoolscli_dbmasterkey_$random"
 
             # File will be cleaned up with the backupPath directory in AfterAll
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.MasterKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Path",
+                "Status"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.MasterKey"
         }
     }
 }
