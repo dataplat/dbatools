@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When changing FileStream Level" {
         It "Should change the FileStream Level to 1" {
-            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
+            $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force -OutVariable "global:dbatoolsciOutput"
 
             $results.InstanceAccessLevel | Should -Be 1
             $results.ServiceAccessLevel | Should -Be 1
@@ -56,6 +56,51 @@ Describe $CommandName -Tag IntegrationTests {
 
             $WarnVar | Should -BeLike '*Filestream must be at least level 2 when using ShareName*'
             $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceAccess",
+                "ServiceAccess",
+                "ServiceShareName",
+                "InstanceAccessLevel",
+                "ServiceAccessLevel",
+                "Credential",
+                "SqlCredential"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceAccess",
+                "ServiceAccess",
+                "ServiceShareName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
