@@ -38,11 +38,38 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling force network encryption" {
         BeforeAll {
-            $results = Enable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $results = Enable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should enable force encryption" {
             $results.ForceEncryption | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ForceEncryption",
+                "CertificateThumbprint"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
