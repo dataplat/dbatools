@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "copies the view data" {
-        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2
+        $null = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_example2 -OutVariable "global:dbatoolsciOutput"
         $table1count = $db.Query("select id from dbo.dbatoolsci_view_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Status.Count | Should -Be $table2count.Status.Count
@@ -181,5 +181,39 @@ Describe $CommandName -Tag IntegrationTests {
     It "Copy data using a query that uses a 3 part query" {
         $result = Copy-DbaDbViewData -SqlInstance $TestConfig.InstanceCopy1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "SourceDatabaseID",
+                "SourceSchema",
+                "SourceTable",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "DestinationDatabaseID",
+                "DestinationSchema",
+                "DestinationTable",
+                "RowsCopied",
+                "Elapsed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
