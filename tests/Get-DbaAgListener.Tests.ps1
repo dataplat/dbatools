@@ -64,8 +64,37 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When getting AG listeners" {
         It "Returns results with proper data" {
-            $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
+            $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -OutVariable "global:dbatoolsciOutput"
             $results.PortNumber | Should -Contain 14330
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Name",
+                "PortNumber",
+                "ClusterIPConfiguration"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityGroupListener"
         }
     }
 }
