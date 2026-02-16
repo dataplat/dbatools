@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying DbMail" {
         BeforeAll {
-            $results = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2
+            $results = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have copied database mail items" {
@@ -164,6 +164,39 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should verify Database Mail XPs is enabled on destination" {
             $destConfig = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name "Database Mail XPs"
             $destConfig.ConfiguredValue | Should -Be 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
