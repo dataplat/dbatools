@@ -24,3 +24,54 @@ Describe $CommandName -Tag UnitTests {
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Check if replication is configured - skip all tests if not
+        $replServer = Get-DbaReplServer -SqlInstance $TestConfig.InstanceSingle
+        $global:skipRepl = -not $replServer.IsPublisher
+
+        if (-not $global:skipRepl) {
+            # Disable publishing to capture the output
+            $global:dbatoolsciOutput = Disable-DbaReplPublishing -SqlInstance $TestConfig.InstanceSingle
+
+            # Re-enable publishing for cleanup
+            Enable-DbaReplPublishing -SqlInstance $TestConfig.InstanceSingle -EnableException
+        }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $global:dbatoolsciOutput = $null
+    }
+
+    Context "Output validation" -Skip:$global:skipRepl {
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Replication.ReplicationServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "IsDistributor",
+                "IsPublisher",
+                "DistributionServer",
+                "DistributionDatabase"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Replication\.ReplicationServer"
+        }
+    }
+}
