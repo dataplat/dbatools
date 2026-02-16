@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns database certificate by certificate name" {
-            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $certificateName1
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $certificateName1 -OutVariable "global:dbatoolsciOutput"
             $cert.Database | Should -Match $dbName
             $cert.Name | Should -Match $certificateName1
         }
@@ -72,6 +72,42 @@ Describe $CommandName -Tag IntegrationTests {
             $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName
             $cert.Database | Should -Not -Match $dbName
             $cert.Name | Should -Not -BeIn $certificateName1, $certificateName2
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Certificate]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Subject",
+                "StartDate",
+                "ActiveForServiceBrokerDialog",
+                "ExpirationDate",
+                "Issuer",
+                "LastBackupDate",
+                "Owner",
+                "PrivateKeyEncryptionType",
+                "Serial"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Certificate"
         }
     }
 }
