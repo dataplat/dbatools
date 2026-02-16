@@ -51,13 +51,43 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get back some operators" {
         It "return at least two results" {
-            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Count -ge 2 | Should -Be $true
         }
 
         It "return one result" {
             $results = Get-DbaAgentOperator -SqlInstance $TestConfig.InstanceSingle -Operator dbatoolsci_operator
             $results.Count | Should -BeExactly 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Operator]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "IsEnabled",
+                "EmailAddress",
+                "LastEmail"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Operator"
         }
     }
 }

@@ -61,7 +61,7 @@ function Get-DbaAgentOperator {
         Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Operator
+        Microsoft.SqlServer.Management.Smo.Agent.Operator
 
         Returns one Operator object per SQL Agent operator found on the SQL Server instance. Each object represents an operator configured to receive notifications through email, pager, or net send.
 
