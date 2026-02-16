@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Gets DbMasterKey" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle | Where-Object Database -eq $dbname
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object Database -eq $dbname
 
         $results | Should -Not -BeNullOrEmpty
         $results.Database | Should -BeExactly $dbname
@@ -59,5 +59,34 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master, $dbname
 
         $results | Should -BeNullOrEmpty
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.MasterKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "DateLastModified",
+                "IsEncryptedByServer"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.MasterKey"
+        }
     }
 }
