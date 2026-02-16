@@ -62,4 +62,39 @@ Describe $CommandName -Tag IntegrationTests {
             $disableResults.TraceFlag | Should -Contain $safeTraceFlag
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Re-enable the trace flag so we can capture output from disabling it
+            $null = $server.Query("DBCC TRACEON($safeTraceFlag,-1)")
+            $global:dbatoolsciOutput = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "InstanceName",
+                "SqlInstance",
+                "TraceFlag",
+                "Status",
+                "Notes",
+                "DateTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }

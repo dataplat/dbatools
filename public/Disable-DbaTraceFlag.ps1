@@ -107,7 +107,7 @@ function Disable-DbaTraceFlag {
                 if ($Pscmdlet.ShouldProcess($instance, "Disabling flag '$tf'")) {
                     try {
                         $query = "DBCC TRACEOFF ($tf, -1)"
-                        $server.Query($query)
+                        $null = $server.Query($query)
                     } catch {
                         $TraceFlagInfo.Status = "Failed"
                         $TraceFlagInfo.Notes = $_.Exception.Message
