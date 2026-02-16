@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should get the table" {
         It "Gets the table" {
-            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
+            (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput").Name | Should -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle).Name | Should -Contain $tablename
         }
 
@@ -67,6 +67,45 @@ Describe $CommandName -Tag IntegrationTests {
         It "Doesn't find the table" {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Table]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Name",
+                "IndexSpaceUsed",
+                "DataSpaceUsed",
+                "RowCount",
+                "HasClusteredIndex",
+                "IsPartitioned",
+                "ChangeTrackingEnabled",
+                "IsFileTable",
+                "IsMemoryOptimized",
+                "IsNode",
+                "IsEdge",
+                "FullTextIndex"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Table"
         }
     }
 }
