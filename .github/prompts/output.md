@@ -55,6 +55,19 @@ Invoke-ManualPester -Path --FILEPATH-- -TestIntegration
 
 Record the new duration. It **must** be comparable to the baseline (within a few seconds). If it is significantly longer, you added a command execution — go back and fix it.
 
+### Step 5: Commit
+
+Once all tests pass, commit the changes. Include only the files you modified (test file and optionally the command source if `.OUTPUTS` was updated).
+
+```bash
+git add --FILEPATH--
+# If you updated .OUTPUTS in the command source:
+git add --CMDSRC--
+git commit -m "--CMDNAME-- - Add output validation tests
+
+(do --CMDNAME--)"
+```
+
 ---
 
 ## CAPTURING OUTPUT WITHOUT RE-RUNNING
@@ -481,3 +494,159 @@ With tests: 12.5s (after changes — no additional command execution)
 - [ ] No trailing spaces
 - [ ] All rules from `style.md` and `migration.md` followed
 - [ ] All comments preserved exactly as in original
+
+---
+
+## RUNNING TESTS LOCALLY
+
+Reference: `dbatools/.github/CONTRIBUTING-TESTING.md`
+
+### Prerequisites
+
+- **PowerShell 7+** (recommended) or Windows PowerShell 5.1+
+- **Run as Administrator** — many dbatools commands require admin privileges (WMI, services, cross-server operations)
+- **At least one SQL Server instance** for basic tests, two for most integration tests
+
+### Initial Setup (One Time)
+
+```powershell
+cd c:\github\dbatools
+
+# Install dbatools.library (contains SMO assemblies)
+.\.github\scripts\install-dbatools-library.ps1
+
+# Install Pester and PSScriptAnalyzer
+Install-Module Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck
+Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2 -Force
+
+# Create local configuration
+Copy-Item .\tests\constants.local.ps1.example .\tests\constants.local.ps1
+# Edit constants.local.ps1 with your instance names
+```
+
+### Instance Configuration (constants.local.ps1)
+
+Tests use scenario-based instance references:
+
+| Config Key | Purpose |
+|------------|---------|
+| `$config['InstanceSingle']` | Tests needing one instance |
+| `$config['InstanceMulti1']` / `InstanceMulti2` | Tests needing multiple instances |
+| `$config['InstanceCopy1']` / `InstanceCopy2` | Tests that copy between instances |
+| `$config['InstanceHadr']` | HA/DR tests (AGs, mirroring, log shipping) |
+| `$config['InstanceRestart']` | Tests that restart SQL Server |
+
+**Temp path:** For cross-instance tests (backup/restore), use a network share accessible by both your session and all SQL Server service accounts:
+
+```powershell
+$config['Temp'] = "\\$env:COMPUTERNAME\dbatools-tests"
+```
+
+### Before Each Test Session
+
+```powershell
+Import-Module .\dbatools.psd1 -Force
+Import-Module .\dbatools.psm1 -Force
+. .\private\testing\Invoke-ManualPester.ps1
+$TestConfig = Get-TestConfig
+$PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
+```
+
+### Running Tests
+
+#### Invoke-ManualPester (Recommended)
+
+**Important:** Dot-source `Invoke-ManualPester.ps1` before calling it. The function re-imports the module with `-Force`, which destroys nested helpers if run from module scope.
+
+```powershell
+# Unit tests only (no SQL Server required)
+Invoke-ManualPester -Path Get-DbaDatabase
+
+# Integration tests (requires SQL Server)
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration
+
+# With code coverage
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage
+
+# With script analyzer
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer
+
+# Pattern matching
+Invoke-ManualPester -Path "*Backup*" -TestIntegration
+```
+
+#### Direct Pester Invocation
+
+```powershell
+# Run a specific test file
+Invoke-Pester .\tests\Get-DbaDatabase.Tests.ps1 -Output Detailed
+
+# Run only unit tests
+Invoke-Pester .\tests\Get-DbaDatabase.Tests.ps1 -Output Detailed -Tag UnitTests
+
+# Run only integration tests
+Invoke-Pester .\tests\Get-DbaDatabase.Tests.ps1 -Output Detailed -Tag IntegrationTests
+```
+
+### Test Scenarios
+
+Tests are organized by infrastructure requirements (defined in `tests/pester.groups.ps1`):
+
+| Scenario | Description |
+|----------|-------------|
+| **SINGLE** | Tests containing `$TestConfig.InstanceSingle` |
+| **MULTI** | Tests containing `$TestConfig.InstanceMulti` |
+| **COPY** | Tests containing `$TestConfig.InstanceCopy` |
+| **HADR** | Tests containing `$TestConfig.InstanceHadr` |
+| **RESTART** | Tests containing `$TestConfig.InstanceRestart` |
+
+### CI/CD: Commit Message Patterns
+
+Control which tests run in CI:
+
+```bash
+# Run specific tests
+git commit -m "Fix database enumeration (do Get-DbaDatabase)"
+
+# Run pattern-matched tests
+git commit -m "Update backup logic (do *Backup*)"
+
+# Run multiple
+git commit -m "Fix login handling (do Get-DbaLogin, Set-DbaLogin)"
+
+# Skip CI
+git commit -m "Update comments [skip ci]"
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `dbatools.library not found` | `.\.github\scripts\install-dbatools-library.ps1 -Force` |
+| Cannot connect to SQL Server | Verify `$TestConfig.InstanceSingle`, run `Test-DbaConnection` |
+| Certificate errors | `Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register` |
+| Access denied / permission errors | Run PowerShell as Administrator |
+| Tests hang or timeout | Clean up leftover `dbatoolsci_*` databases and temp files |
+
+```powershell
+# Clean up leftover test databases
+Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem |
+    Where-Object Name -like "dbatoolsci_*" |
+    Remove-DbaDatabase -Confirm:$false
+
+# Clean up temp files
+Get-ChildItem $TestConfig.Temp -Recurse |
+    Where-Object Name -like "*dbatoolsci*" |
+    Remove-Item -Recurse -Force
+```
+
+### Files Referenced
+
+| File | Purpose |
+|------|---------|
+| `tests/constants.local.ps1.example` | Template for local config |
+| `private/testing/Get-TestConfig.ps1` | Loads test configuration |
+| `private/testing/Invoke-ManualPester.ps1` | Local test runner helper |
+| `tests/pester.groups.ps1` | Scenario definitions |
+| `tests/appveyor.common.ps1` | CI test discovery logic |
+| `tests/CLAUDE.md` | Pester v5 test standards |
