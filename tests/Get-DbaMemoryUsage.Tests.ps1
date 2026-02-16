@@ -32,7 +32,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle
+            $results = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $resultsSimple = Get-DbaMemoryUsage -ComputerName $TestConfig.InstanceSingle
         }
 
@@ -47,6 +47,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns results from simple call" {
             $resultsSimple.Count -gt 0 | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "SqlInstance",
+                "CounterInstance",
+                "Counter",
+                "Pages",
+                "Memory"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
