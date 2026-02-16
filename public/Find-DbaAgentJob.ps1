@@ -74,7 +74,7 @@ function Find-DbaAgentJob {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Job
+        Microsoft.SqlServer.Management.Smo.Agent.Job
 
         Returns one Job object for each job that matches the specified search criteria. Multiple jobs can be returned per instance depending on filter parameters.
 
