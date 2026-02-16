@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find all files with retention 0d" {
-            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
+            $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d" -OutVariable "global:dbatoolsciOutput")
             $results.Count | Should -BeExactly 20
         }
 
@@ -191,6 +191,21 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should find 5 files with extension bak" {
             $results = @(Find-DbaBackup -Path $testPath -BackupFileExtension "bak" -RetentionPeriod "0d")
             $results.Count | Should -BeExactly 5
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
