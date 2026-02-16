@@ -60,7 +60,7 @@ WHERE p.type = 'X'
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
             }
-            $results = Copy-DbaExtendedStoredProcedure @splatCopy
+            $results = Copy-DbaExtendedStoredProcedure @splatCopy -OutVariable "global:dbatoolsciOutput"
             # Results may be null if no custom XPs exist
             $results | Should -BeNullOrEmpty -Because "Test environment typically has no custom Extended Stored Procedures"
         }
@@ -72,6 +72,39 @@ WHERE p.type = 'X'
                 WhatIf      = $true
             }
             { Copy-DbaExtendedStoredProcedure @splatWhatIf } | Should -Not -Throw
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" -Skip:(-not $global:dbatoolsciOutput) {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" -Skip:(-not $global:dbatoolsciOutput) {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" -Skip:(-not $global:dbatoolsciOutput) {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
