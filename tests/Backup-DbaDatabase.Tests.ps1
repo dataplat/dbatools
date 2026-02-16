@@ -82,6 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Properly backups all databases" {
         BeforeAll {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1
+            $global:dbatoolsciOutput = $results
         }
 
         It "Should return a database name, specifically master" {
@@ -556,6 +557,59 @@ go
                 $results.DeviceType | Should -Be "URL"
                 $results.BackupFile | Should -Be "dbatoolsci_azure2.bak"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Database.BackupHistory]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "BackupComplete",
+                "BackupFile",
+                "BackupFilesCount",
+                "BackupFolder",
+                "BackupPath",
+                "DatabaseName",
+                "Script",
+                "Verified",
+                "AvailabilityGroupName",
+                "CompressedBackupSize",
+                "CompressionRatio",
+                "ComputerName",
+                "Database",
+                "DatabaseId",
+                "DeviceType",
+                "Duration",
+                "EncryptorThumbprint",
+                "EncryptorType",
+                "End",
+                "InstanceName",
+                "IsCopyOnly",
+                "KeyAlgorithm",
+                "Path",
+                "Position",
+                "RecoveryModel",
+                "Software",
+                "SqlInstance",
+                "Start",
+                "TotalSize",
+                "Type",
+                "UserName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
         }
     }
 }
