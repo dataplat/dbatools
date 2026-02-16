@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Returns DbaCmConnection" {
         It "Results are not Empty" {
-            $cmConnectionResults = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME
+            $cmConnectionResults = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME -OutVariable "global:dbatoolsciOutput"
             $cmConnectionResults | Should -Not -BeNullOrEmpty
         }
     }
@@ -40,6 +40,25 @@ Describe $CommandName -Tag IntegrationTests {
         It "Results are not Empty" {
             $userConnectionResults = Get-DbaCmConnection -ComputerName $env:COMPUTERNAME -UserName *
             $userConnectionResults | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Should have a ComputerName property" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Connection\.ManagementConnection"
         }
     }
 }
