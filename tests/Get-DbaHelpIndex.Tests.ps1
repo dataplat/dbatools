@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command works for indexes" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Results should be returned" {
@@ -145,6 +145,56 @@ Describe $CommandName -Tag IntegrationTests {
         It "Table t2 has correct index key columns and included columns" {
             $results.where( { $PSItem.object -eq "[dbo].[t2]" }).KeyColumns | Should -Be "c1, c2"
             $results.where( { $PSItem.object -eq "[dbo].[t2]" }).IncludeColumns | Should -Be "c3, c4"
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Object",
+                "Index",
+                "Statistics",
+                "IndexType",
+                "KeyColumns",
+                "IncludeColumns",
+                "FilterDefinition",
+                "FillFactor",
+                "DataCompression",
+                "IndexReads",
+                "IndexUpdates",
+                "Size",
+                "IndexRows",
+                "IndexLookups",
+                "MostRecentlyUsed",
+                "StatsSampleRows",
+                "StatsRowMods",
+                "HistogramSteps",
+                "StatsLastUpdated",
+                "IndexFragInPercent",
+                "Table",
+                "RowState",
+                "RowError",
+                "HasErrors",
+                "ItemArray"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
