@@ -25,7 +25,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $testInstance = $TestConfig.InstanceSingle
-        $results = Enable-DbaHideInstance -SqlInstance $testInstance
+        $results = Enable-DbaHideInstance -SqlInstance $testInstance -OutVariable "global:dbatoolsciOutput"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -41,5 +41,31 @@ Describe $CommandName -Tag IntegrationTests {
     It "Returns an object with HideInstance property set to true" {
         $results | Should -Not -BeNullOrEmpty
         $results.HideInstance | Should -BeTrue
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "HideInstance"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
