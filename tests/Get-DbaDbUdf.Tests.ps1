@@ -73,7 +73,7 @@ END;
     Context "User Functions are correctly located" {
         BeforeAll {
             $results1 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -Database master -Name dbatoolssci_ISOweek | Select-Object *
-            $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle
+            $results2 = Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should execute and return results" {
@@ -99,6 +99,37 @@ END;
 
         It "Should not Throw an Error" {
             { Get-DbaDbUdf -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master -ExcludeSystemUdf } | Should -Not -Throw
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedFunction]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "DataType"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.UserDefinedFunction"
         }
     }
 }
