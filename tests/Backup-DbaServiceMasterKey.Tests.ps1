@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SecurePassword = $securePassword
                 Path           = $backupPath
             }
-            $backupResults = Backup-DbaServiceMasterKey @splatBackup
+            $backupResults = Backup-DbaServiceMasterKey @splatBackup -OutVariable "global:dbatoolsciOutput"
             $backupResults.Status | Should -Be "Success"
             $smkBackupPath = $backupResults.Path
         }
@@ -86,6 +86,33 @@ Describe $CommandName -Tag IntegrationTests {
             [IO.Path]::GetFileNameWithoutExtension($fileBackupResults.Path) | Should -Be "smk($randomNum)"
             $fileBackupResults.Status | Should -Be "Success"
             $fileBackupPath = $fileBackupResults.Path
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ServiceMasterKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Path",
+                "Status"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ServiceMasterKey"
         }
     }
 }
