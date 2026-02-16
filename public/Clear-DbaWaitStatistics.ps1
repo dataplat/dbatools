@@ -79,7 +79,7 @@ function Clear-DbaWaitStatistics {
 
             if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_wait_stats")) {
                 try {
-                    $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
+                    $null = $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
                     $status = "Success"
                 } catch {
                     $status = $_.Exception
