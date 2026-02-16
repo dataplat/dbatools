@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Executes with Exclude Parameters" {
         It "Should exclude databases when exporting" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Match '\nGo\r'
@@ -185,6 +185,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should not export file to custom file path with NoClobber" {
             { Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
