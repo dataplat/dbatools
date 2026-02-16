@@ -23,13 +23,39 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Validate output" {
         It "has some output" {
-            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
+            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle -WarningVariable WarnVar -OutVariable "global:dbatoolsciOutput"
 
             $WarnVar | Should -BeNullOrEmpty
             # On AppVeyor sometimes there are no patches installed
             if (-not $env:AppVeyor) {
                 $result | Should -Not -BeNullOrEmpty
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" -Skip:(-not $global:dbatoolsciOutput) {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" -Skip:(-not $global:dbatoolsciOutput) {
+            $expectedProperties = @(
+                "ComputerName",
+                "Name",
+                "Version",
+                "InstallDate"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
