@@ -120,7 +120,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Test with a table that has parent dependencies" {
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -Parents
+        $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -Parents -OutVariable "global:dbatoolsciOutput"
         $results.Count | Should -Be 1
         $results[0].Dependent | Should -Be "dbatoolsci1"
         $results[0].Tier | Should -Be -1
@@ -162,5 +162,41 @@ Describe $CommandName -Tag IntegrationTests {
         $results[1].Tier | Should -Be 1
         $results[2].Dependent | Should -Be "dbatoolsci_circrefA"
         $results[2].Tier | Should -Be 2
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Database.Dependency]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "ServiceName",
+                "SqlInstance",
+                "Dependent",
+                "Type",
+                "Owner",
+                "IsSchemaBound",
+                "Parent",
+                "ParentType",
+                "Tier",
+                "Object",
+                "Urn",
+                "OriginalResource",
+                "Script"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.Dependency"
+        }
     }
 }
