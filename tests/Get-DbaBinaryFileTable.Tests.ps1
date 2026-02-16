@@ -74,12 +74,42 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "returns a table" {
-        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+        $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -OutVariable "global:dbatoolsciOutput"
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 
     It "supports piping" {
         $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Table]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Name",
+                "BinaryColumn",
+                "FileNameColumn"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Table"
+        }
     }
 }
