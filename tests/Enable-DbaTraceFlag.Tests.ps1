@@ -52,11 +52,40 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling a trace flag" {
         BeforeAll {
-            $enableResults = Enable-DbaTraceFlag -SqlInstance $testInstance -TraceFlag $safeTraceFlag
+            $enableResults = Enable-DbaTraceFlag -SqlInstance $testInstance -TraceFlag $safeTraceFlag -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should enable the specified trace flag" {
             $enableResults.TraceFlag -contains $safeTraceFlag | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "InstanceName",
+                "SqlInstance",
+                "TraceFlag",
+                "Status",
+                "Notes",
+                "DateTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
