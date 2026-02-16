@@ -80,6 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $results = Copy-DbaAgentJobCategory @splatCopyCategory
+            $global:dbatoolsciOutput = $results | Where-Object { $null -ne $PSItem }
             $results.Name | Should -Be "dbatoolsci test category"
             $results.Status | Should -Be "Successful"
         }
@@ -94,6 +95,39 @@ Describe $CommandName -Tag IntegrationTests {
             $secondCopyResults = Copy-DbaAgentJobCategory @splatSecondCopy
             $secondCopyResults.Name | Should -Be "dbatoolsci test category"
             $secondCopyResults.Status | Should -Be "Skipped"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput.PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
