@@ -88,7 +88,7 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
                 Table       = $tableName
                 Path        = $filePath
             }
-            $result = Export-DbaCsv @splatExport
+            $result = Export-DbaCsv @splatExport -OutVariable "global:dbatoolsciOutput"
 
             $result.RowsExported | Should -Be 3
             $result.Path | Should -Be $filePath
@@ -379,6 +379,35 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
                 $result.RowsExported | Should -Be 3 -Because "compression level $compressionLevel should export all rows"
                 Test-Path $filePath | Should -BeTrue -Because "file should exist for compression level $compressionLevel"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Path",
+                "RowsExported",
+                "FileSizeBytes",
+                "FileSizeMB",
+                "CompressionType",
+                "Elapsed",
+                "RowsPerSecond"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
