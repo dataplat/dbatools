@@ -38,8 +38,40 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Return values" {
         It "Get the log shipping errors" {
-            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle)
+            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput")
             $results.Status.Count | Should -BeExactly 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" -Skip:(-not $global:dbatoolsciOutput) {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" -Skip:(-not $global:dbatoolsciOutput) {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Instance",
+                "Action",
+                "SessionID",
+                "SequenceNumber",
+                "LogTime",
+                "Message"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
