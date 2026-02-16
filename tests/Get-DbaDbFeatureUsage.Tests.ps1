@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Feature Usage" {
         It "Gets results" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
         }
     }
@@ -75,6 +75,36 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets results" {
             $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname
             $results.database | Should -Not -Contain $dbname
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Feature",
+                "Database"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProperties) {
+                $prop | Should -BeIn $actualProperties
+            }
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
