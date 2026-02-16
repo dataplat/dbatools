@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.InstanceSingle -Database $db1Name
+            $results = Get-DbaDbStoredProcedure -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have standard properties" {
@@ -129,6 +129,39 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $TestConfig.InstanceSingle | Get-DbaDbStoredProcedure -Database $db1Name -Schema $schemaName
             $results.Name | Should -Be $procName2
             $results.Schema | Should -Be $schemaName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "ObjectId",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "ImplementationType",
+                "Startup"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.StoredProcedure"
         }
     }
 }
