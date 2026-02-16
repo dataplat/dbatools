@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command finds SQL Server instances" {
         BeforeAll {
-            $results = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect | Where-Object SqlInstance -eq $TestConfig.InstanceSingle
+            $results = Find-DbaInstance -ComputerName $TestConfig.InstanceSingle -ScanType Browser, SqlConnect -OutVariable "global:dbatoolsciOutput" | Where-Object SqlInstance -eq $TestConfig.InstanceSingle
         }
 
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
@@ -49,6 +49,47 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "successfully connects" {
             $results.SqlConnected | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "MachineName",
+                "ComputerName",
+                "InstanceName",
+                "FullName",
+                "SqlInstance",
+                "Port",
+                "TcpConnected",
+                "SqlConnected",
+                "DnsResolution",
+                "Ping",
+                "BrowseReply",
+                "Services",
+                "SystemServices",
+                "SPNs",
+                "PortsScanned",
+                "Availability",
+                "Confidence",
+                "ScanTypes",
+                "Timestamp"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Discovery\.DbaInstanceReport"
         }
     }
 }
