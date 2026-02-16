@@ -64,8 +64,23 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Certificate is backed up properly" {
         It "Returns the proper results" {
-            $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath
+            $backupResult = Get-DbaComputerCertificate -Thumbprint $certThumbprint | Backup-DbaComputerCertificate -Path $backupPath -OutVariable "global:dbatoolsciOutput"
             $backupResult.Name | Should -Match "$certThumbprint.cer"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
