@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
                 AvailabilityGroup = $agName
                 Database          = $existingDbWithBackup
             }
-            $results = Add-DbaAgDatabase @splatAddAgDatabase
+            $results = Add-DbaAgDatabase @splatAddAgDatabase -OutVariable "global:dbatoolsciOutput"
         }
 
         # Always include this test to be sure that the command runs without warnings.
@@ -148,6 +148,38 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Does not return results" {
             $results | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityDatabase]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "LocalReplicaRole",
+                "Name",
+                "SynchronizationState",
+                "IsFailoverReady",
+                "IsJoined",
+                "IsSuspended"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityDatabase"
         }
     }
 }
