@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get last history for all databases" {
         BeforeAll {
-            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should be more than one database" {
@@ -237,6 +237,60 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since "-" -WarningVariable warning 3> $null
             $results | Should -BeNullOrEmpty
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Database.BackupHistory]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroupName",
+                "Database",
+                "DatabaseId",
+                "UserName",
+                "Start",
+                "End",
+                "Duration",
+                "Path",
+                "TotalSize",
+                "CompressedBackupSize",
+                "CompressionRatio",
+                "Type",
+                "BackupSetId",
+                "DeviceType",
+                "Software",
+                "FullName",
+                "FileList",
+                "Position",
+                "FirstLsn",
+                "DatabaseBackupLsn",
+                "CheckpointLsn",
+                "LastLsn",
+                "SoftwareVersionMajor",
+                "IsCopyOnly",
+                "LastRecoveryForkGuid",
+                "RecoveryModel",
+                "EncryptorType",
+                "EncryptorThumbprint",
+                "KeyAlgorithm"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
         }
     }
 }
