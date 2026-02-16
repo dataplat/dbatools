@@ -71,10 +71,43 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Count Pages" {
         It "returns the proper results" {
-            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname -OutVariable "global:dbatoolsciOutput"
             @($result).Count | Should -Be 9
             @($result | Where-Object IsAllocated -eq $false).Count | Should -Be 5
             @($result | Where-Object IsAllocated -eq $true).Count | Should -Be 4
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "PageType",
+                "PageFreePercent",
+                "IsAllocated",
+                "IsMixedPage"
+            )
+            $dataRowInternals = @("RowError", "RowState", "ItemArray", "HasErrors")
+            $propertyNames = $global:dbatoolsciOutput[0].PSObject.Properties.Name | Where-Object { $PSItem -notin $dataRowInternals }
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $propertyNames | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
