@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "supports piping databases" {
-            $sequence = Get-DbaDatabase -SqlInstance $server -Database $newDbName | Set-DbaDbSequence -Sequence "Sequence1_$random" -Schema "Schema_$random" -Cycle
+            $sequence = Get-DbaDatabase -SqlInstance $server -Database $newDbName | Set-DbaDbSequence -Sequence "Sequence1_$random" -Schema "Schema_$random" -Cycle -OutVariable "global:dbatoolsciOutput"
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
@@ -132,6 +132,21 @@ Describe $CommandName -Tag IntegrationTests {
             $sequence = Set-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -WarningAction SilentlyContinue
             $sequence | Should -BeNullOrEmpty
             $WarnVar | Should -Match "cannot be zero"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Sequence]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Sequence"
         }
     }
 }
