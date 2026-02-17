@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "starts the services back" {
-                $services = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+                $services = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -OutVariable "global:dbatoolsciOutput"
                 $services | Should -Not -BeNullOrEmpty
                 foreach ($service in $services) {
                     $service.State | Should -Be 'Running'
@@ -70,6 +70,35 @@ Describe $CommandName -Tag IntegrationTests {
         Context "Error handling" {
             It "errors when passing an invalid InstanceName" {
                 { Start-DbaService -ComputerName $TestConfig.InstanceRestart -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No SQL Server services found with current parameters.'
+            }
+        }
+
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should have the custom dbatools type name" {
+                $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.DbaSqlService"
+            }
+
+            It "Should have the correct default display columns" {
+                $expectedColumns = @(
+                    "ComputerName",
+                    "ServiceName",
+                    "InstanceName",
+                    "ServiceType",
+                    "State",
+                    "Status",
+                    "Message"
+                )
+                $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help $CommandName -Full
+                $help.returnValues.returnValue.type.name | Should -Match "DbaSqlService"
             }
         }
     }

@@ -58,26 +58,18 @@ function Start-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .OUTPUTS
-        System.ServiceProcess.ServiceController
+        dbatools.DbaSqlService
 
-        Returns one ServiceController object per service that was successfully started. Each object represents a SQL Server related service on the target computer(s).
+        Returns one DbaSqlService object per service that was started. Each object represents a SQL Server related service on the target computer(s).
 
-        Default display properties (from ServiceController):
-        - Name: The service name (e.g., MSSQLSERVER, SQLSERVERAGENT, MSSQLServerOlapService)
-        - DisplayName: The friendly display name of the service
-        - Status: The current status of the service (Running, Stopped, StartPending, StopPending, etc.)
-        - StartType: How the service starts (Boot, System, Automatic, Manual, Disabled)
-
-        Additional properties available from ServiceController:
-        - ServiceName: The name of the service
-        - ServiceType: The type of service
-        - CanPauseAndContinue: Boolean indicating if the service can be paused and resumed
-        - CanShutdown: Boolean indicating if the service should be notified of system shutdown
-        - CanStop: Boolean indicating if the service can be stopped
-        - ServiceHandle: The service's Windows handle
-        - DependentServices: Collection of services that depend on this service
-        - ServicesDependedOn: Collection of services that this service depends on
-        - RequiredServices: Collection of services required for this service to run
+        Default display properties:
+        - ComputerName: The computer where the service resides
+        - ServiceName: The service name (e.g., MSSQLSERVER, SQLSERVERAGENT)
+        - InstanceName: The SQL Server instance name
+        - ServiceType: The type of SQL Server service (Engine, Agent, Browser, etc.)
+        - State: The current state of the service after the operation (Running, Stopped, etc.)
+        - Status: The result of the start operation (Successful or Failed)
+        - Message: A descriptive message about the start result
 
         Returns nothing if no services are found matching the specified parameters, or if the -WhatIf parameter is used.
 
