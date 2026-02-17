@@ -273,27 +273,8 @@ function Restore-DbaDatabase {
         https://dbatools.io/Restore-DbaDatabase
 
     .OUTPUTS
-        System.String (when -OutputScriptOnly is specified)
-
-        Returns the T-SQL RESTORE statements as strings without executing them. This allows the scripts to be reviewed, modified, or executed later.
-
-        PSCustomObject (for -Recover parameter set only)
-
-        When using the -Recover parameter to bring databases online, returns one object per database recovered with the following properties:
-        - SqlInstance: The target SQL Server instance
-        - DatabaseName: The name of the database that was recovered
-        - RestoreComplete: Boolean indicating if recovery succeeded
-        - Scripts: The T-SQL RESTORE statement that was executed
-
-        No direct output (for standard restore operations)
-
-        When performing standard restore operations (without OutputScriptOnly or Recover), the function delegates to Invoke-DbaAdvancedRestore which handles database restoration. The function may also create global variables if any of the following parameters are specified:
-        - GetBackupInformation: Creates global variable containing backup information
-        - SelectBackupInformation: Creates global variable containing selected backup history
-        - FormatBackupInformation: Creates global variable containing formatted backup information
-        - TestBackupInformation: Creates global variable containing tested backup information
-
-        Use these variables to inspect the backup chain analysis, file mappings, and restore validation results without executing the restore operation.
+        System.Management.Automation.PSCustomObject
+        System.String
 
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups

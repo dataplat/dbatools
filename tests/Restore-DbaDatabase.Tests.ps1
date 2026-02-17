@@ -857,7 +857,7 @@ use master
         }
 
         It "Should have restored the backup" {
-            $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert
+            $results = $encBackupResults | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -TrustDbBackupHistory -RestoredDatabaseNamePrefix cert -DestinationFilePrefix cert -OutVariable "global:dbatoolsciOutput"
             $results.RestoreComplete | Should -Be $true
         }
     }
@@ -999,6 +999,49 @@ use master
             $results.BackupFile | Should -Be "https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak"
             $results.Script -match "CREDENTIAL" | Should -Be $true
             $results.RestoreComplete | Should -Be $true
+        }
+    }
+
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "BackupFile",
+                "BackupFilesCount",
+                "BackupSize",
+                "CompressedBackupSize",
+                "Database",
+                "Owner",
+                "DatabaseRestoreTime",
+                "FileRestoreTime",
+                "NoRecovery",
+                "RestoreComplete",
+                "RestoredFile",
+                "RestoredFilesCount",
+                "Script",
+                "RestoreDirectory",
+                "WithReplace"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $outputs = $help.returnValues.returnValue.type.name
+            $outputs | Should -Match "PSCustomObject"
+            $outputs | Should -Match "System\.String"
         }
     }
 }
