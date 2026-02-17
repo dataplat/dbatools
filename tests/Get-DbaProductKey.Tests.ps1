@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:AppVeyor {
 
     Context "Gets ProductKey for Instances on $(([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName)" {
         BeforeAll {
-            $results = Get-DbaProductKey -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
+            $results = Get-DbaProductKey -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Gets results" {
@@ -49,6 +49,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:AppVeyor {
             foreach ($row in $results) {
                 $row.Key | Should -Not -BeNullOrEmpty
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Version",
+                "Edition",
+                "Key"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
