@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             Start-Sleep -Seconds 1
 
             # Get the results
-            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
+            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have correct properties" {
@@ -108,6 +108,64 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
         It "Should have command of WAITFOR" {
             $results.WaitType | Should -BeLike "*WAITFOR*"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Spid",
+                "Thread",
+                "Scheduler",
+                "WaitMs",
+                "WaitType",
+                "BlockingSpid",
+                "ResourceDesc",
+                "NodeId",
+                "Dop",
+                "DbId",
+                "SqlText",
+                "QueryPlan",
+                "InfoUrl"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Spid",
+                "Thread",
+                "Scheduler",
+                "WaitMs",
+                "WaitType",
+                "BlockingSpid",
+                "ResourceDesc",
+                "NodeId",
+                "Dop",
+                "DbId"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
