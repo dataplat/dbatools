@@ -85,7 +85,6 @@
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
-        'Connect-DbaInstance',
         'ConvertTo-DbaDataTable',
         'ConvertTo-DbaTimeline',
         'ConvertTo-DbaXESession',
