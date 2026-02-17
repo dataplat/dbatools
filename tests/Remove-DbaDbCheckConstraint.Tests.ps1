@@ -66,4 +66,43 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbCheckConstraint -SqlInstance $server -Database $dbname2 | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputDbName = "dbatoolsci_chkout_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $server -Name $outputDbName -EnableException
+            $chkcName = "dbatoolssci_chkc_out_$(Get-Random)"
+            $null = $server.Query("CREATE TABLE dbo.checkconstraint_out(col int CONSTRAINT $chkcName CHECK(col > 0));", $outputDbName)
+
+            $global:dbatoolsciOutput = Remove-DbaDbCheckConstraint -SqlInstance $server -Database $outputDbName
+        }
+
+        AfterAll {
+            Remove-DbaDatabase -SqlInstance $server -Database $outputDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
