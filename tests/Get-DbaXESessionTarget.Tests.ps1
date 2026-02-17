@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Verifying command output" {
         It "returns only the system_health session" {
-            $results = Get-DbaXESessionTarget -SqlInstance $TestConfig.InstanceSingle -Target "package0.event_file"
+            $results = Get-DbaXESessionTarget -SqlInstance $TestConfig.InstanceSingle -Target "package0.event_file" -OutVariable "global:dbatoolsciOutput"
             foreach ($result in $results) {
                 $result.Name -eq "package0.event_file" | Should -Be $true
             }
@@ -40,6 +40,40 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports the pipeline" {
             $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session "system_health" | Get-DbaXESessionTarget -Target "package0.event_file"
             $results.Count -gt 0 | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.XEvent.Target]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Session",
+                "SessionStatus",
+                "Name",
+                "ID",
+                "Field",
+                "PackageName",
+                "File",
+                "Description",
+                "ScriptName"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.XEvent\.Target"
         }
     }
 }
