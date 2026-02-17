@@ -459,7 +459,6 @@
         'New-DbaAgentOperator',
         'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
-        'New-DbaAvailabilityGroup',
         'New-DbaClientAlias',
         'New-DbaCmConnection',
         'New-DbaComputerCertificate',
