@@ -139,6 +139,7 @@ function Update-DbaInstance {
         - Installer (string) - Full path to the installer executable that was executed
         - Successful (bool) - Boolean indicating whether the patch installation completed successfully
         - Restarted (bool) - Boolean indicating whether the server was restarted after patching
+        - ExtractPath (string) - The directory path where update files were extracted on the target computer
         - Notes (object[]) - Array of messages describing the installation process, any warnings, or errors encountered
 
     .LINK
