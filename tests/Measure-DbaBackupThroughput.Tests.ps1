@@ -59,9 +59,43 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Returns output for single database" {
         It "Should return results" {
-            $testResults = Measure-DbaBackupThroughput -SqlInstance $TestConfig.InstanceSingle -Database $testDb
+            $testResults = Measure-DbaBackupThroughput -SqlInstance $TestConfig.InstanceSingle -Database $testDb -OutVariable "global:dbatoolsciOutput"
 
             $testResults | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "AvgThroughput",
+                "AvgSize",
+                "AvgDuration",
+                "MinThroughput",
+                "MaxThroughput",
+                "MinBackupDate",
+                "MaxBackupDate",
+                "BackupCount"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

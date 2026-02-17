@@ -98,7 +98,7 @@ function Measure-DbaDbVirtualLogFile {
 
     #>
     [CmdletBinding()]
-    [OutputType([System.Collections.ArrayList])]
+    [OutputType([PSCustomObject])]
     param ([parameter(ValueFromPipeline, Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
