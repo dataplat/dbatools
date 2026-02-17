@@ -113,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Destination = $secondaryInstance
                 Login       = $loginName1
             }
-            $result = Sync-DbaLoginPassword @splatSync
+            $result = Sync-DbaLoginPassword @splatSync -OutVariable "global:dbatoolsciOutput"
 
             $result | Should -Not -BeNullOrEmpty
             $result.Login | Should -Be $loginName1
@@ -220,6 +220,33 @@ Describe $CommandName -Tag IntegrationTests {
             # Should only process SQL logins, not Windows logins
             $results.SourceServer.Count | Should -Be 1
             $results.Login | Should -Be $loginName1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "DestinationServer",
+                "Login",
+                "Status",
+                "Notes"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
