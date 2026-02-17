@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         It "should have info for model" {
-            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1
+            $results = Test-DbaDiskSpeed -SqlInstance $TestConfig.InstanceMulti1 -OutVariable "global:dbatoolsciOutput"
             $results.FileName -contains "modellog.ldf" | Should -Be $true
         }
         It "returns only for master" {
@@ -341,6 +341,47 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $validColumns | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties for File aggregation" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "SizeGB",
+                "FileName",
+                "FileID",
+                "FileType",
+                "DiskLocation",
+                "Reads",
+                "AverageReadStall",
+                "ReadPerformance",
+                "Writes",
+                "AverageWriteStall",
+                "WritePerformance",
+                "Avg Overall Latency",
+                "Avg Bytes/Read",
+                "Avg Bytes/Write",
+                "Avg Bytes/Transfer"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0] | Get-Member -MemberType Property | Select-Object -ExpandProperty Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }

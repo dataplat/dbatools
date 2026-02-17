@@ -45,7 +45,7 @@ function Test-DbaDiskSpeed {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
         Returns I/O performance statistics aggregated at the file, database, or disk level based on the -AggregateBy parameter. Properties vary by aggregation level.
 
