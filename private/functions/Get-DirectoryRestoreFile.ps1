@@ -5,6 +5,9 @@ Internal Function to get SQL Server backfiles from a specified folder
 
 .DESCRIPTION
 Takes path, checks for validity. Scans for usual backup file
+
+.OUTPUTS
+    System.IO.FileInfo
     #>
     [CmdletBinding()]
     param (

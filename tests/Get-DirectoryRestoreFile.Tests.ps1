@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-Item "TestDrive:\backups\log2.trn" -ItemType File
             $null = New-Item "TestDrive:\backups\b\" -ItemType Directory
             $null = New-Item "TestDrive:\backups\b\log2b.trn" -ItemType File
-            $results = Get-DirectoryRestoreFile -Path "TestDrive:\backups"
+            $results = Get-DirectoryRestoreFile -Path "TestDrive:\backups" -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -111,6 +111,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should contain log2b.trn" {
             ($results2 | Where-Object FullName -like "*\backupsRecurse\*log2b.trn").count | Should -Be 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $helpContent = Get-Content "$PSScriptRoot\..\private\functions\Get-DirectoryRestoreFile.ps1" -Raw
+            $helpContent | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
