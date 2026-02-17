@@ -459,7 +459,6 @@
         'Invoke-DbaDbUpgrade',
         'Invoke-DbaDiagnosticQuery',
         'Invoke-DbaPfRelog',
-        'Invoke-DbaQuery',
         'Invoke-DbatoolsFormatter',
         'Invoke-DbatoolsRenameHelper',
         'Invoke-DbaWhoIsActive',
@@ -748,7 +747,19 @@
     CmdletsToExport    = @(
         'Select-DbaObject',
         'Set-DbatoolsConfig',
-        'Get-DbaConnectedInstance'
+        'Clear-DbaConnectionPool',
+        'Connect-DbaInstance',
+        'Disconnect-DbaInstance',
+        'Get-DbaConnectedInstance',
+        'Get-DbaConnection',
+        'Invoke-DbaQuery',
+        'New-DbaAzAccessToken',
+        'New-DbaConnectionString',
+        'New-DbaConnectionStringBuilder',
+        'New-DbaScriptingOption',
+        'New-DbaSqlParameter',
+        'Test-DbaConnection',
+        'Test-DbaPath'
     )
 
     # Variables to export from this module
