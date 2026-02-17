@@ -711,7 +711,6 @@
         'Set-DbaExtendedProperty',
         'Add-DbaExtendedProperty',
         'Get-DbaOleDbProvider',
-        'Disconnect-DbaInstance',
         'Set-DbaDefaultPath',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
