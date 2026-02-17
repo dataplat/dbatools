@@ -39,7 +39,7 @@ if (-not $env:appveyor) {
     Describe $CommandName -Tag IntegrationTests {
         Context "Can generate a new certificate with default settings" {
             BeforeAll {
-                $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException
+                $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException -OutVariable "global:dbatoolsciOutput"
             }
 
             AfterAll {
@@ -78,6 +78,35 @@ if (-not $env:appveyor) {
 
             It "Returns the right five year (60 month) expiry date" {
                 $customCert.NotAfter -match ((Get-Date).Date).AddMonths(60) | Should -BeTrue
+            }
+        }
+
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should return the correct type" {
+                $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "Selected.System.Security.Cryptography.X509Certificates.X509Certificate2"
+            }
+
+            It "Should have the correct default display columns" {
+                $expectedColumns = @(
+                    "FriendlyName",
+                    "DnsNameList",
+                    "Thumbprint",
+                    "NotBefore",
+                    "NotAfter",
+                    "Subject",
+                    "Issuer"
+                )
+                $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help $CommandName -Full
+                $help.returnValues.returnValue.type.name | Should -Match "System\.Security\.Cryptography\.X509Certificates\.X509Certificate2"
             }
         }
     }
