@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "supports pipable instances" {
-        $results = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
+        $results = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn" -OutVariable "global:dbatoolsciOutput"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
@@ -400,5 +400,20 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results.Column1 | Should -Be "Null"
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
+        }
     }
 }
