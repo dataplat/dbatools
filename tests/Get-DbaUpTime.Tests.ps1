@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Should have correct properties" {
-            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1
+            $results = Get-DbaUptime -SqlInstance $TestConfig.InstanceMulti1 -OutVariable "global:dbatoolsciOutput"
             $ExpectedProps = "ComputerName", "InstanceName", "SqlServer", "SqlUptime", "WindowsUptime", "SqlStartTime", "WindowsBootTime", "SinceSqlStart", "SinceWindowsBoot"
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
@@ -61,6 +61,37 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.WindowsBootTime | Should -BeOfType DbaDateTime
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlServer",
+                "SqlUptime",
+                "WindowsUptime",
+                "SqlStartTime",
+                "WindowsBootTime",
+                "SinceSqlStart",
+                "SinceWindowsBoot"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
