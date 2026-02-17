@@ -30,7 +30,7 @@ function Get-DbaWsfcNetwork {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_Network
 
         Returns one object per cluster network found on the Windows Server Failover Cluster.
 
