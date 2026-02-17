@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "creates a new schema" {
-            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName
+            $schema = New-DbaDbSchema -SqlInstance $server1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName -OutVariable "global:dbatoolsciOutput"
             $schema.Count | Should -Be 1
             $schema.Owner | Should -Be $userName
             $schema.Name | Should -Be TestSchema1
@@ -104,6 +104,21 @@ Describe $CommandName -Tag IntegrationTests {
             $schema.Owner | Should -Be dbo
             $schema.Name | Should -Be TestSchema4
             $schema.Parent.Name | Should -Be $newDbName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Schema]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Schema"
         }
     }
 }
