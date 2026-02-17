@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $dbName
         }
         It "Should transfer all tables" {
-            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -DestinationSqlInstance $TestConfig.InstanceMulti2 -Database $dbName -CopyAll Tables
+            $result = Invoke-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -DestinationSqlInstance $TestConfig.InstanceMulti2 -Database $dbName -CopyAll Tables -OutVariable "global:dbatoolsciOutput"
             $tables = Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti2 -Database $dbName -Table transfer_test, transfer_test2, transfer_test3, transfer_test4
             $tables.Count | Should -Be 4
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
@@ -124,6 +124,34 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Elapsed.TotalMilliseconds | Should -BeGreaterThan 0
             $result.Status | Should -Be 'Success'
             $result.Log -join "`n" | Should -BeLike '*CREATE TABLE `[dbo`].`[transfer_test`]*'
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "SourceDatabase",
+                "DestinationInstance",
+                "DestinationDatabase",
+                "Status",
+                "Elapsed",
+                "Log"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
