@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When importing registered servers" {
         It "imports group objects" {
-            $results = $newServer.Parent | Import-DbaRegServer -SqlInstance $TestConfig.InstanceSingle
+            $results = $newServer.Parent | Import-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Description | Should -Be $regSrvDesc
             $results.ServerName | Should -Be $srvName
             $results.Parent.Name | Should -Be $group
@@ -101,6 +101,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $object | Import-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue -WarningVariable warn
             $results | Should -Be $null
             $warn | Should -Match "No servers added"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "Name",
+                "ServerName",
+                "Group",
+                "Description",
+                "Source"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.RegisteredServers\.RegisteredServer"
         }
     }
 }
