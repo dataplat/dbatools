@@ -35,7 +35,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command output" {
         It "returns results" {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile -OutVariable "global:dbatoolsciOutput"
             $results.DatabaseName.Count | Should -BeGreaterThan 0
         }
 
@@ -65,6 +65,40 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should execute using parameters EventSequence, TextData, ApplicationName, ObjectName" {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id 1 | Read-DbaTraceFile -EventSequence 4 -TextData "Text" -ApplicationName "Application" -ObjectName "Name" -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -BeNullOrEmpty
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the ComputerName property" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the InstanceName property" {
+            $global:dbatoolsciOutput[0].InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the SqlInstance property" {
+            $global:dbatoolsciOutput[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have trace event properties" {
+            $columns = $global:dbatoolsciOutput[0].Table.Columns.ColumnName
+            $columns | Should -Contain "EventClass"
+            $columns | Should -Contain "DatabaseName"
+            $columns | Should -Contain "StartTime"
+            $columns | Should -Contain "EventSequence"
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
