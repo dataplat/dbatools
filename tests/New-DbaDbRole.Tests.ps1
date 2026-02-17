@@ -51,7 +51,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality" {
         It 'Add new role and returns results' {
-            $result = New-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor
+            $result = New-DbaDbRole -SqlInstance $instance -Database $dbname -Role $roleExecutor -OutVariable "global:dbatoolsciOutput"
+            $global:dbatoolsciColumns = $result[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
 
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
@@ -82,6 +83,34 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -Be 1
             $result.Name | Should -Be $roleExecutor
             $result.Parent | Should -Be $dbname
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+            $global:dbatoolsciColumns = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.DatabaseRole]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Parent",
+                "Owner"
+            )
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $global:dbatoolsciColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.DatabaseRole"
         }
     }
 }
