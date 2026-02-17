@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
             $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
-            $randomDb = New-DbaDatabase -SqlInstance $InstanceSingle
+            $randomDb = New-DbaDatabase -SqlInstance $InstanceSingle -OutVariable "global:dbatoolsciOutput"
 
             $newDbName = "dbatoolsci_newdb_$random"
             $newDb1Name = "dbatoolsci_newdb1_$random"
@@ -183,6 +183,44 @@ Describe $CommandName -Tag IntegrationTests {
 
             $secondaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileGroupDbName -DefaultFileGroup "Secondary" -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $secondaryFileGroupDb.DefaultFileGroup | Should -Be "$($secondaryFileGroupDbName)_MainData"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsAccessible",
+                "RecoveryModel",
+                "LogReuseWaitStatus",
+                "SizeMB",
+                "Compatibility",
+                "Collation",
+                "Owner",
+                "Encrypted",
+                "LastFullBackup",
+                "LastDiffBackup",
+                "LastLogBackup"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
         }
     }
 }
