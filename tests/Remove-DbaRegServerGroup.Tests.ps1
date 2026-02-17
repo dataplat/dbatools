@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When removing registered server groups" {
         It "supports dropping via the pipeline" {
-            $results = $newGroup | Remove-DbaRegServerGroup
+            $results = $newGroup | Remove-DbaRegServerGroup -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $groupName1
             $results.Status | Should -Be "Dropped"
         }
@@ -67,6 +67,49 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports hella long group name" {
             $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $hellagroup.Group
             $results.Name | Should -Be "dbatoolsci-third"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
