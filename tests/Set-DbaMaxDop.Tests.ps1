@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Apply to multiple instances" {
         It "Returns MaxDop 2 for each instance" {
-            $results = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -MaxDop 2
+            $results = Set-DbaMaxDop -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -MaxDop 2 -OutVariable "global:dbatoolsciInstanceOutput"
             foreach ($result in $results) {
                 $result.CurrentInstanceMaxDop | Should -Be 2
             }
@@ -120,4 +120,49 @@ Describe $CommandName -Tag IntegrationTests {
             $server.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be 2
         }
     }
+
+    Context "Output validation for instance-level results" {
+        AfterAll {
+            $global:dbatoolsciInstanceOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciInstanceOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceVersion",
+                "Database",
+                "DatabaseMaxDop",
+                "CurrentInstanceMaxDop",
+                "RecommendedMaxDop",
+                "PreviousDatabaseMaxDopValue",
+                "PreviousInstanceMaxDopValue"
+            )
+            $actualProperties = $global:dbatoolsciInstanceOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns for instance-level output" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "PreviousInstanceMaxDopValue",
+                "CurrentInstanceMaxDop"
+            )
+            $defaultColumns = $global:dbatoolsciInstanceOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+
 }
