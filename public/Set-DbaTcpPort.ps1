@@ -54,10 +54,9 @@ function Set-DbaTcpPort {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Void
+        PSCustomObject
 
-        This command does not return any output to the pipeline. It modifies SQL Server network configuration and optionally restarts services.
-        When -Force is used, the Database Engine service is restarted to apply the port configuration changes immediately.
+        Returns one object per SQL Server instance whose TCP port configuration was modified, containing the details of changes applied and service restart status.
 
     .LINK
         https://dbatools.io/Set-DbaTcpPort

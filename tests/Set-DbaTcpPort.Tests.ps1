@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should change the port" {
-            $result = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart -Port $testPort -WarningAction SilentlyContinue
+            $result = Set-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart -Port $testPort -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
             $result.Changes | Should -Match "Changed TcpPort"
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
@@ -72,6 +72,34 @@ Describe $CommandName -Tag IntegrationTests {
 
             $setPort = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
             $setPort | Should -Be $originalPort
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Changes",
+                "RestartNeeded",
+                "Restarted"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
