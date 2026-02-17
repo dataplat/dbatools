@@ -111,6 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $dataResults = Move-DbaDbFile @splatMoveData
+            $global:dbatoolsciOutput = @($dataResults | Where-Object { $null -ne $PSItem })
 
             Start-Sleep -Seconds 5
         }
@@ -254,6 +255,36 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Instance",
+                "Database",
+                "LogicalName",
+                "Source",
+                "Destination",
+                "Result",
+                "DatabaseFileMetadata",
+                "SourceFileDeleted"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
