@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
             "Cmd",
             "Output"
         )
-        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSystemCache
+        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSystemCache -OutVariable "global:dbatoolsciOutput"
     }
 
     Context "Validate standard output" {
@@ -68,6 +68,34 @@ Describe $CommandName -Tag IntegrationTests {
             $resultNoInfo = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSessionCache -NoInformationalMessages
             $resultNoInfo.Operation | Should -Match "FREESESSIONCACHE"
             $resultNoInfo.Output | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Operation",
+                "Cmd",
+                "Output"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
