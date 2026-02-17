@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn2" -BaseObject "obj2"
             $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
+            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -Confirm:$false -OutVariable "global:dbatoolsciOutput"
             $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
             $result1.Count | Should -BeGreaterThan $result2.Count
@@ -158,6 +158,34 @@ Describe $CommandName -Tag IntegrationTests {
             $result20 = Remove-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
 
             $warn | Should -Match "You must pipe in a synonym, database, or server or specify a SqlInstance"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Synonym",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

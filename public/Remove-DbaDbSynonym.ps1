@@ -161,7 +161,7 @@ function Remove-DbaDbSynonym {
 
                     try {
                         # avoid enumeration issues
-                        $db.Query("DROP SYNONYM $dbSynonym")
+                        $null = $db.Query("DROP SYNONYM $dbSynonym")
                         [PSCustomObject]@{
                             ComputerName = $db.ComputerName
                             InstanceName = $db.InstanceName
