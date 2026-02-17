@@ -184,7 +184,6 @@
         'Get-DbaAgentProxy',
         'Get-DbaAgentSchedule',
         'Get-DbaAgentServer',
-        'Get-DbaAvailabilityGroup',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBackupInformation',
