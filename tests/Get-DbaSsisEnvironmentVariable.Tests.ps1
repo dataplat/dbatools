@@ -68,3 +68,103 @@ END
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Check if SSISDB exists on the test instance
+        $ssisDb = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database SSISDB -ErrorAction SilentlyContinue
+        $global:skipSsis = ($null -eq $ssisDb)
+
+        if (-not $global:skipSsis) {
+            $testFolder = "dbatoolsci_folder_$(Get-Random)"
+            $testEnv = "dbatoolsci_env_$(Get-Random)"
+            $testVar = "dbatoolsci_var_$(Get-Random)"
+
+            # Create folder, environment, and variable for testing
+            $splatSetup = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = "SSISDB"
+                Query       = @"
+DECLARE @folder_id bigint;
+EXEC [SSISDB].[catalog].[create_folder] @folder_name = N'$testFolder', @folder_id = @folder_id OUTPUT;
+EXEC [SSISDB].[catalog].[create_environment] @folder_name = N'$testFolder', @environment_name = N'$testEnv';
+EXEC [SSISDB].[catalog].[create_environment_variable]
+    @folder_name = N'$testFolder',
+    @environment_name = N'$testEnv',
+    @variable_name = N'$testVar',
+    @data_type = N'String',
+    @sensitive = 0,
+    @value = N'TestValue';
+"@
+            }
+            $null = Invoke-DbaQuery @splatSetup
+        }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        if (-not $global:skipSsis) {
+            $splatCleanup = @{
+                SqlInstance = $TestConfig.instance1
+                Database    = "SSISDB"
+                Query       = "EXEC [SSISDB].[catalog].[delete_folder] @folder_name = N'$testFolder'"
+            }
+            $null = Invoke-DbaQuery @splatCleanup -ErrorAction SilentlyContinue
+        }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When getting SSIS environment variables" -Skip:$global:skipSsis {
+        It "Should return environment variables" {
+            $splatGetVars = @{
+                SqlInstance = $TestConfig.instance1
+                Folder      = $testFolder
+                Environment = $testEnv
+            }
+            $result = Get-DbaSsisEnvironmentVariable @splatGetVars -OutVariable "global:dbatoolsciOutput"
+            $result | Should -Not -BeNullOrEmpty
+            $result.Name | Should -Contain $testVar
+            $result.Value | Should -Contain "TestValue"
+        }
+    }
+
+    Context "Output validation" -Skip:$global:skipSsis {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Folder",
+                "Environment",
+                "Id",
+                "Name",
+                "Description",
+                "Type",
+                "IsSensitive",
+                "BaseDataType",
+                "Value"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
