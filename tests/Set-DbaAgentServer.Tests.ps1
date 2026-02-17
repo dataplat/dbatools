@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "changes agent server job history properties to 10000 / 100" {
-        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100
+        $results = Set-DbaAgentServer -SqlInstance $testServer -MaximumHistoryRows 10000 -MaximumJobHistoryRows 100 -OutVariable "global:dbatoolsciOutput"
         $results.MaximumHistoryRows | Should -Be 10000
         $results.MaximumJobHistoryRows | Should -Be 100
         $results.JobHistoryIsEnabled | Should -Be $true
@@ -351,5 +351,56 @@ Describe $CommandName -Tag IntegrationTests {
             $validationError = $true
         }
         $validationError | Should -Be $true
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AgentDomainGroup",
+                "AgentLogLevel",
+                "AgentMailType",
+                "AgentShutdownWaitTime",
+                "ErrorLogFile",
+                "IdleCpuDuration",
+                "IdleCpuPercentage",
+                "IsCpuPollingEnabled",
+                "JobServerType",
+                "LoginTimeout",
+                "JobHistoryIsEnabled",
+                "MaximumHistoryRows",
+                "MaximumJobHistoryRows",
+                "MsxAccountCredentialName",
+                "MsxAccountName",
+                "MsxServerName",
+                "Name",
+                "NetSendRecipient",
+                "ServiceAccount",
+                "ServiceStartMode",
+                "SqlAgentAutoStart",
+                "SqlAgentMailProfile",
+                "SqlAgentRestart",
+                "SqlServerRestart",
+                "State",
+                "SysAdminOnly"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobServer"
+        }
     }
 }
