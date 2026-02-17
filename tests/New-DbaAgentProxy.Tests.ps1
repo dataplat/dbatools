@@ -64,9 +64,9 @@ Describe $CommandName -Tag IntegrationTests {
             $isReplicationInstalled = $InstanceSingle.Databases["master"].Query("DECLARE @installed int;BEGIN TRY EXEC @installed = sys.sp_MS_replication_installed; END TRY BEGIN CATCH SET @installed = 0; END CATCH SELECT @installed AS IsReplicationInstalled;").IsReplicationInstalled
 
             if ($isReplicationInstalled -eq 1) {
-                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS, Distribution, LogReader, Merge, QueueReader, Snapshot
+                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS, Distribution, LogReader, Merge, QueueReader, Snapshot -OutVariable "global:dbatoolsciOutput"
             } else {
-                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
+                $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName1 -Description "Subsystem test" -ProxyCredential $userName -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS -OutVariable "global:dbatoolsciOutput"
             }
 
             $agentProxySSISDisabled = New-DbaAgentProxy -SqlInstance $InstanceSingle -Name $proxyName2 -Description "SSIS disabled test" -ProxyCredential $userName -Subsystem SSIS -Disabled
@@ -144,6 +144,41 @@ Describe $CommandName -Tag IntegrationTests {
             $agentProxyLoginRole.ServerRoles.Name | Should -Be securityadmin
             $agentProxyLoginRole.MSDBRoles.Name | Should -Be ServerGroupAdministratorRole
             $agentProxyLoginRole.IsEnabled | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "CredentialName",
+                "CredentialIdentity",
+                "Description",
+                "Logins",
+                "ServerRoles",
+                "MsdbRoles",
+                "SubSystems",
+                "IsEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.ProxyAccount"
         }
     }
 }
