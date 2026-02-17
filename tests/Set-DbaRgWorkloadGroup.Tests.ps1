@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
                 GroupMaximumRequests                = 1
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup
+            $result = Set-DbaRgWorkloadGroup @splatSetWorkloadGroup -OutVariable "global:dbatoolsciOutput"
             $resGov = Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle
 
             $newWorkloadGroup | Should -Not -Be $null
@@ -240,6 +240,41 @@ Describe $CommandName -Tag IntegrationTests {
             $wklGroupCleanupName = "dbatoolssci_wklgroupTest"
             $wklGroupCleanupName2 = "dbatoolssci_wklgroupTest2"
             $null = Remove-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -WorkloadGroup $wklGroupCleanupName, $wklGroupCleanupName2 -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.WorkloadGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.WorkloadGroup"
         }
     }
 }
