@@ -517,7 +517,6 @@
         'New-DbaFirewallRule',
         'New-DbaLogin',
         'New-DbaRgResourcePool',
-        'New-DbaScriptingOption',
         'New-DbaServerRole',
         'New-DbaServiceMasterKey',
         'New-DbaSqlParameter',
