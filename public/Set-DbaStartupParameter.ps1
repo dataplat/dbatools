@@ -150,7 +150,7 @@ function Set-DbaStartupParameter {
         - NoLoggingToWinEvents (boolean) - Whether Windows event logging is disabled (-n)
         - ParameterString (string) - Complete startup parameter string as stored in registry
         - SingleUser (boolean) - Whether single-user mode (-m) is enabled
-        - SingleUserDetails (string) - Specific login allowed in single-user mode (if specified)
+        - SingleUserName (string) - Specific login allowed in single-user mode (if specified)
         - StartAsNamedInstance (boolean) - Whether named instance flag (-s) is enabled
         - TraceFlags (string) - Comma-separated list of enabled trace flags (-T parameters)
 

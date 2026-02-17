@@ -69,11 +69,53 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceMulti1
                 TraceFlag   = 3226
             }
-            $result = Set-DbaStartupParameter @splatSetInstance
+            $result = Set-DbaStartupParameter @splatSetInstance -OutVariable "global:dbatoolsciOutput"
 
             $result.SqlInstance | Should -Be $TestConfig.InstanceMulti1
             $result.TraceFlags.Count | Should -Be 1
             $result.TraceFlags[0] | Should -Be 3226
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MasterData",
+                "MasterLog",
+                "ErrorLog",
+                "TraceFlags",
+                "DebugFlags",
+                "CommandPromptStart",
+                "MinimalStart",
+                "MemoryToReserve",
+                "SingleUser",
+                "SingleUserName",
+                "NoLoggingToWinEvents",
+                "StartAsNamedInstance",
+                "DisableMonitoring",
+                "IncreasedExtents",
+                "ParameterString",
+                "OriginalStartupParameters",
+                "Notes"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Not -BeNullOrEmpty
         }
     }
 }
