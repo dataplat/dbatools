@@ -141,4 +141,85 @@ Describe $CommandName -Tag IntegrationTests {
             $runningResults.IsRunning | Should -Be $true
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $null = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
+            $global:dbatoolsciOutput = @(Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace | Where-Object { $null -ne $PSItem })
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status",
+                "IsRunning",
+                "Path",
+                "RemotePath",
+                "MaxSize",
+                "StopTime",
+                "MaxFiles",
+                "IsRowset",
+                "IsRollover",
+                "IsShutdown",
+                "IsDefault",
+                "BufferCount",
+                "BufferSize",
+                "FilePosition",
+                "ReaderSpid",
+                "StartTime",
+                "LastEventTime",
+                "EventCount",
+                "DroppedEventCount",
+                "Parent",
+                "SqlCredential"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status",
+                "IsRunning",
+                "Path",
+                "MaxSize",
+                "StopTime",
+                "MaxFiles",
+                "IsRowset",
+                "IsRollover",
+                "IsShutdown",
+                "IsDefault",
+                "BufferCount",
+                "BufferSize",
+                "FilePosition",
+                "ReaderSpid",
+                "StartTime",
+                "LastEventTime",
+                "EventCount",
+                "DroppedEventCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
