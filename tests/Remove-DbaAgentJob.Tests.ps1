@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -157,6 +157,33 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "   " -Confirm:$false
             $result | Should -BeNullOrEmpty
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
