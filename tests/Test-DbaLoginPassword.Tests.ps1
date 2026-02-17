@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "making sure command works" {
         It "finds the new weak password and supports piping" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle | Test-DbaLoginPassword
+            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle | Test-DbaLoginPassword -OutVariable "global:dbatoolsciOutput"
             $results.SqlLogin | Should -Contain $weaksauce
         }
         It "returns just one login" {
@@ -61,6 +61,40 @@ Describe $CommandName -Tag IntegrationTests {
         It "handles passwords with quotes, see #9095" {
             $results = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce -Dictionary "&é`"'(-", "hello"
             $results.SqlLogin | Should -Be $weaksauce
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a DataRow" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SqlLogin",
+                "WeakPassword",
+                "Password",
+                "Disabled",
+                "CreatedDate",
+                "ModifiedDate",
+                "DefaultDatabase"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProperties) {
+                $prop | Should -BeIn $actualProperties
+            }
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
