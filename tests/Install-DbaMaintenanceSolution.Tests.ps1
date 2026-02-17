@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "does not overwrite existing" {
             # First installation should succeed
-            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $results = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -BeNullOrEmpty
 
             # Second installation should warn about already existing
@@ -262,6 +262,32 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $jobStep = Get-DbaAgentJobStep @splatJobStep
             $jobStep.Command | Should -Match "@CheckSum = 'Y'"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Results"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
