@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Verifying command returns all the required results" {
         It "returns the correct values" {
-            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle
+            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Count -gt 1000 | Should -Be $true
         }
 
@@ -49,6 +49,40 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.Name -match "sql" | Should -Be $true
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "Name",
+                "Credential"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "Name"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
