@@ -59,7 +59,13 @@ CREATE LOGIN [$DBUserName]
         It "Should execute against active nodes" {
             # Creates the user on
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $CreateTestLogin
-            $results = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable $warn
+            $splatSync = @{
+                Source       = $TestConfig.InstanceMulti1
+                Destination  = $TestConfig.InstanceMulti2
+                Login        = $DBUserName
+                ExcludeLogin = "NotaLogin"
+            }
+            $results = Sync-DbaLoginPermission @splatSync -OutVariable "global:dbatoolsciOutput" -WarningVariable $warn
             $results.Status | Should -Be 'Successful'
             $warn | Should -BeNullOrEmpty
         }
@@ -111,6 +117,49 @@ CREATE LOGIN [$stateTestLogin]
 
             $destLoginAfter = Get-DbaLogin -SqlInstance $TestConfig.InstanceMulti2 -Login $stateTestLogin
             $destLoginAfter.IsDisabled | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes",
+                "DateTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
