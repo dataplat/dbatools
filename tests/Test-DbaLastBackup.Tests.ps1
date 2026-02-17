@@ -109,7 +109,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Test a single database" {
         BeforeAll {
-            $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup
+            $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should return success" {
@@ -184,6 +184,45 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have removed the temp backup copy even if skipped" {
             ($null -eq $fileresult) | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "TestServer",
+                "Database",
+                "FileExists",
+                "Size",
+                "RestoreResult",
+                "DbccResult",
+                "RestoreStart",
+                "RestoreEnd",
+                "RestoreElapsed",
+                "DbccMaxDop",
+                "DbccStart",
+                "DbccEnd",
+                "DbccElapsed",
+                "BackupDates",
+                "BackupFiles"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $outputTypes = @($help.returnValues.returnValue.type.name)
+            ($outputTypes -match "PSCustomObject").Count | Should -BeGreaterThan 0
         }
     }
 }
