@@ -155,7 +155,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sql = "CREATE SCHEMA $schema AUTHORIZATION $login2"
         $server.Query($sql, $dbname)
 
-        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname, msdb -User $login1, $login2 -Force -WarningAction SilentlyContinue
+        $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname, msdb -User $login1, $login2 -Force -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname, msdb
 
         $results1.Name -contains $login1 | Should -Be $false
@@ -190,5 +190,35 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User "$($TestConfig.InstanceSingle)\$loginWindows"
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $results1.Name -contains $loginWindows | Should -Be $false
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "SchemaName",
+                "Action",
+                "SchemaOwnerBefore",
+                "SchemaOwnerAfter"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
