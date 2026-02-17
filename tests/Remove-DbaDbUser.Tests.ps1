@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "drops a user with no ownerships" {
-            Remove-DbaDbUser $server -Database tempdb -User $user.Name
+            Remove-DbaDbUser $server -Database tempdb -User $user.Name -OutVariable "global:dbatoolsciOutput"
             $db.Users[$user.Name] | Should -BeNullOrEmpty
         }
 
@@ -83,6 +83,34 @@ Describe $CommandName -Tag IntegrationTests {
             $table.Create()
             Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
             $db.Users[$user.Name] | Should -Be $user
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "User",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
