@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality" {
         It "Returns all role membership for server roles" {
-            $result = Get-DbaServerRoleMember -SqlInstance $server2
+            $result = Get-DbaServerRoleMember -SqlInstance $server2 -OutVariable "global:dbatoolsciOutput"
 
             # should have at least $testLogin and a sysadmin
             $result.Count | Should -BeGreaterOrEqual 2
@@ -86,6 +86,35 @@ Describe $CommandName -Tag IntegrationTests {
 
             $uniqueInstances = $result.SqlInstance | Select-Object -Unique
             $uniqueInstances.Count | Should -BeExactly 2
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Role",
+                "Name",
+                "SmoRole",
+                "SmoLogin"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 
