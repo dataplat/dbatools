@@ -71,14 +71,9 @@ function Test-DbaBackupInformation {
         https://dbatools.io/Test-DbaBackupInformation
 
     .OUTPUTS
-        The same backup history object type provided as input, with an additional IsVerified property
+        Dataplat.Dbatools.Database.BackupHistory
 
-        Returns one validated backup history object per input backup, with all original properties preserved and an added IsVerified property.
-
-        Properties:
-        - IsVerified (boolean) - Boolean indicating whether the backup history passed all validation tests. Set to $True for backups that passed all validation checks (LSN chain integrity, file accessibility, database conflicts, and path availability). Set to $False or left unchanged for backups with validation errors.
-
-        All original properties from the input backup history objects remain accessible (BackupName, Database, Type, Path, etc.). The function acts as a pass-through validator that marks backups with a verification status for filtering restoration candidates.
+        Returns the same backup history objects provided as input, with an additional IsVerified property set to $True for backups that passed all validation checks or $False for those that did not.
 
     .EXAMPLE
         PS C:\> $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance

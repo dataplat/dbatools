@@ -69,6 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 Mock New-DbaDirectory { $True }
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                $global:dbatoolsciOutput = $output
                 ($output.Count) -gt 0 | Should -Be $true
                 "False" -in ($Output.IsVerified) | Should -Be $False
                 ($null -ne $WarnVar) | Should -Be $True
@@ -259,6 +260,57 @@ Describe $CommandName -Tag IntegrationTests {
                 ($output.Count) -gt 0 | Should -Be $true
                 $true -in ($Output.IsVerified) | Should -Be $False
                 ($null -ne $WarnVar) | Should -Be $True
+            }
+        }
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should have the expected properties" {
+                $expectedProperties = @(
+                    "BackupSetId",
+                    "CheckpointLsn",
+                    "ComputerName",
+                    "Database",
+                    "DatabaseBackupLsn",
+                    "DeviceType",
+                    "Duration",
+                    "End",
+                    "FileList",
+                    "FirstLsn",
+                    "FullName",
+                    "InstanceName",
+                    "IsCopyOnly",
+                    "IsVerified",
+                    "LastLsn",
+                    "LastRecoveryForkGUID",
+                    "OriginalDatabase",
+                    "OriginalFileList",
+                    "OriginalFullName",
+                    "Path",
+                    "Position",
+                    "Software",
+                    "SoftwareVersionMajor",
+                    "SqlInstance",
+                    "Start",
+                    "TotalSize",
+                    "Type",
+                    "UserName"
+                )
+                $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+                Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+            }
+
+            It "Should have IsVerified set on all output objects" {
+                $global:dbatoolsciOutput | ForEach-Object {
+                    $PSItem.PSObject.Properties.Name | Should -Contain "IsVerified"
+                }
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help Test-DbaBackupInformation -Full
+                $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Database\.BackupHistory"
             }
         }
     }
