@@ -42,12 +42,41 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "restarts some services through pipeline" {
-            $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
+            $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService -OutVariable "global:dbatoolsciOutput"
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be "Running"
                 $service.Status | Should -Be "Successful"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.DbaSqlService"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "ServiceName",
+                "InstanceName",
+                "ServiceType",
+                "State",
+                "Status",
+                "Message"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "DbaSqlService"
         }
     }
 }

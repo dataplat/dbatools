@@ -65,7 +65,7 @@ function Restart-DbaService {
         https://dbatools.io/Restart-DbaService
 
     .OUTPUTS
-        PSCustomObject
+        dbatools.DbaSqlService
 
         Returns one object per service that was processed with the following properties:
         - ComputerName: The name of the computer where the service is running
