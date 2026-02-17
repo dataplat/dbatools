@@ -70,7 +70,7 @@ function Get-DbaProcess {
         https://dbatools.io/Get-DbaProcess
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Agent.Job (SMO Process object)
+        System.Data.DataRow
 
         Returns one object per active SQL Server process/session matching the specified filter criteria.
 

@@ -31,7 +31,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing Get-DbaProcess results" {
         BeforeAll {
-            $allResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle)
+            $allResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput")
         }
 
         It "matches self as a login at least once" {
@@ -59,6 +59,56 @@ Describe $CommandName -Tag IntegrationTests {
                 $result.Program | Should -Be "dbatools PowerShell module - dbatools.io"
                 $result.Database | Should -Be "master"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Spid",
+                "Login",
+                "LoginTime",
+                "Host",
+                "Database",
+                "BlockingSpid",
+                "Program",
+                "Status",
+                "Command",
+                "Cpu",
+                "MemUsage",
+                "LastRequestStartTime",
+                "LastRequestEndTime",
+                "MinutesAsleep",
+                "ClientNetAddress",
+                "NetTransport",
+                "EncryptOption",
+                "AuthScheme",
+                "NetPacketSize",
+                "ClientVersion",
+                "HostProcessId",
+                "IsSystem",
+                "EndpointName",
+                "IsDac",
+                "LastQuery"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
