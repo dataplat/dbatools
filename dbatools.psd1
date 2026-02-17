@@ -175,7 +175,6 @@
         'Find-DbaUserObject',
         'Find-DbaView',
         'Format-DbaBackupInformation',
-        'Get-DbaAgentJob',
         'Get-DbaAgentJobCategory',
         'Get-DbaAgentJobHistory',
         'Get-DbaAgentJobOutputFile',
