@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "creates a usable sql parameter" {
-        $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
+        $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output -OutVariable "global:dbatoolsciOutput"
         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be "{""example"":""sample""}"
     }
@@ -73,5 +73,20 @@ Describe $CommandName -Tag IntegrationTests {
         [int]$ZeroInt = 0
         $ZeroSqlParam = New-DbaSqlParameter -ParameterName ZeroInt -Value $ZeroInt -SqlDbType int
         $ZeroSqlParam.Value | Should -Be 0
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.Data.SqlClient.SqlParameter]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.Data\.SqlClient\.SqlParameter"
+        }
     }
 }
