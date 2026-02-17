@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Force         = $true
             }
             $result = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $testWorkloadGroup
-            $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
+            $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -OutVariable "global:dbatoolsciOutput"
             $result2 = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $testWorkloadGroup
 
             $newWorkloadGroup | Should -Not -Be $null
@@ -157,6 +157,41 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle
 
             $result.ReconfigurePending | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.WorkloadGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.WorkloadGroup"
         }
     }
 }
