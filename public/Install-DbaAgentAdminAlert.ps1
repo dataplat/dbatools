@@ -95,7 +95,7 @@ function Install-DbaAgentAdminAlert {
         https://dbatools.io/Install-DbaAgentAdminAlert
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Alert
+        Microsoft.SqlServer.Management.Smo.Agent.Alert
 
         Returns one Alert object per severity level or message ID for which an alert was successfully created. By default, this results in 12 objects (9 severity levels 17-25 plus 3 message IDs 823-825), or fewer if specific severities or message IDs are excluded via -ExcludeSeverity or -ExcludeMessageId parameters.
 
