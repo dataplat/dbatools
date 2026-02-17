@@ -61,7 +61,7 @@ function Get-DbaStub {
 
         $tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random).ps1"
         [System.IO.File]::WriteAllText($tempPath, $content)
-        $results = $tempPath | Invoke-DbatoolsRenameHelper
+        $results = $tempPath | Invoke-DbatoolsRenameHelper -OutVariable "global:dbatoolsciOutput"
         $newContent = [System.IO.File]::ReadAllText($tempPath)
     }
 
@@ -89,6 +89,31 @@ function Get-DbaStub {
 
         It "Should return exactly the format we want" {
             $newContent | Should -Be $wantedContent
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Path",
+                "Pattern",
+                "ReplacedWith"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
