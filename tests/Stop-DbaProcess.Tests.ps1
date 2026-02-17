@@ -32,6 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "kills only this specific process" {
             $fakeapp = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -ClientName 'dbatoolsci test app'
             $results = Stop-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program 'dbatoolsci test app'
+            $global:dbatoolsciOutput = $results
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'
@@ -43,6 +44,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Program.Count | Should -Be 1
             $results.Program | Should -Be 'dbatoolsci test app'
             $results.Status | Should -Be 'Killed'
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SqlInstance",
+                "Spid",
+                "Login",
+                "Host",
+                "Database",
+                "Program",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
