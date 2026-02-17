@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = $alldbs | Start-DbaDbEncryption @splat
             $backups = $alldbs | Select-Object -First 1 | Backup-DbaDatabase -Path $backupPath
-            $results = $backups | Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle
+            $results = $backups | Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Encrypted | Should -Be $true
         }
         It "should detect encryption from piped file" {
@@ -73,6 +73,39 @@ Describe $CommandName -Tag IntegrationTests {
             $backup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $backupPath -EncryptionAlgorithm AES192 -EncryptionCertificate $encryptor -Database $db.Name
             $results = Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle -FilePath $backup.BackupPath
             $results.Encrypted | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "FilePath",
+                "BackupName",
+                "Encrypted",
+                "KeyAlgorithm",
+                "EncryptorThumbprint",
+                "EncryptorType",
+                "TDEThumbprint",
+                "Compressed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
