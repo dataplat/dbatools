@@ -184,3 +184,68 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $result = Test-DbaMaxMemory -SqlInstance $TestConfig.instance2 -OutVariable "global:dbatoolsciOutput"
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When testing max memory on a SQL instance" {
+        It "Should return results" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should return expected property values" {
+            $result.Total | Should -BeGreaterThan 0
+            $result.MaxValue | Should -BeGreaterThan 0
+            $result.RecommendedValue | Should -BeGreaterThan 0
+            $result.InstanceCount | Should -BeGreaterOrEqual 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceCount",
+                "Total",
+                "MaxValue",
+                "RecommendedValue",
+                "Server"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceCount",
+                "Total",
+                "MaxValue",
+                "RecommendedValue"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
