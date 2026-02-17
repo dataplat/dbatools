@@ -104,7 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object Database -eq "" | Should -Not -BeNullOrEmpty
         }
         It "returns no server level permissions without -IncludeServerLevel" {
-            $results = Get-DbaPermission -SqlInstance $server
+            $results = Get-DbaPermission -SqlInstance $server -OutVariable "global:dbatoolsciOutput"
             $results | Where-Object Database -eq "" | Should -HaveCount 0
         }
         It "returns no system object permissions with -ExcludeSystemObjects" {
@@ -138,6 +138,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser1 -and $PSItem.GranteeType -eq "SCHEMA OWNER" } | Should -HaveCount 1
             $results | Where-Object { $PSItem.Securable -eq "$schemaNameForTable2" -and $PSItem.PermissionName -eq "CONTROL" -and $PSItem.Grantee -eq $loginNameUser2 -and $PSItem.GranteeType -eq "SQL_USER" } | Should -HaveCount 1
 
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "PermState",
+                "PermissionName",
+                "SecurableType",
+                "Securable",
+                "Grantee",
+                "GranteeType",
+                "RevokeStatement",
+                "GrantStatement"
+            )
+            $propertyNames = $global:dbatoolsciOutput[0].Table.Columns.ColumnName
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $propertyNames | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
