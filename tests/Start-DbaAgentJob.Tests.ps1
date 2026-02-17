@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = New-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $jobName -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
-            $startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $jobName1 | Start-DbaAgentJob
+            $startJobResults = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $jobName1 | Start-DbaAgentJob -OutVariable "global:dbatoolsciOutput"
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -85,6 +85,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "do not start job if the step does not exist" {
             $nonExistentStepResults = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $jobName3 -StepName "stepdoesnoteexist"
             ($nonExistentStepResults.SqlInstance).Count | Should -Be 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Category",
+                "OwnerLoginName",
+                "CurrentRunStatus",
+                "CurrentRunRetryAttempt",
+                "Enabled",
+                "LastRunDate",
+                "LastRunOutcome",
+                "HasSchedule",
+                "OperatorToEmail",
+                "CreateDate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Job"
         }
     }
 }
