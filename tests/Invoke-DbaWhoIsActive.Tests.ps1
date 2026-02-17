@@ -106,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should execute with ShowOwnSpid" {
-            $resultsOwnSpid = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid
+            $resultsOwnSpid = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid -OutVariable "global:dbatoolsciOutput"
             $WarnVar | Should -BeNullOrEmpty
             $resultsOwnSpid | Should -Not -BeNullOrEmpty
         }
@@ -133,6 +133,38 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $resultsNotFilter = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -NotFilter 0 -NotFilterType Program
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the expected base columns" {
+            $expectedColumns = @(
+                "session_id",
+                "sql_text",
+                "login_name",
+                "status",
+                "host_name",
+                "database_name",
+                "program_name",
+                "start_time",
+                "collection_time"
+            )
+            $actualColumns = $global:dbatoolsciOutput[0].Table.Columns.ColumnName
+            $missingColumns = $expectedColumns | Where-Object { $PSItem -notin $actualColumns }
+            $missingColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "DataRow"
         }
     }
 }
