@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Should set the database owner" {
         It "Sets the database owner on a specific database" {
-            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName -TargetLogin $owner
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName -TargetLogin $owner -OutVariable "global:dbatoolsciOutput"
             $results.Owner | Should -Be $owner
         }
         It "Check it actually set the owner" {
@@ -118,6 +118,33 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Updates at least one database" {
             @($results).Count | Should -BeGreaterOrEqual 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Owner"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
