@@ -25,7 +25,7 @@ function Get-DbaAvailableCollation {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        System.Data.DataRow
+        Microsoft.SqlServer.Management.Smo.Collation
 
         Returns one DataRow per collation supported by each SQL Server instance, enhanced with human-readable descriptions via EnumCollations().
 
