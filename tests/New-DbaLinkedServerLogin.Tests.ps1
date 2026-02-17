@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Creates a linked server login with the local login to remote user mapping on two different linked servers" {
-            $results = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
+            $results = New-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword -OutVariable "global:dbatoolsciOutput"
             $results.Count | Should -Be 2
             $results.Parent.Name | Should -Be $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
@@ -98,6 +98,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
             $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LinkedServerLogin]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteUser",
+                "Impersonate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.LinkedServerLogin"
         }
     }
 }
