@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Apply LogCount to multiple instances" {
         BeforeAll {
-            $logCountResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti2, $TestConfig.InstanceMulti1 -LogCount 8
+            $logCountResults = Set-DbaErrorLogConfig -SqlInstance $TestConfig.InstanceMulti2, $TestConfig.InstanceMulti1 -LogCount 8 -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Returns LogCount set to 8 for each instance" {
@@ -84,6 +84,33 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $logSizeResults) {
                 $result.LogSize.Kilobyte | Should -Be 100
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LogCount",
+                "LogSize"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
