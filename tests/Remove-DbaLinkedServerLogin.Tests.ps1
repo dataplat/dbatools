@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results.length | Should -Be 1
 
-            $results = Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
+            $results = Remove-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name -OutVariable "global:dbatoolsciOutput"
             $results = Get-DbaLinkedServerLogin -SqlInstance $InstanceSingle -LinkedServer $linkedServer1Name -LocalLogin $localLogin1Name
             $results | Should -BeNullOrEmpty
 
@@ -131,6 +131,34 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $InstanceSingle | Remove-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results = $InstanceSingle | Get-DbaLinkedServerLogin -LinkedServer $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Not -Contain $localLogin7Name
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LinkedServer",
+                "Login",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
