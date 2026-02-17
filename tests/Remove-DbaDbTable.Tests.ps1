@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Commands work as expected" {
         It "Removes a table" {
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1
+            $global:dbatoolsciOutput = Remove-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1 -Confirm:$false
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1) | Should -BeNullOrEmpty
         }
 
@@ -62,6 +62,37 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -Not -BeNullOrEmpty
             Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2 | Remove-DbaDbTable
             (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "TableName",
+                "TableSchema",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
