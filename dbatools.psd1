@@ -184,7 +184,6 @@
         'Get-DbaAgentProxy',
         'Get-DbaAgentSchedule',
         'Get-DbaAgentServer',
-        'Get-DbaAgHadr',
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
         'Get-DbaAvailabilityGroup',
