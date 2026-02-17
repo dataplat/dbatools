@@ -43,3 +43,53 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            # Use a large threshold to ensure we get output from any certificate on localhost
+            $global:dbatoolsciOutput = @(Test-DbaComputerCertificateExpiration -Threshold 36500 | Select-Object -First 1)
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return output" {
+            $global:dbatoolsciOutput | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "Store",
+                "Folder",
+                "Name",
+                "DnsNameList",
+                "Thumbprint",
+                "NotBefore",
+                "NotAfter",
+                "Subject",
+                "Issuer",
+                "Algorithm",
+                "ExpiredOrExpiring",
+                "Note"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have the ExpiredOrExpiring property set to true" {
+            $global:dbatoolsciOutput[0].ExpiredOrExpiring | Should -BeTrue
+        }
+
+        It "Should have a Note property" {
+            $global:dbatoolsciOutput[0].Note | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Security\.Cryptography\.X509Certificates\.X509Certificate2"
+        }
+    }
+}

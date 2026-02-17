@@ -57,7 +57,7 @@ function Test-DbaComputerCertificateExpiration {
         https://dbatools.io/Test-DbaComputerCertificateExpiration
 
     .OUTPUTS
-        Certificate objects with added properties
+        System.Security.Cryptography.X509Certificates.X509Certificate2
 
         Returns certificate objects from either Get-DbaNetworkCertificate or Get-DbaComputerCertificate for any certificates that are expired or will expire within the threshold period. If no certificates meet the expiration criteria, nothing is returned.
 
