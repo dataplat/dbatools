@@ -69,7 +69,7 @@ function Stop-DbaService {
         https://dbatools.io/Stop-DbaService
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Wmi.Service
+        dbatools.DbaSqlService
 
         Returns one service object per service that was stopped, with the following default display properties:
         - ComputerName: The name of the computer hosting the SQL Server service
