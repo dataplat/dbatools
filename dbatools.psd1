@@ -178,7 +178,6 @@
         'Format-DbaBackupInformation',
         'Get-DbaAgDatabase',
         'Get-DbaAgDatabaseReplicaState',
-        'Get-DbaAgentAlertCategory',
         'Get-DbaAgentJob',
         'Get-DbaAgentJobCategory',
         'Get-DbaAgentJobHistory',
