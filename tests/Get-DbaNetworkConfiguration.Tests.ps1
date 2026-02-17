@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+            $resultsFull = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $resultsTcpIpProperties = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpProperties
         }
 
@@ -73,6 +73,39 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return a suitable certificate thumbprint" {
             $results.SuitableCertificate.Thumbprint | Should -Contain $certificate.Thumbprint
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SharedMemoryEnabled",
+                "NamedPipesEnabled",
+                "TcpIpEnabled",
+                "TcpIpProperties",
+                "TcpIpAddresses",
+                "Certificate",
+                "SuitableCertificate",
+                "Advanced"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
