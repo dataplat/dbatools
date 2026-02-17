@@ -485,7 +485,6 @@
         'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
         'New-DbaAvailabilityGroup',
-        'New-DbaAzAccessToken',
         'New-DbaClientAlias',
         'New-DbaCmConnection',
         'New-DbaComputerCertificate',
