@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Force                   = $true
             }
             $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle
-            $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool
+            $newResourcePool = New-DbaRgResourcePool @splatNewResourcePool -OutVariable "global:dbatoolsciOutput"
             $result2 = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle
 
             $result.Count | Should -BeLessThan $result2.Count
@@ -143,6 +143,42 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Reset for next test
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourcePool]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "CapCpuPercentage",
+                "IsSystemObject",
+                "MaximumCpuPercentage",
+                "MaximumIopsPerVolume",
+                "MaximumMemoryPercentage",
+                "MinimumCpuPercentage",
+                "MinimumIopsPerVolume",
+                "MinimumMemoryPercentage",
+                "WorkloadGroups"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ResourcePool"
         }
     }
 }
