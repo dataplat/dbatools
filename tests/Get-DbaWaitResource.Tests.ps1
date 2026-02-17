@@ -29,7 +29,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $WaitResourceDB = "WaitResource$random"
-        Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+        $backupPath = "$($TestConfig.Temp)\$CommandName-singlerestore.bak"
+        Copy-Item "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" $backupPath -Force
+        Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path $backupPath
         $sql = "
                 create table waittest (
                 col1 int,
@@ -51,6 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB | Remove-DbaDatabase
+        Remove-Item -Path $backupPath -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -84,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
             "
             $page = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $Pagesql).Column1
             $file = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
-            $results = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page
+            $results = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should return databasename $WaitResourceDB" {
@@ -155,6 +158,36 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return col1 is bilbo" {
             $resultskey.ObjectData.col2 | Should -Be "bilbo"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "DatabaseID",
+                "DatabaseName",
+                "DataFileName",
+                "DataFilePath",
+                "ObjectID",
+                "ObjectName",
+                "ObjectSchema",
+                "ObjectType"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
