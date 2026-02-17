@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When retrieving all startup procedures" {
         It "Returns correct results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
@@ -67,6 +67,39 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns no results" {
             $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure "Not.Here"
             $null -eq $result | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.StoredProcedure]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "ObjectId",
+                "CreateDate",
+                "DateLastModified",
+                "Name",
+                "ImplementationType",
+                "Startup"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.StoredProcedure"
         }
     }
 }
