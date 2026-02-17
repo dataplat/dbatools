@@ -32,9 +32,7 @@ function New-DbaXESession {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        None
-
-        This command creates the Extended Events session on the server but does not return any output objects to the pipeline. The session object is created on the SQL Server instance but is not returned to the caller. To work with the created session, you can use Get-DbaXESession to retrieve it after creation, or the session can be further configured and created in a single operation using other Extended Events cmdlets.
+        Microsoft.SqlServer.Management.XEvent.Session
 
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
