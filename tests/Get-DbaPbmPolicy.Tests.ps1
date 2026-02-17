@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "When retrieving PBM policies" {
         It "returns the test policy" {
-            $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results.Name -contains "dbatoolsci_TestPolicy" | Should -Be $true
         }
 
@@ -96,6 +96,46 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "returns a policy with a condition named dbatoolsci_Condition" {
             $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle -Policy dbatoolsci_TestPolicy
             $results.Condition -eq "dbatoolsci_Condition" | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Dmf.Policy]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ID",
+                "Name",
+                "Enabled",
+                "Description",
+                "PolicyCategory",
+                "AutomatedPolicyEvaluationMode",
+                "Condition",
+                "CreateDate",
+                "CreatedBy",
+                "DateModified",
+                "ModifiedBy",
+                "IsSystemObject",
+                "ObjectSet",
+                "RootCondition",
+                "ScheduleUid"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Dmf\.Policy"
         }
     }
 }
