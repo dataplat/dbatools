@@ -489,7 +489,6 @@
         'New-DbaCmConnection',
         'New-DbaComputerCertificate',
         'New-DbaComputerCertificateSigningRequest',
-        'New-DbaConnectionString',
         'New-DbaConnectionStringBuilder',
         'New-DbaCredential',
         'New-DbaCustomError',
