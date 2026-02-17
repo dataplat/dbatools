@@ -271,7 +271,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should create schedules based on frequency texts" {
         It "Should create a schedule for: Every minute" {
-            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -FrequencyText 'Every minute'
+            $results = New-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -FrequencyText 'Every minute' -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be 'Every minute'
             $results.Description | Should -BeLike 'Occurs every day every 1 minute(s) between 12:00:00 AM and 11:59:59 PM*'
             $results | Remove-DbaAgentSchedule
@@ -303,6 +303,47 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be 'Every sunday at 02:00:00'
             $results.Description | Should -BeLike 'Occurs every week on Sunday at 2:00:00 AM*'
             $results | Remove-DbaAgentSchedule
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobSchedule]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ScheduleName",
+                "ActiveEndDate",
+                "ActiveEndTimeOfDay",
+                "ActiveStartDate",
+                "ActiveStartTimeOfDay",
+                "DateCreated",
+                "FrequencyInterval",
+                "FrequencyRecurrenceFactor",
+                "FrequencyRelativeIntervals",
+                "FrequencySubDayInterval",
+                "FrequencySubDayTypes",
+                "FrequencyTypes",
+                "IsEnabled",
+                "JobCount",
+                "Description",
+                "ScheduleUid"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobSchedule"
         }
     }
 }
