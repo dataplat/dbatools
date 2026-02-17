@@ -20,8 +20,52 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When getting workload groups" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $allResults = Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Gets Results" {
+            $allResults | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.WorkloadGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "ExternalResourcePoolName",
+                "GroupMaximumRequests",
+                "Importance",
+                "IsSystemObject",
+                "MaximumDegreeOfParallelism",
+                "RequestMaximumCpuTimeInSeconds",
+                "RequestMaximumMemoryGrantPercentage",
+                "RequestMemoryGrantTimeoutInSeconds"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.WorkloadGroup"
+        }
+    }
+}
