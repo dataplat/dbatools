@@ -71,4 +71,26 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-ObjectNameParts -ObjectName 'part1.part2.part3.part4').Parsed | Should -Be $false
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Get-ObjectNameParts -ObjectName "schema1.table1"
+        }
+
+        It "Should return a PSCustomObject" {
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "InputValue",
+                "Database",
+                "Schema",
+                "Name",
+                "Parsed"
+            )
+            $actualProperties = $result.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+    }
 }
