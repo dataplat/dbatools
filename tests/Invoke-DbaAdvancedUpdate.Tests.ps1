@@ -127,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate upgrades to a latest version" {
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
-            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo")
+            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo") -OutVariable "global:dbatoolsciOutput"
             Assert-MockCalled -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 if ($ArgumentList[0] -like "/x:*" -and $ArgumentList[1] -eq "/quiet") { return $true }
@@ -195,6 +195,43 @@ Describe $CommandName -Tag IntegrationTests {
             $warVar | Should -BeLike "*failed with exit code 12345*"
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "MajorVersion",
+                "Build",
+                "Architecture",
+                "TargetVersion",
+                "TargetLevel",
+                "KB",
+                "Successful",
+                "Restarted",
+                "InstanceName",
+                "Installer",
+                "ExtractPath",
+                "Notes",
+                "ExitCode",
+                "Log"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
