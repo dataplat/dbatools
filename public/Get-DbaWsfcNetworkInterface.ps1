@@ -32,7 +32,7 @@ function Get-DbaWsfcNetworkInterface {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        System.Management.ManagementObject
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_NetworkInterface
 
         Returns one network interface object per adapter found on cluster nodes queried. Each object represents a network interface configuration with IP address and DHCP settings.
 
