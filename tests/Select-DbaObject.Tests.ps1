@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "renames Bar to Bar2" {
-        ($object | Select-DbaObject -Property "Foo", "Bar as Bar2").PSObject.Properties.Name | Should -Be "Foo", "Bar2"
+        ($object | Select-DbaObject -Property "Foo", "Bar as Bar2" -OutVariable "global:dbatoolsciOutput").PSObject.Properties.Name | Should -Be "Foo", "Bar2"
     }
 
     It "changes Bar to string" {
@@ -101,5 +101,24 @@ Describe $CommandName -Tag IntegrationTests {
         $modItem = $item | Select-DbaObject "Length as Size size KB:1:1" -KeepInputObject
         $modItem.GetType().FullName | Should -Be "System.IO.FileInfo"
         $modItem.Size | Should -BeLike "* KB"
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Foo",
+                "Bar2"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
     }
 }
