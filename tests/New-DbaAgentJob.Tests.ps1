@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "New Agent Job is added properly" {
         It "Should have the right name and description" {
-            $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription
+            $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $jobName
             $results.Description | Should -Be $jobDescription
         }
@@ -75,6 +75,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not write over existing jobs" {
             $results = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Description $jobDescription -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Job]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Category",
+                "OwnerLoginName",
+                "CurrentRunStatus",
+                "CurrentRunRetryAttempt",
+                "Enabled",
+                "LastRunDate",
+                "LastRunOutcome",
+                "HasSchedule",
+                "OperatorToEmail",
+                "CreateDate"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Job"
         }
     }
 }
