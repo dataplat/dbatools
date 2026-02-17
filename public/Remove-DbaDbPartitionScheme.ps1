@@ -85,7 +85,7 @@ function Remove-DbaDbPartitionScheme {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory)]
         [Microsoft.SqlServer.Management.Smo.PartitionScheme[]]$InputObject,
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
