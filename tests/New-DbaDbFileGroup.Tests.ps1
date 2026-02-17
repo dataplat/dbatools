@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "ensure command works" {
         It "Creates a filegroup" {
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random"
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random" -OutVariable "global:dbatoolsciOutput"
             $results.Parent.Name | Should -Be $db1name
             $results.Name | Should -Be "filegroup_$random"
             $results.FileGroupType | Should -Be RowsFileGroup
@@ -89,6 +89,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $newDb1 | New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db2name -FileGroup "filegroup_pipeline2_$random"
             $results.Name | Should -Be "filegroup_pipeline2_$random", "filegroup_pipeline2_$random"
             $results.Parent.Name | Should -Be $db1name, $db2name
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.FileGroup"
         }
     }
 }
