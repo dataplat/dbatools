@@ -46,9 +46,38 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "works" {
             $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
-            $results = $ep | Remove-DbaExtendedProperty
+            $results = $ep | Remove-DbaExtendedProperty -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "Test_Database_Name"
             $results.Status | Should -Be "Dropped"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ParentName",
+                "PropertyType",
+                "Name",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
