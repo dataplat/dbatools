@@ -84,7 +84,7 @@ function Test-DbaInstanceName {
 
     #>
     [CmdletBinding()]
-    [OutputType([System.Collections.ArrayList])]
+    [OutputType([PSCustomObject])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
