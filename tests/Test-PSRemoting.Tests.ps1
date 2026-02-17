@@ -39,8 +39,18 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handles an instance, using just the computername" {
         It "Returns true when succeeding" {
-            $instanceResult = Test-PSRemoting -ComputerName $TestConfig.InstanceSingle
+            $instanceResult = Test-PSRemoting -ComputerName $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $instanceResult | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a boolean" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [bool]
         }
     }
 }
