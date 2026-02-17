@@ -87,7 +87,7 @@ function New-DbaEndpoint {
         https://dbatools.io/New-DbaEndpoint
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.EndPoint
+        Microsoft.SqlServer.Management.Smo.Endpoint
 
         Returns one EndPoint object for each endpoint successfully created. The endpoint object represents the newly created SQL Server endpoint configured with the specified type, protocol, and communication settings.
 
