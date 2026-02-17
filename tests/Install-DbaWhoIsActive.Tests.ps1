@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Should install sp_WhoIsActive" {
         It "Should output correct results" {
-            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName -OutVariable "global:dbatoolsciOutput"
             $installResults.Database | Should -Be $dbName
             $installResults.Name | Should -Be "sp_WhoisActive"
             $installResults.Status | Should -Be "Installed"
@@ -61,6 +61,35 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $updateResults.Database | Should -Be $dbName
             $updateResults.Name | Should -Be "sp_WhoisActive"
             $updateResults.Status | Should -Be "Updated"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Version",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
