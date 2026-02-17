@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Performs an xml-based deployment" {
-            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
+            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -OutVariable "global:dbatoolsciOutput"
             $results.Result | Should -BeLike "*Update complete.*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
@@ -165,6 +165,56 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should throw when ScriptOnly is used" {
             { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Result",
+                "Dacpac",
+                "PublishXml",
+                "ConnectionString",
+                "DatabaseScriptPath",
+                "MasterDbScriptPath",
+                "DeploymentReport",
+                "DeployOptions",
+                "SqlCmdVariableValues"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Dacpac",
+                "PublishXml",
+                "Result",
+                "DeployOptions",
+                "SqlCmdVariableValues"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
