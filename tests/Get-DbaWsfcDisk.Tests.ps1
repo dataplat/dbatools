@@ -19,3 +19,84 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $results = Get-DbaWsfcDisk -ComputerName $TestConfig.InstanceHadr -WarningVariable WarnVar -OutVariable "global:dbatoolsciOutput"
+    }
+
+    Context "Validate output" {
+        It "Should return disk information without errors" {
+            $WarnVar | Should -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have a disk name" {
+            $results[0].Disk | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            if (-not $global:dbatoolsciOutput) { Set-ItResult -Skipped -Because "no output to validate" }
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            if (-not $global:dbatoolsciOutput) { Set-ItResult -Skipped -Because "no output to validate" }
+            $expectedProperties = @(
+                "ClusterName",
+                "ClusterFqdn",
+                "ResourceGroup",
+                "Disk",
+                "State",
+                "FileSystem",
+                "Path",
+                "Label",
+                "Size",
+                "Free",
+                "MountPoints",
+                "SerialNumber",
+                "ClusterDisk",
+                "ClusterDiskPart",
+                "ClusterResource"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            if (-not $global:dbatoolsciOutput) { Set-ItResult -Skipped -Because "no output to validate" }
+            $expectedColumns = @(
+                "ClusterName",
+                "ClusterFqdn",
+                "ResourceGroup",
+                "Disk",
+                "State",
+                "FileSystem",
+                "Path",
+                "Label",
+                "Size",
+                "Free",
+                "MountPoints",
+                "SerialNumber"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have a non-empty ClusterName property" {
+            if (-not $global:dbatoolsciOutput) { Set-ItResult -Skipped -Because "no output to validate" }
+            $global:dbatoolsciOutput[0].ClusterName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
