@@ -24,7 +24,26 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     It "returns some valid info" {
-        $results = Test-DbaCmConnection -Type Wmi
+        $results = Test-DbaCmConnection -Type Wmi -OutVariable "global:dbatoolsciOutput"
         $results.ComputerName | Should -Be $env:COMPUTERNAME
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Should have a ComputerName property" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Connection\.ManagementConnection"
+        }
     }
 }
