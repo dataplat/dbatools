@@ -71,4 +71,35 @@ Describe $CommandName -Tag IntegrationTests {
             ($resultNotMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 2
         }
     }
+    Context "Output validation" {
+        BeforeAll {
+            $global:dbatoolsciOutput = $resultNotMatches | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] }
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Compatibility",
+                "PreviousCompatibility"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
