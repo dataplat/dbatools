@@ -70,7 +70,47 @@ Describe $CommandName -Tag IntegrationTests {
             SharedPath = $TestConfig.Temp
         }
         $results = Invoke-DbaDbMirroring @splatMirroring -WarningVariable WarnVar
+        $global:dbatoolsciOutput = $results
         $WarnVar | Should -BeNullOrEmpty
         $results.Status | Should -Be "Success"
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Primary",
+                "Mirror",
+                "Witness",
+                "Database",
+                "ServiceAccount",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "Primary",
+                "Mirror",
+                "Database",
+                "Status"
+            )
+            $defaultColumns = $global:dbatoolsciOutput.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
