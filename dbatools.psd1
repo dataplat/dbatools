@@ -615,7 +615,7 @@
         'Set-DbaStartupParameter',
         'Set-DbaTcpPort',
         'Set-DbaTempDbConfig',
-        'Set-DbatoolsPath',
+        # Set-DbatoolsPath - migrated to C# in dbatools.library
         'Show-DbaDbList',
         'Show-DbaInstanceFileSystem',
         'Start-DbaAgentJob',
