@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the proper output" {
             $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Path $backupPath -Rows 10
 
-            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $configFile.FullName
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $configFile.FullName -OutVariable "global:dbatoolsciOutput"
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10
@@ -91,6 +91,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Generates the data" {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select * from people" | Should -Not -Be $null
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Columns",
+                "Rows",
+                "Elapsed",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
