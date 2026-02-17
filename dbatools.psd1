@@ -464,7 +464,6 @@
         'Invoke-DbaWhoIsActive',
         'Invoke-DbaXEReplay',
         'Join-DbaAvailabilityGroup',
-        'Join-DbaPath',
         'Measure-DbaBackupThroughput',
         'Measure-DbaDbVirtualLogFile',
         'Measure-DbaDiskSpaceRequirement',
