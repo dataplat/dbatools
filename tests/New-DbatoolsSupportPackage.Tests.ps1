@@ -20,8 +20,40 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $outputPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $outputPath -ItemType Directory
+        $result = New-DbatoolsSupportPackage -Path $outputPath -OutVariable "global:dbatoolsciOutput"
+    }
+
+    AfterAll {
+        Remove-Item -Path $outputPath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    Context "When creating a support package" {
+        It "Should return a FileInfo object" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should create a zip file" {
+            $result.Extension | Should -Be ".zip"
+            $result.Exists | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
+        }
+    }
+}
