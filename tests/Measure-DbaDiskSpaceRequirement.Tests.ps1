@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
-            $results = Measure-DbaDiskSpaceRequirement @splatMeasure
+            $results = Measure-DbaDiskSpaceRequirement @splatMeasure -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have information" {
@@ -62,6 +62,65 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have files on source" {
             $results[0].FileLocation | Should -Be "Only on Source"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceComputerName",
+                "SourceInstance",
+                "SourceSqlInstance",
+                "DestinationComputerName",
+                "DestinationInstance",
+                "DestinationSqlInstance",
+                "SourceDatabase",
+                "SourceLogicalName",
+                "SourceFileName",
+                "SourceFileSize",
+                "DestinationDatabase",
+                "DestinationLogicalName",
+                "DestinationFileName",
+                "DestinationFileSize",
+                "DifferenceSize",
+                "MountPoint",
+                "FileLocation"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "SourceSqlInstance",
+                "DestinationComputerName",
+                "DestinationSqlInstance",
+                "SourceDatabase",
+                "SourceLogicalName",
+                "SourceFileName",
+                "SourceFileSize",
+                "DestinationDatabase",
+                "DestinationFileName",
+                "DestinationFileSize",
+                "DifferenceSize",
+                "MountPoint",
+                "FileLocation"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
