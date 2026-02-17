@@ -297,10 +297,56 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "Should return the correct information including database, currentowner and targetowner" {
             $whoami = whoami
-            $results = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+            $results = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbname -OutVariable "global:dbatoolsciOutput"
             $results.Database | Should -Be $dbname
             $results.CurrentOwner | Should -Be $whoami
             $results.TargetOwner | Should -Be 'sa'
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Server",
+                "Database",
+                "DBState",
+                "CurrentOwner",
+                "TargetOwner",
+                "OwnerMatch"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DBState",
+                "CurrentOwner",
+                "TargetOwner",
+                "OwnerMatch"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
