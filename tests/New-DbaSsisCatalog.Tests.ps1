@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             if (-not $db) {
                 $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-                $results = New-DbaSsisCatalog -SqlInstance $TestConfig.InstanceSingle -Password $password -WarningAction SilentlyContinue -WarningVariable warn
+                $results = New-DbaSsisCatalog -SqlInstance $TestConfig.InstanceSingle -Password $password -WarningAction SilentlyContinue -WarningVariable warn -OutVariable "global:dbatoolsciOutput"
 
                 # Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
                 if ($warn -match "not running") {
@@ -72,6 +72,33 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "creates the catalog" -Skip:(-not $shouldRunTests) {
             $results.Created | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" -Skip:(-not $shouldRunTests) {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" -Skip:(-not $shouldRunTests) {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "SsisCatalog",
+                "Created"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" -Skip:(-not $shouldRunTests) {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
