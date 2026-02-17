@@ -43,4 +43,14 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "system_health is not running"
         }
     }
+
+    Context "Output validation" {
+        # Watch-DbaXESession streams events indefinitely so output cannot be captured without blocking.
+        # We validate only the .OUTPUTS documentation here.
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
