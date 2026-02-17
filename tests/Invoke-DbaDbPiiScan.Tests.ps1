@@ -237,3 +237,76 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $piiscanOutputDb = "dbatoolsci_piiscan_output_$(Get-Random)"
+        $sqlCreateTables = "CREATE TABLE [dbo].[Customer](
+                    [CustomerID] [INT] IDENTITY(1,1) NOT NULL,
+                    [Firstname] [VARCHAR](30) NULL,
+                    [Lastname] [VARCHAR](50) NULL,
+                    [FullName] [VARCHAR](100) NULL,
+                    [Address] [VARCHAR](100) NULL,
+                    [Zip] [VARCHAR](10) NULL,
+                    [City] [VARCHAR](255) NULL,
+                    [Randomtext] [VARCHAR](255) NULL,
+                    [UnknownColumn] [VARCHAR](32) NULL
+                ) ON [PRIMARY]
+                GO
+                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext], [UnknownColumn]) VALUES (N'Monserrate', N'Schmidt', N'Monserrate Schmidt', NULL, N'45269', N'New Gussie', N'eu3geQ2dINZWhLzs2eMEclvEFOVEYxQTI084fD91hP', '172.16.0.1')
+                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Delores', N'Fay', N'Delores Fay', N'209 Howe Club', N'89464', N'Homenickberg', NULL)
+                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Chelsea', N'Williamson', N'Chelsea Williamson', N'0733 Ebert Keys', N'10237-6424', N'Luciochester', N'5Q2K5TAequaevwlQjvGU72uvg')
+                "
+
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $piiscanOutputDb
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb -Query $sqlCreateTables
+
+        $global:dbatoolsciOutput = Invoke-DbaDbPiiScan -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $piiscanOutputDb -Confirm:$false -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected base properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Column",
+                "PII-Category",
+                "PII-Name",
+                "FoundWith",
+                "MaskingType",
+                "MaskingSubType"
+            )
+            $baseProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            foreach ($prop in $expectedProperties) {
+                $prop | Should -BeIn $baseProperties
+            }
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
