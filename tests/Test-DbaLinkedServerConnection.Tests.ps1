@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Function works" {
         BeforeAll {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle | Where-Object LinkedServerName -eq $target
+            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput" | Where-Object LinkedServerName -eq $target
         }
 
         It "function returns results" {
@@ -86,6 +86,35 @@ Describe $CommandName -Tag IntegrationTests {
         It "connectivity is true" {
             $pipeResults.Result | Should -Be 'Success'
             $pipeResults.Connectivity | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Validation.LinkedServerResult]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LinkedServerName",
+                "RemoteServer",
+                "Connectivity",
+                "Result"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Validation\.LinkedServerResult"
         }
     }
 }
