@@ -29,8 +29,41 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When creating a connection" {
+        BeforeAll {
+            $cmConnectionResult = New-DbaCmConnection -ComputerName $env:COMPUTERNAME -UseWindowsCredentials -OutVariable "global:dbatoolsciOutput"
+        }
+
+        AfterAll {
+            Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -ErrorAction SilentlyContinue
+        }
+
+        It "Should return a connection object" {
+            $cmConnectionResult | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the correct computer name" {
+            $cmConnectionResult.ComputerName | Should -Be $env:COMPUTERNAME
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Should have a ComputerName property" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Connection\.ManagementConnection"
+        }
+    }
+}
