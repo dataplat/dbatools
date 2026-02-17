@@ -116,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         It "Should add login to all databases provided" {
-            $results = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Database $dbs -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Database $dbs -Force -EnableException -OutVariable "global:dbatoolsciOutput"
             $results.Count | Should -Be 3
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be "dbo", "dbo", "dbo"
@@ -126,6 +126,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -EnableException
             $results.Count | Should -Be $accessibleDbCount
             $results.Name | Get-Unique | Should -Be $loginName
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.User]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "LoginType",
+                "Login",
+                "AuthenticationType",
+                "DefaultSchema"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.User"
         }
     }
 }
