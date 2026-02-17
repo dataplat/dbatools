@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command works on SQL Server 2016 or higher instances" {
         BeforeAll {
             if ($setupSuccessful) {
-                $testResults = Test-DbaMaxDop -SqlInstance $TestConfig.InstanceSingle
+                $testResults = Test-DbaMaxDop -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             }
         }
 
@@ -62,6 +62,54 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have only one result for database name of dbatoolsci_testMaxDop" -Skip:(-not $setupSuccessful) {
             @($testResults | Where-Object Database -eq $testDbName).Count | Should -Be 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" -Skip:(-not $setupSuccessful) {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" -Skip:(-not $setupSuccessful) {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "InstanceVersion",
+                "Database",
+                "DatabaseMaxDop",
+                "CurrentInstanceMaxDop",
+                "RecommendedMaxDop",
+                "NumaNodes",
+                "NumberOfCores",
+                "Notes"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" -Skip:(-not $setupSuccessful) {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DatabaseMaxDop",
+                "CurrentInstanceMaxDop",
+                "RecommendedMaxDop",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" -Skip:(-not $setupSuccessful) {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
