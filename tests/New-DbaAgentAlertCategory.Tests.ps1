@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1
+            $results = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "CategoryTest1"
         }
 
@@ -57,6 +57,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not write over existing job categories" {
             $results = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -WarningAction SilentlyContinue
             $WarnVar | Should -Match "already exists"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.AlertCategory]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "AlertCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.AlertCategory"
         }
     }
 }

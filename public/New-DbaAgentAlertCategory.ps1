@@ -59,9 +59,9 @@ function New-DbaAgentAlertCategory {
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
-        - ID: Unique identifier for the alert category within the instance
         - Name: The name of the alert category
-        - CategoryType: Type of category (Alert or JobStep)
+        - ID: Unique identifier for the alert category within the instance
+        - AlertCount: The number of alerts currently assigned to this category (integer)
 
         All properties from the base SMO AlertCategory object are accessible using Select-Object *.
 
