@@ -27,3 +27,116 @@ Describe $CommandName -Tag UnitTests {
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Check if replication is configured - skip all tests if not
+        $replServer = Get-DbaReplServer -SqlInstance $TestConfig.InstanceSingle
+        $global:skipRepl = -not $replServer.IsPublisher
+
+        if (-not $global:skipRepl) {
+            # Create test database and table for replication
+            $dbName = "dbatoolsci_replsub_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "CREATE TABLE ReplicateMe (id int identity(1,1) PRIMARY KEY, col1 varchar(10))"
+
+            # Create transactional publication and add an article
+            $pubName = "dbatoolsci_TestSubPub_$(Get-Random)"
+            $splatPub = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Type        = "Transactional"
+                Name        = $pubName
+            }
+            $null = New-DbaReplPublication @splatPub
+            $null = Add-DbaReplArticle -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Publication $pubName -Name "ReplicateMe"
+
+            # Create a push subscription to a subscriber instance
+            $subDbName = "dbatoolsci_replsubdb_$(Get-Random)"
+            $splatSub = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                Database            = $dbName
+                SubscriberSqlInstance = $TestConfig.InstanceCopy1
+                SubscriptionDatabase = $subDbName
+                PublicationName     = $pubName
+                Type                = "Push"
+            }
+            $null = New-DbaReplSubscription @splatSub
+        }
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        if (-not $global:skipRepl) {
+            # Clean up subscription, publication, then databases
+            $splatRemoveSub = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                Database            = $dbName
+                PublicationName     = $pubName
+                SubscriberSqlInstance = $TestConfig.InstanceCopy1
+                SubscriptionDatabase = $subDbName
+                Confirm             = $false
+                ErrorAction         = "SilentlyContinue"
+            }
+            Remove-DbaReplSubscription @splatRemoveSub
+            Remove-DbaReplPublication -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Name $pubName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $subDbName -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When getting subscriptions" -Skip:$global:skipRepl {
+        It "Should return subscriptions" {
+            $splatGetSub = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                PublicationName = $pubName
+            }
+            $result = Get-DbaReplSubscription @splatGetSub -OutVariable "global:dbatoolsciOutput"
+            $result | Should -Not -BeNullOrEmpty
+            $result.PublicationName | Should -Contain $pubName
+            $result.SubscriberName | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" -Skip:$global:skipRepl {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Replication.TransSubscription]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "PublicationName",
+                "Name",
+                "SubscriberName",
+                "SubscriptionDBName",
+                "SubscriptionType"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Replication\.Subscription"
+        }
+    }
+}
