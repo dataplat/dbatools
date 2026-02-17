@@ -386,7 +386,7 @@
         'Get-DbaTcpPort',
         'Get-DbaTempdbUsage',
         # Get-DbatoolsLog - migrated to C# in dbatools.library
-        'Get-DbatoolsPath',
+        # Get-DbatoolsPath - migrated to C# in dbatools.library
         'Get-DbaTopResourceUsage',
         'Get-DbaTrace',
         'Get-DbaTraceFlag',
