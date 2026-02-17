@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Returns dacpac export options" {
-        New-DbaDacOption -Action Export | Should -Not -BeNullOrEmpty
+        New-DbaDacOption -Action Export -OutVariable "global:dbatoolsciOutput" | Should -Not -BeNullOrEmpty
     }
 
     It "Returns bacpac export options" {
@@ -61,5 +61,39 @@ Describe $CommandName -Tag IntegrationTests {
         )
         $result.GenerateDeploymentReport | Should -BeTrue
         $result.DeployOptions.CommandTimeout | Should -Be 5
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type for Dacpac Export" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Dac.DacExtractOptions]
+        }
+
+        It "Should return the correct type for Bacpac Export" {
+            $result = New-DbaDacOption -Action Export -Type Bacpac
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.DacExportOptions]
+        }
+
+        It "Should return the correct type for Dacpac Publish" {
+            $result = New-DbaDacOption -Action Publish
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.PublishOptions]
+        }
+
+        It "Should return the correct type for Bacpac Publish" {
+            $result = New-DbaDacOption -Action Publish -Type Bacpac
+            $result | Should -BeOfType [Microsoft.SqlServer.Dac.DacImportOptions]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $outputTypes = $help.returnValues.returnValue.type.name
+            $outputTypes | Should -Match "DacExtractOptions"
+            $outputTypes | Should -Match "DacExportOptions"
+            $outputTypes | Should -Match "PublishOptions"
+            $outputTypes | Should -Match "DacImportOptions"
+        }
     }
 }
