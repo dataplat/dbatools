@@ -158,7 +158,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
             }
-            $results = @(Invoke-DbaDbDataMasking @splatMasking)
+            $results = @(Invoke-DbaDbDataMasking @splatMasking -OutVariable "global:dbatoolsciOutput")
 
             $results[0].Rows | Should -Be 2
             $results[0].Database | Should -Contain $dbName
@@ -216,6 +216,38 @@ Describe $CommandName -Tag IntegrationTests {
                 Query       = "select * from people where bittest = 0 AND lname = 'Schmee'"
             }
             Invoke-DbaQuery @splatQueryBit2 | Should -Be $null
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Columns",
+                "Rows",
+                "Elapsed",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
