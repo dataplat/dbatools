@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command functionality" {
         It "Should accept Session objects and return FileInfo objects" {
-            $result = $session | Get-DbaXESessionTargetFile
+            $result = $session | Get-DbaXESessionTargetFile -OutVariable "global:dbatoolsciOutput"
             $result | Should -Not -BeNullOrEmpty
             $result[0].GetType().Name | Should -Be "FileInfo"
         }
@@ -54,6 +54,21 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return files with .xel extension" {
             $result = $session | Get-DbaXESessionTargetFile
             $result.Extension | Should -Contain ".xel"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
