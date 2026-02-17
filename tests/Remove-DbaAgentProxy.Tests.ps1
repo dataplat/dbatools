@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports piping SQL Agent proxy" {
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName | Remove-DbaAgentProxy
+            Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName | Remove-DbaAgentProxy -OutVariable "global:dbatoolsciOutput"
             (Get-DbaAgentProxy -SqlInstance $server -Proxy $proxyName) | Should -BeNullOrEmpty
         }
 
@@ -81,6 +81,34 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentProxy -SqlInstance $server) | Should -Not -BeNullOrEmpty
             Remove-DbaAgentProxy -SqlInstance $server
             (Get-DbaAgentProxy -SqlInstance $server) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
