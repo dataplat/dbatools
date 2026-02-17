@@ -103,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "ACTION=""Install"""
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
 
-            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Feature All
+            $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Feature All -OutVariable "global:dbatoolsciOutput"
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
             Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
@@ -362,6 +362,60 @@ Describe $CommandName -Tag IntegrationTests {
             $warVar | Should -BeLike "*Installation failed with exit code 12345*"
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = 0 } } -ModuleName dbatools
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "Version",
+                "SACredential",
+                "Successful",
+                "Restarted",
+                "Configuration",
+                "Installer",
+                "Port",
+                "Notes",
+                "ExitCode",
+                "ExitMessage",
+                "Log",
+                "LogFile",
+                "ConfigurationFile"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "Version",
+                "Port",
+                "Successful",
+                "Restarted",
+                "Installer",
+                "ExitCode",
+                "LogFile",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
