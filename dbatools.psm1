@@ -695,7 +695,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Set-DbaAgentAlert',
         'Get-DbaWaitResource',
         'Get-DbaDbPageInfo',
-        'Get-DbaConnection',
         'Test-DbaLoginPassword',
         'Get-DbaErrorLogConfig',
         'Set-DbaErrorLogConfig',

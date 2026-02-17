@@ -207,7 +207,6 @@
         'Get-DbaCmObject',
         'Get-DbaComputerCertificate',
         'Get-DbaComputerSystem',
-        'Get-DbaConnection',
         'Get-DbaCpuRingBuffer',
         'Get-DbaCpuUsage',
         'Get-DbaCredential',
