@@ -53,10 +53,37 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "session should no longer exist after removal" {
-            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration' | Remove-DbaXESession -OutVariable "global:dbatoolsciOutput"
             $removedResults = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session 'Profiler TSQL Duration'
             $removedResults.Name | Should -BeNullOrEmpty
             $removedResults.Status | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Session",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
