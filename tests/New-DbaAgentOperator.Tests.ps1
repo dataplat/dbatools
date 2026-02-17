@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
                 PagerDay     = "Everyday"
                 Force        = $true
             }
-            $results = New-DbaAgentOperator @splatOperator1
+            $results = New-DbaAgentOperator @splatOperator1 -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $email1
         }
 
@@ -114,6 +114,36 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SundayPagerEndTime.ToString() | Should -Be "17:00:00"
             $results.WeekdayPagerStartTime.ToString() | Should -Be "06:00:00"
             $results.WeekdayPagerEndTime.ToString() | Should -Be "19:00:00"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Operator]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "IsEnabled",
+                "EmailAddress",
+                "LastEmail"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Operator"
         }
     }
 }
