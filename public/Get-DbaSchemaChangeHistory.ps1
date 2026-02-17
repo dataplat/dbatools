@@ -49,7 +49,7 @@ function Get-DbaSchemaChangeHistory {
         https://dbatools.io/Get-DbaSchemaChangeHistory
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
         Returns one object per DDL change (CREATE, DROP, or ALTER operation) found in the SQL Server default system trace.
         When no schema changes are found matching the filter criteria, the command returns nothing.

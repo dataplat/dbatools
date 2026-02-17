@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
             $schemaChangeDb.Query("CREATE TABLE dbatoolsci_schemachange (id int identity)")
             $schemaChangeDb.Query("EXEC sp_rename 'dbatoolsci_schemachange', 'dbatoolsci_schemachange1'")
 
-            $schemaResults = Get-DbaSchemaChangeHistory -SqlInstance $testConfig.InstanceSingle -Database tempdb
+            $schemaResults = Get-DbaSchemaChangeHistory -SqlInstance $testConfig.InstanceSingle -Database tempdb -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -41,6 +41,39 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "notices dbatoolsci_schemachange changed" {
             $schemaResults.Object | Should -Contain "dbatoolsci_schemachange"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.Data.DataRow]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "DateModified",
+                "LoginName",
+                "UserName",
+                "ApplicationName",
+                "DDLOperation",
+                "Object",
+                "ObjectType"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.Data\.DataRow"
         }
     }
 }
