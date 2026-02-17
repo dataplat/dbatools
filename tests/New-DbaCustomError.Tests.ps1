@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             { $results = New-DbaCustomError -SqlInstance $server -MessageID 1 -Severity 1 -MessageText "test 1" -Language English } | Should -Throw
             { $results = New-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Severity 1 -MessageText "test 1" -Language English } | Should -Throw
 
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 16 -MessageText "test_70000"
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 16 -MessageText "test_70000" -OutVariable "global:dbatoolsciOutput"
             $results.Count | Should -Be 1
             $results.ID | Should -Be 70000
         }
@@ -124,6 +124,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results[1].Severity | Should -Be 20
             $results[0].ID | Should -Be 70006
             $results[1].ID | Should -Be 70006
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.UserDefinedMessage]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.UserDefinedMessage"
         }
     }
 }
