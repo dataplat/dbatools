@@ -49,14 +49,17 @@ function Get-DbaRunningJob {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance format)
         - Name: The name of the Agent job
-        - CurrentRunStatus: Current execution status (Executing, Idle, Suspended, etc.)
-        - IsEnabled: Boolean indicating if the job is enabled
-        - LastRunOutcome: Result of the most recent execution (Succeeded, Failed, Cancelled, etc.)
+        - Category: The category/classification of the job
+        - OwnerLoginName: The login that owns the job
+        - CurrentRunStatus: Current execution status (Executing, Suspended, etc.)
+        - CurrentRunRetryAttempt: Current retry attempt number
+        - Enabled: Boolean indicating if the job is enabled (alias for IsEnabled)
         - LastRunDate: DateTime of the most recent job execution
-        - NextRunDate: DateTime scheduled for the next execution
-        - Owner: The login that owns the job
-        - CreateDate: DateTime when the job was created
-        - Description: Text description of the job's purpose
+        - LastRunOutcome: Result of the most recent execution (Succeeded, Failed, Cancelled, etc.)
+        - HasSchedule: Boolean indicating if the job has any schedules assigned
+        - OperatorToEmail: Name of operator for email notifications
+        - CreateDate: DateTime when the job was created (alias for DateCreated)
+        - StartDate: DateTime when the current execution started (included when execution data is available)
 
         Additional properties available from the base SMO Agent.Job object via Select-Object *:
         - JobID: Unique identifier (GUID) for the job
