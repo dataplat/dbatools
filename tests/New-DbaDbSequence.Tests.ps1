@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "creates a new sequence" {
-            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -OutVariable "global:dbatoolsciOutput"
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
@@ -209,6 +209,37 @@ Describe $CommandName -Tag IntegrationTests {
         It "Does not return warning for system schema" {
             $sequence2 = New-DbaDbSequence -SqlInstance $server -Database $newDbName -Schema dbo -Name "Sequence_in_dbo_schema" -IntegerType bigint -WarningVariable warn
             $warn.message | Should -Not -BeLike "*Schema dbo already exists in the database*"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Sequence]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Name",
+                "DataType",
+                "StartValue",
+                "IncrementValue"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Sequence"
         }
     }
 }
