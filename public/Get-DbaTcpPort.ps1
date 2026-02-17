@@ -57,6 +57,10 @@ function Get-DbaTcpPort {
         - SqlInstance: The full SQL Server instance name (computer\instance format)
         - IPAddress: The IP address that SQL Server is listening on (IPv4 or IPv6)
         - Port: The TCP port number that SQL Server is using (integer)
+        - Static: Boolean indicating whether the port assignment is static
+        - Type: The connection type (e.g., Normal)
+
+        Default display columns: ComputerName, InstanceName, SqlInstance, IPAddress, Port
 
         When -All parameter is specified:
         Returns one object per TCP/IP address configuration on the instance, with detailed network settings including both IPv4 and IPv6 addresses (unless -ExcludeIpv6 is used).
