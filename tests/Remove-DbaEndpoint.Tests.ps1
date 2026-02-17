@@ -35,8 +35,42 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    It "removes an endpoint" {
-        $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
-        $results.Status | Should -Be 'Removed'
+    Context "When removing endpoints" {
+        It "removes an endpoint" {
+            $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring
+            $global:dbatoolsciOutput = Remove-DbaEndpoint -InputObject $endpoint
+            $global:dbatoolsciOutput.Status | Should -Be "Removed"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Endpoint",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
