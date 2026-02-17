@@ -68,9 +68,55 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns only one (and the proper) template without pipe" {
-            $results = Import-DbaPfDataCollectorSetTemplate -ComputerName $computerName -Template $collectorSetName
+            $results = Import-DbaPfDataCollectorSetTemplate -ComputerName $computerName -Template $collectorSetName -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $collectorSetName
             $results.ComputerName | Should -Be $computerName
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "Name",
+                "DisplayName",
+                "Description",
+                "State",
+                "Duration",
+                "OutputLocation",
+                "LatestOutputLocation",
+                "RootPath",
+                "SchedulesEnabled",
+                "Segment",
+                "SegmentMaxDuration",
+                "SegmentMaxSize",
+                "SerialNumber",
+                "Server",
+                "StopOnCompletion",
+                "Subdirectory",
+                "SubdirectoryFormat",
+                "SubdirectoryFormatPattern",
+                "Task",
+                "TaskArguments",
+                "TaskRunAsSelf",
+                "TaskUserTextArguments",
+                "UserAccount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
