@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Remove the alert categories" {
-            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
+            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories -Confirm:$false
 
             $newresults = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategories
 
@@ -78,6 +78,43 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName) | Should -Not -BeNullOrEmpty
             Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName | Remove-DbaAgentAlertCategory
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $categoryName) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $outputCategoryName = "dbatoolsci_output_$(Get-Random)"
+            $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName
+            $global:dbatoolsciOutput = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceSingle -Category $outputCategoryName -Confirm:$false -ErrorAction SilentlyContinue
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
