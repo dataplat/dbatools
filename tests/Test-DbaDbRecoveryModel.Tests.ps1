@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Default Execution" {
         It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
-            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $psudoSimpleRecovery, 'Model'
+            $results = Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $fullRecovery, $psudoSimpleRecovery, 'Model' -OutVariable "global:dbatoolsciOutput"
             $results.Database | Should -BeIn ($fullRecovery, $psudoSimpleRecovery, 'Model')
         }
     }
@@ -100,5 +100,46 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ConfiguredRecoveryModel",
+                "ActualRecoveryModel"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ConfiguredRecoveryModel",
+                "ActualRecoveryModel"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $outputTypes = @($help.returnValues.returnValue.type.name)
+            ($outputTypes -match "PSCustomObject").Count | Should -BeGreaterThan 0
+        }
+    }
 
 }
