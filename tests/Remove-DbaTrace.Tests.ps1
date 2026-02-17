@@ -120,7 +120,7 @@ select TraceID=@TraceID
 
     Context "Test Removing Trace" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace -OutVariable "global:dbatoolsciOutput"
         }
 
         It "returns the right values" {
@@ -130,6 +130,37 @@ select TraceID=@TraceID
 
         It "doesn't return any result for trace file id $($traceid)" {
             Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

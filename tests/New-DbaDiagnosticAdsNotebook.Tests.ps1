@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Creates notebook" {
         It "Should create a file" {
-            $notebook = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
+            $notebook = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific -OutVariable "global:dbatoolsciOutput"
             $notebook | Should -Not -BeNullOrEmpty
         }
 
@@ -42,6 +42,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
             $results | Should -Not -BeNullOrEmpty
             ($results | Get-Content) -contains "information for current instance"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }

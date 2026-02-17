@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "moves a piped server" {
-        $results = $newServer2 | Move-DbaRegServer -NewGroup $newGroup.Name
+        $results = $newServer2 | Move-DbaRegServer -NewGroup $newGroup.Name -OutVariable "global:dbatoolsciOutput"
         $results.Parent.Name | Should -Be $newGroup.Name
         $results.Name | Should -Be $regSrvName2
     }
@@ -88,5 +88,32 @@ Describe $CommandName -Tag IntegrationTests {
     It "moves a piped server to a target group" {
         $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $testGroupHR | Move-DbaRegServer -Group $testGroupFinance
         $results.Count | Should -Be 2
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "Name",
+                "ServerName",
+                "Group",
+                "Description",
+                "Source"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.RegisteredServers\.RegisteredServer"
+        }
     }
 }

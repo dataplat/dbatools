@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality" {
         It "Add new synonym and returns results" {
-            $result1 = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
+            $result1 = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1" -OutVariable "global:dbatoolsciOutput"
 
             $result1.Count | Should -Be 1
             $result1.Name | Should -Be "syn1"
@@ -152,5 +152,37 @@ Describe $CommandName -Tag IntegrationTests {
             $result7.BaseObject | Should -Be "obj7"
         }
 
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Synonym]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Schema",
+                "BaseServer",
+                "BaseDatabase",
+                "BaseSchema",
+                "BaseObject"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Synonym"
+        }
     }
 }

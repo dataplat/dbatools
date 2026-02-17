@@ -42,3 +42,39 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $null = New-DbaCmConnection -ComputerName $env:COMPUTERNAME
+    }
+
+    AfterAll {
+        Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -ErrorAction SilentlyContinue
+    }
+
+    Context "When setting connection properties" {
+        It "Should return a connection object" {
+            $result = Set-DbaCmConnection -ComputerName $env:COMPUTERNAME -ResetConfiguration -OutVariable "global:dbatoolsciOutput"
+            $result | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Connection.ManagementConnection]
+        }
+
+        It "Should have a ComputerName property" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Connection\.ManagementConnection"
+        }
+    }
+}

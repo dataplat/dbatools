@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = $maskingDbName
                 Path        = $backupPath
             }
-            $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
+            $configResults = New-DbaDbMaskingConfig @splatMaskingConfig -OutVariable "global:dbatoolsciOutput"
 
             $configResults.Directory.Name | Should -Match $CommandName
             $configResults.FullName | Should -FileContentMatch $maskingDbName
@@ -126,6 +126,21 @@ Describe $CommandName -Tag IntegrationTests {
             $jsonOutput.Tables.Columns[4].Name | Should -Be "Street"
             $jsonOutput.Tables.Columns[4].MaskingType | Should -Be "Address"
             $jsonOutput.Tables.Columns[4].SubType | Should -Be "StreetAddress"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }

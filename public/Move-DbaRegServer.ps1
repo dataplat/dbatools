@@ -60,12 +60,11 @@ function Move-DbaRegServer {
         Returns one RegisteredServer object per registered server that was successfully moved to the new group. Each object represents the updated server registration after the move operation completes.
 
         Default display properties include:
-        - ComputerName: The computer name of the Central Management Server instance
-        - InstanceName: The SQL Server instance name hosting the CMS
-        - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The display name of the registered server in CMS
         - ServerName: The actual SQL Server instance name (connection string)
         - Group: The group path where the registered server is now located
+        - Description: The description of the registered server
+        - Source: The source of the registered server entry
 
     .EXAMPLE
         PS C:\> Move-DbaRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -Group HR\Prod

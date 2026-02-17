@@ -35,9 +35,52 @@ Describe $CommandName -Tag IntegrationTests {
             $trustcert | Should -BeFalse
             $encrypt | Should -BeTrue
 
-            $null = Set-DbatoolsInsecureConnection
+            $null = Set-DbatoolsInsecureConnection -OutVariable "global:dbatoolsciOutput"
             Get-DbatoolsConfigValue -FullName "sql.connection.trustcert" | Should -BeTrue
             Get-DbatoolsConfigValue -FullName "sql.connection.encrypt" | Should -BeFalse
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Dataplat.Dbatools.Configuration.Config]
+        }
+
+        It "Should return two configuration objects" {
+            $global:dbatoolsciOutput.Count | Should -Be 2
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Description",
+                "FullName",
+                "Handler",
+                "Hidden",
+                "Initialized",
+                "Module",
+                "ModuleExport",
+                "Name",
+                "PolicyEnforced",
+                "PolicySet",
+                "RegistryData",
+                "SafeValue",
+                "SimpleExport",
+                "Type",
+                "Unchanged",
+                "Validation",
+                "Value"
+            )
+            $actualProperties = ($global:dbatoolsciOutput[0].PSObject.Properties.Name | Sort-Object)
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Dataplat\.Dbatools\.Configuration\.Config"
         }
     }
 }

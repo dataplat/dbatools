@@ -53,24 +53,29 @@ function Test-DbaDiskAllocation {
         License: MIT https://opensource.org/licenses/MIT
 
     .OUTPUTS
-        PSCustomObject
+        System.Management.Automation.PSCustomObject
 
         Returns one object per NTFS volume found on the target server.
 
         Default properties (when -NoSqlCheck is not specified):
-        - Server: Computer name of the target server
-        - Name: Drive letter or volume name (e.g., "C:", "D:")
-        - Label: Volume label or name assigned to the drive
+        - ComputerName: Computer name of the target server
+        - DiskName: Drive letter or volume name (e.g., "C:", "D:")
+        - DiskLabel: Volume label or name assigned to the drive
         - BlockSize: Allocation unit size in bytes (65536 = 64KB is best practice)
         - IsSqlDisk: Boolean indicating if the volume contains SQL Server database or log files
         - IsBestPractice: Boolean indicating if BlockSize equals 65536 (64KB) - false for system drives
 
         When -NoSqlCheck is specified, the IsSqlDisk property is omitted:
-        - Server: Computer name of the target server
-        - Name: Drive letter or volume name
-        - Label: Volume label
+        - ComputerName: Computer name of the target server
+        - DiskName: Drive letter or volume name
+        - DiskLabel: Volume label
         - BlockSize: Allocation unit size in bytes
         - IsBestPractice: Boolean indicating if BlockSize equals 65536 (64KB)
+
+        Alias properties are available for backwards compatibility:
+        - Server (alias for ComputerName)
+        - Name (alias for DiskName)
+        - Label (alias for DiskLabel)
 
     .LINK
         https://dbatools.io/Test-DbaDiskAllocation
@@ -92,7 +97,7 @@ function Test-DbaDiskAllocation {
 
     #>
     [CmdletBinding()]
-    [OutputType("System.Collections.ArrayList", "System.Boolean")]
+    [OutputType([System.Management.Automation.PSCustomObject])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$ComputerName,

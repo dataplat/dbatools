@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate multiple databases" {
         It "Both databases are migratable" {
-            $results = Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2
+            $results = Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -OutVariable "global:dbatoolsciOutput"
             foreach ($result in $results) {
                 $result.IsMigratable | Should -Be $true
             }
@@ -70,6 +70,36 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Validate single database" {
         It "Databases are migratable" {
             (Test-DbaMigrationConstraint -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Database $db1).IsMigratable | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceInstance",
+                "DestinationInstance",
+                "SourceVersion",
+                "DestinationVersion",
+                "Database",
+                "FeaturesInUse",
+                "IsMigratable",
+                "Notes"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
