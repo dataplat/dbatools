@@ -56,7 +56,7 @@ function Reset-DbaAdmin {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        Dataplat.Dbatools.Login
+        Microsoft.SqlServer.Management.Smo.Login
 
         Returns one login object representing the account that was reset or created. The object contains login properties and credentials information for the account that now has sysadmin privileges on the SQL Server instance.
 
@@ -68,9 +68,10 @@ function Reset-DbaAdmin {
         - LoginType: The type of login (SqlLogin or WindowsUser)
         - CreateDate: The date/time the login was created
         - LastLogin: The date/time of the most recent login (if available)
-        - IsDisabled: Boolean indicating if the login is disabled
+        - HasAccess: Boolean indicating if the login has permission to connect
         - IsLocked: Boolean indicating if the login is locked out
-        - IsSysAdmin: Boolean indicating if the login has sysadmin privileges (should be True after successful reset)
+        - IsDisabled: Boolean indicating if the login is disabled
+        - MustChangePassword: Boolean indicating if the login must change password on next connection
 
         If an error occurs during the reset process and the function cannot reconnect to verify the login, no output is returned.
 
