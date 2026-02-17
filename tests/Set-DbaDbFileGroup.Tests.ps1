@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When setting filegroup properties" {
 
         It "Sets the options for default, readonly, readwrite, autogrow all files, and not autogrow all files" {
-            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles
+            $results = Set-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $db1name -FileGroup $fileGroup1Name -Default -AutoGrowAllFiles -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $true
             $results.IsDefault | Should -Be $true
@@ -107,6 +107,21 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $fg1, $newDb1 | Set-DbaDbFileGroup -FileGroup Primary -AutoGrowAllFiles
             $results.Name | Should -Be $fileGroup1Name, Primary
             $results.AutoGrowAllFiles | Should -Be $true, $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.FileGroup]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.FileGroup"
         }
     }
 }
