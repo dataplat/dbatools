@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Stop-DbaProcess
             Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -WithReplace
             (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore).IsAccessible | Should -BeTrue
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore -OutVariable "global:dbatoolsciOutput"
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Should -BeNullOrEmpty
         }
     }
@@ -69,6 +69,46 @@ Describe $CommandName -Tag IntegrationTests {
             (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Databases['singlerestore'].IsAccessible | Should -BeFalse
             Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database singlerestore | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Create a dedicated test database for output validation if the earlier test did not populate the output
+            if (-not $global:dbatoolsciOutput) {
+                $outputTestDbName = "dbatoolsci_removedb_$(Get-Random)"
+                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $outputTestDbName
+                Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $outputTestDbName -Confirm:$false -OutVariable "global:dbatoolsciOutput"
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
