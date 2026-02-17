@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Gets Instance Privilege" {
         BeforeAll {
-            $results = Get-DbaPrivilege -ComputerName $env:ComputerName -WarningVariable warn 3> $null
+            $results = Get-DbaPrivilege -ComputerName $env:ComputerName -WarningVariable warn -OutVariable "global:dbatoolsciOutput" 3> $null
         }
 
         It "Gets results" {
@@ -31,6 +31,35 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should not warn" {
             $warn | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "User",
+                "LogonAsBatch",
+                "InstantFileInitialization",
+                "LockPagesInMemory",
+                "GenerateSecurityAudit",
+                "LogonAsAService"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
