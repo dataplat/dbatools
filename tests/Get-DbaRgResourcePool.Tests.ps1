@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When getting resource pools" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $allResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle
+            $allResults = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -44,6 +44,42 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Gets Results with Type filter" {
             $typeResults | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourcePool]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Id",
+                "Name",
+                "CapCpuPercentage",
+                "IsSystemObject",
+                "MaximumCpuPercentage",
+                "MaximumIopsPerVolume",
+                "MaximumMemoryPercentage",
+                "MinimumCpuPercentage",
+                "MinimumIopsPerVolume",
+                "MinimumMemoryPercentage",
+                "WorkloadGroups"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ResourcePool"
         }
     }
 }
