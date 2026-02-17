@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "downloads a small update" {
-        $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath
+        $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath -OutVariable "global:dbatoolsciOutput"
         $results.Name -match "aspnet"
         $filesToRemove += $results.FullName
     }
@@ -88,5 +88,20 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path $tempPath
         $results.Count | Should -Be 1
         $filesToRemove += $results.FullName
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
+        }
     }
 }
