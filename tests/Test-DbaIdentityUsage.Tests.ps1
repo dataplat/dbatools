@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
             for ($i = 1; $i -le 128; $i++) {
                 Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $insertSql -Database TempDb
             }
-            $results128 = Test-DbaIdentityUsage -SqlInstance $TestConfig.InstanceSingle -Database TempDb | Where-Object Table -eq $table1
+            $results128 = Test-DbaIdentityUsage -SqlInstance $TestConfig.InstanceSingle -Database TempDb -OutVariable "global:dbatoolsciOutput" | Where-Object Table -eq $table1
 
             for ($i = 1; $i -le 127; $i++) {
                 Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $insertSql -Database TempDb
@@ -89,6 +89,60 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "TinyInt identity column with 25 rows using increment of 5 should be 47.06% full" {
             $results25.PercentUsed | Should -Be 47.06
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Column",
+                "SeedValue",
+                "IncrementValue",
+                "LastValue",
+                "MaxNumberRows",
+                "NumberOfUses",
+                "PercentUsed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "Table",
+                "Column",
+                "SeedValue",
+                "IncrementValue",
+                "LastValue",
+                "PercentUsed"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $outputTypes = @($help.returnValues.returnValue.type.name)
+            ($outputTypes -match "PSCustomObject").Count | Should -BeGreaterThan 0
         }
     }
 }
