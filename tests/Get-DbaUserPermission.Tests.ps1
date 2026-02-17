@@ -46,7 +46,7 @@ exec sp_addrolemember 'userrole','bob';
             $db.ExecuteNonQuery($sql)
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $results = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $results = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $dbName -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -102,6 +102,44 @@ exec sp_addrolemember 'userrole','bob';
 
         It "returns results" {
             $results.Status.Count -gt 0 | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Object",
+                "Type",
+                "Member",
+                "RoleSecurableClass",
+                "SchemaOwner",
+                "Securable",
+                "GranteeType",
+                "Grantee",
+                "Permission",
+                "State",
+                "Grantor",
+                "GrantorType",
+                "SourceView"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
