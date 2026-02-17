@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException
+            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException -OutVariable "global:dbatoolsciOutput"
             $results.ExtendedProtection | Should -Be "0 - Off"
         }
     }
@@ -75,6 +75,31 @@ Describe $CommandName -Tag IntegrationTests {
         It "Set explicitly to '2 - Required' using number" {
             $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value 2 -EnableException -Verbose 4>&1
             $results[-1] | Should -BeLike "*Value: 2"
+        }
+    }
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ExtendedProtection"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
