@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
             $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).ServiceName
-            $allServicesResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle
+            $allServicesResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $agentServicesResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent
             $specificInstanceResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle -InstanceName $instanceName -Type Agent -AdvancedProperties
         }
@@ -88,6 +88,36 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "shows exactly one service" {
             $sqlInstanceResults.Count | Should -Be 1
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.DbaSqlService"
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "ServiceName",
+                "ServiceType",
+                "InstanceName",
+                "DisplayName",
+                "StartName",
+                "State",
+                "StartMode"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "SqlService"
         }
     }
 }
