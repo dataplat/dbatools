@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When removing registered servers" {
         It "supports dropping via the pipeline" {
-            $results = $newServer | Remove-DbaRegServer
+            $results = $newServer | Remove-DbaRegServer -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $regSrvName
             $results.Status | Should -Be "Dropped"
         }
@@ -79,6 +79,51 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Remove-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $regSrvName2
             $results.Name | Should -Be $regSrvName2
             $results.Status | Should -Be "Dropped"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ServerName",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ServerName",
+                "Status"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
