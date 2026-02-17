@@ -66,15 +66,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "removes a database mail account" {
-            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbMailAccount -SqlInstance $server -Account $accountname
-            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname) | Should -BeNullOrEmpty
+            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname1) | Should -Not -BeNullOrEmpty
+            $splatRemove = @{
+                SqlInstance = $server
+                Account     = $accountname1
+                Confirm     = $false
+            }
+            $global:dbatoolsciOutput = Remove-DbaDbMailAccount @splatRemove
+            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname1) | Should -BeNullOrEmpty
         }
 
         It "supports piping database mail account" {
-            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname) | Should -Not -BeNullOrEmpty
-            Get-DbaDbMailAccount -SqlInstance $server -Account $accountname | Remove-DbaDbMailAccount
-            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname) | Should -BeNullOrEmpty
+            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname1) | Should -Not -BeNullOrEmpty
+            Get-DbaDbMailAccount -SqlInstance $server -Account $accountname1 | Remove-DbaDbMailAccount
+            (Get-DbaDbMailAccount -SqlInstance $server -Account $accountname1) | Should -BeNullOrEmpty
         }
 
         It "removes all database mail accounts but excluded" {
@@ -89,6 +94,34 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbMailAccount -SqlInstance $server) | Should -Not -BeNullOrEmpty
             Remove-DbaDbMailAccount -SqlInstance $server
             (Get-DbaDbMailAccount -SqlInstance $server) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
