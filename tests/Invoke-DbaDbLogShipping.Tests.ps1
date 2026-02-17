@@ -120,7 +120,35 @@ Describe $CommandName -Tag IntegrationTests -Skip {
             SecondaryDatabaseSuffix = "_LS"
             Force                   = $true
         }
-        $results = Invoke-DbaDbLogShipping @splatLogShipping
+        $results = Invoke-DbaDbLogShipping @splatLogShipping -OutVariable "global:dbatoolsciOutput"
         $results.Status -eq "Success" | Should -Be $true
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "PrimaryInstance",
+                "SecondaryInstance",
+                "PrimaryDatabase",
+                "SecondaryDatabase",
+                "Result",
+                "Comment"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
