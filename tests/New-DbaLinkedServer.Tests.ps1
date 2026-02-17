@@ -68,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "ensure command works" {
 
         It "Creates a linked server" {
-            $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS1_$random" -ServerProduct product1 -Provider provider1 -DataSource dataSource1 -Location location1 -ProviderString providerString1 -Catalog catalog1
+            $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS1_$random" -ServerProduct product1 -Provider provider1 -DataSource dataSource1 -Location location1 -ProviderString providerString1 -Catalog catalog1 -OutVariable "global:dbatoolsciOutput"
             $results.Parent.Name | Should -Be $InstanceSingle.Name
             $results.Name | Should -Be "dbatoolscli_LS1_$random"
             $results.ProductName | Should -Be product1
@@ -131,6 +131,39 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results.RemoteUser | Should -Be $loginName
             $results.Impersonate | Should -Be $false
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.LinkedServer]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "RemoteServer",
+                "ProductName",
+                "Impersonate",
+                "RemoteUser",
+                "Publisher",
+                "Distributor",
+                "DateLastModified"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.LinkedServer"
         }
     }
 }
