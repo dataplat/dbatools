@@ -61,8 +61,37 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Change the name of the job category" {
-            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -NewName CategoryTest2
+            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -NewName CategoryTest2 -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "CategoryTest2"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobCategory]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "CategoryType",
+                "JobCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobCategory"
         }
     }
 }

@@ -62,6 +62,7 @@ function Set-DbaAgentJobCategory {
         - Name: The name of the job category
         - ID: The unique identifier for the job category
         - CategoryType: The type of category (LocalJob, MultiServerJob, or DatabaseMaintenance)
+        - JobCount: The number of jobs assigned to this category
 
         Additional properties available (from SMO JobCategory object):
         - Urn: The Uniform Resource Name of the job category object
