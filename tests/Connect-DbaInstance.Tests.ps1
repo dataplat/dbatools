@@ -43,7 +43,8 @@ Describe $CommandName -Tag UnitTests {
                 "Tenant",
                 "AccessToken",
                 "DedicatedAdminConnection",
-                "DisableException"
+                "DisableException",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
