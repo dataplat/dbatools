@@ -11,9 +11,10 @@ Describe $CommandName -Tag UnitTests {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
+                "EnableException",
                 "Register",
-                "SessionOnly",
-                "Scope"
+                "Scope",
+                "SessionOnly"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -38,6 +39,23 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbatoolsInsecureConnection
             Get-DbatoolsConfigValue -FullName "sql.connection.trustcert" | Should -BeTrue
             Get-DbatoolsConfigValue -FullName "sql.connection.encrypt" | Should -BeFalse
+        }
+
+        It "Should apply settings for the current session only when -SessionOnly is specified" {
+            $null = Set-DbatoolsInsecureConnection -SessionOnly
+            Get-DbatoolsConfigValue -FullName "sql.connection.trustcert" | Should -BeTrue
+            Get-DbatoolsConfigValue -FullName "sql.connection.encrypt" | Should -BeFalse
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should produce no pipeline output" {
+            $global:dbatoolsciOutput = Set-DbatoolsInsecureConnection -SessionOnly
+            $global:dbatoolsciOutput | Should -BeNullOrEmpty
         }
     }
 }
