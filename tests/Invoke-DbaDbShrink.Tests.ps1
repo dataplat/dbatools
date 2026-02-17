@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Log -OutVariable "global:dbatoolsciOutput"
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be "$($db.Name)_log"
             $result.Success | Should -Be $true
@@ -154,6 +154,48 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Refresh()
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
             $db.LogFiles[0].Size | Should -Be $oldLogSize
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "File",
+                "Start",
+                "End",
+                "Elapsed",
+                "Success",
+                "InitialSize",
+                "InitialUsed",
+                "InitialAvailable",
+                "TargetAvailable",
+                "FinalAvailable",
+                "FinalSize",
+                "InitialAverageFragmentation",
+                "FinalAverageFragmentation",
+                "InitialTopFragmentation",
+                "FinalTopFragmentation",
+                "Notes"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
