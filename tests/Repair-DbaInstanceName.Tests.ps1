@@ -21,8 +21,39 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    # Repair-DbaInstanceName is destructive (drops/adds server name, restarts SQL services)
+    # so we cannot safely run it in integration tests. However, its output comes from
+    # Test-DbaInstanceName, so we validate the output structure using that command.
+
+    Context "Output validation" {
+        BeforeAll {
+            $result = Test-DbaInstanceName -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+        }
+
+        It "Should return a PSCustomObject" {
+            $result | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ServerName",
+                "NewServerName",
+                "RenameRequired",
+                "Updatable",
+                "Warnings",
+                "Blockers"
+            )
+            $actualProperties = $result.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
