@@ -23,3 +23,52 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When testing AG listener SPNs" {
+        It "Should return SPN validation results" {
+            $result = Test-DbaAgSpn -SqlInstance $TestConfig.instance1 -OutVariable "global:dbatoolsciOutput"
+            $result | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "SqlInstance",
+                "InstanceName",
+                "SqlProduct",
+                "InstanceServiceAccount",
+                "RequiredSPN",
+                "IsSet",
+                "Cluster",
+                "TcpEnabled",
+                "Port",
+                "DynamicPort",
+                "Warning",
+                "Error"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
