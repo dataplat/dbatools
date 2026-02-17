@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $server.Query("CREATE DATABASE $darlingDbDownload")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $TestConfig.InstanceSingle -Database $darlingDbDownload -Branch main -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $TestConfig.InstanceSingle -Database $darlingDbDownload -Branch main -Force -Verbose:$false -OutVariable "global:dbatoolsciOutput"
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -110,6 +110,34 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $result = $resultsLocalFile[0]
             $ExpectedProps = "SqlInstance", "InstanceName", "ComputerName", "Name", "Status", "Database"
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Status"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

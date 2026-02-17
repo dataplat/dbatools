@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2
+            $results = Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti2 -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have correct properties" {
@@ -65,6 +65,34 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command can handle multiple instances" {
         It "Should have results for 2 instances" {
             $(Get-DbaInstanceProperty -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Select-Object -Unique SqlInstance).count | Should -Be 2
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Value",
+                "PropertyType"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
