@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
         It "Should create new key in master called test1" {
             $keyname1 = "test1"
-            $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname1
+            $key1 = New-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname1 -OutVariable "global:dbatoolsciOutput"
             $results1 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname1 -Database master -WarningVariable warnvar1
             $warnvar1 | Should -BeNullOrEmpty
             $results1.database | Should -Be "master"
@@ -178,6 +178,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results7 = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyname7 -Database $database7
             $warnvar7 | Should -Not -BeNullOrEmpty
             $results7 | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AsymmetricKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Owner",
+                "KeyEncryptionAlgorithm",
+                "KeyLength",
+                "PrivateKeyEncryptionType",
+                "Thumbprint"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AsymmetricKey"
         }
     }
 }
