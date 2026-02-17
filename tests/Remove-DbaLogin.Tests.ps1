@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When removing a login" {
         It "Should successfully remove the login" {
-            $results = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin
+            $results = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $testLogin -OutVariable "global:dbatoolsciOutput"
             $results.Status | Should -Be "Dropped"
 
             # Verify the login was actually removed
@@ -94,6 +94,37 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $tempLogin -WarningVariable warn -WarningAction SilentlyContinue
             $result.Status | Should -Be "Dropped"
             $warn | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Login",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
