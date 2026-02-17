@@ -124,4 +124,58 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            # Reconnect to get a fresh server object for querying current tempdb config
+            $freshServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $currentDataFiles = $freshServer.Databases["tempdb"].Query("SELECT COUNT(1) AS FileCount, MAX(size/128) AS MaxSizeMb FROM sys.database_files WHERE type = 0")
+            $currentDataFileCount = $currentDataFiles.FileCount
+            # Use a size large enough so existing files are not bigger than the calculated per-file size
+            $currentTotalSize = $currentDataFiles.MaxSizeMb * $currentDataFileCount
+            $currentDataPath = Split-Path ($freshServer.Databases["tempdb"].Query("SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName)
+            $currentLogPath = Split-Path ($freshServer.Databases["tempdb"].Query("SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 2").PhysicalName)
+
+            $splatTempDb = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                DataFileCount = $currentDataFileCount
+                DataFileSize  = $currentTotalSize
+                DataPath      = $currentDataPath
+                LogPath       = $currentLogPath
+                Confirm       = $false
+            }
+            $global:dbatoolsciOutput = Set-DbaTempDbConfig @splatTempDb -WarningAction SilentlyContinue
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DataFileCount",
+                "DataFileSize",
+                "SingleDataFileSize",
+                "LogSize",
+                "DataPath",
+                "LogPath",
+                "DataFileGrowth",
+                "LogFileGrowth"
+            )
+            $actualProperties = $global:dbatoolsciOutput.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
