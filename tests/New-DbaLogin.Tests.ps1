@@ -133,7 +133,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force
+            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "tester"
             $results.DefaultDatabase | Should -Be "master"
             $results.IsDisabled | Should -Be $false
@@ -299,6 +299,39 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not attempt overwrite" {
             $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
             $warning | Should -Match "Login tester already exists"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "LoginType",
+                "CreateDate",
+                "LastLogin",
+                "HasAccess",
+                "IsLocked",
+                "IsDisabled",
+                "MustChangePassword"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Login"
         }
     }
 }
