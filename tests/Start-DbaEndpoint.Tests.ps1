@@ -47,7 +47,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "starts the endpoint" {
         $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint "TSQL Default TCP"
-        $results = $endpoint | Start-DbaEndpoint
+        $results = $endpoint | Start-DbaEndpoint -OutVariable "global:dbatoolsciOutput"
         $results.EndpointState | Should -Be "Started"
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Endpoint]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Endpoint"
+        }
     }
 }
