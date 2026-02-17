@@ -36,14 +36,40 @@ Describe $CommandName -Tag UnitTests {
                 "TrustServerCertificate",
                 "WorkstationId",
                 "Legacy",
-                "AppendConnectionString"
+                "AppendConnectionString",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When creating a connection string" {
+        BeforeAll {
+            $result = New-DbaConnectionString -SqlInstance $TestConfig.instance1 -OutVariable "global:dbatoolsciOutput"
+        }
+
+        It "Should return a connection string" {
+            $result | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should contain Data Source" {
+            $result | Should -Match "Data Source"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a string" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.String"
+        }
+    }
+}
