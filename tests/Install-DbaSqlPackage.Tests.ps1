@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $results = Install-DbaSqlPackage -Force
+            $results = Install-DbaSqlPackage -Force -OutVariable "global:dbatoolsciOutput"
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -74,6 +74,31 @@ Describe $CommandName -Tag IntegrationTests {
                 Remove-Item "$env:TEMP\sqlpackage_test.txt" -ErrorAction SilentlyContinue
                 Remove-Item "$env:TEMP\sqlpackage_error.txt" -ErrorAction SilentlyContinue
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "Name",
+                "Path",
+                "Installed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
