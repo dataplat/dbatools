@@ -57,13 +57,70 @@ Describe $CommandName -Tag IntegrationTests {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return a result" {
-            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $TestConfig.InstanceSingle
+            $results = Test-DbaBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $results | Should -Not -Be $null
         }
 
         It "Should return a result" {
             $results = Test-DbaBuild -Build "12.0.5540" -MaxBehind "1SP 1CU" -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -Be $null
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SqlInstance",
+                "Build",
+                "NameLevel",
+                "SPLevel",
+                "CULevel",
+                "KBLevel",
+                "BuildLevel",
+                "SupportedUntil",
+                "MatchType",
+                "Warning",
+                "Compliant",
+                "MinimumBuild",
+                "MaxBehind",
+                "SPTarget",
+                "CUTarget",
+                "BuildTarget"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "Build",
+                "BuildLevel",
+                "Compliant",
+                "CULevel",
+                "KBLevel",
+                "MatchType",
+                "MinimumBuild",
+                "NameLevel",
+                "SPLevel",
+                "SqlInstance",
+                "SupportedUntil",
+                "Warning"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
