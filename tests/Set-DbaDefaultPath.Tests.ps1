@@ -44,8 +44,36 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "returns proper information" {
         It "Backup returns the correct value" {
-            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $TestConfig.Temp
+            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $TestConfig.Temp -OutVariable "global:dbatoolsciOutput"
             $results.Backup | Should -BeExactly $TestConfig.Temp
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Data",
+                "Log",
+                "Backup"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
