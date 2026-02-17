@@ -385,7 +385,7 @@
         'Get-DbaSuspectPage',
         'Get-DbaTcpPort',
         'Get-DbaTempdbUsage',
-        'Get-DbatoolsLog',
+        # Get-DbatoolsLog - migrated to C# in dbatools.library
         'Get-DbatoolsPath',
         'Get-DbaTopResourceUsage',
         'Get-DbaTrace',
