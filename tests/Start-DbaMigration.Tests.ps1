@@ -127,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SharedPath    = $backupPath
                 Exclude       = "Logins", "SpConfigure", "SysDbUserObjects", "AgentServer", "CentralManagementServer", "ExtendedEvents", "PolicyManagement", "ResourceGovernor", "Endpoints", "ServerAuditSpecifications", "Audits", "LinkedServers", "SystemTriggers", "DataCollector", "DatabaseMail", "BackupDevices", "Credentials"
             }
-            $migrationResults = Start-DbaMigration @splatMigration
+            $migrationResults = Start-DbaMigration @splatMigration -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should return at least one result" {
@@ -252,6 +252,50 @@ Describe $CommandName -Tag IntegrationTests {
             $destDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $offlineTestDb
             $destDb | Should -Not -BeNullOrEmpty
             $destDb.Status | Should -Be "Normal"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should have the custom dbatools type name" {
+            $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "DestinationDatabase",
+                "Type",
+                "Status",
+                "Notes",
+                "DateTime"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "DateTime",
+                "SourceServer",
+                "DestinationServer",
+                "Name",
+                "Type",
+                "Status",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }

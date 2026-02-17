@@ -181,19 +181,19 @@ function Start-DbaMigration {
         https://dbatools.io/Start-DbaMigration
 
     .OUTPUTS
-        Object (output from Copy-DbaDatabase command when -Exclude Databases is not specified)
+        System.Management.Automation.PSCustomObject
 
-        When databases are migrated (default behavior unless -Exclude Databases is used), this function returns the output from Copy-DbaDatabase. The specific object type and properties depend on the migration method selected:
+        Returns one object per database migrated with the following properties:
+        - DateTime: The timestamp when the migration status was recorded (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The original database name on the source instance
+        - DestinationDatabase: The database name on the destination instance (may differ if -NewName or -Prefix was used)
+        - Type: Always "Database" - identifies this as a database migration result
+        - Status: The outcome of the migration operation (Successful, Failed, or Skipped)
+        - Notes: Additional details about the migration, including reasons for failure or skip conditions
 
-        When using -BackupRestore method:
-        Returns database migration status objects showing which databases were successfully restored on destination servers.
-
-        When using -DetachAttach method:
-        Returns database reattachment status objects showing which databases were successfully attached on destination servers.
-
-        No output is returned when -Exclude Databases is specified, as the function then only migrates server-level objects without providing pipeline output.
-
-        All other migration operations (logins, SQL Agent jobs, configuration, etc.) perform their tasks without returning objects to the pipeline. Use -Verbose to see detailed progress messages for all migration steps.
+        No output is returned when -Exclude Databases is specified.
 
     .EXAMPLE
         PS C:\> Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach
