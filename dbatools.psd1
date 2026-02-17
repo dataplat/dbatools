@@ -582,7 +582,6 @@
         'Repair-DbaInstanceName',
         'Reset-DbaAdmin',
         'Reset-DbatoolsConfig',
-        'Resolve-DbaPath',
         'Restart-DbaService',
         'Restore-DbaDatabase',
         'Restore-DbaDbCertificate',
