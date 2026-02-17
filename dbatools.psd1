@@ -403,7 +403,6 @@
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
         'Import-DbaSpConfigure',
-        'Import-DbatoolsConfig',
         'Import-DbaXESessionTemplate',
         'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
