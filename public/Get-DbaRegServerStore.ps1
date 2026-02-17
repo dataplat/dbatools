@@ -39,18 +39,11 @@ function Get-DbaRegServerStore {
 
         Returns one RegisteredServersStore object per specified instance. When no -SqlInstance is specified, returns the local file store containing your locally registered servers from SQL Server Management Studio.
 
-        Default display properties (via Select-DefaultView):
-        - ComputerName: The computer name of the SQL Server instance hosting the CMS
-        - InstanceName: The SQL Server instance name hosting the CMS
-        - SqlInstance: The full SQL Server instance name in computer\instance format
-        - DatabaseEngineServerGroup: The root server group containing all registered servers and subgroups
-        - ServerGroups: Collection of top-level server groups
-        - RegisteredServers: Collection of registered servers at the root level
+        Default display properties include all properties except those excluded below, such as:
+        ComputerName, InstanceName, SqlInstance, DatabaseEngineServerGroup, ServerGroups, DisplayName, IsLocal, and all server group/name properties.
 
         Properties excluded from default display (internal/technical properties):
-        - ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer
-
-        All SMO RegisteredServersStore properties are accessible using Select-Object *, including the excluded properties if needed for advanced operations.
+        ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer
 
     .EXAMPLE
         PS C:\> Get-DbaRegServerStore -SqlInstance sqlserver2014a
