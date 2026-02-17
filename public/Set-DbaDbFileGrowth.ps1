@@ -145,7 +145,7 @@ function Set-DbaDbFileGrowth {
                     try {
                         $sql = "ALTER DATABASE $db MODIFY FILE ( NAME = N'$($file.Name)', FILEGROWTH = $($Growth)$($GrowthType) )"
                         Write-Message -Level Verbose -Message $sql
-                        $db.Query($sql)
+                        $null = $db.Query($sql)
                         $db.Refresh()
                         $db.Parent.Refresh()
                         # this executes Get-DbaDbFileGrowth a bunch of times because it's in a loop, but it's needed to keep the output results in the WhatIf

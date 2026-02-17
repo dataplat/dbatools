@@ -80,4 +80,41 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Database | Should -Be $testDbName
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $splatOutputValidation = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $testDbName
+                Confirm         = $false
+            }
+            $ovResult = Set-DbaDbFileGrowth @splatOutputValidation
+        }
+
+        It "Should return a PSCustomObject" {
+            $ovResult[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "MaxSize",
+                "GrowthType",
+                "Growth",
+                "File",
+                "FileName",
+                "State"
+            )
+            $defaultColumns = $ovResult[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
