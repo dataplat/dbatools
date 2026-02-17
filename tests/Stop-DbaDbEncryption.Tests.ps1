@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $encrypted = ($dbState.encryption_state -eq 3)
             } while (-not $encrypted -and $elapsed -lt $timeout)
 
-            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn
+            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn -OutVariable "global:dbatoolsciOutput"
             $warn | Should -BeNullOrEmpty
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $false
@@ -142,6 +142,33 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $false
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "EncryptionEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
