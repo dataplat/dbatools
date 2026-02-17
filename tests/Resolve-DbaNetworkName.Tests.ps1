@@ -22,7 +22,7 @@ Describe $CommandName -Tag UnitTests {
 
     Context "Testing basic name resolution" {
         It "should test env:computername" {
-            $result = Resolve-DbaNetworkName $env:computername -EnableException
+            $result = Resolve-DbaNetworkName $env:computername -EnableException -OutVariable "global:dbatoolsciOutput"
             $result.InputName | Should -Be $env:computername
             $result.ComputerName | Should -Be $env:computername
             $result.IPAddress | Should -Not -BeNullOrEmpty
@@ -87,8 +87,35 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "InputName",
+                "ComputerName",
+                "IPAddress",
+                "DNSHostname",
+                "DNSDomain",
+                "Domain",
+                "DNSHostEntry",
+                "FQDN",
+                "FullComputerName"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
+}
