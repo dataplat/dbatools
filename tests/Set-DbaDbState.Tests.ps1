@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
             if (-not $setupright) {
                 Set-ItResult -Inconclusive -Because "Setup failed"
             }
-            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Emergency -Force
+            $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Emergency -Force -OutVariable "global:dbatoolsciOutput"
             $result.DatabaseName | Should -Be $db2
             $result.Status | Should -Be "EMERGENCY"
             $results = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1, $db2 -Emergency -Force
@@ -239,6 +239,52 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $db1 -Emergency -Force
             $ExpectedPropsDefault = "ComputerName", "InstanceName", "SqlInstance", "DatabaseName", "RW", "Status", "Access", "Notes"
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "RW",
+                "Status",
+                "Access",
+                "Notes",
+                "Database"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DatabaseName",
+                "RW",
+                "Status",
+                "Access",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
