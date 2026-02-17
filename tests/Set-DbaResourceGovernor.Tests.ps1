@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "enables resource governor" {
-            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
+            $results = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled -OutVariable "global:dbatoolsciOutput"
             $results.Enabled | Should -Be $true
         }
 
@@ -74,6 +74,37 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $dropUDFQuery -Database "master" -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.ResourceGovernor]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "ClassifierFunction",
+                "Enabled",
+                "MaxOutstandingIOPerVolume",
+                "ReconfigurePending",
+                "ResourcePools",
+                "ExternalResourcePools"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.ResourceGovernor"
         }
     }
 }
