@@ -17,3 +17,29 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Output validation" {
+        BeforeAll {
+            $global:dbatoolsciOutput = Get-DbatoolsPath -Name "temp"
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput | Should -BeOfType [System.String]
+        }
+
+        It "Should return a valid path" {
+            $global:dbatoolsciOutput | Should -Not -BeNullOrEmpty
+            Test-Path -Path $global:dbatoolsciOutput | Should -BeTrue
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.String"
+        }
+    }
+}
