@@ -156,10 +156,18 @@ function Add-DbaComputerCertificate {
             $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
 
             # Ensure the correct store is used
-            if ($Store -eq "LocalMachine") {
-                $flags += ",MachineKeySet"
+            if (-not $flags) {
+                if ($Store -eq "LocalMachine") {
+                    $flags = "MachineKeySet"
+                } else {
+                    $flags = "UserKeySet"
+                }
             } else {
-                $flags += ",UserKeySet"
+                if ($Store -eq "LocalMachine") {
+                    $flags += ",MachineKeySet"
+                } else {
+                    $flags += ",UserKeySet"
+                }
             }
         } else {
             $flags = $Flag -join ","
@@ -200,7 +208,8 @@ function Add-DbaComputerCertificate {
                 try {
                     # Import using plain text password (or null for non-password-protected certificates)
                     # Works reliably in all PowerShell versions v3+
-                    $null = $certCollection.Import($fileBytes, $plainPassword, $flags)
+                    # This import intentionally doesn't use $flags to allow re-export
+                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
 
                     # Export the entire collection as a single PFX to preserve the chain
                     # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
