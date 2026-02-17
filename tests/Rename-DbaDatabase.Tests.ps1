@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Preview      = $true
             }
 
-            $previewResults = Rename-DbaDatabase @splatPreview
+            $previewResults = Rename-DbaDatabase @splatPreview -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should have Results" {
@@ -334,6 +334,63 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Where-Object { $null -ne $PSItem } | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DBN",
+                "DatabaseRenames",
+                "FGN",
+                "FileGroupsRenames",
+                "LGN",
+                "LogicalNameRenames",
+                "FNN",
+                "FileNameRenames",
+                "PendingRenames",
+                "Status"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "DBN",
+                "FGN",
+                "LGN",
+                "FNN",
+                "PendingRenames",
+                "Status"
+            )
+            $defaultColumns = $outputItem.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
