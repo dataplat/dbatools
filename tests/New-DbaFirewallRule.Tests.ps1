@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
 
             # Create firewall rules with default RuleType (Program)
-            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
             $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
@@ -162,6 +162,58 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsRemovePort.Type | Should -Contain "Engine"
             $resultsRemovePort.IsRemoved | Should -Contain $true
             $resultsRemovePort.Status | Should -Contain "The rule was successfully removed."
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DisplayName",
+                "Name",
+                "Type",
+                "Protocol",
+                "LocalPort",
+                "Program",
+                "RuleConfig",
+                "Successful",
+                "Status",
+                "Details"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "DisplayName",
+                "Type",
+                "Successful",
+                "Status",
+                "Protocol",
+                "LocalPort",
+                "Program"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
