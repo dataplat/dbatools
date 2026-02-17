@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Testing connection parameters" {
         It "Should create a transfer object" {
-            $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName
+            $transfer = New-DbaDbTransfer -SqlInstance $TestConfig.InstanceMulti1 -Database $dbName -OutVariable "global:dbatoolsciOutput"
             $transfer | Should -BeOfType Microsoft.SqlServer.Management.Smo.Transfer
             $transfer.BatchSize | Should -Be 50000
             $transfer.BulkCopyTimeout | Should -Be 5000
@@ -247,6 +247,21 @@ Describe $CommandName -Tag IntegrationTests {
             $tables.Count | Should -Be 2
             $db.Query("select id from dbo.transfer_test").id | Should -Not -BeNullOrEmpty
             $db.Query("select id from dbo.transfer_test").id | Should -BeIn $db2.Query("select id from dbo.transfer_test").id
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Transfer]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Transfer"
         }
     }
 }
