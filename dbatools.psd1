@@ -698,7 +698,6 @@
         'Test-DbaMigrationConstraint',
         'Test-DbaNetworkLatency',
         'Test-DbaOptimizeForAdHoc',
-        'Test-DbaPath',
         'Test-DbaPowerPlan',
         'Test-DbaReplLatency',
         'Test-DbaSpn',
