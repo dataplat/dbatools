@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Function works as expected" {
         BeforeAll {
             $svr = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname
+            $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should return results" {
@@ -111,6 +111,37 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should show trace flag 7745 meets best practice" {
             ($resultsPipe | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Name",
+                "Value",
+                "RecommendedValue",
+                "IsBestPractice",
+                "Justification"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
