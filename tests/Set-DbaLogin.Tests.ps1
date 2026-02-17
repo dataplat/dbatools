@@ -120,7 +120,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         It 'Change the password from a SecureString' {
-            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $password2
+            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $password2 -OutVariable "global:dbatoolsciOutput"
 
             $result.PasswordChanged | Should -Be $true
         }
@@ -334,6 +334,41 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -MustChangePassword
             $result.Name | Should -Contain "testlogin1_$random"
             $result.Name | Should -Contain "testlogin2_$random"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Login]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "DenyLogin",
+                "IsDisabled",
+                "IsLocked",
+                "PasswordPolicyEnforced",
+                "PasswordExpirationEnabled",
+                "MustChangePassword",
+                "PasswordChanged",
+                "ServerRole",
+                "Notes"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Login"
         }
     }
 }
