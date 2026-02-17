@@ -52,7 +52,7 @@ Describe $CommandName -Tag UnitTests {
                     $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
                     return $obj
                 }
-                $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
+                $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException -OutVariable "global:dbatoolsciOutput"
             }
             It "Should return an array of 2 files" {
                 $results.count | Should -BeExactly 2
@@ -156,6 +156,28 @@ Describe $CommandName -Tag UnitTests {
             }
             It "Should not contain backslashes in URL path" {
                 $results[0].Fullname | Should -Not -BeLike "*\*"
+            }
+        }
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should return a PSCustomObject" {
+                $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Should have the expected properties" {
+                $expectedProperties = @(
+                    "FullName"
+                )
+                $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+                Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $helpContent = Get-Content "$PSScriptRoot\..\private\functions\Get-XpDirTreeRestoreFile.ps1" -Raw
+                $helpContent | Should -Match "System\.Management\.Automation\.PSCustomObject"
             }
         }
     }

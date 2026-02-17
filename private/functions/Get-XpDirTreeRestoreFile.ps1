@@ -20,6 +20,10 @@ function Get-XpDirTreeRestoreFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+            Properties: FullName (string)
+
     .EXAMPLE
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
 
