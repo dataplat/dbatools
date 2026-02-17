@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database     = $dbName
                 Certificate  = "dbatoolsci_AGCert"
             }
-            $results = New-DbaAvailabilityGroup @splatAg
+            $results = New-DbaAvailabilityGroup @splatAg -OutVariable "global:dbatoolsciOutput"
             $results.AvailabilityDatabases.Name | Should -Be $dbName
             $results.AvailabilityDatabases.Count | Should -Be 1 -Because "There should be only the named database in the group"
         }
@@ -126,6 +126,40 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = New-DbaAvailabilityGroup @splatAgNoDb
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LocalReplicaRole",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ClusterType",
+                "DtcSupportEnabled",
+                "AutomatedBackupPreference",
+                "AvailabilityReplicas",
+                "AvailabilityDatabases",
+                "AvailabilityGroupListeners"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityGroup"
         }
     }
 }
