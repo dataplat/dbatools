@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
 
-            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName "Step 1" -NewName "Step 1 updated"
+            $jobStep = Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName "Step 1" -NewName "Step 1 updated" -OutVariable "global:dbatoolsciOutput"
             $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1 updated"
 
@@ -567,6 +567,21 @@ Describe $CommandName -Tag IntegrationTests {
             $newJobStep.OnFailAction | Should -Be GoToStep
             $newJobStep.OnFailStep | Should -Be 11
             $newJobStep.JobStepFlags | Should -Be AppendAllCmdExecOutputToJobHistory
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobStep]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobStep"
         }
     }
 }
