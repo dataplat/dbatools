@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command actually works" {
         It "Should restore to the same server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb
+            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb -OutVariable "global:dbatoolsciOutput"
             $results.DatabaseName | Should -Be $db1
             $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
             $results.TestingInstance | Should -Be $TestConfig.InstanceCopy1
@@ -78,6 +78,33 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
             $results.TestingInstance | Should -Be $TestConfig.InstanceCopy2
             $results.BackupFolder | Should -Be $backupPath
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "SqlInstance",
+                "DatabaseName",
+                "JobName",
+                "TestingInstance",
+                "BackupFolder"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
