@@ -672,7 +672,6 @@
         'Test-DbaBuild',
         'Test-DbaCmConnection',
         'Test-DbaComputerCertificateExpiration',
-        'Test-DbaConnection',
         'Test-DbaConnectionAuthScheme',
         'Test-DbaKerberos',
         'Test-DbaDbCollation',
