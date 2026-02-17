@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "removes the alias and shows computername" {
-                $results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false
+                $results = Remove-DbaClientAlias -Alias dbatoolscialias1 -Verbose:$false -OutVariable "global:dbatoolsciOutput"
                 $results.ComputerName | Should -Not -BeNullOrEmpty
             }
 
@@ -99,6 +99,32 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = Remove-DbaClientAlias -Alias dbatoolscialias5 -WarningAction SilentlyContinue
                 $PSDefaultParameterValues = $defaultParamValues
                 $buffer.Count -ge 4 | Should -Be $true
+            }
+        }
+
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should return a PSCustomObject" {
+                $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Should have the expected properties" {
+                $expectedProperties = @(
+                    "ComputerName",
+                    "Architecture",
+                    "Alias",
+                    "Status"
+                )
+                $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+                Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help Remove-DbaClientAlias -Full
+                $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
             }
         }
     }
