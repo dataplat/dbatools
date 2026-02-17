@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "should create master key on a database using piping" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $results = $db1 | New-DbaDbMasterKey -SecurePassword $passwd
+            $results = $db1 | New-DbaDbMasterKey -SecurePassword $passwd -OutVariable "global:dbatoolsciOutput"
             $results.IsEncryptedByServer | Should -BeTrue
         }
 
@@ -53,6 +53,35 @@ Describe $CommandName -Tag IntegrationTests {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $results = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $db2.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -BeTrue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.MasterKey]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "CreateDate",
+                "DateLastModified",
+                "IsEncryptedByServer"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.MasterKey"
         }
     }
 }
