@@ -262,7 +262,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Decrypt Stored Procedure" {
         It "Should be successful" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -OutVariable "global:dbatoolsciOutput"
             $result.Script | Should -Be $queryStoredProcedure
         }
     }
@@ -315,6 +315,38 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti2 -SqlCredential $sqlCredential -Database $dbname -ObjectName dbatoolsci_test_remote_dac_vw -ExportDestination $tempDir
             (Get-Content $result.OutputFile -Raw).Trim() | Should -Be $remoteDacSampleEncryptedView.Trim()
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Type",
+                "Schema",
+                "Name",
+                "FullName",
+                "Script",
+                "OutputFile"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
