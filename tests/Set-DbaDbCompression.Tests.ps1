@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command gets results" {
         BeforeAll {
-            $results = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -MaxRunTime 5 -PercentCompression 0
+            $results = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -MaxRunTime 5 -PercentCompression 0 -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should contain objects" {
@@ -158,6 +158,47 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($row in $noneResults) {
                 $row.DataCompression | Should -Be "None"
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Schema",
+                "TableName",
+                "IndexName",
+                "Partition",
+                "IndexID",
+                "IndexType",
+                "PercentScan",
+                "PercentUpdate",
+                "RowEstimatePercentOriginal",
+                "PageEstimatePercentOriginal",
+                "CompressionTypeRecommendation",
+                "SizeCurrent",
+                "SizeRequested",
+                "PercentCompression",
+                "AlreadyProcessed"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
