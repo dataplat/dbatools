@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When removing views" {
         It "removes a view" {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1
+            $global:dbatoolsciOutput = Remove-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1 -Confirm:$false
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view1) | Should -BeNullOrEmpty
         }
 
@@ -62,6 +62,37 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -Not -BeNullOrEmpty
             Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2 | Remove-DbaDbView
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "View",
+                "ViewName",
+                "ViewSchema",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
