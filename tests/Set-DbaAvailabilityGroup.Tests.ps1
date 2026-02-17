@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "sets ag properties" {
         It "returns modified results" {
-            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -DtcSupportEnabled:$false
+            $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -DtcSupportEnabled:$false -OutVariable "global:dbatoolsciOutput"
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $false
         }
@@ -71,6 +71,40 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Set-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname -DtcSupportEnabled
             $results.AvailabilityGroup | Should -Be $agname
             $results.DtcSupportEnabled | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "LocalReplicaRole",
+                "AvailabilityGroup",
+                "PrimaryReplica",
+                "ClusterType",
+                "DtcSupportEnabled",
+                "AutomatedBackupPreference",
+                "AvailabilityReplicas",
+                "AvailabilityDatabases",
+                "AvailabilityGroupListeners"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.AvailabilityGroup"
         }
     }
 }
