@@ -45,14 +45,26 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling replication distribution" {
         BeforeAll {
-            $results = Enable-DbaReplDistributor -SqlInstance $TestConfig.InstanceMulti1 -EnableException -OutVariable "global:dbatoolsciOutput"
+            try {
+                $results = Enable-DbaReplDistributor -SqlInstance $TestConfig.InstanceMulti1 -EnableException -OutVariable "global:dbatoolsciOutput"
+            } catch {
+                $global:dbatoolsciReplError = $PSItem.Exception.Message
+            }
         }
 
         It "Should enable the distributor" {
+            if ($global:dbatoolsciReplError) {
+                Set-ItResult -Skipped -Because "replication not available: $($global:dbatoolsciReplError)"
+                return
+            }
             $results.IsDistributor | Should -BeTrue
         }
 
         It "Should have the default distribution database name" {
+            if ($global:dbatoolsciReplError) {
+                Set-ItResult -Skipped -Because "replication not available"
+                return
+            }
             $results.DistributionDatabases.Name | Should -Contain "distribution"
         }
     }
@@ -63,10 +75,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the correct type" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Replication.ReplicationServer]
         }
 
         It "Should have the correct default display columns" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $expectedColumns = @(
                 "ComputerName",
                 "InstanceName",

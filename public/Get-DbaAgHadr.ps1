@@ -22,11 +22,11 @@ function Get-DbaAgHadr {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        PSCustomObject
+        Microsoft.SqlServer.Management.Smo.Server
 
-        Returns one object per SQL Server instance queried, containing the current HADR status.
+        Returns one Server object per SQL Server instance queried, filtered to show the current HADR status via Select-DefaultView.
 
-        Properties:
+        Default display properties:
         - ComputerName: The computer name of the SQL Server instance
         - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER or named instance)
         - SqlInstance: The full SQL Server instance identifier in the format ComputerName\InstanceName or instance name for default

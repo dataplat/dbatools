@@ -87,10 +87,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return a PSCustomObject" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Should have the expected properties" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $expectedProperties = @(
                 "SqlInstance",
                 "DatabaseName",

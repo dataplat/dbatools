@@ -25,9 +25,9 @@ function Get-DbaAvailableCollation {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        Microsoft.SqlServer.Management.Smo.Collation
+        System.Data.DataRow
 
-        Returns one collation object per collation supported by each SQL Server instance, enhanced with human-readable descriptions.
+        Returns one DataRow per collation supported by each SQL Server instance, enhanced with human-readable descriptions via EnumCollations().
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The computer name of the SQL Server instance
@@ -40,7 +40,7 @@ function Get-DbaAvailableCollation {
         - LocaleName: Human-readable locale/language name (e.g., English_United States, Japanese_Unicode)
         - Description: SQL Server collation description with sorting and case sensitivity information
 
-        Additional properties available from SMO Collation object (use Select-Object * to access):
+        Additional properties available (use Select-Object * to access):
         - BinaryOrder: Boolean indicating if the collation uses binary sort order
         - BuiltInComparisonStyle: The comparison style constant used by SQL Server
         - IsCodePageCompatible: Boolean indicating code page compatibility
@@ -48,8 +48,6 @@ function Get-DbaAvailableCollation {
         - IsAccentSensitive: Boolean indicating if the collation is accent-sensitive
         - IsKanaTypeSensitive: Boolean indicating if the collation distinguishes between Hiragana and Katakana
         - IsWidthSensitive: Boolean indicating if the collation distinguishes between full-width and half-width characters
-
-        All properties from the base SMO Collation object are accessible even though only default properties are displayed without using Select-Object *.
 
     .NOTES
         Tags: Collation, Configuration, Management

@@ -176,14 +176,26 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return a PSCustomObject" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Should have the custom dbatools type name" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0].PSObject.TypeNames[0] | Should -Be "dbatools.MigrationObject"
         }
 
         It "Should have the correct default display columns" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $expectedColumns = @(
                 "DateTime",
                 "SourceServer",

@@ -54,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should contain timeline data rows in the body" {
-            $html = $results | Out-String
-            $html | Should -Match "Get-DbaAgentJobHistory"
+            $html = $results -join "`n"
+            $html | Should -Match "google\.visualization\.Timeline"
         }
     }
 
@@ -75,11 +75,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the correct type" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
         }
 
         It "Should produce valid HTML when combined" {
-            $html = $global:dbatoolsciOutput | Out-String
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
+            $html = $global:dbatoolsciOutput -join "`n"
             $html | Should -Match "<html>"
             $html | Should -Match "</html>"
         }

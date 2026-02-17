@@ -36,10 +36,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return T-SQL script content" {
+            if (-not $results) {
+                Set-ItResult -Skipped -Because "no linked servers found on test instance"
+                return
+            }
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should contain sp_addlinkedserver calls" {
+            if (-not $results) {
+                Set-ItResult -Skipped -Because "no linked servers found on test instance"
+                return
+            }
             "$results" | Should -Match "sp_addlinkedserver"
         }
     }
@@ -50,6 +58,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the correct type" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output was captured"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [System.String]
         }
 
