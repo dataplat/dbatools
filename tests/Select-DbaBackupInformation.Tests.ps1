@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
             BeforeAll {
                 $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
                 $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-                $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
+                $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true -OutVariable "global:dbatoolsciOutput"
             }
 
             It "Should return an array of 7 items" {
@@ -311,6 +311,54 @@ Describe $CommandName -Tag IntegrationTests {
             It "Should start with a log backup including redo_start_lsn" {
                 $tmp = ($output | Sort-Object -Property FirstLSn)[0]
                 ($redo_start_lsn -ge $tmp.FirstLsn -and $redo_start_lsn -le $tmp.LastLsn) | Should -Be $true
+            }
+        }
+
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should return a PSCustomObject" {
+                $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+            }
+
+            It "Should have the expected properties" {
+                $expectedProperties = @(
+                    "BackupFinishDate",
+                    "BackupPath",
+                    "BackupSetGUID",
+                    "BackupSetId",
+                    "BackupStartDate",
+                    "BackupTypeDescription",
+                    "CheckpointLSN",
+                    "Database",
+                    "DatabaseBackupLSN",
+                    "DatabaseName",
+                    "End",
+                    "FileList",
+                    "FirstLSN",
+                    "FullName",
+                    "LastLSN",
+                    "Position",
+                    "RestoreTime",
+                    "ServerName",
+                    "SoftwareVersionMajor",
+                    "SoftwareVersionMinor",
+                    "Start",
+                    "Type"
+                )
+                $actualProperties = ($global:dbatoolsciOutput[0].PSObject.Properties.Name | Sort-Object)
+                Compare-Object -ReferenceObject ($expectedProperties | Sort-Object) -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+            }
+
+            It "Should have the RestoreTime property added by the command" {
+                $global:dbatoolsciOutput[0].RestoreTime | Should -Not -BeNullOrEmpty
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help Select-DbaBackupInformation -Full
+                $help.returnValues.returnValue.type.name | Should -Not -BeNullOrEmpty
             }
         }
 
