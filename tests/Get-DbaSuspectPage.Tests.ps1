@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
             } catch { } # should fail
 
-            $results = Get-DbaSuspectPage -SqlInstance $server
+            $results = Get-DbaSuspectPage -SqlInstance $server -OutVariable "global:dbatoolsciOutput"
         }
 
         AfterAll {
@@ -59,6 +59,37 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "function should find at least one record in suspect_pages table" {
             $results.Database -contains $dbname | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "FileId",
+                "PageId",
+                "EventType",
+                "ErrorCount",
+                "LastUpdateDate"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
