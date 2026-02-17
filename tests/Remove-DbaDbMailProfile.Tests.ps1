@@ -72,4 +72,40 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbMailProfile -SqlInstance $server) | Should -BeNullOrEmpty
         }
     }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $outputProfileName = "dbatoolsci_output_$(Get-Random)"
+            $null = New-DbaDbMailProfile -SqlInstance $outputServer -Name $outputProfileName -EnableException
+
+            $global:dbatoolsciOutput = Remove-DbaDbMailProfile -SqlInstance $outputServer -Profile $outputProfileName -Confirm:$false
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsRemoved"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
+    }
 }
