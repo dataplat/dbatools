@@ -511,7 +511,6 @@
         'New-DbaRgResourcePool',
         'New-DbaServerRole',
         'New-DbaServiceMasterKey',
-        'New-DbatoolsSupportPackage',
         'New-DbaXESession',
         'Publish-DbaDacPackage',
         'Read-DbaAuditFile',
