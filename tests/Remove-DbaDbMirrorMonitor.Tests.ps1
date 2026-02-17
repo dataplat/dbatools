@@ -48,8 +48,40 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    It "removes the mirror monitor" {
-        $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
-        $results.MonitorStatus | Should -Be "Removed"
+    Context "When removing mirror monitor" {
+        It "removes the mirror monitor" {
+            $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
+            $results.MonitorStatus | Should -Be "Removed"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $outputItem = $global:dbatoolsciOutput | Select-Object -First 1
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $outputItem | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "MonitorStatus"
+            )
+            $actualProperties = $outputItem.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
+        }
     }
 }
