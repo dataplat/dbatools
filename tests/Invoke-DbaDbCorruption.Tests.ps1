@@ -90,12 +90,45 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Corrupt a single database" {
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
+            $global:dbatoolsciOutput = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption
+            $global:dbatoolsciOutput | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
         }
 
         It "Causes DBCC CHECKDB to fail" {
             $checkDbResult = Start-DbccCheck -Server $serverConnection -dbname $dbNameCorruption
             $checkDbResult | Should -Not -Be "Success"
+        }
+    }
+
+    Context "Output validation" {
+        BeforeAll {
+            $commandOutput = $global:dbatoolsciOutput | Where-Object { $PSItem.PSObject.Properties.Name -contains "Status" }
+        }
+
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $commandOutput | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Table",
+                "Status"
+            )
+            $actualProperties = $commandOutput.PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
