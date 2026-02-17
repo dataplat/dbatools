@@ -34,7 +34,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Get a ConnectionStringBuilder and assert its values" {
         BeforeAll {
-            $results = New-DbaConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled"
+            $results = New-DbaConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled" -OutVariable "global:dbatoolsciOutput"
         }
         It "Should be a connection string builder" {
             $results.GetType() | Should -Be Microsoft.Data.SqlClient.SqlConnectionStringBuilder
@@ -181,6 +181,21 @@ Describe $CommandName -Tag IntegrationTests {
                 $results = New-DbaConnectionStringBuilder "Data Source=localhost,1433;Pooling=True" -NonPooledConnection
                 $results.Pooling | Should -Be $False
             }
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.Data.SqlClient.SqlConnectionStringBuilder]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.Data\.SqlClient\.SqlConnectionStringBuilder"
         }
     }
 }
