@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             It "Should return True" {
-                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredFiles -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
                 $output | Should -BeExactly $true
             }
 
@@ -113,6 +113,21 @@ Describe $CommandName -Tag IntegrationTests {
             It "Should return True for valid striped backup set" {
                 $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredStripped -WarningAction SilentlyContinue
                 $output | Should -BeExactly $true
+            }
+        }
+
+        Context "Output validation" {
+            AfterAll {
+                $global:dbatoolsciOutput = $null
+            }
+
+            It "Should return a Boolean" {
+                $global:dbatoolsciOutput[0] | Should -BeOfType [Boolean]
+            }
+
+            It "Should have accurate .OUTPUTS documentation" {
+                $help = Get-Help Test-DbaLsnChain -Full
+                $help.returnValues.returnValue.type.name | Should -Match "Boolean"
             }
         }
     }
