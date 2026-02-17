@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "sets the proper recovery model" {
-            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $dbname -RecoveryModel BulkLogged
+            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $dbname -RecoveryModel BulkLogged -OutVariable "global:dbatoolsciOutput"
             $results.RecoveryModel -eq "BulkLogged" | Should -Be $true
         }
 
@@ -62,6 +62,38 @@ Describe $CommandName -Tag IntegrationTests {
         It "requires Database, ExcludeDatabase or AllDatabases" {
             $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "AllDatabases" | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Database]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "Status",
+                "IsAccessible",
+                "RecoveryModel",
+                "LastFullBackup",
+                "LastDiffBackup",
+                "LastLogBackup"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Database"
         }
     }
 }
