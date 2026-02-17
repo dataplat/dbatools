@@ -39,7 +39,7 @@ function Get-DbaTempdbUsage {
         https://dbatools.io/Get-DbaTempdbUsage
 
     .OUTPUTS
-        PSCustomObject
+        System.Data.DataRow
 
         Returns one object per running session that has allocated or deallocated tempdb space. For sessions with no tempdb allocation activity, no object is returned.
 
