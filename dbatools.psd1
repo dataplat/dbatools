@@ -519,7 +519,6 @@
         'New-DbaRgResourcePool',
         'New-DbaServerRole',
         'New-DbaServiceMasterKey',
-        'New-DbaSqlParameter',
         'New-DbatoolsSupportPackage',
         'New-DbaXESession',
         'Publish-DbaDacPackage',
