@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command works" {
 
         It "Should output a file with specific content" {
-            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath
+            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath -OutVariable "global:dbatoolsciOutput"
             $configResults.Directory.Name | Should -Be (Split-Path $tempConfigPath -Leaf)
 
             $configResults.FullName | Should -FileContentMatch $dbNameGenerator
@@ -72,6 +72,21 @@ Describe $CommandName -Tag IntegrationTests {
             $configResults.FullName | Should -FileContentMatch "FirstName"
 
             $configResults | Remove-Item -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [System.IO.FileInfo]
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "System\.IO\.FileInfo"
         }
     }
 }
