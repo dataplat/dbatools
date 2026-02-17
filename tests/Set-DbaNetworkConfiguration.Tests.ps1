@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
             $netConfPiped.TcpIpProperties.KeepAlive = 60000
-            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
+            $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Should Return a Result" {
@@ -89,6 +89,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should Return a Change" {
             $commandlineResults.Changes | Should -Match "Changed NamedPipesEnabled to"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Changes",
+                "RestartNeeded",
+                "Restarted"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "PSCustomObject"
         }
     }
 }
