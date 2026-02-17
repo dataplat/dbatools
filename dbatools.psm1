@@ -764,7 +764,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Sync-DbaAvailabilityGroup',
         'Get-DbaMemoryCondition',
         'Remove-DbaDbBackupRestoreHistory',
-        'New-DbaDatabase'
+        'New-DbaDatabase',
         'New-DbaDacOption',
         'Get-DbaDbccHelp',
         'Get-DbaDbccMemoryStatus',
@@ -772,7 +772,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaDbccUserOption',
         'Get-DbaAgentServer',
         'Set-DbaAgentServer',
-        'Invoke-DbaDbccFreeCache'
+        'Invoke-DbaDbccFreeCache',
         'Export-DbatoolsConfig',
         'Import-DbatoolsConfig',
         'Reset-DbatoolsConfig',
@@ -811,7 +811,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Set-DbaDbSequence',
         'Get-DbaDbUserDefinedTableType',
         'Get-DbaDbServiceBrokerService',
-        'Get-DbaDbServiceBrokerQueue ',
         'Set-DbaResourceGovernor',
         'New-DbaRgResourcePool',
         'Set-DbaRgResourcePool',
@@ -973,7 +972,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
     )
     $script:windowsonly = @(
         # filesystem (\\ related),
-        'Move-DbaDbFile'
+        'Move-DbaDbFile',
         'Copy-DbaBackupDevice',
         'Read-DbaXEFile',
         'Watch-DbaXESession',

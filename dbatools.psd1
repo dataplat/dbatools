@@ -783,9 +783,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepDistributor',
         'Test-DbaRepLatency',
-        'Get-DbaRepDistributor',
-        'Get-DbaRepPublication',
-        'Get-DbaRepServer'
+        'Get-DbaRepPublication'
 
     )
 
