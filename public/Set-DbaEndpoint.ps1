@@ -56,20 +56,7 @@ function Set-DbaEndpoint {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.Endpoint
 
-        Returns one modified Endpoint object for each endpoint that was changed. The endpoint object reflects the updated property values after the Alter() operation is committed.
-
-        Default display properties (via Select-DefaultView):
-        - ComputerName: The computer name of the SQL Server instance
-        - InstanceName: The SQL Server instance name
-        - SqlInstance: The full SQL Server instance name (computer\instance)
-        - Name: The name of the endpoint
-        - EndpointType: The type of endpoint (DatabaseMirroring, ServiceBroker, Soap, or TSql)
-        - ProtocolType: The communication protocol used by the endpoint
-        - Owner: The login name that owns the endpoint
-        - IsSystemObject: Boolean indicating if this is a system endpoint
-        - CreateDate: DateTime when the endpoint was created
-
-        All properties from the SMO Endpoint object are accessible using Select-Object * for more detailed analysis.
+        Returns one modified Endpoint object for each endpoint that was changed. The endpoint object reflects the updated property values after the Alter() operation is committed. Default display properties are inherited from Get-DbaEndpoint which sets them via Select-DefaultView.
 
     .EXAMPLE
         PS C:\> Set-DbaEndpoint -SqlInstance sql2016 -AllEndpoints -Owner sa
