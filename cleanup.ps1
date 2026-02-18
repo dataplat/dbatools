@@ -47,7 +47,7 @@ if ( ($olderVersions.Count -gt 0) -and $newestVersion.Version -in $installedVers
     Write-Output "Latest version of $module found on $env:COMPUTERNAME."
     Write-Output "Older versions of $module also found. These will be uninstalled now."
     if ($isElevated) {
-        $processes = Get-Process $process -IncludeUserName -ErrorAction SilentlyContinue | Where-Object Id -NE $pid
+        $processes = Get-Process $process -IncludeUserName -ErrorAction SilentlyContinue | Where-Object Id -ne $pid
     } else {
         $processes = Get-Process $process -ErrorAction SilentlyContinue | Where-Object Id -NE $PID
     }
