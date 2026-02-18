@@ -262,6 +262,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Output validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        }
+
         AfterAll {
             $global:dbatoolsciOutput = $null
         }
@@ -281,15 +285,24 @@ Describe $CommandName -Tag IntegrationTests {
                 "IndexSpaceUsed",
                 "DataSpaceUsed",
                 "RowCount",
-                "HasClusteredIndex",
-                "IsPartitioned",
-                "ChangeTrackingEnabled",
-                "IsFileTable",
-                "IsMemoryOptimized",
-                "IsNode",
-                "IsEdge",
-                "FullTextIndex"
+                "HasClusteredIndex"
             )
+            if ($server.VersionMajor -ge 9) {
+                $expectedColumns += "IsPartitioned"
+            }
+            if ($server.VersionMajor -ge 10) {
+                $expectedColumns += "ChangeTrackingEnabled"
+            }
+            if ($server.VersionMajor -ge 11) {
+                $expectedColumns += "IsFileTable"
+            }
+            if ($server.VersionMajor -ge 12) {
+                $expectedColumns += "IsMemoryOptimized"
+            }
+            if ($server.VersionMajor -ge 14) {
+                $expectedColumns += @("IsNode", "IsEdge")
+            }
+            $expectedColumns += "FullTextIndex"
             $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
         }

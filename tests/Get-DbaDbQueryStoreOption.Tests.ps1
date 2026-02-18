@@ -67,6 +67,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Output validation" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        }
+
         AfterAll {
             $global:dbatoolsciOutput = $null
         }
@@ -88,14 +92,22 @@ Describe $CommandName -Tag IntegrationTests {
                 "CurrentStorageSizeInMB",
                 "QueryCaptureMode",
                 "SizeBasedCleanupMode",
-                "StaleQueryThresholdInDays",
-                "MaxPlansPerQuery",
-                "WaitStatsCaptureMode",
-                "CustomCapturePolicyExecutionCount",
-                "CustomCapturePolicyTotalCompileCPUTimeMS",
-                "CustomCapturePolicyTotalExecutionCPUTimeMS",
-                "CustomCapturePolicyStaleThresholdHours"
+                "StaleQueryThresholdInDays"
             )
+            if ($server.VersionMajor -ge 14) {
+                $expectedColumns += @(
+                    "MaxPlansPerQuery",
+                    "WaitStatsCaptureMode"
+                )
+            }
+            if ($server.VersionMajor -ge 15) {
+                $expectedColumns += @(
+                    "CustomCapturePolicyExecutionCount",
+                    "CustomCapturePolicyTotalCompileCPUTimeMS",
+                    "CustomCapturePolicyTotalExecutionCPUTimeMS",
+                    "CustomCapturePolicyStaleThresholdHours"
+                )
+            }
             $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
         }

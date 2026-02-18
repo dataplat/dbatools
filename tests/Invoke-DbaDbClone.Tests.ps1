@@ -42,12 +42,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "warns if destination database already exists" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "exists"
         }
 
         It "warns if a system db is specified to clone" {
-            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue
+            $results = Invoke-DbaDbClone -SqlInstance $TestConfig.InstanceSingle -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "user database"
         }
 

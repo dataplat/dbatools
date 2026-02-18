@@ -148,7 +148,7 @@ function Get-DbaPbmPolicy {
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $store.InstanceName
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $store.SqlInstance
 
-                Select-DefaultView -InputObject $currentpolicy -ExcludeProperty HelpText, HelpLink, Urn, Properties, Metadata, Parent, IdentityKey, HasScript, PolicyEvaluationStarted, ConnectionProcessingStarted, TargetProcessed, ConnectionProcessingFinished, PolicyEvaluationFinished, PropertyMetadataChanged, PropertyChanged
+                Select-DefaultView -InputObject $currentpolicy -Property ComputerName, InstanceName, SqlInstance, ID, Name, Enabled, Description, PolicyCategory, AutomatedPolicyEvaluationMode, Condition, CreateDate, CreatedBy, DateModified, ModifiedBy, IsSystemObject, ObjectSet, RootCondition, ScheduleUid
             }
         }
     }
