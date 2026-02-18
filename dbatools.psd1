@@ -204,7 +204,6 @@
         'Get-DbaClientAlias',
         'Get-DbaClientProtocol',
         'Get-DbaCmConnection',
-        'Get-DbaCmObject',
         'Get-DbaComputerCertificate',
         'Get-DbaComputerSystem',
         'Get-DbaConnection',
