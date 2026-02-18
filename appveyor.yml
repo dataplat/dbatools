@@ -1,5 +1,5 @@
 # See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Previous Visual Studio 2017
+image: Previous Visual Studio 2022
 configuration: "Debug"
 
 # skip PR builds when there's already a push build
@@ -49,23 +49,23 @@ environment:
   matrix:
     - scenario: SINGLE
       part: 1/3
-      InstanceSingle: sql2016
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 2/3
-      InstanceSingle: sql2016
+      InstanceSingle: sql2022
     - scenario: SINGLE
       part: 3/3
-      InstanceSingle: sql2016
+      InstanceSingle: sql2022
     - scenario: MULTI
-      InstanceMulti1: sql2016
+      InstanceMulti1: sql2022
       InstanceMulti2: sql2017
     - scenario: COPY
       InstanceCopy1: sql2017
-      InstanceCopy2: sql2016
+      InstanceCopy2: sql2022
     - scenario: HADR
-      InstanceHadr: sql2016
+      InstanceHadr: sql2022
     - scenario: RESTART
-      InstanceRestart: sql2016
+      InstanceRestart: sql2022
     - scenario: default
     - scenario: 2008R2SP2Express
       part: 1/2
