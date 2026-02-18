@@ -575,7 +575,6 @@
         'Set-DbaAgentJobStep',
         'Set-DbaAgentSchedule',
         'Set-DbaAgentServer',
-        'Set-DbaAgListener',
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
         'Set-DbaCmConnection',
