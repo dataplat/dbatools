@@ -184,7 +184,7 @@
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBackupInformation',
-        'Get-DbaCmConnection',
+
         'Get-DbaCmObject',
         'Get-DbaComputerCertificate',
         'Get-DbaComputerSystem',
