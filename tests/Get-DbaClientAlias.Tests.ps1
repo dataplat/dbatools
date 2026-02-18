@@ -31,8 +31,43 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "gets the alias" {
         It "returns accurate information" {
-            $results = Get-DbaClientAlias
+            $results = Get-DbaClientAlias -OutVariable "global:dbatoolsciOutput"
             $results.AliasName -contains "dbatoolscialias" | Should -Be $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "NetworkLibrary",
+                "ServerName",
+                "AliasName",
+                "AliasString",
+                "Architecture"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+        It "Should return the correct ComputerName" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should return a valid Architecture value" {
+            $global:dbatoolsciOutput[0].Architecture | Should -BeIn @("32-bit", "64-bit")
+        }
+
+        It "Should return a valid NetworkLibrary value" {
+            $global:dbatoolsciOutput[0].NetworkLibrary | Should -BeIn @("TCP/IP", "Named Pipes")
         }
     }
 }
