@@ -57,7 +57,6 @@
         'Install-DbaAgentAdminAlert',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
-        'Add-DbaAgDatabase',
         'Add-DbaAgListener',
         'Add-DbaAgReplica',
         'Add-DbaComputerCertificate',
@@ -708,6 +707,7 @@
 
     # Cmdlets to export from this module
     CmdletsToExport    = @(
+        'Add-DbaAgDatabase',
         'Select-DbaObject',
         'Set-DbatoolsConfig',
         'Clear-DbaConnectionPool',
