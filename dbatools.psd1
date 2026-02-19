@@ -591,7 +591,6 @@
         'Stop-DbaXESession',
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
-        'Test-DbaAgentJobOwner',
         'Test-DbaBackupInformation',
         'Test-DbaBuild',
         'Test-DbaCmConnection',
