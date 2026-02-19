@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
                 EnableException       = $true
             }
 
-            $alert = New-DbaAgentAlert @splatAlert
+            $alert = New-DbaAgentAlert @splatAlert -OutVariable "global:dbatoolsciOutput"
 
             # Assert
             $alert.Name | Should -Be "Test Alert"
@@ -111,6 +111,43 @@ Describe $CommandName -Tag IntegrationTests {
             $alert.Severity | Should -Be 0
 
             Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti2 -Alert $splatMessageAlert.Alert | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct output type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "SqlInstance",
+                "InstanceName",
+                "Name",
+                "ID",
+                "JobName",
+                "AlertType",
+                "CategoryName",
+                "Severity",
+                "MessageID",
+                "IsEnabled",
+                "DelayBetweenResponses",
+                "LastRaised",
+                "OccurrenceCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $typeNames = @($help.returnValues.returnValue.type.name)
+            ($typeNames -match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Alert").Count | Should -BeGreaterThan 0
         }
     }
 }
