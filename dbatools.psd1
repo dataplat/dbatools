@@ -328,7 +328,6 @@
         'Get-DbaRgClassifierFunction',
         'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
-        'Get-DbaRunningJob',
         'Get-DbaSchemaChangeHistory',
         'Get-DbaServerRole',
         'Get-DbaServerRoleMember',
