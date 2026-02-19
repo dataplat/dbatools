@@ -698,6 +698,7 @@
         'Test-DbaMaxDop',
         'Test-DbaMaxMemory',
         'Test-DbaMigrationConstraint',
+        'Test-DbaNetworkCertificate',
         'Test-DbaNetworkLatency',
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaPath',

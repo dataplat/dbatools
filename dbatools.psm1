@@ -1062,6 +1062,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Add-DbaComputerCertificate',
         'Backup-DbaComputerCertificate',
         'Test-DbaComputerCertificateExpiration',
+        'Test-DbaNetworkCertificate',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Remove-DbaDbLogShipping',
