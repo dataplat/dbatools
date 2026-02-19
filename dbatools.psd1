@@ -173,7 +173,6 @@
         'Find-DbaUserObject',
         'Find-DbaView',
         'Format-DbaBackupInformation',
-        'Get-DbaAgentJobStep',
         'Get-DbaAgentLog',
         'Get-DbaAgentOperator',
         'Get-DbaAgentProxy',
