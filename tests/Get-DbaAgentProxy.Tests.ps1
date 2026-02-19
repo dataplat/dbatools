@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the list of Proxy" {
         BeforeAll {
-            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
         }
 
         It "Results are not empty" {
@@ -135,6 +135,50 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should be enabled" {
             $results.IsEnabled | Should -Contain $true
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "SqlInstance",
+                "InstanceName",
+                "Name",
+                "ID",
+                "CredentialID",
+                "CredentialIdentity",
+                "CredentialName",
+                "Description",
+                "IsEnabled"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have the ComputerName NoteProperty set" {
+            $global:dbatoolsciOutput[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the InstanceName NoteProperty set" {
+            $global:dbatoolsciOutput[0].InstanceName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the SqlInstance NoteProperty set" {
+            $global:dbatoolsciOutput[0].SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.ProxyAccount"
         }
     }
 }
