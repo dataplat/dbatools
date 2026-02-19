@@ -2,7 +2,7 @@
 
 This guide provides the standards and best practices for writing Pester v5 tests in the dbatools project.
 
-## Local Testing Setup
+## Local (not appveyor) Testing Setup
 
 To test commands locally during development:
 
@@ -25,7 +25,7 @@ $TestConfig.Temp              # Temp directory for test files
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 ```
 
-This allows you to manually test commands against actual SQL Server instances before running the full test suite.
+This allows you to manually test commands against actual SQL Server instances before running the full test suite using `Invoke-ManualPester`
 
 ## MANDATORY HEADER STRUCTURE
 

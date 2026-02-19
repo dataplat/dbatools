@@ -25,25 +25,25 @@ function Get-TestConfig {
         Write-Host -Object "Get-TestConfig: Setting up test configuration for AppVeyor"  -ForegroundColor DarkGreen
 
         if ($env:InstanceSingle) {
-            $config['InstanceSingle'] = "$(hostname)\$($env:InstanceSingle)"
+            $config['InstanceSingle'] = "$env:COMPUTERNAME\$env:InstanceSingle"
         }
         if ($env:InstanceMulti1) {
-            $config['InstanceMulti1'] = "$(hostname)\$($env:InstanceMulti1)"
+            $config['InstanceMulti1'] = "$env:COMPUTERNAME\$env:InstanceMulti1"
         }
         if ($env:InstanceMulti2) {
-            $config['InstanceMulti2'] = "$(hostname)\$($env:InstanceMulti2)"
+            $config['InstanceMulti2'] = "$env:COMPUTERNAME\$env:InstanceMulti2"
         }
         if ($env:InstanceCopy1) {
-            $config['InstanceCopy1'] = "$(hostname)\$($env:InstanceCopy1)"
+            $config['InstanceCopy1'] = "$env:COMPUTERNAME\$env:InstanceCopy1"
         }
         if ($env:InstanceCopy2) {
-            $config['InstanceCopy2'] = "$(hostname)\$($env:InstanceCopy2)"
+            $config['InstanceCopy2'] = "$env:COMPUTERNAME\$env:InstanceCopy2"
         }
         if ($env:InstanceHadr) {
-            $config['InstanceHadr'] = "$(hostname)\$($env:InstanceHadr)"
+            $config['InstanceHadr'] = "$env:COMPUTERNAME\$env:InstanceHadr"
         }
         if ($env:InstanceRestart) {
-            $config['InstanceRestart'] = "$(hostname)\$($env:InstanceRestart)"
+            $config['InstanceRestart'] = "$env:COMPUTERNAME\$env:InstanceRestart"
         }
 
         $config['SQLUserName'] = $null  # placeholders for -SqlCredential testing

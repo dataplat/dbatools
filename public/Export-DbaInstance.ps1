@@ -217,17 +217,39 @@ function Export-DbaInstance {
         foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                # Do we need a dedicated admin connection for password retrieval?
+                # If not both are excluded, we do
+                $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'LinkedServers'
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Force) {
                 # when the caller requests to overwrite existing scripts we won't add the dynamic timestamp to the folder name, so that a pre-existing location can be overwritten.
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))"
             } else {
                 $timeNow = (Get-Date -UFormat (Get-DbatoolsConfigValue -FullName 'formatting.uformat'))
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))-$timeNow"
             }
 
             # Ensure the export dir exists.
@@ -264,7 +286,7 @@ function Export-DbaInstance {
             if ($Exclude -notcontains 'Credentials') {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
-                $null = Export-DbaCredential -SqlInstance $server -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword
+                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\credentials.sql"
             }
 
@@ -447,6 +469,9 @@ function Export-DbaInstance {
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
             }
 
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            }
 
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }

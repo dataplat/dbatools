@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 2, 2026
+-- Last Modified: February 13, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -65,6 +65,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.1000.7		RTM									11-18-2025
 -- 17.0.1050.2		RTM + GDR							1-13-2026		https://support.microsoft.com/en-us/topic/kb5073177-description-of-the-security-update-for-sql-server-2025-gdr-january-13-2026-b1f8569f-b2e2-479e-84a4-96e1a9076b77	
 -- 17.0.4006.2		CU1									1-29-2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate1
+-- 17.0.4015.4		CU2									2-12-2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate2
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -187,9 +188,6 @@ DBCC TRACESTATUS (-1);
 -- Common trace flags that should be enabled in most cases
 -- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK   
-
--- TF 6534 - Enables use of native code to improve performance with spatial data. This is a startup trace flag only
---           https://bit.ly/2HrQUpU         
 
 -- TF 7745 - Prevents Query Store data from being written to disk in case of a failover or shutdown command
 --           https://bit.ly/2GU69Km

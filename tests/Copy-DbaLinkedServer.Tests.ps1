@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SourceSqlCredential",
                 "Destination",
                 "DestinationSqlCredential",
+                "Credential",
                 "LinkedServer",
                 "ExcludeLinkedServer",
                 "UpgradeSqlClient",
