@@ -420,7 +420,6 @@
         'Move-DbaDbFile',
         'Move-DbaRegServer',
         'Move-DbaRegServerGroup',
-        'New-DbaAgentJob',
         'New-DbaAgentJobCategory',
         'New-DbaAgentJobStep',
         'New-DbaAgentOperator',
