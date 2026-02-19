@@ -162,7 +162,6 @@
         'Find-DbaUserObject',
         'Find-DbaView',
         'Format-DbaBackupInformation',
-        'Get-DbaAgentServer',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBackupInformation',
