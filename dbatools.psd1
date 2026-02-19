@@ -167,7 +167,6 @@
         'Get-DbaBackupInformation',
 
         'Get-DbaCmObject',
-        'Get-DbaComputerCertificate',
         'Get-DbaComputerSystem',
         'Get-DbaCredential',
         'Get-DbaCustomError',
