@@ -489,7 +489,6 @@
         'Read-DbaTransactionLog',
         'Read-DbaXEFile',
         'Register-DbatoolsConfig',
-        'Remove-DbaAgDatabase',
         'Remove-DbaAgentAlertCategory',
         'Remove-DbaAgentAlert',
         'Remove-DbaAgentJob',
@@ -497,9 +496,6 @@
         'Remove-DbaAgentJobStep',
         'Remove-DbaAgentOperator',
         'Remove-DbaAgentSchedule',
-        'Remove-DbaAgListener',
-        'Remove-DbaAgReplica',
-        'Remove-DbaAvailabilityGroup',
         'Remove-DbaBackup',
         'Remove-DbaClientAlias',
         'Remove-DbaCmConnection',
@@ -722,6 +718,10 @@
         'New-DbaConnectionStringBuilder',
         'New-DbaScriptingOption',
         'New-DbaSqlParameter',
+        'Remove-DbaAgDatabase',
+        'Remove-DbaAgListener',
+        'Remove-DbaAgReplica',
+        'Remove-DbaAvailabilityGroup',
         'Test-DbaConnection',
         'Test-DbaPath'
     )
