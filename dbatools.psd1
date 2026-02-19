@@ -570,7 +570,6 @@
         'Set-DbaAgentJobStep',
         'Set-DbaAgentSchedule',
         'Set-DbaAgentServer',
-        'Set-DbaAvailabilityGroup',
         'Set-DbaCmConnection',
         'Set-DbaDbCompatibility',
         'Set-DbaDbCompression',
