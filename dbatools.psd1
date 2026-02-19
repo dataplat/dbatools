@@ -145,7 +145,6 @@
         'Export-DbaUser',
         'Export-DbaXESession',
         'Export-DbaXESessionTemplate',
-        'Find-DbaAgentJob',
         'Find-DbaBackup',
         'Find-DbaCommand',
         'Find-DbaDatabase',
