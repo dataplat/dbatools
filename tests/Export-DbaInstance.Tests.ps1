@@ -60,7 +60,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         # registered server and group
         $testServer = $TestConfig.InstanceSingle
-        $server = Connect-DbaInstance -SqlInstance $testServer
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
         $regSrvName = "dbatoolsci-server12"
@@ -255,6 +254,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "Export credentials" {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+    }
+
+    It "Export credentials without passwords" {
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -ExcludePassword
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+    }
+
+    It "Export credentials with preopend dac" {
+        $dac = Connect-DbaInstance -SqlInstance $testServer -DedicatedAdminConnection
+        $results = Export-DbaInstance -SqlInstance $dac -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -ExcludePassword
+        $null = $dac | Disconnect-DbaInstance
 
         $results.FullName | Should -Exist
         $results.Length | Should -BeGreaterThan 0

@@ -155,12 +155,18 @@ function Add-DbaComputerCertificate {
         if ("NonExportable" -in $Flag) {
             $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
 
-            # It needs at least one flag
+            # Ensure the correct store is used
             if (-not $flags) {
                 if ($Store -eq "LocalMachine") {
                     $flags = "MachineKeySet"
                 } else {
                     $flags = "UserKeySet"
+                }
+            } else {
+                if ($Store -eq "LocalMachine") {
+                    $flags += ",MachineKeySet"
+                } else {
+                    $flags += ",UserKeySet"
                 }
             }
         } else {
@@ -198,9 +204,11 @@ function Add-DbaComputerCertificate {
                     $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
                 }
 
+                Write-Message -Level Verbose -Message "Importing Path: $Path"
                 try {
                     # Import using plain text password (or null for non-password-protected certificates)
                     # Works reliably in all PowerShell versions v3+
+                    # This import intentionally doesn't use $flags to allow re-export
                     $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
 
                     # Export the entire collection as a single PFX to preserve the chain
@@ -234,9 +242,9 @@ function Add-DbaComputerCertificate {
 
             # Use X509Certificate2Collection to import the full certificate chain
             $certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+            Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $certCollection.Import($CertificateData, $PlainPassword, $flags)
 
-            Write-Verbose -Message "Importing certificate chain to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open("ReadWrite")
 

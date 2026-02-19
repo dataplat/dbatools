@@ -35,7 +35,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $params = @{
             MasterKeyPassword = $cred.Password
             BackupRestore     = $true
-            Exclude           = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
+            Exclude           = "DatabaseMail", "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
         # something is up with docker on actions, adjust accordingly for the cert test
         $initialcertcount = (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count
