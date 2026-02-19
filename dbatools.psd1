@@ -57,7 +57,6 @@
         'Install-DbaAgentAdminAlert',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
-        'Add-DbaAgReplica',
         'Add-DbaComputerCertificate',
         'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
@@ -708,6 +707,7 @@
     CmdletsToExport    = @(
         'Add-DbaAgDatabase',
         'Add-DbaAgListener',
+        'Add-DbaAgReplica',
         'Select-DbaObject',
         'Set-DbatoolsConfig',
         'Clear-DbaConnectionPool',
