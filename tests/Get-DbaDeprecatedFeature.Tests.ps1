@@ -34,8 +34,31 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Deprecated Features" {
         It "Gets results" {
-            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.InstanceSingle
+            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"
             $deprecatedResults.DeprecatedFeature | Should -Contain "sysdatabases"
         }
     }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return a PSCustomObject" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
+        }
+
+        It "Should have the expected properties" {
+            $expectedProperties = @(
+                "ComputerName",
+                "DeprecatedFeature",
+                "InstanceName",
+                "SqlInstance",
+                "UsageCount"
+            )
+            $actualProperties = $global:dbatoolsciOutput[0].PSObject.Properties.Name | Sort-Object
+            Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $actualProperties | Should -BeNullOrEmpty
+        }
+
+}
 }

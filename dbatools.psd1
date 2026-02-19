@@ -249,7 +249,6 @@
         'Get-DbaDbVirtualLogFile',
         'Get-DbaDefaultPath',
         'Get-DbaDependency',
-        'Get-DbaDeprecatedFeature',
         'Get-DbaDiskSpace',
         'Get-DbaDump',
         'Get-DbaEndpoint',
