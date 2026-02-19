@@ -16,6 +16,7 @@ function Get-DecryptedObject {
         - Export-DbaLinkedServer
 
         This function is heavily based on Antti Rantasaari's script at http://goo.gl/wpqSib
+        (currently pointing to: https://www.netspi.com/decrypting-mssql-database-link-server-passwords/)
         Antti Rantasaari 2014, NetSPI
         License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
@@ -132,73 +133,7 @@ function Get-DecryptedObject {
     }
 
     Write-Message -Level Verbose -Message "Query password information from the Db."
-
-    if ($server.Name -like 'ADMIN:*') {
-        Write-Message -Level Verbose -Message "We already have a dac, so we use it."
-        $results = $server.Query($sql)
-    } else {
-        $instance = $server.InstanceName
-        if (-not $server.IsClustered) {
-            $connString = "Server=ADMIN:127.0.0.1\$instance;Trusted_Connection=True;Pooling=false"
-        } else {
-            $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
-
-            if ($dacEnabled -eq $false) {
-                If ($Pscmdlet.ShouldProcess($server.Name, "Enabling remote DAC on clustered instance.")) {
-                    try {
-                        Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
-                        $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
-                        $server.Configuration.Alter()
-                    } catch {
-                        Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourceName" -Target $sourceName -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-
-            $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True;Pooling=false;"
-        }
-
-        try {
-            $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
-                try {
-                    $connString = $args[0]
-                    $sql = $args[1]
-                    $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-                    $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
-                    $dt = New-Object System.Data.DataTable
-                    $conn.open()
-                    $dt.Load($cmd.ExecuteReader())
-                    $conn.Close()
-                    $conn.Dispose()
-                    return $dt
-                } catch {
-                    $exception = $_
-                    try {
-                        $conn.Close()
-                        $conn.Dispose()
-                    } catch {
-                        $null = 1
-                    }
-                    throw $exception
-                }
-            }
-        } catch {
-            Stop-Function -Message "Can't establish local DAC connection on $sourceName." -Target $server -ErrorRecord $_
-        }
-
-        if ($server.IsClustered -and $dacEnabled -eq $false) {
-            If ($Pscmdlet.ShouldProcess($server.Name, "Disabling remote DAC on clustered instance.")) {
-                try {
-                    Write-Message -Level Verbose -Message "Setting remote DAC config back to 0."
-                    $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
-                    $server.Configuration.Alter()
-                } catch {
-                    Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourceName" -Target $server -ErrorRecord $_
-                }
-            }
-        }
-    }
+    $results = $server.Query($sql)
 
     Write-Message -Level Verbose -Message "Go through each row in results"
     foreach ($result in $results) {
@@ -215,8 +150,6 @@ function Get-DecryptedObject {
         $encode = New-Object System.Text.UnicodeEncoding
 
         # Print results - removing the weird padding (8 bytes in the front, some bytes at the end)...
-        # Might cause problems but so far seems to work.. may be dependant on SQL server version...
-        # If problems arise remove the next three lines..
         $i = 8; foreach ($b in $decrypted) { if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
         $decrypted = $decrypted[8 .. $i]
 
