@@ -171,7 +171,6 @@
         'Get-DbaCmObject',
         'Get-DbaComputerCertificate',
         'Get-DbaComputerSystem',
-        'Get-DbaCpuUsage',
         'Get-DbaCredential',
         'Get-DbaCustomError',
         'Get-DbaDatabase',
