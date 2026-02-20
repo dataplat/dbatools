@@ -1147,7 +1147,7 @@ if ($option.LoadTypes -or
     ($myInv.Line -like '*.psm1*' -and
         (-not (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
         ))) {
-    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml") -ErrorAction SilentlyContinue
     Write-ImportTime -Text "Updating type data"
     Update-FormatData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Format.ps1xml")
     Write-ImportTime -Text "Updating format data"
