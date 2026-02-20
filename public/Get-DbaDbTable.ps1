@@ -181,7 +181,13 @@ function Get-DbaDbTable {
             # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
             # Build property list based on SQL Server version
             # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via ClearAndInitialize
-            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'IndexSpaceUsed', 'DataSpaceUsed', 'RowCount', 'HasClusteredIndex')
+            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'RowCount', 'HasClusteredIndex')
+
+            # Azure SQL does not support IndexSpaceUsed and DataSpaceUsed via the SMO enumerator
+            if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                $null = $properties.Add('IndexSpaceUsed')
+                $null = $properties.Add('DataSpaceUsed')
+            }
 
             # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
             if ($server.VersionMajor -ge 9) {
