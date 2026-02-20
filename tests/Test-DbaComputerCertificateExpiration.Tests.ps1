@@ -37,20 +37,21 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "reports that the certificate is expired" {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt"
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-            $results = Test-DbaComputerCertificateExpiration -Thumbprint $thumbprint
-            $results | Select-Object -ExpandProperty Note | Should -Be "This certificate has expired and is no longer valid"
-            $results.Thumbprint | Should -Be $thumbprint
+            $script:outputForValidation = Test-DbaComputerCertificateExpiration -Thumbprint $thumbprint
+            $script:outputForValidation | Select-Object -ExpandProperty Note | Should -Be "This certificate has expired and is no longer valid"
+            $script:outputForValidation.Thumbprint | Should -Be $thumbprint
         }
 
         Context "Output validation" {
             It "Returns output with expected properties" {
-                $results | Should -Not -BeNullOrEmpty
-                $results.ExpiredOrExpiring | Should -BeTrue
-                $results.Note | Should -Not -BeNullOrEmpty
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $script:outputForValidation.ExpiredOrExpiring | Should -BeTrue
+                $script:outputForValidation.Note | Should -Not -BeNullOrEmpty
             }
 
             It "Has the expected default display properties" {
-                $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+                if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
+                $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
                 $expectedDefaults = @(
                     "ComputerName",
                     "Store",

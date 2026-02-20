@@ -37,7 +37,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns no output" {
-            $outputResult = Import-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path $spConfigPath
+            # Some sp_configure options (e.g. 'suppress recovery model errors') are not supported
+            # on Express Edition, which generates warnings/errors during import - suppress them
+            $outputResult = Import-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path $spConfigPath -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
             $outputResult | Should -BeNullOrEmpty
         }
     }

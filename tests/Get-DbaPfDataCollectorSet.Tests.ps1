@@ -23,20 +23,24 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command works" {
+        BeforeAll {
+            $script:outputForValidation = @(Get-DbaPfDataCollectorSet | Select-Object -First 1)
+        }
+
         It "Returns a result with the right computername and name is not null" {
-            $results = @(Get-DbaPfDataCollectorSet | Select-Object -First 1)
-            $results.ComputerName | Should -Be $env:COMPUTERNAME
-            $results.Name | Should -Not -BeNullOrEmpty
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no data collector sets found on this system" }
+            $script:outputForValidation.ComputerName | Should -Be $env:COMPUTERNAME
+            $script:outputForValidation.Name | Should -Not -BeNullOrEmpty
         }
 
         It "Returns output of the documented type" {
-            $results | Should -Not -BeNullOrEmpty
-            $results[0] | Should -BeOfType PSCustomObject
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no data collector sets found on this system" }
+            $script:outputForValidation[0] | Should -BeOfType PSCustomObject
         }
 
         It "Has the expected default display properties" {
-            $results | Should -Not -BeNullOrEmpty
-            $defaultProps = $results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no data collector sets found on this system" }
+            $defaultProps = $script:outputForValidation[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedDefaults = @(
                 "ComputerName",
                 "Name",

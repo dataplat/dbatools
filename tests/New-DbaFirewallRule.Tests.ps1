@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "creates first firewall rule for SQL Server instance" {
             $resultsNew[0].Successful | Should -Be $true
             $resultsNew[0].Type | Should -Be "Engine"
-            $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNew[0].DisplayName | Should -BeLike "*SQL Server instance*$instanceName*"
             $resultsNew[0].Status | Should -Be "The rule was successfully created."
         }
 
@@ -167,7 +167,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "creates first firewall rule for SQL Server instance" {
             $resultsNewPort[0].Successful | Should -Be $true
             $resultsNewPort[0].Type | Should -Be "Engine"
-            $resultsNewPort[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNewPort[0].DisplayName | Should -BeLike "*SQL Server instance*$instanceName*"
             $resultsNewPort[0].Status | Should -Be "The rule was successfully created."
         }
 

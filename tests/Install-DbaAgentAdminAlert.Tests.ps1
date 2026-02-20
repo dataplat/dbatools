@@ -93,7 +93,7 @@ Describe $CommandName -Tag IntegrationTests {
 
 }
 
-Describe "$CommandName Output" -Tag IntegrationTests {
+Describe "$CommandName Output" -Tag IntegrationTests -Skip:(-not $TestConfig.InstanceSingle) {
     Context "Output validation" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

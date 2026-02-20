@@ -61,6 +61,11 @@ $global:dbatools_dotsourcemodule = $true
 # imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
 
+# Ensure ShouldProcess/ConfirmImpact=High commands work non-interactively in CI
+# $PSDefaultParameterValues['*-Dba*:Confirm'] = $false does not reliably propagate
+# into Pester 5 isolated scopes, so we suppress globally here
+$global:ConfirmPreference = 'None'
+
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
@@ -451,6 +456,27 @@ if (-not $Finalize) {
                     # Restarting all used instances to avoid state issues
                     $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
                     Start-Sleep -Seconds 10
+                    # Clean up registered server test artifacts to prevent UNIQUE KEY violations on retry
+                    try {
+                        $splatCleanup = @{
+                            Type        = 'Engine'
+                            ErrorAction = 'SilentlyContinue'
+                        }
+                        $cleanupInstances = Get-DbaService @splatCleanup |
+                            Where-Object State -eq 'Running' |
+                            Select-Object -ExpandProperty InstanceName |
+                            ForEach-Object { "$(hostname)\$_" }
+                        foreach ($inst in $cleanupInstances) {
+                            $srv = Connect-DbaInstance -SqlInstance $inst -ErrorAction SilentlyContinue
+                            if ($srv) {
+                                $srv.Query("DELETE FROM msdb.dbo.sysmanagement_shared_registered_servers_internal WHERE name LIKE 'dbatoolsci%'")
+                                $srv.Query("DELETE FROM msdb.dbo.sysmanagement_shared_server_groups_internal WHERE name LIKE 'dbatoolsci%'")
+                            }
+                        }
+                        Write-Host -Object "appveyor.pester: Cleaned up registered server test artifacts" -ForegroundColor DarkGreen
+                    } catch {
+                        Write-Host -Object "appveyor.pester: Cleanup of registered server artifacts failed: $($_.Exception.Message)" -ForegroundColor Yellow
+                    }
                 } else {
                     Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
                     Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail

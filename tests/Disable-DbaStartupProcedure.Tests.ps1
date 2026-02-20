@@ -35,6 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "master"
 
         $null = $server.Query("CREATE PROCEDURE $startupProc AS Select 1", $dbname)
+        # Ensure startup is on regardless of prior state (e.g. CI retries)
         $null = $server.Query("EXEC sp_procoption '$startupProc', 'startup', 'on'", $dbname)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.

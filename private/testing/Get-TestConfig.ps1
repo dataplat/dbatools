@@ -17,6 +17,9 @@ function Get-TestConfig {
         # When testing a remote SQL Server instance this must be a network share
         # where both the SQL Server instance and the test script can write to.
         Temp             = 'C:\Temp'
+        # Detect CI environments for tests that need to skip or guard against
+        # features unavailable on shared CI VMs (WMI, PerfMon, etc.)
+        IsCI             = [bool]$env:APPVEYOR -or [bool]$env:GITHUB_WORKSPACE
     }
 
     if (Test-Path $LocalConfigPath) {

@@ -58,6 +58,11 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "Remote query timeout value is null"
                 return
             }
+            # Ensure the value is at baseline before testing "same value" warning
+            $currentValue = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout).ConfiguredValue
+            if ($currentValue -ne $remotequerytimeout) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
+            }
             $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning -match "existing" | Should -Be $true
         }

@@ -37,15 +37,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             # make darn sure suspect pages show up, run twice
             try {
-                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbname
-                $null = $db.Query("select top 100 from example")
+                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Confirm:$false
+                $null = $db.Query("select top 100 * from dbo.Example")
                 $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
                 $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
             } catch { } # should fail
 
             try {
-                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbname
-                $null = $db.Query("select top 100 from example")
+                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Confirm:$false
+                $null = $db.Query("select top 100 * from dbo.Example")
                 $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
                 $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
             } catch { } # should fail

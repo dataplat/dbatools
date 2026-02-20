@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Commands work as expected" {
         It "Works" {
-            $ep = Get-DbaExtendedProperty -SqlInstance $InstanceSingle -Name "Test_Database_Name"
+            $ep = Get-DbaExtendedProperty -SqlInstance $InstanceSingle -Database $newDbName -Name "Test_Database_Name"
             $newep = $ep | Set-DbaExtendedProperty -Value "Test_Database_Value"
             $newep.Name | Should -Be "Test_Database_Name"
             $newep.Value | Should -Be "Test_Database_Value"

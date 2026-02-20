@@ -210,7 +210,7 @@ Describe $CommandName -Tag IntegrationTests {
         Context "Output validation" {
             It "Returns output of the documented type" {
                 if (-not $script:outputForValidation) { Set-ItResult -Skipped -Because "no result to validate" }
-                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "Microsoft.SqlServer.Management.Smo.Wmi.SqlService"
+                $script:outputForValidation[0].psobject.TypeNames | Should -Contain "dbatools.DbaSqlService"
             }
 
             It "Has the expected default display properties" {

@@ -50,6 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
                     WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
 
             $null = $server.Query($sql)
+            # Allow extra time for sys.dm_db_index_usage_stats to populate on slower CI systems
+            Start-Sleep -Seconds 10
         }
 
         AfterAll {
