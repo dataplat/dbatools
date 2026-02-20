@@ -420,7 +420,6 @@
         'Move-DbaRegServer',
         'Move-DbaRegServerGroup',
 
-        'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
         'New-DbaClientAlias',
         'New-DbaCmConnection',
