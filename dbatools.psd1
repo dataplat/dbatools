@@ -523,7 +523,6 @@
         'Save-DbaKbUpdate',
         'Select-DbaBackupInformation',
         'Select-DbaDbSequenceNextValue',
-        'Set-DbaAgentJob',
         'Set-DbaAgentJobCategory',
         'Set-DbaAgentJobOutputFile',
         'Set-DbaAgentJobOwner',
