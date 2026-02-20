@@ -403,7 +403,7 @@ function Show-DependencyTree {
     )
 
     if ($Prefix) {
-        Write-Host ('{0}{1}{2}' -f $Prefix, ($(if ($IsLast) { '└─ ' } else { '├─ ' })), $Node)
+        Write-Host ('{0}{1}{2}' -f $Prefix, ($(if ($IsLast) { '\-- ' } else { '|- ' })), $Node)
     } else {
         Write-Host $Node
     }
@@ -425,7 +425,7 @@ function Show-DependencyTree {
         return
     }
 
-    $nextPrefix = $Prefix + ($(if ($IsLast) { '   ' } else { '│  ' }))
+    $nextPrefix = $Prefix + ($(if ($IsLast) { '   ' } else { '|  ' }))
 
     for ($i = 0; $i -lt $children.Count; $i++) {
         Show-DependencyTree `
