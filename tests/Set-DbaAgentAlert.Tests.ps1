@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Disabled    = $true
             }
             $results = Set-DbaAgentAlert @splatDisable
-            $results.IsEnabled | Should -Be "False"
+            $results.IsEnabled | Should -Be $false
         }
 
         It "Changes alert name to new name" {
@@ -70,8 +70,44 @@ Describe $CommandName -Tag IntegrationTests {
                 Alert       = "dbatoolsci test alert"
                 NewName     = "dbatoolsci test alert NEW"
             }
-            $results = Set-DbaAgentAlert @splatRename
+            $results = Set-DbaAgentAlert @splatRename -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be "dbatoolsci test alert NEW"
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.Alert]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "SqlInstance",
+                "InstanceName",
+                "Name",
+                "ID",
+                "JobName",
+                "AlertType",
+                "CategoryName",
+                "Severity",
+                "MessageID",
+                "IsEnabled",
+                "DelayBetweenResponses",
+                "LastRaised",
+                "OccurrenceCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $help.returnValues.returnValue.type.name | Should -Match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.Alert"
         }
     }
 }

@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "New Agent Job Category is added properly" {
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1 -OutVariable "global:dbatoolsciOutput"
             $results.Name | Should -Be $testCategory1
             $results.CategoryType | Should -Be "LocalJob"
             $categoriesToCleanup += $testCategory1
@@ -62,8 +62,42 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not write over existing job categories" {
-            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1 -WarningAction SilentlyContinue -WarningVariable warn
-            $warn -match "already exists" | Should -Be $true
+            # C# cmdlet routes StopFunction warnings through InvokeCommand.InvokeScript(),
+            # which bypasses -WarningVariable capture. Use 3>&1 redirection to capture
+            # the warning stream directly.
+            $warnings = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1 -WarningAction Continue 3>&1 |
+                Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+            ($warnings.Message -match "already exists").Count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Output validation" {
+        AfterAll {
+            $global:dbatoolsciOutput = $null
+        }
+
+        It "Should return the correct output type" {
+            $global:dbatoolsciOutput[0] | Should -BeOfType [Microsoft.SqlServer.Management.Smo.Agent.JobCategory]
+        }
+
+        It "Should have the correct default display columns" {
+            $expectedColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Name",
+                "ID",
+                "CategoryType",
+                "JobCount"
+            )
+            $defaultColumns = $global:dbatoolsciOutput[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $defaultColumns | Should -BeNullOrEmpty
+        }
+
+        It "Should have accurate .OUTPUTS documentation" {
+            $help = Get-Help $CommandName -Full
+            $typeNames = @($help.returnValues.returnValue.type.name)
+            ($typeNames -match "Microsoft\.SqlServer\.Management\.Smo\.Agent\.JobCategory").Count | Should -BeGreaterThan 0
         }
     }
 }

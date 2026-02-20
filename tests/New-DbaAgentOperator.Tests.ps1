@@ -107,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EmailAddress | Should -Be $email4
             $results.NetSendAddress | Should -Be "dbauser1"
             $results.PagerAddress | Should -Be "dbauser1@pager.dbatools.io"
-            $results.PagerDays | Should -Be "Everyday"
+            $results.PagerDays | Should -Be "EveryDay"
             $results.SaturdayPagerStartTime.ToString() | Should -Be "07:00:00"
             $results.SaturdayPagerEndTime.ToString() | Should -Be "18:00:00"
             $results.SundayPagerStartTime.ToString() | Should -Be "08:00:00"
