@@ -278,6 +278,12 @@ function Get-DbaDbTable {
                 }
             }
 
+            # Azure SQL does not support IndexSpaceUsed and DataSpaceUsed via the SMO enumerator
+            if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                $null = $properties.Remove('IndexSpaceUsed')
+                $null = $properties.Remove('DataSpaceUsed')
+            }
+
             $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
 
             if ($fqTns) {
