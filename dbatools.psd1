@@ -419,7 +419,6 @@
         'Move-DbaRegServer',
         'Move-DbaRegServerGroup',
 
-        'New-DbaAgentSchedule',
         'New-DbaClientAlias',
         'New-DbaCmConnection',
         'New-DbaComputerCertificate',
