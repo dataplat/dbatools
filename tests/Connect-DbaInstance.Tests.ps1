@@ -58,7 +58,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     AfterAll {
-        Get-DbaConnectedInstance | Disconnect-DbaInstance
+        $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
         Clear-DbaConnectionPool
     }
 
@@ -222,7 +222,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $server | Disconnect-DbaInstance
+            $null = $server | Disconnect-DbaInstance
         }
 
         It "clones when using parameter Database" {
@@ -253,7 +253,7 @@ Describe $CommandName -Tag IntegrationTests {
             $serverClone = Connect-DbaInstance -SqlInstance $server -DedicatedAdminConnection
             $server.ConnectionContext.ServerInstance | Should -Not -Match "^ADMIN:"
             $serverClone.ConnectionContext.ServerInstance | Should -Match "^ADMIN:"
-            $serverClone | Disconnect-DbaInstance
+            $null = $serverClone | Disconnect-DbaInstance
         }
 
         It "clones when using Backup-DabInstace" {
