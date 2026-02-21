@@ -407,6 +407,7 @@ if (-not $Finalize) {
         # === SPLIT TESTS INTO PARALLEL AND SEQUENTIAL GROUPS ===
         # Tests in parallel_exclusive modify instance-wide state (kill connections,
         # create singleton server objects, or share encryption resources) and must run sequentially
+        . "$ModuleBase\tests\pester.groups.ps1"
         $exclusiveNames = $TestsRunGroups['parallel_exclusive']
         $parallelTests = @($AllTestsWithinScenario | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $exclusiveNames })
         $sequentialTests = @($AllTestsWithinScenario | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $exclusiveNames })
