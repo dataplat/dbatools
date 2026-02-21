@@ -67,6 +67,8 @@ environment:
     - scenario: RESTART
       InstanceRestart: sql2022
     - scenario: default
+    # Unit tests only -- no SQL Server required, runs parameter validation for all commands
+    - scenario: UNIT_TESTS_ONLY
     #- scenario: 2008R2SP2Express
     #  part: 1/2
     #  InstanceSingle: sql2008r2sp2

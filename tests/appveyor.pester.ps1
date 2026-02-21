@@ -410,6 +410,12 @@ if (-not $Finalize) {
         $pester5config.Run.PassThru = $true
         $pester5config.Output.Verbosity = "None"
 
+        # For UNIT_TESTS_ONLY scenario, only run parameter validation tests (no SQL required)
+        if ($env:SCENARIO -eq 'UNIT_TESTS_ONLY') {
+            $pester5Config.Filter.Tag = @('UnitTests')
+            $pester5Config.Filter.ExcludeTag = @('IntegrationTests')
+        }
+
         #opt-in
         if ($IncludeCoverage) {
             $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase

@@ -33,6 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $splatClearStats = @{
                 SqlInstance = $TestConfig.InstanceSingle
+                Confirm     = $false
             }
             $clearResults = Clear-DbaWaitStatistics @splatClearStats -OutVariable "global:dbatoolsciOutput"
         }

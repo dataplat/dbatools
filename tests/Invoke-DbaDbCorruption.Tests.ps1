@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Corrupt a single database" {
-            $global:dbatoolsciOutput = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption
+            $global:dbatoolsciOutput = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption -Confirm:$false
             $global:dbatoolsciOutput | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
         }
 

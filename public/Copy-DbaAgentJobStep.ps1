@@ -210,8 +210,9 @@ function Copy-DbaAgentJobStep {
                         foreach ($sourceStep in $sourceSteps) {
                             Write-Message -Message "Creating step $($sourceStep.Name) in $jobName on $destinstance" -Level Verbose
                             $sql = $sourceStep.Script() | Out-String
-                            # Replace @job_id with @job_name since the destination job has a different GUID
-                            $sql = $sql -replace "@job_id=N'[0-9a-fA-F-]+'", "@job_name=N'$($jobName -replace "'", "''")'"
+                            # Replace @job_id with @job_name since the destination job has a different GUID.
+                            # Allow optional whitespace around = to handle different SMO script formats across SQL Server versions.
+                            $sql = $sql -replace "@job_id\s*=\s*N'[0-9a-fA-F\-]+'", "@job_name=N'$($jobName -replace "'", "''")'"
                             Write-Message -Message $sql -Level Debug
                             $destServer.Query($sql)
                         }

@@ -33,7 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            # Two-step cleanup: catch residual rules left by previous failed runs
+            $null = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -ErrorAction SilentlyContinue | Remove-DbaFirewallRule -ErrorAction SilentlyContinue
+            $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -ErrorAction SilentlyContinue
 
             # Create firewall rules with default RuleType (Program)
             $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -OutVariable "global:dbatoolsciOutput"

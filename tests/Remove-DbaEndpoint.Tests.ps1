@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When removing endpoints" {
         It "removes an endpoint" {
             $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring
-            $global:dbatoolsciOutput = Remove-DbaEndpoint -InputObject $endpoint
+            $global:dbatoolsciOutput = Remove-DbaEndpoint -InputObject $endpoint -Confirm:$false
             $global:dbatoolsciOutput.Status | Should -Be "Removed"
         }
     }

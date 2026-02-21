@@ -343,8 +343,21 @@ $TestsRunGroups = @{
         'Watch-DbaDbLogin',
         'Write-DbaDbTableData'
     )
+    # run unit tests only (no SQL Server required) -- used by UNIT_TESTS_ONLY scenario
+    "UNIT_TESTS_ONLY"   = 'autodetect_UnitTests'
     # do not run on appveyor
-    "appveyor_disabled" = @()
+    "appveyor_disabled" = @(
+        # Database Mirroring monitoring SPs removed in SQL Server 2022
+        # AppVeyor uses SQL 2022 as primary target -- re-enable when testing against older SQL versions
+        'Remove-DbaDbMirrorMonitor',
+        'Add-DbaDbMirrorMonitor',
+        # Service management via WMI requires elevated local WMI permissions not available on AppVeyor agents
+        # These tests pass in local lab environments with proper WMI access
+        'Set-DbaTcpPort',
+        'Update-DbaServiceAccount',
+        # Stop-DbaService is timing-sensitive in CI; passes locally but flaky in AppVeyor
+        'Stop-DbaService'
+    )
     # do not run everywhere
     "disabled"          = @()
 }

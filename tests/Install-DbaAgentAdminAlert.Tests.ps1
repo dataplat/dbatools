@@ -33,7 +33,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:(-not $TestConfig.InstanceMulti1) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
     }

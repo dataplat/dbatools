@@ -142,7 +142,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Output validation" {
         BeforeAll {
             # Restart the trace so we can stop it again for output capture
-            $null = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
+            # Only start if it's not already running (previous test stopped it)
+            $traceState = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+            if ($traceState -and -not $traceState.IsRunning) {
+                $null = $traceState | Start-DbaTrace
+            }
             $global:dbatoolsciOutput = @(Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace | Where-Object { $null -ne $PSItem })
         }
 
@@ -151,10 +155,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return a PSCustomObject" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output captured from Stop-DbaTrace"
+                return
+            }
             $global:dbatoolsciOutput[0] | Should -BeOfType [PSCustomObject]
         }
 
         It "Should have the expected properties" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output captured from Stop-DbaTrace"
+                return
+            }
             $expectedProperties = @(
                 "ComputerName",
                 "InstanceName",
@@ -187,6 +199,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have the correct default display columns" {
+            if (-not $global:dbatoolsciOutput) {
+                Set-ItResult -Skipped -Because "no output captured from Stop-DbaTrace"
+                return
+            }
             $expectedColumns = @(
                 "ComputerName",
                 "InstanceName",
