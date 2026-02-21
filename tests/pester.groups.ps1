@@ -347,4 +347,16 @@ $TestsRunGroups = @{
     "appveyor_disabled" = @()
     # do not run everywhere
     "disabled"          = @()
+    # tests that must not run in parallel — they modify instance-wide state
+    # (kill connections, create singleton server objects, or share encryption resources)
+    "parallel_exclusive" = @(
+        'Dismount-DbaDatabase',
+        'Disable-DbaDbEncryption',
+        'Enable-DbaDbEncryption',
+        'Get-DbaDbEncryption',
+        'Get-DbaDbFileMapping',
+        'Read-DbaAuditFile',
+        'Set-DbaDbCompression',
+        'Test-DbaDbCompression'
+    )
 }

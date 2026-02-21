@@ -404,12 +404,74 @@ if (-not $Finalize) {
     $Counter = 0
 
     if ($AllTestsWithinScenario.Count -gt 1 -and -not $IncludeCoverage -and $env:SCENARIO -ne 'RESTART') {
-        # === PARALLEL FIRST PASS ===
-        # Run all tests concurrently using runspace pool, then retry failures sequentially
-        # RESTART scenario is excluded — those tests restart SQL services and must run sequentially
-        Write-Host -Object "appveyor.pester: Running $($AllTestsWithinScenario.Count) tests in parallel (max 3 threads)..." -ForegroundColor DarkGreen
+        # === SPLIT TESTS INTO PARALLEL AND SEQUENTIAL GROUPS ===
+        # Tests in parallel_exclusive modify instance-wide state (kill connections,
+        # create singleton server objects, or share encryption resources) and must run sequentially
+        $exclusiveNames = $TestsRunGroups['parallel_exclusive']
+        $parallelTests = @($AllTestsWithinScenario | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $exclusiveNames })
+        $sequentialTests = @($AllTestsWithinScenario | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $exclusiveNames })
 
-        $parallelResults = @(Start-ParallelPester -TestFiles $AllTestsWithinScenario -ModuleBase $ModuleBase -MaxThreads 3)
+        Write-Host -Object "appveyor.pester: $($parallelTests.Count) tests parallel, $($sequentialTests.Count) tests sequential (exclusive)" -ForegroundColor DarkGreen
+
+        $allFirstPassResults = @()
+
+        # === PARALLEL FIRST PASS ===
+        if ($parallelTests.Count -gt 1) {
+            Write-Host -Object "appveyor.pester: Running $($parallelTests.Count) tests in parallel (max 3 threads)..." -ForegroundColor DarkGreen
+            $allFirstPassResults += @(Start-ParallelPester -TestFiles $parallelTests -ModuleBase $ModuleBase -MaxThreads 3)
+        } elseif ($parallelTests.Count -eq 1) {
+            # Single parallel test — run directly without runspace overhead
+            $seqFile = $parallelTests[0]
+            Write-Host -Object "Running $($seqFile.FullName) ..." -ForegroundColor Cyan -NoNewLine
+            $splatPester = @{
+                Run    = @{ Path = $seqFile.FullName; PassThru = $true }
+                Output = @{ Verbosity = "None" }
+            }
+            $PesterRun = Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable $splatPester)
+            Write-Host -Object "`rCompleted $($seqFile.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+            $allFirstPassResults += [PSCustomObject]@{
+                TestFile      = $seqFile.FullName
+                TestFileName  = $seqFile.Name
+                PassedCount   = $PesterRun.PassedCount
+                FailedCount   = $PesterRun.FailedCount
+                SkippedCount  = $PesterRun.SkippedCount
+                Duration      = $PesterRun.Duration
+                Result        = $PesterRun.Result
+                Tests         = $PesterRun.Tests
+                PesterRun     = $PesterRun
+                RunspaceError = $null
+            }
+        }
+
+        # === SEQUENTIAL EXCLUSIVE TESTS ===
+        # These tests modify instance-wide state and must not run concurrently
+        if ($sequentialTests.Count -gt 0) {
+            Write-Host -Object "appveyor.pester: Running $($sequentialTests.Count) exclusive tests sequentially..." -ForegroundColor DarkGreen
+            foreach ($seqFile in $sequentialTests) {
+                Write-Host -Object "Running $($seqFile.FullName) ..." -ForegroundColor Cyan -NoNewLine
+                $splatPester = @{
+                    Run    = @{ Path = $seqFile.FullName; PassThru = $true }
+                    Output = @{ Verbosity = "None" }
+                }
+                $PesterRun = Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable $splatPester)
+                Write-Host -Object "`rCompleted $($seqFile.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+                $allFirstPassResults += [PSCustomObject]@{
+                    TestFile      = $seqFile.FullName
+                    TestFileName  = $seqFile.Name
+                    PassedCount   = $PesterRun.PassedCount
+                    FailedCount   = $PesterRun.FailedCount
+                    SkippedCount  = $PesterRun.SkippedCount
+                    Duration      = $PesterRun.Duration
+                    Result        = $PesterRun.Result
+                    Tests         = $PesterRun.Tests
+                    PesterRun     = $PesterRun
+                    RunspaceError = $null
+                }
+            }
+        }
+
+        # Combined results from both parallel and sequential — downstream processing is uniform
+        $parallelResults = $allFirstPassResults
 
         # Export results and report to AppVeyor for each test
         foreach ($result in $parallelResults) {

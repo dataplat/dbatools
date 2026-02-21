@@ -5,9 +5,11 @@ function Start-ParallelPester {
 
     .DESCRIPTION
         Creates a runspace pool and executes Pester test files concurrently.
-        Each runspace is fully isolated — it re-imports dbatools, Pester, and
-        creates its own $TestConfig. Results are streamed to the pipeline as
-        each runspace completes.
+        Test files are split into $MaxThreads batches, and each batch runs in
+        its own isolated runspace. Each runspace imports dbatools, Pester, and
+        creates its own $TestConfig once, then runs all tests in its batch
+        sequentially. Results are streamed to the pipeline as each test
+        completes within a runspace.
 
         No retry logic is included — callers should collect failures and retry
         them sequentially (with SQL service restarts if needed).
@@ -51,7 +53,27 @@ function Start-ParallelPester {
     $parallelStartTime = Get-Date
     $totalTests = $TestFiles.Count
 
-    Write-Host -Object "Start-ParallelPester: Running $totalTests test files with $MaxThreads max concurrent threads" -ForegroundColor DarkGreen
+    # Split an array into roughly equal parts — used to batch test files into $MaxThreads groups
+    # so each runspace imports the module once and runs its batch sequentially.
+    function Split-ArrayInParts($array, [int]$parts) {
+        #splits an array in "equal" parts
+        $size = $array.Length / $parts
+        if ($size -lt 1) { $size = 1 }
+        $counter = [PSCustomObject] @{ Value = 0 }
+        $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
+        $rtn = @()
+        foreach ($g in $groups) {
+            $rtn += , @($g.Group)
+        }
+        $rtn
+    }
+
+    # Split test files into $MaxThreads batches — each batch runs in one runspace,
+    # importing the module only once instead of once per test file.
+    $batches = Split-ArrayInParts -array $TestFiles -parts $MaxThreads
+    $batchCount = $batches.Count
+
+    Write-Host -Object "Start-ParallelPester: Running $totalTests test files in $batchCount batches with $MaxThreads max concurrent threads" -ForegroundColor DarkGreen
 
     # Scriptblock that executes inside each isolated runspace.
     # Runspaces share NO state with the caller — modules, variables, and functions
@@ -86,28 +108,28 @@ function Start-ParallelPester {
                 $run = Invoke-Pester -Configuration $pesterConfig
 
                 [PSCustomObject]@{
-                    TestFile     = $testFile
-                    TestFileName = [System.IO.Path]::GetFileName($testFile)
-                    PassedCount  = $run.PassedCount
-                    FailedCount  = $run.FailedCount
-                    SkippedCount = $run.SkippedCount
-                    Duration     = $run.Duration
-                    Result       = $run.Result
-                    Tests        = $run.Tests
-                    PesterRun    = $run
+                    TestFile      = $testFile
+                    TestFileName  = [System.IO.Path]::GetFileName($testFile)
+                    PassedCount   = $run.PassedCount
+                    FailedCount   = $run.FailedCount
+                    SkippedCount  = $run.SkippedCount
+                    Duration      = $run.Duration
+                    Result        = $run.Result
+                    Tests         = $run.Tests
+                    PesterRun     = $run
                     RunspaceError = $null
                 }
             } catch {
                 [PSCustomObject]@{
-                    TestFile     = $testFile
-                    TestFileName = [System.IO.Path]::GetFileName($testFile)
-                    PassedCount  = 0
-                    FailedCount  = 1
-                    SkippedCount = 0
-                    Duration     = [TimeSpan]::Zero
-                    Result       = "Failed"
-                    Tests        = @()
-                    PesterRun    = $null
+                    TestFile      = $testFile
+                    TestFileName  = [System.IO.Path]::GetFileName($testFile)
+                    PassedCount   = 0
+                    FailedCount   = 1
+                    SkippedCount  = 0
+                    Duration      = [TimeSpan]::Zero
+                    Result        = "Failed"
+                    Tests         = @()
+                    PesterRun     = $null
                     RunspaceError = $PSItem.Exception.Message
                 }
             }
@@ -125,23 +147,23 @@ function Start-ParallelPester {
     $completedCount = 0
 
     try {
-        # Queue one runspace per test file — the pool limits concurrency to $MaxThreads
-        foreach ($testFile in $TestFiles) {
+        # Queue one runspace per batch — each imports the module once and runs its tests sequentially
+        foreach ($batch in $batches) {
             $ps = [PowerShell]::Create()
             $null = $ps.AddScript($scriptblock)
-            $null = $ps.AddArgument(@($testFile.FullName))
+            $null = $ps.AddArgument(@($batch | ForEach-Object { $PSItem.FullName }))
             $null = $ps.AddArgument($ModuleBase)
             $null = $ps.AddArgument($true)
             $ps.RunspacePool = $pool
 
             $runspaces += [PSCustomObject]@{
-                Pipe     = $ps
-                Status   = $ps.BeginInvoke()
-                TestFile = $testFile
+                Pipe      = $ps
+                Status    = $ps.BeginInvoke()
+                TestFiles = $batch
             }
         }
 
-        Write-Host -Object "Start-ParallelPester: All $totalTests runspaces queued, waiting for completion..." -ForegroundColor DarkGreen
+        Write-Host -Object "Start-ParallelPester: All $batchCount runspaces queued, waiting for completion..." -ForegroundColor DarkGreen
 
         # Poll for completion and stream results
         while ($runspaces.Count -gt 0) {
@@ -152,8 +174,9 @@ function Start-ParallelPester {
 
                         # Check for runspace-level errors (module import failures, etc.)
                         if ($rs.Pipe.Streams.Error.Count -gt 0) {
+                            $batchNames = ($rs.TestFiles | ForEach-Object { $PSItem.Name }) -join ", "
                             $runspaceErrors = ($rs.Pipe.Streams.Error | ForEach-Object { $PSItem.ToString() }) -join " | "
-                            Write-Warning "Runspace error for $($rs.TestFile.Name): $runspaceErrors"
+                            Write-Warning "Runspace error for batch ($batchNames): $runspaceErrors"
                         }
 
                         if ($result) {
@@ -173,24 +196,26 @@ function Start-ParallelPester {
                             }
                         }
                     } catch {
-                        # EndInvoke threw — create an error result
-                        $completedCount++
-                        $errorCount++
-                        $errorResult = [PSCustomObject]@{
-                            TestFile      = $rs.TestFile.FullName
-                            TestFileName  = $rs.TestFile.Name
-                            PassedCount   = 0
-                            FailedCount   = 1
-                            SkippedCount  = 0
-                            Duration      = [TimeSpan]::Zero
-                            Result        = "Failed"
-                            Tests         = @()
-                            PesterRun     = $null
-                            RunspaceError = $PSItem.Exception.Message
+                        # EndInvoke threw — create error results for all files in the batch
+                        foreach ($batchFile in $rs.TestFiles) {
+                            $completedCount++
+                            $errorCount++
+                            $errorResult = [PSCustomObject]@{
+                                TestFile      = $batchFile.FullName
+                                TestFileName  = $batchFile.Name
+                                PassedCount   = 0
+                                FailedCount   = 1
+                                SkippedCount  = 0
+                                Duration      = [TimeSpan]::Zero
+                                Result        = "Failed"
+                                Tests         = @()
+                                PesterRun     = $null
+                                RunspaceError = $PSItem.Exception.Message
+                            }
+                            Write-Host -Object "  ERROR  [$completedCount/$totalTests]: $($batchFile.Name) - $($PSItem.Exception.Message)" -ForegroundColor Red
+                            $allResults += $errorResult
+                            $errorResult  # output to pipeline
                         }
-                        Write-Host -Object "  ERROR  [$completedCount/$totalTests]: $($rs.TestFile.Name) - $($PSItem.Exception.Message)" -ForegroundColor Red
-                        $allResults += $errorResult
-                        $errorResult  # output to pipeline
                     } finally {
                         $rs.Pipe.Dispose()
                         $runspaces = @($runspaces | Where-Object { $_ -ne $rs })
