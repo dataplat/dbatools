@@ -402,81 +402,221 @@ if (-not $Finalize) {
 
     $TestConfig = Get-TestConfig
     $Counter = 0
-    foreach ($f in $AllTestsWithinScenario) {
-        $Counter += 1
 
-        $pester5Config = New-PesterConfiguration
-        $pester5Config.Run.Path = $f.FullName
-        $pester5config.Run.PassThru = $true
-        $pester5config.Output.Verbosity = "None"
+    if ($AllTestsWithinScenario.Count -gt 1 -and -not $IncludeCoverage -and $env:SCENARIO -ne 'RESTART') {
+        # === PARALLEL FIRST PASS ===
+        # Run all tests concurrently using runspace pool, then retry failures sequentially
+        # RESTART scenario is excluded — those tests restart SQL services and must run sequentially
+        Write-Host -Object "appveyor.pester: Running $($AllTestsWithinScenario.Count) tests in parallel (max 3 threads)..." -ForegroundColor DarkGreen
 
-        #opt-in
-        if ($IncludeCoverage) {
-            $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
-            $pester5Config.CodeCoverage.Enabled = $true
-            $pester5Config.CodeCoverage.Path = $CoverFiles
-            $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
-            $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
+        $parallelResults = @(Start-ParallelPester -TestFiles $AllTestsWithinScenario -ModuleBase $ModuleBase -MaxThreads 3)
+
+        # Export results and report to AppVeyor for each test
+        foreach ($result in $parallelResults) {
+            $Counter++
+            $f = Get-Item $result.TestFile
+
+            Write-Host -Object "Completed $($result.TestFile) in $([int]$result.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+
+            # Export Pester results for finalize phase aggregation
+            if ($result.PesterRun) {
+                $result.PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
+                Export-TestFailureSummary -TestFile $f -PesterRun $result.PesterRun -Counter $Counter -ModuleBase $ModuleBase
+            }
+
+            if ($result.FailedCount -gt 0) {
+                # Build error message for AppVeyor
+                if ($result.RunspaceError) {
+                    $errorMessageDetail = $result.RunspaceError
+                } elseif ($result.Tests) {
+                    $failedTestsList = $result.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                        $path = $PSItem.Path -join " > "
+                        $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
+                        "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
+                    }
+                    $errorMessageDetail = $failedTestsList -join " | "
+                } else {
+                    $errorMessageDetail = "Test failed (no details available)"
+                }
+
+                # Report as running — will be updated after retry
+                Add-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Running
+
+                # Add to summary
+                $allTestsSummary.TestRuns += @{
+                    TestFile      = $f.Name
+                    Attempt       = 1
+                    Outcome       = "Failed"
+                    FailedCount   = $result.FailedCount
+                    Duration      = $result.Duration.TotalMilliseconds
+                    PesterVersion = '5'
+                }
+            } else {
+                Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $result.Duration.TotalMilliseconds
+
+                # Add to summary
+                $allTestsSummary.TestRuns += @{
+                    TestFile      = $f.Name
+                    Attempt       = 1
+                    Outcome       = "Passed"
+                    Duration      = $result.Duration.TotalMilliseconds
+                    PesterVersion = '5'
+                }
+            }
         }
 
-        $trialNo = 1
-        while ($trialNo -le 3) {
-            if ($trialNo -eq 1) {
-                $appvTestName = $f.Name
-            } else {
-                $appvTestName = "$($f.Name), attempt #$trialNo"
+        # === SEQUENTIAL RETRY OF FAILURES ===
+        $failures = @($parallelResults | Where-Object { $PSItem.FailedCount -gt 0 })
+        if ($failures.Count -gt 0) {
+            Write-Host -Object "appveyor.pester: Retrying $($failures.Count) failed tests sequentially..." -ForegroundColor Yellow
+            # Restarting all used instances to avoid state issues
+            $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+            Start-Sleep -Seconds 10
+
+            foreach ($failure in $failures) {
+                $f = Get-Item $failure.TestFile
+
+                $pester5Config = New-PesterConfiguration
+                $pester5Config.Run.Path = $f.FullName
+                $pester5config.Run.PassThru = $true
+                $pester5config.Output.Verbosity = "None"
+
+                $trialNo = 2
+                while ($trialNo -le 3) {
+                    $appvTestName = "$($f.Name), attempt #$trialNo"
+                    Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
+                    $PesterRun = Invoke-Pester -Configuration $pester5config
+                    Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+                    $Counter++
+                    $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
+
+                    # Export failure summary for easier retrieval
+                    Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
+
+                    if ($PesterRun.FailedCount -gt 0) {
+                        $trialno += 1
+
+                        # Create detailed error message for AppVeyor with comprehensive extraction
+                        $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                            $path = $PSItem.Path -join " > "
+                            $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
+                            "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
+                        }
+                        $errorMessageDetail = $failedTestsList -join " | "
+
+                        if ($trialNo -le 3) {
+                            Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
+                            # Restarting all used instances to avoid state issues
+                            $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+                            Start-Sleep -Seconds 10
+                        } else {
+                            Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
+                            Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                        }
+
+                        # Add to summary
+                        $allTestsSummary.TestRuns += @{
+                            TestFile      = $f.Name
+                            Attempt       = $trialNo
+                            Outcome       = "Failed"
+                            FailedCount   = $PesterRun.FailedCount
+                            Duration      = $PesterRun.Duration.TotalMilliseconds
+                            PesterVersion = '5'
+                        }
+                    } else {
+                        Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+
+                        # Add to summary
+                        $allTestsSummary.TestRuns += @{
+                            TestFile      = $f.Name
+                            Attempt       = $trialNo
+                            Outcome       = "Passed"
+                            Duration      = $PesterRun.Duration.TotalMilliseconds
+                            PesterVersion = '5'
+                        }
+                        break
+                    }
+                }
             }
-            Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
-            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-            $PesterRun = Invoke-Pester -Configuration $pester5config
-            Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
-            $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
+        }
+    } else {
+        # === SEQUENTIAL FALLBACK (coverage mode or single test) ===
+        foreach ($f in $AllTestsWithinScenario) {
+            $Counter += 1
 
-            # Export failure summary for easier retrieval
-            Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
+            $pester5Config = New-PesterConfiguration
+            $pester5Config.Run.Path = $f.FullName
+            $pester5config.Run.PassThru = $true
+            $pester5config.Output.Verbosity = "None"
 
-            if ($PesterRun.FailedCount -gt 0) {
-                $trialno += 1
+            #opt-in
+            if ($IncludeCoverage) {
+                $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
+                $pester5Config.CodeCoverage.Enabled = $true
+                $pester5Config.CodeCoverage.Path = $CoverFiles
+                $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
+                $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
+            }
 
-                # Create detailed error message for AppVeyor with comprehensive extraction
-                $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
-                    $path = $PSItem.Path -join " > "
-                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
-                    "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
-                }
-                $errorMessageDetail = $failedTestsList -join " | "
-
-                if ($trialNo -le 3) {
-                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
-                    # Restarting all used instances to avoid state issues
-                    $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
-                    Start-Sleep -Seconds 10
+            $trialNo = 1
+            while ($trialNo -le 3) {
+                if ($trialNo -eq 1) {
+                    $appvTestName = $f.Name
                 } else {
-                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
-                    Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                    $appvTestName = "$($f.Name), attempt #$trialNo"
                 }
+                Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
+                Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+                $PesterRun = Invoke-Pester -Configuration $pester5config
+                Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+                $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
 
-                # Add to summary
-                $allTestsSummary.TestRuns += @{
-                    TestFile      = $f.Name
-                    Attempt       = $trialNo
-                    Outcome       = "Failed"
-                    FailedCount   = $PesterRun.FailedCount
-                    Duration      = $PesterRun.Duration.TotalMilliseconds
-                    PesterVersion = '5'
-                }
-            } else {
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+                # Export failure summary for easier retrieval
+                Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
 
-                # Add to summary
-                $allTestsSummary.TestRuns += @{
-                    TestFile      = $f.Name
-                    Attempt       = $trialNo
-                    Outcome       = "Passed"
-                    Duration      = $PesterRun.Duration.TotalMilliseconds
-                    PesterVersion = '5'
+                if ($PesterRun.FailedCount -gt 0) {
+                    $trialno += 1
+
+                    # Create detailed error message for AppVeyor with comprehensive extraction
+                    $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                        $path = $PSItem.Path -join " > "
+                        $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
+                        "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
+                    }
+                    $errorMessageDetail = $failedTestsList -join " | "
+
+                    if ($trialNo -le 3) {
+                        Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
+                        # Restarting all used instances to avoid state issues
+                        $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+                        Start-Sleep -Seconds 10
+                    } else {
+                        Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
+                        Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                    }
+
+                    # Add to summary
+                    $allTestsSummary.TestRuns += @{
+                        TestFile      = $f.Name
+                        Attempt       = $trialNo
+                        Outcome       = "Failed"
+                        FailedCount   = $PesterRun.FailedCount
+                        Duration      = $PesterRun.Duration.TotalMilliseconds
+                        PesterVersion = '5'
+                    }
+                } else {
+                    Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+
+                    # Add to summary
+                    $allTestsSummary.TestRuns += @{
+                        TestFile      = $f.Name
+                        Attempt       = $trialNo
+                        Outcome       = "Passed"
+                        Duration      = $PesterRun.Duration.TotalMilliseconds
+                        PesterVersion = '5'
+                    }
+                    break
                 }
-                break
             }
         }
     }
