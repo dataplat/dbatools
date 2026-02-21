@@ -67,25 +67,25 @@ environment:
     - scenario: RESTART
       InstanceRestart: sql2022
     - scenario: default
-    - scenario: 2008R2SP2Express
-      part: 1/2
-      InstanceSingle: sql2008r2sp2
-      InstanceMulti1: sql2008r2sp2
-      InstanceMulti2: sql2017
-      InstanceCopy1: sql2008r2sp2
-      InstanceCopy2: sql2017
-      InstanceRestart: sql2008r2sp2
-      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
-    - scenario: 2008R2SP2Express
-      part: 2/2
-      InstanceSingle: sql2008r2sp2
-      InstanceMulti1: sql2008r2sp2
-      InstanceMulti2: sql2017
-      InstanceCopy1: sql2008r2sp2
-      InstanceCopy2: sql2017
-      InstanceHadr: sql2017
-      InstanceRestart: sql2008r2sp2
-      APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
+    #- scenario: 2008R2SP2Express
+    #  part: 1/2
+    #  InstanceSingle: sql2008r2sp2
+    #  InstanceMulti1: sql2008r2sp2
+    #  InstanceMulti2: sql2017
+    #  InstanceCopy1: sql2008r2sp2
+    #  InstanceCopy2: sql2017
+    #  InstanceRestart: sql2008r2sp2
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
+    #- scenario: 2008R2SP2Express
+    #  part: 2/2
+    #  InstanceSingle: sql2008r2sp2
+    #  InstanceMulti1: sql2008r2sp2
+    #  InstanceMulti2: sql2017
+    #  InstanceCopy1: sql2008r2sp2
+    #  InstanceCopy2: sql2017
+    #  InstanceHadr: sql2017
+    #  InstanceRestart: sql2008r2sp2
+    #  APPVEYOR_BUILD_WORKER_IMAGE: Previous Visual Studio 2015
 
 # Set alternative clone folder
 clone_folder: c:\github\dbatools

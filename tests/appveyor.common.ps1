@@ -2,6 +2,7 @@ function Get-TestsForScenario {
     param($Scenario, $AllTests, [switch]$Silent)
 
     # does this scenario run an 'autodetect' ?
+
     if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
         # exclude any test specifically tied to a non-autodetect or version specific scenario
         $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' -and $_.Name -notlike '20*' }).Value
@@ -72,8 +73,7 @@ function Get-TestsForBuildScenario {
     $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
 
     # Check if we're in a Pull Request and auto-detect changed files
-    $IsInPullRequest = $env:APPVEYOR_PULL_REQUEST_NUMBER -ne $null
-    $TestsToRun = "*.Tests.*"
+    $IsInPullRequest = $null -ne $env:APPVEYOR_PULL_REQUEST_NUMBER
 
     if ($IsInPullRequest) {
         if (-not($Silent)) {
@@ -81,13 +81,12 @@ function Get-TestsForBuildScenario {
         }
         try {
             # Get the list of changed files in this PR compared to the base branch
-            $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { "origin/development" }
+            $targetBranch = if ($env:APPVEYOR_REPO_BRANCH) { "origin/$env:APPVEYOR_REPO_BRANCH" } else { 'origin/development' }
             $ChangedFiles = git diff --name-only "$targetBranch...HEAD" 2>$null
 
             if (-not($Silent)) {
-                Write-Host -ForegroundColor DarkGreen "...Changed files are: "
-                foreach($cmd in $ChangedFiles)
-                {
+                Write-Host -ForegroundColor DarkGreen '...Changed files are: '
+                foreach ($cmd in $ChangedFiles) {
                     Write-Host -ForegroundColor DarkGreen "...  - $cmd"
                 }
             }
@@ -100,17 +99,17 @@ function Get-TestsForBuildScenario {
 
                 foreach ($file in $ChangedFiles) {
                     # Check for changes to public commands
-                    if ($file -like "public/*.ps1") {
-                        $commandName = Split-Path $file -Leaf | ForEach-Object { $_ -replace "\.ps1$", "" }
+                    if ($file -like 'public/*.ps1') {
+                        $commandName = Split-Path $file -Leaf | ForEach-Object { $_ -replace '\.ps1$', '' }
                         $changedCommands += $commandName
                     }
                     # Check for changes to private functions
-                    elseif ($file -like "private/functions/*.ps1") {
-                        $functionName = Split-Path $file -Leaf | ForEach-Object { $_ -replace "\.ps1$", "" }
+                    elseif ($file -like 'private/functions/*.ps1') {
+                        $functionName = Split-Path $file -Leaf | ForEach-Object { $_ -replace '\.ps1$', '' }
                         $changedCommands += $functionName
                     }
                     # Check for direct changes to test files
-                    elseif ($file -like "tests/*.Tests.ps1") {
+                    elseif ($file -like 'tests/*.Tests.ps1') {
                         $testName = Split-Path $file -Leaf
                         $changedTests += $testName
                     }
@@ -122,7 +121,7 @@ function Get-TestsForBuildScenario {
                 if ($changedCommands.Count -gt 0) {
                     # Find test files matching the changed commands
                     foreach ($cmd in $changedCommands) {
-                        $matchingTests = $AllTests | Where-Object { ($_.Name -replace "\.Tests\.ps1$", "") -eq $cmd }
+                        $matchingTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -eq $cmd }
                         $testsForChangedFiles += $matchingTests
                     }
                 }
@@ -158,8 +157,6 @@ function Get-TestsForBuildScenario {
                     if (-not($Silent)) {
                         Write-Host -ForegroundColor DarkGreen "PR Detection: Extended to $($AllTests.Count) tests including dependencies"
                     }
-
-                    $TestsToRun = "*.Tests.*"
                 }
             }
         } catch {
@@ -208,7 +205,7 @@ function Get-TestsForBuildScenario {
         } else {
             # No direct matches - fall back to dbatools.Tests.ps1 only
             if (-not($Silent)) {
-                Write-Host -ForegroundColor DarkGreen "Commit message: No direct test matches, falling back to dbatools.Tests.ps1"
+                Write-Host -ForegroundColor DarkGreen 'Commit message: No direct test matches, falling back to dbatools.Tests.ps1'
             }
             $testsThatDependOn += Get-Item "$ModuleBase\tests\dbatools.Tests.ps1"
         }
@@ -220,7 +217,7 @@ function Get-TestsForBuildScenario {
             Write-Host -ForegroundColor DarkGreen "Commit message: Extended to $($AllTests.Count) for all the dependencies"
         }
         if ($AllTests.Count -eq 0) {
-            throw "something went wrong, nothing to test"
+            throw 'something went wrong, nothing to test'
         }
     }
 
@@ -258,80 +255,185 @@ function Get-TestsForBuildScenario {
         }
     }
     if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
-        throw "something went wrong, nothing to test"
+        throw 'something went wrong, nothing to test'
     }
     return $AllScenarioTests
 }
 
-function Get-TestIndications($Path, $ModuleBase, $eval) {
+function Get-TestIndications {
     # takes a test file path and figures out what to run for tests (i.e. functions that depend on this)
-    $CBHRex = [regex]'(?smi)<#(.*)#>'
-    $everything = (Get-Module dbatools).ExportedCommands.Values
-    $everyfunction = $everything.Name
+    param($Path, $ModuleBase, $ExportedCommands, $AllFiles, $cmdDef)
+    $everyFunction = $ExportedCommands.Name
     $funcs = @()
     $leaf = Split-Path $path -Leaf
     # assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
     # but allowing also Get-DbaFoo.one.Tests.ps1 and Get-DbaFoo.two.Tests.ps1
-    $func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
-    if ($func_name -in $everyfunction) {
+    $func_name += ($leaf -Replace '^([^.]+)(.+)?.Tests.ps1', '$1')
+    if ($func_name -in $everyFunction) {
         $funcs += $func_name
-        $f = $everything | Where-Object Name -eq $func_name
+        $f = $ExportedCommands | Where-Object Name -eq $func_name
         # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
         $searchme = "$f "
-        foreach ($f in $everything) {
-            $source = $f.Definition
-            $CBH = $CBHRex.match($source).Value
-            # This fails very hard sometimes
-            if ($source -and $CBH) {
-                $cmdonly = $source.Replace($CBH, '')
-                if ($cmdonly.contains($searchme)) {
-                    $funcs += $f.Name
-                }
+        foreach ($f in $ExportedCommands) {
+            $cmdOnly = $cmdDef[$f.Name]
+            if ($cmdonly.Contains($searchme)) {
+                $funcs += $f.Name
             }
         }
     }
     $testpaths = @()
-    $allfiles = Get-ChildItem -File -Path "$ModuleBase\tests" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
         if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
         # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
         $res = $allfiles | Where-Object { $_.Name -like "$($f).*Tests.ps1" }
-        if ($res.count -gt 0) {
+        if ($res.Count -gt 0) {
             $testpaths += $res.FullName
         }
     }
-    foreach ($item in $testpaths) {
-        $eval[$item] = 1
-    }
-    return $eval
+    return ($testpaths | Sort-Object -Unique)
 }
 
 function Get-AllTestsIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to run for tests (i.e. functions that depend on this, till the top level is reached)
-    $baseTests = $Path
-    $evaluated = @{ }
-    $evaluated = Get-TestIndications -Path $baseTests -ModuleBase $ModuleBase -eval $evaluated
-    $seen = @{ }
-    while ($true) {
-        $currKeys = @()
-        foreach ($k in $evaluated.Keys) {
-            $currKeys += $k
+    $baseTestFile = $Path
+    # prepare empty cache
+    $testIndicationsResultCache = @{ }
+    $testTreeRepresentation = @()
+
+    $exportedCommands = (Get-Module dbatools).ExportedCommands.Values
+
+    #prepare definitions to look up
+    $cmdDef = Get-PreparedCommandDefinitions -ExportedCommands $exportedCommands
+
+    # get all test files once and for all, so we don't have to do it every time we look for a dependency
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\tests" -Filter '*.ps1'
+
+    $evaluated = Get-TestIndications -Path $baseTestFile -ModuleBase $ModuleBase -ExportedCommands $exportedCommands -AllFiles $allfiles -cmdDef $cmdDef
+    $testIndicationsResultCache[$baseTestFile] = $evaluated
+
+    foreach ($p in $evaluated) {
+        $testTreeRepresentation += [pscustomobject]@{
+            Source    = Get-FunctionNameFromTestFile $baseTestFile
+            DependsOn = Get-FunctionNameFromTestFile $p
+            Level     = 0
         }
-        foreach ($key in $currKeys) {
-            #write-host -fore Yellow "eval $key"
-            if ($key -in $seen.Keys) {
-                #write-host -fore Yellow "skipping $key, already seen"
-            } else {
-                $evaluated = Get-TestIndications -Path $key -ModuleBase $ModuleBase -eval $evaluated
-                $seen[$key] = 1
+    }
+
+    $x = 0
+    while ($true) {
+        $x += 1
+        $discoveredDependencies = $testIndicationsResultCache.Keys.Count
+        $currKeys = @()
+        foreach ($k in $testIndicationsResultCache.Keys) {
+            foreach ($dep in $testIndicationsResultCache[$k]) {
+                $currKeys += $dep
             }
         }
-        if ($evaluated.Keys.Count -eq $currKeys.Count) {
+
+        foreach ($key in $currKeys) {
+            if ($key -notin $testIndicationsResultCache.Keys) {
+                $evaluated = Get-TestIndications -Path $key -ModuleBase $ModuleBase -ExportedCommands $exportedCommands -AllFiles $allfiles -cmdDef $cmdDef
+                $testIndicationsResultCache[$key] = $evaluated
+                foreach ($p in $evaluated) {
+                    $testTreeRepresentation += [pscustomobject]@{
+                        Source    = Get-FunctionNameFromTestFile $key
+                        DependsOn = Get-FunctionNameFromTestFile $p
+                        Level     = $x
+                    }
+                }
+            }
+        }
+        if ($testIndicationsResultCache.Keys.Count -eq $discoveredDependencies) {
+            # didn't discover anything new, so we can stop here
             break
         }
     }
     # add dbatools.Tests.ps1 always
-    $evaluated["$ModuleBase\tests\dbatools.Tests.ps1"] = 1
-    Get-Item $evaluated.GetEnumerator().Name
+
+    $returnValue = @{}
+    $returnValue["$ModuleBase\tests\dbatools.Tests.ps1"] = 1
+    foreach ($k in $testIndicationsResultCache.Keys) {
+        $returnValue[$k] = 1
+        foreach ($dep in $testIndicationsResultCache[$k]) {
+            $returnValue[$k] = 1
+        }
+    }
+
+    # for users in need of debugging, uncomment the following lines
+    #$testTreeRepresentation | Sort Level,Source,DependsOn | Format-Table
+    #Show-DependencyTree -Node (Get-FunctionNameFromTestFile $baseTestFile) -Data $testTreeRepresentation
+
+    Get-Item $returnValue.GetEnumerator().Name
+}
+
+function Get-PreparedCommandDefinitions {
+    param($ExportedCommands)
+    # prepares in one sweep the "source code" of all the commands
+    # so it can be searched for dependencies within
+    $CBHRex = [regex]'(?smi)<#(.*)#>'
+    $cmdDef = @{}
+    foreach ($f in $ExportedCommands) {
+        $rawSource = $f.Definition
+        $CBH = $CBHRex.match($rawSource).Value
+        # This fails very hard sometimes
+        if ($rawSource -and $CBH) {
+            $runningCode = $rawSource.Replace($CBH, '')
+            $cmdDef[$f.Name] = $runningCode
+        } else {
+            $cmdDef[$f.Name] = ''
+        }
+    }
+    return $cmdDef
+}
+
+function Get-FunctionNameFromTestFile($testFilePath) {
+    $leaf = Split-Path $testFilePath -Leaf
+    return $leaf.Replace('.Tests.ps1', '')
+}
+
+function Show-DependencyTree {
+    # helper function to show the dependency tree for easier debugging
+    param (
+        [string]$Node,
+        [object[]]$Data,
+        [string]$Prefix = '',
+        [bool]$IsLast = $true,
+        [System.Collections.Generic.HashSet[string]]$Visited =
+        (New-Object 'System.Collections.Generic.HashSet[string]')
+    )
+
+    if ($Prefix) {
+        Write-Host ('{0}{1}{2}' -f $Prefix, ($(if ($IsLast) { '\-- ' } else { '|- ' })), $Node)
+    } else {
+        Write-Host $Node
+    }
+
+    if (-not $Visited.Add($Node)) {
+        return
+    }
+
+    $children = @(
+        $Data |
+        Where-Object {
+            $_.Source -eq $Node -and $_.DependsOn -ne $_.Source
+        } |
+        Select-Object -ExpandProperty DependsOn -Unique |
+        Sort-Object
+    )
+
+    if ($children.Count -eq 0) {
+        return
+    }
+
+    $nextPrefix = $Prefix + ($(if ($IsLast) { '   ' } else { '|  ' }))
+
+    for ($i = 0; $i -lt $children.Count; $i++) {
+        Show-DependencyTree `
+            -Node $children[$i] `
+            -Data $Data `
+            -Prefix $nextPrefix `
+            -IsLast ($i -eq $children.Count - 1) `
+            -Visited $Visited
+    }
 }
