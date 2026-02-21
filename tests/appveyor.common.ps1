@@ -1,6 +1,10 @@
 function Get-TestsForScenario {
     param($Scenario, $AllTests, [switch]$Silent)
 
+    # 'all' sentinel: return every test file (Pester tag filtering handles the rest)
+    if ($TestsRunGroups[$Scenario] -eq 'all') {
+        return $AllTests
+    }
     # does this scenario run an 'autodetect' ?
     if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
         # exclude any test specifically tied to a non-autodetect or version specific scenario

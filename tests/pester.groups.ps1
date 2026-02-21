@@ -344,7 +344,8 @@ $TestsRunGroups = @{
         'Write-DbaDbTableData'
     )
     # run unit tests only (no SQL Server required) -- used by UNIT_TESTS_ONLY scenario
-    "UNIT_TESTS_ONLY"   = 'autodetect_UnitTests'
+    # uses 'all' sentinel (not autodetect_) to avoid poisoning the cross-scenario exclusion logic
+    "UNIT_TESTS_ONLY"   = 'all'
     # do not run on appveyor
     "appveyor_disabled" = @(
         # Database Mirroring monitoring SPs removed in SQL Server 2022
