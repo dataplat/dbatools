@@ -61,6 +61,26 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Rename a Database using string ReplaceDatabaseName with ReplaceDbNameInFile renames log files" {
+        BeforeAll {
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName 'Pester' -ReplaceDbNameInFile
+        }
+
+        It "Should have a database name of Pester" {
+            ($output | Where-Object { $_.Database -ne 'Pester' }).count | Should -Be 0
+        }
+        It "Should have renamed all data files" {
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.Type -eq 'D' } | Where-Object { $_.PhysicalName -like '*RestoreTimeClean*' }).count | Should -Be 0
+        }
+        It "Should have renamed all log files" {
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.Type -eq 'L' } | Where-Object { $_.PhysicalName -like '*RestoreTimeClean*' }).count | Should -Be 0
+        }
+        It "Log file physical name should contain new database name" {
+            ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.Type -eq 'L' } | Where-Object { $_.PhysicalName -like '*Pester*' }).count | Should -BeGreaterThan 0
+        }
+    }
+
     Context "Rename 2 dbs using a hash" {
         BeforeAll {
             $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
