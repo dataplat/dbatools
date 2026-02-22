@@ -101,8 +101,13 @@ function Test-DbaLsnChain {
 
         #Check T-log LSNs form a chain.
         $TranLogBackups = $TestHistory | Where-Object {
-            $_.$TypeName -in ('Transaction Log', 'Log') -and (($_.DatabaseBackupLSN.ToString() -eq $FullDBAnchor.CheckPointLSN) -or (($_.DatabaseBackupLSN.ToString() -ne $FullDBAnchor.CheckPointLSN) -and ($_.FirstLSN -gt $FullDBAnchor.CheckPointLSN)))
-        } | Sort-Object -Property LastLSN, FirstLsn
+            $isLogBackup = $_.$TypeName -in ('Transaction Log', 'Log')
+            $isBasedOnAnchor = $_.DatabaseBackupLsn -eq $FullDBAnchor.CheckPointLsn
+            $hasGreaterFirstLsn = $_.FirstLsn -gt $FullDBAnchor.CheckPointLsn
+
+            Write-Message -Level Verbose -Message "Checking $($_.FullName) - isLogBackup $isLogBackup, isBasedOnAnchor $isBasedOnAnchor, hasGreaterFirstLsn $hasGreaterFirstLsn, FullDBAnchor.CheckPointLsn $($FullDBAnchor.CheckPointLsn), DatabaseBackupLsn $($_.DatabaseBackupLsn), FirstLsn $($_.FirstLsn) LastLsn $($_.LastLsn)"
+            $isLogBackup -and ($isBasedOnAnchor -or $hasGreaterFirstLsn)
+        } | Sort-Object -Property LastLsn, FirstLsn
 
         for ($i = 0; $i -lt ($TranLogBackups.count)) {
             Write-Message -Level Debug -Message "looping t logs"
