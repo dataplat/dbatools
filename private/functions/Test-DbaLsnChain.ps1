@@ -103,10 +103,10 @@ function Test-DbaLsnChain {
         $TranLogBackups = $TestHistory | Where-Object {
             $isLogBackup = $_.$TypeName -in ('Transaction Log', 'Log')
             $isBasedOnAnchor = $_.DatabaseBackupLsn -eq $FullDBAnchor.CheckPointLsn
-            $hasGreaterFirstLsn = $_.FirstLsn -gt $FullDBAnchor.CheckPointLsn
+            $hasGreaterLastLsn = $_.LastLsn -gt $FullDBAnchor.CheckPointLsn
 
-            Write-Message -Level Verbose -Message "Checking $($_.FullName) - isLogBackup $isLogBackup, isBasedOnAnchor $isBasedOnAnchor, hasGreaterFirstLsn $hasGreaterFirstLsn, FullDBAnchor.CheckPointLsn $($FullDBAnchor.CheckPointLsn), DatabaseBackupLsn $($_.DatabaseBackupLsn), FirstLsn $($_.FirstLsn) LastLsn $($_.LastLsn)"
-            $isLogBackup -and ($isBasedOnAnchor -or $hasGreaterFirstLsn)
+            Write-Message -Level Verbose -Message "Checking $($_.FullName) - isLogBackup $isLogBackup, isBasedOnAnchor $isBasedOnAnchor, hasGreaterLastLsn $hasGreaterLastLsn, FullDBAnchor.CheckPointLsn $($FullDBAnchor.CheckPointLsn), DatabaseBackupLsn $($_.DatabaseBackupLsn), FirstLsn $($_.FirstLsn) LastLsn $($_.LastLsn)"
+            $isLogBackup -and ($isBasedOnAnchor -or $hasGreaterLastLsn)
         } | Sort-Object -Property LastLsn, FirstLsn
 
         for ($i = 0; $i -lt ($TranLogBackups.count)) {
