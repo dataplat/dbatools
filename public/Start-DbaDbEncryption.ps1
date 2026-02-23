@@ -180,6 +180,7 @@ function Start-DbaDbEncryption {
         [Security.SecureString]$BackupSecurePassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [string[]]$ExcludeDatabase,
         [switch]$AllUserDatabases,
         [switch]$Force,
         [switch]$Parallel,
@@ -318,25 +319,27 @@ function Start-DbaDbEncryption {
                         $null = $db.Refresh()
                         $null = $server.Refresh()
 
-                        $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
-                        if (-not $mastercerttest) {
-                            # Back up certificate
-                            $null = $server.Databases["master"].Refresh()
-                            $params = @{
-                                SqlInstance        = $server
-                                Database           = "master"
-                                Certificate        = $mastercert.Name
-                                Path               = $BackupPath
-                                EnableException    = $true
-                                EncryptionPassword = $BackupSecurePassword
+                        if ($mastercert) {
+                            $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
+                            if (-not $mastercerttest) {
+                                # Back up certificate
+                                $null = $server.Databases["master"].Refresh()
+                                $params = @{
+                                    SqlInstance        = $server
+                                    Database           = "master"
+                                    Certificate        = $mastercert.Name
+                                    Path               = $BackupPath
+                                    EnableException    = $true
+                                    EncryptionPassword = $BackupSecurePassword
+                                }
+                                Write-Message -Level Verbose -Message "Backing up master certificate on $($server.Name)"
+                                $null = Backup-DbaDbCertificate @params
                             }
-                            Write-Message -Level Verbose -Message "Backing up master certificate on $($server.Name)"
-                            $null = Backup-DbaDbCertificate @params
-                        }
 
-                        if (-not $EncryptorName) {
-                            Write-Message -Level Verbose -Message "Getting EncryptorName from master cert on $($server.Name)"
-                            $EncryptorName = $mastercert.Name
+                            if (-not $EncryptorName) {
+                                Write-Message -Level Verbose -Message "Getting EncryptorName from master cert on $($server.Name)"
+                                $EncryptorName = $mastercert.Name
+                            }
                         }
                     } else {
                         $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master
@@ -453,21 +456,23 @@ function Start-DbaDbEncryption {
                         }
 
                         # Back up certificate if needed
-                        $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
-                        if (-not $mastercerttest) {
-                            $splatBackupCertificate = @{
-                                SqlInstance        = $server
-                                Database           = "master"
-                                Certificate        = $mastercert.Name
-                                Path               = $BackupPath
-                                EnableException    = $true
-                                EncryptionPassword = $BackupSecurePassword
+                        if ($mastercert) {
+                            $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
+                            if (-not $mastercerttest) {
+                                $splatBackupCertificate = @{
+                                    SqlInstance        = $server
+                                    Database           = "master"
+                                    Certificate        = $mastercert.Name
+                                    Path               = $BackupPath
+                                    EnableException    = $true
+                                    EncryptionPassword = $BackupSecurePassword
+                                }
+                                Write-Message -Level Verbose -Message "Backing up certificate on $servername"
+                                $null = Backup-DbaDbCertificate @splatBackupCertificate
                             }
-                            Write-Message -Level Verbose -Message "Backing up certificate on $servername"
-                            $null = Backup-DbaDbCertificate @splatBackupCertificate
-                        }
 
-                        $encryptorNameToUse = $mastercert.Name
+                            $encryptorNameToUse = $mastercert.Name
+                        }
                     } else {
                         $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master
                         if (-not $masterasym) {
