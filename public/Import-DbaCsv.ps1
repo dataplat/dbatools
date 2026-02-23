@@ -635,6 +635,12 @@ function Import-DbaCsv {
             $options.MaxDecompressedSize = $MaxDecompressedSize
             $options.SkipRows = $SkipRows
             $options.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+            # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+            if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                $options.AllowMultilineFields = $true
+            } else {
+                $options.AllowMultilineFields = $SupportsMultiline.IsPresent
+            }
 
             try {
                 $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
@@ -966,7 +972,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                     Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
                 }
                 if (-not $SingleColumn) {
-                    if ($firstlines -notmatch [regex]::Escape($Delimiter)) {
+                    if (-not ($firstlines -match [regex]::Escape($Delimiter))) {
                         Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
                         return
                     }
@@ -1104,6 +1110,12 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $inferOptions.Escape = $Escape
                         $inferOptions.Comment = $Comment
                         $inferOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $inferOptions.AllowMultilineFields = $true
+                        } else {
+                            $inferOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
                         if ($PSBoundParameters.DateTimeFormats) {
                             $inferOptions.DateTimeFormats = $DateTimeFormats
                         }
@@ -1299,7 +1311,12 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
                         $csvOptions.MaxParseErrors = $MaxParseErrors
                         $csvOptions.SkipEmptyLines = $SkipEmptyLine.IsPresent
-                        $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $csvOptions.AllowMultilineFields = $true
+                        } else {
+                            $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
                         $csvOptions.UseColumnDefaults = $UseColumnDefault.IsPresent
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
