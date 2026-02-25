@@ -21,11 +21,11 @@ function Start-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specifies which user databases to encrypt with Transparent Data Encryption (TDE). Accepts single database names, arrays, or wildcards.
+        Specifies one or more databases to include in the results using exact name matching.
         Use this when you need to encrypt specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies which databases to exclude from TDE encryption when using wildcards or AllUserDatabases.
+        Specifies one or more databases to exclude from the results using exact name matching.
         Useful when you want to encrypt most databases but need to skip specific ones due to compatibility or business requirements.
 
     .PARAMETER EncryptorName
@@ -168,6 +168,7 @@ function Start-DbaDbEncryption {
         [ValidateSet("AsymmetricKey", "Certificate")]
         [string]$EncryptorType = "Certificate",
         [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [Parameter(Mandatory)]
         [string]$BackupPath,
         [Parameter(Mandatory)]
