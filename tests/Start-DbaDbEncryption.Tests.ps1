@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "EncryptorName",
                 "EncryptorType",
                 "Database",
+                "ExcludeDatabase",
                 "BackupPath",
                 "MasterKeySecurePassword",
                 "CertificateSubject",
