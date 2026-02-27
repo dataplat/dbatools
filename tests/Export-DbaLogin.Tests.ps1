@@ -31,6 +31,7 @@ Describe $CommandName -Tag UnitTests {
                 "NoPrefix",
                 "Passthru",
                 "ObjectLevel",
+                "IncludeRolePermissions",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -73,6 +74,21 @@ Describe $CommandName -Tag IntegrationTests {
         $login3 = "dbatoolsci_exportdbalogin_login3$random"
         $server.Query("CREATE LOGIN [$login3] WITH PASSWORD = 'GoodPass1234!'")
         $db1.Query("CREATE USER [$login3] WITHOUT LOGIN")
+
+        # login with a custom role that has granted permissions (for IncludeRolePermissions tests)
+        $login4 = "dbatoolsci_exportdbalogin_login4$random"
+        $user4 = "dbatoolsci_exportdbalogin_user4$random"
+        $role4 = "dbatoolsci_exportdbalogin_role4$random"
+        $null = $server.Query("CREATE LOGIN [$login4] WITH PASSWORD = 'GoodPass1234!'")
+        $db1.Query("CREATE USER [$user4] FOR LOGIN [$login4]")
+        $db1.Query("CREATE ROLE [$role4]")
+        $db1.Query("GRANT SELECT ON SCHEMA::dbo TO [$role4]")
+        $db1.Query("GRANT EXECUTE ON SCHEMA::dbo TO [$role4]")
+        if ($server.VersionMajor -lt 11) {
+            $db1.Query("EXEC sp_addrolemember @rolename = N'$role4', @membername = N'$user4'")
+        } else {
+            $db1.Query("ALTER ROLE [$role4] ADD MEMBER [$user4]")
+        }
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
@@ -87,6 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login3
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login4
     }
 
     Context "Executes with Exclude Parameters" {
@@ -157,6 +174,24 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -Match "$login2|$dbname2|$login3"
             $results | Should -Match "$login1|$dbname1"
             $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
+        }
+    }
+    Context "Executes with IncludeRolePermissions" {
+        It "Should include role permissions in non-ObjectLevel export" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
+            $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
+            $results | Should -Match ([regex]::Escape("[$role4]"))
+        }
+        It "Should include role permissions in ObjectLevel export" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -ObjectLevel -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
+            $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
+            $results | Should -Match ([regex]::Escape("[$role4]"))
+        }
+        It "Should not include role permissions without the switch" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -Passthru -WarningAction SilentlyContinue
+            $results | Should -Not -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
         }
     }
     Context "Exports file to random and specified paths" {
