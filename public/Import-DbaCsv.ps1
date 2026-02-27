@@ -70,6 +70,12 @@ function Import-DbaCsv {
         For proper type inference (int, decimal, datetime2, varchar vs nvarchar), use -SampleRows or -DetectColumnTypes instead.
         For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
+    .PARAMETER NoColumnOptimize
+        Skips the automatic column size optimization that runs after AutoCreateTable imports.
+        By default, AutoCreateTable creates nvarchar(MAX) columns and then shrinks them to fit the imported data.
+        Use this switch when importing multiple CSV files into the same auto-created table, so that later files
+        with longer values are not rejected due to columns being shrunk to fit only the first file's data.
+
     .PARAMETER Truncate
         Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
         Use this for full data refreshes where you want to replace all existing data with the CSV contents.
@@ -537,6 +543,7 @@ function Import-DbaCsv {
         [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
+        [switch]$NoColumnOptimize,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
         [switch]$UseFileNameForSchema,
@@ -1436,7 +1443,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                                 }
 
                                 # Optimize column sizes after commit if we created a fat table
-                                if ($createdFatTable) {
+                                if ($createdFatTable -and -not $NoColumnOptimize) {
                                     try {
                                         Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
                                     } catch {
@@ -1449,7 +1456,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                                 } catch {
                                 }
                             }
-                        } elseif ($completed -and $createdFatTable) {
+                        } elseif ($completed -and $createdFatTable -and -not $NoColumnOptimize) {
                             # NoTransaction mode - still optimize if we created a fat table
                             try {
                                 Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
