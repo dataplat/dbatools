@@ -641,11 +641,23 @@ function Connect-DbaInstance {
             if ($DedicatedAdminConnection -and $serverName) {
                 Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used, so serverName will be changed and NonPooledConnection will be set."
                 if ($instance.IsLocalHost) {
-                    # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                    # Use a single loopback IP to avoid multi-IP resolution on multi-homed servers (issue #10151)
+                    # Prefer IPv4 (127.0.0.1) but fall back to IPv6 (::1) for IPv6-only systems
+                    try {
+                        $loopbackAddrs = [System.Net.Dns]::GetHostAddresses("localhost")
+                        $ipv4Addr = $loopbackAddrs | Where-Object AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork | Select-Object -First 1
+                        if ($ipv4Addr) {
+                            $dacLoopbackIp = $ipv4Addr.IPAddressToString
+                        } else {
+                            $dacLoopbackIp = ($loopbackAddrs | Select-Object -First 1).IPAddressToString
+                        }
+                    } catch {
+                        $dacLoopbackIp = "127.0.0.1"
+                    }
                     if ($instance.InstanceName -ne 'MSSQLSERVER') {
-                        $serverName = "ADMIN:localhost\$($instance.InstanceName)"
+                        $serverName = "ADMIN:$dacLoopbackIp\$($instance.InstanceName)"
                     } else {
-                        $serverName = "ADMIN:localhost"
+                        $serverName = "ADMIN:$dacLoopbackIp"
                     }
                     Write-Message -Level Debug -Message "IsLocalHost is true, using '$serverName' for DAC to avoid multi-IP resolution."
                 } else {
@@ -715,11 +727,23 @@ function Connect-DbaInstance {
                     }
                     if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
                         if ($instance.IsLocalHost) {
-                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                            # Use a single loopback IP to avoid multi-IP resolution on multi-homed servers (issue #10151)
+                            # Prefer IPv4 (127.0.0.1) but fall back to IPv6 (::1) for IPv6-only systems
+                            try {
+                                $loopbackAddrs = [System.Net.Dns]::GetHostAddresses("localhost")
+                                $ipv4Addr = $loopbackAddrs | Where-Object AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork | Select-Object -First 1
+                                if ($ipv4Addr) {
+                                    $dacLoopbackIp = $ipv4Addr.IPAddressToString
+                                } else {
+                                    $dacLoopbackIp = ($loopbackAddrs | Select-Object -First 1).IPAddressToString
+                                }
+                            } catch {
+                                $dacLoopbackIp = "127.0.0.1"
+                            }
                             if ($instance.InstanceName -ne 'MSSQLSERVER') {
-                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                                $connContext.ServerInstance = "ADMIN:$dacLoopbackIp\$($instance.InstanceName)"
                             } else {
-                                $connContext.ServerInstance = "ADMIN:localhost"
+                                $connContext.ServerInstance = "ADMIN:$dacLoopbackIp"
                             }
                         } else {
                             $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
