@@ -281,11 +281,22 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "multiple dedicated admin connections are properly made using strings" {
-        # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
         It "opens and closes the connections" {
+            $instance1 = [DbaInstanceParameter]$TestConfig.InstanceMulti1
+            if ($instance1.IsLocalHost) {
+                $computerName1 = 'localhost'
+            } else {
+                $computerName1 = $instance1.ComputerName
+            }
+            $instance2 = [DbaInstanceParameter]$TestConfig.InstanceMulti2
+            if ($instance2.IsLocalHost) {
+                $computerName2 = 'localhost'
+            } else {
+                $computerName2 = $instance2.ComputerName
+            }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$($TestConfig.InstanceMulti1)"
-            $server[1].Name | Should -Be "ADMIN:$($TestConfig.InstanceMulti2)"
+            $server[0].Name | Should -Be "ADMIN:$computerName1"
+            $server[1].Name | Should -Be "ADMIN:$computerName2"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
