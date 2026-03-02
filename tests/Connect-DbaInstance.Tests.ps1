@@ -284,19 +284,27 @@ Describe $CommandName -Tag IntegrationTests {
         It "opens and closes the connections" {
             $instance1 = [DbaInstanceParameter]$TestConfig.InstanceMulti1
             if ($instance1.IsLocalHost) {
-                $computerName1 = 'localhost'
+                if ($instance1.InstanceName -ne 'MSSQLSERVER') {
+                    $name1 = "ADMIN:localhost\$($instance1.InstanceName)"
+                } else {
+                    $name1 = "ADMIN:localhost"
+                }
             } else {
-                $computerName1 = $instance1.ComputerName
+                $name1 = 'ADMIN:' + $instance1.FullName
             }
             $instance2 = [DbaInstanceParameter]$TestConfig.InstanceMulti2
             if ($instance2.IsLocalHost) {
-                $computerName2 = 'localhost'
+                if ($instance2.InstanceName -ne 'MSSQLSERVER') {
+                    $name2 = "ADMIN:localhost\$($instance2.InstanceName)"
+                } else {
+                    $name2 = "ADMIN:localhost"
+                }
             } else {
-                $computerName2 = $instance2.ComputerName
+                $name2 = 'ADMIN:' + $instance2.FullName
             }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$computerName1"
-            $server[1].Name | Should -Be "ADMIN:$computerName2"
+            $server[0].Name | Should -Be "ADMIN:$name1"
+            $server[1].Name | Should -Be "ADMIN:$name2"
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
