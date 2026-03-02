@@ -303,8 +303,8 @@ Describe $CommandName -Tag IntegrationTests {
                 $name2 = 'ADMIN:' + $instance2.FullName
             }
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
-            $server[0].Name | Should -Be "ADMIN:$name1"
-            $server[1].Name | Should -Be "ADMIN:$name2"
+            $server[0].Name | Should -Be $name1
+            $server[1].Name | Should -Be $name2
             $null = $server | Disconnect-DbaInstance
             # DAC is not reopened in the background
             Start-Sleep -Seconds 10
