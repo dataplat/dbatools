@@ -74,12 +74,12 @@ function Test-DbaLsnChain {
         $FullDBAnchor = ($FullDBAnchor | Select-Object -First 1)
 
         #Via LSN chain:
-        [BigInt]$CheckPointLSN = $FullDBAnchor.CheckPointLSN.ToString()
-        [BigInt]$FullDBLastLSN = $FullDBAnchor.LastLSN.ToString()
-        $BackupWrongLSN = $FilteredRestoreFiles | Where-Object { $_.DatabaseBackupLSN -ne $CheckPointLSN }
+        [BigInt]$CheckPointLsn = $FullDBAnchor.CheckPointLsn.ToString()
+        [BigInt]$FullDBLastLsn = $FullDBAnchor.LastLsn.ToString()
+        $BackupWrongLSN = $FilteredRestoreFiles | Where-Object { [BigInt]$_.DatabaseBackupLsn.ToString() -ne $CheckPointLsn }
         #Should be 0 in there, if not, lets check that they're from during the full backup
         if ($BackupWrongLSN.count -gt 0 ) {
-            if (($BackupWrongLSN | Where-Object { [BigInt]$_.LastLSN.ToString() -lt $FullDBLastLSN }).count -gt 0) {
+            if (($BackupWrongLSN | Where-Object { [BigInt]$_.LastLSN.ToString() -lt $FullDBLastLsn }).count -gt 0) {
                 Write-Message -Level Warning -Message "We have non matching LSNs - not supported"
                 return $false
                 break;
@@ -102,24 +102,24 @@ function Test-DbaLsnChain {
         #Check T-log LSNs form a chain.
         $TranLogBackups = $TestHistory | Where-Object {
             $isLogBackup = $_.$TypeName -in ('Transaction Log', 'Log')
-            $isBasedOnAnchor = $_.DatabaseBackupLsn -eq $FullDBAnchor.CheckPointLsn
-            $hasGreaterLastLsn = $_.LastLsn -gt $FullDBAnchor.CheckPointLsn
+            $isBasedOnAnchor = [BigInt]$_.DatabaseBackupLsn.ToString() -eq $CheckPointLsn
+            $hasGreaterLastLsn = [BigInt]$_.LastLsn.ToString() -gt $CheckPointLsn
 
             Write-Message -Level Verbose -Message "Checking $($_.FullName) - isLogBackup $isLogBackup, isBasedOnAnchor $isBasedOnAnchor, hasGreaterLastLsn $hasGreaterLastLsn, FullDBAnchor.CheckPointLsn $($FullDBAnchor.CheckPointLsn), DatabaseBackupLsn $($_.DatabaseBackupLsn), FirstLsn $($_.FirstLsn) LastLsn $($_.LastLsn)"
             $isLogBackup -and ($isBasedOnAnchor -or $hasGreaterLastLsn)
         } | Sort-Object -Property LastLsn, FirstLsn
 
-        for ($i = 0; $i -lt ($TranLogBackups.count)) {
+        for ($i = 0; $i -lt ($TranLogBackups.Count)) {
             Write-Message -Level Debug -Message "looping t logs"
             if ($i -eq 0) {
-                if ($TranLogBackups[$i].FirstLSN.ToString() -gt $TlogAnchor.LastLSN) {
+                if ([BigInt]$TranLogBackups[$i].FirstLsn.ToString() -gt [BigInt]$TlogAnchor.LastLsn.ToString()) {
                     Write-Message -Level Warning -Message "Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
-                    Write-Message -Level Verbose -Message "Anchor $($TlogAnchor.LastLSN) - FirstLSN $($TranLogBackups[$i].FirstLSN)"
+                    Write-Message -Level Verbose -Message "Anchor $($TlogAnchor.LastLsn) - FirstLSN $($TranLogBackups[$i].FirstLsn)"
                     return $false
                     break
                 }
             } else {
-                if ($TranLogBackups[($i - 1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i - 1)])) {
+                if ([BigInt]$TranLogBackups[($i - 1)].LastLsn.ToString() -ne [BigInt]$TranLogBackups[($i)].FirstLsn.ToString() -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i - 1)])) {
                     Write-Message -Level Warning -Message "Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
                     return $false
                     break
