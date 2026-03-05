@@ -62,6 +62,7 @@ Describe $CommandName -Tag UnitTests {
                 "Culture",
                 "SampleRows",
                 "DetectColumnTypes",
+                "NoColumnOptimize",
                 "Parallel",
                 "ThrottleLimit",
                 "ParallelBatchSize"
@@ -707,6 +708,42 @@ José García,São Paulo
             $cityCol.DataType.Name | Should -Be "nvarchar"
             # But still optimized to appropriate length
             $nameCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "skips optimization when NoColumnOptimize is specified" {
+            $filePath = "$($TestConfig.Temp)\noopt-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "NoOptTest$(Get-Random)"
+
+            $csvContent = @"
+ShortCol,MediumCol
+ABC,Hello
+XYZ,World
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path             = $filePath
+                SqlInstance      = $server
+                Database         = "tempdb"
+                Table            = $tableName
+                AutoCreateTable  = $true
+                NoColumnOptimize = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $result.RowsCopied | Should -Be 2
+
+            # Columns should remain at nvarchar(MAX) since optimization was skipped
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortCol"
+            $mediumCol = $columns | Where-Object Name -eq "MediumCol"
+
+            $shortCol.DataType.MaximumLength | Should -Be -1
+            $mediumCol.DataType.MaximumLength | Should -Be -1
 
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
