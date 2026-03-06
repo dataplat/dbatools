@@ -213,7 +213,7 @@ function Test-DbaBackupInformation {
 
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { $_.IsVerified = $True }
+                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { Add-Member -InputObject $_ -MemberType NoteProperty -Name IsVerified -Value $true -Force }
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }
