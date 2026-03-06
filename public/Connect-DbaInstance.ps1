@@ -640,7 +640,17 @@ function Connect-DbaInstance {
 
             if ($DedicatedAdminConnection -and $serverName) {
                 Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used, so serverName will be changed and NonPooledConnection will be set."
-                $serverName = 'ADMIN:' + $serverName
+                if ($instance.IsLocalHost) {
+                    # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                    if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                        $serverName = "ADMIN:localhost\$($instance.InstanceName)"
+                    } else {
+                        $serverName = "ADMIN:localhost"
+                    }
+                    Write-Message -Level Debug -Message "IsLocalHost is true, using '$serverName' for DAC to avoid multi-IP resolution."
+                } else {
+                    $serverName = "ADMIN:$serverName"
+                }
                 $NonPooledConnection = $true
             }
 
@@ -704,7 +714,16 @@ function Connect-DbaInstance {
                         $connContext.StatementTimeout = $StatementTimeout
                     }
                     if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
-                        $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        if ($instance.IsLocalHost) {
+                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                            } else {
+                                $connContext.ServerInstance = "ADMIN:localhost"
+                            }
+                        } else {
+                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        }
                         $connContext.NonPooledConnection = $true
                     }
                     if ($Database) {
