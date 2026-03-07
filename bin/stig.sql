@@ -204,12 +204,12 @@ USE tempdb;
                 END                 AS [Securable Type or Class],
                 CASE
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE'                     THEN PS.name COLLATE DATABASE_DEFAULT
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN schema_name(OB.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'OBJECT_OR_COLUMN'             THEN OB_SC.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SCHEMA'                       THEN P3.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'DATABASE_PRINCIPAL'           THEN coalesce(PR.default_schema_name, PE.name)
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASSEMBLY'                     THEN P4.name COLLATE DATABASE_DEFAULT
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'TYPE'                         THEN schema_name(TP.schema_id)
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'XML_SCHEMA_COLLECTION'        THEN schema_name(XS.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'TYPE'                         THEN TP_SC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'XML_SCHEMA_COLLECTION'        THEN XS_SC.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'MESSAGE_TYPE'                 THEN P5.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE_CONTRACT'             THEN P6.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'SERVICE'                      THEN P7.name COLLATE DATABASE_DEFAULT
@@ -220,12 +220,12 @@ USE tempdb;
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'ASYMMETRIC_KEY'               THEN PC.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT = 'CERTIFICATE'                  THEN PD.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND DB.name IS NOT NULL  THEN PS.name COLLATE DATABASE_DEFAULT
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name IS NOT NULL  THEN schema_name(OB.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND OB.name IS NOT NULL  THEN OB_SC.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SC.name IS NOT NULL  THEN P3.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND PR.name IS NOT NULL  THEN PR.default_schema_name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND AY.name IS NOT NULL  THEN P4.name COLLATE DATABASE_DEFAULT
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name IS NOT NULL  THEN schema_name(TP.schema_id)
-                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name IS NOT NULL  THEN schema_name(XS.schema_id)
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND TP.name IS NOT NULL  THEN TP_SC.name COLLATE DATABASE_DEFAULT
+                    WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND XS.name IS NOT NULL  THEN XS_SC.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND MT.name IS NOT NULL  THEN P5.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND VC.name IS NOT NULL  THEN P6.name COLLATE DATABASE_DEFAULT
                     WHEN DP.class_desc COLLATE DATABASE_DEFAULT IS NULL AND SV.name IS NOT NULL  THEN P7.name COLLATE DATABASE_DEFAULT
@@ -333,6 +333,8 @@ USE tempdb;
                 LEFT OUTER JOIN [<TARGETDB>].sys.all_columns CM
                     ON  CM.[object_id] = DP.major_id
                     AND CM.[column_id] = DP.minor_id
+                LEFT OUTER JOIN [<TARGETDB>].sys.schemas OB_SC
+                    ON  OB_SC.schema_id = OB.schema_id
 
                 FULL OUTER JOIN [<TARGETDB>].sys.schemas SC
                     ON  DP.major_id   = SC.[schema_id]
@@ -355,10 +357,14 @@ USE tempdb;
                 FULL OUTER JOIN [<TARGETDB>].sys.types TP
                     ON  DP.major_id   = TP.user_type_id
                     AND DP.class_desc = 'TYPE'
+                LEFT OUTER JOIN [<TARGETDB>].sys.schemas TP_SC
+                    ON  TP_SC.schema_id = TP.schema_id
 
                 FULL OUTER JOIN [<TARGETDB>].sys.xml_schema_collections XS
                     ON  DP.major_id   = XS.xml_collection_id
                     AND DP.class_desc = 'XML_SCHEMA_COLLECTION'
+                LEFT OUTER JOIN [<TARGETDB>].sys.schemas XS_SC
+                    ON  XS_SC.schema_id = XS.schema_id
 
                 FULL OUTER JOIN [<TARGETDB>].sys.service_message_types MT
                     ON  DP.major_id   = MT.message_type_id
