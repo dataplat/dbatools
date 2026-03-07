@@ -101,6 +101,7 @@ function Get-DbaStartupParameter {
                     $Simple = $args[3]
 
                     $wmisvc = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instanceName)"
+                    if (-not $wmisvc) { return }
 
                     $params = $wmisvc.StartupParameters -split ';'
 
