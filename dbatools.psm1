@@ -788,6 +788,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaDbDbccOpenTran',
         'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCheckDb',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Get-DbaDbIdentity',

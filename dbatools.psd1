@@ -449,6 +449,7 @@
         'Invoke-DbaDbDataGenerator',
         'Invoke-DbaDbDataMasking',
         'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCheckDb',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaDbDecryptObject',
