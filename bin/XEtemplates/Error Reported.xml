@@ -1,0 +1,504 @@
+<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+   <event_session name="Error Reported" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="5" maxEventSize="4" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Error Reported</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Captures SQL Server errors with severity 16 and above, plus a curated list of critical error numbers covering corruption, memory issues, IO failures, deadlocks, and other important conditions by Kevin Kline.</templateDescription>
+      <event package="sqlserver" name="error_reported">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="sql_text" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+            <or>
+               <leaf>
+                  <comparator name="greater_than_equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="severity" />
+                  <value>16</value>
+               </leaf>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>229</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>230</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>300</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>605</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>610</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>701</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>802</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>823</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>824</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>825</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>832</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>833</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>845</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>855</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>856</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>1101</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>1105</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>1121</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>1205</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>1214</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>2104</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>2508</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>2511</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>3271</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>3452</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>3619</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>3624</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>3701</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5180</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5228</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5229</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5242</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5243</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5250</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5572</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>5901</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>6004</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>8621</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>8642</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>8645</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>8966</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9001</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9002</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9003</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9004</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9015</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>9100</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15388</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15469</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15470</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15472</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15562</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>15622</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17065</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17066</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17067</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17130</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17179</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17204</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17207</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17300</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17883</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17884</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17887</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17888</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>17890</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>28036</value>
+               </leaf>
+            </or>
+               <leaf>
+                  <comparator name="equal_int64" package="package0" />
+                  <event name="error_reported" package="sqlserver" field="error_number" />
+                  <value>33094</value>
+               </leaf>
+            </or>
+
+         </predicate>
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="Error Reported" />
+         <parameter name="max_file_size" value="100" />
+      </target>
+   </event_session>
+</event_sessions>
