@@ -94,15 +94,13 @@ function Get-DbaStartupParameter {
                 $instanceName = $instance.InstanceName
                 $ogInstance = $instance.FullSmoName
 
-                $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
-                $displayName = "SQL Server ($instanceName)"
-
                 $scriptBlock = {
                     $computerName = $args[0]
-                    $displayName = $args[1]
-                    $Simple = $args[2]
+                    $instanceName = $args[1]
+                    $ogInstance = $args[2]
+                    $Simple = $args[3]
 
-                    $wmisvc = $wmi.Services | Where-Object DisplayName -eq $displayName
+                    $wmisvc = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instanceName)"
 
                     $params = $wmisvc.StartupParameters -split ';'
 
@@ -204,10 +202,10 @@ function Get-DbaStartupParameter {
 
                 # This command is in the internal function
                 # It's sorta like Invoke-Command.
-                if ($credential) {
-                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName, $Simple
+                if ($Credential) {
+                    Invoke-ManagedComputerCommand -Server $computerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $instanceName, $ogInstance, $Simple
                 } else {
-                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName, $Simple
+                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $instanceName, $ogInstance, $Simple
                 }
             } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance
