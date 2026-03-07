@@ -37,4 +37,30 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object Category -eq $null | Should -BeNullOrEmpty
         }
     }
+
+    Context "Import Error Reported template" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $sessionName = "dbatoolsci_Error_Reported_$(Get-Random)"
+            $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.InstanceSingle -Template "Error Reported" -Name $sessionName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $sessionName | Remove-DbaXESession -Confirm:$false -ErrorAction SilentlyContinue
+        }
+
+        It "should import the session successfully" {
+            $session | Should -Not -BeNullOrEmpty
+        }
+
+        It "should create a session with the correct name" {
+            $session.Name | Should -Be $sessionName
+        }
+
+        It "should have the error_reported event" {
+            $session.Events.Name | Should -Contain "error_reported"
+        }
+    }
 }

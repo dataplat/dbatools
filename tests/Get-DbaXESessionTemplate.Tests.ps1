@@ -31,4 +31,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object Category -eq $null | Should -BeNullOrEmpty
         }
     }
+
+    Context "Get Error Reported template" {
+        BeforeAll {
+            $errorReported = Get-DbaXESessionTemplate | Where-Object Name -eq "Error Reported"
+        }
+
+        It "should return the Error Reported template" {
+            $errorReported | Should -Not -BeNullOrEmpty
+        }
+
+        It "should have the correct metadata" {
+            $errorReported.Name | Should -Be "Error Reported"
+            $errorReported.Category | Should -Be "System Monitoring"
+            $errorReported.Description | Should -BeLike "*severity*"
+            $errorReported.Source | Should -Be "Kevin Kline"
+        }
+
+        It "should have valid XML with error_reported event" {
+            $errorReported.TemplateName | Should -Be "Error Reported"
+        }
+    }
 }
