@@ -95,10 +95,6 @@ function Get-DbaStartupParameter {
                 $ogInstance = $instance.FullSmoName
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
-
-
-                if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
-
                 $displayName = "SQL Server ($instanceName)"
 
                 $scriptBlock = {
