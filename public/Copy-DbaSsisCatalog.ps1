@@ -150,19 +150,19 @@ function Copy-DbaSsisCatalog {
                 [String]$Project,
                 [String]$Folder
             )
-            $sqlConn = New-Object Microsoft.Data.SqlClient.SqlConnection
+            $sqlConn = New-Object System.Data.SqlClient.SqlConnection
             $sqlConn.ConnectionString = $sourceServer.ConnectionContext.ConnectionString
             if ($sqlConn.State -eq "Closed") {
                 $sqlConn.Open()
             }
             try {
                 Write-Message -Level Verbose -Message "Deploying project $Project from folder $Folder."
-                $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand
+                $cmd = New-Object System.Data.SqlClient.SqlCommand
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
                 $cmd.CommandText = "SSISDB.catalog.get_project"
-                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
-                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
+                $cmd.Parameters.AddWithValue("@folder_name", $Folder) | Out-Null
+                $cmd.Parameters.AddWithValue("@project_name", $Project) | Out-Null
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
                     $destFolder = $destinationFolders | Where-Object {
