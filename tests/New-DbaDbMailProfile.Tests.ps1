@@ -97,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Adds multiple accounts to the same profile" {
         It "Should allow adding a second account to existing profile without error" {
             $splatProfile2 = @{
-                SqlInstance         = $TestConfig.instance2
+                SqlInstance         = $TestConfig.InstanceSingle
                 Profile             = $profilename
                 MailAccountName     = $mailaccountname2
                 MailAccountPriority = 2
@@ -106,14 +106,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should have both accounts associated with the profile" {
-            $profile = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -Profile $profilename
+            $profile = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceSingle -Profile $profilename
             $accounts = $profile.EnumAccounts()
             $accounts.Count | Should -Be 2
         }
 
         It "Should fail with clear message when trying to create duplicate profile without MailAccountName" {
             $splatDuplicate = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Profile     = $profilename
                 Description = "Duplicate attempt"
             }
