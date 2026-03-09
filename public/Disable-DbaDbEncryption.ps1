@@ -43,6 +43,20 @@ function Disable-DbaDbEncryption {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each database where encryption was disabled. The object reflects the database state after TDE was disabled.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - DatabaseName: The name of the database where encryption was disabled (aliased from Name property)
+        - EncryptionEnabled: Boolean indicating whether Transparent Data Encryption is enabled (will be $false after execution)
+
+        Additional properties available from the SMO Database object include all standard database properties such as Owner, Collation, CompatibilityLevel, RecoveryModel, Status, Size, and many others. Access these using Select-Object * if needed.
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         It "Returns OLE DB provider information" {
-            $allResults = @(Get-DbaOleDbProvider -SqlInstance $TestConfig.instance1)
+            $allResults = @(Get-DbaOleDbProvider -SqlInstance $TestConfig.InstanceSingle)
             $allResults | Should -Not -BeNullOrEmpty
         }
     }

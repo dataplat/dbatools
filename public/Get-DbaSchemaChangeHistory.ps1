@@ -48,6 +48,27 @@ function Get-DbaSchemaChangeHistory {
     .LINK
         https://dbatools.io/Get-DbaSchemaChangeHistory
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per DDL change (CREATE, DROP, or ALTER operation) found in the SQL Server default system trace.
+        When no schema changes are found matching the filter criteria, the command returns nothing.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - DatabaseName: The database in which the schema change occurred
+        - DateModified: DateTime when the DDL operation was executed
+        - LoginName: The login name (SQL or Windows) that executed the change
+        - UserName: The Windows user name (domain\username format) if using Windows Authentication, or SQL login name
+        - ApplicationName: The application or tool that executed the DDL (e.g., "SQL Server Management Studio", "sqlcmd")
+        - DDLOperation: Type of operation performed - 'Create' for CREATE statements, 'Drop' for DROP statements, 'Alter' for ALTER statements
+        - Object: The name of the database object that was created, dropped, or altered (table, procedure, view, etc.)
+        - ObjectType: The type of database object affected (Table, StoredProcedure, View, Index, Trigger, UserDefinedFunction, etc.)
+
+        All properties are strings except DateModified which is DateTime. The ObjectType may be "Unknown" if the specific object type cannot be determined from the trace data.
+
     .EXAMPLE
         PS C:\> Get-DbaSchemaChangeHistory -SqlInstance localhost
 

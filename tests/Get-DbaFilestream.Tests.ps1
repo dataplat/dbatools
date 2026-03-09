@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Getting FileStream Level" {
         It "Should have changed the FileStream Level" {
-            $results = Get-DbaFilestream -SqlInstance $TestConfig.instance2
+            $results = Get-DbaFilestream -SqlInstance $TestConfig.InstanceSingle
             $results.InstanceAccess | Should -BeIn "Disabled", "T-SQL access enabled", "Full access enabled"
         }
     }

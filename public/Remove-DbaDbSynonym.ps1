@@ -55,6 +55,20 @@ function Remove-DbaDbSynonym {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per synonym successfully removed, containing the following properties:
+
+        - ComputerName: The name of the computer where the SQL Server instance resides
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database from which the synonym was removed
+        - Synonym: The name of the synonym that was removed
+        - Status: The status of the removal operation (set to "Removed" on success)
+
+        Note: Failed removal operations are reported through error handling but do not produce output objects.
+
     .NOTES
         Tags: Synonym, Database
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

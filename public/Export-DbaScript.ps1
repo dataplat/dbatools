@@ -67,6 +67,27 @@ function Export-DbaScript {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.String (when -Passthru is specified)
+
+        Returns the generated T-SQL script as a string. When multiple objects are piped in, returns multiple strings separated by newlines.
+        Each script includes a comment prefix (unless -NoPrefix is used) with generation timestamp, username, and dbatools version.
+        Script sections are separated by the configured batch terminator (typically "GO").
+
+        System.IO.FileInfo (default when -Passthru is not specified)
+
+        Returns one file object per input object representing the generated SQL script file(s) written to disk.
+        When multiple objects are piped in, multiple file objects are returned.
+
+        Properties:
+        - Name: The filename of the exported script (e.g., "sql2016-Export-DbaScript-20231215_143022.sql")
+        - FullName: The complete path to the exported script file
+        - Directory: The directory object containing the file
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last modified
+        - Length: Size of the file in bytes
+        - Extension: Always ".sql"
+
     .NOTES
         Tags: Migration, Backup, Export
         Author: Chrissy LeMaire (@cl), netnerds.net

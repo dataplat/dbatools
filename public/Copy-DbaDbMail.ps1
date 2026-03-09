@@ -32,9 +32,18 @@ function Copy-DbaDbMail {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER Type
         Limits migration to specific Database Mail component types instead of copying everything. Choose 'ConfigurationValues' for global settings like retry attempts and file size limits, 'Profiles' for mail profile definitions, 'Accounts' for SMTP account configurations, or 'MailServers' for SMTP server details.
         Use this when you only need to sync specific components or when troubleshooting individual Database Mail layers.
+
+    .PARAMETER ExcludePassword
+        Copies credential definitions without the actual password values.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -60,6 +69,20 @@ function Copy-DbaDbMail {
         License: MIT https://opensource.org/licenses/MIT
 
         Requires: sysadmin access on SQL Servers
+
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per Database Mail component migrated (configuration, profile, account, or mail server). Each object tracks the migration status of a single component.
+
+        Properties:
+        - DateTime: Timestamp when the migration operation was performed (Dataplat.Dbatools.Utility.DbaDateTime)
+        - SourceServer: The source SQL Server instance name
+        - DestinationServer: The destination SQL Server instance name
+        - Name: The name of the Database Mail component being migrated (profile name, account name, server name, or "Server Configuration")
+        - Type: Category of the component migrated - "Mail Configuration", "Mail Profile", "Mail Account", or "Mail Server"
+        - Status: Migration result status - "Successful", "Skipped", or "Failed"
+        - Notes: Additional details about the migration outcome (reason for skip, error message, etc.). Null if no additional notes.
 
     .LINK
         https://dbatools.io/Copy-DbaDbMail
@@ -89,13 +112,15 @@ function Copy-DbaDbMail {
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
+        [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'SpecificTypes')]
         [ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'MailServers')]
         [string[]]$Type,
-        [PSCredential]$SourceSqlCredential,
-        [PSCredential]$DestinationSqlCredential,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -107,7 +132,7 @@ function Copy-DbaDbMail {
 
             Write-Message -Message "Migrating mail server configuration values." -Level Verbose
             $copyMailConfigStatus = [PSCustomObject]@{
-                SourceServer      = $sourceServer.Name
+                SourceServer      = $sourceServerName
                 DestinationServer = $destServer.Name
                 Name              = "Server Configuration"
                 Type              = "Mail Configuration"
@@ -144,7 +169,7 @@ function Copy-DbaDbMail {
                 $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
                 $copyMailAccountStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $accountName
                     Type              = "Mail Account"
@@ -213,7 +238,7 @@ function Copy-DbaDbMail {
                 $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
                 $copyMailProfileStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $profileName
                     Type              = "Mail Profile"
@@ -277,18 +302,20 @@ function Copy-DbaDbMail {
             $sourceMailServers = $sourceServer.Mail.Accounts.MailServers
             $destMailServers = $destServer.Mail.Accounts.MailServers
 
-            Write-Message -Message "Getting mail server credentials." -Level Verbose
-            $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
-            $credentialAccounts = @($sourceServer.Query($sql))
-            if ($credentialAccounts.Count -gt 0) {
-                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+            if (-not $ExcludePassword) {
+                Write-Message -Message "Getting mail server credentials." -Level Verbose
+                $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
+                $credentialAccounts = @($sourceServer.Query($sql))
+                if ($credentialAccounts.Count -gt 0) {
+                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+                }
             }
 
             Write-Message -Message "Migrating mail servers." -Level Verbose
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = [string]$mailServer.name
                 $copyMailServerStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer      = $sourceServerName
                     DestinationServer = $destServer.Name
                     Name              = $mailServerName
                     Type              = "Mail Server"
@@ -330,14 +357,16 @@ function Copy-DbaDbMail {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
-                        $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
-                        if ($credentialName) {
-                            $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
-                            if ($decryptedCred) {
-                                $password = $decryptedCred.Password.Replace("'", "''")
-                                $sql = $sql -replace "@password=N''", "@password=N'$($password)'"
-                            } else {
-                                Write-Message -Level Warning -Message "Failed to get mail server password, it will need to be entered manually on the destination."
+                        if (-not $ExcludePassword) {
+                            $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
+                            if ($credentialName) {
+                                $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
+                                if ($decryptedCred) {
+                                    $password = $decryptedCred.Password.Replace("'", "''")
+                                    $sql = $sql -replace "@password=N''", "@password=N'$($password)'"
+                                } else {
+                                    Write-Message -Level Warning -Message "Failed to get mail server password, it will need to be entered manually on the destination."
+                                }
                             }
                         }
                         Write-Message -Message $sql -Level Debug
@@ -356,7 +385,28 @@ function Copy-DbaDbMail {
         }
 
         try {
-            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                    $sourceServer = $Source.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
+            } else {
+                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            }
+            $sourceServerName = $sourceServer.DomainInstanceName
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -437,7 +487,7 @@ function Copy-DbaDbMail {
             Write-Message -Message "Destination Database Mail XPs: $destDbMailEnabled" -Level Verbose
 
             $enableDBMailStatus = [PSCustomObject]@{
-                SourceServer      = $sourceServer.Name
+                SourceServer      = $sourceServerName
                 DestinationServer = $destServer.Name
                 Name              = "Database Mail XPs"
                 Type              = "Mail Configuration"
@@ -471,6 +521,11 @@ function Copy-DbaDbMail {
                 Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
                 $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
+        }
+    }
+    end {
+        if ($dacOpened) {
+            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

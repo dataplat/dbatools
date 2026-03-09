@@ -37,6 +37,21 @@ function Get-DbaInstanceProperty {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance property from the Information, UserOptions, and Settings collections. The function returns properties from three separate SMO collections, outputting each property with contextual information about which collection it came from.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The property name (e.g., DefaultFile, MaxWorkerThreads, LoginMode, TcpPort)
+        - Value: The current value of the configuration property (string or mixed type depending on property)
+        - PropertyType: The type of property collection - either "Information", "UserOption", or "Setting"
+
+        The -InstanceProperty and -ExcludeInstanceProperty parameters filter which specific properties are returned but do not change the output structure.
+
     .LINK
         https://dbatools.io/Get-DbaInstanceProperty
 

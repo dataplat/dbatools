@@ -119,6 +119,23 @@ function Invoke-DbaDbDataMasking {
     .LINK
         https://dbatools.io/Invoke-DbaDbDataMasking
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per table that was processed by the masking operation. Each object contains the results of masking that specific table.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database where masking was performed
+        - Schema: The schema name of the masked table
+        - Table: The name of the masked table
+        - Columns: Array of column names that were masked
+        - Rows: Integer count of rows that were masked in the table
+        - Elapsed: TimeSpan object showing how long the masking operation took for this table
+        - Status: String indicating if masking was "Successful" or "Failed" for this table
+
     .EXAMPLE
         Invoke-DbaDbDataMasking -SqlInstance SQLDB2 -Database DB1 -FilePath C:\Temp\sqldb1.db1.tables.json
 

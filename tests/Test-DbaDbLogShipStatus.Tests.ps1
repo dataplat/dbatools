@@ -27,22 +27,16 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "When testing SQL instance edition support" {
-        # TODO: This test is not working in AppVeyor, so it is skipped
-        It -Skip "Should warn if SQL instance edition is not supported" {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
-            if ((Connect-DbaInstance -SqlInstance $TestConfig.instance1).Edition -match 'Express') {
-                $WarnVar | Should -Match "Express"
-            } else {
-                $WarnVar | Should -Not -Match "Express"
-            }
-
+        It -Skip:(-not $TestConfig.InstanceExpress) "Should warn if SQL instance edition is not supported" {
+            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.InstanceExpress -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Express"
         }
     }
 
     Context "When no log shipping is configured" {
         It "Should warn if no log shipping found" {
-            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
-            $doesntexist -match "No information available" | Should -BeTrue
+            $null = Test-DbaDbLogShipStatus -SqlInstance $TestConfig.InstanceSingle -Database 'master' -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "No information available"
         }
     }
 }

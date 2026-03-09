@@ -63,6 +63,24 @@ function Set-DbaDbMirror {
     .LINK
         https://dbatools.io/Set-DbaDbMirror
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns the Database object only when the -State parameter is specified. When -State is used with Suspend, Resume, Failover, or RemoveWitness operations, the modified SMO Database object is returned to the pipeline.
+
+        When only -Partner, -Witness, or -SafetyLevel parameters are specified, no output is returned (configuration-only operations with no object output).
+
+        Default display properties from the returned Database object include:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Database name
+        - Status: Current database status (Normal, Offline, Recovering, etc.)
+        - RecoveryModel: Database recovery model (Full, Simple, BulkLogged)
+        - Owner: Database owner login name
+
+        All properties from the SMO Database object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Partner TCP://SQL2008.ad.local:5374
 

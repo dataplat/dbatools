@@ -25,8 +25,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting database assemblies" {
         BeforeAll {
-            $assemblyResults = Get-DbaDbAssembly -SqlInstance $TestConfig.instance2 | Where-Object { $PSItem.parent.name -eq "master" }
-            $masterDatabase = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master
+            $assemblyResults = Get-DbaDbAssembly -SqlInstance $TestConfig.InstanceSingle | Where-Object { $PSItem.parent.name -eq "master" }
+            $masterDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
         It "Returns assembly objects" {

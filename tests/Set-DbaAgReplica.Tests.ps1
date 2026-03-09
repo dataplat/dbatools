@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the availability group.
         $splatAvailabilityGroup = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.InstanceHadr
             Name         = $agName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -64,8 +64,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Sets AG properties" {
         It "Returns modified results when setting BackupPriority" {
             $splatBackupPriority = @{
-                SqlInstance       = $TestConfig.instance3
+                SqlInstance       = $TestConfig.InstanceHadr
                 AvailabilityGroup = $agName
                 Replica           = $replicaName
                 BackupPriority    = 100
@@ -85,7 +85,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Returns modified results when setting SeedingMode" {
             $splatSeedingMode = @{
-                SqlInstance       = $TestConfig.instance3
+                SqlInstance       = $TestConfig.InstanceHadr
                 AvailabilityGroup = $agName
                 Replica           = $replicaName
                 SeedingMode       = "Automatic"
@@ -101,13 +101,13 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction       = "SilentlyContinue"
                 WarningVariable     = "warn"
             }
-            $null = Get-DbaAgReplica -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
+            $null = Get-DbaAgReplica -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName | Select-Object -First 1 | Set-DbaAgReplica @splatRoutingList
             $warn | Should -Match "does not exist. Only availability"
         }
 
         It "Accepts simple ordered ReadOnlyRoutingList (issue #9987)" {
             $splatSimpleRouting = @{
-                SqlInstance         = $TestConfig.instance3
+                SqlInstance         = $TestConfig.InstanceHadr
                 AvailabilityGroup   = $agName
                 Replica             = $replicaName
                 ReadOnlyRoutingList = @($replicaName)
@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Accepts load-balanced ReadOnlyRoutingList" {
             $splatLoadBalanced = @{
-                SqlInstance         = $TestConfig.instance3
+                SqlInstance         = $TestConfig.InstanceHadr
                 AvailabilityGroup   = $agName
                 Replica             = $replicaName
                 ReadOnlyRoutingList = @(,($replicaName))
@@ -127,4 +127,4 @@ Describe $CommandName -Tag IntegrationTests {
             { Set-DbaAgReplica @splatLoadBalanced } | Should -Not -Throw
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

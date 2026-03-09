@@ -56,6 +56,26 @@ function Remove-DbaRegServer {
     .LINK
         https://dbatools.io/Remove-DbaRegServer
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per registered server removed from CMS or local registered server groups.
+
+        Default display properties vary based on server type:
+
+        For Central Management Server registered servers (with ID):
+        - ComputerName: The name of the computer hosting the CMS instance
+        - InstanceName: The SQL Server instance name of the CMS
+        - SqlInstance: The full SQL Server instance name in format ComputerName\InstanceName
+        - Name: The display name of the registered server as shown in SSMS
+        - ServerName: The actual SQL Server instance name or connection string
+        - Status: The operation status (Dropped)
+
+        For local registered server groups (without ID):
+        - Name: The display name of the registered server
+        - ServerName: The actual SQL Server instance name or connection string
+        - Status: The operation status (Dropped)
+
     .EXAMPLE
         PS C:\> Remove-DbaRegServer -SqlInstance sql2012 -Group HR, Accounting
 

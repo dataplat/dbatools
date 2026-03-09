@@ -41,8 +41,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
         $PSDefaultParameterValues["*-Dba*:WarningAction"] = "SilentlyContinue"
 
-        $primaryInstance = $TestConfig.instance2
-        $secondaryInstance = $TestConfig.instance3
+        $primaryInstance = $TestConfig.InstanceMulti1
+        $secondaryInstance = $TestConfig.InstanceMulti2
 
         $loginName1 = "dbatoolsci_syncpwd1_$(Get-Random)"
         $loginName2 = "dbatoolsci_syncpwd2_$(Get-Random)"
@@ -145,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaLogin @splatLogin
 
             # Ensure login does NOT exist on destination (handle AG/replication scenarios)
-            $null = Remove-DbaLogin -SqlInstance $secondaryInstance -Login $nonExistentLogin -Confirm:$false -ErrorAction SilentlyContinue
+            $null = Get-DbaLogin -SqlInstance $secondaryInstance -Login $nonExistentLogin | Remove-DbaLogin
 
             # Try to sync - should skip because login doesn't exist on destination
             $splatSync = @{

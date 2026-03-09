@@ -39,6 +39,19 @@ function Remove-DbaDbCertificate {
         Accepts certificate objects from Get-DbaDbCertificate via pipeline input.
         This allows for advanced filtering and bulk operations when combined with other dbatools certificate functions.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per certificate successfully removed, with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database where the certificate was removed
+        - Certificate: The name of the certificate that was removed
+        - Status: Removal status (Success when the certificate was successfully dropped)
+
+        Certificates that fail to remove do not produce output; errors are handled via Stop-Function with -Continue behavior.
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

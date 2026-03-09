@@ -27,8 +27,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serverPrimary = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $serverSecondary = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverPrimary = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $serverSecondary = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         $null = New-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000 -Severity 1 -MessageText "test_70000"
         $null = New-DbaCustomError -SqlInstance $serverPrimary, $serverSecondary -MessageID 70001 -Severity 1 -MessageText "test_70001"
@@ -102,10 +102,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Supports multiple servers via SqlInstance parameter" {
-            $testResults = Remove-DbaCustomError -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -MessageID 70002
+            $testResults = Remove-DbaCustomError -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -MessageID 70002
             # even the SMO server.Refresh() doesn't pick up the changes to the user defined messages
-            $serverPrimaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $serverSecondaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $serverPrimaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $serverSecondaryReconnected = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
             ($serverPrimaryReconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
             ($serverSecondaryReconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
         }

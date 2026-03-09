@@ -79,6 +79,31 @@ function Set-DbaTempDbConfig {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject (default behavior)
+
+        Returns configuration details after successfully applying tempdb settings. Contains the following properties:
+
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DataFileCount: The number of data files configured (int)
+        - DataFileSize: Total size for all data files combined; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - SingleDataFileSize: Size of each individual data file; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - LogSize: Size of the transaction log file; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - DataPath: Path(s) where tempdb data files are located (string or string array)
+        - LogPath: Path where the tempdb log file is located (string)
+        - DataFileGrowth: Growth increment for data files; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - LogFileGrowth: Growth increment for log file; dbasize object convertible to Bytes, KB, MB, GB, TB
+
+        System.String[] (when -OutputScriptOnly is specified)
+
+        Returns array of T-SQL ALTER DATABASE statements that would configure tempdb without executing them.
+
+        System.Void (when -OutFile is specified)
+
+        No output is returned to the pipeline when -OutFile is used; the T-SQL script is written directly to the specified file path.
+
     .LINK
         https://dbatools.io/Set-DbaTempDbConfig
 

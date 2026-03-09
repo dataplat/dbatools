@@ -49,6 +49,33 @@ function Get-DbaReplSubscription {
         Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.Subscription
+
+        Returns one Subscription object per subscription found across all qualifying publications. Each object represents a replication relationship between a publisher and subscriber, showing subscription details, delivery method, and synchronization information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance (publisher)
+        - InstanceName: The SQL Server instance name (publisher)
+        - SqlInstance: The full SQL Server instance name (computer\instance) for the publisher
+        - DatabaseName: The name of the publication database on the publisher
+        - PublicationName: The name of the publication being subscribed to
+        - Name: The name of the subscription
+        - SubscriberName: The name of the Subscriber instance receiving replicated data
+        - SubscriptionDBName: The name of the database on the Subscriber receiving the data
+        - SubscriptionType: The type of subscription delivery (Push or Pull)
+
+        Additional properties available (from SMO Subscription object):
+        - AgentJobId: The unique identifier of the agent job used for subscription synchronization
+        - AgentSchedule: The schedule for the synchronization agent job execution
+        - SynchronizationAgentName: The name of the synchronization agent job
+        - Status: The current status of the subscription (Active, Inactive, Uninitialized, etc.)
+        - SyncType: The manner in which the subscription is initialized (Automatic, None, Replicating)
+        - SubscriberSecurity: The security context for Subscriber connections
+        - SynchronizationAgentProcessSecurity: The Windows account credentials for the agent process
+
+        All properties from the base SMO Subscription object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaReplSubscription
 

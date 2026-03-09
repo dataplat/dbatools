@@ -24,7 +24,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "dbatools_datagentest"
         $query = "CREATE DATABASE [$dbname]"
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query $query
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $query
 
         $query = "
         CREATE TABLE [dbo].[Customer](
@@ -40,13 +40,13 @@ Describe $CommandName -Tag IntegrationTests {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbname -Query $query
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Query $query
 
-        $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbname -Table Customer -Path "$($TestConfig.Temp)\datageneration"
+        $file = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table Customer -Path "$($TestConfig.Temp)\datageneration"
 
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\datageneration" -Recurse
     }
 

@@ -21,9 +21,9 @@ function Import-DbaCsv {
         When enabled, columns are mapped by ordinal position and you'll need to ensure your target table column order matches the CSV.
 
     .PARAMETER Delimiter
-        Sets the field separator character used in the CSV file. Defaults to comma if not specified.
+        Sets the field separator used in the CSV file. Defaults to comma if not specified.
         Common values include comma (,), tab (`t), pipe (|), semicolon (;), or space for different export formats from various systems.
-        Note: Due to LumenWorks library limitations, only single-character delimiters are supported. If a multi-character delimiter is provided, only the first character will be used.
+        Multi-character delimiters are fully supported (e.g., "::", "||", "\t\t").
 
     .PARAMETER SingleColumn
         Indicates the CSV contains only one column of data without delimiters. Use this for simple lists or single-value imports.
@@ -65,7 +65,16 @@ function Import-DbaCsv {
 
     .PARAMETER AutoCreateTable
         Creates the destination table automatically if it doesn't exist, using nvarchar(max) for all columns.
-        Convenient for quick imports or testing, but for production use, create tables manually with appropriate data types, indexes, and constraints.
+        After import, column sizes are automatically optimized based on actual data lengths (nvarchar(MAX) -> nvarchar(16/32/64/etc.)).
+
+        For proper type inference (int, decimal, datetime2, varchar vs nvarchar), use -SampleRows or -DetectColumnTypes instead.
+        For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
+
+    .PARAMETER NoColumnOptimize
+        Skips the automatic column size optimization that runs after AutoCreateTable imports.
+        By default, AutoCreateTable creates nvarchar(MAX) columns and then shrinks them to fit the imported data.
+        Use this switch when importing multiple CSV files into the same auto-created table, so that later files
+        with longer values are not rejected due to columns being shrunk to fit only the first file's data.
 
     .PARAMETER Truncate
         Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
@@ -159,6 +168,122 @@ function Import-DbaCsv {
         Disables the automatic transaction wrapper, allowing partial imports to remain committed even if the operation fails.
         Use this for very large imports where you want to commit data in batches, but be aware that failed imports may leave partial data.
 
+    .PARAMETER MaxDecompressedSize
+        Maximum size in bytes for decompressed data when reading compressed CSV files (.gz, .br, .deflate, .zlib).
+        This protects against decompression bomb attacks. Default is 10GB (10737418240 bytes).
+        Set to 0 for unlimited (not recommended for untrusted files).
+
+    .PARAMETER SkipRows
+        Number of rows to skip at the beginning of the file before reading headers or data.
+        Useful for files with metadata rows before the actual CSV content.
+
+    .PARAMETER QuoteMode
+        Controls how quoted fields are parsed.
+        - Strict: RFC 4180 compliant parsing (default)
+        - Lenient: More forgiving parsing for malformed CSV files with embedded quotes
+
+    .PARAMETER DuplicateHeaderBehavior
+        Controls how duplicate column headers are handled.
+        - ThrowException: Throw an error (default)
+        - Rename: Rename duplicates (Name_2, Name_3, etc.)
+        - UseFirstOccurrence: Keep first, ignore duplicates
+        - UseLastOccurrence: Keep last, rename earlier occurrences
+
+    .PARAMETER MismatchedFieldAction
+        Controls what happens when a row has more or fewer fields than expected.
+        - ThrowException: Throw an error (default)
+        - PadWithNulls: Pad missing fields with null
+        - TruncateExtra: Remove extra fields
+        - PadOrTruncate: Both pad and truncate as needed
+
+    .PARAMETER DistinguishEmptyFromNull
+        When specified, treats empty quoted fields ("") as empty strings and
+        unquoted empty fields (,,) as null values.
+
+    .PARAMETER NormalizeQuotes
+        When specified, converts smart/curly quotes (' ' " ") to standard ASCII quotes before parsing.
+        Useful when importing data exported from Microsoft Word or Excel.
+
+    .PARAMETER CollectParseErrors
+        When specified, collects parse errors instead of throwing immediately.
+        Use with -MaxParseErrors to limit the number of errors collected.
+        Errors can be retrieved from the reader after import completes.
+
+    .PARAMETER MaxParseErrors
+        Maximum number of parse errors to collect before stopping.
+        Only applies when -CollectParseErrors is specified. Default is 1000.
+
+    .PARAMETER StaticColumns
+        A hashtable of static column names and values to add to every row.
+        Useful for tagging imported data with metadata like source filename or import timestamp.
+        Keys are column names, values are the static values to insert.
+        Example: @{ SourceFile = "data.csv"; ImportDate = (Get-Date) }
+
+    .PARAMETER DateTimeFormats
+        An array of custom date/time format strings for parsing date columns.
+        Useful when importing data with non-standard date formats (e.g., Oracle's dd-MMM-yyyy).
+        Example: @("dd-MMM-yyyy", "yyyy/MM/dd", "MM-dd-yyyy")
+
+    .PARAMETER Culture
+        The culture name to use for parsing numbers and dates (e.g., "de-DE", "fr-FR", "en-US").
+        Useful when importing CSV files with locale-specific number formats (e.g., comma as decimal separator).
+        Default is InvariantCulture.
+
+    .PARAMETER SampleRows
+        Enables smart type detection by sampling the first N rows of the CSV file.
+        When specified, the command analyzes the sample to infer optimal SQL Server column types
+        instead of using nvarchar(MAX) for all columns.
+
+        This is faster than -DetectColumnTypes but has a small risk if data patterns change
+        after the sampled rows (e.g., row 10001 has a longer string than any in the sample).
+
+        Implies -AutoCreateTable behavior for type detection.
+
+        Example: -SampleRows 10000 samples the first 10,000 rows to determine types like
+        int, bigint, decimal(p,s), datetime2, bit, uniqueidentifier, or varchar(n)/nvarchar(n)
+        with appropriate lengths. Unlike plain -AutoCreateTable, this can infer varchar for
+        ASCII-only string data, saving storage space.
+
+    .PARAMETER DetectColumnTypes
+        Enables smart type detection by scanning the entire CSV file before import.
+        This guarantees no import failures due to type mismatches but requires reading
+        the file twice (once for analysis, once for import).
+
+        A separate progress bar is displayed during the type detection phase.
+        The final output (Elapsed, RowsPerSecond) reflects only the import time,
+        not the detection overhead.
+
+        Implies -AutoCreateTable behavior for type detection.
+
+        Detected types include: int, bigint, decimal(p,s), datetime2, bit,
+        uniqueidentifier, varchar(n) for ASCII-only strings, and nvarchar(n) when Unicode is detected.
+        This provides optimal storage by using varchar where possible.
+
+    .PARAMETER Parallel
+        Enables parallel processing for improved performance on large files.
+        When enabled, line reading, parsing, and type conversion are performed in parallel
+        using a producer-consumer pipeline. This can provide 2-4x performance improvement
+        on multi-core systems.
+
+        Note: Parallel processing is most beneficial for large files (>100K rows) with
+        complex type conversions. For small files, sequential processing may be faster
+        due to lower overhead.
+
+        When Parallel is used, the progress bar is disabled because the progress callback
+        cannot run in background threads.
+
+    .PARAMETER ThrottleLimit
+        Sets the maximum number of worker threads for parallel processing.
+        Default is 0, which uses the number of logical processors on the system.
+        Set to 1 to effectively disable parallelism while still using the pipeline architecture.
+        Only used when Parallel is specified.
+
+    .PARAMETER ParallelBatchSize
+        Sets the number of records to batch before yielding to the consumer during parallel processing.
+        Larger batches reduce synchronization overhead but increase memory usage and latency.
+        Default is 100. Minimum is 1.
+        Only used when Parallel is specified.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -180,6 +305,27 @@ function Import-DbaCsv {
 
     .LINK
         https://dbatools.io/Import-DbaCsv
+
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per CSV file imported. Each object contains comprehensive metrics about the import operation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance where the CSV was imported
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name where data was imported
+        - Table: The table name where CSV data was loaded
+        - Schema: The schema name containing the target table
+        - RowsCopied: The total number of rows successfully copied from the CSV file (int64)
+        - Elapsed: The elapsed time for the import operation in elapsed time format (automatically formatted as HH:mm:ss.fff)
+        - RowsPerSecond: The average import rate calculated as total rows divided by elapsed time in seconds (decimal)
+        - Path: The full file system path of the imported CSV file
+
+        All size and rate metrics are calculated based on the actual import duration, which for type detection operations does not include
+        the time spent scanning the file for column type inference.
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path C:\temp\housing.csv -SqlInstance sql001 -Database markets
@@ -246,6 +392,127 @@ function Import-DbaCsv {
 
         If the CSV has no headers, passing a ColumnMap works when you have as the key the ordinal of the column (0-based).
         In this example the first CSV field is inserted into SQL column 'FirstName' and the second CSV field is inserted into the SQL Column 'PhoneNumber'.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -Delimiter "::" -AutoCreateTable
+
+        Imports a CSV file that uses a multi-character delimiter (::). The new CSV reader supports delimiters of any length,
+        not just single characters.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv.gz -SqlInstance sql001 -Database tempdb -Table MyTable -AutoCreateTable
+
+        Imports a gzip-compressed CSV file. Compression is automatically detected from the .gz extension and the file
+        is decompressed on-the-fly during import without extracting to disk.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\export.csv -SqlInstance sql001 -Database tempdb -Table MyTable -SkipRows 3 -AutoCreateTable
+
+        Skips the first 3 rows of the file before reading headers and data. Useful for files that have metadata rows,
+        comments, or report headers before the actual CSV content begins.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -DuplicateHeaderBehavior Rename -AutoCreateTable
+
+        Handles CSV files with duplicate column headers by automatically renaming them (e.g., Name, Name_2, Name_3).
+        Without this, duplicate headers would cause an error.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\messy.csv -SqlInstance sql001 -Database tempdb -Table MyTable -MismatchedFieldAction PadWithNulls -AutoCreateTable
+
+        Imports a CSV where some rows have fewer fields than the header row. Missing fields are padded with NULL values
+        instead of throwing an error. Useful for importing data from systems that omit trailing empty fields.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\data.csv -SqlInstance sql001 -Database tempdb -Table MyTable -QuoteMode Lenient -AutoCreateTable
+
+        Uses lenient quote parsing for CSV files with improperly escaped quotes. This is useful when importing data
+        from systems that don't follow RFC 4180 strictly, such as files with embedded quotes that aren't doubled.
+
+    .EXAMPLE
+        PS C:\> # Import CSV with proper type conversion to a pre-created table
+        PS C:\> $query = "CREATE TABLE TypedData (id INT, amount DECIMAL(10,2), active BIT, created DATETIME)"
+        PS C:\> Invoke-DbaQuery -SqlInstance sql001 -Database tempdb -Query $query
+        PS C:\> Import-DbaCsv -Path C:\temp\typed.csv -SqlInstance sql001 -Database tempdb -Table TypedData
+
+        Imports CSV data into a table with specific column types. The CSV reader automatically converts string values
+        to the appropriate SQL Server types (INT, DECIMAL, BIT, DATETIME, etc.) during import.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\large.csv -SqlInstance sql001 -Database tempdb -Table BigData -AutoCreateTable -Parallel
+
+        Imports a large CSV file using parallel processing for improved performance. The -Parallel switch enables
+        concurrent line reading, parsing, and type conversion, which can provide 2-4x speedup on multi-core systems
+        for files with 100K+ rows.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\huge.csv -SqlInstance sql001 -Database tempdb -Table HugeData -AutoCreateTable -Parallel -ThrottleLimit 4
+
+        Imports a large CSV with parallel processing limited to 4 worker threads. Use -ThrottleLimit to control
+        resource usage on shared systems or when you want to limit CPU consumption during the import.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\massive.csv -SqlInstance sql001 -Database tempdb -Table MassiveData -AutoCreateTable -Parallel -ParallelBatchSize 500
+
+        Imports a very large CSV with parallel processing using larger batch sizes. Increase -ParallelBatchSize
+        for very large files (millions of rows) to reduce synchronization overhead. The default is 100.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\refresh.csv -SqlInstance sql001 -Database tempdb -Table LookupData -Truncate
+
+        Performs a full data refresh by truncating the existing table before importing. The truncate and import
+        operations are wrapped in a transaction, so if the import fails, the original data is preserved.
+
+    .EXAMPLE
+        PS C:\> $static = @{ SourceFile = "sales_2024.csv"; ImportDate = (Get-Date); Region = "EMEA" }
+        PS C:\> Import-DbaCsv -Path C:\temp\sales.csv -SqlInstance sql001 -Database sales -Table SalesData -StaticColumns $static -AutoCreateTable
+
+        Imports CSV data and adds three static columns (SourceFile, ImportDate, Region) to every row.
+        This is useful for tracking data lineage and tagging imported records with metadata.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\oracle_export.csv -SqlInstance sql001 -Database tempdb -Table OracleData -DateTimeFormats @("dd-MMM-yyyy", "dd-MMM-yyyy HH:mm:ss") -AutoCreateTable
+
+        Imports a CSV with Oracle-style date formats (e.g., "15-Jan-2024"). The -DateTimeFormats parameter
+        specifies custom format strings to parse non-standard date columns correctly.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\german_data.csv -SqlInstance sql001 -Database tempdb -Table GermanData -Culture "de-DE" -AutoCreateTable
+
+        Imports a CSV with German number formatting where comma is the decimal separator (e.g., "1.234,56").
+        The -Culture parameter ensures numbers are parsed correctly according to the specified locale.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\sales.csv -SqlInstance sql001 -Database sales -Table SalesData -AutoCreateTable -SampleRows 10000
+
+        Imports sales.csv and creates the table with optimal column types inferred from the first 10,000 rows.
+        Instead of nvarchar(MAX) for all columns, the table will have appropriate types like int, decimal(10,2),
+        datetime2, bit, or varchar(50) based on the actual data patterns detected.
+
+        This is fast but has a small risk if data patterns change after the sampled rows.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\large_dataset.csv -SqlInstance sql001 -Database warehouse -Table FactSales -AutoCreateTable -DetectColumnTypes
+
+        Imports large_dataset.csv with guaranteed optimal column types by scanning the entire file first.
+        A separate progress bar shows "Analyzing column types..." during the detection phase.
+        The final output (Elapsed, RowsPerSecond) reflects only the import time, not the detection overhead.
+
+        This is slower (reads file twice) but guarantees no import failures due to type mismatches.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\products.csv -SqlInstance sql001 -Database inventory -Table Products -AutoCreateTable -SampleRows 5000 -DateTimeFormats @("dd-MMM-yyyy", "yyyy/MM/dd")
+
+        Imports products.csv with type detection from 5,000 rows, using custom date formats for parsing.
+        Columns containing dates in formats like "15-Jan-2024" or "2024/01/15" will be detected as datetime2.
+
+    .EXAMPLE
+        PS C:\> Import-DbaCsv -Path C:\temp\quickload.csv -SqlInstance sql001 -Database tempdb -Table QuickData -AutoCreateTable
+
+        Imports quickload.csv with AutoCreateTable. After import completes, column sizes are automatically
+        optimized by querying actual max lengths and altering columns from nvarchar(MAX) to padded sizes
+        like nvarchar(16), nvarchar(32), nvarchar(64), etc. The nvarchar type is preserved to avoid any
+        risk of data loss from Unicode conversion. For ASCII->varchar conversion, use -SampleRows or -DetectColumnTypes.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -262,6 +529,7 @@ function Import-DbaCsv {
         [string]$Schema,
         [switch]$Truncate,
         [ValidateNotNullOrEmpty()]
+        [Alias("DelimiterChar")]
         [string]$Delimiter = ",",
         [switch]$SingleColumn,
         [int]$BatchSize = 50000,
@@ -275,6 +543,7 @@ function Import-DbaCsv {
         [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
+        [switch]$NoColumnOptimize,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
         [switch]$UseFileNameForSchema,
@@ -294,6 +563,26 @@ function Import-DbaCsv {
         [switch]$SupportsMultiline,
         [switch]$UseColumnDefault,
         [switch]$NoTransaction,
+        [long]$MaxDecompressedSize = 10737418240,
+        [int]$SkipRows = 0,
+        [ValidateSet('Strict', 'Lenient')]
+        [string]$QuoteMode = 'Strict',
+        [ValidateSet('ThrowException', 'Rename', 'UseFirstOccurrence', 'UseLastOccurrence')]
+        [string]$DuplicateHeaderBehavior = 'ThrowException',
+        [ValidateSet('ThrowException', 'PadWithNulls', 'TruncateExtra', 'PadOrTruncate')]
+        [string]$MismatchedFieldAction = 'ThrowException',
+        [switch]$DistinguishEmptyFromNull,
+        [switch]$NormalizeQuotes,
+        [switch]$CollectParseErrors,
+        [int]$MaxParseErrors = 1000,
+        [hashtable]$StaticColumns,
+        [string[]]$DateTimeFormats,
+        [string]$Culture,
+        [int]$SampleRows,
+        [switch]$DetectColumnTypes,
+        [switch]$Parallel,
+        [int]$ThrottleLimit = 0,
+        [int]$ParallelBatchSize = 100,
         [switch]$EnableException
     )
     begin {
@@ -304,12 +593,14 @@ function Import-DbaCsv {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
         }
 
-        # Handle multi-character delimiters
-        if ($Delimiter.Length -gt 1) {
-            Write-Message -Level Warning -Message "Multi-character delimiter '$Delimiter' specified. Due to LumenWorks library limitations, only the first character '$($Delimiter[0])' will be used as the delimiter."
-            $delimiterChar = $Delimiter[0]
-        } else {
-            $delimiterChar = $Delimiter[0]
+        # Type detection implies AutoCreateTable behavior
+        $useTypeDetection = $PSBoundParameters.SampleRows -or $DetectColumnTypes
+        if ($useTypeDetection -and -not $AutoCreateTable) {
+            Write-Message -Level Verbose -Message "Type detection enabled - AutoCreateTable behavior will be used for table creation."
+        }
+
+        if ($PSBoundParameters.SampleRows -and $DetectColumnTypes) {
+            Write-Message -Level Warning -Message "Both SampleRows and DetectColumnTypes specified. DetectColumnTypes (full scan) takes precedence for zero-risk type detection."
         }
 
         function New-SqlTable {
@@ -331,30 +622,35 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [string]$Path,
                 [Parameter(Mandatory)]
-                [char]$DelimiterChar,
+                [string]$Delimiter,
                 [Parameter(Mandatory)]
                 [bool]$FirstRowHeader,
                 [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
-                [Microsoft.Data.SqlClient.SqlTransaction]$transaction,
-                [bool]$IsCompressed
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $stream = [System.IO.File]::OpenRead($Path);
-            if ($IsCompressed) {
-                $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
+            $options = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
+            $options.HasHeaderRow = $FirstRowHeader
+            $options.Delimiter = $Delimiter
+            $options.Quote = $Quote
+            $options.Escape = $Escape
+            $options.Comment = $Comment
+            $options.TrimmingOptions = [Dataplat.Dbatools.Csv.ValueTrimmingOptions]::$TrimmingOption
+            $options.BufferSize = $BufferSize
+            $options.Encoding = [System.Text.Encoding]::$Encoding
+            if ($NullValue) { $options.NullValue = $NullValue }
+            $options.MaxDecompressedSize = $MaxDecompressedSize
+            $options.SkipRows = $SkipRows
+            $options.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+            # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+            if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                $options.AllowMultilineFields = $true
+            } else {
+                $options.AllowMultilineFields = $SupportsMultiline.IsPresent
             }
+
             try {
-                $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                    (New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)),
-                    $FirstRowHeader,
-                    $DelimiterChar,
-                    $Quote,
-                    $Escape,
-                    $Comment,
-                    [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                    $BufferSize,
-                    $NullValue
-                )
+                $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
                 $columns = $reader.GetFieldHeaders()
             } finally {
                 $reader.Close()
@@ -382,8 +678,206 @@ function Import-DbaCsv {
             Write-Message -Level Verbose -Message "Consider creating the table first using best practices if the data will be used in production."
         }
 
+        function New-SqlTableWithInferredSchema {
+            <#
+                .SYNOPSIS
+                    Creates new Table using inferred column types from CSV analysis.
 
+                .DESCRIPTION
+                    Uses CsvSchemaInference to analyze CSV data and create a table with optimal
+                    SQL Server column types instead of nvarchar(MAX) for everything.
 
+                .EXAMPLE
+                    New-SqlTableWithInferredSchema -Path $Path -InferredColumns $columns -SqlConn $sqlconn -Transaction $transaction
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Parameter(Mandatory)]
+                [string]$Path,
+                [Parameter(Mandatory)]
+                [object[]]$InferredColumns,
+                [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
+            )
+
+            # Convert PowerShell array back to List<InferredColumn> for C# interop
+            # PowerShell unwraps List<T> to Object[] when passing through functions
+            $columnList = New-Object 'System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.InferredColumn]'
+            foreach ($col in $InferredColumns) {
+                $columnList.Add($col)
+            }
+
+            $sql = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::GenerateCreateTableStatement($columnList, $table, $schema)
+
+            Write-Message -Level Debug -Message $sql
+
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+
+            try {
+                $null = $sqlcmd.ExecuteNonQuery()
+            } catch {
+                $errormessage = $_.Exception.Message.ToString()
+                Stop-Function -Continue -Message "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
+            }
+
+            $typeList = ($InferredColumns | ForEach-Object { "[$($_.ColumnName)] $($_.SqlDataType) $(if ($_.IsNullable) { 'NULL' } else { 'NOT NULL' })" }) -join "`n  "
+            Write-Message -Level Verbose -Message "Successfully created table $schema.$table with inferred column types:`n  $typeList"
+        }
+
+        function Get-InferredSchema {
+            <#
+                .SYNOPSIS
+                    Infers SQL Server column types from CSV file.
+
+                .DESCRIPTION
+                    Uses CsvSchemaInference to analyze CSV data and return optimal column definitions.
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Parameter(Mandatory)]
+                [string]$Path,
+                [object]$CsvOptions,
+                [int]$SampleRows,
+                [switch]$FullScan
+            )
+
+            if ($FullScan) {
+                # Full scan with progress callback
+                [Action[double]]$progressCallback = {
+                    param($progress)
+                    $percent = [int]($progress * 100)
+                    Write-Progress -Id 2 -Activity "Analyzing column types" -Status "$percent% complete" -PercentComplete $percent
+                }
+
+                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
+
+                Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+            } else {
+                # Sample-based inference
+                Write-Message -Level Verbose -Message "Sampling first $SampleRows rows for type inference..."
+                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchemaFromSample($Path, $CsvOptions, $SampleRows)
+            }
+
+            return $inferredColumns
+        }
+
+        function Optimize-ColumnSize {
+            <#
+                .SYNOPSIS
+                    Optimizes nvarchar(MAX) columns to appropriate sizes after import.
+
+                .DESCRIPTION
+                    Queries MAX(LEN()) for each column and ALTERs to appropriate varchar/nvarchar sizes.
+                    This is called automatically when AutoCreateTable is used without type detection.
+
+                .NOTES
+                    Requires SQL Server 2005 or higher. This is not a limitation since nvarchar(MAX)
+                    was introduced in SQL Server 2005 - the feature this optimizes cannot exist on SQL 2000.
+            #>
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+            param (
+                [Microsoft.Data.SqlClient.SqlConnection]$SqlConn,
+                [string]$Schema,
+                [string]$Table
+            )
+
+            Write-Message -Level Verbose -Message "Optimizing column sizes for $Schema.$Table..."
+
+            # Get column names and their current types from the table
+            $getColumnsSql = @"
+SELECT c.name AS ColumnName, t.name AS TypeName
+FROM sys.columns c
+INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID(@tableName)
+  AND t.name IN ('nvarchar', 'varchar')
+  AND c.max_length = -1
+"@
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($getColumnsSql, $SqlConn)
+            $null = $sqlcmd.Parameters.AddWithValue('tableName', "[$Schema].[$Table]")
+
+            $columns = @{}
+            $reader = $sqlcmd.ExecuteReader()
+            while ($reader.Read()) {
+                $columns[$reader["ColumnName"]] = $reader["TypeName"]
+            }
+            $reader.Close()
+
+            if ($columns.Count -eq 0) {
+                Write-Message -Level Verbose -Message "No nvarchar(MAX)/varchar(MAX) columns to optimize."
+                return
+            }
+
+            # Build MAX(LEN()) query for all columns
+            $columnNames = @($columns.Keys)
+            $maxLenSelects = $columnNames | ForEach-Object { "MAX(LEN([$_])) AS [$_]" }
+            $maxLenSql = "SELECT $($maxLenSelects -join ', ') FROM [$Schema].[$Table]"
+
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($maxLenSql, $SqlConn)
+            $reader = $sqlcmd.ExecuteReader()
+
+            $maxLengths = @{}
+            if ($reader.Read()) {
+                foreach ($col in $columnNames) {
+                    $val = $reader[$col]
+                    if ($val -is [DBNull] -or $null -eq $val) {
+                        $maxLengths[$col] = 1
+                    } else {
+                        $maxLengths[$col] = [int]$val
+                    }
+                }
+            }
+            $reader.Close()
+
+            # ALTER each column to appropriate size, preserving original type
+            foreach ($col in $columnNames) {
+                $maxLen = $maxLengths[$col]
+                if ($maxLen -eq 0) { $maxLen = 1 }
+
+                # Preserve the original column type (nvarchar stays nvarchar, varchar stays varchar)
+                # This is safer than trying to detect Unicode - no risk of data loss
+                $baseType = $columns[$col]
+                $maxAllowed = if ($baseType -eq "nvarchar") { 4000 } else { 8000 }
+
+                if ($maxLen -gt $maxAllowed) {
+                    # Keep as MAX if truly needed
+                    Write-Message -Level Verbose -Message "Column [$col] requires $baseType(MAX) - max length is $maxLen"
+                    continue
+                }
+
+                # Add padding to the length to allow for future data that may be slightly longer
+                # This prevents issues when re-importing to the same table with -Truncate
+                # Round up to common sizes: 16, 32, 64, 128, 256, 512, 1024, 2048, 4000/8000
+                $paddedLen = switch ($true) {
+                    ($maxLen -le 16) { 16; break }
+                    ($maxLen -le 32) { 32; break }
+                    ($maxLen -le 64) { 64; break }
+                    ($maxLen -le 128) { 128; break }
+                    ($maxLen -le 256) { 256; break }
+                    ($maxLen -le 512) { 512; break }
+                    ($maxLen -le 1024) { 1024; break }
+                    ($maxLen -le 2048) { 2048; break }
+                    default { $maxAllowed }
+                }
+                # Ensure we don't exceed the max allowed
+                if ($paddedLen -gt $maxAllowed) { $paddedLen = $maxAllowed }
+
+                $newType = "${baseType}($paddedLen)"
+                # SQL Server 2008 R2 and earlier require NULL/NOT NULL in ALTER COLUMN
+                # Original columns were nvarchar(MAX) NULL, so we preserve NULL
+                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType NULL"
+
+                Write-Message -Level Verbose -Message "Optimizing [$col]: nvarchar(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
+
+                try {
+                    $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($alterSql, $SqlConn)
+                    $null = $sqlcmd.ExecuteNonQuery()
+                } catch {
+                    Write-Message -Level Warning -Message "Failed to optimize column [$col]: $($_.Exception.Message)"
+                }
+            }
+
+            Write-Message -Level Verbose -Message "Column size optimization complete."
+        }
 
         function ConvertTo-DotnetType {
             param (
@@ -472,14 +966,20 @@ function Import-DbaCsv {
             $isCompressed = $ext -eq '.gz'
 
             if (-not $isCompressed) {
-                # Does the second line contain the specified delimiter?
+                # Does the data section contain the specified delimiter?
+                # Account for SkipRows when checking
                 try {
-                    $firstlines = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
+                    $linesToRead = $SkipRows + 2
+                    $firstlines = Get-Content -Path $file -TotalCount $linesToRead -ErrorAction Stop
+                    # Get only the lines after SkipRows for delimiter check
+                    if ($SkipRows -gt 0 -and $firstlines.Count -gt $SkipRows) {
+                        $firstlines = $firstlines[$SkipRows..($firstlines.Count - 1)]
+                    }
                 } catch {
                     Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
                 }
                 if (-not $SingleColumn) {
-                    if ($firstlines -notmatch $Delimiter) {
+                    if (-not ($firstlines -match [regex]::Escape($Delimiter))) {
                         Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
                         return
                     }
@@ -525,7 +1025,18 @@ function Import-DbaCsv {
             foreach ($instance in $SqlInstance) {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
+                # Detect if user passed an already-open connection that we should preserve
+                $startedWithAnOpenConnection = $false
                 try {
+                    # Check if user passed a Server SMO object with an open connection
+                    # Following the pattern from Invoke-DbaQuery.ps1
+                    if ($instance.InputObject.GetType().Name -eq "Server" -and
+                        (-not $SqlCredential) -and
+                        ($instance.InputObject.ConnectionContext.DatabaseName -eq $Database -or -not $Database)) {
+                        $startedWithAnOpenConnection = $true
+                        Write-Message -Level Debug -Message "User provided an open connection - will preserve it after import"
+                    }
+
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     if ($sqlconn.State -ne 'Open') {
@@ -543,6 +1054,9 @@ function Import-DbaCsv {
                     }
                 }
 
+                # Determine if we should auto-create (type detection also implies auto-create)
+                $shouldAutoCreate = $AutoCreateTable -or $useTypeDetection
+
                 # Ensure Schema exists
                 $sql = "SELECT COUNT(*) FROM sys.schemas WHERE name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
@@ -550,7 +1064,7 @@ function Import-DbaCsv {
                 # If Schema doesn't exist create it
                 # Defaulting to dbo.
                 if (($sqlcmd.ExecuteScalar()) -eq 0) {
-                    if (-not $AutoCreateTable) {
+                    if (-not $shouldAutoCreate) {
                         Stop-Function -Continue -Message "Schema $Schema does not exist and AutoCreateTable was not specified"
                     }
                     $sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
@@ -580,24 +1094,88 @@ function Import-DbaCsv {
                 # we opt-in only if the table already exists but not when we create the default table (which is basic, and it's all nvarchar(max)s columns)
                 $shouldMapCorrectTypes = $false
 
+                # Store inferred columns for later use with CsvDataReader type mapping
+                $inferredColumns = $null
+
+                # Track if we created a "fat" table (nvarchar(MAX) for all columns) that needs post-import optimization
+                $createdFatTable = $false
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
                 if (($sqlcmd.ExecuteScalar()) -eq 0 -and ($sqlcmd2.ExecuteScalar()) -eq 0) {
-                    if (-not $AutoCreateTable) {
+                    if (-not $shouldAutoCreate) {
                         Stop-Function -Continue -Message "Table or view $table does not exist and AutoCreateTable was not specified"
                     }
                     Write-Message -Level Verbose -Message "Table does not exist"
-                    if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
-                        try {
-                            New-SqlTable -Path $file -DelimiterChar $delimiterChar -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction -IsCompressed $isCompressed
-                        } catch {
-                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+
+                    if ($useTypeDetection) {
+                        # Build CsvReaderOptions for schema inference
+                        $inferOptions = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
+                        $inferOptions.HasHeaderRow = $FirstRowHeader
+                        $inferOptions.Delimiter = $Delimiter
+                        $inferOptions.Quote = $Quote
+                        $inferOptions.Escape = $Escape
+                        $inferOptions.Comment = $Comment
+                        $inferOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $inferOptions.AllowMultilineFields = $true
+                        } else {
+                            $inferOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
+                        if ($PSBoundParameters.DateTimeFormats) {
+                            $inferOptions.DateTimeFormats = $DateTimeFormats
+                        }
+                        if ($PSBoundParameters.Culture) {
+                            $inferOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
+                        }
+
+                        # Infer schema (this happens before the import timer starts)
+                        $splatInfer = @{
+                            Path       = $file
+                            CsvOptions = $inferOptions
+                        }
+
+                        if ($DetectColumnTypes) {
+                            # Full scan - guarantees zero risk
+                            $splatInfer.FullScan = $true
+                            Write-Message -Level Verbose -Message "Performing full file scan for type detection (zero risk)..."
+                        } else {
+                            # Sample-based
+                            $splatInfer.SampleRows = $SampleRows
+                            Write-Message -Level Verbose -Message "Sampling $SampleRows rows for type detection..."
+                        }
+
+                        $inferredColumns = Get-InferredSchema @splatInfer
+
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating table $table with inferred column types")) {
+                            try {
+                                New-SqlTableWithInferredSchema -Path $file -InferredColumns $inferredColumns -SqlConn $sqlconn -Transaction $transaction
+                                # With inferred types, we want to use type conversion during import
+                                $shouldMapCorrectTypes = $true
+                            } catch {
+                                Stop-Function -Continue -Message "Failure creating table with inferred types" -ErrorRecord $_
+                            }
+                        }
+                    } else {
+                        # Original behavior - nvarchar(MAX) for all columns, then optimize after import
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
+                            try {
+                                New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                                $createdFatTable = $true
+                            } catch {
+                                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                            }
                         }
                     }
                 } else {
                     $shouldMapCorrectTypes = $true
                     Write-Message -Level Verbose -Message "Table exists"
+                }
+
+                # Reset the elapsed timer if we did type detection, so output reflects import time only
+                if ($useTypeDetection -and $inferredColumns) {
+                    $elapsed.Restart()
                 }
 
                 # Truncate if specified. Remember, this will occur within a transaction, so if the script fails, the
@@ -654,8 +1232,14 @@ function Import-DbaCsv {
                                 try {
                                     $ColumnMap = @{ }
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
+                                    $isFirst = $true
                                     $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
                                         $trimmed = $PSItem.Trim('"')
+                                        # Remove UTF-8 BOM from first column if present (U+FEFF)
+                                        if ($isFirst) {
+                                            $trimmed = $trimmed.TrimStart([char]0xFEFF)
+                                            $isFirst = $false
+                                        }
                                         Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
                                         $ColumnMap.Add($trimmed, $trimmed)
                                     }
@@ -682,6 +1266,12 @@ function Import-DbaCsv {
                             }
                         }
 
+                        # Add static column mappings for metadata tagging (issue #6676)
+                        if ($PSBoundParameters.StaticColumns) {
+                            foreach ($key in $StaticColumns.Keys) {
+                                $null = $bulkcopy.ColumnMappings.Add($key, $key)
+                            }
+                        }
 
                     } catch {
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
@@ -690,36 +1280,78 @@ function Import-DbaCsv {
                     # Write to server :D
                     try {
 
-                        [Action[double]] $progressCallback = {
-                            param($progress)
+                        $stream = [System.IO.File]::OpenRead($File)
 
-                            if (-not $NoProgress) {
-                                $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                $percent = [int]($progress * 100)
-                                Write-ProgressHelper -StepNumber $percent -TotalSteps 100 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows {1}% in {2} seconds", $script:totalRowsCopied, $percent, $timetaken))
+                        # ProgressStream callback doesn't work with parallel processing
+                        # (background threads can't access PowerShell runspace)
+                        if (-not $Parallel) {
+                            [Action[double]] $progressCallback = {
+                                param($progress)
+
+                                if (-not $NoProgress) {
+                                    $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
+                                    $percent = [int]($progress * 100)
+                                    Write-ProgressHelper -StepNumber $percent -TotalSteps 100 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows {1}% in {2} seconds", $script:totalRowsCopied, $percent, $timetaken))
+                                }
                             }
+                            $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
                         }
 
-                        $stream = [System.IO.File]::OpenRead($File);
-                        $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
-
-                        if ($isCompressed) {
-                            $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
+                        # Build CsvReaderOptions with all configuration
+                        $csvOptions = New-Object Dataplat.Dbatools.Csv.Reader.CsvReaderOptions
+                        $csvOptions.HasHeaderRow = $FirstRowHeader
+                        $csvOptions.Delimiter = $Delimiter
+                        $csvOptions.Quote = $Quote
+                        $csvOptions.Escape = $Escape
+                        $csvOptions.Comment = $Comment
+                        $csvOptions.TrimmingOptions = [Dataplat.Dbatools.Csv.ValueTrimmingOptions]::$TrimmingOption
+                        $csvOptions.BufferSize = $BufferSize
+                        $csvOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        if ($NullValue) { $csvOptions.NullValue = $NullValue }
+                        $csvOptions.MaxDecompressedSize = $MaxDecompressedSize
+                        $csvOptions.SkipRows = $SkipRows
+                        $csvOptions.QuoteMode = [Dataplat.Dbatools.Csv.Reader.QuoteMode]::$QuoteMode
+                        $csvOptions.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+                        $csvOptions.MismatchedFieldAction = [Dataplat.Dbatools.Csv.Reader.MismatchedFieldAction]::$MismatchedFieldAction
+                        $csvOptions.DistinguishEmptyFromNull = $DistinguishEmptyFromNull.IsPresent
+                        $csvOptions.NormalizeQuotes = $NormalizeQuotes.IsPresent
+                        $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
+                        $csvOptions.MaxParseErrors = $MaxParseErrors
+                        $csvOptions.SkipEmptyLines = $SkipEmptyLine.IsPresent
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $csvOptions.AllowMultilineFields = $true
+                        } else {
+                            $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
+                        $csvOptions.UseColumnDefaults = $UseColumnDefault.IsPresent
+                        if ($PSBoundParameters.MaxQuotedFieldLength) {
+                            $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
+                        }
+                        $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
+                        if ($PSBoundParameters.DateTimeFormats) {
+                            $csvOptions.DateTimeFormats = $DateTimeFormats
+                        }
+                        if ($PSBoundParameters.Culture) {
+                            $csvOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
+                        }
+                        if ($PSBoundParameters.StaticColumns) {
+                            $staticColumnsList = New-Object "System.Collections.Generic.List[Dataplat.Dbatools.Csv.Reader.StaticColumn]"
+                            foreach ($key in $StaticColumns.Keys) {
+                                $staticCol = New-Object Dataplat.Dbatools.Csv.Reader.StaticColumn($key, $StaticColumns[$key])
+                                $staticColumnsList.Add($staticCol)
+                            }
+                            $csvOptions.StaticColumns = $staticColumnsList
+                        }
+                        $csvOptions.EnableParallelProcessing = $Parallel.IsPresent
+                        if ($PSBoundParameters.ThrottleLimit) {
+                            $csvOptions.MaxDegreeOfParallelism = $ThrottleLimit
+                        }
+                        if ($PSBoundParameters.ParallelBatchSize) {
+                            $csvOptions.ParallelBatchSize = $ParallelBatchSize
                         }
 
-                        $textReader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)
-
-                        $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                            $textReader,
-                            $FirstRowHeader,
-                            $delimiterChar,
-                            $Quote,
-                            $Escape,
-                            $Comment,
-                            [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                            $BufferSize,
-                            $NullValue
-                        )
+                        $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($stream, $csvOptions)
 
                         if ($shouldMapCorrectTypes) {
 
@@ -743,82 +1375,35 @@ function Import-DbaCsv {
                                             $colTypeFromSql = $sqlCol.DataType
                                             # and now we translate to C# type
                                             $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
-                                            # and now we assign the type to the LumenCsv column
-                                            foreach ($csvCol in $reader.Columns) {
-                                                if ($csvCol.Name -eq $colNameFromCsv) {
-                                                    $csvCol.Type = $colTypeCSharp
-                                                    Write-Message -Level Verbose -Message "Mapped $colNameFromCsv --> $colNameFromSql ($colTypeCSharp --> $colTypeFromSql)"
-                                                    break
-                                                }
-                                            }
+                                            # and now we assign the type to the CsvDataReader column
+                                            $reader.SetColumnType($colNameFromCsv, $colTypeCSharp)
+                                            Write-Message -Level Verbose -Message "Mapped $colNameFromCsv --> $colNameFromSql ($colTypeCSharp --> $colTypeFromSql)"
                                             break
                                         }
                                     }
                                 }
                             } else {
-                                # we need to resort to ordinals
-                                # start by getting the table definition
+                                # For no-header scenarios, we need to set up column types based on table definition
+                                # We cannot call Read() here as that would consume the first data row
                                 $tableDef = Get-TableDefinitionFromInfoSchema -table $table -schema $schema -sqlconn $sqlconn
                                 if ($tableDef.Length -eq 0) {
                                     Stop-Function -Message "Could not fetch table definition for table $table in schema $schema"
                                 }
                                 if ($bulkcopy.ColumnMappings.Count -eq 0) {
-                                    # if we land here, we aren't (probably ? ) forcing any mappings, but we kinda need them for later
+                                    # if we land here, we aren't forcing any mappings, but we need them for later
                                     foreach ($dataRow in $tableDef) {
                                         $null = $bulkcopy.ColumnMappings.Add($dataRow.Index, $dataRow.Index)
                                     }
                                 }
-                                # ok we got the mappings sorted
-
-                                # we must build Lumen's columns by hand here, we can't use GetFieldHeaders()
-                                $reader.Columns = New-Object System.Collections.Generic.List[LumenWorks.Framework.IO.Csv.Column]
-
-                                foreach ($bcMapping in $bulkcopy.ColumnMappings) {
-                                    # loop over mappings, we need to be careful and assign the correct type, and we're in the "natural" order of the CSV fields
-                                    $colNameFromSql = $bcMapping.DestinationOrdinal
-                                    $colNameFromCsv = $bcMapping.SourceOrdinal
-                                    $newcol = New-Object LumenWorks.Framework.IO.Csv.Column
-                                    $newcol.Name = "c$(Get-Random)" # need to assign a name, it's required for Lumen even if we're mapping just by ordinal
-                                    foreach ($sqlCol in $tableDef) {
-                                        if ($bcMapping.DestinationOrdinal -eq -1) {
-                                            # we can map by name
-                                            $colNameFromSql = $bcMapping.DestinationColumn
-                                            $sqlColComparison = $sqlCol.Name
-                                        } else {
-                                            # we fallback to mapping by index
-                                            $colNameFromSql = $bcMapping.DestinationOrdinal
-                                            $sqlColComparison = $sqlCol.Index
-                                        }
-                                        if ($sqlColComparison -eq $colNameFromSql) {
-                                            $colTypeFromSql = $sqlCol.DataType
-                                            # and now we translate to C# type
-                                            $colTypeCSharp = ConvertTo-DotnetType -DataType $colTypeFromSql
-                                            # assign it to the column
-                                            $newcol.Type = $colTypeCSharp
-                                            # and adding to the column collection
-                                            $null = $reader.Columns.Add($newcol)
-                                            Write-Message -Level Verbose -Message "Mapped $colNameFromSql --> $colNameFromCsv ($colTypeCSharp --> $colTypeFromSql)"
-                                            break
-                                        }
-                                    }
+                                # For no-header mode, column names are auto-generated as "Column0", "Column1", etc.
+                                # Set up types by ordinal using the table definition
+                                foreach ($sqlCol in $tableDef) {
+                                    $colTypeCSharp = ConvertTo-DotnetType -DataType $sqlCol.DataType
+                                    $colName = "Column$($sqlCol.Index)"
+                                    $reader.SetColumnType($colName, $colTypeCSharp)
+                                    Write-Message -Level Verbose -Message "Mapped $colName --> $($sqlCol.Name) ($colTypeCSharp)"
                                 }
                             }
-                        }
-
-                        if ($PSBoundParameters.MaxQuotedFieldLength) {
-                            $reader.MaxQuotedFieldLength = $MaxQuotedFieldLength
-                        }
-                        if ($PSBoundParameters.SkipEmptyLine) {
-                            $reader.SkipEmptyLines = $SkipEmptyLine
-                        }
-                        if ($PSBoundParameters.SupportsMultiline) {
-                            $reader.SupportsMultiline = $SupportsMultiline
-                        }
-                        if ($PSBoundParameters.UseColumnDefault) {
-                            $reader.UseColumnDefaults = $UseColumnDefault
-                        }
-                        if ($PSBoundParameters.ParseErrorAction) {
-                            $reader.DefaultParseErrorAction = $ParseErrorAction
                         }
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
@@ -856,18 +1441,37 @@ function Import-DbaCsv {
                                     $null = $transaction.Commit()
                                 } catch {
                                 }
+
+                                # Optimize column sizes after commit if we created a fat table
+                                if ($createdFatTable -and -not $NoColumnOptimize) {
+                                    try {
+                                        Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
+                                    } catch {
+                                        Write-Message -Level Warning -Message "Column size optimization failed: $($_.Exception.Message)"
+                                    }
+                                }
                             } else {
                                 try {
                                     $null = $transaction.Rollback()
                                 } catch {
                                 }
                             }
+                        } elseif ($completed -and $createdFatTable -and -not $NoColumnOptimize) {
+                            # NoTransaction mode - still optimize if we created a fat table
+                            try {
+                                Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
+                            } catch {
+                                Write-Message -Level Warning -Message "Column size optimization failed: $($_.Exception.Message)"
+                            }
                         }
 
-                        try {
-                            $sqlconn.Close()
-                            $sqlconn.Dispose()
-                        } catch {
+                        # Only close connection if we created it (not user-provided)
+                        if (-not $startedWithAnOpenConnection) {
+                            try {
+                                $sqlconn.Close()
+                                $sqlconn.Dispose()
+                            } catch {
+                            }
                         }
 
                         try {
@@ -916,10 +1520,16 @@ function Import-DbaCsv {
     }
     end {
         # Close everything just in case & ignore errors
+        # Only close SQL connection if we created it (not user-provided)
         try {
-            $null = $sqlconn.Close(); $null = $sqlconn.Dispose();
-            $null = $bulkCopy.Close(); $bulkcopy.Dispose();
-            $null = $reader.Close(); $null = $reader.Dispose()
+            if (-not $startedWithAnOpenConnection) {
+                $null = $sqlconn.Close()
+                $null = $sqlconn.Dispose()
+            }
+            $null = $bulkCopy.Close()
+            $bulkcopy.Dispose()
+            $null = $reader.Close()
+            $null = $reader.Dispose()
         } catch {
             #here to avoid an empty catch
             $null = 1

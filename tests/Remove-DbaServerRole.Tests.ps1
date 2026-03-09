@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $testRoleExecutor = "serverExecuter"
         $null = New-DbaServerRole -SqlInstance $testInstance -ServerRole $testRoleExecutor
 

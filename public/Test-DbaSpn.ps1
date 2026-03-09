@@ -38,6 +38,25 @@ function Test-DbaSpn {
     .LINK
         https://dbatools.io/Test-DbaSpn
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Service Principal Name per SQL Server instance discovered on the target computer(s). For instances with multiple ports or dynamic port configurations, multiple SPN entries may be returned per instance.
+
+        Properties:
+        - ComputerName (string): The name of the computer (or cluster virtual name for clustered instances) where the SQL Server instance is running
+        - InstanceName (string): The name of the SQL Server instance (MSSQLSERVER for default instance, or the named instance name)
+        - SqlProduct (string): The SQL Server product version and edition information (e.g., "15.0.2154.1 Enterprise Edition")
+        - InstanceServiceAccount (string): The Windows service account under which the SQL Server instance runs (includes domain and username, e.g., "DOMAIN\sqlservice" or "NT SERVICE\MSSQLSERVER")
+        - RequiredSPN (string): The Service Principal Name that should be registered in Active Directory for this instance and port (format: MSSQLSvc/hostname or MSSQLSvc/hostname:port)
+        - IsSet (boolean): Boolean indicating whether the required SPN is currently registered in Active Directory under the service account
+        - Cluster (boolean): Boolean indicating whether this is a clustered SQL Server instance
+        - TcpEnabled (boolean): Boolean indicating whether TCP/IP protocol is enabled for this instance (instances without TCP/IP don't require SPNs)
+        - Port (string or null): The port number on which this instance is listening (null if using default 1433 or if TCP is disabled)
+        - DynamicPort (boolean): Boolean indicating whether this instance is using dynamic port assignment (port changes at each startup)
+        - Warning (string): Warning message about the SPN configuration (e.g., "Dynamic port is enabled" or "None")
+        - Error (string): Error message if the SPN configuration is invalid (e.g., "SPN missing" or "None")
+
     .EXAMPLE
         Test-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 

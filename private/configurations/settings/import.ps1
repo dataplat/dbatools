@@ -36,7 +36,7 @@ Set-DbatoolsConfig -Name 'Import.SerialImport' -Value $false -Initialize -Valida
     } catch {
         Write-Message -Level Warning -Message "Failed to apply configuration 'Import.SerialImport'" -ErrorRecord $_ -Target 'Import.SerialImport'
     }
-} -Description "Enabling this will cause the module to perform import in a serial manner, not parallelizing anything. Security policy may require it, also useful for debugging. This configuration setting persists across all PowerShell consoles for this user. This will impose a significant delay on import, but reduces the CPU impact during import. Setting this for an unattended script may be useful to avoid resource alerts. Can be set on script level by placing the following code in the first line: '`$dbatools_serialimport = `$true'. This configuration setting persists across all PowerShell consoles for this user."
+} -Description "Enabling this will cause the module to perform import in a serial manner, not parallelizing anything. Security policy may require it, also useful for debugging. This configuration setting persists across all PowerShell consoles for this user. This will impose a significant delay on import, but reduces the CPU impact during import. Setting this for an unattended script may be useful to avoid resource alerts. Can be set on script level by placing the following code in the first line: '`$dbatools_dotsourcemodule = `$true'. This configuration setting persists across all PowerShell consoles for this user."
 
 # Check for SqlPs
 Set-DbatoolsConfig -Name 'Import.SqlpsCheck' -Value $true -Initialize -Validation bool -Description "Does not warn about sqlps being imported at the time of the dbatools import"

@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Returns a boolean with no exceptions" {
         BeforeAll {
-            $failResult = Test-PSRemoting -ComputerName "funny"
+            $failResult = Test-PSRemoting -ComputerName "funny" 3>$null
             $successResult = Test-PSRemoting -ComputerName localhost
         }
 
@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Handles an instance, using just the computername" {
         It "Returns true when succeeding" {
-            $instanceResult = Test-PSRemoting -ComputerName $TestConfig.instance1
+            $instanceResult = Test-PSRemoting -ComputerName $TestConfig.InstanceSingle
             $instanceResult | Should -Be $true
         }
     }

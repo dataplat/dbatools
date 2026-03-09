@@ -27,6 +27,18 @@ function Invoke-DbatoolsRenameHelper {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per matched pattern found and replaced in each file. If no deprecated command or parameter names are found, nothing is returned.
+
+        Properties:
+        - Path: The full file path that was updated
+        - Pattern: The deprecated command or parameter name that was found (e.g., 'Get-SqlMaxMemory', 'ExcludeSystem')
+        - ReplacedWith: The current equivalent name that replaced the deprecated name (e.g., 'Get-DbaMaxMemory', 'ExcludeSystem')
+
+        Objects are returned for both deprecated command name replacements and parameter name replacements. This allows you to see exactly which deprecated names were found and what they were changed to in each file.
+
     .NOTES
         Tags: Module
         Author: Chrissy LeMaire (@cl), netnerds.net

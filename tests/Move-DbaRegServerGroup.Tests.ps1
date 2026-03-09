@@ -33,14 +33,14 @@ Describe $CommandName -Tag IntegrationTests {
         $regSrvName = "dbatoolsci-server12"
         $regSrvDesc = "dbatoolsci-server123"
 
-        $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group
-        $newServer = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
+        $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $group
+        $newServer = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $srvName -Name $regSrvName -Description $regSrvDesc -Group $newGroup.Name
 
         $group2 = "dbatoolsci-group1a"
-        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group2
+        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $group2
 
         $group3 = "dbatoolsci-group1b"
-        $newGroup3 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $group3
+        $newGroup3 = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $group3
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -50,8 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName | Remove-DbaRegServer -ErrorAction SilentlyContinue
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+        Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $regSrvName | Remove-DbaRegServer -ErrorAction SilentlyContinue
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $group, $group2, $group3 | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "moves a manually specified group" {
-            $results = Move-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group "$group\$group3" -NewGroup Default
+            $results = Move-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group "$group\$group3" -NewGroup Default
             $results.Parent.Name | Should -Be "DatabaseEngineServerGroup"
         }
     }

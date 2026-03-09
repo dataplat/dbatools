@@ -41,6 +41,29 @@ function Get-DbaDbFileGroup {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.FileGroup
+
+        Returns one FileGroup object per filegroup in the selected databases. For example, querying a database with PRIMARY, SECONDARY, and FILESTREAM filegroups returns three objects.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (domain\instance or instance)
+        - Parent: The parent Database object name
+        - FileGroupType: Type of filegroup (RowsFileGroup, FileStreamFileGroup, or MemoryOptimizedFileGroup)
+        - Name: Name of the filegroup (e.g., PRIMARY, SECONDARY, FILESTREAM)
+        - Size: Total size of the filegroup in kilobytes
+
+        Additional properties available (from SMO FileGroup object):
+        - AbsolutePhysicalName: Absolute physical name of the filegroup
+        - DefaultFileGroup: Boolean indicating if this is the default filegroup
+        - Files: Collection of DataFile objects in the filegroup
+        - IsDefault: Boolean indicating if this is the default filegroup
+        - State: State of the filegroup (Normal, Offline, Defunct)
+
+        All properties from the base SMO FileGroup object are accessible even though only default properties are displayed without using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaDbFileGroup
 

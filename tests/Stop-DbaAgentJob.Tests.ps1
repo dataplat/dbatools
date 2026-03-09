@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         It -Skip "Should stop an agent job and return CurrentRunStatus of Idle" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
             $results.CurrentRunStatus | Should -Be 'Idle'
         }
     }

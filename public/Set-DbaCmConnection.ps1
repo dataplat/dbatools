@@ -110,6 +110,38 @@ function Set-DbaCmConnection {
     .LINK
         https://dbatools.io/Set-DbaCmConnection
 
+    .OUTPUTS
+        Dataplat.Dbatools.Connection.ManagementConnection
+
+        Returns the modified connection object after applying the specified configuration changes. The object represents the remote computer connection settings used by dbatools for CIM, WMI, and PowerShell remoting operations.
+
+        Default display properties:
+        - ComputerName: The name of the SQL Server host computer for which connection settings were configured
+        - IsConnected: Boolean indicating whether a successful connection to the remote computer has been established
+        - CimRM: Current status of CIM (WinRM) connectivity (Unknown, Connected, Failed, Untested)
+        - CimDCOM: Current status of CIM (DCOM) connectivity (Unknown, Connected, Failed, Untested)
+        - Wmi: Current status of WMI connectivity (Unknown, Connected, Failed, Untested)
+        - PowerShellRemoting: Current status of PowerShell remoting connectivity (Unknown, Connected, Failed, Untested)
+
+        Additional properties available (from ManagementConnection object):
+        - Credentials: Currently cached credentials for this connection
+        - UseWindowsCredentials: Boolean indicating whether Windows credentials of the current user are configured
+        - WindowsCredentialsAreBad: Boolean indicating whether Windows credentials have been marked as non-functional
+        - KnownBadCredentials: Collection of credentials known to fail authentication
+        - OverrideExplicitCredential: Boolean indicating whether cached credentials override explicit parameters
+        - OverrideConnectionPolicy: Boolean indicating whether global connection policies are bypassed
+        - DisabledConnectionTypes: Connection protocols disabled for this computer
+        - DisableBadCredentialCache: Boolean indicating whether failed credentials are cached
+        - DisableCimPersistence: Boolean indicating whether CIM sessions are recreated each time
+        - DisableCredentialAutoRegister: Boolean indicating whether successful credentials are auto-cached
+        - EnableCredentialFailover: Boolean indicating whether credential failover is enabled
+        - CimWinRMOptions: WinRM session options for CIM connections
+        - CimDCOMOptions: DCOM session options for CIM connections
+        - LastCimRM: DateTime of last CIM (WinRM) connection attempt
+        - LastCimDCOM: DateTime of last CIM (DCOM) connection attempt
+        - LastWmi: DateTime of last WMI connection attempt
+        - LastPowerShellRemoting: DateTime of last PowerShell remoting connection attempt
+
     .EXAMPLE
         PS C:\> Get-DbaCmConnection sql2014 | Set-DbaCmConnection -ClearBadCredential -UseWindowsCredentials
 

@@ -34,8 +34,66 @@ Write-ImportTime -Text "Started" -Timestamp $script:start
 
 $script:PSModuleRoot = $PSScriptRoot
 
+# Ensure TEMP directory is set
+# This is critical for Add-Type operations in dbatools.library
+# If TEMP doesn't exist, try to set it from GetTempPath or find an alternative
 if (-not $Env:TEMP) {
-    $Env:TEMP = [System.IO.Path]::GetTempPath()
+    # Try to get system temp path first
+    try {
+        $systemTemp = [System.IO.Path]::GetTempPath()
+        if ($systemTemp) {
+            $Env:TEMP = $systemTemp
+            $Env:TMP = $systemTemp
+        }
+    } catch {
+        # GetTempPath failed, try to find an alternative
+        $alternativePaths = @(
+            [System.IO.Path]::Combine($env:USERPROFILE, "AppData", "Local", "Temp"),
+            [System.IO.Path]::Combine($env:LOCALAPPDATA, "Temp"),
+            [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+        )
+
+        $foundWritable = $false
+        foreach ($altPath in $alternativePaths) {
+            if ($altPath -and (Test-Path $altPath -PathType Container -ErrorAction SilentlyContinue)) {
+                try {
+                    $testFile = [System.IO.Path]::Combine($altPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+                    [System.IO.File]::WriteAllText($testFile, "test")
+                    [System.IO.File]::Delete($testFile)
+                    $Env:TEMP = $altPath
+                    $Env:TMP = $altPath
+                    $foundWritable = $true
+                    Write-Verbose "TEMP environment variable was not set. Using: $altPath"
+                    break
+                } catch {
+                    continue
+                }
+            }
+        }
+
+        if (-not $foundWritable) {
+            # Try to create a temp directory in the module path as last resort
+            try {
+                $moduleTempPath = [System.IO.Path]::Combine($script:PSModuleRoot, "temp")
+                if (-not (Test-Path $moduleTempPath)) {
+                    $null = New-Item -Path $moduleTempPath -ItemType Directory -Force -ErrorAction Stop
+                }
+                $testFile = [System.IO.Path]::Combine($moduleTempPath, "dbatools_temp_test_$([System.Guid]::NewGuid().ToString()).tmp")
+                [System.IO.File]::WriteAllText($testFile, "test")
+                [System.IO.File]::Delete($testFile)
+                $Env:TEMP = $moduleTempPath
+                $Env:TMP = $moduleTempPath
+                Write-Verbose "TEMP environment variable was not set. Created and using: $moduleTempPath"
+            } catch {
+                $tempError = "dbatools requires a TEMP environment variable to load assemblies. "
+                $tempError += "The TEMP environment variable is not set, and no alternative writable location could be found. "
+                $tempError += "This commonly occurs in SQL Server Agent jobs running without a user profile. "
+                $tempError += "Please set TEMP/TMP environment variables to a writable location, "
+                $tempError += "or create a writable directory at: $moduleTempPath"
+                throw $tempError
+            }
+        }
+    }
 }
 
 $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
@@ -53,7 +111,7 @@ if (-not $script:libraryroot) {
 
 try {
     # if core add core to the path, otherwise add desktop
-    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib',  'dbatools.dll')
+    $dll = [System.IO.Path]::Combine($script:libraryroot, 'lib', 'dbatools.dll')
     Import-Module $dll
 } catch {
     throw "Couldn't import dbatools library | $PSItem"
@@ -80,7 +138,6 @@ if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -lt [ver
     throw "dbatools requires at least PowerShell 7.4.0 when running on Core. Please update your PowerShell."
 }
 
-
 if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $PSVersionTable.Platform -eq 'Win32NT')) {
     $script:isWindows = $true
 } else {
@@ -101,8 +158,8 @@ Write-ImportTime -Text "Setting some OS variables"
 # if core then run this
 if ($PSVersionTable.PSEdition -eq 'Core') {
     Add-Type -AssemblyName System.Security
+    Write-ImportTime -Text "Loading System.Security"
 }
-#Write-ImportTime -Text "Loading System.Security"
 
 # SQLSERVER:\ path not supported
 if ($ExecutionContext.SessionState.Path.CurrentLocation.Drive.Name -eq 'SqlServer') {
@@ -149,7 +206,6 @@ $dbatoolsSystemSystemNode.SerialImport -or
 $dbatoolsSystemUserNode.SerialImport -or
 $option.SerialImport
 
-
 $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
 $pubDir = $script:PSModuleRoot, 'public' -join [IO.Path]::DirectorySeparatorChar
 
@@ -193,7 +249,9 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
 } else {
     try {
         Import-Command -Path "$script:PSModuleRoot/dbatools.dat" -ErrorAction Stop
+        Write-ImportTime -Text "Loading dbatools.dat"
     } catch {
+        Write-ImportTime -Text "Loading dbatools.dat failed, retrying after waiting"
         # sometimes the file is in use by another process
         # not sure why, bc it's opened like this: using (FileStream fs = File.Open(Path, FileMode.Open, FileAccess.Read))
         function Test-FileInuse {
@@ -215,8 +273,10 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
             Start-Sleep -Seconds 2
             $waitsec++
         } while ((Test-FileInuse -FilePath "$script:PSModuleRoot/dbatools.dat") -and $waitsec -lt 10)
+        Write-ImportTime -Text "Finished waiting"
 
         Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
+        Write-ImportTime -Text "Loading dbatools.dat"
     }
 }
 
@@ -355,6 +415,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Copy-DbaStartupProcedure',
         'Get-DbaDbDetachedFileInfo',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Get-DbaLinkedServerLogin',
         'Test-DbaPath',
         'Export-DbaLogin',
@@ -380,6 +441,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
         'Test-DbaConnectionAuthScheme',
+        'Test-DbaKerberos',
         'Test-DbaInstanceName',
         'Repair-DbaInstanceName',
         'Stop-DbaProcess',
@@ -398,6 +460,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',
@@ -588,6 +651,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaBackupInformation',
         'Invoke-DbaBalanceDataFiles',
         'Select-DbaBackupInformation',
+        'New-DbaDacPackage',
         'Publish-DbaDacPackage',
         'Copy-DbaDbTableData',
         'Copy-DbaDbViewData',
@@ -715,6 +779,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Unregister-DbatoolsConfig',
         'Join-DbaPath',
         'Resolve-DbaPath',
+        'Export-DbaCsv',
         'Import-DbaCsv',
         'Invoke-DbaDbDataMasking',
         'New-DbaDbMaskingConfig',
@@ -997,6 +1062,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Add-DbaComputerCertificate',
         'Backup-DbaComputerCertificate',
         'Test-DbaComputerCertificateExpiration',
+        'Test-DbaNetworkCertificate',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Remove-DbaDbLogShipping',
@@ -1086,6 +1152,8 @@ if ($option.LoadTypes -or
         ))) {
     Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Updating type data"
+    Update-FormatData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Format.ps1xml")
+    Write-ImportTime -Text "Updating format data"
 }
 
 $loadedModuleNames = (Get-Module sqlserver, sqlps -ErrorAction Ignore).Name

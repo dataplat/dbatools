@@ -48,6 +48,50 @@ function Get-DbaPbmPolicy {
     .LINK
         https://dbatools.io/Get-DbaPbmPolicy
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Dmf.Policy
+
+        Returns one Policy object per policy found on the specified SQL Server instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the policy
+        - Name: Name of the policy
+        - Enabled: Boolean indicating if the policy is enabled
+        - Description: Text description of the policy's purpose
+        - PolicyCategory: The category or group the policy belongs to
+        - AutomatedPolicyEvaluationMode: The mode used for automated evaluation (On Demand, On Schedule, On Change, None)
+        - Condition: The condition that the policy enforces
+        - CreateDate: DateTime when the policy was created
+        - CreatedBy: User who created the policy
+        - DateModified: DateTime when the policy was last modified
+        - ModifiedBy: User who last modified the policy
+        - IsSystemObject: Boolean indicating if this is a Microsoft system policy
+        - ObjectSet: The object set targeted by this policy
+        - RootCondition: The root condition evaluated by the policy
+        - ScheduleUid: The schedule identifier if policy uses scheduled evaluation
+
+        Properties excluded from default display (accessible with Select-Object *):
+        - HelpText: Help documentation text for the policy
+        - HelpLink: URL link to additional help documentation
+        - Urn: The Uniform Resource Name
+        - Properties: The SMO object properties collection
+        - Metadata: The object metadata
+        - Parent: Reference to parent PolicyStore object
+        - IdentityKey: The identity key for the object
+        - HasScript: Boolean indicating if policy conditions reference T-SQL or WQL scripts
+        - PolicyEvaluationStarted: Indicates if evaluation has started
+        - ConnectionProcessingStarted: Indicates if connection processing started
+        - TargetProcessed: Indicates if targets have been processed
+        - ConnectionProcessingFinished: Indicates if connection processing is complete
+        - PolicyEvaluationFinished: Indicates if policy evaluation is complete
+        - PropertyMetadataChanged: Indicates if metadata has changed
+        - PropertyChanged: Indicates if properties have changed
+
+        All properties from the base SMO Policy object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Get-DbaPbmPolicy -SqlInstance sql2016
 

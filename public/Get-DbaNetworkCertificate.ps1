@@ -28,6 +28,27 @@ function Get-DbaNetworkCertificate {
     .LINK
         https://dbatools.io/Get-DbaNetworkCertificate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance that has a certificate configured for network encryption. Instances without certificates are filtered out and will not appear in the results.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - VSName: Virtual Server Name if applicable (for clustered instances)
+        - ServiceAccount: The Windows service account running SQL Server
+        - ForceEncryption: Boolean indicating if encryption is forced for all connections
+        - FriendlyName: Human-readable certificate name from the certificate store
+        - DnsNameList: Array of DNS names in the certificate's Subject Alternative Names
+        - Thumbprint: SHA-1 hash thumbprint of the certificate
+        - Generated: DateTime when the certificate becomes valid (NotBefore)
+        - Expires: DateTime when the certificate expires (NotAfter)
+        - IssuedTo: Certificate subject (who it was issued to)
+        - IssuedBy: Certificate issuer name
+        - Certificate: The full X509Certificate2 object with complete certificate information
+
     .EXAMPLE
         PS C:\> Get-DbaNetworkCertificate -SqlInstance sql2016
 

@@ -23,9 +23,7 @@ choco install codecov | Out-Null
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\1.18.2')) {
-    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2 | Out-Null
-}
+Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2
 
 #Get dbatools.library
 Write-Host -Object "appveyor.prep: Install dbatools.library" -ForegroundColor DarkGreen
@@ -49,23 +47,29 @@ if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersi
     Write-Host -Object "appveyor.prep: Version validation successful" -ForegroundColor Green
 }
 
-##Get Pester (to run tests)
+# Get Pester (to run tests)
 Write-Host -Object "appveyor.prep: Install Pester5" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.6.1')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.6.1 | Out-Null
-}
+Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 5.7.1
 
-#Setup DbatoolsConfig Path.DbatoolsExport path
+# Setup DbatoolsConfig Path.DbatoolsExport path
 Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
-    New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
-}
+$null = New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory
 
+Write-Host -Object "appveyor.prep: Creating temp directory" -ForegroundColor DarkGreen
+$null = New-Item -Path C:\Temp -ItemType Directory
+
+Write-Host -Object "appveyor.prep: Configuring WSMan (see #9782)" -ForegroundColor DarkGreen
+$null = Set-WSManQuickConfig -Force
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library
 Import-Module C:\github\dbatools\dbatools.psd1
 Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+Write-Host -Object "appveyor.prep: Setting up SQL Server Browser" -ForegroundColor DarkGreen
+Set-Service -Name SQLBrowser -StartupType Automatic
+Start-Service -Name SQLBrowser
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $dbName = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbName]")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace" {
         BeforeAll {
-            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 | Where-Object Database -eq $dbName)
+            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle | Where-Object Database -eq $dbName)
         }
 
         It "Gets results" {
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace when using -Database" {
         BeforeAll {
-            $databaseResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -Database $dbName)
+            $databaseResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $dbName)
         }
 
         It "Gets results" {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
         It "Gets no results for excluded database" {
-            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbName)
+            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
             $excludeResults.Database | Should -Not -Contain $dbName
         }
     }

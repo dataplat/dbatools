@@ -56,6 +56,30 @@ function Enable-DbaDbEncryption {
     .LINK
         https://dbatools.io/Enable-DbaDbEncryption
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object per database where encryption was enabled successfully.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The name of the database where encryption was enabled (Name property aliased)
+        - EncryptionEnabled: Boolean indicating whether Transparent Data Encryption is now enabled on the database
+
+        Additional properties available (from SMO Database object):
+        - CreateDate: DateTime when the database was created
+        - LastBackupDate: DateTime of the last database backup
+        - Owner: Database owner/principal name
+        - RecoveryModel: Database recovery model (Simple, Full, BulkLogged)
+        - Status: Current database status
+        - Size: Database size in megabytes
+        - DatabaseEncryptionKey: The Database Encryption Key object containing encryption details
+        - EncryptionAlgorithm: The algorithm used for encryption (AES_128, AES_192, AES_256)
+
+        All properties from the base SMO Database object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Enable-DbaDbEncryption -SqlInstance sql2017, sql2016 -Database pubs
 

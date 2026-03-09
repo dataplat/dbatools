@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance $TestConfig.instance1
+            $server = Connect-DbaInstance $TestConfig.InstanceSingle
             $regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             $dbStore = $regStore.DatabaseEngineServerGroup
 
@@ -88,14 +88,14 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -ErrorAction SilentlyContinue
-            Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -ErrorAction SilentlyContinue
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return multiple objects" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $group
             $results.Count | Should -Be 2
             $results[0].ParentServer | Should -Not -BeNullOrEmpty
             $results[0].ComputerName | Should -Not -BeNullOrEmpty
@@ -108,29 +108,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group "$group\$group2"
             $results.Count | Should -Be 1
         }
 
         It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
 
         It "Should filter subgroups" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Group $group -ExcludeGroup "$group\$group2"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Group $group -ExcludeGroup "$group\$group2"
             $results.Count | Should -Be 1
             $results.Group | Should -Be $group
         }
 
         It "Should filter by pattern using regex" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Pattern "^dbatoolsci-server[12]"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Pattern "^dbatoolsci-server[12]"
             $results.Count | Should -BeGreaterThan 0
             $results.Name | Should -Match "^dbatoolsci-server[12]"
         }
 
         It "Should filter by pattern matching ServerName property" {
-            $results = Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Pattern "server1$"
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Pattern "server1$"
             $results.Count | Should -BeGreaterThan 0
             $results | Where-Object ServerName -match "server1$" | Should -Not -BeNullOrEmpty
         }

@@ -28,6 +28,18 @@ function Get-DbaDbccUserOption {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per session option returned by DBCC USEROPTIONS. If the -Option parameter is specified, only matching options are returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName or just the computer name for the default instance
+        - Option: The name of the session option (e.g., ansi_nulls, dateformat, isolation level)
+        - Value: The current value or setting of the option
+
     .NOTES
         Tags: DBCC
         Author: Patrick Flynn (@sqllensman)

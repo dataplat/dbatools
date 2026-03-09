@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 11, 2025
+-- Last Modified: February 2, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2025 Glenn Berry
+--*   Copyright (C) 2026 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -98,7 +98,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4210.1		CU20 + GDR							8/12/2025		https://support.microsoft.com/en-us/topic/kb5063814-description-of-the-security-update-for-sql-server-2022-cu20-august-12-2025-8744624f-a95c-4902-a191-5a25079d7f37
 -- 16.0.4212.1		CU20 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065220-description-of-the-security-update-for-sql-server-2022-cu20-september-9-2025-e58e6d66-717c-4e33-adc1-4a89d3dd71f5
 -- 16.0.4215.2		CU21								9/11/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate21
--- 16.0.4222.2		CU21 + GDR							11/11/2025		https://support.microsoft.com/en-us/topic/kb5068406-description-of-the-security-update-for-sql-server-2022-cu21-november-11-2025-7403d389-606b-4176-a1d5-b0960fb7dc50	
+-- 16.0.4222.2		CU21 + GDR							11/11/2025		https://support.microsoft.com/en-us/topic/kb5068406-description-of-the-security-update-for-sql-server-2022-cu21-november-11-2025-7403d389-606b-4176-a1d5-b0960fb7dc50
+-- 16.0.4225.2		CU22								11/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate22
+-- 16.0.4230.2		CU22 + GDR							1/13/2026		https://support.microsoft.com/en-gb/topic/kb5072936-description-of-the-security-update-for-sql-server-2022-cu22-january-13-2026-c483559a-57d8-4c72-a010-5792bb668dc8
+-- 16.0.4236.2		CU23								1/29/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate23
 
 
 -- What's new in SQL Server 2022 (16.x)
@@ -412,6 +415,8 @@ SELECT host_platform, host_distribution, host_release,
 	   host_architecture
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
+
+-- Note: Windows 11 is incorrectly identified as Windows 10. This is a Windows OS issue.
 
 -- host_release codes (only valid for Windows)
 -- 10.0 is either Windows 10, Windows Server 2016 or Windows Server 2019

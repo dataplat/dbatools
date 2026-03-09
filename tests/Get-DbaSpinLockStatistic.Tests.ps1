@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When retrieving spinlock statistics" {
         It "Returns spinlock contention metrics from SQL Server" {
-            $results = @(Get-DbaSpinLockStatistic -SqlInstance $TestConfig.instance2)
+            $results = @(Get-DbaSpinLockStatistic -SqlInstance $TestConfig.InstanceSingle)
             $results.Count | Should -BeGreaterThan 0
         }
     }

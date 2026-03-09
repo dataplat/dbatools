@@ -33,6 +33,25 @@ function Get-DbaInstanceAuditSpecification {
     .LINK
         https://dbatools.io/Get-DbaInstanceAuditSpecification
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ServerAuditSpecification
+
+        Returns one ServerAuditSpecification object for each server-level audit specification configured on the SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the server audit specification within the instance
+        - Name: The name of the server audit specification
+        - AuditName: The name of the SQL Server Audit that this specification is associated with
+        - Enabled: Boolean indicating if the audit specification is currently enabled
+        - CreateDate: DateTime when the audit specification was created
+        - DateLastModified: DateTime when the audit specification was last modified
+        - Guid: Globally unique identifier for the audit specification
+
+        All properties from the base SMO ServerAuditSpecification object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaInstanceAuditSpecification -SqlInstance localhost
 

@@ -68,6 +68,20 @@ function Copy-DbaDataCollector {
     .LINK
         https://dbatools.io/Copy-DbaDataCollector
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per collection set or configuration operation performed. Each object represents the result of copying a collection set or attempting to configure Data Collector settings on the destination instance.
+
+        Properties:
+        - DateTime: The date and time the operation was performed (DbaDateTime type)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the collection set or configuration item being copied
+        - Type: The type of object being copied (e.g., "Collection Set", "Data Collection Server Config")
+        - Status: Result of the operation (Successful, Skipped, Failed, etc.)
+        - Notes: Additional information about the operation, such as skip reasons or error details
+
     .EXAMPLE
         PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster
 

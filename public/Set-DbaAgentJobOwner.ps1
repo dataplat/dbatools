@@ -62,6 +62,23 @@ function Set-DbaAgentJobOwner {
     .LINK
         https://dbatools.io/Set-DbaAgentJobOwner
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Job
+
+        Returns one Job object per SQL Agent job processed, with added connection context and operation status information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The SQL Agent job name
+        - Category: The job category
+        - OwnerLoginName: The login name that owns the job (updated if operation was successful)
+        - Status: Operation result status (Skipped, Failed, or Successful)
+        - Notes: Additional information about the operation result (reason for skip/failure, empty on success)
+
+        All properties from the base SMO Job object are accessible using Select-Object *. The output includes all original SMO Job properties plus the added connection context properties and status information.
+
     .EXAMPLE
         PS C:\> Set-DbaAgentJobOwner -SqlInstance localhost
 

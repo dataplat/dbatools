@@ -35,6 +35,32 @@ function Get-DbaClientProtocol {
     .LINK
         https://dbatools.io/Get-DbaClientProtocol
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root\Microsoft\SQLServer\ComputerManagement*\ClientNetworkProtocol
+
+        Returns one ClientNetworkProtocol WMI object per protocol found on each computer.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name where the protocol is configured (alias for PSComputerName)
+        - DisplayName: The friendly display name of the protocol (alias for ProtocolDisplayName), such as "TCP/IP", "Named Pipes", "Shared Memory", or "VIA"
+        - DLL: The DLL file associated with the protocol (alias for ProtocolDll), typically sqlncli10.dll, sqlncli11.dll, or msoledbsql.dll
+        - Order: The protocol precedence order (alias for ProtocolOrder); lower numbers indicate higher priority, 0 means disabled
+        - IsEnabled: Boolean indicating if the protocol is enabled (based on ProtocolOrder value)
+
+        Additional properties available from the WMI object:
+        - ProtocolDisplayName: Friendly name of the protocol
+        - ProtocolDll: Path to the protocol DLL file
+        - ProtocolOrder: Numeric precedence order (0 = disabled, 1+ = enabled and ordered)
+        - PSComputerName: Computer name from WMI
+        - PSPath: WMI object path
+        - PSProvider: WMI provider name
+
+        Methods:
+        - Enable(): Enables the protocol by calling the WMI SetEnable method; returns exit code 0 on success
+        - Disable(): Disables the protocol by calling the WMI SetDisable method; returns exit code 0 on success
+
+        All properties and methods are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaClientProtocol -ComputerName sqlserver2014a
 

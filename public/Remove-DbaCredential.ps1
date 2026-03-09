@@ -48,6 +48,17 @@ function Remove-DbaCredential {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per credential removed. Each object contains the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL credential that was targeted for removal
+        - Status: The status of the removal operation. Shows "Dropped" on success, or the error message on failure
+        - IsRemoved: Boolean indicating whether the credential was successfully removed ($true) or the removal failed ($false)
+
     .NOTES
         Tags: Security, Credential
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

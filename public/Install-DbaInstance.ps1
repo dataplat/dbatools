@@ -259,6 +259,34 @@ function Install-DbaInstance {
     .LINK
         https://dbatools.io/Install-DbaInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance installed, providing detailed installation results and status information for each target computer.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The target computer where SQL Server was installed
+        - InstanceName: The SQL Server instance name that was installed
+        - Version: The SQL Server version installed (e.g., 14.0 for SQL Server 2017)
+        - Port: The TCP port configured for the instance after installation (nullable int, null if default 1433)
+        - Successful: Boolean indicating if the installation completed successfully (True/False)
+        - Restarted: Boolean indicating if the computer was restarted during installation (True/False)
+        - Installer: The full path to the SQL Server setup.exe file used for installation
+        - ExitCode: The exit code returned by setup.exe (nullable int; 0 = success, 3010 = reboot required, other values = failure)
+        - LogFile: The full path to the installation Summary.txt log file on the target computer
+        - Notes: Array of strings containing installation warnings, errors, or post-installation action notes
+
+        Additional properties available:
+        - SACredential: The SA account credential provided if mixed-mode authentication was configured
+        - Configuration: The hashtable of SQL Server configuration settings used for installation
+        - ExitMessage: Detailed exit message text extracted from the installation summary log
+        - Log: Full contents of the installation Summary.txt file as array of strings, includes detailed setup diagnostics
+        - ConfigurationFile: Path to the ConfigurationFile.ini used during installation on the target computer
+
+        When multiple instances are specified via -SqlInstance, one object is returned per instance. When -Throttle limits parallelism,
+        installation objects are returned as each instance completes. Examine the Successful and ExitCode properties to determine
+        installation outcome; ExitMessage and Log properties contain detailed diagnostic information for troubleshooting failed installations.
+
     .Example
         PS C:\> Install-DbaInstance -Version 2017 -Feature All
 

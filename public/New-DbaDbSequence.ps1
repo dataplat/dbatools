@@ -83,6 +83,35 @@ function New-DbaDbSequence {
     .LINK
         https://dbatools.io/New-DbaDbSequence
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Sequence
+
+        Returns one Sequence object for each sequence successfully created. The returned object represents the newly created SQL Server sequence definition with its configuration properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the sequence
+        - Schema: The schema where the sequence is created
+        - Name: The name of the sequence object
+        - DataType: The data type of values the sequence will generate (e.g., bigint, int, tinyint, smallint)
+        - StartValue: The initial value the sequence will return on first use
+        - IncrementValue: The amount the sequence will increase (or decrease if negative) with each NEXT VALUE FOR call
+
+        Additional properties available (from SMO Sequence object):
+        - CurrentValue: The current value that will be returned by the next NEXT VALUE FOR call
+        - MinValue: The minimum value the sequence can generate
+        - MaxValue: The maximum value the sequence can generate
+        - IsCycleEnabled: Boolean indicating whether the sequence will cycle from MaxValue back to MinValue
+        - CacheSize: The number of sequence values pre-allocated in memory (0 means no cache)
+        - SequenceCacheType: The cache behavior setting (DefaultCache, NoCache, or CacheWithSize)
+        - Parent: Reference to the parent Database SMO object
+        - Urn: The Uniform Resource Name (URN) identifying the sequence in the SMO object hierarchy
+        - State: The state of the SMO object (Existing, Creating, Altering, Dropping, etc.)
+
+        All properties from the base SMO Sequence object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -StartWith 10000 -IncrementBy 10
 

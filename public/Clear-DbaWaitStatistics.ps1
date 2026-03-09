@@ -38,6 +38,17 @@ function Clear-DbaWaitStatistics {
     .LINK
         https://dbatools.io/Clear-DbaWaitStatistics
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance, confirming the operation status.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Status: Either "Success" if the wait statistics were cleared, or the exception message if the operation failed
+
     .EXAMPLE
         PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
 

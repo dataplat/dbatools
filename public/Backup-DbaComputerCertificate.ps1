@@ -42,6 +42,22 @@ function Backup-DbaComputerCertificate {
     .LINK
         https://dbatools.io/Backup-DbaComputerCertificate
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object per certificate that was successfully exported. This represents the certificate file created on disk.
+
+        Properties:
+        - Name: The filename of the exported certificate (e.g., ComputerName-Thumbprint.cer)
+        - FullName: The complete path to the exported certificate file
+        - DirectoryName: The directory where the certificate file is stored
+        - Directory: The DirectoryInfo object of the parent directory
+        - Extension: The file extension (.cer, .pfx, etc., based on Type parameter)
+        - Length: The size of the exported certificate file in bytes
+        - CreationTime: When the certificate file was created
+        - LastWriteTime: When the certificate file was last written
+        - Attributes: File attributes (Archive, Normal, etc.)
+
     .EXAMPLE
         PS C:\> Get-DbaComputerCertificate | Backup-DbaComputerCertificate -Path C:\temp
 

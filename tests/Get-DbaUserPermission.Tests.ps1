@@ -42,16 +42,16 @@ exec sp_addrolemember 'userrole','alice';
 exec sp_addrolemember 'userrole','bob';
 "@
 
-            $db = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName
+            $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
             $db.ExecuteNonQuery($sql)
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $results = Get-DbaUserPermission -SqlInstance $TestConfig.instance1 -Database $dbName
+            $results = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -82,16 +82,16 @@ exec sp_addrolemember 'userrole','bob';
             $dbName = "dbatoolsci_UserPermissionDiffCollation"
             $dbCollation = "Latin1_General_CI_AI"
 
-            $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName -Collation $dbCollation
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName -Collation $dbCollation
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-            $results = Get-DbaUserPermission -SqlInstance $TestConfig.instance1 -Database $dbName -WarningVariable warnvar 3> $null
+            $results = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceSingle -Database $dbName -WarningVariable warnvar 3> $null
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }

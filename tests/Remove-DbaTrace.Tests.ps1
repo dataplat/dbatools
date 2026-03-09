@@ -26,13 +26,16 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tracePath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tracePath -ItemType Directory
+
         $sql = @"
 -- Create a Queue
 declare @rc int
 declare @TraceID int
 declare @maxfilesize bigint
 set @maxfilesize = 5
-exec @rc = sp_trace_create @TraceID output, 0, N'C:\windows\temp\temptrace', @maxfilesize, NULL
+exec @rc = sp_trace_create @TraceID output, 0, N'$tracePath\temptrace', @maxfilesize, NULL
 
 -- Set the events
 declare @on bit
@@ -105,19 +108,19 @@ exec sp_trace_setstatus @TraceID, 1
 -- display trace id for future references
 select TraceID=@TraceID
 "@
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $traceid = ($server.Query($sql)).TraceID
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        Remove-Item "C:\windows\temp\temptrace.trc" -ErrorAction SilentlyContinue
+        Remove-Item -Path $tracePath -Recurse
     }
 
     Context "Test Removing Trace" {
         BeforeAll {
-            $results = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Remove-DbaTrace
+            $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Remove-DbaTrace
         }
 
         It "returns the right values" {
@@ -126,7 +129,7 @@ select TraceID=@TraceID
         }
 
         It "doesn't return any result for trace file id $($traceid)" {
-            Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Should -Be $null
+            Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Should -Be $null
         }
     }
 }

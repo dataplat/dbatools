@@ -121,6 +121,45 @@ function Export-DbaInstance {
     .LINK
         https://dbatools.io/Export-DbaInstance
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one or more FileInfo objects representing the exported SQL script files and configuration files created during the instance export. Each file represents a different component type being exported (logins, jobs, credentials, etc.).
+
+        The command returns file objects for successfully created export files, such as:
+        - sp_configure.sql: SQL Server configuration settings
+        - customererrors.sql: User-defined error messages
+        - serverroles.sql: Server role definitions
+        - credentials.sql: SQL credentials
+        - logins.sql: SQL Server logins
+        - dbmail.sql: Database Mail configuration
+        - regserver.xml: Central Management Server registration settings
+        - backupdevices.sql: Backup device definitions
+        - linkedservers.sql: Linked server configurations
+        - servertriggers.sql: Server-level triggers
+        - databases.sql: Database restore scripts
+        - audits.sql: Server audits
+        - auditspecs.sql: Server audit specifications
+        - endpoints.sql: Server endpoints
+        - policymanagement.sql: Policy-Based Management policies and conditions
+        - resourcegov.sql: Resource Governor configuration
+        - extendedevents.sql: Extended Events sessions
+        - sqlagent.sql: SQL Agent jobs, schedules, operators, alerts, and proxies
+        - replication.sql: Replication settings
+        - userobjectsinsysdbs.sql: User-created objects in system databases
+        - AvailabilityGroups.sql: Availability Groups configuration
+        - OleDbProvider.sql: OLEDB provider configuration
+
+        Files are returned only if they were successfully created and are not excluded via the -Exclude parameter.
+        The -ErrorAction Ignore used in Get-ChildItem means that if a file is not created, no error object is returned for that file.
+
+        All FileInfo properties are accessible, including:
+        - FullName: Complete path to the exported file
+        - Name: File name
+        - Length: File size in bytes
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last written
+
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
 
@@ -178,17 +217,39 @@ function Export-DbaInstance {
         foreach ($instance in $SqlInstance) {
             $stepCounter = 0
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                # Do we need a dedicated admin connection for password retrieval?
+                # If not both are excluded, we do
+                $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'LinkedServers'
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Force) {
                 # when the caller requests to overwrite existing scripts we won't add the dynamic timestamp to the folder name, so that a pre-existing location can be overwritten.
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))"
             } else {
                 $timeNow = (Get-Date -UFormat (Get-DbatoolsConfigValue -FullName 'formatting.uformat'))
-                $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
+                $exportPath = Join-DbaPath -Path $Path -Child "$($server.DomainInstanceName.replace('\', '$'))-$timeNow"
             }
 
             # Ensure the export dir exists.
@@ -201,213 +262,220 @@ function Export-DbaInstance {
                 }
             }
 
-            if ($Exclude -notcontains 'SpConfigure') {
-                Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL Server Configuration"
-                Export-DbaSpConfigure -SqlInstance $server -FilePath "$exportPath\sp_configure.sql"
-                # no call to Get-ChildItem because Export-DbaSpConfigure does it
-            }
-
-            if ($Exclude -notcontains 'CustomErrors') {
-                Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting custom errors (user defined messages)"
-                $null = Get-DbaCustomError -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\customererrors.sql"
-            }
-
-            if ($Exclude -notcontains 'ServerRoles') {
-                Write-Message -Level Verbose -Message "Exporting server roles"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
-                $null = Get-DbaServerRole -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\serverroles.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\serverroles.sql"
-            }
-
-            if ($Exclude -notcontains 'Credentials') {
-                Write-Message -Level Verbose -Message "Exporting SQL credentials"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
-                $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\credentials.sql"
-            }
-
-            if ($Exclude -notcontains 'Logins') {
-                Write-Message -Level Verbose -Message "Exporting logins"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\logins.sql" -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
-                # no call to Get-ChildItem because Export-DbaLogin does it
-            }
-
-            if ($Exclude -notcontains 'DatabaseMail') {
-                Write-Message -Level Verbose -Message "Exporting database mail"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database mail"
-                # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
-                # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
-                $null = Get-DbaDbMailConfig -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaDbMailAccount -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaDbMailProfile -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaDbMailServer -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\dbmail.sql"
-            }
-
-            if ($Exclude -notcontains 'CentralManagementServer') {
-                Write-Message -Level Verbose -Message "Exporting Central Management Server"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $outputFilePath = "$exportPath\regserver.xml"
-                $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath -Overwrite:$Force
-                Get-ChildItem -ErrorAction Ignore -Path $outputFilePath
-            }
-
-            if ($Exclude -notcontains 'BackupDevices') {
-                Write-Message -Level Verbose -Message "Exporting Backup Devices"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Backup Devices"
-                $null = Get-DbaBackupDevice -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\backupdevices.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\backupdevices.sql"
-            }
-
-            if ($Exclude -notcontains 'LinkedServers') {
-                Write-Message -Level Verbose -Message "Exporting linked servers"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting linked servers"
-                Export-DbaLinkedServer -SqlInstance $server -FilePath "$exportPath\linkedservers.sql" -Credential $Credential -ExcludePassword:$ExcludePassword
-                # no call to Get-ChildItem because Export-DbaLinkedServer does it
-            }
-
-            if ($Exclude -notcontains 'SystemTriggers') {
-                Write-Message -Level Verbose -Message "Exporting System Triggers"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
-                $null = Get-DbaInstanceTrigger -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\servertriggers.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $triggers = Get-Content -Path "$exportPath\servertriggers.sql" -Raw -ErrorAction Ignore
-                if ($triggers) {
-                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator$($eol)CREATE TRIGGER"
-                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator$($eol)ENABLE TRIGGER"
-                    $null = $triggers | Set-Content -Path "$exportPath\servertriggers.sql" -Force
-                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\servertriggers.sql"
-                }
-            }
-
-            if ($Exclude -notcontains 'Databases') {
-                Write-Message -Level Verbose -Message "Exporting database restores"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database restores"
-                Get-DbaDbBackupHistory -SqlInstance $server -Last -WarningAction SilentlyContinue | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue -AzureCredential $AzureCredential | Out-File -FilePath "$exportPath\databases.sql"
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\databases.sql"
-            }
-
-            if ($Exclude -notcontains 'Audits') {
-                Write-Message -Level Verbose -Message "Exporting Audits"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Audits"
-                $null = Get-DbaInstanceAudit -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\audits.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\audits.sql"
-            }
-
-            if ($Exclude -notcontains 'ServerAuditSpecifications') {
-                Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Server Audit Specifications"
-                $null = Get-DbaInstanceAuditSpecification -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\auditspecs.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\auditspecs.sql"
-            }
-
-            if ($Exclude -notcontains 'Endpoints') {
-                Write-Message -Level Verbose -Message "Exporting Endpoints"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Endpoints"
-                $null = Get-DbaEndpoint -SqlInstance $server | Where-Object IsSystemObject -EQ $false | Export-DbaScript -FilePath "$exportPath\endpoints.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
-            }
-
-            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
-                Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
-            }
-            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
-                Write-Message -Level Verbose -Message "Exporting Policy Management"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
-
-                $outputFilePath = "$exportPath\policymanagement.sql"
-                $scriptText = ""
-                $policyObjects = @()
-
-                # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
-
-                $policyObjects += Get-DbaPbmCondition -SqlInstance $server
-                $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
-                $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
-
-                foreach ($policyObject in $policyObjects) {
-                    $tsqlScript = $policyObject.ScriptCreate()
-                    $scriptText += $tsqlScript.GetScript() + "$eol$BatchSeparator$eol$eol"
+            try {
+                if ($Exclude -notcontains 'SpConfigure') {
+                    Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL Server Configuration"
+                    Export-DbaSpConfigure -SqlInstance $server -FilePath "$exportPath\sp_configure.sql" -EnableException:$EnableException
+                    # no call to Get-ChildItem because Export-DbaSpConfigure does it
                 }
 
-                Set-Content -Path $outputFilePath -Value $scriptText
-
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\policymanagement.sql"
-            }
-
-            if ($Exclude -notcontains 'ResourceGovernor') {
-                Write-Message -Level Verbose -Message "Exporting Resource Governor"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Resource Governor"
-                # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
-                # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
-                $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\resourcegov.sql"
-            }
-
-            if ($Exclude -notcontains 'ExtendedEvents') {
-                Write-Message -Level Verbose -Message "Exporting Extended Events"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
-                $null = Get-DbaXESession -SqlInstance $server | Export-DbaXESession -FilePath "$exportPath\extendedevents.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\extendedevents.sql"
-            }
-
-            if ($Exclude -notcontains 'AgentServer') {
-                Write-Message -Level Verbose -Message "Exporting job server"
-
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting job server"
-                # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
-                # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
-                $null = Get-DbaAgentJobCategory -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentOperator -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentAlert -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentProxy -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentSchedule -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentJob -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\sqlagent.sql"
-            }
-
-            if ($Exclude -notcontains 'ReplicationSettings') {
-                Write-Message -Level Verbose -Message "Exporting replication settings"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
-
-                try {
-                    $null = Export-DbaReplServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql" -EnableException
-                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\replication.sql"
-                } catch {
-                    Write-Message -Level Verbose -Message "Replication failed, skipping"
+                if ($Exclude -notcontains 'CustomErrors') {
+                    Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting custom errors (user defined messages)"
+                    $null = Get-DbaCustomError -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\customererrors.sql"
                 }
+
+                if ($Exclude -notcontains 'ServerRoles') {
+                    Write-Message -Level Verbose -Message "Exporting server roles"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
+                    $null = Get-DbaServerRole -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\serverroles.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\serverroles.sql"
+                }
+
+                if ($Exclude -notcontains 'Credentials') {
+                    Write-Message -Level Verbose -Message "Exporting SQL credentials"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
+                    $null = Export-DbaCredential -SqlInstance $server -Credential $Credential -FilePath "$exportPath\credentials.sql" -ExcludePassword:$ExcludePassword -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\credentials.sql"
+                }
+
+                if ($Exclude -notcontains 'Logins') {
+                    Write-Message -Level Verbose -Message "Exporting logins"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
+                    Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\logins.sql" -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue -EnableException:$EnableException
+                    # no call to Get-ChildItem because Export-DbaLogin does it
+                }
+
+                if ($Exclude -notcontains 'DatabaseMail') {
+                    Write-Message -Level Verbose -Message "Exporting database mail"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database mail"
+                    # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
+                    # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
+                    $null = Get-DbaDbMailConfig -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaDbMailAccount -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaDbMailProfile -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaDbMailServer -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\dbmail.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\dbmail.sql"
+                }
+
+                if ($Exclude -notcontains 'CentralManagementServer') {
+                    Write-Message -Level Verbose -Message "Exporting Central Management Server"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
+                    $outputFilePath = "$exportPath\regserver.xml"
+                    $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath -Overwrite:$Force -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path $outputFilePath
+                }
+
+                if ($Exclude -notcontains 'BackupDevices') {
+                    Write-Message -Level Verbose -Message "Exporting Backup Devices"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Backup Devices"
+                    $null = Get-DbaBackupDevice -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\backupdevices.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\backupdevices.sql"
+                }
+
+                if ($Exclude -notcontains 'LinkedServers') {
+                    Write-Message -Level Verbose -Message "Exporting linked servers"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting linked servers"
+                    Export-DbaLinkedServer -SqlInstance $server -FilePath "$exportPath\linkedservers.sql" -Credential $Credential -ExcludePassword:$ExcludePassword -EnableException:$EnableException
+                    # no call to Get-ChildItem because Export-DbaLinkedServer does it
+                }
+
+                if ($Exclude -notcontains 'SystemTriggers') {
+                    Write-Message -Level Verbose -Message "Exporting System Triggers"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
+                    $null = Get-DbaInstanceTrigger -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\servertriggers.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $triggers = Get-Content -Path "$exportPath\servertriggers.sql" -Raw -ErrorAction Ignore
+                    if ($triggers) {
+                        $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator$($eol)CREATE TRIGGER"
+                        $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator$($eol)ENABLE TRIGGER"
+                        $null = $triggers | Set-Content -Path "$exportPath\servertriggers.sql" -Force
+                        Get-ChildItem -ErrorAction Ignore -Path "$exportPath\servertriggers.sql"
+                    }
+                }
+
+                if ($Exclude -notcontains 'Databases') {
+                    Write-Message -Level Verbose -Message "Exporting database restores"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database restores"
+                    Get-DbaDbBackupHistory -SqlInstance $server -Last -WarningAction SilentlyContinue -EnableException:$EnableException | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue -AzureCredential $AzureCredential -EnableException:$EnableException | Out-File -FilePath "$exportPath\databases.sql"
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\databases.sql"
+                }
+
+                if ($Exclude -notcontains 'Audits') {
+                    Write-Message -Level Verbose -Message "Exporting Audits"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Audits"
+                    $null = Get-DbaInstanceAudit -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\audits.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\audits.sql"
+                }
+
+                if ($Exclude -notcontains 'ServerAuditSpecifications') {
+                    Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Server Audit Specifications"
+                    $null = Get-DbaInstanceAuditSpecification -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\auditspecs.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\auditspecs.sql"
+                }
+
+                if ($Exclude -notcontains 'Endpoints') {
+                    Write-Message -Level Verbose -Message "Exporting Endpoints"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Endpoints"
+                    $null = Get-DbaEndpoint -SqlInstance $server -EnableException:$EnableException | Where-Object IsSystemObject -EQ $false | Export-DbaScript -FilePath "$exportPath\endpoints.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
+                }
+
+                if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
+                    Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
+                }
+                if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
+                    Write-Message -Level Verbose -Message "Exporting Policy Management"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
+
+                    $outputFilePath = "$exportPath\policymanagement.sql"
+                    $scriptText = ""
+                    $policyObjects = @()
+
+                    # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
+
+                    $policyObjects += Get-DbaPbmCondition -SqlInstance $server -EnableException:$EnableException
+                    $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server -EnableException:$EnableException
+                    $policyObjects += Get-DbaPbmPolicy -SqlInstance $server -EnableException:$EnableException
+
+                    foreach ($policyObject in $policyObjects) {
+                        $tsqlScript = $policyObject.ScriptCreate()
+                        $scriptText += $tsqlScript.GetScript() + "$eol$BatchSeparator$eol$eol"
+                    }
+
+                    Set-Content -Path $outputFilePath -Value $scriptText
+
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\policymanagement.sql"
+                }
+
+                if ($Exclude -notcontains 'ResourceGovernor') {
+                    Write-Message -Level Verbose -Message "Exporting Resource Governor"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Resource Governor"
+                    # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
+                    # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
+                    $null = Get-DbaRgClassifierFunction -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaRgResourcePool -SqlInstance $server -EnableException:$EnableException | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaRgWorkloadGroup -SqlInstance $server -EnableException:$EnableException | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaResourceGovernor -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\resourcegov.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\resourcegov.sql"
+                }
+
+                if ($Exclude -notcontains 'ExtendedEvents') {
+                    Write-Message -Level Verbose -Message "Exporting Extended Events"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
+                    $null = Get-DbaXESession -SqlInstance $server -EnableException:$EnableException | Export-DbaXESession -FilePath "$exportPath\extendedevents.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\extendedevents.sql"
+                }
+
+                if ($Exclude -notcontains 'AgentServer') {
+                    Write-Message -Level Verbose -Message "Exporting job server"
+
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting job server"
+                    # The first invocation to Export-DbaScript needs to have -Append:$false so that the previous file contents are discarded. Otherwise, the file would end up with duplicate SQL.
+                    # The subsequent calls to Export-DbaScript need to have -Append:$true because this is a multi-step export and the objects are written to the same file.
+                    $null = Get-DbaAgentJobCategory -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$false -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaAgentOperator -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaAgentAlert -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaAgentProxy -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaAgentSchedule -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    $null = Get-DbaAgentJob -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\sqlagent.sql" -Append:$true -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\sqlagent.sql"
+                }
+
+                if ($Exclude -notcontains 'ReplicationSettings') {
+                    Write-Message -Level Verbose -Message "Exporting replication settings"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
+
+                    try {
+                        $null = Export-DbaReplServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql" -EnableException
+                        Get-ChildItem -ErrorAction Ignore -Path "$exportPath\replication.sql"
+                    } catch {
+                        Write-Message -Level Verbose -Message "Replication failed, skipping"
+                    }
+                }
+
+                if ($Exclude -notcontains 'SysDbUserObjects') {
+                    Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
+                    $outputFile = "$exportPath\userobjectsinsysdbs.sql"
+                    $sysDbUserObjects = Export-DbaSysDbUserObject -SqlInstance $server -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -PassThru -EnableException:$EnableException
+                    Set-Content -Path $outputFile -Value $sysDbUserObjects # this approach is needed because -Append is used in Export-DbaSysDbUserObject.ps1
+                    Get-ChildItem -ErrorAction Ignore -Path $outputFile
+                }
+
+                if ($Exclude -notcontains 'AvailabilityGroups') {
+                    Write-Message -Level Verbose -Message "Exporting availability group"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
+                    $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\AvailabilityGroups.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\AvailabilityGroups.sql"
+                }
+
+                if ($Exclude -notcontains 'OleDbProvider') {
+                    Write-Message -Level Verbose -Message "Exporting OLEDB Providers"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting OLEDB Providers"
+                    $null = Get-DbaOleDbProvider -SqlInstance $server -WarningAction SilentlyContinue -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\OleDbProvider.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -EnableException:$EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
 
-            if ($Exclude -notcontains 'SysDbUserObjects') {
-                Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
-                $outputFile = "$exportPath\userobjectsinsysdbs.sql"
-                $sysDbUserObjects = Export-DbaSysDbUserObject -SqlInstance $server -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -PassThru
-                Set-Content -Path $outputFile -Value $sysDbUserObjects # this approach is needed because -Append is used in Export-DbaSysDbUserObject.ps1
-                Get-ChildItem -ErrorAction Ignore -Path $outputFile
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
-
-            if ($Exclude -notcontains 'AvailabilityGroups') {
-                Write-Message -Level Verbose -Message "Exporting availability group"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$exportPath\AvailabilityGroups.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\AvailabilityGroups.sql"
-            }
-
-            if ($Exclude -notcontains 'OleDbProvider') {
-                Write-Message -Level Verbose -Message "Exporting OLEDB Providers"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting OLEDB Providers"
-                $null = Get-DbaOleDbProvider -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$exportPath\OleDbProvider.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
-            }
-
 
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }

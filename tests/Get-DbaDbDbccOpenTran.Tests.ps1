@@ -37,25 +37,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns results for DBCC OPENTRAN" {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle
             $result | Should -Not -BeNullOrEmpty
         }
 
         It "returns multiple results" {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle
             $result.Count | Should -BeGreaterThan 0
         }
 
         It "Should return all expected properties" {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle
             foreach ($prop in $props) {
                 $result[0].PSObject.Properties[$prop].Name | Should -Be $prop
             }
         }
 
         It "returns results for a specific database" {
-            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.instance1 -Database tempDB
-            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempDB
+            $result = Get-DbaDbDbccOpenTran -SqlInstance $TestConfig.InstanceSingle -Database tempDB
+            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempDB
 
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Get-Unique | Should -Be "tempDB"

@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.instance2 -Enabled
+            $null = Set-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle -Enabled
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Sets a resource pool" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
                 CapCpuPercent           = 100
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool
-            $result2 = Set-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -MaximumCpuPercentage 99
+            $result2 = Set-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -MaximumCpuPercentage 99
 
             $result2.MaximumCpuPercentage | Should -Be 99
         }
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Type                    = "Internal"
             }
             $splatSetResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 99
                 MaximumMemoryPercentage = 99
@@ -99,7 +99,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Works using -Type External" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -107,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Type                    = "External"
             }
             $splatSetResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 99
                 MaximumMemoryPercentage = 99
@@ -127,7 +127,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
             $splatNewResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
                 MaximumIOPSPerVolume    = 100
@@ -136,7 +136,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = New-DbaRgResourcePool @splatNewResourcePool -ResourcePool $resourcePoolName
             $null = New-DbaRgResourcePool @splatNewResourcePool -ResourcePool $resourcePoolName2
-            $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.instance2 | Where-Object Name -in ($resourcePoolName, $resourcePoolName2)
+            $result = Get-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -in ($resourcePoolName, $resourcePoolName2)
             ($result | Where-Object Name -eq $resourcePoolName).MaximumCpuPercentage = 99
             ($result | Where-Object Name -eq $resourcePoolName2).MaximumCpuPercentage = 98
             $result2 = $result | Set-DbaRgResourcePool
@@ -148,7 +148,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
-                SqlInstance             = $TestConfig.instance2
+                SqlInstance             = $TestConfig.InstanceSingle
                 ResourcePool            = $resourcePoolName
                 MaximumCpuPercentage    = 100
                 MaximumMemoryPercentage = 100
@@ -157,8 +157,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $null = New-DbaRgResourcePool @splatNewResourcePool
-            $null = Set-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName -MaximumCpuPercentage 99 -SkipReconfigure -WarningAction SilentlyContinue
-            $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.instance2
+            $null = Set-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName -MaximumCpuPercentage 99 -SkipReconfigure -WarningAction SilentlyContinue
+            $result = Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle
 
             $result.ReconfigurePending | Should -Be $true
         }
@@ -166,8 +166,8 @@ Describe $CommandName -Tag IntegrationTests {
         AfterEach {
             $resourcePoolName = "dbatoolssci_poolTest"
             $resourcePoolName2 = "dbatoolssci_poolTest2"
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal -ErrorAction SilentlyContinue
-            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal -ErrorAction SilentlyContinue
+            $null = Remove-DbaRgResourcePool -SqlInstance $TestConfig.InstanceSingle -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External -ErrorAction SilentlyContinue
         }
     }
 }

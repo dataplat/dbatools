@@ -61,6 +61,22 @@ function Stop-DbaProcess {
     .LINK
         https://dbatools.io/Stop-DbaProcess
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successfully killed process, confirming the termination action with session details.
+
+        Properties:
+        - SqlInstance: The name of the SQL Server instance where the process was terminated
+        - Spid: The session ID (SPID) of the killed process
+        - Login: The login name associated with the killed process
+        - Host: The hostname or computer name where the client process originated
+        - Database: The name of the database the killed session was connected to
+        - Program: The application or program name that initiated the killed session
+        - Status: Always set to "Killed" to confirm successful process termination
+
+        Note: Processes matching filter criteria but matching ExcludeSpid, or the current session, or processes that fail to kill will not generate output objects.
+
     .EXAMPLE
         PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 

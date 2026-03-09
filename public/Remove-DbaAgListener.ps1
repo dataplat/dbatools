@@ -39,6 +39,19 @@ function Remove-DbaAgListener {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per listener that is successfully removed from the availability group.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance hosting the listener
+        - InstanceName: The SQL Server instance name (the named instance or MSSQLSERVER for default instance)
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - AvailabilityGroup: Name of the availability group from which the listener was removed
+        - Listener: The name of the availability group listener that was removed
+        - Status: The status of the operation; always "Removed" for successful removals
+
     .NOTES
         Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

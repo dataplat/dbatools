@@ -60,6 +60,32 @@ function Get-DbaPermission {
     .LINK
         https://dbatools.io/Get-DbaPermission
 
+    .OUTPUTS
+        System.Data.DataRow
+
+        Returns one object per permission found across the specified instances and databases. Each permission object represents either an explicit permission from sys.server_permissions or sys.database_permissions, or an implicit permission from fixed roles, schema owners, or the database owner (dbo).
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (MSSQLSERVER for default instance)
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name; empty string for server-level permissions
+        - PermState: The permission state - 'GRANT', 'DENY', or 'REVOKE' (empty string for implicit permissions from roles)
+        - PermissionName: The name of the permission (e.g., SELECT, CONTROL, CONNECT, ADMINISTER BULK OPERATIONS)
+        - SecurableType: The type of securable being protected (e.g., DATABASE, OBJECT, SCHEMA, SERVER, ENDPOINT, AVAILABILITY GROUP, LOGIN)
+        - Securable: The name or identifier of the securable being protected (e.g., database name, object name, schema name, server name, login name)
+        - Grantee: The name of the principal (login, user, or role) that has the permission (server-level) or the user/role in the database (database-level)
+        - GranteeType: The type of principal - 'LOGIN', 'USER', 'APPLICATION ROLE', 'ROLE', 'DATABASE OWNER (dbo user)', 'DATABASE OWNER (db_owner role)', 'SCHEMA OWNER', or fixed role type
+        - RevokeStatement: T-SQL REVOKE statement that can be used to revoke this permission; empty string for implicit permissions
+        - GrantStatement: T-SQL GRANT or GRANT WITH GRANT OPTION statement that can be used to grant this permission; empty string for implicit permissions and fixed role permissions
+
+        Output Conditions:
+        - Server-level permissions: Only included when -IncludeServerLevel switch is specified; Database column is empty
+        - Database-level permissions: Always included; one object per explicit permission from sys.database_permissions
+        - Fixed role permissions: One object per built-in fixed role (db_owner, db_datareader, db_ddladmin, etc.); PermState is empty
+        - Implicit CONTROL permissions: Included for dbo users, db_owner role members, and schema owners; PermState is empty
+        - ExcludeSystemObjects: When specified, filters results to exclude permissions with major_id = 0 (system objects) in T-SQL WHERE clause
+
     .EXAMPLE
         PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987
 

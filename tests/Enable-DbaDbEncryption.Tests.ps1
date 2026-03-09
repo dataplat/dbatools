@@ -31,16 +31,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master |
             Where-Object Name -notmatch "##" |
             Select-Object -First 1
 
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
-        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
@@ -72,9 +72,9 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling encryption directly" {
         It "Should enable encryption on a database" {
-            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Database $testDb.Name
+            $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -Database $testDb.Name
             $splatEnableEncryption = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 EncryptorName = $mastercert.Name
                 Database      = $testDb.Name
                 Force         = $true

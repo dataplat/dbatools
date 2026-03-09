@@ -98,9 +98,10 @@ function Test-DbaLastBackup {
         Use this when you need to test only backups from specific backup devices or exclude certain device types.
         Commonly used to test only disk backups or exclude tape backups that may be offline.
 
-    .PARAMETER AzureCredential
-        Specifies the name of the SQL Server credential that contains the key for accessing Azure Storage where backups are stored.
-        Use this when testing backups stored in Azure Blob Storage that require credential-based authentication.
+    .PARAMETER StorageCredential
+        Specifies the name of the SQL Server credential for accessing cloud storage where backups are stored.
+        For Azure: Use credentials containing the storage account access key or configured for SAS authentication.
+        For S3: Use credentials with Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or later.
         The credential must already exist on the destination SQL Server instance.
 
     .PARAMETER IncludeCopyOnly
@@ -154,6 +155,11 @@ function Test-DbaLastBackup {
         Use this to ensure backup files contain checksums and validate them during testing, following backup best practices.
         Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
 
+    .PARAMETER Wait
+        Specifies the number of seconds to wait between each database restore test.
+        Use this to prevent I/O errors on checkpoint files by allowing time for cleanup between restore operations.
+        Helpful when restoring to network shares or storage systems that need additional time to release file handles.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -170,6 +176,30 @@ function Test-DbaLastBackup {
 
     .LINK
         https://dbatools.io/Test-DbaLastBackup
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database tested with the following properties:
+
+        - SourceServer (string) - Name of the source SQL Server instance where the backup originated
+        - TestServer (string) - Name of the destination SQL Server instance where the restore was tested
+        - Database (string) - Name of the database being tested
+        - FileExists (boolean) - Whether the backup files were found and accessible ($true, $false, or $null)
+        - Size (dbasize) - Total size of the backup files; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - RestoreResult (string) - Result of the restore operation: "Success", "Failure", "Skipped", or error message
+        - DbccResult (string) - Result of the DBCC CHECKDB operation: "Success", "Failure", "Skipped", or detailed error
+        - RestoreStart (datetime) - Date and time when the restore operation started
+        - RestoreEnd (datetime) - Date and time when the restore operation ended
+        - RestoreElapsed (timespan as string) - Formatted duration of the restore operation (HH:mm:ss format)
+        - DbccMaxDop (int) - Maximum degree of parallelism used for DBCC CHECKDB
+        - DbccStart (datetime) - Date and time when the DBCC CHECKDB operation started
+        - DbccEnd (datetime) - Date and time when the DBCC CHECKDB operation ended
+        - DbccElapsed (timespan as string) - Formatted duration of the DBCC CHECKDB operation (HH:mm:ss format)
+        - BackupDates (datetime array) - Array of backup start times for all backup files in the restore chain
+        - BackupFiles (string array) - Array of backup file paths used for the restore operation
+
+        Output is returned immediately for each database processed, enabling real-time progress monitoring of multi-database restore tests.
 
     .EXAMPLE
         PS C:\> Test-DbaLastBackup -SqlInstance sql2016
@@ -235,9 +265,19 @@ function Test-DbaLastBackup {
        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly -Checksum
 
        Verifies the backup files using RESTORE VERIFYONLY WITH CHECKSUM. This will fail if the backups do not contain checksums, ensuring that backups follow best practices.
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -Wait 5
+
+        Tests all database backups on sql2016 and waits 5 seconds between each database restore test. This helps prevent I/O errors on checkpoint files when restoring to network shares.
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2022 -Database Sales -StorageCredential "S3Credential"
+
+        Tests the last backup of the Sales database where backups are stored in S3-compatible storage. Requires SQL Server 2022 or later for S3 support.
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and StorageCredential")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -258,7 +298,8 @@ function Test-DbaLastBackup {
         [string[]]$DeviceType,
         [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [int]$MaxTransferSize,
@@ -267,6 +308,7 @@ function Test-DbaLastBackup {
         [int]$MaxDop,
         [switch]$ReuseSourceFolderStructure,
         [switch]$Checksum,
+        [int]$Wait,
         [switch]$EnableException
     )
     process {
@@ -366,8 +408,8 @@ function Test-DbaLastBackup {
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
 
-            if ((Test-Bound -ParameterName AzureCredential) -and (Test-Bound -ParameterName CopyFile)) {
-                Stop-Function -Message "Cannot use copyfile with Azure backups, set to false." -continue
+            if ((Test-Bound -ParameterName StorageCredential) -and (Test-Bound -ParameterName CopyFile)) {
+                Stop-Function -Message "Cannot use CopyFile with cloud storage backups (Azure/S3), set to false." -Continue
                 $CopyFile = $false
             }
 
@@ -480,7 +522,7 @@ function Test-DbaLastBackup {
                 $fileexists = $false
                 $success = $restoreresult = $dbccresult = "Skipped"
             }
-            if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
+            if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*' -or $lastbackup[0].Path -like 's3*') {
                 Write-Message -Level Verbose -Message "Looking good."
 
                 $fileexists = $true
@@ -503,7 +545,7 @@ function Test-DbaLastBackup {
                                 RestoredDatabaseNamePrefix = $prefix
                                 DestinationFilePrefix      = $Prefix
                                 IgnoreLogBackup            = $IgnoreLogBackup
-                                AzureCredential            = $AzureCredential
+                                StorageCredential          = $StorageCredential
                                 TrustDbBackupHistory       = $true
                                 ReuseSourceFolderStructure = $true
                                 EnableException            = $true
@@ -516,7 +558,7 @@ function Test-DbaLastBackup {
                                 DestinationDataDirectory   = $datadirectory
                                 DestinationLogDirectory    = $logdirectory
                                 IgnoreLogBackup            = $IgnoreLogBackup
-                                AzureCredential            = $AzureCredential
+                                StorageCredential          = $StorageCredential
                                 TrustDbBackupHistory       = $true
                                 EnableException            = $true
                             }
@@ -539,7 +581,7 @@ function Test-DbaLastBackup {
                             $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly
                         } else {
                             $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
-                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
+                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -StorageCredential $StorageCredential -TrustDbBackupHistory"
                         }
                     } catch {
                         $errormsg = Get-ErrorMessage -Record $_
@@ -645,6 +687,11 @@ function Test-DbaLastBackup {
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
+            }
+
+            if ($Wait) {
+                Write-Message -Level Verbose -Message "Waiting $Wait seconds before processing next database."
+                Start-Sleep -Seconds $Wait
             }
         }
     }

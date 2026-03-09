@@ -41,6 +41,37 @@ function Get-DbaPbmCondition {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Dmf.Condition
+
+        Returns one condition object for each policy condition found on the specified PBM store. Conditions define the rules and criteria used to evaluate database objects for compliance with policies.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the condition
+        - Name: The name of the condition
+        - CreateDate: DateTime when the condition was created
+        - CreatedBy: User who created the condition
+        - DateModified: DateTime when the condition was last modified
+        - Description: Description of the condition
+        - ExpressionNode: The expression tree that defines the condition logic
+        - Facet: The facet that the condition applies to (management area such as Database, Server, Table, etc.)
+        - HasScript: Boolean indicating if the condition contains a dynamic script expression
+        - IsSystemObject: Boolean indicating if this is a system-provided condition or user-created
+        - ModifiedBy: User who last modified the condition
+
+        Additional properties available via Select-Object *:
+        - IsEnumerable: Boolean indicating if the condition can be used as a target set level filter
+        - Parent: Reference to the parent PolicyStore object
+        - State: Current state of the condition object (Existing, Creating, Pending, etc.)
+        - Urn: Uniform Resource Name (URN) for the condition object
+        - IdentityKey: Identity key of the condition object
+        - Metadata: Metadata information
+        - KeyChain: Identity path of the condition object
+        - Properties: Properties collection for the condition
+
     .LINK
         https://dbatools.io/Get-DbaPbmCondition
 

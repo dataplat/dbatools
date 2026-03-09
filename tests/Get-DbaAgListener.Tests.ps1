@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the objects.
         $splatNewAg = @{
-            Primary      = $TestConfig.instance3
+            Primary      = $TestConfig.InstanceHadr
             Name         = $agListenerName
             ClusterType  = "None"
             FailoverMode = "Manual"
@@ -56,16 +56,16 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agListenerName
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agListenerName
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When getting AG listeners" {
         It "Returns results with proper data" {
-            $results = Get-DbaAgListener -SqlInstance $TestConfig.instance3
+            $results = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr
             $results.PortNumber | Should -Contain 14330
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

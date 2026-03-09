@@ -23,12 +23,12 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $null = Set-DbaPowerPlan -ComputerName $TestConfig.instance2 -PowerPlan "Balanced"
+        $null = Set-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle -PowerPlan "Balanced"
     }
 
     Context "Command actually works" {
         It "Should return result for the server" {
-            $results = Test-DbaPowerPlan -ComputerName $TestConfig.instance2
+            $results = Test-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
             $results.ActivePowerPlan | Should -Be "Balanced"
             $results.RecommendedPowerPlan | Should -Be "High performance"
@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Use Balanced plan as best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $TestConfig.instance2 -PowerPlan "Balanced"
+            $results = Test-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle -PowerPlan "Balanced"
             $results.IsBestPractice | Should -Be $true
         }
     }

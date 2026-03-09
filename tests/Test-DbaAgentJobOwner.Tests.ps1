@@ -27,23 +27,23 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $saJob = ("dbatoolsci_sa_{0}" -f $(Get-Random))
         $notSaJob = ("dbatoolsci_nonsa_{0}" -f $(Get-Random))
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob -OwnerLogin 'sa'
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $saJob -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $saJob, $notSaJob
     }
 
     Context "Command actually works" {
         It "Should return $notSaJob" {
-            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2
+            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle
             $results | Where-Object { $_.Job -eq $notSaJob } | Should -Not -Be Null
         }
     }
 
     Context "Command works for specific jobs" {
         BeforeAll {
-            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2 -Job $saJob, $notSaJob
+            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $saJob, $notSaJob
         }
         It "Should find $saJob owner matches default sa" {
             $($results | Where-Object { $_.Job -eq $saJob }).OwnerMatch | Should -Be $True
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Exclusions work" {
         It "Should exclude $notSaJob job" {
-            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.instance2 -ExcludeJob $notSaJob
+            $results = Test-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -ExcludeJob $notSaJob
             $results.job | Should -Not -Match $notSaJob
         }
     }

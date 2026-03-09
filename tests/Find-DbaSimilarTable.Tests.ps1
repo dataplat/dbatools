@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
             $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
 
@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $db.Query("DROP TABLE dbatoolsci_table1")
             $db.Query("DROP TABLE dbatoolsci_table2")
 
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns at least two rows" {
             # not an exact count because who knows
-            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
 
             $results.Status.Count -ge 2 | Should -Be $true
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "matches 100% for the test tables" {
-            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Where-Object Table -Match dbatoolsci
 
             foreach ($result in $results) {
                 $result.MatchPercent -eq 100 | Should -Be $true

@@ -32,6 +32,39 @@ function Get-DbaInstanceTrigger {
     .LINK
         https://dbatools.io/Get-DbaInstanceTrigger
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Trigger
+
+        Returns one Trigger object per server-level DDL trigger on the specified instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the trigger
+        - Name: The name of the trigger
+        - AnsiNullsStatus: ANSI NULLS setting (ON or OFF)
+        - AssemblyName: CLR assembly name (for CLR-based triggers)
+        - BodyStartIndex: Starting character position of the trigger body in the script
+        - ClassName: CLR class name (for CLR-based triggers)
+        - CreateDate: DateTime when the trigger was created
+        - DateLastModified: DateTime of the most recent modification
+        - DdlTriggerEvents: DDL events that cause the trigger to fire (CREATE, ALTER, DROP, etc.)
+        - ExecutionContext: Security context of trigger execution (Caller, Owner, or specific principal name)
+        - ExecutionContextLogin: The principal that executes the trigger
+        - ImplementationType: Implementation type (T-SQL or CLR)
+        - IsDesignMode: Boolean indicating if the trigger is in design mode
+        - IsEnabled: Boolean indicating if the trigger is active
+        - IsEncrypted: Boolean indicating if the trigger body is encrypted
+        - IsSystemObject: Boolean indicating if this is a system object
+        - MethodName: CLR method name (for CLR-based triggers)
+        - QuotedIdentifierStatus: QUOTED_IDENTIFIER setting
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+        - TextHeader: The text header of the trigger definition
+        - TextMode: The text mode setting for the trigger
+
+        All properties from the base SMO Trigger object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaInstanceTrigger -SqlInstance sql2017
 

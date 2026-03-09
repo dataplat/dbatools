@@ -48,6 +48,28 @@ function Test-DbaCmConnection {
 
         **This function should not be called from within dbatools. It is meant as a tool for users only.**
 
+    .OUTPUTS
+        Dataplat.Dbatools.Connection.ConnectionManager
+
+        Returns one connection manager object containing the results of connectivity testing across all requested management protocols.
+
+        Default properties displayed:
+        - ComputerName: The target computer name being tested (lowercase format)
+        - CimRM: Result of CIM over WinRM connectivity test ("Success" or "Error")
+        - CimDCOM: Result of CIM over DCOM connectivity test ("Success" or "Error")
+        - Wmi: Result of WMI connectivity test ("Success" or "Error")
+        - PowerShellRemoting: Result of PowerShell Remoting connectivity test ("Success" or "Error")
+
+        Additional properties available (from ConnectionManager object):
+        - LastCimRM: DateTime of the most recent CIM over WinRM connectivity test
+        - LastCimDCOM: DateTime of the most recent CIM over DCOM connectivity test
+        - LastWmi: DateTime of the most recent WMI connectivity test
+        - LastPowerShellRemoting: DateTime of the most recent PowerShell Remoting test
+        - KnownBadCredentials: Collection of credentials that have failed in previous tests
+        - DisableBadCredentialCache: Boolean indicating if bad credential caching is disabled
+
+        The returned object is automatically cached by dbatools for optimization of future connections using Get-DbaCmObject and Invoke-DbaCmMethod.
+
     .LINK
         https://dbatools.io/Test-DbaCmConnection
 

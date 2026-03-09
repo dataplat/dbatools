@@ -78,6 +78,11 @@ function Add-DbaAgDatabase {
         Use this when you want the command to return immediately after adding the database to the AG, allowing seeding to continue in the background.
         This is particularly useful in deployments where seeding can take a long time and you want to start using the environment before synchronization completes.
 
+    .PARAMETER SkipReuseSourceFolderStructure
+        Prevents restores from using the source server's folder structure when restoring databases to secondary replicas.
+        When enabled, Restore-DbaDatabase uses the replica's default data and log directories instead of attempting to replicate the primary's folder structure.
+        This is automatically set to true when the primary and replica servers run on different operating system platforms (e.g., Windows primary with Linux replica).
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -141,6 +146,61 @@ function Add-DbaAgDatabase {
         PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1 -NoWait
 
         Adds db1 to ag1 on sql2017a and returns immediately without waiting for seeding to complete on secondary replicas. Seeding will continue in the background.
+
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityDatabase
+
+        Returns one AvailabilityDatabase object per replica where the database was added. For example, adding one database to an AG with two replicas returns two objects - one for the primary and one for each secondary.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group
+        - LocalReplicaRole: Role of this replica (Primary or Secondary)
+        - Name: Database name
+        - SynchronizationState: Current synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover
+        - IsJoined: Boolean indicating if the database has joined the availability group
+        - IsSuspended: Boolean indicating if data movement is suspended
+
+        Additional properties available (from SMO AvailabilityDatabase object):
+        - DatabaseGuid: Unique identifier for the database
+        - EstimatedDataLoss: Estimated data loss in seconds
+        - EstimatedRecoveryTime: Estimated recovery time in seconds
+        - FileStreamSendRate: Rate of FILESTREAM data being sent (bytes/sec)
+        - GroupDatabaseId: Unique identifier for the database within the AG
+        - ID: Internal object ID
+        - IsAvailabilityDatabaseSuspended: Boolean indicating suspension state
+        - IsDatabaseDiskHealthy: Boolean indicating if database disk health is good
+        - IsDatabaseJoined: Boolean indicating database join state
+        - IsInstanceDiskHealthy: Boolean indicating if instance disk health is good
+        - IsInstanceHealthy: Boolean indicating overall instance health
+        - IsPendingSecondarySuspend: Boolean indicating if secondary suspend is pending
+        - LastCommitLsn: Last commit log sequence number
+        - LastCommitTime: Timestamp of last committed transaction
+        - LastHardenedLsn: Last hardened log sequence number
+        - LastHardenedTime: Timestamp when last LSN was hardened
+        - LastReceivedLsn: Last received log sequence number
+        - LastReceivedTime: Timestamp when last LSN was received
+        - LastRedoneLsn: Last redone log sequence number
+        - LastRedoneTime: Timestamp when last LSN was redone
+        - LastSentLsn: Last sent log sequence number
+        - LastSentTime: Timestamp when last LSN was sent
+        - LogSendQueue: Size of log send queue in KB
+        - LogSendRate: Rate of log sending (bytes/sec)
+        - LowWaterMarkForGhostCleanup: Low water mark LSN for ghost cleanup
+        - Parent: Reference to parent AvailabilityGroup SMO object
+        - RecoveryLsn: Recovery log sequence number
+        - RedoQueue: Size of redo queue in KB
+        - RedoRate: Rate of redo operations (bytes/sec)
+        - SecondaryLagSeconds: Lag in seconds for secondary replica
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - SuspendReason: Reason for suspension if database is suspended
+        - Urn: Uniform Resource Name for the SMO object
+        - UserAccess: User access state
+
+        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -177,6 +237,9 @@ function Add-DbaAgDatabase {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$NoWait,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
+        [switch]$SkipReuseSourceFolderStructure,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
@@ -330,12 +393,31 @@ function Add-DbaAgDatabase {
                         try {
                             Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
                             $restoreParams = @{
-                                SqlInstance                = $replicaServerSMO[$replicaName]
-                                NoRecovery                 = $true
-                                TrustDbBackupHistory       = $true
-                                ReuseSourceFolderStructure = $true
-                                EnableException            = $true
+                                SqlInstance          = $replicaServerSMO[$replicaName]
+                                NoRecovery           = $true
+                                TrustDbBackupHistory = $true
+                                EnableException      = $true
                             }
+
+                            # Check if we should skip ReuseSourceFolderStructure
+                            if (-not $SkipReuseSourceFolderStructure) {
+                                # Check if primary and replica are on the same platform
+                                $primaryPlatform = $server.HostPlatform
+                                $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
+                                if ($primaryPlatform -ne $replicaPlatform) {
+                                    Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Setting SkipReuseSourceFolderStructure."
+                                    $SkipReuseSourceFolderStructure = $true
+                                }
+                            }
+
+                            # Only use ReuseSourceFolderStructure if not skipped
+                            if (-not $SkipReuseSourceFolderStructure) {
+                                Write-Message -Level Verbose -Message "Using ReuseSourceFolderStructure to maintain consistent folder layout."
+                                $restoreParams['ReuseSourceFolderStructure'] = $true
+                            } else {
+                                Write-Message -Level Verbose -Message "Using replica's default paths for database files."
+                            }
+
                             $sourceOwner = $db.Owner
                             $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
                             if ($sourceOwner -ne $replicaOwner) {

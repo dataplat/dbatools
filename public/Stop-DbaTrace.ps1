@@ -46,6 +46,36 @@ function Stop-DbaTrace {
     .LINK
         https://dbatools.io/Stop-DbaTrace
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per trace that was stopped, with the following default display properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Id: The unique identifier of the trace
+        - IsRunning: Boolean indicating if the trace is currently running (false after successful stop)
+
+        Additional properties available via Select-Object *:
+        - Status: Current status of the trace
+        - Path: File path where trace events are logged
+        - MaxSize: Maximum size of the trace file in MB
+        - StopTime: DateTime when the trace will stop
+        - MaxFiles: Maximum number of trace files for rollover
+        - IsRowset: Boolean indicating if trace data is in rowset format
+        - IsRollover: Boolean indicating if trace file rollover is enabled
+        - IsShutdown: Boolean indicating if trace stops on shutdown
+        - IsDefault: Boolean indicating if this is the default trace
+        - BufferCount: Number of buffers in memory
+        - BufferSize: Size of each buffer in KB
+        - FilePosition: Current position in the trace file
+        - ReaderSpid: SPID of the trace reader process
+        - StartTime: DateTime when the trace started
+        - LastEventTime: DateTime of the last event logged
+        - EventCount: Total number of events logged
+        - DroppedEventCount: Number of events dropped due to buffer overflow
+        - Parent: Reference to the parent SQL Server object
+
     .EXAMPLE
         PS C:\> Stop-DbaTrace -SqlInstance sql2008
 

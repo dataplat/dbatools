@@ -28,7 +28,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying User is removed" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $db = Get-DbaDatabase $server -Database tempdb
             $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
             $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword -Force

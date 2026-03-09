@@ -34,6 +34,25 @@ function Get-DbaFilestream {
     .LINK
         https://dbatools.io/Get-DbaFilestream
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance queried, containing both service-level and instance-level FileStream configuration status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - InstanceAccess: Human-readable description of instance-level FileStream access (Disabled, T-SQL access enabled, or Full access enabled)
+        - ServiceAccess: Human-readable description of service-level FileStream access (Disabled, FileStream enabled for T-SQL access, FileStream enabled for T-SQL and IO streaming access, or FileStream enabled for T-SQL, IO streaming, and remote clients)
+        - ServiceShareName: The Windows file share name used for FileStream when service-level access is enabled
+
+        Additional properties available (via Select-Object *):
+        - InstanceAccessLevel: Numeric code for instance-level FileStream access (0-2)
+        - ServiceAccessLevel: Numeric code for service-level FileStream access (0-3)
+        - Credential: The Windows credentials used for service-level queries (passed from -Credential parameter)
+        - SqlCredential: The SQL Server credentials used for instance-level queries (passed from -SqlCredential parameter)
+
     .EXAMPLE
         PS C:\> Get-DbaFilestream -SqlInstance server1\instance2
 

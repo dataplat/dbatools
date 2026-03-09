@@ -38,6 +38,21 @@ function Get-DbaTraceFlag {
     .LINK
         https://dbatools.io/Get-DbaTraceFlag
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per enabled global trace flag on the SQL Server instance. If -TraceFlag is specified, only those specific trace flags (if currently enabled) are returned. If no global trace flags are enabled, nothing is returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - TraceFlag: The trace flag number (integer, e.g., 4199, 3205, 1118)
+        - Global: Boolean indicating if the trace flag is enabled globally on the server
+        - Status: Status value for the trace flag (typically 1 for enabled, 0 for disabled)
+
+        The property Session (indicating session-level flag status) is available but excluded from default view. Use Select-Object * to access all properties including Session.
+
     .EXAMPLE
         PS C:\> Get-DbaTraceFlag -SqlInstance localhost
 

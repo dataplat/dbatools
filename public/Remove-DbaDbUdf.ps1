@@ -1,10 +1,10 @@
 function Remove-DbaDbUdf {
     <#
     .SYNOPSIS
-        Removes user-defined functions from SQL Server databases.
+        Removes user-defined functions and user-defined aggregates from SQL Server databases.
 
     .DESCRIPTION
-        Removes user-defined functions from specified databases, providing a clean way to drop obsolete or unwanted UDFs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
+        Removes user-defined functions and user-defined aggregates from specified databases, providing a clean way to drop obsolete or unwanted UDFs and UDAs without manual T-SQL scripting. This function is particularly useful during database cleanup operations, code refactoring projects, or when removing deprecated functions that are no longer needed. Supports filtering by schema and function name, and can exclude system UDFs to prevent accidental removal of built-in functions. Works seamlessly with Get-DbaDbUdf for pipeline operations.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -45,8 +45,8 @@ function Remove-DbaDbUdf {
         Use this to protect specific functions from deletion while removing others that match your criteria.
 
     .PARAMETER InputObject
-        Accepts UDF objects directly from Get-DbaDbUdf pipeline operations.
-        Use this when you need to filter or examine UDFs first before removal, enabling complex selection logic not possible with simple name matching.
+        Accepts UDF and UDA objects directly from Get-DbaDbUdf pipeline operations.
+        Use this when you need to filter or examine UDFs or UDAs first before removal, enabling complex selection logic not possible with simple name matching.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -59,6 +59,22 @@ function Remove-DbaDbUdf {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per user-defined function or user-defined aggregate that was processed for removal.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The fully qualified SQL Server instance name (computer\instance format)
+        - Database: The name of the database containing the UDF or UDA
+        - Udf: The fully qualified name of the function (schema.name format)
+        - UdfName: The unqualified function name
+        - UdfSchema: The schema name containing the function
+        - Status: The result of the removal operation ("Dropped" for successful removals, or error message for failures)
+        - IsRemoved: Boolean indicating whether the UDF or UDA was successfully removed (True if dropped, False if failed)
 
     .NOTES
         Tags: Udf, Database
@@ -103,7 +119,7 @@ function Remove-DbaDbUdf {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeName,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
-        [Microsoft.SqlServer.Management.Smo.UserDefinedFunction[]]$InputObject,
+        [object[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )

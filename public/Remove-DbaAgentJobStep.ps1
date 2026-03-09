@@ -46,6 +46,11 @@ function Remove-DbaAgentJobStep {
     .LINK
         https://dbatools.io/Remove-DbaAgentJobStep
 
+    .OUTPUTS
+        None
+
+        This function does not return any objects. It performs the removal operation and returns no output to the pipeline.
+
     .EXAMPLE
         PS C:\> Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
 

@@ -23,8 +23,13 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Validate output" {
         It "has some output" {
-            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.instance1
-            $result | Should -Not -BeNullOrEmpty
+            $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
+
+            $WarnVar | Should -BeNullOrEmpty
+            # On AppVeyor sometimes there are no patches installed
+            if (-not $env:AppVeyor) {
+                $result | Should -Not -BeNullOrEmpty
+            }
         }
     }
 }

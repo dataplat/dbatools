@@ -64,6 +64,20 @@ function Restart-DbaService {
     .LINK
         https://dbatools.io/Restart-DbaService
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per service that was processed with the following properties:
+        - ComputerName: The name of the computer where the service is running
+        - InstanceName: The SQL Server instance name the service belongs to
+        - ServiceName: The Windows service name (MSSQLSERVER, MSSQL$NAMED, SQLSERVERAGENT, etc.)
+        - ServiceType: The type of service (Engine, Agent, Browser, FullText, SSAS, SSIS, SSRS, PolyBase, Launchpad)
+        - Status: The result of the restart operation (Successful, Failed, or other status values)
+
+        Services that failed to stop are returned before services that successfully restarted. This allows you to identify which services encountered issues during the restart process.
+
+        If -Force is specified with Engine services, dependent services (Agent, PolyBase, Launchpad) are automatically included and restarted as part of the operation.
+
     .EXAMPLE
         PS C:\> Restart-DbaService -ComputerName sqlserver2014a
 

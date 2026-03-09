@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $waitingTaskFlag = "dbatools_$(Get-Random)"
         $waitingTaskTime = "00:15:00"
         $waitingTaskSql = "SELECT '$waitingTaskFlag'; WAITFOR DELAY '$waitingTaskTime'"
-        $waitingTaskInstance = $TestConfig.instance2
+        $waitingTaskInstance = $TestConfig.InstanceSingle
 
         $waitingTaskModulePath = "C:\Github\dbatools\dbatools.psm1"
         $waitingTaskJobName = "YouHaveBeenFoundWaiting"

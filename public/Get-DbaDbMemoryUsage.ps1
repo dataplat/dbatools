@@ -46,6 +46,25 @@ function Get-DbaDbMemoryUsage {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per page type per database showing buffer pool memory consumption.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database consuming the buffer pool pages
+        - PageType: Type of page in the buffer (e.g., data pages, index pages, etc.)
+        - Size: Amount of memory consumed by this database and page type (in MB, as DbaSize object)
+        - PercentUsed: Percentage of total buffer pool consumed by this database and page type (0-100)
+
+        Additional properties available:
+        - PageCount: The number of 8KB pages allocated to this database and page type in the buffer pool
+
+        All properties are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaDbMemoryUsage
 

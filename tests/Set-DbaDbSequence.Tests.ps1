@@ -33,7 +33,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb = New-DbaDatabase -SqlInstance $server -Name $newDbName
 

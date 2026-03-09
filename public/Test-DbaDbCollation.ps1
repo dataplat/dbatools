@@ -40,6 +40,20 @@ function Test-DbaDbCollation {
     .LINK
         https://dbatools.io/Test-DbaDbCollation
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database on the specified instance(s) that matches the filter criteria.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database being tested
+        - ServerCollation: The default collation of the SQL Server instance
+        - DatabaseCollation: The collation setting of the database
+        - IsEqual: Boolean indicating if the database collation matches the server's default collation ($true if match, $false if different)
+
     .EXAMPLE
         PS C:\> Test-DbaDbCollation -SqlInstance sqlserver2014a
 

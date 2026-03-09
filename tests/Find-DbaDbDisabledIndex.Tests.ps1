@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $random = Get-Random
             $databaseName1 = "dbatoolsci1_$random"
             $databaseName2 = "dbatoolsci2_$random"
@@ -58,21 +58,21 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should find disabled index: $indexName" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle
             ($results | Where-Object IndexName -eq $indexName).Count | Should -BeExactly 2
             ($results | Where-Object DatabaseName -in $databaseName1, $databaseName2).Count | Should -BeExactly 2
             ($results | Where-Object DatabaseId -in $db1.Id, $db2.Id).Count | Should -BeExactly 2
         }
 
         It "Should find disabled index: $indexName for specific database" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1 -Database $databaseName1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -Database $databaseName1
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName1
             $results.DatabaseId | Should -Be $db1.Id
         }
 
         It "Should exclude specific database" {
-            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1 -ExcludeDatabase $databaseName1
+            $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $databaseName1
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName2
             $results.DatabaseId | Should -Be $db2.Id

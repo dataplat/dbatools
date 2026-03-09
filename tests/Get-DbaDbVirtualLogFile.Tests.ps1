@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $testDbName = "dbatoolsci_getvlf"
         $splatDatabase = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Name            = $testDbName
             EnableException = $true
         }
@@ -44,7 +44,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
             $splatVirtualLogFile = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $testDbName
             }
             $allResults = Get-DbaDbVirtualLogFile @splatVirtualLogFile

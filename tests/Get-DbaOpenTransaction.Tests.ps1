@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         It "Should not throw when connecting to instance" {
-            { Get-DbaOpenTransaction -SqlInstance $TestConfig.instance1 } | Should -Not -Throw
+            { Get-DbaOpenTransaction -SqlInstance $TestConfig.InstanceSingle } | Should -Not -Throw
         }
     }
 }

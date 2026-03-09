@@ -49,6 +49,66 @@ function Get-DbaTopResourceUsage {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one result set per cached query grouped by query hash matching the specified resource metric criteria. When -Type All (default) is specified, up to 80 result objects are returned (20 per metric type × 4 metric types).
+
+        Duration metric results (when -Type includes "Duration"):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The database context where the query executed
+        - ObjectName: The stored procedure or object name containing the query (or '<none>' for ad-hoc queries)
+        - QueryHash: The binary hash identifier for the query
+        - TotalElapsedTimeMs: Total elapsed time in milliseconds for this cached query execution plan
+        - ExecutionCount: Total number of times this query execution plan was executed
+        - AverageDurationMs: Average elapsed time per execution in milliseconds
+        - QueryTotalElapsedTimeMs: Total elapsed time for all occurrences of this query hash
+        - QueryText: The actual SQL statement text being executed
+
+        Frequency metric results (when -Type includes "Frequency"):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The database context where the query executed
+        - ObjectName: The stored procedure or object name containing the query (or '<none>' for ad-hoc queries)
+        - QueryHash: The binary hash identifier for the query
+        - ExecutionCount: Number of times this query execution plan was executed
+        - QueryTotalExecutions: Total execution count for all occurrences of this query hash
+        - QueryText: The actual SQL statement text being executed
+
+        IO metric results (when -Type includes "IO"):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The database context where the query executed
+        - ObjectName: The stored procedure or object name containing the query (or '<none>' for ad-hoc queries)
+        - QueryHash: The binary hash identifier for the query
+        - TotalIO: Total logical reads and writes (sum of logical read and write operations)
+        - ExecutionCount: Number of times this query execution plan was executed
+        - AverageIO: Average IO operations per execution
+        - QueryTotalIO: Total IO operations for all occurrences of this query hash
+        - QueryText: The actual SQL statement text being executed
+
+        CPU metric results (when -Type includes "CPU"):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - Database: The database context where the query executed
+        - ObjectName: The stored procedure or object name containing the query (or '<none>' for ad-hoc queries)
+        - QueryHash: The binary hash identifier for the query
+        - CpuTime: Total worker time in microseconds (CPU time consumed)
+        - ExecutionCount: Number of times this query execution plan was executed
+        - AverageCpuMs: Average CPU time per execution in milliseconds
+        - QueryTotalCpu: Total CPU time for all occurrences of this query hash
+        - QueryText: The actual SQL statement text being executed
+
+        Additional property available with Select-Object *:
+        - QueryPlan: The actual execution plan XML (excluded from default display via Select-DefaultView)
+
+        The -ExcludeSystem parameter filters out system replication procedures (sp_MS%) from all result sets. The -Database and -ExcludeDatabase parameters filter results to specific databases before aggregation.
+
     .NOTES
         Tags: Diagnostic, Performance, Query
         Author: Chrissy LeMaire (@cl), netnerds.net

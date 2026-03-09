@@ -39,7 +39,7 @@ CREATE TRIGGER dbatoolsci_safety
     RAISERROR ('You must disable Trigger "dbatoolsci_safety" to drop synonyms!',10, 1)
     ROLLBACK
 "@
-        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $serverInstance.Query("$createTrigger")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -50,7 +50,7 @@ CREATE TRIGGER dbatoolsci_safety
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverInstance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $dropTrigger = "DROP TRIGGER dbatoolsci_safety ON DATABASE;"
         $serverInstance.Query("$dropTrigger")
 
@@ -59,7 +59,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets Database Trigger" {
         BeforeAll {
-            $allResults = Get-DbaDbTrigger -SqlInstance $TestConfig.instance2 | Where-Object Name -eq "dbatoolsci_safety"
+            $allResults = Get-DbaDbTrigger -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "dbatoolsci_safety"
         }
 
         It "Gets results" {
@@ -77,7 +77,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets Database Trigger when using -Database" {
         BeforeAll {
-            $databaseResults = Get-DbaDbTrigger -SqlInstance $TestConfig.instance2 -Database Master
+            $databaseResults = Get-DbaDbTrigger -SqlInstance $TestConfig.InstanceSingle -Database Master
         }
 
         It "Gets results" {
@@ -95,7 +95,7 @@ CREATE TRIGGER dbatoolsci_safety
 
     Context "Gets no Database Trigger when using -ExcludeDatabase" {
         BeforeAll {
-            $excludeResults = Get-DbaDbTrigger -SqlInstance $TestConfig.instance2 -ExcludeDatabase Master
+            $excludeResults = Get-DbaDbTrigger -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase Master
         }
 
         It "Gets no results" {

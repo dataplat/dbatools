@@ -44,6 +44,19 @@ function Get-DbaPbmCategory {
     .LINK
         https://dbatools.io/Get-DbaPbmCategory
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Sdk.Sfc.ISfcInstance
+
+        Returns one policy category object per category found on the target PBM store(s). Each category object includes connection context properties and policy category metadata.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The unique identifier for the policy category
+        - Name: The name of the policy category
+        - MandateDatabaseSubscriptions: Boolean indicating if databases must be subscribed to this category for automatic policy evaluation
+
     .EXAMPLE
         PS C:\> Get-DbaPbmCategory -SqlInstance sql2016
 

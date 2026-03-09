@@ -36,6 +36,16 @@ function Remove-DbaComputerCertificate {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per certificate removal attempt. Each object contains the following properties:
+        - ComputerName: The computer name where the certificate removal was attempted
+        - Store: The certificate store location (LocalMachine or CurrentUser)
+        - Folder: The certificate store folder/subfolder where the certificate was located (My, Root, TrustedPeople, etc.)
+        - Thumbprint: The SHA-1 hash thumbprint of the certificate that was targeted for removal
+        - Status: The status of the removal operation. Shows "Removed" on success, or "Certificate not found in Cert:\$Store\$Folder" if the certificate was not found
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

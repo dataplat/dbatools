@@ -65,6 +65,24 @@ function Invoke-DbaBalanceDataFiles {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed with data file balancing results.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database that was balanced
+        - Start: DateTime when the data file balancing operation started
+        - End: DateTime when the data file balancing operation completed
+        - Elapsed: The elapsed time formatted as HH:mm:ss
+        - Success: Boolean indicating if the data file balancing was successful
+        - Unsuccessful: Comma-separated list of table names that could not be balanced (empty string if all successful)
+        - DataFilesStart: Array of file objects before balancing, each containing ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace
+        - DataFilesEnd: Array of file objects after balancing, each containing ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace
+
     .LINK
         https://dbatools.io/Invoke-DbaBalanceDataFiles
 

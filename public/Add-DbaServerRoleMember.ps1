@@ -54,6 +54,11 @@ function Add-DbaServerRoleMember {
     .LINK
         https://dbatools.io/Add-DbaServerRoleMember
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects. It performs administrative actions to add logins or roles to server-level roles and returns control to the caller. Use the -Verbose switch to see detailed information about the actions being performed, or the -WhatIf switch to preview what would be changed without making modifications.
+
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1
 

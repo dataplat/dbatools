@@ -107,6 +107,31 @@ function Invoke-DbaDbMirroring {
     .LINK
         https://dbatools.io/Invoke-DbaDbMirroring
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database successfully configured for mirroring, containing configuration summary information for the mirroring partnership.
+
+        Default display properties (via Select-DefaultView):
+
+        Without witness server:
+        - Primary: The SQL Server instance serving as the primary (principal) server
+        - Mirror: The SQL Server instance serving as the mirror server
+        - Database: The name of the database configured for mirroring
+        - Status: Status of the mirroring setup (Success indicates successful configuration)
+
+        With witness server:
+        - Primary: The SQL Server instance serving as the primary (principal) server
+        - Mirror: The SQL Server instance serving as the mirror server
+        - Witness: The SQL Server instance configured as the witness server for automatic failover
+        - Database: The name of the database configured for mirroring
+        - Status: Status of the mirroring setup (Success indicates successful configuration)
+
+        Additional properties available (from PSCustomObject):
+        - ServiceAccount: String array of SQL Server service accounts that were granted CONNECT permissions on the mirroring endpoints
+
+        Output occurs only when the ShouldProcess block executes successfully. Multiple objects are returned when mirroring is configured for multiple databases or to multiple mirror instances.
+
     .EXAMPLE
         PS C:\> $params = @{
         >> Primary = 'sql2017a'

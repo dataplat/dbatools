@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting server agent" {
         It "Should get 1 agent server" {
-            $agentResults = Get-DbaAgentServer -SqlInstance $TestConfig.instance2
+            $agentResults = Get-DbaAgentServer -SqlInstance $TestConfig.InstanceSingle
             $agentResults.Count | Should -BeExactly 1
         }
     }

@@ -44,6 +44,26 @@ function Get-DbaDbMailServer {
     .LINK
         https://dbatools.io/Get-DbaDbMailServer
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailServer
+
+        Returns one or more Database Mail server objects from configured Database Mail accounts. Each server object represents an SMTP server configuration associated with a Database Mail account.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Account: The name of the Database Mail account that uses this server
+        - Name: The name or hostname of the SMTP server
+        - Port: The SMTP port number used for connections (typically 25, 465, or 587)
+        - EnableSsl: Boolean indicating whether SSL/TLS encryption is enabled for this server
+        - ServerType: The type of mail server (typically "SMTP")
+        - UserName: The username used to authenticate with the SMTP server, if required
+        - UseDefaultCredentials: Boolean indicating whether default Windows credentials are used
+        - NoCredentialChange: Boolean indicating the credential policy for the server
+
+        All properties from the SMO MailServer object are accessible via Select-Object * if needed.
+
     .EXAMPLE
         PS C:\> Get-DbaDbMailServer -SqlInstance sql01\sharepoint
 

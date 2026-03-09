@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "BlockSize",
                 "BufferCount",
                 "Continue",
-                "AzureCredential",
+                "StorageCredential",
                 "WithReplace",
                 "KeepReplication",
                 "KeepCDC",
@@ -33,6 +33,7 @@ Describe $CommandName -Tag UnitTests {
                 "StopMark",
                 "StopAfterDate",
                 "Checksum",
+                "Restart",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

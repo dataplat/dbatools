@@ -59,8 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # registered server and group
-        $testServer = $TestConfig.instance2
-        $server = Connect-DbaInstance -SqlInstance $testServer
+        $testServer = $TestConfig.InstanceSingle
         $srvName = "dbatoolsci-server1"
         $group = "dbatoolsci-group1"
         $regSrvName = "dbatoolsci-server12"
@@ -90,10 +89,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "CREATE TRIGGER [create_database_$random] ON ALL SERVER FOR CREATE_DATABASE AS SELECT 1"
 
         # database restore scripts
-        $backupdir = Join-Path $server.BackupDirectory $dbName
-        if (-not (Test-Path $backupdir -PathType Container)) {
-            $null = New-Item -Path $backupdir -ItemType Container
-        }
+        $backupdir = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupdir -ItemType Directory
         New-DbaDatabase -SqlInstance $testServer -Name $dbName
         Backup-DbaDatabase -SqlInstance $testServer -Database $dbName -BackupDirectory $backupdir
 
@@ -174,7 +171,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP TRIGGER [create_database_$random] ON ALL SERVER"
 
         # database restore scripts
-        Remove-Item -Path $backupdir -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupdir -Recurse
 
         # database audit
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database $dbName -Query "ALTER DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random] WITH (STATE = OFF); DROP DATABASE AUDIT SPECIFICATION [DatabaseAuditSpecification_$random]"
@@ -257,6 +254,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "Export credentials" {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+    }
+
+    It "Export credentials without passwords" {
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -ExcludePassword
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+    }
+
+    It "Export credentials with preopend dac" {
+        $dac = Connect-DbaInstance -SqlInstance $testServer -DedicatedAdminConnection
+        $results = Export-DbaInstance -SqlInstance $dac -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider' -ExcludePassword
+        $null = $dac | Disconnect-DbaInstance
 
         $results.FullName | Should -Exist
         $results.Length | Should -BeGreaterThan 0

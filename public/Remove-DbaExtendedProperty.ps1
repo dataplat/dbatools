@@ -25,6 +25,20 @@ function Remove-DbaExtendedProperty {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successfully removed extended property.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - ParentName: The name of the parent SQL Server object from which the extended property was removed
+        - PropertyType: The type of extended property that was removed
+        - Name: The name of the extended property that was removed
+        - Status: The status of the removal operation (always "Dropped" for successful removals)
+
     .NOTES
         Tags: extendedproperties
         Author: Chrissy LeMaire (@cl), netnerds.net

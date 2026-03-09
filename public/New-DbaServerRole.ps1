@@ -42,6 +42,32 @@ function New-DbaServerRole {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ServerRole
+
+        Returns one ServerRole object for each newly created server-level role. The returned object is obtained from Get-DbaServerRole after successful role creation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Role: The name of the server role
+        - Login: Array of logins/users that are members of this role
+        - Owner: The login that owns the server role
+        - IsFixedRole: Boolean indicating if this is a built-in fixed role (always $false for newly created roles)
+        - DateCreated: DateTime when the role was created
+        - DateModified: DateTime when the role was last modified
+
+        Additional properties available (from SMO ServerRole object):
+        - ServerRole: Duplicate of Role property name
+        - Parent: Reference to parent SQL Server object
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Urn: The unified resource name of the role object
+        - Properties: Collection of property objects for the role
+        - PermissionSet: Permissions assigned to the role
+
+        All properties from the base SMO ServerRole object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/New-DbaServerRole
 

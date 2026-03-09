@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $queryResult = $db.Query("SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -62,8 +62,8 @@ Describe $CommandName -Tag IntegrationTests {
                 "Buffer",
                 "HexBuffer"
             )
-            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -All
-            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -All
+            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All
+            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All
         }
 
         It "Returns results for InputBuffer" {
@@ -86,8 +86,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Validate returns results for SessionId" {
         BeforeAll {
             $spid = $queryResult[0].MySpid
-            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -SessionId $spid
-            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -SessionId $spid
+            $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -SessionId $spid
+            $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -SessionId $spid
         }
 
         It "Returns results for InputBuffer with correct SessionId" {

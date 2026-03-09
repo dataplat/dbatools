@@ -43,6 +43,25 @@ function Rename-DbaLogin {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per operation performed (login rename and/or user renames). Each object includes the following properties:
+
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the user being renamed (null for login-level rename operations)
+        - PreviousLogin: The original login name (populated for login rename, null for user renames)
+        - NewLogin: The new login name (populated for login rename, null for user renames)
+        - PreviousUser: The original database user name (null for login rename, populated for user renames)
+        - NewUser: The new database user name (null for login rename, populated for successful user renames)
+        - Status: Result of the operation (Successful, Failure, or "Failure to rename. Rolled back change." when rollback occurs)
+
+        When -Force is not specified, only one object is returned representing the login rename operation.
+
+        When -Force is specified, multiple objects are returned - one for the login rename operation and one per database user that was successfully renamed. If any user rename fails, the login is rolled back and a rollback status is returned.
+
     .NOTES
         Tags: Login
         Author: Mitchell Hamann (@SirCaptainMitch)

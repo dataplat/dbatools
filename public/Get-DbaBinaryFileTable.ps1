@@ -51,6 +51,36 @@ function Get-DbaBinaryFileTable {
     .LINK
         https://dbatools.io/Get-DbaBinaryFileTable
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Table
+
+        Returns one Table object for each table found containing binary columns (binary, varbinary, or image data types).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the table
+        - Schema: The schema name containing the table
+        - Name: The table name
+        - BinaryColumn: The name(s) of the column(s) containing binary data; multiple values if multiple binary columns exist
+        - FileNameColumn: The name of the column identified as containing filenames for extraction; empty if no column matches the pattern or multiple matches were found
+
+        Additional properties available from the base SMO Table object include:
+        - IndexSpaceUsed: Space consumed by indexes on the table (bytes)
+        - DataSpaceUsed: Space consumed by table data (bytes)
+        - RowCount: Number of rows in the table
+        - HasClusteredIndex: Boolean indicating if the table has a clustered index
+        - IsPartitioned: Boolean indicating if the table uses partitioning (SQL Server 2005+)
+        - ChangeTrackingEnabled: Boolean indicating if change tracking is enabled (SQL Server 2008+)
+        - IsFileTable: Boolean indicating if the table is a FileTable (SQL Server 2012+)
+        - IsMemoryOptimized: Boolean indicating if the table is memory-optimized (SQL Server 2014+)
+        - IsNode: Boolean indicating if the table is a node table (SQL Server 2017+)
+        - IsEdge: Boolean indicating if the table is an edge table (SQL Server 2017+)
+        - FullTextIndex: Full-text index configuration for the table if present
+
+        All properties from the SMO Table object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaBinaryFileTable -SqlInstance sqlcs -Database test
 

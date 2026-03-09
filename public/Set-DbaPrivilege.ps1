@@ -46,6 +46,11 @@ function Set-DbaPrivilege {
     .LINK
         https://dbatools.io/Set-DbaPrivilege
 
+    .OUTPUTS
+        None
+
+        This command performs configuration operations and does not return any objects to the pipeline. Status and informational messages are displayed through Write-Message during execution (visible at Verbose level).
+
     .EXAMPLE
         PS C:\> Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI
 

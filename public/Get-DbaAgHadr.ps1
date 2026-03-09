@@ -21,6 +21,17 @@ function Get-DbaAgHadr {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance queried, containing the current HADR status.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER or named instance)
+        - SqlInstance: The full SQL Server instance identifier in the format ComputerName\InstanceName or instance name for default
+        - IsHadrEnabled: Boolean value indicating whether HADR is enabled ($true) or disabled ($false) on the instance
+
     .NOTES
         Tags: AG, HA
         Author: Shawn Melton (@wsmelton), wsmelton.github.io

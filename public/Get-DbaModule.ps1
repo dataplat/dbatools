@@ -63,6 +63,26 @@ function Get-DbaModule {
     .LINK
         https://dbatools.io/Get-DbaModule
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database module (stored procedure, function, view, trigger, etc.) found in the specified databases that matches the filter criteria.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the module
+        - Name: The name of the module object
+        - ObjectID: The SQL Server object ID (int)
+        - SchemaName: The name of the schema containing the module
+        - Type: The type of module (VIEW, SQL_STORED_PROCEDURE, SQL_SCALAR_FUNCTION, SQL_TABLE_VALUED_FUNCTION, SQL_INLINE_TABLE_VALUED_FUNCTION, SQL_TRIGGER, DEFAULT_CONSTRAINT, RULE)
+        - CreateDate: DateTime when the module was first created
+        - ModifyDate: DateTime when the module was last modified
+        - IsMsShipped: Boolean indicating if the module is a Microsoft-shipped system object
+        - ExecIsStartUp: Boolean indicating if the stored procedure is configured to run at SQL Server startup (for stored procedures only)
+        - Definition: The source code definition of the module (hidden by default, use Select-Object * to view)
+
     .EXAMPLE
         PS C:\> Get-DbaModule -SqlInstance sql2008, sqlserver2012
 

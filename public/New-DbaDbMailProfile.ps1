@@ -54,6 +54,26 @@ function New-DbaDbMailProfile {
     .LINK
         https://dbatools.io/New-DbaDbMailProfile
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailProfile
+
+        Returns one MailProfile object for the Database Mail profile that was created.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The unique identifier for the Database Mail profile
+        - Name: The name of the Database Mail profile
+        - Description: The description of the Database Mail profile (if provided)
+        - IsBusyProfile: Boolean indicating if the profile is currently processing mail
+
+        Additional properties available (from SMO MailProfile object):
+        - Parent: Reference to parent SqlMail object
+        - Urn: The Uniform Resource Name of the profile
+        - State: Current state of the object (Existing, Creating, etc.)
+        - MailAccountMemberships: Collection of mail accounts associated with this profile
+
     .EXAMPLE
         PS C:\> $profile = New-DbaDbMailProfile -SqlInstance sql2017 -Profile 'The DBA Team'
 

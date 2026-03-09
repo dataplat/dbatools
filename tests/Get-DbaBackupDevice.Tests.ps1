@@ -24,7 +24,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
         $server.Query($sql)
 
@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
         $server.Query($sql)
 
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the backup devices" {
         BeforeAll {
-            $results = Get-DbaBackupDevice -SqlInstance $TestConfig.instance2
+            $results = Get-DbaBackupDevice -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Results are not empty" {

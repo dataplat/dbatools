@@ -34,12 +34,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         $testFile = "$($TestConfig.Temp)\Servers_$random.txt"
 
-        $TestConfig.instance1, $TestConfig.instance2 | Out-File $testFile
+        $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Out-File $testFile
 
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
-        $null = Add-DbaRegServer -SqlInstance $TestConfig.instance1 -ServerName $TestConfig.instance2 -Name "dbatoolsci_instance_$random"
+        $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceMulti1 -ServerName $TestConfig.InstanceMulti2 -Name "dbatoolsci_instance_$random"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer
+        Get-DbaRegServer -SqlInstance $TestConfig.InstanceMulti1 | Remove-DbaRegServer
         Remove-Item -Path $testFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -60,17 +60,17 @@ Describe $CommandName -Tag IntegrationTests {
         # A real test would need a very complex setup.
 
         It "ServersFromFile" {
-            Watch-DbaDbLogin -SqlInstance $TestConfig.instance1 -Database tempdb -ServersFromFile $testFile
+            Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -ServersFromFile $testFile
             $WarnVar | Should -BeNullOrEmpty
         }
 
         It "Pipeline of instances" {
-            $server1, $server2 | Watch-DbaDbLogin -SqlInstance $TestConfig.instance1 -Database tempdb
+            $server1, $server2 | Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
             $WarnVar | Should -BeNullOrEmpty
         }
 
         It "ServersFromCMS" {
-            Watch-DbaDbLogin -SqlInstance $TestConfig.instance1 -Database tempdb -SqlCms $TestConfig.instance1
+            Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -SqlCms $TestConfig.InstanceMulti1
             $WarnVar | Should -BeNullOrEmpty
         }
     }

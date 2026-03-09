@@ -85,6 +85,30 @@ function New-DbaRgResourcePool {
     .LINK
         https://dbatools.io/New-DbaRgResourcePool
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ResourcePool (for Internal pools)
+        Microsoft.SqlServer.Management.Smo.ExternalResourcePool (for External pools)
+
+        Returns one resource pool object per pool created on the specified instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The unique identifier for the resource pool
+        - Name: The name of the resource pool
+        - CapCpuPercentage: Absolute maximum CPU percentage limit (1-100)
+        - IsSystemObject: Boolean indicating if the pool is a system-defined pool
+        - MaximumCpuPercentage: Maximum CPU percentage during contention (1-100)
+        - MaximumIopsPerVolume: Maximum IOPS per disk volume (0 = unlimited)
+        - MaximumMemoryPercentage: Maximum memory percentage (1-100)
+        - MinimumCpuPercentage: Guaranteed minimum CPU percentage (0-100)
+        - MinimumIopsPerVolume: Guaranteed minimum IOPS per disk volume (0 = unlimited)
+        - MinimumMemoryPercentage: Guaranteed minimum memory percentage (0-100)
+        - WorkloadGroups: Collection of workload groups associated with this pool
+
+        All properties from the base SMO ResourcePool or ExternalResourcePool objects are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaRgResourcePool -SqlInstance sql2016 -ResourcePool "poolAdmin"
 

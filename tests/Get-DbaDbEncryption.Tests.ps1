@@ -31,18 +31,18 @@ Describe $CommandName -Tag IntegrationTests {
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
 
             $splatCertificate = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $cert
                 Password    = $password
             }
             New-DbaDbCertificate @splatCertificate
 
-            $results = Get-DbaDbEncryption -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle
         }
 
         AfterAll {
             $splatRemove = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Certificate = $cert
             }
             Get-DbaDbCertificate @splatRemove | Remove-DbaDbCertificate

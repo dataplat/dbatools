@@ -23,13 +23,13 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $versionMajor = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).VersionMajor
+        $versionMajor = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).VersionMajor
     }
 
     Context "Command actually works" {
         BeforeAll {
-            $trueResults = Test-DbaManagementObject -ComputerName $TestConfig.instance2 -VersionNumber $versionMajor
-            $falseResults = Test-DbaManagementObject -ComputerName $TestConfig.instance2 -VersionNumber -1
+            $trueResults = Test-DbaManagementObject -ComputerName $TestConfig.InstanceSingle -VersionNumber $versionMajor
+            $falseResults = Test-DbaManagementObject -ComputerName $TestConfig.InstanceSingle -VersionNumber -1
         }
 
         It "Should have correct properties" {

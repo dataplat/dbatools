@@ -46,6 +46,22 @@ function Get-DbaSpinLockStatistic {
     .LINK
         https://dbatools.io/Get-DbaSpinLockStatistic
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per spinlock type found on the SQL Server instance. Each object contains statistics about spinlock usage and contention for a specific spinlock type.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - SpinLockName: The type of spinlock (e.g., LOCK_HASH, LOGCACHE_ACCESS)
+        - Collisions: Number of times threads had to wait for the spinlock
+        - Spins: Total number of spin cycles before acquiring the lock
+        - SpinsPerCollision: Average spins per collision (efficiency indicator)
+        - SleepTime: Total time spent sleeping when spins were exhausted (milliseconds)
+        - Backoffs: Number of times the thread backed off before retrying
+
     .EXAMPLE
         PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
 

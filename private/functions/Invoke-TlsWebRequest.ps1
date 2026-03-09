@@ -14,7 +14,11 @@ function Invoke-TlsWebRequest {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
     }
 
+    # IWR is crazy slow for large downloads
+    $currentProgressPref = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
     Invoke-WebRequest @Args
+    $ProgressPreference = $currentProgressPref
 
     [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
 }

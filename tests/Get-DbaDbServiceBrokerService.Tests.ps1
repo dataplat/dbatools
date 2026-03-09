@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up Service Broker components for testing
-        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $testProcName = "dbatools_{0}" -f $(Get-Random)
         $testServer.Query("CREATE PROCEDURE $testProcName AS SELECT 1", "tempdb")
         $testQueueName = "dbatools_{0}" -f $(Get-Random)
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the service broker service" {
         BeforeAll {
-            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.instance2 -Database tempdb -ExcludeSystemService:$true
+            $testResults = Get-DbaDbServiceBrokerService -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeSystemService:$true
         }
 
         It "Gets results" {

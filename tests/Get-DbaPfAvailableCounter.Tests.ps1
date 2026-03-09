@@ -25,7 +25,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.instance1
+        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate -ComputerName $TestConfig.InstanceSingle
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -33,19 +33,19 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.instance1 -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
+        $null = Get-DbaPfDataCollectorSet -ComputerName $TestConfig.InstanceSingle -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Verifying command returns all the required results" {
         It "returns the correct values" {
-            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.instance1
+            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle
             $results.Count -gt 1000 | Should -Be $true
         }
 
         It "returns are pipable into Add-DbaPfDataCollectorCounter" {
-            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.instance1 -Pattern "*sql*" | Select-Object -First 3 | Add-DbaPfDataCollectorCounter -CollectorSet "Long Running Queries" -Collector "DataCollector01" -WarningAction SilentlyContinue
+            $results = Get-DbaPfAvailableCounter -ComputerName $TestConfig.InstanceSingle -Pattern "*sql*" | Select-Object -First 3 | Add-DbaPfDataCollectorCounter -CollectorSet "Long Running Queries" -Collector "DataCollector01" -WarningAction SilentlyContinue
             foreach ($result in $results) {
                 $result.Name -match "sql" | Should -Be $true
             }

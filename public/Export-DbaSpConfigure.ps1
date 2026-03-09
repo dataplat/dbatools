@@ -45,7 +45,19 @@ function Export-DbaSpConfigure {
         A DbaInstanceParameter representing an array of SQL Server instances.
 
     .OUTPUTS
-        Creates a new file for each SQL Server Instance
+        System.IO.FileInfo
+
+        Returns one file object for each SQL Server instance processed. The file contains the complete SQL script with EXEC sp_configure statements that can be executed on another SQL Server instance to replicate the exact configuration settings.
+
+        Properties:
+        - Name: The name of the exported SQL script file (format: Servername-MMDDYYYYhhmmss-sp_configure.sql)
+        - FullName: The complete file path to the exported SQL script
+        - Directory: The parent directory object where the file is stored
+        - Length: The size of the SQL script file in bytes
+        - CreationTime: DateTime when the file was created
+        - LastWriteTime: DateTime when the file was last modified
+        - Extension: The file extension (.sql)
+        - Attributes: File attributes (Archive, etc.)
 
     .EXAMPLE
         PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver

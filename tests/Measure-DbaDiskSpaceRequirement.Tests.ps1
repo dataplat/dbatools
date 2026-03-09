@@ -28,12 +28,12 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should Measure Disk Space Required" {
         BeforeAll {
-            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
 
             $splatMeasure = @{
-                Source              = $TestConfig.instance1
-                Destination         = $TestConfig.instance2
+                Source              = $TestConfig.InstanceCopy1
+                Destination         = $TestConfig.InstanceCopy2
                 Database            = "master"
                 DestinationDatabase = "Dbatoolsci_DestinationDB"
             }
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].SourceDatabase | Should -Be $splatMeasure.Database
         }
 
-        It "Should be sourced from the instance $($TestConfig.instance1)" {
+        It "Should be sourced from the instance $($TestConfig.InstanceCopy1)" {
             $results[0].SourceSqlInstance | Should -Be $server1.SqlInstance
         }
 
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].DestinationDatabase | Should -Be $splatMeasure.DestinationDatabase
         }
 
-        It "Should be destined for the instance $($TestConfig.instance2)" {
+        It "Should be destined for the instance $($TestConfig.InstanceCopy2)" {
             $results[0].DestinationSqlInstance | Should -Be $server2.SqlInstance
         }
 

@@ -33,6 +33,23 @@ function Get-DbaDbccMemoryStatus {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per memory metric returned by DBCC MEMORYSTATUS. Each metric is parsed into a structured object containing the metric name, value, and classification.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - RecordSet: The recordset number from the DBCC MEMORYSTATUS output (identifies which section the metric belongs to)
+        - RowId: The sequential row ID across all recordsets
+        - RecordSetId: The row ID within the current recordset
+        - Type: The memory category/type from DBCC MEMORYSTATUS (e.g., Memory Manager, Buffer Manager, Resource Pool, etc.)
+        - Name: The name of the memory metric
+        - Value: The value of the memory metric (typically in KB)
+        - ValueType: The column name from DBCC MEMORYSTATUS output indicating the metric classification
+
     .LINK
         https://dbatools.io/Get-DbaDbccMemoryStatus
 

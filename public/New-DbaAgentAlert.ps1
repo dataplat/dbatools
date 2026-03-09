@@ -105,6 +105,42 @@ function New-DbaAgentAlert {
     .LINK
         https://dbatools.io/New-DbaAgentAlert
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Alert
+
+        Returns one Alert object for each newly created SQL Server Agent alert. The object represents the alert as configured on the target instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Name of the newly created alert
+        - ID: Unique identifier of the alert in the msdb database
+        - JobName: Name of the job that responds to this alert (if any)
+        - AlertType: Type of alert (EventAlert, ErrorNumberAlert, PerformanceConditionAlert, or WmiEventAlert)
+        - CategoryName: Category name assigned to the alert
+        - Severity: SQL Server error severity level (0-25) that triggers this alert
+        - MessageId: SQL Server message ID that triggers this alert (if alert is message-based)
+        - IsEnabled: Boolean indicating if the alert is enabled or disabled
+        - DelayBetweenResponses: Delay in seconds between repeated alert responses
+
+        Additional properties available (from SMO Alert object):
+        - CategoryId: Unique identifier of the alert category
+        - CreateDate: DateTime when the alert was created
+        - DateLastModified: DateTime when the alert was last modified
+        - DatabaseName: Name of the database this alert applies to (for database-specific alerts)
+        - EventDescriptionKeyword: Keyword filter for event descriptions
+        - LastOccurrenceDate: DateTime when this alert was last triggered
+        - Notifications: DataTable containing operators notified by this alert and their notification methods
+        - OccurrenceCount: Number of times this alert has been raised
+        - PerformanceCondition: Performance condition that triggers the alert (if performance-based)
+        - WmiEventNamespace: WMI namespace for WMI-based alerts
+        - WmiEventQuery: WMI query for WMI-based alerts
+        - Urn: Uniform Resource Name for the SMO object
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO Alert object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> $parms = @{
                 SqlInstance           = "sql01"

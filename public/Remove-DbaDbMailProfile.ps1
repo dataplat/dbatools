@@ -43,6 +43,19 @@ function Remove-DbaDbMailProfile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Database Mail profile processed, regardless of success or failure.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Name: The name of the Database Mail profile that was removed or attempted to be removed
+        - Status: A string indicating the operation result ("Dropped" on success, or error message on failure)
+        - IsRemoved: A boolean value indicating whether the profile was successfully removed ($true for success, $false for failure)
+
     .NOTES
         Tags: DatabaseMail, DBMail, Mail
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

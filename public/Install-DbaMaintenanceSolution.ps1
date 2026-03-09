@@ -102,7 +102,7 @@ function Install-DbaMaintenanceSolution {
         Only applies when InstallJobs is specified.
 
     .PARAMETER ModificationLevel
-        Specifies minimum modification percentage required before ChangeBackupType converts a differential or log backup to full backup.
+        Specifies minimum modification percentage required before ChangeBackupType converts a differential backup to full backup.
         Valid range: 0-100. Use this with ChangeBackupType to control when backup type changes occur based on data modification levels.
         Only applies when InstallJobs is specified.
 
@@ -123,6 +123,19 @@ function Install-DbaMaintenanceSolution {
 
     .LINK
         https://dbatools.io/Install-DbaMaintenanceSolution
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where the maintenance solution was installed. Each object contains installation result information.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Results: Status of the installation ("Success" or "Failed")
+
+        Only returns output when installation actually executes (not during WhatIf). When using -WhatIf, no output is generated.
 
     .EXAMPLE
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -CleanupTime 72
@@ -296,6 +309,11 @@ function Install-DbaMaintenanceSolution {
 
         if ($InstallJobs -and $Solution -notcontains 'All') {
             Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
+            return
+        }
+
+        if ($BackupLocation -eq "NUL" -and $Verify) {
+            Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or turn off Verify."
             return
         }
 
@@ -531,9 +549,8 @@ function Install-DbaMaintenanceSolution {
                         Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
                         $sql = $fileContents[$file]
                         try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Invoke($query)
-                            }
+                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
                         } catch {
                             $result = "Failed"
                             Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
@@ -717,7 +734,7 @@ function Install-DbaMaintenanceSolution {
             }
 
             # Modify backup job steps to include additional parameters
-            if ($InstallJobs -and ($ChangeBackupType -or $Compress -or $CopyOnly -or $Verify -or $CheckSum -or $ModificationLevel)) {
+            if ($InstallJobs) {
                 Write-ProgressHelper -ExcludePercent -Message "Applying additional backup parameters to job steps"
 
                 $null = $server.Refresh()
@@ -744,7 +761,7 @@ function Install-DbaMaintenanceSolution {
                         }
 
                         # Add ModificationLevel parameter for jobs with ChangeBackupType
-                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF|LOG")) {
+                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF")) {
                             if ($modifiedCommand -notmatch "@ModificationLevel") {
                                 $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ModificationLevel = $ModificationLevel"
                             }
@@ -752,9 +769,15 @@ function Install-DbaMaintenanceSolution {
 
                         # Add Compress parameter for all backup jobs
                         if ($Compress) {
+                            $modifiedCommand = $modifiedCommand -replace "@Compress = 'N'", "@Compress = 'Y'"
                             if ($modifiedCommand -notmatch "@Compress") {
                                 $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'Y'"
                             }
+                        } else {
+                            $modifiedCommand = $modifiedCommand -replace "@Compress = 'Y'", "@Compress = 'N'"
+                            if ($modifiedCommand -notmatch "@Compress") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'N'"
+                            }                        
                         }
 
                         # Add CopyOnly parameter for all backup jobs
@@ -765,16 +788,18 @@ function Install-DbaMaintenanceSolution {
                         }
 
                         # Add Verify parameter for all backup jobs
-                        if ($Verify) {
-                            if ($modifiedCommand -notmatch "@Verify") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'Y'"
+                        # Ola turns this on by default, so all we have to do is turn it off if asked.
+                        if (-not $Verify) {
+                            if ($modifiedCommand -notmatch "@Verify = 'N'") {
+                                $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
                             }
                         }
 
                         # Add CheckSum parameter for all backup jobs
-                        if ($CheckSum) {
-                            if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'Y'"
+                        # Ola turns this on by default, so all we have to do is turn it off if asked.
+                        if (-not $CheckSum) {
+                            if ($modifiedCommand -notmatch "@CheckSum = 'N'") {
+                                $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
                             }
                         }
 
@@ -794,7 +819,7 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            if ($query) {
+            if ($sql) {
                 # then whatif wasn't passed
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName

@@ -29,16 +29,16 @@ Describe $CommandName -Tag IntegrationTests {
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
         # Setup master certificate if needed
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master |
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master |
             Where-Object Name -notmatch "##" |
             Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
         # Create and configure test database
-        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
         $testDb | New-DbaDbEncryptionKey -Force
@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
             Start-Sleep -Seconds 10 # Allow encryption to complete
 
             $splatDisable = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $testDb.Name
             }
             $results = Disable-DbaDbEncryption @splatDisable -WarningVariable warn 3> $null

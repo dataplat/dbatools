@@ -30,6 +30,24 @@ function Get-DbaWsfcNode {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Management.ManagementObject
+
+        Returns one node object per cluster member node queried. Each object represents a cluster node with ownership and version information.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - Name: The name of the cluster node (server name)
+        - PrimaryOwnerName: The primary owner of the node resource
+        - PrimaryOwnerContact: Contact information for the primary owner
+        - Dedicated: Boolean indicating if the node is dedicated to clustering
+        - NodeHighestVersion: The highest cluster API version supported by this node
+        - NodeLowestVersion: The lowest cluster API version supported by this node
+
+        Additional properties available via Select-Object *:
+        All properties from the MSCluster_Node WMI class, including node state, resource ownership, and cluster communication details.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcNode
 

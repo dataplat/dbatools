@@ -32,6 +32,11 @@ function Copy-DbaXESessionTemplate {
     .LINK
         https://dbatools.io/Copy-DbaXESessionTemplate
 
+    .OUTPUTS
+        None
+
+        This command copies Extended Event session template files to the destination directory but does not return any objects to the pipeline. Template files are copied based on the filtering criteria (non-Microsoft templates only by default). Use Write-Message output or monitoring the destination directory to confirm successful completion.
+
     .EXAMPLE
         PS C:\> Copy-DbaXESessionTemplate
 

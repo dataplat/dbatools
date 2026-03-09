@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("Create Database [$dbname]")
         $server.Query("Create Table [$dbname].dbo.TestCompression
             (Column1 nvarchar(10),
@@ -52,14 +52,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Feature Usage" {
         It "Gets results" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Gets Feature Usage using -Database" {
         BeforeAll {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2 -Database $dbname
+            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         }
 
         It "Gets results" {
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Feature Usage using -ExcludeDatabase" {
         It "Gets results" {
-            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.instance2 -ExcludeDatabase $dbname
+            $results = Get-DbaDbFeatureUsage -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname
             $results.database | Should -Not -Contain $dbname
         }
     }

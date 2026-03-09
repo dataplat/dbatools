@@ -26,6 +26,44 @@ function Get-DbaComputerSystem {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per computer specified, containing hardware and system information collected from WMI.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The resolved computer name
+        - Domain: The domain name the computer belongs to
+        - DomainRole: Role of the computer (Standalone Workstation, Member Workstation, Standalone Server, Member Server, Backup Domain Controller, or Primary Domain Controller)
+        - Manufacturer: Hardware manufacturer name
+        - Model: Hardware model name
+        - SystemFamily: System family classification
+        - SystemType: System type (e.g., "x64-based PC")
+        - ProcessorName: Processor name from Win32_Processor
+        - ProcessorCaption: Processor description from Win32_Processor
+        - ProcessorMaxClockSpeed: Maximum processor speed in MHz
+        - NumberLogicalProcessors: Number of logical processors (includes hyperthreading virtual cores)
+        - NumberProcessors: Number of physical processor sockets
+        - IsHyperThreading: Boolean indicating if hyperthreading is detected (logical processors > physical processors)
+        - TotalPhysicalMemory: Total physical memory as a DbaSize object (shows human-readable format)
+        - IsSystemManagedPageFile: Boolean indicating if Windows manages the page file automatically
+        - PendingReboot: Boolean indicating if the system has a pending reboot, or $null if reboot status could not be determined
+
+        Additional properties available but not shown by default:
+        - SystemSkuNumber: System SKU number from hardware
+        - IsDaylightSavingsTime: Boolean indicating if daylight saving time is enabled on the system
+        - DaylightInEffect: Boolean indicating if daylight saving time is currently in effect
+        - DnsHostName: DNS host name of the computer
+        - AdminPasswordStatus: Administrator password status (Disabled, Enabled, Not Implemented, or Unknown)
+
+        When -IncludeAws is specified and the computer is detected as an AWS EC2 instance, the following properties are added:
+        - AwsAmiId: The AMI (Amazon Machine Image) ID
+        - AwsIamRoleArn: The IAM instance profile ARN
+        - AwsEc2InstanceId: The EC2 instance ID
+        - AwsEc2InstanceType: The EC2 instance type (e.g., t2.large, m5.xlarge)
+        - AwsAvailabilityZone: The AWS availability zone where the instance is located
+        - AwsPublicHostName: The public hostname assigned to the EC2 instance
+
     .NOTES
         Tags: Management, Computer, OS
         Author: Shawn Melton (@wsmelton), wsmelton.github.io

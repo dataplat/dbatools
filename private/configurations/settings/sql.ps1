@@ -23,6 +23,9 @@ Set-DbatoolsConfig -FullName 'sql.connection.encrypt' -Value $true -Initialize -
 # Trust server certificate
 Set-DbatoolsConfig -FullName 'sql.connection.trustcert' -Value $false -Initialize -Validation bool -Handler { } -Description "Trust SQL Server certificate"
 
+# Allow trust server certificate fallback
+Set-DbatoolsConfig -FullName 'sql.connection.allowtrustcert' -Value $false -Initialize -Validation bool -Handler { } -Description "Attempt connection with TrustServerCertificate if TLS validation fails"
+
 # Enables Always Encryption
 Set-DbatoolsConfig -FullName 'sql.alwaysencrypted.enable' -Value $false -Initialize -Validation bool -Handler { } -Description "Not yet implemented"
 

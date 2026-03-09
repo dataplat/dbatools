@@ -68,6 +68,31 @@ function Get-DbaLastGoodCheckDb {
     .LINK
         https://dbatools.io/Get-DbaLastGoodCheckDb
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed, containing database integrity check status and compliance metrics.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database
+        - DatabaseCreated: DateTime when the database was created; $null if the date cannot be determined
+        - LastGoodCheckDb: DateTime of the last successful DBCC CHECKDB operation; $null if CHECKDB has never been performed
+        - DaysSinceDbCreated: Numeric value (days and fractional days) representing time elapsed since database creation
+        - DaysSinceLastGoodCheckDb: Integer number of days since the last successful CHECKDB; only present if CHECKDB was previously run
+        - Status: String status indicator - "Ok" (CHECKDB within last 7 days), "New database, not checked yet" (created within last 7 days), or "CheckDB should be performed" (overdue for CHECKDB)
+        - DataPurityEnabled: Boolean indicating if data purity checks are enabled; $null for SQL Server 2008 and newer when not running as sysadmin; based on dbi_dbccFlags field for SQL Server 2005-2008
+        - CreateVersion: Integer representing the internal version of the database (from dbi_createVersion DBCC DBINFO field); available only when running SQL Server 2008 and earlier or as sysadmin
+        - DbccFlags: Integer representing DBCC flags from the database (from dbi_dbccFlags DBCC DBINFO field); available only when running SQL Server 2008 and earlier or as sysadmin
+
+        Notes:
+        - For SQL Server 2005-2008: Uses DBCC DBINFO() WITH TABLERESULTS to retrieve LastGoodCheckDb, CreateVersion, and DbccFlags
+        - For SQL Server 2008 R2 and newer: Uses SMO LastGoodCheckDbTime property (CreateVersion and DbccFlags are not available)
+        - CreateVersion and DbccFlags are only populated when running as sysadmin or on SQL Server versions prior to 2010
+        - If CHECKDB has never been performed, LastGoodCheckDb will be $null and Status will indicate "New database" or "should be performed"
+
     .EXAMPLE
         PS C:\> Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987
 

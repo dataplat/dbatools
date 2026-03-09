@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.10'
+    ModuleVersion      = '2.7.25'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2025.11.12'
+        ModuleVersion = '2025.12.28'
     }
 
     # Assemblies that must be loaded prior to importing this module
@@ -84,6 +84,7 @@
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Connect-DbaInstance',
         'ConvertTo-DbaDataTable',
@@ -92,6 +93,7 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentSchedule',
@@ -419,6 +421,7 @@
         'Get-DbaXESessionTemplate',
         'Get-DbaXEStore',
         'Grant-DbaAgPermission',
+        'Export-DbaCsv',
         'Import-DbaCsv',
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
@@ -493,6 +496,7 @@
         'New-DbaCredential',
         'New-DbaCustomError',
         'New-DbaDacOption',
+        'New-DbaDacPackage',
         'New-DbaDacProfile',
         'New-DbaDatabase',
         'New-DbaDbAsymmetricKey',
@@ -671,6 +675,7 @@
         'Test-DbaComputerCertificateExpiration',
         'Test-DbaConnection',
         'Test-DbaConnectionAuthScheme',
+        'Test-DbaKerberos',
         'Test-DbaDbCollation',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCompression',
@@ -693,6 +698,7 @@
         'Test-DbaMaxDop',
         'Test-DbaMaxMemory',
         'Test-DbaMigrationConstraint',
+        'Test-DbaNetworkCertificate',
         'Test-DbaNetworkLatency',
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaPath',

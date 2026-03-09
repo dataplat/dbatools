@@ -39,6 +39,30 @@ function Get-DbaWsfcResourceGroup {
     .LINK
         https://dbatools.io/Get-DbaWsfcResourceGroup
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_ResourceGroup
+
+        Returns one resource group object per resource group found on the specified Windows Server Failover Cluster.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - Name: The name of the resource group
+        - State: Current resource group state (Online, Offline, Failed, or Unknown)
+        - PersistentState: The desired persistent state of the resource group
+        - OwnerNode: The cluster node that currently owns this resource group
+
+        Additional properties available from WMI MSCluster_ResourceGroup object (via Select-Object *):
+        - Characteristics: Resource group characteristics bitmask
+        - CreationTime: DateTime when the resource group was created
+        - Description: Text description of the resource group
+        - Flags: Resource group flags
+        - GroupType: Type of resource group
+        - PrivateProperties: Collection of private property objects
+        - ResourceType: The resource type of this group
+        - StateInfo: Detailed state information
+        - Topology: Cluster topology information
+
     .EXAMPLE
         PS C:\> Get-DbaWsfcResourceGroup -ComputerName cluster01
 

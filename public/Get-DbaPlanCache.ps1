@@ -40,6 +40,18 @@ function Get-DbaPlanCache {
     .LINK
         https://dbatools.io/Get-DbaPlanCache
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance queried, providing aggregate single-use plan cache statistics.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Size: Total size of single-use adhoc and prepared statement plans; dbasize object convertible to Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes
+        - UseCount: Count of single-use adhoc and prepared statement plans found in the plan cache
+
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017
 

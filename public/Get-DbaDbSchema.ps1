@@ -63,6 +63,29 @@ function Get-DbaDbSchema {
     .LINK
         https://dbatools.io/Get-DbaDbSchema
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Schema
+
+        Returns one Schema object per database schema found, filtered based on the -Schema, -SchemaOwner, and -IncludeSystemSchemas parameters. Returns multiple objects when querying multiple databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the schema
+        - IsSystemObject: Boolean indicating if this is a built-in system schema (dbo, sys, guest, INFORMATION_SCHEMA) or a custom user-defined schema
+
+        Additional properties available (from SMO Schema object):
+        - DatabaseName: The name of the database containing the schema
+        - DatabaseId: The unique identifier (ID) of the database
+        - Owner: The principal that owns the schema
+        - CreateDate: DateTime when the schema was created
+        - DateLastModified: DateTime when the schema was last modified
+        - ID: The schema's unique object ID within the database
+        - Urn: The Urn identifier for the schema
+
+        All properties from the base SMO Schema object are accessible via Select-Object * even though only default properties are displayed. The schema object can also be used directly with methods like Alter() and Drop() as shown in the examples.
+
     .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost
 
