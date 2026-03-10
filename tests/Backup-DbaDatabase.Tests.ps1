@@ -485,6 +485,16 @@ go
         }
     }
 
+    Context "Test CreateFolder with ReplaceInName prevents duplicate dbname (issue 9135)" {
+        It "Should not duplicate database name when path contains dbname token" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path "$DestBackupDir\servername\instancename\dbname\backuptype" -BackupFileName "servername_dbname_backuptype_timestamp.bak" -ReplaceInName -CreateFolder -BuildPath
+            $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).InstanceName
+            $serverName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).ComputerName
+            $results.BackupPath | Should -BeLike "$DestBackupDir\$serverName\$instanceName\master\Full\*"
+            $results.BackupPath | Should -Not -BeLike "*\master\master\*"
+        }
+    }
+
     Context "Test Backup Encryption with Certificate" {
         # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {
