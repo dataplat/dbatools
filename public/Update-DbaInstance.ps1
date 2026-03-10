@@ -445,8 +445,13 @@ function Update-DbaInstance {
                 Write-Message -Level Warning -Message "Explicit -Credential might be required when running against remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
-            if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential) {
-                $resolvedComputers += $resolvedComputer.FullComputerName
+            try {
+                if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential -EnableException) {
+                    $resolvedComputers += $resolvedComputer.FullComputerName
+                }
+            } catch {
+                Write-Message -Level Verbose -Message "Could not resolve $($computer.ComputerName) via CIM (this may occur with CredSSP or workgroup environments). Using provided name directly."
+                $resolvedComputers += $computer.ComputerName
             }
         }
         #Leave only unique computer names
