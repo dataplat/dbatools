@@ -102,13 +102,15 @@ Describe $CommandName -Tag IntegrationTests {
                 MailAccountName     = $mailaccountname2
                 MailAccountPriority = 2
             }
-            { New-DbaDbMailProfile @splatProfile2 } | Should -Not -Throw
+            $results = New-DbaDbMailProfile @splatProfile2
+            $results | Should -Not -BeNullOrEmpty
+            $WarnVar | Should -BeNullOrEmpty
         }
 
         It "Should have both accounts associated with the profile" {
             $profile = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceSingle -Profile $profilename
             $accounts = $profile.EnumAccounts()
-            $accounts.Count | Should -Be 2
+            $accounts | Should -HaveCount 2
         }
 
         It "Should fail with clear message when trying to create duplicate profile without MailAccountName" {
@@ -117,8 +119,9 @@ Describe $CommandName -Tag IntegrationTests {
                 Profile     = $profilename
                 Description = "Duplicate attempt"
             }
-            $warningMessage = New-DbaDbMailProfile @splatDuplicate 3>&1
-            $warningMessage | Should -Match "Profile .* already exists"
+            $results = New-DbaDbMailProfile @$splatDuplicate
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "Profile .* already exists"
         }
     }
 }
