@@ -443,7 +443,7 @@ function New-DbaLogin {
                             $newLogin.Set_Sid($currentSid)
                         }
 
-                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser")) {
+                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser", "ExternalGroup")) {
                             if ($currentDefaultDatabase) {
                                 Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
                                 $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
@@ -501,7 +501,7 @@ function New-DbaLogin {
 
                         # Attempt to add login using SMO, then T-SQL
                         try {
-                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser")) {
+                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser", "ExternalGroup")) {
                                 if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
                                 $newLogin.Create()
                             } elseif ($loginType -eq "SqlLogin") {
@@ -527,8 +527,8 @@ function New-DbaLogin {
                                 elseif ($loginType -eq 'SqlLogin' -and $server.DatabaseEngineType -eq 'SqlAzureDatabase') {
                                     # Azure SQL doesn't support HASHED so we have to dump out the plain text password :(
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$($SecurePassword | ConvertFrom-SecurePass)'"
-                                } elseif ($loginType -eq 'ExternalUser' -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance')) {
-                                    # Azure SQL DB and Azure SQL Managed Instance are the only ones that currently support FROM EXTERNAL PROVIDER syntax
+                                } elseif ($loginType -in ('ExternalUser', 'ExternalGroup') -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance' -or $server.VersionMajor -ge 16)) {
+                                    # Azure SQL DB, Azure SQL Managed Instance, and SQL Server 2022+ support FROM EXTERNAL PROVIDER syntax
                                     $sql = "CREATE LOGIN [$loginName] FROM EXTERNAL PROVIDER" + $withParams
                                 } elseif ($loginType -eq 'SqlLogin' ) {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams
