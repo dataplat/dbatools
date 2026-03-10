@@ -119,7 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Profile     = $profilename
                 Description = "Duplicate attempt"
             }
-            $results = New-DbaDbMailProfile @$splatDuplicate
+            $results = New-DbaDbMailProfile @splatDuplicate
             $results | Should -BeNullOrEmpty
             $WarnVar | Should -Match "Profile .* already exists"
         }
