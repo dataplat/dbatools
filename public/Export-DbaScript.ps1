@@ -306,14 +306,14 @@ function Export-DbaScript {
                     if ($Passthru) {
                         if ($ScriptingOptionsObject) {
                             $ScriptingOptionsObject.FileName = $null
-                            foreach ($scriptpart in (if ($dagScript) { @($dagScript) } else { $scripter.EnumScript($object) })) {
+                            foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($scriptBatchTerminator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 }
                                 $scriptpart | Out-String
                             }
                         } else {
-                            foreach ($scriptpart in (if ($dagScript) { @($dagScript) } else { $scripter.EnumScript($object) })) {
+                            foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
@@ -338,7 +338,7 @@ function Export-DbaScript {
                                 }
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
-                                $scriptInFull = foreach ($scriptpart in (if ($dagScript) { @($dagScript) } else { $scripter.EnumScript($object) })) {
+                                $scriptInFull = foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                     if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                     } else {
@@ -349,7 +349,7 @@ function Export-DbaScript {
                                 $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                             }
                         } else {
-                            $scriptInFull = foreach ($scriptpart in (if ($dagScript) { @($dagScript) } else { $scripter.EnumScript($object) })) {
+                            $scriptInFull = foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
