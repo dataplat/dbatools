@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Certificate",
                 "Thumbprint",
                 "RestartService",
+                "SkipCertificateValidation",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

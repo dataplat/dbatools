@@ -8,10 +8,15 @@ function Set-DbaNetworkCertificate {
 
         This command also grants read permissions for the service account on the certificate's private key.
 
+        Before setting the certificate, the command uses Test-DbaNetworkCertificate to verify that
+        the certificate is suitable for SQL Server network encryption. Use -SkipCertificateValidation
+        to bypass this check if needed.
+
         References:
         https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
+        https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/certificate-requirements
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Defaults to localhost.
@@ -27,12 +32,18 @@ function Set-DbaNetworkCertificate {
     .PARAMETER Thumbprint
         Specifies the thumbprint (SHA-1 hash) of the certificate to configure as the network certificate.
         Use this when you know the specific certificate thumbprint from certificates already installed in LocalMachine\My.
-        The certificate must have a private key and the SQL Server service account will be granted read permissions to it.
+        Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key and the SQL Server
+        service account will be granted read permissions to it.
 
     .PARAMETER RestartService
         Forces an automatic restart of the SQL Server service after setting the network certificate.
         Certificate changes require a service restart to take effect - without this switch you'll need to manually restart SQL Server.
         Use this when you want the SSL configuration to be immediately active, but be aware it will cause a brief service interruption.
+
+    .PARAMETER SkipCertificateValidation
+        Skips the certificate suitability validation performed by Test-DbaNetworkCertificate.
+        By default, the command verifies the certificate meets all SQL Server requirements before setting it.
+        Use this switch only if you need to set a certificate that does not pass all validation checks.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -47,7 +58,7 @@ function Set-DbaNetworkCertificate {
 
     .NOTES
         Tags: Certificate, Security
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: the dbatools team + Claude
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -78,19 +89,26 @@ function Set-DbaNetworkCertificate {
 
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
 
+    .EXAMPLE
+        PS C:\> Set-DbaNetworkCertificate -SqlInstance sql1 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 -SkipCertificateValidation
+
+        Sets the network certificate on sql1, skipping the certificate suitability validation. Use when you need to set a certificate that does not fully pass the Test-DbaNetworkCertificate checks.
+
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
         [Alias("ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
-        [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
-        [parameter(Mandatory, ParameterSetName = "Thumbprint", ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [ValidatePattern('^[0-9A-Fa-f]{40}$')]
         [string]$Thumbprint,
         [switch]$RestartService,
+        [switch]$SkipCertificateValidation,
         [switch]$EnableException
     )
 
@@ -104,7 +122,7 @@ function Set-DbaNetworkCertificate {
             return
         }
 
-        if (-not $Thumbprint) {
+        if (Test-Bound -ParameterName Certificate) {
             Write-Message -Level SomewhatVerbose -Message "Getting thumbprint"
             $Thumbprint = $Certificate.Thumbprint
         }
@@ -123,10 +141,12 @@ function Set-DbaNetworkCertificate {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
+                continue
             }
 
             if (-not $sqlwmi) {
                 Stop-Function -Message "Cannot find $instanceName on $computerName" -Continue -Category ObjectNotFound -Target $instance
+                continue
             }
 
             $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
@@ -143,6 +163,7 @@ function Set-DbaNetworkCertificate {
                     $vsname = ($vsname -Split 'Value\=')[1]
                 } else {
                     Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
+                    continue
                 }
             }
 
@@ -153,6 +174,38 @@ function Set-DbaNetworkCertificate {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
 
+            if (-not $SkipCertificateValidation) {
+                Write-Message -Level Verbose -Message "Validating certificate $Thumbprint for $instance using Test-DbaNetworkCertificate"
+                try {
+                    $splatTest = @{
+                        SqlInstance     = $instance
+                        Credential      = $Credential
+                        Thumbprint      = $Thumbprint
+                        EnableException = $true
+                    }
+                    $certTest = Test-DbaNetworkCertificate @splatTest
+                } catch {
+                    Stop-Function -Message "Failed to validate certificate $Thumbprint for $instance" -Target $instance -ErrorRecord $_ -Continue
+                    continue
+                }
+
+                if (-not $certTest.IsSuitable) {
+                    $failedChecks = @()
+                    if (-not $certTest.CertificateFound) { $failedChecks += "CertificateNotFound" }
+                    if ($certTest.CertificateFound -and -not $certTest.KeyUsagesValid) { $failedChecks += "KeyUsagesInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.DnsNamesValid) { $failedChecks += "DnsNamesInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.PrivateKeyValid) { $failedChecks += "PrivateKeyInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.PublicKeyValid) { $failedChecks += "PublicKeyInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }
+                    if ($certTest.CertificateFound -and -not $certTest.ValidityPeriodOk) { $failedChecks += "ValidityPeriodExpiredOrInsufficient" }
+                    Stop-Function -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance. Failed checks: $($failedChecks -join ', '). Use -SkipCertificateValidation to override." -Target $instance -Continue
+                    continue
+                }
+
+                Write-Message -Level Verbose -Message "Certificate $Thumbprint passed all validation checks for $instance"
+            }
+
             $scriptBlock = {
                 $regRoot = $args[0]
                 $serviceAccount = $args[1]
@@ -162,13 +215,19 @@ function Set-DbaNetworkCertificate {
 
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                $oldThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                $oldThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate -ErrorAction SilentlyContinue).Certificate
 
-                $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
+                $cert = Get-ChildItem Cert:\LocalMachine\My -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 
                 if ($null -eq $cert) {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Warning "Certificate does not exist on $env:COMPUTERNAME"
+                    Write-Warning "Certificate does not exist in LocalMachine\My on $env:COMPUTERNAME"
+                    return
+                }
+
+                if (-not $cert.HasPrivateKey) {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
+                    Write-Warning "Certificate $Thumbprint does not have a private key on $env:COMPUTERNAME"
                     return
                 }
 
@@ -185,10 +244,10 @@ function Set-DbaNetworkCertificate {
 
                 if ($null -ne $cert.PrivateKey) {
                     $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                    $keyName = switch ($PSEdition) {
-                        Core { $cert.PrivateKey.Key.UniqueName }
-                        Desktop { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }
-                        default { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }  # for PowerShell v3 and earlier which does not return $PSEdition
+                    if ($PSVersionTable.PSVersion.Major -ge 6) {
+                        $keyName = $cert.PrivateKey.Key.UniqueName
+                    } else {
+                        $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
                     }
                     $keyFullPath = $keyPath + $keyName
                 } else {
@@ -208,27 +267,27 @@ function Set-DbaNetworkCertificate {
                         Write-Warning "Unknown certificate key algorithm OID ""$algorithm""."
                     }
 
-                    $KeyFullPath = $keyPath + $keyName
+                    $keyFullPath = $keyPath + $keyName
                 }
 
-                if (-not (Test-Path $KeyFullPath -Type Leaf)) {
+                if (-not (Test-Path $keyFullPath -Type Leaf)) {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning "Read-only permissions could not be granted to certificate, unable to determine private key path."
                     return
                 }
 
-                $acl = Get-Acl -Path $keyFullPath
-                $null = $acl.AddAccessRule($accessRule)
-                $null = $acl.AddAccessRule($accessRuleSSID)
-                Set-Acl -Path $keyFullPath -AclObject $acl
-
-                if ($acl) {
-                    Set-ItemProperty -Path $regPath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
-                } else {
+                try {
+                    $acl = Get-Acl -Path $keyFullPath
+                    $null = $acl.AddAccessRule($accessRule)
+                    $null = $acl.AddAccessRule($accessRuleSSID)
+                    Set-Acl -Path $keyFullPath -AclObject $acl
+                } catch {
                     <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Warning "Read-only permissions could not be granted to certificate"
+                    Write-Warning "Failed to set read permissions on certificate private key: $_"
                     return
                 }
+
+                Set-ItemProperty -Path $regPath -Name Certificate -Value $Thumbprint.ToString().ToLowerInvariant() # to make it compat with SQL config
 
                 if (![System.String]::IsNullOrEmpty($oldThumbprint)) {
                     $notes = "Granted $serviceAccount read access to certificate private key. Replaced thumbprint: $oldThumbprint."
