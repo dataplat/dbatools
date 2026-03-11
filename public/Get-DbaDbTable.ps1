@@ -284,7 +284,11 @@ function Get-DbaDbTable {
                 }
             }
 
-            $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+            try {
+                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+            } catch {
+                Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+            }
 
             if ($fqTns) {
                 $tables = @()
