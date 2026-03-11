@@ -896,8 +896,6 @@ function Invoke-DbaDbDataMasking {
 
                                             if ($lookupResult.NewValue) {
                                                 $newValue = $lookupResult.NewValue
-                                                # Skip further processing for this column
-                                                continue
                                             }
                                         } catch {
                                             Stop-Function -Message "Something went wrong retrieving the deterministic values" -Target $query -ErrorRecord $_ -continue
