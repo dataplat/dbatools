@@ -96,19 +96,27 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                         }
 
-                        $SQLServiceAccounts = @();
+                        $SQLServiceAccounts = @()
+                        $SQLPerServiceSIDs = @()
                         if (Test-Bound 'User') {
-                            $SQLServiceAccounts += $User;
+                            $SQLServiceAccounts += $User
+                            $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $SQLServiceAccounts += (Get-DbaService -ComputerName $computer -Type Engine).StartName
+                            $services = Get-DbaService -ComputerName $computer -Type Engine
+                            $SQLServiceAccounts += $services.StartName
+                            # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
+                            # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID
+                            # for file operations (IFI) and memory operations (LPIM), matching setup.exe behavior.
+                            $SQLPerServiceSIDs += $services | ForEach-Object { "NT SERVICE\$($_.ServiceName)" }
                         }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $Type -ScriptBlock {
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type -ScriptBlock {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
+                                    $SQLPerServiceSIDs,
                                     $Type
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
@@ -137,7 +145,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                                 if ('IFI' -in $Type) {
                                     $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    # Use per-service SIDs for IFI: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID for volume maintenance tasks, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if (-not $IFIline) {
                                             $IFIline = "SeManageVolumePrivilege = *$SID"
@@ -158,7 +168,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                                 if ('LPIM' -in $Type) {
                                     $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    # Use per-service SIDs for LPIM: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID for locked memory pages, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if (-not $LPIMline) {
                                             $LPIMline = "SeLockMemoryPrivilege = *$SID"
@@ -179,7 +191,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                                 if ('SecAudit' -in $Type) {
                                     $Line = Get-Content $tempfile | Where-Object { $_ -match "SeAuditPrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    # Use per-service SIDs for SecAudit: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID when writing security audit events, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if (-not $Line) {
                                             $Line = "SeAuditPrivilege = *$SID"
