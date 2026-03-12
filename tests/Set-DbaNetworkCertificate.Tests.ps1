@@ -22,8 +22,29 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
+        $test = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart
+        if ($test.ConfiguredCertificateThumbprint) {
+            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $test.ConfiguredCertificateThumbprint
+        }
+    }
+
+    It "Warns that no suitable certificate was found" {
+        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService -WarningAction SilentlyContinue
+        $result | Should -BeNullOrEmpty
+        $WarnVar | Should -Match "No suitable certificate found"
+    }
+
+    It "Creates a self-signed certificate and applies it" {
+        $result = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned | Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService
+        $result | Should -Not -BeNullOrEmpty
+    }
+
+    It "Does nothing if the certificate is already applied" {
+        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart
+        $result.Notes | Should -Be "No changes needed"
+    }
+}
