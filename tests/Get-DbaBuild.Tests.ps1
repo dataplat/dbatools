@@ -110,9 +110,9 @@ Describe $CommandName -Tag UnitTests {
             $SortedVersions = $Naturalized | Sort-Object
             ($SortedVersions -join ",") | Should -Be ($Naturalized -join ",")
         }
-        It "Names are at least 8" {
+        It "Names are at least 11" {
             $Names = $IdxRef.Data.Name | Where-Object { $PSItem }
-            $Names.Length | Should -BeGreaterThan 7
+            $Names.Length | Should -BeGreaterThan 10
         }
     }
     Context "Params mutual exclusion" {
