@@ -16,10 +16,9 @@ function Test-DbaKerberos {
         - Client-Server time synchronization (5-minute Kerberos threshold)
         - Server-DC time synchronization
 
-        DNS (3 checks):
+        DNS (2 checks):
         - Forward lookup verification
         - Reverse lookup verification
-        - CNAME detection (CNAMEs break Kerberos)
 
         Service Account (3 checks):
         - Service account type validation (gMSA, domain account, built-in accounts)
@@ -174,8 +173,6 @@ function Test-DbaKerberos {
 
                 Write-Message -Level Verbose -Message "Starting Kerberos diagnostics for $target"
 
-                #region Tier 1 Checks - Essential & Straightforward
-
                 #region SPN Checks
                 # Check 1: Run Test-DbaSpn
                 try {
@@ -225,7 +222,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 5: Check AG listener SPNs if applicable
+                # Check 2: Check AG listener SPNs if applicable
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking for Availability Group listener SPNs"
@@ -270,7 +267,7 @@ function Test-DbaKerberos {
                 #endregion SPN Checks
 
                 #region Time Synchronization Checks
-                # Check 6: Compare system clocks (client to SQL Server)
+                # Check 3: Compare system clocks (client to SQL Server)
                 try {
                     Write-Message -Level Verbose -Message "Comparing client and server time"
                     $clientTime = Get-Date
@@ -334,7 +331,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 7: Compare with domain controllers
+                # Check 4: Compare with domain controllers
                 try {
                     Write-Message -Level Verbose -Message "Comparing server time with domain controller"
                     # Get domain controller
@@ -451,7 +448,7 @@ function Test-DbaKerberos {
                 #endregion Time Synchronization Checks
 
                 #region DNS Checks
-                # Check 8: DNS forward lookup
+                # Check 5: DNS forward lookup
                 try {
                     Write-Message -Level Verbose -Message "Testing DNS forward lookup"
                     $resolvedFqdn = [System.Net.Dns]::GetHostEntry($computerTarget).HostName
@@ -488,7 +485,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 9: DNS reverse lookup
+                # Check 6: DNS reverse lookup
                 try {
                     Write-Message -Level Verbose -Message "Testing DNS reverse lookup"
                     $ip = [System.Net.Dns]::GetHostAddresses($computerTarget) | Select-Object -First 1
@@ -524,71 +521,10 @@ function Test-DbaKerberos {
                         Remediation  = "Create PTR record in DNS for proper reverse lookup"
                     }
                 }
-
-                # Check 10: Check for CNAME records
-                try {
-                    Write-Message -Level Verbose -Message "Checking for CNAME records"
-                    # CNAME detection requires nslookup or DNS cmdlets
-                    $splatDns = @{
-                        ComputerName = $computerTarget
-                        ScriptBlock  = {
-                            param($hostname)
-                            try {
-                                $result = nslookup $hostname 2>&1 | Out-String
-                                if ($result -match "canonical name") {
-                                    return "CNAME"
-                                } else {
-                                    return "A"
-                                }
-                            } catch {
-                                return "Unknown"
-                            }
-                        }
-                        ArgumentList = $computerTarget
-                    }
-                    if ($Credential) {
-                        $splatDns.Credential = $Credential
-                    }
-                    $recordType = Invoke-Command @splatDns
-
-                    if ($recordType -eq "CNAME") {
-                        $status = "Fail"
-                        $details = "CNAME record detected. CNAMEs break Kerberos authentication."
-                        $remediation = "Replace CNAME with A record in DNS. Kerberos does not support CNAME aliases."
-                    } elseif ($recordType -eq "A") {
-                        $status = "Pass"
-                        $details = "Using A record (not CNAME)"
-                        $remediation = "None"
-                    } else {
-                        $status = "Warning"
-                        $details = "Unable to determine DNS record type"
-                        $remediation = "Manually verify no CNAME records are in use"
-                    }
-
-                    [PSCustomObject]@{
-                        ComputerName = $computerTarget
-                        InstanceName = $instanceName
-                        Check        = "CNAME Detection"
-                        Category     = "DNS"
-                        Status       = $status
-                        Details      = $details
-                        Remediation  = $remediation
-                    }
-                } catch {
-                    [PSCustomObject]@{
-                        ComputerName = $computerTarget
-                        InstanceName = $instanceName
-                        Check        = "CNAME Detection"
-                        Category     = "DNS"
-                        Status       = "Warning"
-                        Details      = "Unable to check for CNAME: $($_.Exception.Message)"
-                        Remediation  = "Manually verify no CNAME records are in use"
-                    }
-                }
                 #endregion DNS Checks
 
                 #region Service Account Checks
-                # Check 11: Verify service account
+                # Check 7: Verify service account
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Verifying SQL Server service account"
@@ -643,7 +579,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 12: Check account lock status
+                # Check 8: Check account lock status
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking service account lock status"
@@ -717,7 +653,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 13: Check "Account is sensitive and cannot be delegated"
+                # Check 9: Check "Account is sensitive and cannot be delegated"
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking delegation settings"
@@ -787,7 +723,7 @@ function Test-DbaKerberos {
                 #endregion Service Account Checks
 
                 #region Authentication Validation
-                # Check 14: Test-DbaConnectionAuthScheme
+                # Check 10: Test-DbaConnectionAuthScheme
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Testing current authentication scheme"
@@ -834,12 +770,8 @@ function Test-DbaKerberos {
                 }
                 #endregion Authentication Validation
 
-                #endregion Tier 1 Checks
-
-                #region Tier 2 Checks - Practical & Valuable
-
                 #region Network Connectivity Checks
-                # Check 16: Test Kerberos ports (tcp/88, udp/88)
+                # Check 11: Test Kerberos ports (tcp/88, udp/88)
                 try {
                     Write-Message -Level Verbose -Message "Testing Kerberos port connectivity"
                     $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
@@ -877,7 +809,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 17: Test LDAP ports (tcp/389, udp/389)
+                # Check 12: Test LDAP ports (tcp/389, udp/389)
                 try {
                     Write-Message -Level Verbose -Message "Testing LDAP port connectivity"
                     $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
@@ -915,7 +847,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 18: Test Kerberos-Kdc port (tcp/464)
+                # Check 13: Test Kerberos-Kdc port (tcp/464)
                 try {
                     Write-Message -Level Verbose -Message "Testing Kerberos password change port"
                     $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
@@ -952,9 +884,10 @@ function Test-DbaKerberos {
                         Remediation  = "Manually verify TCP/464 connectivity to DC"
                     }
                 }
+                #endregion Network Connectivity Checks
 
                 #region Security Policy Checks
-                # Check 20: Check encryption types
+                # Check 14: Check encryption types
                 try {
                     Write-Message -Level Verbose -Message "Checking Kerberos encryption types"
                     $splatEncryption = @{
@@ -1013,7 +946,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 21: Test-ComputerSecureChannel
+                # Check 15: Test-ComputerSecureChannel
                 try {
                     Write-Message -Level Verbose -Message "Testing computer secure channel"
                     $splatSecureChannel = @{
@@ -1056,7 +989,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 22: Check hosts file
+                # Check 16: Check hosts file
                 try {
                     Write-Message -Level Verbose -Message "Checking hosts file for entries"
                     $splatHosts = @{
@@ -1106,7 +1039,7 @@ function Test-DbaKerberos {
                 #endregion Security Policy Checks
 
                 #region SQL Server Configuration Checks
-                # Check 23: Check SQL Server service account
+                # Check 17: Check SQL Server service account
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Validating SQL Server service account configuration"
@@ -1167,7 +1100,7 @@ function Test-DbaKerberos {
                     }
                 }
 
-                # Check 24: Verify network protocols
+                # Check 18: Verify network protocols
                 if ($PSCmdlet.ParameterSetName -eq "Instance") {
                     try {
                         Write-Message -Level Verbose -Message "Checking SQL Server network protocol configuration"
@@ -1208,7 +1141,7 @@ function Test-DbaKerberos {
                 #endregion SQL Server Configuration Checks
 
                 #region Client-Side Checks
-                # Check 25: Run klist command
+                # Check 19: Run klist command
                 try {
                     Write-Message -Level Verbose -Message "Checking Kerberos ticket cache with klist"
                     $klistOutput = & klist 2>&1 | Out-String
@@ -1250,9 +1183,6 @@ function Test-DbaKerberos {
                     }
                 }
                 #endregion Client-Side Checks
-
-                #endregion Tier 2 Checks
-
             } catch {
                 Stop-Function -Message "Error testing Kerberos for $target" -ErrorRecord $_ -Continue
             }

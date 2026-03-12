@@ -640,7 +640,17 @@ function Connect-DbaInstance {
 
             if ($DedicatedAdminConnection -and $serverName) {
                 Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used, so serverName will be changed and NonPooledConnection will be set."
-                $serverName = 'ADMIN:' + $serverName
+                if ($instance.IsLocalHost) {
+                    # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                    if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                        $serverName = "ADMIN:localhost\$($instance.InstanceName)"
+                    } else {
+                        $serverName = "ADMIN:localhost"
+                    }
+                    Write-Message -Level Debug -Message "IsLocalHost is true, using '$serverName' for DAC to avoid multi-IP resolution."
+                } else {
+                    $serverName = "ADMIN:$serverName"
+                }
                 $NonPooledConnection = $true
             }
 
@@ -704,7 +714,16 @@ function Connect-DbaInstance {
                         $connContext.StatementTimeout = $StatementTimeout
                     }
                     if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
-                        $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        if ($instance.IsLocalHost) {
+                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                            } else {
+                                $connContext.ServerInstance = "ADMIN:localhost"
+                            }
+                        } else {
+                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        }
                         $connContext.NonPooledConnection = $true
                     }
                     if ($Database) {
@@ -1107,6 +1126,37 @@ function Connect-DbaInstance {
                     } catch {
                         Write-Message -Level Debug -Message "Retry with TrustServerCertificate also failed: $($_.Exception.Message)"
                         # Use the original error for reporting since the retry also failed
+                        $connectionError = $_
+                    }
+                }
+
+                # Check if the error is about Failover Partner requiring Initial Catalog.
+                # This happens when connecting to a SQL Server instance configured for database mirroring.
+                # The .NET SqlClient sends Failover Partner info from the server's TDS handshake to the
+                # connection pool, and the pool then requires Initial Catalog to be set in the connection string.
+                $isFailoverPartnerError = $errorMessage -match "Failover Partner" -and $errorMessage -match "Initial Catalog"
+                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -eq 'String') {
+                    Write-Message -Level Verbose -Message "Connection failed because the server is configured for database mirroring (Failover Partner requires Initial Catalog). Retrying with Initial Catalog=master."
+                    Write-Message -Level Debug -Message "Original error: $errorMessage"
+
+                    try {
+                        # Add Initial Catalog=master to satisfy the Failover Partner connection string requirement
+                        if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Initial Catalog" -and $server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Database=") {
+                            if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -match ";$") {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += "Initial Catalog=master;"
+                            } else {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += ";Initial Catalog=master;"
+                            }
+                        }
+
+                        # Retry the connection
+                        Write-Message -Level Debug -Message "Retrying connection with Initial Catalog=master for server with database mirroring"
+                        $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection with Initial Catalog'")
+                        Write-Message -Level Verbose -Message "Connection succeeded with Initial Catalog=master for server with database mirroring"
+                        $connectionSucceeded = $true
+                    } catch {
+                        Write-Message -Level Debug -Message "Retry with Initial Catalog=master also failed: $($_.Exception.Message)"
+                        # Keep the original error for reporting
                         $connectionError = $_
                     }
                 }

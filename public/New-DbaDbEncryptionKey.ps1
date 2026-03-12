@@ -161,7 +161,7 @@ function New-DbaDbEncryptionKey {
                     $null = $db.Parent.Refresh()
                     $null = $db.Parent.Databases["master"].Refresh()
                 }
-                if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
+                if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force -and -not $WhatIfPreference) {
                     Stop-Function -Message "Certificate ($EncryptorName) in master on $($db.Parent) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
                 }
             }

@@ -352,58 +352,68 @@ function Invoke-DbaDbDataMasking {
 
                     [bool]$cleanupIdentityColumn = $false
 
-                    # Make sure there is an identity column present to speed things up
-                    if (-not ($dbTable.Columns | Where-Object { $_.Identity -eq $true })) {
-                        Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
-                        $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
-
-                        try {
-                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
-                        } catch {
-                            Stop-Function -Message "Could not alter the table to add the masking id" -Target $db -Continue
-                        }
-
-                        $cleanupIdentityColumn = $true
-
-                        $identityColumn = "MaskingID"
-
-                        $dbTable.Columns.Refresh()
-                    } else {
-                        $identityColumn = $dbTable.Columns | Where-Object { $_.Identity } | Select-Object -ExpandProperty Name
-                    }
-
-                    # Check if the index for the identity column is already present
+                    # The masking index name used for cleanup checks
                     $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
-                    try {
-                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
-                            Write-Message -Level Verbose -Message "Masking index already exists in table [$($dbTable.Schema)].[$($dbTable.Name)]. Dropping it..."
-                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+
+                    # Make sure there is an identity column present to speed things up
+                    # Skip column and index creation when -WhatIf is active to avoid leaving behind schema changes
+                    if (-not $WhatIfPreference) {
+                        if (-not ($dbTable.Columns | Where-Object { $_.Identity -eq $true })) {
+                            Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                            $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
+
+                            try {
+                                Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            } catch {
+                                Stop-Function -Message "Could not alter the table to add the masking id" -Target $db -Continue
+                            }
+
+                            $cleanupIdentityColumn = $true
+
+                            $identityColumn = "MaskingID"
+
+                            $dbTable.Columns.Refresh()
+                        } else {
+                            $identityColumn = $dbTable.Columns | Where-Object { $_.Identity } | Select-Object -ExpandProperty Name
                         }
-                    } catch {
-                        Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+
+                        # Check if the index for the identity column is already present
+                        try {
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level Verbose -Message "Masking index already exists in table [$($dbTable.Schema)].[$($dbTable.Name)]. Dropping it..."
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
+                        } catch {
+                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                        }
+
+                        # Create the index for the identity column
+                        try {
+                            Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
+
+                            $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
+
+                            $queryParams = @{
+                                SqlInstance   = $server
+                                SqlCredential = $SqlCredential
+                                Database      = $db.Name
+                                Query         = $query
+                                QueryTimeout  = $CommandTimeout
+                            }
+
+                            Invoke-DbaQuery @queryParams
+                        } catch {
+                            Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                        }
                     }
 
-                    # Create the index for the identity column
                     try {
-                        Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                        $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
-
-                        $queryParams = @{
-                            SqlInstance   = $server
-                            SqlCredential = $SqlCredential
-                            Database      = $db.Name
-                            Query         = $query
-                            QueryTimeout  = $CommandTimeout
-                        }
-
-                        Invoke-DbaQuery @queryParams
-                    } catch {
-                        Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
-                    }
-
-                    try {
-                        if (-not $tableobject.FilterQuery) {
+                        if ($WhatIfPreference) {
+                            # In WhatIf mode, only get the row count without modifying the table structure
+                            $query = "SELECT COUNT(*) AS RowCount FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            $rowCount = ($db.Query($query)).RowCount
+                            $data = New-Object object[] $rowCount
+                        } elseif (-not $tableobject.FilterQuery) {
                             # Get all the columns from the table
                             $columnString = "[" + (($dbTable.Columns | Where-Object { $_.DataType -in $supportedDataTypes } | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
 
@@ -412,6 +422,9 @@ function Invoke-DbaDbDataMasking {
 
                             # Put it all together
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+
+                            # Get the data
+                            [array]$data = $db.Query($query)
                         } else {
                             # Get the query from the table objects
                             $query = ($tableobject.FilterQuery).ToLower()
@@ -424,10 +437,10 @@ function Invoke-DbaDbDataMasking {
                                 # Put it all together again with the identifier
                                 $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"
                             }
-                        }
 
-                        # Get the data
-                        [array]$data = $db.Query($query)
+                            # Get the data
+                            [array]$data = $db.Query($query)
+                        }
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -883,8 +896,6 @@ function Invoke-DbaDbDataMasking {
 
                                             if ($lookupResult.NewValue) {
                                                 $newValue = $lookupResult.NewValue
-                                                # Skip further processing for this column
-                                                continue
                                             }
                                         } catch {
                                             Stop-Function -Message "Something went wrong retrieving the deterministic values" -Target $query -ErrorRecord $_ -continue
@@ -1232,33 +1243,6 @@ function Invoke-DbaDbDataMasking {
                             $null = $stringBuilder.Clear()
                         }
 
-                        # Clean up the masking index
-                        try {
-                            # Refresh the indexes to make sure to have the latest list
-                            $dbTable.Indexes.Refresh()
-
-                            # Check if the index is there
-                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
-                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
-                                $dbTable.Indexes[$($maskingIndexName)].Drop()
-                            }
-                        } catch {
-                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
-                        }
-
-                        # Clean up the identity column
-                        if ($cleanupIdentityColumn) {
-                            try {
-                                Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                                $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
-
-                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
-                            } catch {
-                                Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
-                            }
-                        }
-
                         # Return the masking results
                         if ($maskingErrorFlag) {
                             $maskingStatus = "Failed"
@@ -1282,6 +1266,33 @@ function Invoke-DbaDbDataMasking {
 
                         # Reset time
                         $null = $elapsed.Reset()
+                    }
+
+                    # Clean up the masking index (always runs, regardless of -WhatIf or errors during masking)
+                    try {
+                        # Refresh the indexes to make sure to have the latest list
+                        $dbTable.Indexes.Refresh()
+
+                        # Check if the index is there
+                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                            Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                    }
+
+                    # Clean up the identity column (always runs, regardless of -WhatIf or errors during masking)
+                    if ($cleanupIdentityColumn) {
+                        try {
+                            Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+
+                            $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
+
+                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
+                        } catch {
+                            Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                        }
                     }
 
                     # Cleanup

@@ -374,7 +374,6 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "AgentJob") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                # MSX jobs are automatically excluded by Get-DbaAgentJob to avoid errors
                 $splatGetJob = @{
                     SqlInstance = $server
                 }
@@ -385,6 +384,9 @@ function Sync-DbaAvailabilityGroup {
                     $splatGetJob['ExcludeJob'] = $ExcludeJob
                 }
                 $jobsToSync = Get-DbaAgentJob @splatGetJob
+
+                # Always exclude MSX jobs (CategoryID = 1) - they cannot be synced to secondary replicas
+                $jobsToSync = $jobsToSync | Where-Object CategoryID -ne 1
 
                 $splatCopyJob = @{
                     Destination          = $secondaries

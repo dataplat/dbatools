@@ -70,6 +70,12 @@ function Import-DbaCsv {
         For proper type inference (int, decimal, datetime2, varchar vs nvarchar), use -SampleRows or -DetectColumnTypes instead.
         For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
+    .PARAMETER NoColumnOptimize
+        Skips the automatic column size optimization that runs after AutoCreateTable imports.
+        By default, AutoCreateTable creates nvarchar(MAX) columns and then shrinks them to fit the imported data.
+        Use this switch when importing multiple CSV files into the same auto-created table, so that later files
+        with longer values are not rejected due to columns being shrunk to fit only the first file's data.
+
     .PARAMETER Truncate
         Removes all existing data from the destination table before importing. The truncate operation is part of the transaction.
         Use this for full data refreshes where you want to replace all existing data with the CSV contents.
@@ -537,6 +543,7 @@ function Import-DbaCsv {
         [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
+        [switch]$NoColumnOptimize,
         [switch]$NoProgress,
         [switch]$NoHeaderRow,
         [switch]$UseFileNameForSchema,
@@ -635,6 +642,12 @@ function Import-DbaCsv {
             $options.MaxDecompressedSize = $MaxDecompressedSize
             $options.SkipRows = $SkipRows
             $options.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
+            # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+            if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                $options.AllowMultilineFields = $true
+            } else {
+                $options.AllowMultilineFields = $SupportsMultiline.IsPresent
+            }
 
             try {
                 $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
@@ -966,7 +979,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                     Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
                 }
                 if (-not $SingleColumn) {
-                    if ($firstlines -notmatch [regex]::Escape($Delimiter)) {
+                    if (-not ($firstlines -match [regex]::Escape($Delimiter))) {
                         Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
                         return
                     }
@@ -1104,6 +1117,12 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $inferOptions.Escape = $Escape
                         $inferOptions.Comment = $Comment
                         $inferOptions.Encoding = [System.Text.Encoding]::$Encoding
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $inferOptions.AllowMultilineFields = $true
+                        } else {
+                            $inferOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
                         if ($PSBoundParameters.DateTimeFormats) {
                             $inferOptions.DateTimeFormats = $DateTimeFormats
                         }
@@ -1299,7 +1318,12 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
                         $csvOptions.MaxParseErrors = $MaxParseErrors
                         $csvOptions.SkipEmptyLines = $SkipEmptyLine.IsPresent
-                        $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
+                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
+                            $csvOptions.AllowMultilineFields = $true
+                        } else {
+                            $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
+                        }
                         $csvOptions.UseColumnDefaults = $UseColumnDefault.IsPresent
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
@@ -1419,7 +1443,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                                 }
 
                                 # Optimize column sizes after commit if we created a fat table
-                                if ($createdFatTable) {
+                                if ($createdFatTable -and -not $NoColumnOptimize) {
                                     try {
                                         Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table
                                     } catch {
@@ -1432,7 +1456,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                                 } catch {
                                 }
                             }
-                        } elseif ($completed -and $createdFatTable) {
+                        } elseif ($completed -and $createdFatTable -and -not $NoColumnOptimize) {
                             # NoTransaction mode - still optimize if we created a fat table
                             try {
                                 Optimize-ColumnSize -SqlConn $sqlconn -Schema $schema -Table $table

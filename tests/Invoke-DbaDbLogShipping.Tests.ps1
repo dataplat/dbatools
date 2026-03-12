@@ -90,6 +90,7 @@ Describe $CommandName -Tag UnitTests {
                 "StandbyDirectory",
                 "UseExistingFullBackup",
                 "UseBackupFolder",
+                "IgnoreFileChecks",
                 "AzureBaseUrl",
                 "AzureCredential",
                 "Force",

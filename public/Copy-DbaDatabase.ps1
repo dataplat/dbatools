@@ -764,8 +764,6 @@ function Copy-DbaDatabase {
             }
         }
 
-        Invoke-SmoCheck -SqlInstance $sourceServer
-
         # Fix #6600
         $sourceFullComputerName = Resolve-DbaComputerName -ComputerName $sourceServer.ComputerName
         Write-Message -Level Verbose -Message "Using $sourceFullComputerName as sourceFullComputerName."
@@ -852,9 +850,6 @@ function Copy-DbaDatabase {
             # Fix #6600
             $destFullComputerName = Resolve-DbaComputerName -ComputerName $destserver.ComputerName
             Write-Message -Level Verbose -Message "Using $destFullComputerName as destFullComputerName."
-
-            Write-Message -Level Verbose -Message "Performing SMO version check."
-            Invoke-SmoCheck -SqlInstance $destServer
 
             Write-Message -Level Verbose -Message "Checking to ensure the source isn't the same as the destination."
             if ($source -eq $destinstance) {

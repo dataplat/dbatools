@@ -71,6 +71,7 @@ function Backup-DbaDatabase {
         Specifies the number of files to stripe the backup across for improved performance.
         Higher values increase backup speed but require more disk space and coordination during restores.
         Automatically overridden when multiple Path values are provided. Typically use 2-4 files for optimal performance.
+        When using StorageBaseUrl (S3/Azure), an explicit FileCount allows striping multiple backup files into the same bucket/container.
 
     .PARAMETER CreateFolder
         Creates a separate subdirectory for each database within the backup path for better organization.
@@ -669,7 +670,9 @@ function Backup-DbaDatabase {
                         }
                     }
                 }
-                $FileCount = $StorageBaseUrl.count
+                if ($FileCount -eq 0) {
+                    $FileCount = $StorageBaseUrl.count
+                }
                 $Path = $StorageBaseUrl
             }
 
@@ -865,6 +868,21 @@ function Backup-DbaDatabase {
                 }
             } elseif ($FinalBackupPath[0] -ne 'NUL:') {
                 $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
+            }
+
+            # Auto-detect dbname token to prevent duplication when using CreateFolder + ReplaceInName
+            if ($CreateFolder -and $ReplaceInName -and -not $NoAppendDbNameInPath) {
+                $containsDbNameToken = $false
+                foreach ($pathToCheck in $FinalBackupPath) {
+                    if ($pathToCheck -match "\bdbname\b") {
+                        $containsDbNameToken = $true
+                        break
+                    }
+                }
+                if ($containsDbNameToken) {
+                    Write-Message -Level Verbose -Message "Path contains 'dbname' token with ReplaceInName. Automatically skipping database folder creation to prevent duplication."
+                    $NoAppendDbNameInPath = $true
+                }
             }
 
             if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {

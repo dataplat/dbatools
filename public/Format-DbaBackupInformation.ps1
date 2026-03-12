@@ -219,6 +219,11 @@ function Format-DbaBackupInformation {
             }
             $History.Database = $DatabaseNamePrefix + $History.Database
 
+            # Capture rename values before entering the ForEach-Object pipeline to ensure correct
+            # scoping and to use [regex]::Escape so database names with special chars are treated literally
+            $originalDb = $History.OriginalDatabase
+            $newDb = $History.Database
+
             $History.FileList | ForEach-Object {
                 if ($null -ne $FileMapping ) {
                     if ($null -ne $FileMapping[$_.LogicalName]) {
@@ -240,7 +245,7 @@ function Format-DbaBackupInformation {
                     $baseName = $baseName.Split($PathSep)[-1]
 
                     if ($ReplaceDbNameInFile -eq $true) {
-                        $baseName = $baseName -Replace $History.OriginalDatabase, $History.Database
+                        $baseName = $baseName -Replace ([regex]::Escape($originalDb)), $newDb
                     }
 
                     # Determine restore directory based on file type

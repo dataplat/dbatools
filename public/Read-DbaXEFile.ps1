@@ -148,7 +148,7 @@ function Read-DbaXEFile {
                         }
 
                         foreach ($key in $event.Actions.Keys) {
-                            $hash[$key] = $event.Actions[$key]
+                            $hash[($key -Split '\.')[-1]] = $event.Actions[$key]
                         }
 
                         foreach ($key in $event.Fields.Keys) {

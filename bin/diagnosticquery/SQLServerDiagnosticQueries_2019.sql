@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 2, 2026
+-- Last Modified: March 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 

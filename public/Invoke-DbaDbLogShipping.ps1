@@ -366,6 +366,10 @@ function Invoke-DbaDbLogShipping {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER IgnoreFileChecks
+        Skips path validation checks before backup operations. Use this when SQL Server cannot verify that the backup path exists,
+        for example when the network share is created just before the backup and there is latency in the path becoming visible to SQL Server.
+
     .PARAMETER Force
         Bypasses confirmations and applies default values for missing parameters like copy destination folder.
         Also removes existing schedules with the same name and sets automatic database suffix when source and destination instances are identical.
@@ -575,6 +579,7 @@ function Invoke-DbaDbLogShipping {
         [string]$StandbyDirectory,
         [switch]$UseExistingFullBackup,
         [string]$UseBackupFolder,
+        [switch]$IgnoreFileChecks,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -1527,12 +1532,13 @@ function Invoke-DbaDbLogShipping {
                                 } else {
                                     # Backup to file share
                                     $splatBackup = @{
-                                        SqlInstance     = $SourceSqlInstance
-                                        SqlCredential   = $SourceSqlCredential
-                                        BackupDirectory = $DatabaseSharedPath
-                                        BackupFileName  = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
-                                        Database        = $($db.Name)
-                                        Type            = "Full"
+                                        SqlInstance      = $SourceSqlInstance
+                                        SqlCredential    = $SourceSqlCredential
+                                        BackupDirectory  = $DatabaseSharedPath
+                                        BackupFileName   = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        Database         = $($db.Name)
+                                        Type             = "Full"
+                                        IgnoreFileChecks = $IgnoreFileChecks
                                     }
 
                                     $LastBackup = Backup-DbaDatabase @splatBackup

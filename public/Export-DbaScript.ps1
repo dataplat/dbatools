@@ -227,12 +227,23 @@ function Export-DbaScript {
                 Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
             }
 
+            $dagScript = $null
             if ($shorttype -eq "AvailabilityGroup") {
-                Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/dataplat/dbatools/issues/5913."
-                try {
-                    $null = $InputObject.Script()
-                } catch {
-                    Write-Message -Level Verbose -Message "Invoking .Script() failed: $_"
+                if ((Get-Member -InputObject $object -Name IsDistributedAvailabilityGroup -ErrorAction SilentlyContinue) -and $object.IsDistributedAvailabilityGroup) {
+                    Write-Message -Level Verbose -Message "Detected Distributed Availability Group '$($object.Name)'. Generating T-SQL script manually as SMO scripting does not support Distributed AGs."
+                    $dagReplicaScripts = foreach ($replica in $object.AvailabilityReplicas) {
+                        $availMode = if ($replica.AvailabilityMode -eq "SynchronousCommit") { "SYNCHRONOUS_COMMIT" } else { "ASYNCHRONOUS_COMMIT" }
+                        $seedMode = if ($replica.SeedingMode -eq "Automatic") { "AUTOMATIC" } else { "MANUAL" }
+                        "   N'$($replica.Name)' WITH$eol   ($eol      LISTENER_URL = N'$($replica.EndpointUrl)',$eol      AVAILABILITY_MODE = $availMode,$eol      FAILOVER_MODE = MANUAL,$eol      SEEDING_MODE = $seedMode$eol   )"
+                    }
+                    $dagScript = "CREATE AVAILABILITY GROUP [$($object.Name)]$eol   WITH (DISTRIBUTED)$eol   AVAILABILITY GROUP ON$eol$($dagReplicaScripts -join ",$eol");"
+                } else {
+                    Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/dataplat/dbatools/issues/5913."
+                    try {
+                        $null = $InputObject.Script()
+                    } catch {
+                        Write-Message -Level Verbose -Message "Invoking .Script() failed: $_"
+                    }
                 }
             }
 
@@ -295,14 +306,14 @@ function Export-DbaScript {
                     if ($Passthru) {
                         if ($ScriptingOptionsObject) {
                             $ScriptingOptionsObject.FileName = $null
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                            foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($scriptBatchTerminator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 }
                                 $scriptpart | Out-String
                             }
                         } else {
-                            foreach ($scriptpart in $scripter.EnumScript($object)) {
+                            foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
@@ -320,10 +331,14 @@ function Export-DbaScript {
                                 if (-not $ScriptingOptionsObject.FileName) {
                                     $ScriptingOptionsObject.FileName = $scriptPath
                                 }
-                                $null = $object.Script($ScriptingOptionsObject)
+                                if ($dagScript) {
+                                    "$dagScript$eol$BatchSeparator$eol" | Out-File -FilePath $ScriptingOptionsObject.FileName -Encoding $encoding -Append
+                                } else {
+                                    $null = $object.Script($ScriptingOptionsObject)
+                                }
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
-                                $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
+                                $scriptInFull = foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                     if ($BatchSeparator) {
                                         $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                     } else {
@@ -334,7 +349,7 @@ function Export-DbaScript {
                                 $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
                             }
                         } else {
-                            $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
+                            $scriptInFull = foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
                                 if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
