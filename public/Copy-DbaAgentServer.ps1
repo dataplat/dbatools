@@ -118,7 +118,6 @@ function Copy-DbaAgentServer {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
 
         if ($Force) { $ConfirmPreference = 'none' }
@@ -131,7 +130,6 @@ function Copy-DbaAgentServer {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
             Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
 
