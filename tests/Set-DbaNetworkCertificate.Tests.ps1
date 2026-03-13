@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "Credential",
                 "Certificate",
                 "Thumbprint",
+                "UnsetCertificate",
                 "RestartService",
                 "EnableException"
             )
