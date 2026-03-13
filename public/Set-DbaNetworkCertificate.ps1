@@ -21,6 +21,8 @@ function Set-DbaNetworkCertificate {
 
         This command also grants read permissions for the service account on the certificate's private key.
 
+        The currently configured certificate can be unset by using the parameter -UnsetCertificate.
+
         References:
         https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
@@ -43,6 +45,10 @@ function Set-DbaNetworkCertificate {
         Use this when you know the specific certificate thumbprint from certificates already installed in LocalMachine\My.
         Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key and the SQL Server
         service account will be granted read permissions to it.
+
+    .PARAMETER UnsetCertificate
+        Unsets the currently configured network certificate for the SQL Server instance.
+        This will remove the certificate configuration, and SQL Server will not use any certificate for SSL connections.
 
     .PARAMETER RestartService
         Forces an automatic restart of the SQL Server service after setting the network certificate.
@@ -97,6 +103,11 @@ function Set-DbaNetworkCertificate {
 
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
 
+    .EXAMPLE
+        PS C:\> Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -UnsetCertificate -RestartService
+
+        Unsets the network certificate for the SQL2008R2SP2 instance and restarts the SQL Server service.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -108,8 +119,8 @@ function Set-DbaNetworkCertificate {
         [Parameter(ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
         [Parameter(ValueFromPipelineByPropertyName)]
-        [ValidatePattern('^[0-9A-Fa-f]{40}$')]
         [string]$Thumbprint,
+        [switch]$UnsetCertificate,
         [switch]$RestartService,
         [switch]$EnableException
     )
@@ -155,35 +166,42 @@ function Set-DbaNetworkCertificate {
                 }
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
 
-                $cert = Get-ChildItem Cert:\LocalMachine\My -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $thumbprint }
-                $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                if ($PSVersionTable.PSVersion.Major -ge 6) {
-                    $keyName = $cert.PrivateKey.Key.UniqueName
+                if ($thumbprint) {
+                    $verbose += "Certificate thumbprint to set: $thumbprint"
+
+                    $cert = Get-ChildItem Cert:\LocalMachine\My -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $thumbprint }
+                    $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
+                    if ($PSVersionTable.PSVersion.Major -ge 6) {
+                        $keyName = $cert.PrivateKey.Key.UniqueName
+                    } else {
+                        $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+                    }
+                    $keyFullPath = $keyPath + $keyName
+                    if (-not (Test-Path $keyFullPath -Type Leaf)) {
+                        throw "Can't find private key path"
+                    }
+
+                    # Grant permissions to the Service SID
+                    $sqlSSID = "NT SERVICE\MSSQLSERVER"
+                    if ($instance.InstanceName -ne "MSSQLSERVER") {
+                        $sqlSSID = "NT SERVICE\MSSQL$" + $instance.InstanceName
+                    }
+                    $permission = $sqlSSID, "Read", "Allow"
+                    $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
+                    try {
+                        $acl = Get-Acl -Path $keyFullPath -ErrorAction Stop
+                        $null = $acl.AddAccessRule($accessRule)
+                        Set-Acl -Path $keyFullPath -AclObject $acl -ErrorAction Stop
+                    } catch {
+                        throw "Failed to set read permissions on certificate private key: $_"
+                    }
+
+                    Set-ItemProperty -Path $regPath -Name Certificate -Value $thumbprint.ToLowerInvariant() # to make it compat with SQL config
                 } else {
-                    $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
-                }
-                $keyFullPath = $keyPath + $keyName
-                if (-not (Test-Path $keyFullPath -Type Leaf)) {
-                    throw "Can't find private key path"
-                }
+                    $verbose += "No certificate thumbprint provided, unsetting certificate configuration"
 
-                # Grant permissions to the Service SID
-                $sqlSSID = "NT SERVICE\MSSQLSERVER"
-                if ($instance.InstanceName -ne "MSSQLSERVER") {
-                    $sqlSSID = "NT SERVICE\MSSQL$" + $instance.InstanceName
+                    Set-ItemProperty -Path $regPath -Name Certificate -Value $null
                 }
-                $permission = $sqlSSID, "Read", "Allow"
-                $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
-
-                try {
-                    $acl = Get-Acl -Path $keyFullPath
-                    $null = $acl.AddAccessRule($accessRule)
-                    Set-Acl -Path $keyFullPath -AclObject $acl
-                } catch {
-                    throw "Failed to set read permissions on certificate private key: $_"
-                }
-
-                Set-ItemProperty -Path $regPath -Name Certificate -Value $thumbprint.ToLowerInvariant() # to make it compat with SQL config
             } catch {
                 $exception = $_
             }
@@ -198,6 +216,11 @@ function Set-DbaNetworkCertificate {
         # Registry access
 
         if (Test-FunctionInterrupt) { return }
+
+        if ($Thumbprint -and $Thumbprint -notmatch '^[0-9A-Fa-f]{40}$') {
+            Stop-Function -Message "The thumbprint must be a 40-character hexadecimal string (no spaces)."
+            return
+        }
 
         if ($Certificate) {
             Write-Message -Level Verbose -Message "Getting thumbprint"
@@ -219,7 +242,22 @@ function Set-DbaNetworkCertificate {
                 Stop-Function -Message "Failed to use Test-DbaNetworkCertificate to get information for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
 
-            if ($Thumbprint) {
+            if ($UnsetCertificate) {
+                if (-not $certTest.ConfiguredCertificateThumbprint) {
+                    Write-Message -Level Verbose -Message "There is no certificate configured for $instance"
+                    [PSCustomObject]@{
+                        ComputerName          = $certTest.ComputerName
+                        InstanceName          = $certTest.InstanceName
+                        SqlInstance           = $certTest.SqlInstance
+                        CertificateThumbprint = $null
+                        Notes                 = 'No changes needed'
+                    }
+                    continue
+                } else {
+                    # In case of unsetting we ignore the parameter Thumbprint.
+                    $Thumbprint = $null
+                }
+            } elseif ($Thumbprint) {
                 if ($Thumbprint -eq $certTest.ConfiguredCertificateThumbprint -and $certTest.ConfiguredCertificateValid) {
                     Write-Message -Level Verbose -Message "Certificate $($certTest.ConfiguredCertificateThumbprint) was already configured for $instance"
                     [PSCustomObject]@{
@@ -278,7 +316,12 @@ function Set-DbaNetworkCertificate {
                 }
             }
 
-            if ($PScmdlet.ShouldProcess($instance, "Configuring certificate $Thumbprint")) {
+            if ($UnsetCertificate) {
+                $message = "Unsetting certificate $($certTest.ConfiguredCertificateThumbprint)"
+            } else {
+                $message = "Configuring certificate $Thumbprint"
+            }
+            if ($PScmdlet.ShouldProcess($instance, $message)) {
                 $computerName = Resolve-DbaComputerName -ComputerName $instance.ComputerName -Credential $Credential
                 $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $Thumbprint -ComputerName $computerName -Credential $Credential -ErrorAction Stop
                 foreach ($verbose in $result.Verbose) {
@@ -293,7 +336,7 @@ function Set-DbaNetworkCertificate {
                 $notes = $null
                 if ($RestartService) {
                     try {
-                        $null = Restart-DbaService -SqlInstance $instance -Force -EnableException
+                        $null = Restart-DbaService -SqlInstance $instance -Type Engine -Force -EnableException
                     } catch {
                         Write-Message -Level Warning -Message "Failed to restart service for instance $instance."
                         $notes = "Failed to restart service"
