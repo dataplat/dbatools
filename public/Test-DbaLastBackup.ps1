@@ -160,6 +160,12 @@ function Test-DbaLastBackup {
         Use this to prevent I/O errors on checkpoint files by allowing time for cleanup between restore operations.
         Helpful when restoring to network shares or storage systems that need additional time to release file handles.
 
+    .PARAMETER Path
+        Specifies one or more folder paths containing backup files to test instead of querying backup history from a SQL instance.
+        Use this when you want to validate backup files from a specific location without needing the original source SQL Server instance.
+        Backup files will be discovered recursively from the specified paths. When using -Path, a -Destination server must be specified.
+        Accepts local paths, UNC paths, Azure blob storage URLs, or S3 URLs accessible to the destination SQL Server instance.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -275,6 +281,16 @@ function Test-DbaLastBackup {
         PS C:\> Test-DbaLastBackup -SqlInstance sql2022 -Database Sales -StorageCredential "S3Credential"
 
         Tests the last backup of the Sales database where backups are stored in S3-compatible storage. Requires SQL Server 2022 or later for S3 support.
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -Path "\\BackupShare\Backups\sql2016" -Destination sql2016
+
+        Scans the specified UNC path for backup files, then tests all databases found by restoring them to sql2016 and performing a DBCC CHECKDB.
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -Path "\\BackupShare\Backups\sql2016" -Destination sql2016test -Database AdventureWorks
+
+        Scans the specified UNC path for AdventureWorks backup files and tests the restore on sql2016test.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and StorageCredential")]
@@ -309,11 +325,287 @@ function Test-DbaLastBackup {
         [switch]$ReuseSourceFolderStructure,
         [switch]$Checksum,
         [int]$Wait,
+        [string[]]$Path,
         [switch]$EnableException
     )
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        if (Test-Bound "Path") {
+            if (-not (Test-Bound "Destination")) {
+                Stop-Function -Message "A -Destination server must be specified when using -Path to specify backup folder paths."
+                return
+            }
+
+            try {
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
+                return
+            }
+
+            if ($datadirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceAccount has permissions." -Continue
+                }
+            } else {
+                $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
+            }
+
+            if ($logdirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
+                    $serviceAccount = $destserver.ServiceAccount
+                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceAccount has permissions." -Continue
+                }
+            } else {
+                $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
+            }
+
+            Write-Message -Level Verbose -Message "Getting backup information from path(s): $($Path -join ', ')."
+
+            $splatGetBackupInfo = @{
+                SqlInstance      = $destserver
+                Path             = $Path
+                DirectoryRecurse = $true
+                EnableException  = $EnableException
+            }
+            if (Test-Bound "Database") {
+                $splatGetBackupInfo.Add("DatabaseName", $Database)
+            }
+            if (Test-Bound "StorageCredential") {
+                $splatGetBackupInfo.Add("StorageCredential", $StorageCredential)
+            }
+
+            try {
+                $allPathBackups = Get-DbaBackupInformation @splatGetBackupInfo
+            } catch {
+                Stop-Function -Message "Failed to get backup information from path(s)." -ErrorRecord $_
+                return
+            }
+
+            if (-not $allPathBackups) {
+                Stop-Function -Message "No backup files found in the specified path(s)."
+                return
+            }
+
+            if (Test-Bound "ExcludeDatabase") {
+                $allPathBackups = $allPathBackups | Where-Object { $_.Database -notin $ExcludeDatabase }
+            }
+
+            $pathDatabaseGroups = $allPathBackups | Group-Object -Property Database
+
+            foreach ($pathDbGroup in $pathDatabaseGroups) {
+                $dbName = $pathDbGroup.Name
+                $lastbackup = $pathDbGroup.Group
+                $source = "N/A"
+                $restoreresult = $null
+                $fileexists = $true
+                $dbccresult = $null
+                $success = $null
+                $errormsg = $null
+
+                if (-not ($lastbackup | Where-Object { $_.Type -eq "Full" })) {
+                    Write-Message -Level Verbose -Message "No full backup found for $dbName in the specified path(s)."
+                    [PSCustomObject]@{
+                        SourceServer   = $source
+                        TestServer     = $Destination
+                        Database       = $dbName
+                        FileExists     = $false
+                        Size           = $null
+                        RestoreResult  = "No full backup found"
+                        DbccResult     = "Skipped"
+                        RestoreStart   = $null
+                        RestoreEnd     = $null
+                        RestoreElapsed = $null
+                        DbccMaxDop     = $null
+                        DbccStart      = $null
+                        DbccEnd        = $null
+                        DbccElapsed    = $null
+                        BackupDates    = $null
+                        BackupFiles    = $null
+                    }
+                    continue
+                }
+
+                $totalSizeMB = ($lastbackup.TotalSize.Megabyte | Measure-Object -Sum).Sum
+                if ($MaxSize -and $MaxSize -lt $totalSizeMB) {
+                    [PSCustomObject]@{
+                        SourceServer   = $source
+                        TestServer     = $Destination
+                        Database       = $dbName
+                        FileExists     = $null
+                        Size           = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
+                        RestoreResult  = "The backup size for $dbName ($totalSizeMB MB) exceeds the specified maximum size ($MaxSize MB)."
+                        DbccResult     = "Skipped"
+                        RestoreStart   = $null
+                        RestoreEnd     = $null
+                        RestoreElapsed = $null
+                        DbccMaxDop     = $null
+                        DbccStart      = $null
+                        DbccEnd        = $null
+                        DbccElapsed    = $null
+                        BackupDates    = [dbadatetime[]]($lastbackup.Start)
+                        BackupFiles    = $lastbackup.FullName
+                    }
+                    continue
+                }
+
+                $ogdbname = $dbName
+                $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
+                $prefixedDbName = "$prefix$dbName"
+                $destdb = $destserver.Databases[$prefixedDbName]
+
+                if ($destdb) {
+                    Stop-Function -Message "$prefixedDbName already exists on $Destination - skipping." -Continue
+                }
+
+                if ($Pscmdlet.ShouldProcess($Destination, "Restoring $ogdbname as $prefixedDbName.")) {
+                    Write-Message -Level Verbose -Message "Performing restore."
+                    $startRestore = Get-Date
+                    try {
+                        if ($ReuseSourceFolderStructure) {
+                            $restoreSplat = @{
+                                SqlInstance                = $destserver
+                                RestoredDatabaseNamePrefix = $prefix
+                                DestinationFilePrefix      = $Prefix
+                                IgnoreLogBackup            = $IgnoreLogBackup
+                                StorageCredential          = $StorageCredential
+                                ReuseSourceFolderStructure = $true
+                                EnableException            = $true
+                            }
+                        } else {
+                            $restoreSplat = @{
+                                SqlInstance                = $destserver
+                                RestoredDatabaseNamePrefix = $prefix
+                                DestinationFilePrefix      = $Prefix
+                                DestinationDataDirectory   = $datadirectory
+                                DestinationLogDirectory    = $logdirectory
+                                IgnoreLogBackup            = $IgnoreLogBackup
+                                StorageCredential          = $StorageCredential
+                                EnableException            = $true
+                            }
+                        }
+
+                        if (Test-Bound "MaxTransferSize") {
+                            $restoreSplat.Add("MaxTransferSize", $MaxTransferSize)
+                        }
+                        if (Test-Bound "BufferCount") {
+                            $restoreSplat.Add("BufferCount", $BufferCount)
+                        }
+                        if (Test-Bound "FileStreamDirectory") {
+                            $restoreSplat.Add("DestinationFileStreamDirectory", $FileStreamDirectory)
+                        }
+                        if (Test-Bound "Checksum") {
+                            $restoreSplat.Add("Checksum", $Checksum)
+                        }
+                        if (Test-Bound "IgnoreDiffBackup") {
+                            $restoreSplat.Add("IgnoreDiffBackup", $true)
+                        }
+
+                        if ($verifyonly) {
+                            $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly
+                        } else {
+                            $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
+                        }
+                    } catch {
+                        $errormsg = Get-ErrorMessage -Record $_
+                    }
+
+                    $endRestore = Get-Date
+                    $restorets = New-TimeSpan -Start $startRestore -End $endRestore
+                    $ts = [timespan]::fromseconds($restorets.TotalSeconds)
+                    $restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+
+                    if ($restoreresult.RestoreComplete -eq $true) {
+                        $success = "Success"
+                    } else {
+                        if ($errormsg) {
+                            $success = $errormsg
+                        } else {
+                            $success = "Failure"
+                        }
+                    }
+                }
+
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+                if (-not $NoCheck -and -not $VerifyOnly) {
+                    # shouldprocess is taken care of in Start-DbccCheck
+                    if ($ogdbname -eq "master") {
+                        $dbccresult = "DBCC CHECKDB skipped for restored master ($prefixedDbName) database. The master database cannot be copied off of a server and have a successful DBCC CHECKDB. See https://www.itprotoday.com/my-master-database-really-corrupt for more information."
+                    } else {
+                        if ($success -eq "Success") {
+                            Write-Message -Level Verbose -Message "Starting DBCC."
+
+                            $startDbcc = Get-Date
+                            $dbccresult = Start-DbccCheck -Server $destserver -DbName $prefixedDbName -MaxDop $MaxDop 3>$null
+                            $endDbcc = Get-Date
+
+                            $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
+                            $ts = [timespan]::fromseconds($dbccts.TotalSeconds)
+                            $dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+                        } else {
+                            $dbccresult = "Skipped"
+                        }
+                    }
+                }
+
+                if ($VerifyOnly) {
+                    $dbccresult = "Skipped"
+                }
+
+                if (-not $NoDrop -and $null -ne $destserver.Databases[$prefixedDbName]) {
+                    if ($PSCmdlet.ShouldProcess($prefixedDbName, "Dropping Database $prefixedDbName on $Destination")) {
+                        Write-Message -Level Verbose -Message "Dropping database."
+
+                        ## Drop the database
+                        try {
+                            #Variable $removeresult marked as unused by PSScriptAnalyzer replace with $null to catch output
+                            $null = Remove-DbaDatabase -SqlInstance $destserver -Database $prefixedDbName -Confirm:$false
+                            Write-Message -Level Verbose -Message "Dropped $prefixedDbName Database on $Destination."
+                        } catch {
+                            $destserver.Databases.Refresh()
+                            if ($destserver.Databases[$prefixedDbName]) {
+                                Write-Message -Level Warning -Message "Failed to Drop database $prefixedDbName on $Destination."
+                            }
+                        }
+                    }
+                }
+
+                $destserver.Databases.Refresh()
+                if ($destserver.Databases[$prefixedDbName] -and -not $NoDrop) {
+                    Write-Message -Level Warning -Message "$prefixedDbName was not dropped."
+                }
+
+                if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
+                    [PSCustomObject]@{
+                        SourceServer   = $source
+                        TestServer     = $Destination
+                        Database       = $ogdbname
+                        FileExists     = $fileexists
+                        Size           = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
+                        RestoreResult  = $success
+                        DbccResult     = $dbccresult
+                        RestoreStart   = [dbadatetime]$startRestore
+                        RestoreEnd     = [dbadatetime]$endRestore
+                        RestoreElapsed = $restoreElapsed
+                        DbccMaxDop     = [int]$MaxDop
+                        DbccStart      = [dbadatetime]$startDbcc
+                        DbccEnd        = [dbadatetime]$endDbcc
+                        DbccElapsed    = $dbccElapsed
+                        BackupDates    = [dbadatetime[]]($lastbackup.Start)
+                        BackupFiles    = $lastbackup.FullName
+                    }
+                }
+
+                if ($Wait) {
+                    Write-Message -Level Verbose -Message "Waiting $Wait seconds before processing next database."
+                    Start-Sleep -Seconds $Wait
+                }
+            }
         }
 
         foreach ($db in $InputObject) {
