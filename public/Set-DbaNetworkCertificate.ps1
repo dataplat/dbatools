@@ -326,7 +326,7 @@ function Set-DbaNetworkCertificate {
                 $message = "Configuring certificate $newThumbprint"
             }
             if ($PScmdlet.ShouldProcess($instance, $message)) {
-                $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $Thumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
+                $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $newThumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
                 foreach ($verbose in $result.Verbose) {
                     Write-Message -Level Verbose -Message $verbose
                 }
@@ -346,12 +346,16 @@ function Set-DbaNetworkCertificate {
                     try {
                         $null = Restart-DbaService -SqlInstance $instance -Type Engine -Force -EnableException
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to restart service for instance $instance."
                         $notes = "Failed to restart service"
+                        Write-Message -Level Warning -Message "$notes for instance $instance."
                     }
                 } else {
-                    Write-Message -Level Warning -Message "New certificate will not take effect until SQL Server services are restarted for $instance"
-                    $notes = "New certificate will not take effect until SQL Server services are restarted"
+                    if ($UnsetCertificate) {
+                        $notes = "Certificate removal will not take effect until SQL Server service is restarted"
+                    } else {
+                        $notes = "New certificate will not take effect until SQL Server service is restarted"
+                    }
+                    Write-Message -Level Warning -Message "$notes for instance$instance"
                 }
 
                 [PSCustomObject]@{

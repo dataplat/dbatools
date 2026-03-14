@@ -285,7 +285,7 @@ $config = [ordered]@{
 }
 ```
 
-So `$WarnVar` can be used with `WarnVar | Should -Be` to test for warnings.
+So `$WarnVar` can be used with `$WarnVar | Should -Be` to test for warnings.
 
 ### Formatting Rules
 - Apply OTBS (One True Brace Style) formatting to all code blocks
