@@ -355,7 +355,7 @@ function Set-DbaNetworkCertificate {
                     } else {
                         $notes = "New certificate will not take effect until SQL Server service is restarted"
                     }
-                    Write-Message -Level Warning -Message "$notes for instance$instance"
+                    Write-Message -Level Warning -Message "$notes for instance $instance"
                 }
 
                 [PSCustomObject]@{
