@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Retrieves Windows security privileges critical for SQL Server performance from target computers.
 
     .DESCRIPTION
-        Audits five Windows privileges that directly impact SQL Server performance and functionality: Lock Pages in Memory, Instant File Initialization, Logon as Batch, Generate Security Audits, and Logon as a Service. These privileges are essential for SQL Server service accounts to achieve optimal performance and proper operation.
+        Audits six Windows privileges that directly impact SQL Server performance and functionality: Lock Pages in Memory, Instant File Initialization, Logon as Batch, Generate Security Audits, Logon as a Service, and Create Global Objects. These privileges are essential for SQL Server service accounts to achieve optimal performance and proper operation.
 
         Use this to verify that SQL Server service accounts have the necessary Windows privileges configured, troubleshoot performance issues related to missing privileges, or audit security configurations across your SQL Server environment. The function exports the local security policy using secedit and parses the results to show which users and groups hold these critical privileges.
 
@@ -36,7 +36,7 @@ function Get-DbaPrivilege {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per unique user or group found across the five Windows security privileges being audited.
+        Returns one object per unique user or group found across the six Windows security privileges being audited.
 
         Properties:
         - ComputerName: The name of the computer where the privilege audit was performed
@@ -46,6 +46,7 @@ function Get-DbaPrivilege {
         - LockPagesInMemory: Boolean indicating if the user has SeLockMemoryPrivilege
         - GenerateSecurityAudit: Boolean indicating if the user has SeAuditPrivilege
         - LogonAsAService: Boolean indicating if the user has SeServiceLogonRight privilege
+        - CreateGlobalObjects: Boolean indicating if the user has SeCreateGlobalPrivilege (required by some backup agents)
 
     .EXAMPLE
         PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
@@ -189,7 +190,24 @@ function Get-DbaPrivilege {
                     Write-Message -Level Verbose -Message "No users with Logon as a service Rights on $computer"
                 }
 
-                $users = @() + $bl + $ifi + $lpim + $gsa + $los | Select-Object -Unique
+                Write-Message -Level Verbose -Message "Getting Create Global Objects Privileges on $computer"
+                $cgoEntries = $secPol | Where-Object { $_ -like "SeCreateGlobalPrivilege*" }
+
+                $cgo = if ($null -ne $cgoEntries) {
+                    $cgoEntries.Substring(26).Split(",") | ForEach-Object {
+                        if ($_ -match '^\*S-') {
+                            Convert-SIDToUserName -SID $_.TrimStart('*')
+                        } else {
+                            $_
+                        }
+                    }
+                }
+
+                if ($cgo.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Create Global Objects Rights on $computer"
+                }
+
+                $users = @() + $bl + $ifi + $lpim + $gsa + $los + $cgo | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
@@ -199,6 +217,7 @@ function Get-DbaPrivilege {
                         LockPagesInMemory         = $lpim -contains $_
                         GenerateSecurityAudit     = $gsa -contains $_
                         LogonAsAService           = $los -contains $_
+                        CreateGlobalObjects       = $cgo -contains $_
                     }
                 }
 
