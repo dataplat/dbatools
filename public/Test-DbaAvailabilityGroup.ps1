@@ -160,6 +160,98 @@ function Test-DbaAvailabilityGroup {
             return
         }
 
+        # Adding new policy based tests here, may be moved later.
+        # Based on https://github.com/dataplat/dbatools/issues/9911
+        $failedPolicies = @()
+        $groupState = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupState -ArgumentList $ag
+
+        <#
+        Always On Availability group is offline
+        Documentation: https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/availability-group-is-offline
+        Policy Name: Availability Group Online State
+        Issue: Availability group is offline.
+        Category: Critical
+        Facet: Availability group
+
+        Name           : AlwaysOnAgOnlineStateHealthCondition
+        Facet          : IAvailabilityGroupState
+        ExpressionNode : @IsOnline = True()
+        #>
+
+        if (-not $groupState.IsOnline) {
+            $failedPolicies += [PSCustomObject]@{
+                PolicyName = "Availability Group Online State"
+                Issue      = "Availability group is offline."
+                Category   = "Critical"
+                Facet      = "Availability group"
+            }
+            Write-Message -Level Warning -Message "Availability Group $AvailabilityGroup is offline. Please check the state of the Availability Group and its replicas."
+        }
+
+        <#
+        Always On availability group is not ready for automatic failover
+        Documentation: https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/availability-group-is-not-ready-for-automatic-failover
+        Policy Name: Availability Group Automatic Failover Readiness
+        Issue: Availability group is not ready for automatic failover.
+        Category: Critical
+        Facet: Availability group
+
+        Name           : AlwaysOnAgAutomaticFailoverHealthCondition
+        Facet          : IAvailabilityGroupState
+        ExpressionNode : (@IsAutoFailover = True() AND @NumberOfSynchronizedSecondaryReplicas > 0) OR @IsAutoFailover = False()
+        #>
+
+        if ($groupState.IsAutoFailover -and $groupState.NumberOfSynchronizedSecondaryReplicas -eq 0) {
+            $failedPolicies += [PSCustomObject]@{
+                PolicyName = "Availability Group Automatic Failover Readiness"
+                Issue      = "Availability group is not ready for automatic failover."
+                Category   = "Critical"
+                Facet      = "Availability group"
+            }
+            Write-Message -Level Warning -Message "Availability Group $AvailabilityGroup is not ready for automatic failover. It is configured for automatic failover, but has no synchronized secondary replicas."
+        }
+
+        <#
+        Some availability replicas are disconnected
+        Documentation: https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/some-availability-replicas-are-disconnected
+        Policy Name: Availability Replicas Connection State
+        Issue: Some availability replicas are disconnected.
+        Category: Warning
+        Facet: Availability group
+
+        Name           : AlwaysOnAgReplicasConnectionHealthCondition
+        Facet          : IAvailabilityGroupState
+        ExpressionNode : @NumberOfDisconnectedReplicas = 0
+
+        Name           : AlwaysOnArConnectionHealthCondition
+        Facet          : AvailabilityReplica
+        ExpressionNode : @ConnectionState = Enum('Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionState', 'Connected')
+        #>
+
+        if ($groupState.NumberOfDisconnectedReplicas -gt 0) {
+            $failedPolicies += [PSCustomObject]@{
+                PolicyName = "Availability Replicas Connection State"
+                Issue      = "Some availability replicas are disconnected."
+                Category   = "Warning"
+                Facet      = "Availability group"
+            }
+            Write-Message -Level Warning -Message "Availability Group $AvailabilityGroup has $($groupState.NumberOfDisconnectedReplicas) disconnected replicas. Please check the connection state of the replicas."
+        }
+
+        # More policies should be added here.
+
+        if ($failedPolicies.Count -gt 0) {
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.AvailabilityGroup
+                FailedPolicies    = $failedPolicies
+            }
+            Stop-Function -Message "One or more critical issues found with Availability Group $AvailabilityGroup. Please review the warnings and fix the issues before using this Availability Group for production workloads."
+            return
+        }
+
 
         # For now, just output the base information.
 
