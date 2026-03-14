@@ -235,10 +235,15 @@ function Restore-DbaDatabase {
         Marked point in the transaction log to stop the restore at (Mark is created via BEGIN TRANSACTION (https://docs.microsoft.com/en-us/sql/t-sql/language-elements/begin-transaction-transact-sql?view=sql-server-ver15)).
 
     .PARAMETER StopBefore
-        Switch to indicate the restore should stop before StopMark occurs, default is to stop when mark is created.
+        Switch to indicate the restore should stop before StopMark or StopAtLsn occurs, default is to stop when mark/LSN is reached.
 
     .PARAMETER StopAfterDate
         By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime.
+
+    .PARAMETER StopAtLsn
+        Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
+        Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
+        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -430,6 +435,16 @@ function Restore-DbaDatabase {
 
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
+    .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001'
+
+        Restores the backups from \\ServerName\ShareName\File as database, stopping when the specified LSN is reached.
+
+    .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001' -StopBefore
+
+        Restores the backups from \\ServerName\ShareName\File as database, stopping just before the specified LSN is reached.
+
         Note that Date time needs to be specified in your local SQL Server culture
 
     .EXAMPLE
@@ -498,6 +513,7 @@ function Restore-DbaDatabase {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
+        [string]$StopAtLsn,
         [int]$StatementTimeout = 0,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Restart
@@ -891,6 +907,7 @@ function Restore-DbaDatabase {
                     StopMark          = $StopMark
                     StopAfterDate     = $StopAfterDate
                     StopBefore        = $StopBefore
+                    StopAtLsn         = $StopAtLsn
                     ExecuteAs         = $ExecuteAs
                     Checksum          = $Checksum
                     Restart           = $Restart
