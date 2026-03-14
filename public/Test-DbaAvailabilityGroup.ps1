@@ -48,6 +48,19 @@ function Test-DbaAvailabilityGroup {
         Validates that the most recent database backup chain can be used for AG database addition.
         Enables validation using existing backups instead of creating new ones, but requires the last backup to be a transaction log backup. Use this to test AG readiness with your current backup strategy.
 
+    .PARAMETER Policy
+        Evaluates all 13 predefined Always On Availability Group policies as defined by Microsoft's Policy-Based Management
+        framework. See https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-policies-for-operational-issues-always-on-availability
+
+        When specified, the function tests each policy condition and returns one object per policy check with the result.
+
+        The policies are grouped by facet:
+        - Server: WSFC cluster state (Critical)
+        - Availability group: online state, automatic failover readiness, replica connection state, replica data
+          synchronization state, replica role state, synchronous replica data synchronization state
+        - Availability replica: replica role state, join state, data synchronization state
+        - Availability database: suspension state, data synchronization state, join state
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,6 +80,18 @@ function Test-DbaAvailabilityGroup {
     .OUTPUTS
         PSCustomObject
 
+        With the -Policy parameter, returns one object per policy check with the following properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: The name of the Availability Group being tested
+        - PolicyName: The name of the Always On policy being evaluated
+        - Category: Severity of the policy - Critical or Warning
+        - Facet: The SMO facet the policy applies to - Server, Availability group, Availability replica, or Availability database
+        - Status: Result of the policy check - Healthy or Unhealthy
+        - Issue: The human-readable issue description from Microsoft documentation
+        - Details: Specific values found during the check
+
         Without the -AddDatabase parameter, returns one object per Availability Group tested with the following properties:
         - ComputerName: The name of the computer hosting the SQL Server instance
         - InstanceName: The SQL Server instance name
@@ -85,6 +110,16 @@ function Test-DbaAvailabilityGroup {
         - ReplicaServerSMO: A hashtable mapping secondary replica names to their Microsoft.SqlServer.Management.Smo.Server objects
         - RestoreNeeded: A hashtable mapping replica names to boolean values indicating if database restore is needed on that replica
         - Backups: An array of backup history objects from Get-DbaDbBackupHistory (when -UseLastBackup is specified)
+
+    .EXAMPLE
+        PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1 -Policy
+
+        Evaluates all 13 Always On policies for Availability Group TestAG1 on SQL2016.
+
+    .EXAMPLE
+        PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1 -Policy | Where-Object Status -eq Unhealthy
+
+        Shows only unhealthy policy results for Availability Group TestAG1.
 
     .EXAMPLE
         PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1
@@ -110,6 +145,7 @@ function Test-DbaAvailabilityGroup {
         [string]$SeedingMode,
         [string]$SharedPath,
         [switch]$UseLastBackup,
+        [switch]$Policy,
         [switch]$EnableException
     )
     process {
@@ -134,6 +170,239 @@ function Test-DbaAvailabilityGroup {
 
         if ($ag.LocalReplicaRole -ne 'Primary') {
             Stop-Function -Message "LocalReplicaRole of replica $server is not Primary, but $($ag.LocalReplicaRole). Please connect to the current primary replica $($ag.PrimaryReplica)."
+            return
+        }
+
+        if ($Policy) {
+            # Implements the 13 Always On Availability Group policies from Microsoft's Policy-Based Management framework.
+            # Source: https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-policies-for-operational-issues-always-on-availability
+            # Conditions verified via: Get-DbaPbmCondition -SqlInstance <instance> -IncludeSystemObject | Where-Object Name -Match AlwaysOn
+
+            # Policy: WSFC Cluster State (Critical, Server facet)
+            # AlwaysOnAgWSFClusterHealthCondition: @ClusterQuorumState = Enum('...ClusterQuorumState', 'NormalQuorum')
+            $wsfcStatus = if ($server.ClusterQuorumState -eq "NormalQuorum") { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $server.ComputerName
+                InstanceName      = $server.InstanceName
+                SqlInstance       = $server.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "WSFC Cluster State"
+                Category          = "Critical"
+                Facet             = "Server"
+                Status            = $wsfcStatus
+                Issue             = "WSFC cluster service is offline."
+                Details           = "ClusterQuorumState is $($server.ClusterQuorumState)"
+            }
+
+            # Get AG state object for all IAvailabilityGroupState facet policies
+            $agState = New-Object -TypeName "Microsoft.SqlServer.Management.Smo.AvailabilityGroupState" -ArgumentList $ag
+
+            # Policy: Availability Group Online State (Critical, Availability group facet)
+            # AlwaysOnAgOnlineStateHealthCondition: @IsOnline = True()
+            $agOnlineStatus = if ($agState.IsOnline) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Availability Group Online State"
+                Category          = "Critical"
+                Facet             = "Availability group"
+                Status            = $agOnlineStatus
+                Issue             = "Availability group is offline."
+                Details           = "IsOnline is $($agState.IsOnline)"
+            }
+
+            # Policy: Availability Group Automatic Failover Readiness (Critical, Availability group facet)
+            # AlwaysOnAgAutomaticFailoverHealthCondition: (@IsAutoFailover = True() AND @NumberOfSynchronizedSecondaryReplicas > 0) OR @IsAutoFailover = False()
+            $autoFailoverHealthy = (-not $agState.IsAutoFailover) -or ($agState.NumberOfSynchronizedSecondaryReplicas -gt 0)
+            $autoFailoverStatus = if ($autoFailoverHealthy) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Availability Group Automatic Failover Readiness"
+                Category          = "Critical"
+                Facet             = "Availability group"
+                Status            = $autoFailoverStatus
+                Issue             = "Availability group is not ready for automatic failover."
+                Details           = "IsAutoFailover is $($agState.IsAutoFailover), NumberOfSynchronizedSecondaryReplicas is $($agState.NumberOfSynchronizedSecondaryReplicas)"
+            }
+
+            # Policy: Availability Replicas Connection State (Warning, Availability group facet)
+            # AlwaysOnAgReplicasConnectionHealthCondition: @NumberOfDisconnectedReplicas = 0
+            $replicasConnStatus = if ($agState.NumberOfDisconnectedReplicas -eq 0) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Availability Replicas Connection State"
+                Category          = "Warning"
+                Facet             = "Availability group"
+                Status            = $replicasConnStatus
+                Issue             = "Some availability replicas are disconnected."
+                Details           = "NumberOfDisconnectedReplicas is $($agState.NumberOfDisconnectedReplicas)"
+            }
+
+            # Policy: Availability Replicas Data Synchronization State (Warning, Availability group facet)
+            # AlwaysOnAgReplicasDataSynchronizationHealthCondition: @NumberOfNotSynchronizingReplicas = 0
+            $replicasSyncStatus = if ($agState.NumberOfNotSynchronizingReplicas -eq 0) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Availability Replicas Data Synchronization State"
+                Category          = "Warning"
+                Facet             = "Availability group"
+                Status            = $replicasSyncStatus
+                Issue             = "Some availability replicas are not synchronizing data."
+                Details           = "NumberOfNotSynchronizingReplicas is $($agState.NumberOfNotSynchronizingReplicas)"
+            }
+
+            # Policy: Availability Replicas Role State (Warning, Availability group facet)
+            # AlwaysOnAgReplicasRoleHealthCondition: @NumberOfReplicasWithUnhealthyRole = 0
+            $replicasRoleStatus = if ($agState.NumberOfReplicasWithUnhealthyRole -eq 0) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Availability Replicas Role State"
+                Category          = "Warning"
+                Facet             = "Availability group"
+                Status            = $replicasRoleStatus
+                Issue             = "Some availability replicas do not have a healthy role."
+                Details           = "NumberOfReplicasWithUnhealthyRole is $($agState.NumberOfReplicasWithUnhealthyRole)"
+            }
+
+            # Policy: Synchronous Replicas Data Synchronization State (Warning, Availability group facet)
+            # AlwaysOnAgSynchronousReplicasDataSynchronizationHealthCondition: @NumberOfNotSynchronizedReplicas = 0
+            $syncReplicasStatus = if ($agState.NumberOfNotSynchronizedReplicas -eq 0) { "Healthy" } else { "Unhealthy" }
+            [PSCustomObject]@{
+                ComputerName      = $ag.ComputerName
+                InstanceName      = $ag.InstanceName
+                SqlInstance       = $ag.SqlInstance
+                AvailabilityGroup = $ag.Name
+                PolicyName        = "Synchronous Replicas Data Synchronization State"
+                Category          = "Warning"
+                Facet             = "Availability group"
+                Status            = $syncReplicasStatus
+                Issue             = "Some synchronous replicas are not synchronized."
+                Details           = "NumberOfNotSynchronizedReplicas is $($agState.NumberOfNotSynchronizedReplicas)"
+            }
+
+            # Replica-level policies (one result per replica per policy)
+            foreach ($replica in $ag.AvailabilityReplicas) {
+                # Policy: Availability Replica Role State (Critical, Availability replica facet)
+                # AlwaysOnArRoleHealthCondition: @Role = Primary OR @Role = Secondary
+                $replicaRoleHealthy = $replica.Role -eq "Primary" -or $replica.Role -eq "Secondary"
+                $replicaRoleStatus = if ($replicaRoleHealthy) { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Replica Role State"
+                    Category          = "Critical"
+                    Facet             = "Availability replica"
+                    Status            = $replicaRoleStatus
+                    Issue             = "Availability replica does not have a healthy role."
+                    Details           = "Replica $($replica.Name): Role is $($replica.Role)"
+                }
+
+                # Policy: Availability Replica Join State (Warning, Availability replica facet)
+                # AlwaysOnArJoinStateHealthCondition: @JoinState != Enum('...AvailabilityReplicaJoinState', 'NotJoined')
+                $replicaJoinStatus = if ($replica.JoinState -ne "NotJoined") { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Replica Join State"
+                    Category          = "Warning"
+                    Facet             = "Availability replica"
+                    Status            = $replicaJoinStatus
+                    Issue             = "Availability Replica is not joined."
+                    Details           = "Replica $($replica.Name): JoinState is $($replica.JoinState)"
+                }
+
+                # Policy: Availability Replica Data Synchronization State (Warning, Availability replica facet)
+                # AlwaysOnArDataSynchronizationHealthCondition:
+                #   ((@AvailabilityMode = AsynchronousCommit AND (@RollupSynchronizationState = Synchronizing OR @RollupSynchronizationState = Synchronized)) OR @RollupSynchronizationState = Synchronized)
+                $replicaSyncHealthy = ($replica.AvailabilityMode -eq "AsynchronousCommit" -and ($replica.RollupSynchronizationState -eq "Synchronizing" -or $replica.RollupSynchronizationState -eq "Synchronized")) -or $replica.RollupSynchronizationState -eq "Synchronized"
+                $replicaSyncStatus = if ($replicaSyncHealthy) { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Replica Data Synchronization State"
+                    Category          = "Warning"
+                    Facet             = "Availability replica"
+                    Status            = $replicaSyncStatus
+                    Issue             = "Data synchronization state of some availability database is not healthy."
+                    Details           = "Replica $($replica.Name): AvailabilityMode is $($replica.AvailabilityMode), RollupSynchronizationState is $($replica.RollupSynchronizationState)"
+                }
+            }
+
+            # Database-level policies (one result per database per replica per policy)
+            # Uses Get-DbaAgDatabaseReplicaState which wraps DatabaseReplicaState SMO objects
+            $dbReplicaStates = Get-DbaAgDatabaseReplicaState -InputObject $ag
+
+            foreach ($dbState in $dbReplicaStates) {
+                # Policy: Availability Database Suspension State (Warning, Availability database facet)
+                # AlwaysOnDbrSuspendStateCondition: @IsSuspended = False()
+                $dbSuspendStatus = if (-not $dbState.IsSuspended) { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Database Suspension State"
+                    Category          = "Warning"
+                    Facet             = "Availability database"
+                    Status            = $dbSuspendStatus
+                    Issue             = "Availability database is suspended."
+                    Details           = "Database $($dbState.DatabaseName) on replica $($dbState.ReplicaServerName): IsSuspended is $($dbState.IsSuspended)"
+                }
+
+                # Policy: Availability Database Data Synchronization State (Warning, Availability database facet)
+                # AlwaysOnDbrDataSynchronizationCondition:
+                #   ((@ReplicaAvailabilityMode = AsynchronousCommit AND @SynchronizationState != NotSynchronizing) OR @SynchronizationState = Synchronized)
+                $dbSyncHealthy = ($dbState.ReplicaAvailabilityMode -eq "AsynchronousCommit" -and $dbState.SynchronizationState -ne "NotSynchronizing") -or $dbState.SynchronizationState -eq "Synchronized"
+                $dbSyncStatus = if ($dbSyncHealthy) { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Database Data Synchronization State"
+                    Category          = "Warning"
+                    Facet             = "Availability database"
+                    Status            = $dbSyncStatus
+                    Issue             = "Data synchronization state of availability database is not healthy."
+                    Details           = "Database $($dbState.DatabaseName) on replica $($dbState.ReplicaServerName): ReplicaAvailabilityMode is $($dbState.ReplicaAvailabilityMode), SynchronizationState is $($dbState.SynchronizationState)"
+                }
+
+                # Policy: Availability Database Join State (Warning, Availability database facet)
+                # AlwaysOnDbrJoinStateCondition: @IsJoined = True()
+                $dbJoinStatus = if ($dbState.IsJoined) { "Healthy" } else { "Unhealthy" }
+                [PSCustomObject]@{
+                    ComputerName      = $ag.ComputerName
+                    InstanceName      = $ag.InstanceName
+                    SqlInstance       = $ag.SqlInstance
+                    AvailabilityGroup = $ag.Name
+                    PolicyName        = "Availability Database Join State"
+                    Category          = "Warning"
+                    Facet             = "Availability database"
+                    Status            = $dbJoinStatus
+                    Issue             = "Secondary database is not joined."
+                    Details           = "Database $($dbState.DatabaseName) on replica $($dbState.ReplicaServerName): IsJoined is $($dbState.IsJoined)"
+                }
+            }
             return
         }
 
