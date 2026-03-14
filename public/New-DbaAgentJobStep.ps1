@@ -212,7 +212,7 @@ function New-DbaAgentJobStep {
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction = 'QuitWithSuccess',
         [int]$OnSuccessStepId = 0,
-        [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
+        [ValidateSet('QuitWithFailure', 'QuitWithSuccess', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
         [int]$OnFailStepId = 0,
         [string]$Database,
