@@ -10,14 +10,14 @@ function Set-DbaNetworkCertificate {
         information about the currently configured certificate and available suitable certificates.
         Returns without changes if the currently configured certificate is still valid.
         Configures the suitable certificate if exactly one is available.
-        Failes if more than one or no suitable certificate is found.
+        Fails if more than one or no suitable certificate is found.
 
         With the Certificate or Thumbprint parameter (Way Two): Calls Test-DbaNetworkCertificate to retrieve
         information about the currently configured certificate and available suitable certificates.
         Returns without changes if the given certificate match the currently configured certificate that is still valid.
         Configures the given certificate if it is returned as a suitable certificate.
         If the given certificate is not returned as a suitable certificate, the command gets detailed information
-        about why the given certificate is not suitable and failes with that information.
+        about why the given certificate is not suitable and fails with that information.
 
         This command also grants read permissions for the service account on the certificate's private key.
 
@@ -68,7 +68,7 @@ function Set-DbaNetworkCertificate {
 
     .NOTES
         Tags: Certificate, Security
-        Author: Andreas Jordan (@andreasjordan)
+        Author: Chrissy LeMaire (@cl), netnerds.net | Refactored by Andreas Jordan (@andreasjordan)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -149,16 +149,13 @@ function Set-DbaNetworkCertificate {
 
                 $wmiService = $wmi.Services | Where-Object { $_.DisplayName -eq "SQL Server ($($instance.InstanceName))" }
                 $regRoot = ($wmiService.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-                $vsname = ($wmiService.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-                $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+                $verbose += "regRoot = '$regRoot'"
                 if ([System.String]::IsNullOrEmpty($regRoot)) {
                     $regRoot = $wmiService.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
-                    $vsname = $wmiService.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
-                    $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+                    $verbose += "regRoot = '$regRoot'"
                     if (![System.String]::IsNullOrEmpty($regRoot)) {
                         $regRoot = ($regRoot -Split 'Value\=')[1]
-                        $vsname = ($vsname -Split 'Value\=')[1]
-                        $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+                        $verbose += "regRoot = '$regRoot'"
                     } else {
                         # This is just for safty, as we just used Get-DbaNetworkConfiguration successfully
                         throw "Can't find regRoot"
@@ -217,6 +214,11 @@ function Set-DbaNetworkCertificate {
 
         if (Test-FunctionInterrupt) { return }
 
+        if ($UnsetCertificate -and ($Thumbprint -or $Certificate)) {
+            Stop-Function -Message "-UnsetCertificate cannot be used with -Thumbprint or -Certificate."
+            return
+        }
+
         if ($Thumbprint -and $Thumbprint -notmatch '^[0-9A-Fa-f]{40}$') {
             Stop-Function -Message "The thumbprint must be a 40-character hexadecimal string (no spaces)."
             return
@@ -238,6 +240,7 @@ function Set-DbaNetworkCertificate {
                     EnableException = $true
                 }
                 $certTest = Test-DbaNetworkCertificate @splatTest
+                $oldThumbprint = $certTest.ConfiguredCertificateThumbprint
             } catch {
                 Stop-Function -Message "Failed to use Test-DbaNetworkCertificate to get information for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
@@ -254,22 +257,23 @@ function Set-DbaNetworkCertificate {
                     }
                     continue
                 } else {
-                    # In case of unsetting we ignore the parameter Thumbprint.
-                    $Thumbprint = $null
+                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint will be unset for $instance"
+                    $newThumbprint = $null
                 }
             } elseif ($Thumbprint) {
-                if ($Thumbprint -eq $certTest.ConfiguredCertificateThumbprint -and $certTest.ConfiguredCertificateValid) {
-                    Write-Message -Level Verbose -Message "Certificate $($certTest.ConfiguredCertificateThumbprint) was already configured for $instance"
+                if ($Thumbprint -eq $oldThumbprint -and $certTest.ConfiguredCertificateValid) {
+                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
                     [PSCustomObject]@{
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
-                        CertificateThumbprint = $certTest.ConfiguredCertificateThumbprint
+                        CertificateThumbprint = $oldThumbprint
                         Notes                 = 'No changes needed'
                     }
                     continue
                 } elseif ($Thumbprint -in $certTest.SuitableCertificates.Thumbprint) {
                     Write-Message -Level Verbose -Message "Certificate $Thumbprint is suitable for $instance"
+                    $newThumbprint = $Thumbprint
                 } else {
                     Write-Message -Level Verbose -Message "Validating certificate $Thumbprint for $instance using Test-DbaNetworkCertificate"
                     try {
@@ -297,18 +301,18 @@ function Set-DbaNetworkCertificate {
                 }
             } else {
                 if ($certTest.ConfiguredCertificateValid) {
-                    Write-Message -Level Verbose -Message "Certificate $($certTest.ConfiguredCertificateThumbprint) was already configured for $instance"
+                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
                     [PSCustomObject]@{
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
-                        CertificateThumbprint = $certTest.ConfiguredCertificateThumbprint
+                        CertificateThumbprint = $oldThumbprint
                         Notes                 = 'No changes needed'
                     }
                     continue
                 } elseif ($certTest.SuitableCertificateAvailable -and $certTest.SuitableCertificateCount -eq 1) {
-                    $Thumbprint = $certTest.SuitableCertificates.Thumbprint
-                    Write-Message -Level Verbose -Message "Certificate $Thumbprint was selected for $instance"
+                    $newThumbprint = $certTest.SuitableCertificates.Thumbprint
+                    Write-Message -Level Verbose -Message "Certificate $newThumbprint was selected for $instance"
                 } elseif ($certTest.SuitableCertificateAvailable) {
                     Stop-Function -Message "More than one suitable certificate found on $instance. Please use -Thumbprint." -Target $instance -Continue
                 } else {
@@ -317,20 +321,24 @@ function Set-DbaNetworkCertificate {
             }
 
             if ($UnsetCertificate) {
-                $message = "Unsetting certificate $($certTest.ConfiguredCertificateThumbprint)"
+                $message = "Unsetting certificate $oldThumbprint"
             } else {
-                $message = "Configuring certificate $Thumbprint"
+                $message = "Configuring certificate $newThumbprint"
             }
             if ($PScmdlet.ShouldProcess($instance, $message)) {
-                $computerName = Resolve-DbaComputerName -ComputerName $instance.ComputerName -Credential $Credential
-                $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $Thumbprint -ComputerName $computerName -Credential $Credential -ErrorAction Stop
+                $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $Thumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
                 foreach ($verbose in $result.Verbose) {
                     Write-Message -Level Verbose -Message $verbose
                 }
                 if ($result.Exception) {
                     # The new code pattern for WMI calls is used where all exceptions are catched and return as part of an object.
-                    Write-Message -Level Verbose -Message "Execution against $computerName failed with: $($result.Exception)"
-                    Stop-Function -Message "Failed to configure certificate $Thumbprint for instance $instance." -Target $instance -ErrorRecord $result.Exception -Continue
+                    Write-Message -Level Verbose -Message "Execution against $($certTest.ComputerName) failed with: $($result.Exception)"
+                    if ($UnsetCertificate) {
+                        $message = "Failed to unset certificate $oldThumbprint for instance $instance."
+                    } else {
+                        $message = "Failed to configure certificate $newThumbprint for instance $instance."
+                    }
+                    Stop-Function -Message $message -Target $instance -ErrorRecord $result.Exception -Continue
                 }
 
                 $notes = $null
@@ -350,7 +358,7 @@ function Set-DbaNetworkCertificate {
                     ComputerName          = $certTest.ComputerName
                     InstanceName          = $certTest.InstanceName
                     SqlInstance           = $certTest.SqlInstance
-                    CertificateThumbprint = $Thumbprint
+                    CertificateThumbprint = $newThumbprint
                     Notes                 = $notes
                 }
             }
