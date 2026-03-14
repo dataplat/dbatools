@@ -196,6 +196,7 @@ function Test-DbaLastBackup {
         - DbccStart (datetime) - Date and time when the DBCC CHECKDB operation started
         - DbccEnd (datetime) - Date and time when the DBCC CHECKDB operation ended
         - DbccElapsed (timespan as string) - Formatted duration of the DBCC CHECKDB operation (HH:mm:ss format)
+        - DbccOutput (string array) - Detailed informational messages returned by DBCC CHECKDB (row counts, Service Broker analysis, etc.); $null when skipped
         - BackupDates (datetime array) - Array of backup start times for all backup files in the restore chain
         - BackupFiles (string array) - Array of backup file paths used for the restore operation
 
@@ -349,6 +350,7 @@ function Test-DbaLastBackup {
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
+                    DbccOutput     = $null
                     BackupDates    = $null
                     BackupFiles    = $null
                 }
@@ -452,6 +454,7 @@ function Test-DbaLastBackup {
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
+                    DbccOutput     = $null
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
@@ -528,6 +531,7 @@ function Test-DbaLastBackup {
                 $fileexists = $true
                 $ogdbname = $dbName
                 $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
+                $dbccOutput = $null
                 $dbName = "$prefix$dbName"
                 $destdb = $destserver.databases[$dbName]
 
@@ -617,7 +621,9 @@ function Test-DbaLastBackup {
                             Write-Message -Level Verbose -Message "Starting DBCC."
 
                             $startDbcc = Get-Date
-                            $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbName -MaxDop $MaxDop 3>$null
+                            $dbccCheckResult = Start-DbccCheck -Server $destserver -DbName $dbName -MaxDop $MaxDop 3>$null
+                            $dbccresult = $dbccCheckResult.Status
+                            $dbccOutput = $dbccCheckResult.Output
                             $endDbcc = Get-Date
 
                             $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
@@ -684,6 +690,7 @@ function Test-DbaLastBackup {
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed
+                    DbccOutput     = $dbccOutput
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
