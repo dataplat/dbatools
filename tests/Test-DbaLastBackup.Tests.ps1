@@ -108,6 +108,33 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "Test restore using -Path parameter" {
+        BeforeAll {
+            $splatPathRestore = @{
+                Path        = $backupPath
+                Destination = $TestConfig.InstanceSingle
+                Database    = $testlastbackup
+            }
+            $pathParamResults = Test-DbaLastBackup @splatPathRestore
+        }
+
+        It "Should return success when using -Path" {
+            $pathParamResults.RestoreResult | Should -Be "Success"
+            $pathParamResults.DbccResult | Should -Be "Success"
+        }
+
+        It "Should return the correct database name" {
+            $pathParamResults.Database | Should -Be $testlastbackup
+        }
+    }
+
+    Context "Test -Path without -Destination fails" {
+        It "Should write an error when -Destination is not specified with -Path" {
+            $result = Test-DbaLastBackup -Path $backupPath -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*-Destination server must be specified*"
+        }
+    }
+
     Context "Test a single database" {
         BeforeAll {
             $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup
@@ -154,33 +181,6 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not contain a diff backup" {
             ($ignoreDiffResults.BackupFiles | Where-Object { $PSItem -like "*diff*" }).Status.Count | Should -Be 0
-        }
-    }
-
-    Context "Test restore using -Path parameter" {
-        BeforeAll {
-            $splatPathRestore = @{
-                Path        = $backupPath
-                Destination = $TestConfig.InstanceSingle
-                Database    = $testlastbackup
-            }
-            $pathParamResults = Test-DbaLastBackup @splatPathRestore
-        }
-
-        It "Should return success when using -Path" {
-            $pathParamResults.RestoreResult | Should -Be "Success"
-            $pathParamResults.DbccResult | Should -Be "Success"
-        }
-
-        It "Should return the correct database name" {
-            $pathParamResults.Database | Should -Be $testlastbackup
-        }
-    }
-
-    Context "Test -Path without -Destination fails" {
-        It "Should write an error when -Destination is not specified with -Path" {
-            $result = Test-DbaLastBackup -Path $backupPath -WarningVariable warn -WarningAction SilentlyContinue
-            $warn | Should -BeLike "*-Destination server must be specified*"
         }
     }
 
