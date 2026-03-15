@@ -167,6 +167,8 @@ Describe $CommandName -Tag IntegrationTests {
                 "BackupStartDate",
                 "backup_finish_date",
                 "BackupFinishDate",
+                "StopAt",
+                "LastRestorePoint",
                 "RowError",
                 "RowState",
                 "Table",
@@ -186,7 +188,9 @@ Describe $CommandName -Tag IntegrationTests {
                 "From",
                 "To",
                 "BackupStartDate",
-                "BackupFinishDate"
+                "BackupFinishDate",
+                "StopAt",
+                "LastRestorePoint"
             )
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
