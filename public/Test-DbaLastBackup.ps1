@@ -407,7 +407,7 @@ function Test-DbaLastBackup {
                 $success = $null
                 $errormsg = $null
 
-                if (-not ($lastbackup | Where-Object { $_.Type -eq "Full" })) {
+                if (-not ($lastbackup | Where-Object { $_.Type -eq "Full" -or $_.Type -eq "Database" })) {
                     Write-Message -Level Verbose -Message "No full backup found for $dbName in the specified path(s)."
                     [PSCustomObject]@{
                         SourceServer   = $source
