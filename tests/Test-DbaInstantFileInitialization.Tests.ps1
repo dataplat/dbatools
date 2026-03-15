@@ -24,7 +24,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets IFI status" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $results = Test-DbaInstantFileInitialization -ComputerName $TestConfig.ComputerName
+            $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
+            $results = Test-DbaInstantFileInitialization -ComputerName $computerName
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
