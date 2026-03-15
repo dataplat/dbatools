@@ -163,6 +163,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "last_lsn",
                 "checkpoint_lsn",
                 "database_backup_lsn",
+                "backup_start_date",
                 "backup_finish_date",
                 "BackupFinishDate",
                 "RowError",
