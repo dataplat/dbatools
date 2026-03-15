@@ -346,22 +346,24 @@ function Test-DbaLastBackup {
                 return
             }
 
-            if ($datadirectory) {
-                if (-not (Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
+            if ($DataDirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $DataDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceAccount has permissions." -Continue
+                    Stop-Function -Message "Can't access $DataDirectory Please check if $serviceAccount has permissions." -Continue
                 }
+                $effectiveDataDirectory = $DataDirectory
             } else {
-                $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
+                $effectiveDataDirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
             }
 
-            if ($logdirectory) {
-                if (-not (Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
+            if ($LogDirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $LogDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceAccount has permissions." -Continue
+                    Stop-Function -Message "$Destination can't access its local directory $LogDirectory. Please check if $serviceAccount has permissions." -Continue
                 }
+                $effectiveLogDirectory = $LogDirectory
             } else {
-                $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
+                $effectiveLogDirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
 
             Write-Message -Level Verbose -Message "Getting backup information from path(s): $($Path -join ', ')."
@@ -481,8 +483,8 @@ function Test-DbaLastBackup {
                                 SqlInstance                = $destserver
                                 RestoredDatabaseNamePrefix = $prefix
                                 DestinationFilePrefix      = $Prefix
-                                DestinationDataDirectory   = $datadirectory
-                                DestinationLogDirectory    = $logdirectory
+                                DestinationDataDirectory   = $effectiveDataDirectory
+                                DestinationLogDirectory    = $effectiveLogDirectory
                                 IgnoreLogBackup            = $IgnoreLogBackup
                                 StorageCredential          = $StorageCredential
                                 EnableException            = $true
@@ -682,22 +684,24 @@ function Test-DbaLastBackup {
                 }
             }
 
-            if ($datadirectory) {
-                if (-not (Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
+            if ($DataDirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $DataDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceAccount has permissions." -Continue
+                    Stop-Function -Message "Can't access $DataDirectory Please check if $serviceAccount has permissions." -Continue
                 }
+                $effectiveDataDirectory = $DataDirectory
             } else {
-                $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
+                $effectiveDataDirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
             }
 
-            if ($logdirectory) {
-                if (-not (Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
+            if ($LogDirectory) {
+                if (-not (Test-DbaPath -SqlInstance $destserver -Path $LogDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceAccount has permissions." -Continue
+                    Stop-Function -Message "$Destination can't access its local directory $LogDirectory. Please check if $serviceAccount has permissions." -Continue
                 }
+                $effectiveLogDirectory = $LogDirectory
             } else {
-                $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
+                $effectiveLogDirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
 
             if ((Test-Bound -ParameterName StorageCredential) -and (Test-Bound -ParameterName CopyFile)) {
@@ -847,8 +851,8 @@ function Test-DbaLastBackup {
                                 SqlInstance                = $destserver
                                 RestoredDatabaseNamePrefix = $prefix
                                 DestinationFilePrefix      = $Prefix
-                                DestinationDataDirectory   = $datadirectory
-                                DestinationLogDirectory    = $logdirectory
+                                DestinationDataDirectory   = $effectiveDataDirectory
+                                DestinationLogDirectory    = $effectiveLogDirectory
                                 IgnoreLogBackup            = $IgnoreLogBackup
                                 StorageCredential          = $StorageCredential
                                 TrustDbBackupHistory       = $true
@@ -873,7 +877,7 @@ function Test-DbaLastBackup {
                             $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly
                         } else {
                             $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
-                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -StorageCredential $StorageCredential -TrustDbBackupHistory"
+                            Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $effectiveDataDirectory -DestinationLogDirectory $effectiveLogDirectory -IgnoreLogBackup:$IgnoreLogBackup -StorageCredential $StorageCredential -TrustDbBackupHistory"
                         }
                     } catch {
                         $errormsg = Get-ErrorMessage -Record $_
