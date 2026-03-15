@@ -17,6 +17,8 @@ Describe $CommandName -Tag UnitTests {
                 "Path",
                 "NoRecovery",
                 "IncludeDbMasterKey",
+                "EncryptionPassword",
+                "DecryptionPassword",
                 "Exclude",
                 "BatchSeparator",
                 "ScriptingOption",
