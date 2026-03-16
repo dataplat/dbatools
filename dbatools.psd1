@@ -703,6 +703,7 @@
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaPath',
         'Test-DbaPowerPlan',
+        'Test-DbaInstantFileInitialization',
         'Test-DbaReplLatency',
         'Test-DbaSpn',
         'Test-DbaTempDbConfig',

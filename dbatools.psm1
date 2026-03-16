@@ -1085,6 +1085,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaDiskSpace',
         'Test-DbaDiskAllocation',
         'Test-DbaPowerPlan',
+        'Test-DbaInstantFileInitialization',
         'Set-DbaPowerPlan',
         'Test-DbaDiskAlignment',
         'Get-DbaStartupParameter',
