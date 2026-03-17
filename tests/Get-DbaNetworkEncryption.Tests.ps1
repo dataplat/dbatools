@@ -29,13 +29,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Certificate retrieval" {
         BeforeAll {
             # Attempt to retrieve the certificate - not all environments have TLS configured
-            $result = Get-DbaNetworkEncryption -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue
+            $result = Get-DbaNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         }
 
         It "Should not throw an error when connecting" {
             # If result is null it means no certificate is configured, which is a valid state
             # We just verify the command runs without throwing a terminating error
-            { Get-DbaNetworkEncryption -SqlInstance $TestConfig.instance1 -WarningAction SilentlyContinue } | Should -Not -Throw
+            { Get-DbaNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue } | Should -Not -Throw
         }
 
         It "Should return certificate with expected properties when TLS is configured" {
