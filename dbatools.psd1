@@ -621,6 +621,7 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbFileGrowth',
         'Set-DbaDbIdentity',
+        'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
         'Set-DbaDbOwner',
         'Set-DbaDbQueryStoreOption',
