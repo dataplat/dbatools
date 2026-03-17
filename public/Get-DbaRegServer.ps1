@@ -379,13 +379,21 @@ function Get-DbaRegServer {
             Select-DefaultView -InputObject $server -Property $defaults
         }
 
-        if ($IncludeSelf -and $servers) {
+        if ($IncludeSelf -and $SqlInstance -and $serverstore) {
             Write-Message -Level Verbose -Message "Adding CMS instance"
-            $self = $servers[0].PsObject.Copy() | Select-Object -Property $defaults
-            $self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force
-            $self.ServerName = $instance
-            $self.Group = $null
-            $self.Description = $null
+            $self = [PSCustomObject]@{
+                Name         = "CMS Instance"
+                ServerName   = $serverstore.SqlInstance
+                Group        = $null
+                Description  = $null
+                Source       = "Central Management Servers"
+                ComputerName = $serverstore.ComputerName
+                InstanceName = $serverstore.InstanceName
+                SqlInstance  = $serverstore.SqlInstance
+                FQDN         = $null
+                IPAddress    = $null
+            }
+            $self | Add-Member -MemberType ScriptMethod -Name ToString -Value { $this.ServerName } -Force
             Select-DefaultView -InputObject $self -Property $defaults
         }
     }
