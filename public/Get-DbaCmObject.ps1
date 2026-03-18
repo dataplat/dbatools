@@ -255,6 +255,14 @@ function Get-DbaCmObject {
 
             $connection = $connectionObject.Connection
 
+            # Ensure CIM session options are initialized with the configured operation timeout
+            if ($null -eq $connection.CimWinRMOptions) {
+                $connection.CimWinRMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Default
+            }
+            if ($null -eq $connection.CimDCOMOptions) {
+                $connection.CimDCOMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Dcom
+            }
+
             # Ensure using the right credentials
             try { $cred = $connection.GetCredential($Credential) }
             catch {
