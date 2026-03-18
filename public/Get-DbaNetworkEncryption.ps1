@@ -86,6 +86,110 @@ function Get-DbaNetworkEncryption {
         [switch]$EnableException
     )
     begin {
+        # SQL Server wraps TLS handshake messages inside TDS packets (type 0x12) during negotiation.
+        # This helper stream transparently adds/strips TDS framing so that SslStream can perform
+        # the TLS handshake correctly over the SQL Server pre-login channel.
+        if (-not ('DbaTools.TdsWrappingStream' -as [type])) {
+            Add-Type -TypeDefinition @"
+using System;
+using System.IO;
+
+namespace DbaTools {
+    public class TdsWrappingStream : Stream {
+        private Stream _inner;
+        private byte _packetType;
+        private byte _packetId;
+        private byte[] _readBuffer;
+        private int _readPos;
+        private int _readCount;
+
+        public TdsWrappingStream(Stream inner, byte packetType) {
+            _inner = inner;
+            _packetType = packetType;
+            _packetId = 1;
+            _readBuffer = null;
+            _readPos = 0;
+            _readCount = 0;
+        }
+
+        public override bool CanRead  { get { return true; } }
+        public override bool CanWrite { get { return true; } }
+        public override bool CanSeek  { get { return false; } }
+        public override long Length   { get { throw new NotSupportedException(); } }
+        public override long Position {
+            get { throw new NotSupportedException(); }
+            set { throw new NotSupportedException(); }
+        }
+
+        public override void Flush() { _inner.Flush(); }
+
+        // Wrap outgoing data in TDS packet(s) before sending to SQL Server.
+        public override void Write(byte[] buffer, int offset, int count) {
+            int maxPayload = 32760;
+            int remaining  = count;
+            int srcOffset  = offset;
+            while (remaining > 0) {
+                int  chunkSize = remaining < maxPayload ? remaining : maxPayload;
+                bool isLast    = (remaining - chunkSize) == 0;
+                int  packetLen = chunkSize + 8;
+                byte[] header  = new byte[] {
+                    _packetType,
+                    isLast ? (byte)0x01 : (byte)0x00,
+                    (byte)(packetLen >> 8),
+                    (byte)(packetLen & 0xFF),
+                    0x00, 0x00,
+                    _packetId++,
+                    0x00
+                };
+                _inner.Write(header, 0, 8);
+                _inner.Write(buffer, srcOffset, chunkSize);
+                srcOffset += chunkSize;
+                remaining -= chunkSize;
+            }
+        }
+
+        // Strip TDS packet framing from incoming data before delivering to SslStream.
+        public override int Read(byte[] buffer, int offset, int count) {
+            // Return buffered payload from the previous TDS packet first.
+            if (_readBuffer != null && _readPos < _readCount) {
+                int available = _readCount - _readPos;
+                int toCopy    = available < count ? available : count;
+                Array.Copy(_readBuffer, _readPos, buffer, offset, toCopy);
+                _readPos += toCopy;
+                return toCopy;
+            }
+            // Read the 8-byte TDS header of the next packet.
+            byte[] header    = new byte[8];
+            int    headerRead = 0;
+            while (headerRead < 8) {
+                int n = _inner.Read(header, headerRead, 8 - headerRead);
+                if (n == 0) return 0;
+                headerRead += n;
+            }
+            int payloadLen = ((header[2] << 8) | header[3]) - 8;
+            if (payloadLen <= 0) return 0;
+            // Read the full payload.
+            _readBuffer = new byte[payloadLen];
+            _readCount  = 0;
+            while (_readCount < payloadLen) {
+                int n = _inner.Read(_readBuffer, _readCount, payloadLen - _readCount);
+                if (n == 0) break;
+                _readCount += n;
+            }
+            _readPos = 0;
+            int toCopyNow = _readCount < count ? _readCount : count;
+            Array.Copy(_readBuffer, 0, buffer, offset, toCopyNow);
+            _readPos = toCopyNow;
+            return toCopyNow;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) { throw new NotSupportedException(); }
+        public override void SetLength(long value)                 { throw new NotSupportedException(); }
+    }
+}
+"@
+        }
+
         function Get-SqlBrowserPort {
             param (
                 [string]$ComputerName,
@@ -164,8 +268,8 @@ function Get-DbaNetworkEncryption {
 
                 $networkStream = $tcpClient.GetStream()
 
-                # We need to send a SQL Server pre-login packet before doing TLS,
-                # because SQL Server uses STARTTLS-style negotiation.
+                # Send a SQL Server pre-login packet requesting ENCRYPT_ON (0x01).
+                # SQL Server uses STARTTLS-style negotiation: TLS only starts after this exchange.
                 # Pre-login packet layout (26 bytes total):
                 #   TDS header (8 bytes): type=0x12 (PRE_LOGIN), status=0x01 (EOM), length=0x001A (26)
                 #   Payload option headers (11 bytes):
@@ -195,7 +299,36 @@ function Get-DbaNetworkEncryption {
                     throw "Invalid pre-login response from ${ComputerName}:${Port}"
                 }
 
-                # Now wrap in SSL stream and do TLS handshake
+                # Parse the ENCRYPTION option from the server's pre-login response.
+                # Option offsets in the payload are relative to the start of the payload (byte 8).
+                $payloadStart = 8
+                $optionOffset = $payloadStart
+                $serverEncryption = $null
+                while ($optionOffset -lt ($bytesRead - 4)) {
+                    $optionType = $responseBuffer[$optionOffset]
+                    if ($optionType -eq 0xFF) { break } # TERMINATOR
+                    $dataOffset = ($responseBuffer[$optionOffset + 1] -shl 8) -bor $responseBuffer[$optionOffset + 2]
+                    $dataLength = ($responseBuffer[$optionOffset + 3] -shl 8) -bor $responseBuffer[$optionOffset + 4]
+                    if ($optionType -eq 0x01) {
+                        # ENCRYPTION option
+                        $absoluteDataOffset = $payloadStart + $dataOffset
+                        if ($absoluteDataOffset -lt $bytesRead) {
+                            $serverEncryption = $responseBuffer[$absoluteDataOffset]
+                        }
+                        break
+                    }
+                    $optionOffset += 5
+                }
+
+                if ($serverEncryption -eq 0x02) {
+                    # ENCRYPT_NOT_SUP - server does not support TLS at all
+                    throw "Server does not support TLS encryption - no certificate is presented"
+                }
+
+                # SQL Server wraps TLS handshake messages in TDS packets (type 0x12).
+                # TdsWrappingStream adds/strips that framing so SslStream negotiates correctly.
+                $tdsStream = New-Object DbaTools.TdsWrappingStream($networkStream, [byte]0x12)
+
                 # The server certificate is captured via the validation callback
                 $script:capturedCertificate = $null
 
@@ -206,7 +339,7 @@ function Get-DbaNetworkEncryption {
                 }
 
                 $sslStream = New-Object System.Net.Security.SslStream(
-                    $networkStream,
+                    $tdsStream,
                     $false,
                     $certValidationCallback
                 )
