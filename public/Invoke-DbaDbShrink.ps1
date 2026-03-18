@@ -329,12 +329,7 @@ function Invoke-DbaDbShrink {
                         } catch {
                             $success = $false
                             $errorDetails = $_.Exception.Message
-                            if ($_.Exception.InnerException) {
-                                $errorDetails += " Inner exception: $($_.Exception.InnerException.Message)"
-                            }
-                            Write-Message -Level Warning -Message "Shrink operation failed for file $($file.Name): $errorDetails"
-                            Stop-Function -Message "Shrink failed: $errorDetails" -EnableException $EnableException -ErrorRecord $_ -Continue
-                            continue
+                            Stop-Function -Message "Shrink operation failed for file $($file.Name): $errorDetails" -ErrorRecord $_
                         } finally {
                             $instance.ConnectionContext.StatementTimeout = $previousStatementTimeout
                         }
@@ -349,9 +344,7 @@ function Invoke-DbaDbShrink {
                             $shrinkShortfall = $finalFileSizeKB - $desiredFileSizeKB
                             $partialShrinkMessage = "File only shrunk to $finalFileSizeKB (target was $desiredFileSizeKB). Shortfall: $shrinkShortfall. This may be due to active transactions, data distribution, or minimum file size constraints."
                             Write-Message -Level Warning -Message $partialShrinkMessage
-                            if (-not $errorDetails) {
-                                $errorDetails = $partialShrinkMessage
-                            }
+                            $errorDetails = $partialShrinkMessage
                         }
 
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
@@ -370,6 +363,8 @@ function Invoke-DbaDbShrink {
                         $notesText = 'Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE'
                         if ($errorDetails) {
                             $notesText = "$errorDetails | $notesText"
+                        } else {
+                            $notesText = $notesText
                         }
 
                         $object = [PSCustomObject]@{
