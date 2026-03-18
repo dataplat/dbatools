@@ -117,14 +117,19 @@ function Invoke-DbaAdvancedRestore {
         Provides more granular control than timestamp-based recovery for critical business operations.
 
     .PARAMETER StopBefore
-        Stops the restore operation just before the specified StopMark rather than after it.
-        Use this when you need to exclude a particular marked transaction from the restored database.
-        Only effective when used in combination with the StopMark parameter for mark-based recovery scenarios.
+        Stops the restore operation just before the specified StopMark or StopAtLsn rather than after it.
+        Use this when you need to exclude a particular marked transaction or LSN from the restored database.
+        Only effective when used in combination with the StopMark or StopAtLsn parameter.
 
     .PARAMETER StopAfterDate
         DateTime value specifying that only StopMark occurrences after this date should be considered for restore termination.
         Use this when the same mark name appears multiple times in your transaction log backups.
         Ensures the restore stops at the correct instance of the mark when identical mark names exist at different times.
+
+    .PARAMETER StopAtLsn
+        Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
+        Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
+        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -239,6 +244,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
+        [string]$StopAtLsn,
         [switch]$Checksum,
         [switch]$Restart,
         [switch]$EnableException
@@ -323,7 +329,13 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $restore.NoRecovery = $False
                 }
-                if (-not [string]::IsNullOrEmpty($StopMark)) {
+                if (-not [string]::IsNullOrEmpty($StopAtLsn)) {
+                    if ($StopBefore -eq $True) {
+                        $restore.StopBeforeMarkName = "lsn:$StopAtLsn"
+                    } else {
+                        $restore.StopAtMarkName = "lsn:$StopAtLsn"
+                    }
+                } elseif (-not [string]::IsNullOrEmpty($StopMark)) {
                     if ($StopBefore -eq $True) {
                         $restore.StopBeforeMarkName = $StopMark
                         if ($null -ne $StopAfterDate) {
