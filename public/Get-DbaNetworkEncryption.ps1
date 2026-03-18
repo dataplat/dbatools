@@ -165,16 +165,23 @@ function Get-DbaNetworkEncryption {
                 $networkStream = $tcpClient.GetStream()
 
                 # We need to send a SQL Server pre-login packet before doing TLS,
-                # because SQL Server uses STARTTLS-style negotiation
-                # Pre-login packet: Type=0x12, Status=0x01, Length=0x002F, SPID=0x0000, PacketID=0x01, Window=0x00
-                # followed by pre-login options
+                # because SQL Server uses STARTTLS-style negotiation.
+                # Pre-login packet layout (26 bytes total):
+                #   TDS header (8 bytes): type=0x12 (PRE_LOGIN), status=0x01 (EOM), length=0x001A (26)
+                #   Payload option headers (11 bytes):
+                #     VERSION    (type=0x00): data-offset=11 (0x000B), data-length=6 (0x0006)
+                #     ENCRYPTION (type=0x01): data-offset=17 (0x0011), data-length=1 (0x0001)
+                #     TERMINATOR (0xFF)
+                #   Payload data (7 bytes):
+                #     VERSION data    at payload offset 11: major=8, minor=0, build=0, subbuild=0
+                #     ENCRYPTION data at payload offset 17: 0x01 = ENCRYPT_ON
                 $preLoginBytes = [byte[]](
-                    0x12, 0x01, 0x00, 0x2F, 0x00, 0x00, 0x01, 0x00, # TDS header
-                    0x00, 0x00, 0x15, 0x00, 0x06, 0x01, 0x00, 0x1B, # VERSION option
-                    0x00, 0x01, 0x02, 0x00, 0x1C, 0x00, 0x01, 0x03, # ENCRYPTION option
-                    0x00, 0x1D, 0x00, 0x00, 0x04, 0x00, 0x1D, 0x00, # INSTOPT + THREADID
-                    0x01, 0xFF, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, # options
-                    0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00         # version + encryption=ENCRYPT_ON
+                    0x12, 0x01, 0x00, 0x1A, 0x00, 0x00, 0x01, 0x00, # TDS header
+                    0x00, 0x00, 0x0B, 0x00, 0x06,                   # VERSION: type=0, offset=11, length=6
+                    0x01, 0x00, 0x11, 0x00, 0x01,                   # ENCRYPTION: type=1, offset=17, length=1
+                    0xFF,                                           # TERMINATOR
+                    0x08, 0x00, 0x00, 0x00, 0x00, 0x00,            # VERSION data: 8.0.0.0
+                    0x01                                            # ENCRYPTION: ENCRYPT_ON
                 )
 
                 $networkStream.Write($preLoginBytes, 0, $preLoginBytes.Length)
