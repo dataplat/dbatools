@@ -70,6 +70,16 @@ function Test-DbaBackupInformation {
     .LINK
         https://dbatools.io/Test-DbaBackupInformation
 
+    .OUTPUTS
+        The same backup history object type provided as input, with an additional IsVerified property
+
+        Returns one validated backup history object per input backup, with all original properties preserved and an added IsVerified property.
+
+        Properties:
+        - IsVerified (boolean) - Boolean indicating whether the backup history passed all validation tests. Set to $True for backups that passed all validation checks (LSN chain integrity, file accessibility, database conflicts, and path availability). Set to $False or left unchanged for backups with validation errors.
+
+        All original properties from the input backup history objects remain accessible (BackupName, Database, Type, Path, etc.). The function acts as a pass-through validator that marks backups with a verification status for filtering restoration candidates.
+
     .EXAMPLE
         PS C:\> $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance
         PS C:\> $PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}
@@ -195,7 +205,7 @@ function Test-DbaBackupInformation {
             $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
             $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
-                if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*')) {
+                if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*') -and ($path.FilePath -notlike 's3*')) {
                     Write-Message -Message "Backup File $($path.FilePath) cannot be read by $($RestoreInstance.Name). Does the service account ($($RestoreInstance.ServiceAccount)) have permission?" -Level Warning
                     $VerificationErrors++
                 }
@@ -203,7 +213,7 @@ function Test-DbaBackupInformation {
 
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { $_.IsVerified = $True }
+                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { Add-Member -InputObject $_ -MemberType NoteProperty -Name IsVerified -Value $true -Force }
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }

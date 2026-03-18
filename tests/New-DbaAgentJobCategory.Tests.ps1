@@ -33,28 +33,28 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2 -ErrorAction SilentlyContinue
+        Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1, $testCategory2 -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "New Agent Job Category is added properly" {
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1
             $results.Name | Should -Be $testCategory1
             $results.CategoryType | Should -Be "LocalJob"
             $categoriesToCleanup += $testCategory1
         }
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory2 -CategoryType MultiServerJob
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory2 -CategoryType MultiServerJob
             $results.Name | Should -Be $testCategory2
             $results.CategoryType | Should -Be "MultiServerJob"
             $categoriesToCleanup += $testCategory2
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1, $testCategory2
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1, $testCategory2
             $newresults[0].Name | Should -Be $testCategory1
             $newresults[0].CategoryType | Should -Be "LocalJob"
             $newresults[1].Name | Should -Be $testCategory2
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not write over existing job categories" {
-            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategory1 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategory1 -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
         }
     }

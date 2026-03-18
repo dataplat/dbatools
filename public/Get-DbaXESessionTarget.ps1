@@ -44,6 +44,39 @@ function Get-DbaXESessionTarget {
     .LINK
         https://dbatools.io/Get-DbaXESessionTarget
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Target
+
+        Returns one Target object per Extended Events session target found on the specified SQL Server instance(s). One target can be any kind of data collector configured for a session (event files, ring buffers, event counters, etc.).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Session: The name of the Extended Events session containing this target
+        - SessionStatus: Current session status - either "Running" or "Stopped"
+        - Name: The target type/name (e.g., 'package0.event_file', 'package0.ring_buffer')
+        - ID: Unique identifier for this target within the session
+        - Field: Collection of target field configuration parameters
+        - PackageName: The Extended Events package name that provides this target type (usually 'package0')
+        - File: Array of resolved file paths for file-based targets (includes UNC paths for network access)
+        - Description: Description of the target type and its purpose
+        - ScriptName: The target name formatted for scripting purposes
+
+        Additional properties added as NoteProperties:
+        - TargetFile: Array of resolved file paths for this target (local paths)
+        - RemoteTargetFile: Array of UNC paths for this target (for remote file access)
+
+        Additional properties available from SMO Target object (via Select-Object *):
+        - TargetFields: Collection containing detailed configuration parameters for the target
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Urn: Unified Resource Name for the target object
+        - IdentityKey: Identity key of the target object
+        - KeyChain: Identity path of the object
+        - ModuleID: Module identifier for the target
+        - Parent: Reference to parent Session object
+        - Properties: Collection of property objects for this target
+
     .EXAMPLE
         PS C:\> Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
 

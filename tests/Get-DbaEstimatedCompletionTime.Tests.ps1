@@ -30,10 +30,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         if (-not (Test-Path -Path $TestConfig.BigDatabaseBackup) -and $TestConfig.BigDatabaseBackupSourceUrl) {
-            Invoke-WebRequest -Uri $TestConfig.BigDatabaseBackupSourceUrl -OutFile $TestConfig.BigDatabaseBackup -ErrorAction Stop
+            Invoke-TlsWebRequest -Uri $TestConfig.BigDatabaseBackupSourceUrl -OutFile $TestConfig.BigDatabaseBackup -ErrorAction Stop
         }
         $splatRestore = @{
-            SqlInstance         = $TestConfig.instance2
+            SqlInstance         = $TestConfig.InstanceSingle
             Path                = $TestConfig.BigDatabaseBackup
             DatabaseName        = "checkdbTestDatabase"
             WithReplace         = $true
@@ -42,13 +42,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         $null = Restore-DbaDatabase @splatRestore
 
         $splatJob = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Job         = "checkdbTestJob"
         }
         $null = New-DbaAgentJob @splatJob
 
         $splatJobStep = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Job         = "checkdbTestJob"
             StepName    = "checkdb"
             Subsystem   = "TransactSql"
@@ -65,17 +65,17 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob | Remove-DbaAgentJob
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database checkdbTestDatabase | Remove-DbaDatabase
+        $null = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob | Remove-DbaAgentJob
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database checkdbTestDatabase | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets correct results" {
         It "Gets Query Estimated Completion" {
-            $job = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob
+            $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
-            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.instance2
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle
             while ($job.CurrentRunStatus -eq "Executing") {
                 Start-Sleep -Seconds 1
                 $job.Refresh()
@@ -87,9 +87,9 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         }
 
         It "Gets Query Estimated Completion when using -Database" {
-            $job = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob
+            $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
-            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.instance2 -Database checkdbTestDatabase
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -Database checkdbTestDatabase
             while ($job.CurrentRunStatus -eq "Executing") {
                 Start-Sleep -Seconds 1
                 $job.Refresh()
@@ -101,9 +101,9 @@ Describe $CommandName -Tag IntegrationTests -Skip:$((-not $TestConfig.BigDatabas
         }
 
         It "Gets no Query Estimated Completion when using -ExcludeDatabase" {
-            $job = Start-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job checkdbTestJob
+            $job = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job checkdbTestJob
             Start-Sleep -Seconds 1
-            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.instance2 -ExcludeDatabase checkdbTestDatabase
+            $results = Get-DbaEstimatedCompletionTime -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase checkdbTestDatabase
             while ($job.CurrentRunStatus -eq "Executing") {
                 Start-Sleep -Seconds 1
                 $job.Refresh()

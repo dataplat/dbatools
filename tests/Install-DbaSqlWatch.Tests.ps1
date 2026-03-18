@@ -32,18 +32,18 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $server.Query("CREATE DATABASE $database")
 
-            $results = Install-DbaSqlWatch -SqlInstance $TestConfig.instance2 -Database $database
+            $results = Install-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $database -ErrorAction SilentlyContinue
+            Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -57,19 +57,19 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Installed tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database $database | Where-Object Name -like "sqlwatch_*").Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $database | Where-Object Name -like "sqlwatch_*").Count
             $tableCount | Should -BeGreaterThan 0
         }
         It "Installed views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $TestConfig.instance2 -Database $database | Where-Object Name -like "vw_sqlwatch_*").Count
+            $viewCount = (Get-DbaDbView -SqlInstance $TestConfig.InstanceSingle -Database $database | Where-Object Name -like "vw_sqlwatch_*").Count
             $viewCount | Should -BeGreaterThan 0
         }
         It "Installed stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $TestConfig.instance2 -Database $database | Where-Object Name -like "usp_sqlwatch_*").Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $TestConfig.InstanceSingle -Database $database | Where-Object Name -like "usp_sqlwatch_*").Count
             $sprocCount | Should -BeGreaterThan 0
         }
         It "Installed SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object { ($PSItem.Name -like "SqlWatch-*") -or ($PSItem.Name -like "DBA-PERF-*") }).Count
             $agentCount | Should -BeGreaterThan 0
         }
 

@@ -97,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbName = "dbatools_maskingtest"
         $createDbQuery = "CREATE DATABASE [$dbName]"
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query $createDbQuery
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $createDbQuery
 
         $createTableQuery = "
         CREATE TABLE [dbo].[Customer](
@@ -113,9 +113,9 @@ Describe $CommandName -Tag IntegrationTests {
         ) ON [PRIMARY]
         "
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $dbName -Query $createTableQuery
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query $createTableQuery
 
-        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.instance1 -Database $dbName -Table Customer -Path $tempPath
+        $file = New-DbaDbMaskingConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table Customer -Path $tempPath
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -126,7 +126,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbName
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         Remove-Item -Path $tempPath -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

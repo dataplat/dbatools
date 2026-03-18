@@ -50,6 +50,21 @@ function New-DbaAgentAlertCategory {
     .LINK
         https://dbatools.io/New-DbaAgentAlertCategory
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.AlertCategory
+
+        Returns one AlertCategory object for each category created. The returned objects represent the newly created alert categories and are fully functional for immediate assignment to SQL Agent alerts.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ID: Unique identifier for the alert category within the instance
+        - Name: The name of the alert category
+        - CategoryType: Type of category (Alert or JobStep)
+
+        All properties from the base SMO AlertCategory object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaAgentAlertCategory -SqlInstance sql1 -Category 'Category 1'
 

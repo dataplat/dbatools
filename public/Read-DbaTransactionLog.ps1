@@ -37,6 +37,31 @@ function Read-DbaTransactionLog {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject[]
+
+        Returns zero or more objects representing transaction log records from the fn_dblog function. Each object represents one transaction log record with all columns from fn_dblog as individual properties.
+
+        Common properties include:
+        - RecoveryUnitId: Identifier of the recovery unit
+        - LSN: Log Sequence Number identifying the position in the transaction log
+        - LOP: The log operation type (e.g., INSERT, DELETE, UPDATE, ALLOCATE, DEALLOCATE, etc.)
+        - Transaction ID: The transaction identifier
+        - BeginTime: When the operation began
+        - AllocUnitName: Name of the allocation unit affected
+        - RowIdentifier: Identifies the specific row affected
+        - DBFragId: Database fragmentation identifier
+        - XactId: Extended transaction ID
+        - XactOp: Extended transaction operation
+        - Context: Operation context flags
+        - AllocUnitId: Identifier of the allocation unit
+        - ObjectId: Object ID of the table or index
+        - IndexId: Index ID if applicable
+        - PrevPageLSN: LSN of the previous page in the log chain
+        - PageId: Page ID affected by the operation
+
+        The exact set of columns depends on SQL Server version and the specific operations recorded in the transaction log. Use Select-Object * to see all available properties.
+
     .NOTES
         Tags: Log, LogFile, Utility
         Author: Stuart Moore (@napalmgram), stuart-moore.com

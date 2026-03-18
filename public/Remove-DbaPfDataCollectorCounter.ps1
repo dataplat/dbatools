@@ -42,6 +42,18 @@ function Remove-DbaPfDataCollectorCounter {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per counter successfully removed from the Data Collector Set.
+
+        Properties:
+        - ComputerName: The name of the computer where the performance counter was removed
+        - DataCollectorSet: The name of the Data Collector Set containing the collector
+        - DataCollector: The name of the specific data collector within the Collector Set where the counter was removed
+        - Name: The performance counter path that was removed
+        - Status: The operation status (always "Removed" on success)
+
     .NOTES
         Tags: PerfMon
         Author: Chrissy LeMaire (@cl), netnerds.net

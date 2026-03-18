@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("INSERT INTO msdb.[dbo].[sysmail_log]
         ([event_type]
         ,[log_date]
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("DELETE FROM msdb.[dbo].[sysmail_log] WHERE last_mod_user = 'dbatools\dbatoolssci'")
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail Log" {
         BeforeAll {
-            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 | Where-Object Login -eq "dbatools\dbatoolssci"
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle | Where-Object Login -eq "dbatools\dbatoolssci"
         }
 
         It "Gets results" {
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail Log using -Type" {
         BeforeAll {
-            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Type Information
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -Type Information
         }
 
         It "Gets results" {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Db Mail History using -Since" {
         BeforeAll {
-            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.instance2 -Since "2018-01-01"
+            $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -Since "2018-01-01"
         }
 
         It "Gets results" {

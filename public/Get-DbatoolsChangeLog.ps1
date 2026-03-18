@@ -25,6 +25,11 @@ function Get-DbatoolsChangeLog {
     .LINK
         https://dbatools.io/Get-DbatoolsChangeLog
 
+    .OUTPUTS
+        None
+
+        This command does not return any objects. It opens the dbatools release changelog in your default browser or displays a message for unsupported options.
+
     .EXAMPLE
         Get-DbatoolsChangeLog
 

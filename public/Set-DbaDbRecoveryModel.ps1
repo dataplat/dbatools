@@ -62,6 +62,27 @@ function Set-DbaDbRecoveryModel {
     .LINK
         https://dbatools.io/Set-DbaDbRecoveryModel
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one SMO Database object for each database where the recovery model was set. The returned objects show the updated database with the new recovery model applied.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Database name
+        - Status: Current database status (EmergencyMode, Normal, Offline, Recovering, RecoveryPending, Restoring, Standby, Suspect)
+        - IsAccessible: Boolean indicating if the database is currently accessible
+        - RecoveryModel: Database recovery model (Full, Simple, or BulkLogged) - this will be the newly set value
+        - LastFullBackup: DateTime of the most recent full backup
+        - LastDiffBackup: DateTime of the most recent differential backup
+        - LastLogBackup: DateTime of the most recent transaction log backup
+
+        Note: The output is the result of Get-DbaDbRecoveryModel called for each updated database. When the recovery model is already set to the specified value, an error is issued and no output is returned for that database. When -WhatIf is used, no output objects are returned.
+
+        All other properties from the underlying SMO Database object remain accessible via Select-Object * even though only the properties listed above are displayed by default.
+
     .EXAMPLE
         PS C:\> Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose
 

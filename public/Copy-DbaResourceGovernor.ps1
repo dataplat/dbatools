@@ -61,6 +61,22 @@ function Copy-DbaResourceGovernor {
 
         Requires: sysadmin access on SQL Servers
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject)
+
+        Returns one object per item migrated (Resource Governor settings, pools, workload groups, and classifier functions). Each object represents the migration status of a single component.
+
+        Properties:
+        - DateTime: Timestamp when the object was created (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance (string)
+        - DestinationServer: The name of the destination SQL Server instance (string)
+        - Name: The name of the object being migrated (string) - examples: "Classifier Function", "PoolName", "WorkgroupName", "Reconfigure Resource Governor"
+        - Type: The type of object being migrated (string) - one of: "Resource Governor Settings", "Resource Governor Pool", "Resource Governor Pool Workgroup", "Reconfigure Resource Governor"
+        - Status: The migration status (string) - one of: "Successful", "Skipped", "Failed", or $null
+        - Notes: Additional details about the operation (string) - examples: "Already exists on destination", "The new classifier function has been created", error messages for failures, or $null
+
+        All properties are displayed by default through Select-DefaultView.
+
     .LINK
         https://dbatools.io/Copy-DbaResourceGovernor
 

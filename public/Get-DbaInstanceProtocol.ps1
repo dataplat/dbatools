@@ -30,6 +30,25 @@ function Get-DbaInstanceProtocol {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        WMI ServerNetworkProtocol object
+
+        Returns one WMI ServerNetworkProtocol object per network protocol found on the target computer(s). The returned objects include Enable() and Disable() script methods for managing protocol states programmatically.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer running SQL Server
+        - InstanceName: The SQL Server instance name
+        - DisplayName: The user-friendly name of the protocol (TCP/IP, Named Pipes, Shared Memory, VIA)
+        - Name: The technical protocol name as recognized by SQL Server WMI
+        - MultiIP: Boolean indicating if the protocol supports multiple IP configurations
+        - IsEnabled: Boolean indicating whether the protocol is currently enabled or disabled
+
+        Methods available on returned objects:
+        - Enable(): Enables the network protocol; returns 0 on success
+        - Disable(): Disables the network protocol; returns 0 on success
+
+        These methods can be called directly on the returned objects to manage protocol states without using SQL Server Configuration Manager.
+
     .LINK
         https://dbatools.io/Get-DbaInstanceProtocol
 

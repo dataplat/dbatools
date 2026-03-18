@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $dbname = "dbatoolsci_recoverymodel"
             Get-DbaDatabase -SqlInstance $server -Database $dbname | Remove-DbaDatabase
             $server.Query("CREATE DATABASE $dbname")
@@ -44,23 +44,23 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "sets the proper recovery model" {
-            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -Database $dbname -RecoveryModel BulkLogged
+            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $dbname -RecoveryModel BulkLogged
             $results.RecoveryModel -eq "BulkLogged" | Should -Be $true
         }
 
         It "supports the pipeline" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Set-DbaDbRecoveryModel -RecoveryModel Simple
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Set-DbaDbRecoveryModel -RecoveryModel Simple
             $results.RecoveryModel -eq "Simple" | Should -Be $true
         }
 
         It "requires Database, ExcludeDatabase or AllDatabases" {
-            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.instance2 -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Set-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -RecoveryModel Simple -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "AllDatabases" | Should -Be $true
         }
     }

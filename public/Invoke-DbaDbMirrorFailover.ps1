@@ -49,6 +49,20 @@ function Invoke-DbaDbMirrorFailover {
 
         TODO: add service accounts
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each database that was failed over successfully. When performing a failover operation, the database object is returned with its mirroring state updated to reflect the new role (now the principal server).
+
+        Default properties visible:
+        - Name: Database name
+        - Status: Current database status
+        - Owner: Database owner login
+        - RecoveryModel: Database recovery model (typically Full for mirrored databases)
+        - Size: Database size in megabytes
+
+        When no failover is performed due to -WhatIf or user cancellation, no output is returned.
+
     .LINK
         https://dbatools.io/Invoke-DbaDbMirrorFailover
 

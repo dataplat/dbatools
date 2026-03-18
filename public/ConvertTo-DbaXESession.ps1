@@ -48,6 +48,40 @@ function ConvertTo-DbaXESession {
     .LINK
         https://dbatools.io/ConvertTo-DbaXESession
 
+    .OUTPUTS
+        System.String (when -OutputScriptOnly is specified)
+
+        Returns the T-SQL CREATE EVENT SESSION script as a string. The script contains the complete Extended Events session definition with all events, columns, actions, and filters mapped from the original SQL Trace.
+
+        Microsoft.SqlServer.Management.XEvent.Session (default output)
+
+        Returns one Extended Events session object per trace converted. When creating sessions on the target server (default behavior), the function returns the created session object with the following properties added by Get-DbaXESession:
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The Extended Events session name (the converted trace name)
+        - Status: Current session status (Running or Stopped)
+        - StartTime: Date and time the session started
+        - AutoStart: Boolean indicating if the session auto-starts on SQL Server startup
+        - State: Session state (Created, Running, etc.)
+        - Targets: Extended Events targets collecting the data
+        - TargetFile: Path to the target output file(s)
+        - Events: Extended Events events configured in the session
+        - MaxMemory: Maximum memory allocated to the session in MB
+        - MaxEventSize: Maximum size of events in KB
+
+        Additional properties available (from SMO XEStore.ServerSession object):
+        - Session: The session name (duplicate of Name property)
+        - RemoteTargetFile: UNC path to the target output file(s) for remote access
+        - Parent: Reference to the SQL Server SMO server object
+        - Store: Reference to the XEStore object
+        - IsRunning: Boolean indicating if the session is currently running
+        - Description: Session description
+        - CreateDate: Date and time the session was created
+        - ModifyDate: Date and time the session was last modified
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2017, sql2012 | Where-Object Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
 

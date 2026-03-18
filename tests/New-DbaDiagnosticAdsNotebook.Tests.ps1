@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $testNotebookFile = "C:\Temp\myNotebook-$(Get-Random).ipynb"
+        $testNotebookFile = "$($TestConfig.Temp)\myNotebook-$(Get-Random).ipynb"
     }
 
     AfterAll {

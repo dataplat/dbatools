@@ -44,6 +44,31 @@ function Get-DbaDbTrigger {
     .LINK
         https://dbatools.io/Get-DbaDbTrigger
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.DatabaseDdlTrigger
+
+        Returns one DatabaseDdlTrigger object per database trigger found on the specified databases. The function enhances the SMO object with additional dbatools properties via Add-Member.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the database-level DDL trigger
+        - IsEnabled: Boolean indicating whether the trigger is enabled
+        - DateLastModified: DateTime when the trigger was last modified
+
+        Additional properties available (from SMO DatabaseDdlTrigger object):
+        - CreateDate: DateTime when the trigger was created
+        - EventSet: The set of DDL events that fire the trigger (CREATE_TABLE, ALTER_TABLE, DROP_TABLE, etc.)
+        - ExecutionContext: The execution context of the trigger (Caller, Owner, or specific user)
+        - TextHeader: The header portion of the trigger definition
+        - TextBody: The body portion of the trigger SQL code
+        - Text: The complete T-SQL definition of the trigger
+        - Urn: The uniform resource name (URN) uniquely identifying the trigger
+        - State: The state of the SMO object (Existing, Creating, Dropping, etc.)
+
+        All properties from the base SMO DatabaseDdlTrigger object are accessible via Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbTrigger -SqlInstance sql2017
 

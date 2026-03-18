@@ -60,6 +60,9 @@ Describe $CommandName -Tag UnitTests {
                 "StaticColumns",
                 "DateTimeFormats",
                 "Culture",
+                "SampleRows",
+                "DetectColumnTypes",
+                "NoColumnOptimize",
                 "Parallel",
                 "ThrottleLimit",
                 "ParallelBatchSize"
@@ -97,37 +100,37 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test tables
-        Get-DbaDbTable -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database tempdb -Table SuperSmall, CommaSeparatedWithHeader -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Works as expected" {
         It "accepts piped input and doesn't add rows if the table does not exist" {
-            $results = $pathSuperSmall | Import-DbaCsv -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $results = $pathSuperSmall | Import-DbaCsv -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable WarnVar -WarningAction SilentlyContinue
 
             $WarnVar | Should -BeLike "*Table or view SuperSmall does not exist and AutoCreateTable was not specified*"
             $results | Should -BeNullOrEmpty
         }
 
         It "creates the right columnmap (#7630), handles pipe delimiters (#7806)" {
-            $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathCols -Database tempdb -AutoCreateTable -Table cols
-            $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathCol2 -Database tempdb -Table cols
-            $null = Import-DbaCsv -SqlInstance $TestConfig.instance1 -Path $pathPipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
+            $null = Import-DbaCsv -SqlInstance $TestConfig.InstanceMulti1 -Path $pathCols -Database tempdb -AutoCreateTable -Table cols
+            $null = Import-DbaCsv -SqlInstance $TestConfig.InstanceMulti1 -Path $pathCol2 -Database tempdb -Table cols
+            $null = Import-DbaCsv -SqlInstance $TestConfig.InstanceMulti1 -Path $pathPipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols"
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "select * from cols"
 
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
 
-            $results = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "select * from cols2"
+            $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "select * from cols2"
 
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
 
         It "performs 4 imports" {
-            $results = Import-DbaCsv -Path $pathSuperSmall, $pathSuperSmall -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
+            $results = Import-DbaCsv -Path $pathSuperSmall, $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn2 -AutoCreateTable
 
             $results.Count | Should -Be 4
             foreach ($result in $results) {
@@ -138,7 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "doesn't break when truncate is passed" {
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate
 
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be "tempdb"
@@ -146,7 +149,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "works with NoTransaction" {
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -NoTransaction
 
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be "tempdb"
@@ -154,12 +157,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Catches the scenario where the database param does not match the server object passed into the command" {
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1 -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable -WarningVariable WarnVar -WarningAction SilentlyContinue
 
             $WarnVar | Should -BeLike "*Cannot open database * requested by the login. The login failed.*"
             $result | Should -BeNullOrEmpty
 
-            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.instance1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
+            $result = Import-DbaCsv -Path $pathSuperSmall -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
 
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be "tempdb"
@@ -168,20 +171,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Catches the scenario where the header is not properly parsed causing param errors" {
             # create the table using AutoCreate
-            $null = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $TestConfig.instance1 -Database tempdb -AutoCreateTable
+            $null = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable
             # reload table without AutoCreate parameter to recreate bug #6553
-            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $TestConfig.instance1 -Database tempdb -Truncate
+            $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Truncate
 
             $result.RowsCopied | Should -Be 1
             $result.Database | Should -Be "tempdb"
             $result.Table | Should -Be "CommaSeparatedWithHeader"
 
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP TABLE CommaSeparatedWithHeader" -ErrorAction SilentlyContinue
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "DROP TABLE CommaSeparatedWithHeader" -ErrorAction SilentlyContinue
         }
 
         It "works with NoHeaderRow" {
             # See #7759
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))"
 
             $result = Import-DbaCsv -Path $pathCols -NoHeaderRow -SqlInstance $server -Database tempdb -Table "NoHeaderRow"
@@ -195,7 +198,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works with tables which have non-varchar types (date)" {
             # See #9433
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithTypes ([date] DATE, col1 VARCHAR(50), col2 VARCHAR(50))"
             $result = Import-DbaCsv -Path $pathCommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Table "WithTypes"
 
@@ -208,7 +211,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "works with tables which have non-varchar types (guid, bit)" {
             # See #9433
             $filePath = "$($TestConfig.Temp)\foo.csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE WithGuidsAndBits (one_guid UNIQUEIDENTIFIER, one_bit BIT)"
             $row = [PSCustomObject]@{
                 one_guid = (New-Guid).Guid
@@ -226,7 +229,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports multi-character delimiters (issue #6488)" {
             $filePath = "$($TestConfig.Temp)\delimiter-test-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "DelimiterTest$(Get-Random)"
 
             # Create a file with multi-character delimiter "::"
@@ -259,7 +262,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "supports gzip-compressed CSV files" {
             $csvContent = "col1,col2`nvalue1,value2"
             $filePath = "$($TestConfig.Temp)\compressed-$(Get-Random).csv.gz"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "CompressedTest$(Get-Random)"
 
             # Create a gzipped test file
@@ -281,7 +284,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports SkipRows parameter" {
             $filePath = "$($TestConfig.Temp)\skiprows-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "SkipRowsTest$(Get-Random)"
 
             # Create file with metadata rows before actual CSV data
@@ -303,7 +306,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports DuplicateHeaderBehavior Rename" {
             $filePath = "$($TestConfig.Temp)\dupheader-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "DupHeaderTest$(Get-Random)"
 
             # Create file with duplicate headers
@@ -325,7 +328,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports MismatchedFieldAction PadWithNulls" {
             $filePath = "$($TestConfig.Temp)\mismatch-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "MismatchTest$(Get-Random)"
 
             # Create file with missing field
@@ -347,7 +350,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports QuoteMode Lenient for malformed quotes" {
             $filePath = "$($TestConfig.Temp)\lenient-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "LenientTest$(Get-Random)"
 
             # Create file with malformed quotes (embedded quotes without proper escaping)
@@ -364,7 +367,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Tests using static files from appveyor-lab
         It "imports multi-character delimited file from static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticMultiCharDelim$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathMultiCharDelim -SqlInstance $server -Database tempdb -Table $tableName -Delimiter "::" -AutoCreateTable
@@ -377,7 +380,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports gzip-compressed file from static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticCompressed$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathCompressed -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
@@ -390,7 +393,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports file with SkipRows using static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticSkipRows$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathWithMetadata -SqlInstance $server -Database tempdb -Table $tableName -SkipRows 2 -AutoCreateTable
@@ -403,7 +406,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports file with duplicate headers using static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticDupHeaders$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathDuplicateHeaders -SqlInstance $server -Database tempdb -Table $tableName -DuplicateHeaderBehavior Rename -AutoCreateTable
@@ -417,7 +420,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports file with mismatched fields using static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticMismatch$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathMismatchedFields -SqlInstance $server -Database tempdb -Table $tableName -MismatchedFieldAction PadWithNulls -AutoCreateTable
@@ -430,7 +433,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "imports file with malformed quotes using static test file" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticMalformed$(Get-Random)"
 
             $result = Import-DbaCsv -Path $pathMalformedQuotes -SqlInstance $server -Database tempdb -Table $tableName -QuoteMode Lenient -AutoCreateTable
@@ -442,7 +445,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works with -Parallel switch" {
             $filePath = "$($TestConfig.Temp)\parallel-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "ParallelTest$(Get-Random)"
 
             # Create test file with multiple rows
@@ -462,7 +465,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works with -Parallel and -ThrottleLimit" {
             $filePath = "$($TestConfig.Temp)\parallel-throttle-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "ParallelThrottleTest$(Get-Random)"
 
             # Create test file
@@ -479,7 +482,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works with -Parallel and type conversion" {
             $filePath = "$($TestConfig.Temp)\parallel-types-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "ParallelTypesTest$(Get-Random)"
 
             # Create table with specific types (avoiding BIT which has known issues in parallel mode)
@@ -507,7 +510,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "parallel mode preserves record order" {
             $filePath = "$($TestConfig.Temp)\parallel-order-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "ParallelOrderTest$(Get-Random)"
 
             # Create test file with sequential numbers to verify order
@@ -528,7 +531,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports StaticColumns parameter for metadata tagging (issue #6676)" {
             $filePath = "$($TestConfig.Temp)\staticcol-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "StaticColTest$(Get-Random)"
 
             # Create simple CSV
@@ -562,7 +565,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports DateTimeFormats parameter for custom date parsing (issue #9694)" {
             $filePath = "$($TestConfig.Temp)\datefmt-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "DateFmtTest$(Get-Random)"
 
             # Create CSV with Oracle-style date format
@@ -589,7 +592,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports Culture parameter for locale-specific number parsing (LumenWorks issue #66)" {
             $filePath = "$($TestConfig.Temp)\culture-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "CultureTest$(Get-Random)"
 
             # Create CSV with German number format (semicolon delimiter, comma as decimal separator)
@@ -615,10 +618,277 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "AutoCreateTable post-import optimization" {
+        It "optimizes nvarchar(MAX) columns to appropriate sizes after import" {
+            $filePath = "$($TestConfig.Temp)\optimize-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "OptimizeTest$(Get-Random)"
+
+            # Create CSV with string data of known lengths
+            $csvContent = @"
+ShortCol,MediumCol,LongCol
+ABC,This is medium,This is a longer piece of text that should still fit
+XYZ,Another medium,Another longer piece of text for testing purposes here
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # Verify columns were optimized (not nvarchar(MAX))
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortCol"
+            $mediumCol = $columns | Where-Object Name -eq "MediumCol"
+            $longCol = $columns | Where-Object Name -eq "LongCol"
+
+            # Should be varchar with padded lengths, not MAX (-1)
+            # Padding rounds up to: 16, 32, 64, 128, 256, 512, 1024, 2048, max
+            $shortCol.DataType.MaximumLength | Should -Not -Be -1
+            $shortCol.DataType.MaximumLength | Should -Be 16  # "ABC" (3 chars) padded to 16
+            $mediumCol.DataType.MaximumLength | Should -Not -Be -1
+            $longCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "preserves nvarchar type while optimizing size" {
+            $filePath = "$($TestConfig.Temp)\ascii-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "AsciiTest$(Get-Random)"
+
+            # Create CSV with ASCII-only data
+            $csvContent = @"
+Name,Code
+John Smith,ABC123
+Jane Doe,XYZ789
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # AutoCreateTable creates nvarchar(MAX), optimization preserves type but optimizes size
+            # Use SampleRows or DetectColumnTypes for proper varchar/nvarchar inference
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $nameCol = $columns | Where-Object Name -eq "Name"
+
+            $nameCol.DataType.Name | Should -Be "nvarchar"
+            $nameCol.DataType.MaximumLength | Should -Not -Be -1  # Optimized, not MAX
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "keeps nvarchar for Unicode data" {
+            $filePath = "$($TestConfig.Temp)\unicode-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "UnicodeOptTest$(Get-Random)"
+
+            # Create CSV with Unicode characters
+            $csvContent = @"
+Name,City
+José García,São Paulo
+田中太郎,東京
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -AutoCreateTable
+
+            $result.RowsCopied | Should -Be 2
+
+            # Should be nvarchar since data contains Unicode
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $nameCol = $columns | Where-Object Name -eq "Name"
+            $cityCol = $columns | Where-Object Name -eq "City"
+
+            $nameCol.DataType.Name | Should -Be "nvarchar"
+            $cityCol.DataType.Name | Should -Be "nvarchar"
+            # But still optimized to appropriate length
+            $nameCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "skips optimization when NoColumnOptimize is specified" {
+            $filePath = "$($TestConfig.Temp)\noopt-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "NoOptTest$(Get-Random)"
+
+            $csvContent = @"
+ShortCol,MediumCol
+ABC,Hello
+XYZ,World
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $splatImport = @{
+                Path             = $filePath
+                SqlInstance      = $server
+                Database         = "tempdb"
+                Table            = $tableName
+                AutoCreateTable  = $true
+                NoColumnOptimize = $true
+            }
+            $result = Import-DbaCsv @splatImport
+
+            $result.RowsCopied | Should -Be 2
+
+            # Columns should remain at nvarchar(MAX) since optimization was skipped
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortCol"
+            $mediumCol = $columns | Where-Object Name -eq "MediumCol"
+
+            $shortCol.DataType.MaximumLength | Should -Be -1
+            $mediumCol.DataType.MaximumLength | Should -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "Type detection with SampleRows and DetectColumnTypes" {
+        It "creates table with inferred types using SampleRows" {
+            $filePath = "$($TestConfig.Temp)\samplerows-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "SampleRowsTest$(Get-Random)"
+
+            # Create CSV with typed data
+            $csvContent = @"
+Id,Name,Price,Quantity,IsActive,Created,UniqueId
+1,Widget A,19.99,100,true,2024-01-15,550e8400-e29b-41d4-a716-446655440000
+2,Widget B,29.50,50,false,2024-02-20,6ba7b810-9dad-11d1-80b4-00c04fd430c8
+3,Gadget C,99.00,25,yes,2024-03-25,f47ac10b-58cc-4372-a567-0e02b2c3d479
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify the table was created with proper types (not all nvarchar(MAX))
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $idCol = $columns | Where-Object Name -eq "Id"
+            $priceCol = $columns | Where-Object Name -eq "Price"
+            $isActiveCol = $columns | Where-Object Name -eq "IsActive"
+            $createdCol = $columns | Where-Object Name -eq "Created"
+            $uniqueIdCol = $columns | Where-Object Name -eq "UniqueId"
+
+            $idCol.DataType.Name | Should -Be "int"
+            $priceCol.DataType.Name | Should -Be "decimal"
+            $isActiveCol.DataType.Name | Should -Be "bit"
+            $createdCol.DataType.Name | Should -Be "datetime2"
+            $uniqueIdCol.DataType.Name | Should -Be "uniqueidentifier"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "creates table with inferred types using DetectColumnTypes (full scan)" {
+            $filePath = "$($TestConfig.Temp)\detecttypes-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "DetectTypesTest$(Get-Random)"
+
+            # Create CSV with typed data
+            $csvContent = @"
+OrderId,Amount,Status
+1001,1500.75,true
+1002,2500.00,false
+1003,750.25,true
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -DetectColumnTypes
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify the table was created with proper types
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $orderIdCol = $columns | Where-Object Name -eq "OrderId"
+            $amountCol = $columns | Where-Object Name -eq "Amount"
+            $statusCol = $columns | Where-Object Name -eq "Status"
+
+            $orderIdCol.DataType.Name | Should -Be "int"
+            $amountCol.DataType.Name | Should -Be "decimal"
+            $statusCol.DataType.Name | Should -Be "bit"
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "infers varchar with correct max length instead of varchar(MAX)" {
+            $filePath = "$($TestConfig.Temp)\varcharlength-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "VarcharLengthTest$(Get-Random)"
+
+            # Create CSV with string data of known lengths
+            $csvContent = @"
+ShortName,LongDescription
+ABC,This is a longer description text
+XYZ,Another description here
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 2
+
+            # Verify varchar columns have appropriate lengths (not MAX)
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $shortCol = $columns | Where-Object Name -eq "ShortName"
+            $longCol = $columns | Where-Object Name -eq "LongDescription"
+
+            # Should be varchar with specific length, not varchar(MAX)
+            $shortCol.DataType.Name | Should -Be "varchar"
+            $shortCol.DataType.MaximumLength | Should -BeLessOrEqual 10
+            $shortCol.DataType.MaximumLength | Should -Not -Be -1  # -1 means MAX
+            $longCol.DataType.Name | Should -Be "varchar"
+            $longCol.DataType.MaximumLength | Should -Not -Be -1
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+
+        It "detects nullable columns correctly" {
+            $filePath = "$($TestConfig.Temp)\nullable-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "NullableTest$(Get-Random)"
+
+            # Create CSV with some null/empty values
+            $csvContent = @"
+Id,RequiredName,OptionalValue
+1,John,100
+2,Jane,
+3,Bob,300
+"@
+            $csvContent | Out-File -FilePath $filePath -Encoding UTF8
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -SampleRows 1000
+
+            $result.RowsCopied | Should -Be 3
+
+            # Verify nullability
+            $columns = Get-DbaDbTable -SqlInstance $server -Database tempdb -Table $tableName | Select-Object -ExpandProperty Columns
+            $idCol = $columns | Where-Object Name -eq "Id"
+            $nameCol = $columns | Where-Object Name -eq "RequiredName"
+            $optCol = $columns | Where-Object Name -eq "OptionalValue"
+
+            $idCol.Nullable | Should -Be $false
+            $nameCol.Nullable | Should -Be $false
+            $optCol.Nullable | Should -Be $true
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
+    }
+
     Context "Deep data validation" {
         It "verifies exact data values match between CSV and database" {
             $filePath = "$($TestConfig.Temp)\deepval-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "DeepValidation$(Get-Random)"
 
             # Create CSV with specific known values
@@ -656,7 +926,7 @@ id,name,value,date
 
         It "preserves special characters in quoted fields" {
             $filePath = "$($TestConfig.Temp)\special-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "SpecialChars$(Get-Random)"
 
             # Create CSV with special characters
@@ -692,7 +962,7 @@ name,description
 
         It "truncate removes old data and replaces with new data" {
             $filePath = "$($TestConfig.Temp)\truncate-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "TruncateTest$(Get-Random)"
 
             # Create initial CSV
@@ -737,7 +1007,7 @@ name,description
 
         It "type conversion works for INT, DECIMAL, BIT, and DATETIME" {
             $filePath = "$($TestConfig.Temp)\types-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "TypeConversion$(Get-Random)"
 
             # Create table with various types
@@ -783,7 +1053,7 @@ int_col,decimal_col,bit_col,datetime_col,bigint_col,smallint_col
         }
 
         It "row count matches exactly between CSV source and database" {
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "RowCountMatch$(Get-Random)"
 
             # Use SuperSmall.csv which has 1000 rows (999 data + no header, or 1000 lines)
@@ -813,7 +1083,7 @@ int_col,decimal_col,bit_col,datetime_col,bigint_col,smallint_col
 
         It "handles empty string values correctly" {
             $filePath = "$($TestConfig.Temp)\emptyvals-$(Get-Random).csv"
-            $server = Connect-DbaInstance $TestConfig.instance1 -Database tempdb
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
             $tableName = "EmptyValues$(Get-Random)"
 
             # Create CSV with empty values

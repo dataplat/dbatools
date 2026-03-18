@@ -44,6 +44,32 @@ function Import-DbaRegServer {
     .LINK
         https://dbatools.io/Import-DbaRegServer
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer
+
+        Returns one RegisteredServer object for each server successfully imported into the target Central Management Server (CMS). When importing from XML files, returns only newly imported servers (servers that did not exist before the import operation).
+
+        Default display properties (via Select-DefaultView):
+        - Name: The display name of the registered server as shown in SSMS Registered Servers
+        - ServerName: The actual SQL Server connection string (computer name, IP address, or instance name)
+        - Group: The CMS group path (hierarchical, using backslash separators) or null for root-level servers
+        - Description: Text description of the registered server
+        - Source: Source location of the registration - "Central Management Servers", "Local Server Groups", or "Azure Data Studio"
+
+        Additional properties available from the RegisteredServer object (via Select-Object *):
+        - ComputerName: NetBIOS computer name of the CMS instance
+        - InstanceName: The SQL Server instance name of the CMS
+        - SqlInstance: The full SQL Server instance name of the CMS
+        - ParentServer: The parent CMS instance name
+        - ConnectionString: The connection string with decrypted password if available
+        - SecureConnectionString: The connection string as a SecureString object if password was decrypted
+        - Id: Internal identifier for the registered server
+        - ServerType: Type of server (DatabaseEngine, AnalysisServices, ReportingServices, etc.)
+        - CredentialPersistenceType: Whether credentials are stored
+        - Urn: The Uniform Resource Name (URN) for the registered server object
+
+        All properties from the base RegisteredServer SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Import-DbaRegServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
 

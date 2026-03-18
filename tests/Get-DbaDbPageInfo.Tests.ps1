@@ -34,14 +34,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Clean up any existing connections
         $splatStopProcess = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Program         = "dbatools PowerShell module - dbatools.io"
             WarningAction   = "SilentlyContinue"
             EnableException = $true
         }
         Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("CREATE DATABASE $dbname;")
         $server.Databases[$dbname].Query("CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)")
         $query = "
@@ -65,13 +65,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Count Pages" {
         It "returns the proper results" {
-            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.instance2 -Database $dbname
+            $result = Get-DbaDbPageInfo -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             @($result).Count | Should -Be 9
             @($result | Where-Object IsAllocated -eq $false).Count | Should -Be 5
             @($result | Where-Object IsAllocated -eq $true).Count | Should -Be 4

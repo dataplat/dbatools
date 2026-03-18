@@ -51,6 +51,20 @@ function Copy-DbaSystemDbUserObject {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject (default when -Classic is not specified)
+
+        Returns one object per user-defined object (schema, table, view, function, trigger, etc.) copied from system databases. The Classic mode returns no output.
+
+        Properties:
+        - DateTime: The date and time the operation completed (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the object copied (schema name, table name, or fully qualified object name with schema)
+        - Type: The type of object and system database (e.g., "User schema in master", "User table in msdb", "User stored procedure in master")
+        - Status: The result of the copy operation (Successful, Skipped, or Failed)
+        - Notes: Additional context about the operation result (e.g., "Already exists on destination", "May have also created dependencies", error details)
+
     .LINK
         https://dbatools.io/Copy-DbaSystemDbUserObject
 

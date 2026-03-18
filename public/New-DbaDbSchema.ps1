@@ -55,6 +55,21 @@ function New-DbaDbSchema {
     .LINK
         https://dbatools.io/New-DbaDbSchema
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Schema
+
+        Returns one Schema object for each schema created. One schema is created per Schema parameter value in each target database.
+
+        Properties:
+        - Name: The name of the newly created schema
+        - Owner: The database user that owns the schema (dbo by default, or custom owner if SchemaOwner is specified)
+        - Parent: Reference to the parent Database object
+        - CreateDate: DateTime when the schema was created
+        - State: The current state of the schema object (Existing, Creating, Pending, etc.)
+        - Urn: The Uniform Resource Name of the schema object
+
+        All properties from the base SMO Schema object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1
 

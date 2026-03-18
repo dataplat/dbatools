@@ -25,14 +25,14 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
         It "returns information about msdb files" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.instance2
+            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle
             $result.Database -contains "msdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only msdb" {
         It "returns only msdb files" {
-            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1
+            $result = Get-DbaDbFileGrowth -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1
             $result.Database | Should -Be "msdb"
         }
     }

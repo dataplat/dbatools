@@ -54,6 +54,26 @@ function New-DbaDbMailProfile {
     .LINK
         https://dbatools.io/New-DbaDbMailProfile
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailProfile
+
+        Returns one MailProfile object for the Database Mail profile that was created.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The unique identifier for the Database Mail profile
+        - Name: The name of the Database Mail profile
+        - Description: The description of the Database Mail profile (if provided)
+        - IsBusyProfile: Boolean indicating if the profile is currently processing mail
+
+        Additional properties available (from SMO MailProfile object):
+        - Parent: Reference to parent SqlMail object
+        - Urn: The Uniform Resource Name of the profile
+        - State: Current state of the object (Existing, Creating, etc.)
+        - MailAccountMemberships: Collection of mail accounts associated with this profile
+
     .EXAMPLE
         PS C:\> $profile = New-DbaDbMailProfile -SqlInstance sql2017 -Profile 'The DBA Team'
 
@@ -81,27 +101,53 @@ function New-DbaDbMailProfile {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Profile")) {
-                try {
-                    $profileObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Profile
-                    if (Test-Bound -ParameterName 'Description') {
-                        $profileObj.Description = $Description
-                    }
-                    $profileObj.Create()
-                    if (Test-Bound -ParameterName 'MailAccountName') {
-                        if (!$MailAccountPriority) {
-                            $MailAccountPriority = 1
-                        }
-                        $profileObj.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a db mail Account to a db mail Profile
-                    }
-                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            # Check if profile already exists
+            $existingProfile = $server.Mail.Profiles | Where-Object Name -eq $Profile
 
-                    $profileObj | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, Description, IsBusyProfile
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            if ($existingProfile) {
+                # Profile exists, just add the account if specified
+                if (Test-Bound -ParameterName 'MailAccountName') {
+                    if ($Pscmdlet.ShouldProcess($instance, "Adding account $MailAccountName to existing db mail profile $Profile")) {
+                        try {
+                            if (!$MailAccountPriority) {
+                                $MailAccountPriority = 1
+                            }
+                            $existingProfile.AddAccount($MailAccountName, $MailAccountPriority)
+                            $profileObj = $existingProfile
+                        } catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                        }
+                    }
+                } else {
+                    Stop-Function -Message "Profile $Profile already exists on $instance. Use MailAccountName parameter to add an account to the existing profile." -Continue
                 }
+            } else {
+                # Profile doesn't exist, create it
+                if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Profile")) {
+                    try {
+                        $profileObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Profile
+                        if (Test-Bound -ParameterName 'Description') {
+                            $profileObj.Description = $Description
+                        }
+                        $profileObj.Create()
+                        if (Test-Bound -ParameterName 'MailAccountName') {
+                            if (!$MailAccountPriority) {
+                                $MailAccountPriority = 1
+                            }
+                            $profileObj.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a db mail Account to a db mail Profile
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            if ($profileObj) {
+                Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                $profileObj | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, Description, IsBusyProfile
             }
         }
     }

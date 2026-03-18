@@ -93,7 +93,7 @@ function Get-DbaReportingService {
             $serviceArray = @()
             Write-Message -Level VeryVerbose -Message "Getting Reporting Server namespace on $Computer" -Target $Computer
             try {
-                $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer\ReportServer -Query "Select Name FROM __NAMESPACE" -EnableException -Credential $credential
+                $namespaces = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -NameSpace root\Microsoft\SQLServer\ReportServer -Query "Select Name FROM __NAMESPACE" -EnableException
             } catch {
                 Write-Message -Level Verbose -Message "No SQLServer\ReportServer Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                 return
@@ -102,13 +102,13 @@ function Get-DbaReportingService {
             ForEach ($namespace in $namespaces) {
                 Write-Message -Level Verbose -Message "Getting version from the namespace $($namespace.Name) on $Computer." -Target $Computer
                 try {
-                    $namespaceVersion = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)" -Query "SELECT Name FROM __NAMESPACE" -EnableException
+                    $namespaceVersion = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)" -Query "SELECT Name FROM __NAMESPACE" -EnableException
                 } catch {
                     Stop-Function -EnableException $EnableException -Message "No version Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
                 }
                 try {
                     $cimQuery = "SELECT * FROM MSReportServer_ConfigurationSetting" + $searchClause
-                    $services = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)\$($namespaceVersion.Name)\Admin" -Query $cimQuery -EnableException
+                    $services = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "root\Microsoft\SQLServer\ReportServer\$($namespace.Name)\$($namespaceVersion.Name)\Admin" -Query $cimQuery -EnableException
                 } catch {
                     Stop-Function -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)\$($namespaceVersion.Name)." -Target $Computer -ErrorRecord $_ -Continue
                 }
@@ -120,7 +120,7 @@ function Get-DbaReportingService {
                             Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
 
                             try {
-                                $service32 = Get-DbaCmObject -ComputerName $Computer -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
+                                $service32 = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
                             } catch {
                                 Stop-Function -EnableException $EnableException -Message "Failed to acquire services32" -Target $Computer -ErrorRecord $_ -Continue
                             }

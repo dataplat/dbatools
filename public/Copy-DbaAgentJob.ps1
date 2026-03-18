@@ -82,6 +82,20 @@ function Copy-DbaAgentJob {
     .LINK
         https://dbatools.io/Copy-DbaAgentJob
 
+    .OUTPUTS
+        MigrationObject (PSCustomObject)
+
+        Returns one object per job processed, regardless of whether it was successfully copied, skipped, or failed. This provides a consistent record of all job migration operations.
+
+        Properties:
+        - DateTime: Timestamp when the operation was attempted (DbaDateTime type)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the SQL Agent job
+        - Type: Always "Agent Job" indicating the type of object being migrated
+        - Status: The outcome of the operation - "Successful", "Skipped", or "Failed"
+        - Notes: Descriptive message explaining the status (reason for skip, error details, etc.)
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
 

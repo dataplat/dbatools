@@ -45,6 +45,28 @@ function Get-DbaReplArticleColumn {
         Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per column for each matched article, with detailed article and column information added via NoteProperties.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The database containing the publication
+        - PublicationName: The publication name
+        - ArticleName: The article name
+        - ArticleId: The unique identifier for the article
+        - ColumnName: The name of the column within the article
+
+        Additional properties available:
+        - Description: Description of the article
+        - Type: Type of the article (Table, View, Stored Procedure, etc.)
+        - VerticalPartition: Boolean indicating if vertical partitioning is enabled
+        - SourceObjectOwner: Schema owner of the source table
+        - SourceObjectName: Name of the source table or view
+
     .LINK
         https://dbatools.io/Get-DbaReplArticleColumn
 

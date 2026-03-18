@@ -45,6 +45,39 @@ function Get-DbaPfDataCollector {
     .LINK
         https://dbatools.io/Get-DbaPfDataCollector
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per data collector found within the specified collector sets. Each object represents a single Performance Monitor data collector configuration.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the collector set is configured
+        - DataCollectorSet: The name of the parent data collector set containing this collector
+        - Name: The logical name of the data collector within the collector set
+        - DataCollectorType: The type of data collector (e.g., PerformanceCounterDataCollector)
+        - DataSourceName: The name of the performance counter data source being collected
+        - FileName: The base file name where performance counter data is written
+        - FileNameFormat: Format specification for the output file naming (e.g., monddyy)
+        - FileNameFormatPattern: The file naming pattern used for sequential file naming
+        - LatestOutputLocation: The full path where the most recent collector output is stored
+        - LogAppend: Boolean indicating if new data is appended to existing log files
+        - LogCircular: Boolean indicating if the log uses circular buffering (overwrites when full)
+        - LogFileFormat: The format of the log file (e.g., csv, binary, sql)
+        - LogOverwrite: Boolean indicating if existing log data is overwritten
+        - SampleInterval: The sampling interval in milliseconds between performance counter samples
+        - SegmentMaxRecords: The maximum number of records per log segment
+        - Counters: The collection of performance counters being collected by this collector
+
+        Additional properties available (not shown by default):
+        - CounterDisplayNames: Display names for the performance counters
+        - RemoteLatestOutputLocation: UNC path for accessing the latest output location remotely
+        - DataCollectorSetXml: The raw XML configuration of the parent data collector set
+        - CollectorXml: The raw XML configuration of this specific data collector
+        - DataCollectorObject: Flag indicating this is a data collector object
+        - Credential: The credential object used for remote access (if applicable)
+
+        Use Select-Object * to access all properties available in the object.
+
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollector
 

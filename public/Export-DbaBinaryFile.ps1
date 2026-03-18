@@ -69,6 +69,24 @@ function Export-DbaBinaryFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object for each binary file successfully exported to the filesystem.
+
+        Properties:
+        - FullName: The complete path to the exported file
+        - Name: The filename of the exported file (without path)
+        - DirectoryName: The directory path where the file was exported
+        - Directory: DirectoryInfo object for the parent directory
+        - Extension: The file extension (e.g., .jpg, .pdf)
+        - Length: Size of the file in bytes
+        - CreationTime: When the file was created on disk
+        - LastWriteTime: When the file was last written
+        - Attributes: File attributes (Archive, ReadOnly, etc.)
+
+        Files are written with the original filename from the FileNameColumn if using -Path, or with the specified filename if using -FilePath. Only successfully exported files are returned.
+
     .NOTES
         Tags: Migration, Backup, Export
         Author: Chrissy LeMaire (@cl), netnerds.net

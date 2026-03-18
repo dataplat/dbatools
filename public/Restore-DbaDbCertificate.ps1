@@ -53,6 +53,34 @@ function Restore-DbaDbCertificate {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Certificate
+
+        Returns one Certificate object per certificate successfully restored to the database. For example, restoring 3 certificates results in 3 objects being returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database where the certificate was restored
+        - Name: The name of the certificate
+        - Subject: The subject field of the certificate for identification
+        - StartDate: The date and time when the certificate becomes valid
+        - ActiveForServiceBrokerDialog: Boolean indicating if the certificate is active for Service Broker dialog security
+        - ExpirationDate: The date and time when the certificate expires
+        - Issuer: The issuer of the certificate
+        - LastBackupDate: The date and time of the most recent backup of the certificate
+        - Owner: The owner or principal that owns the certificate
+        - PrivateKeyEncryptionType: The encryption type used for the private key (None, Password, or MasterKey)
+        - Serial: The serial number of the certificate
+
+        Additional properties available from the SMO Certificate object (via Select-Object *):
+        - DatabaseId: The unique identifier of the database containing the certificate
+        - Thumbprint: The SHA-1 hash of the certificate
+        - CreateDate: The date and time when the certificate was created
+        - SignedByCertificate: Name of the certificate that signed this certificate (if applicable)
+        - PrivateKeyExists: Boolean indicating if the certificate has a private key
+
     .NOTES
         Tags: CertBackup, Certificate, Backup
         Author: Jess Pomfret (@jpomfret), jesspomfret.com

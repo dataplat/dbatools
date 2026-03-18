@@ -55,6 +55,42 @@ function Compare-DbaAvailabilityGroup {
     .LINK
         https://dbatools.io/Compare-DbaAvailabilityGroup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns zero or more objects representing configuration differences detected across Availability Group replicas. The specific properties returned depend on which comparison types are executed (controlled by the -Type parameter).
+
+        For AgentJob comparisons:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The SQL Server instance name where the job status applies
+        - JobName: The name of the SQL Agent job
+        - Status: Job status on this replica ("Present" or "Missing")
+        - DateLastModified: DateTime when the job was last modified, or $null if the job is missing on this replica (only populated when -IncludeModifiedDate is specified)
+
+        For Login comparisons:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The name of the SQL Server replica instance
+        - LoginName: The name of the login account
+        - Status: Current status of the login on this replica ("Present" or "Missing")
+        - ModifyDate: The datetime when the login was last modified on this replica (null if Status is "Missing"; only populated when -IncludeModifiedDate is specified)
+        - CreateDate: The datetime when the login was created on this replica (null if Status is "Missing")
+
+        For Credential comparisons:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The name of the replica instance where the credential status was checked
+        - CredentialName: The name of the SQL Server credential
+        - Status: The credential state on this replica ("Present" if the credential exists, "Missing" if it doesn't)
+        - Identity: The credential's identity/principal on replicas where the credential is Present; $null where Status is "Missing"
+
+        For Operator comparisons:
+        - AvailabilityGroup: Name of the Availability Group being compared
+        - Replica: The SQL Server instance name of the replica
+        - OperatorName: Name of the SQL Agent operator
+        - Status: Configuration status of the operator on this replica ("Present" or "Missing")
+        - EmailAddress: Email address of the operator (null if Status is "Missing")
+
+        Only objects representing differences (missing items or differing values when -IncludeModifiedDate is specified) are returned. If all configurations are identical across replicas, no output is generated.
+
     .EXAMPLE
         PS C:\> Compare-DbaAvailabilityGroup -SqlInstance sql2016 -AvailabilityGroup AG1
 

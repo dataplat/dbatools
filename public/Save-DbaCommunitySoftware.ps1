@@ -73,6 +73,11 @@ function Save-DbaCommunitySoftware {
     .LINK
          https://dbatools.io/Save-DbaCommunitySoftware
 
+    .OUTPUTS
+        None
+
+        This command does not output any objects to the pipeline. It performs file operations to download and extract community software tools to the local cache directory. To verify successful operation, check the exit code or use ErrorAction/ErrorVariable parameters.
+
     .EXAMPLE
         PS C:\> Save-DbaCommunitySoftware -Software MaintenanceSolution
 

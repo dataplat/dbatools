@@ -37,9 +37,9 @@ Describe $CommandName -Tag IntegrationTests {
         $fgName = "filegroup_$random"
         $fgMemName = "filegroup_mem_$random"
 
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
-        $null = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $dbName -FileGroup $fgName
-        $null = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $dbName -FileGroup $fgMemName -FileGroupType MemoryOptimizedDataFileGroup
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+        $null = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $dbName -FileGroup $fgName
+        $null = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $dbName -FileGroup $fgMemName -FileGroupType MemoryOptimizedDataFileGroup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Adds a file to a filegroup" {
         It "Adds a file with auto-generated name" {
             $splatAddFile = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 FileGroup   = $fgName
             }
@@ -67,7 +67,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Adds a file with a custom name" {
             $customFileName = "customfile_$random"
             $splatAddFile = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 FileGroup   = $fgName
                 FileName    = $customFileName
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds a file with custom size and growth" {
             $splatAddFile = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 FileGroup   = $fgName
                 FileName    = "customsize_$random"
@@ -96,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds a file to a memory-optimized filegroup" {
             $splatAddFile = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 FileGroup   = $fgMemName
                 FileName    = "memfile_$random"
@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Validates that duplicate file names are rejected" {
             $duplicateName = "duplicate_$random"
             $splatAddFile = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 Database         = $dbName
                 FileGroup        = $fgName
                 FileName         = $duplicateName
@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Validates that non-existent filegroup is rejected" {
             $splatAddFile = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 Database         = $dbName
                 FileGroup        = "nonexistent_$random"
                 WarningAction    = "SilentlyContinue"
@@ -135,7 +135,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Works with pipeline input" {
             $splatGetDb = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
             }
             $result = Get-DbaDatabase @splatGetDb | Add-DbaDbFile -FileGroup $fgName -FileName "pipelinefile_$random"

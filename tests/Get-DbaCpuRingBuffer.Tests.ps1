@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "When retrieving CPU ring buffer data" {
         It "Returns CPU performance metrics from ring buffer" {
-            $results = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.instance2 -CollectionMinutes 100)
+            $results = @(Get-DbaCpuRingBuffer -SqlInstance $TestConfig.InstanceSingle -CollectionMinutes 100)
             $results.Count | Should -BeGreaterThan 0
         }
     }

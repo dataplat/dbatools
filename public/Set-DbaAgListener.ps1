@@ -51,6 +51,21 @@ function Set-DbaAgListener {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener
+
+        Returns the modified availability group listener object for each listener that was successfully updated. This is the same object type as returned by Get-DbaAgListener, but with the modified port number applied.
+
+        Properties available on the returned object include:
+        - Name: The name of the availability group listener
+        - AvailabilityGroup: The name of the parent availability group
+        - PortNumber: The port number for client connections (modified by this command)
+        - IPAddress: The IP address for the listener
+        - SubnetMask: The subnet mask for the listener
+        - Parent: Reference to the parent AvailabilityGroup object
+
+        All properties from the base SMO AvailabilityGroupListener object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Set-DbaAgListener
 

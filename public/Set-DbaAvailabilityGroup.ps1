@@ -57,6 +57,25 @@ function Set-DbaAvailabilityGroup {
         Configures the availability group as a Distributed AG that spans multiple WSFC clusters or standalone instances.
         Used for disaster recovery scenarios across geographic locations or different domains. Requires SQL Server 2016 or later.
 
+    .PARAMETER ClusterConnectionOption
+        Specifies connection options for TDS 8.0 support in SQL Server 2025 and above.
+        This allows the Windows Server Failover Cluster (WSFC) to connect to SQL Server instances using ODBC with TLS 1.3 encryption.
+        The value is a string containing semicolon-delimited key-value pairs.
+
+        Available keys:
+        - Encrypt: Controls connection encryption
+        - TrustServerCertificate: Whether to trust the server certificate
+        - HostNameInCertificate: Expected hostname in the certificate
+        - ServerCertificate: Path to server certificate
+
+        This setting is persisted by WSFC in the registry and used continuously for cluster-to-instance communication.
+        Note: PowerShell does not validate these values - invalid combinations will be rejected by SMO or the ODBC driver.
+
+        Example: "Encrypt=Strict;TrustServerCertificate=False"
+
+        For detailed documentation, see:
+        https://learn.microsoft.com/en-us/sql/t-sql/statements/alter-availability-group-transact-sql
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline operations.
         Use this to pipe specific AG objects directly to the function instead of specifying SqlInstance and AG names separately.
@@ -82,6 +101,36 @@ function Set-DbaAvailabilityGroup {
 
     .LINK
         https://dbatools.io/Set-DbaAvailabilityGroup
+
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroup
+
+        Returns one AvailabilityGroup object per availability group that was modified. The object contains the updated configuration properties that were changed by this command.
+
+        Default display properties (via Select-DefaultView):
+        - Name: Name of the availability group
+        - AvailabilityReplicas: Collection of replica instances in the AG
+        - AutomatedBackupPreference: Current backup preference (None, Primary, Secondary, SecondaryOnly)
+        - BasicAvailabilityGroup: Boolean indicating if the AG is a Basic AG (Standard Edition)
+        - ClusterType: Clustering technology used (Wsfc, External, None) - SQL Server 2017+
+        - DatabaseHealthTrigger: Boolean indicating if database health triggers failover
+        - DtcSupportEnabled: Boolean indicating if Distributed Transaction Coordinator support is enabled
+        - FailureConditionLevel: Failover sensitivity level (OnServerDown, OnServerUnresponsive, OnCriticalServerErrors, OnModerateServerErrors, OnAnyQualifiedFailureCondition)
+        - HealthCheckTimeout: Health check timeout in milliseconds
+        - IsDistributedAvailabilityGroup: Boolean indicating if this is a Distributed AG (SQL Server 2016+)
+
+        Additional properties available (from SMO AvailabilityGroup object):
+        - ClusterConnectionOptions: Connection options for WSFC communication (SQL Server 2025+)
+        - Parent: Reference to the parent SQL Server object
+        - Databases: Collection of databases in the AG
+        - ListenerIPAddresses: Collection of listener IP addresses
+        - AvailabilityGroupListeners: Collection of AG listeners
+        - CreateDate: DateTime when the AG was created
+        - LastModificationTime: DateTime when the AG was last modified
+        - Urn: The Unified Resource Name for the AG
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO AvailabilityGroup object are accessible using Select-Object * even though only default properties are displayed without that cmdlet.
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016 | Set-DbaAvailabilityGroup -DtcSupportEnabled
@@ -115,6 +164,7 @@ function Set-DbaAvailabilityGroup {
         [switch]$BasicAvailabilityGroup,
         [switch]$DatabaseHealthTrigger,
         [switch]$IsDistributedAvailabilityGroup,
+        [string]$ClusterConnectionOption,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
@@ -142,6 +192,16 @@ function Set-DbaAvailabilityGroup {
                             $ag.$prop = (Get-Variable -Name $prop -ValueOnly)
                         }
                     }
+
+                    # ClusterConnectionOption requires SQL Server 2025+ (version 17)
+                    if ((Test-Bound -ParameterName ClusterConnectionOption)) {
+                        if ($ag.Parent.VersionMajor -ge 17) {
+                            $ag.ClusterConnectionOptions = $ClusterConnectionOption
+                        } else {
+                            Write-Message -Level Warning -Message "ClusterConnectionOption is only supported in SQL Server 2025 and above. Skipping this setting on $($ag.Parent.Name)."
+                        }
+                    }
+
                     $ag.Alter()
                     $ag
                 }

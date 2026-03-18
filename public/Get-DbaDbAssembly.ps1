@@ -41,6 +41,31 @@ function Get-DbaDbAssembly {
     .LINK
         https://dbatools.io/Get-DbaDbAssembly
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Assembly
+
+        Returns one Assembly object for each CLR assembly found in the specified or accessible databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the assembly
+        - ID: Unique identifier for the assembly
+        - Name: Name of the assembly
+        - Owner: The principal that owns the assembly
+        - SecurityLevel: Assembly security level (Safe, ExternalAccess, or Unsafe)
+        - CreateDate: DateTime when the assembly was created
+        - IsSystemObject: Boolean indicating if the assembly is a system object
+        - Version: Version information of the assembly
+
+        Additional properties available (from SMO Assembly object):
+        - DatabaseId: Unique identifier for the database containing the assembly
+        - FilePath: File path associated with the assembly
+        - AssemblySecurityLevel: Same as SecurityLevel property
+
+        All properties from the base SMO Assembly object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbAssembly -SqlInstance localhost
 

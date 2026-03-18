@@ -79,6 +79,30 @@ function Export-DbaServerRole {
     .LINK
         https://dbatools.io/Export-DbaServerRole
 
+    .OUTPUTS
+        System.String
+
+        When -Passthru is specified, or when neither -Path nor -FilePath is provided, returns the generated T-SQL script as a string.
+
+        Properties of the output include:
+        - Role creation statements with IF NOT EXISTS clauses
+        - GRANT, DENY, and REVOKE permission statements for each role's permissions
+        - Optional ALTER SERVER ROLE statements to add current role members (when -IncludeRoleMember is specified)
+        - Optional header comment block with generation metadata (unless -NoPrefix is specified)
+        - Batch separator statements between T-SQL commands (configurable via -BatchSeparator)
+
+        System.IO.FileInfo
+
+        When -Path or -FilePath is specified (and -Passthru is not used), returns FileInfo objects for each script file created, one per instance processed.
+
+        Properties:
+        - FullName: Complete file path where the script was saved
+        - Name: File name of the exported script
+        - Directory: Directory containing the script file
+        - Length: Size of the file in bytes
+        - CreationTime: Timestamp when the file was created
+        - LastWriteTime: Timestamp of the last modification
+
     .EXAMPLE
         PS C:\> Export-DbaServerRole -SqlInstance sql2005
 

@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
         It "returns information about multiple databases" {
-            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $true
         }
@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should return file information for a single database" {
         It "returns information about tempdb" {
-            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.instance1 -Database tempdb
+            $results = Get-DbaDbFileMapping -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $results.Database -contains "tempdb" | Should -Be $true
             $results.Database -contains "master" | Should -Be $false
         }

@@ -30,6 +30,18 @@ function Get-DbaForceNetworkEncryption {
     .LINK
         https://dbatools.io/Get-DbaForceNetworkEncryption
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with the Force Network Encryption configuration details.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - ForceEncryption: Boolean indicating whether Force Network Encryption is enabled on the instance
+        - CertificateThumbprint: The SHA-1 thumbprint of the certificate used for encryption, or $null if no certificate is configured
+
     .EXAMPLE
         PS C:\> Get-DbaForceNetworkEncryption
 

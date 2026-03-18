@@ -27,19 +27,19 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command execution and functionality" {
         AfterAll {
             # Restore endpoint to started state
-            Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+            Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
         }
 
         It "Should stop the endpoint" {
             # We want to run all commands in the setup with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
+            Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP' | Start-DbaEndpoint
 
             # We want to run all commands outside of the setup without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 -Endpoint 'TSQL Default TCP'
+            $endpoint = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint 'TSQL Default TCP'
             $results = $endpoint | Stop-DbaEndpoint
             $results.EndpointState | Should -Be 'Stopped'
         }

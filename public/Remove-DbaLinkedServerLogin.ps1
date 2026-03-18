@@ -40,6 +40,19 @@ function Remove-DbaLinkedServerLogin {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per linked server login processed, whether successfully removed or failed.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name
+        - LinkedServer: The name of the linked server containing the removed login
+        - Login: The name of the linked server login that was removed
+        - Status: Either "Removed" on success or "Failure" if the operation failed
+
     .NOTES
         Tags: Security, Server
         Author: Adam Lancaster, github.com/lancasteradam

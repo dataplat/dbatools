@@ -102,6 +102,35 @@ function Copy-DbaLogin {
     .LINK
         https://dbatools.io/Copy-DbaLogin
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per login migration attempt. Each object represents the result of copying a single login to a destination instance.
+
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp when the migration operation occurred (DbaDateTime)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Login name that was copied (or renamed login name if -LoginRenameHashtable was used)
+        - Type: Login type (e.g., "Login - SqlLogin", "Login - WindowsUser", "Login - WindowsGroup")
+        - Status: Result of the migration attempt (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation or reason for skipping/failure
+
+        All properties available on the returned object:
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Type: Login type classification
+        - Name: Destination login name (post-rename if applicable)
+        - DestinationLogin: Destination login name (same as Name)
+        - SourceLogin: Original login name from source server
+        - Status: Operation result
+        - Notes: Operation details or error message
+        - DateTime: Operation timestamp
+
+        System.String (when -OutFile is specified)
+
+        When exporting login scripts to a file using -OutFile, the function returns the file path where the T-SQL scripts were written.
+
     .EXAMPLE
         PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 

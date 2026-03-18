@@ -17,6 +17,22 @@ function Get-DbaConnectedInstance {
     .LINK
         https://dbatools.io/Get-DbaConnectedInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per cached connection in the dbatools connection pool, containing details about each active or recently used SQL Server connection.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The SQL Server instance identifier (computer\instance or server name)
+        - ConnectionType: The .NET type of the connection object (e.g., Microsoft.SqlServer.Management.Smo.Server or System.Data.SqlClient.SqlConnection)
+        - ConnectionObject: The actual connection object used internally by dbatools
+        - Pooled: Boolean indicating whether connection pooling is enabled for this connection
+
+        Additional properties available:
+        - ConnectionString: The connection string used to establish the connection (with credentials redacted for security)
+
+        Use Select-Object * to view all properties including the full ConnectionString.
+
     .EXAMPLE
         PS C:\> Get-DbaConnectedInstance
 

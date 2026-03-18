@@ -31,6 +31,7 @@ Describe $CommandName -Tag UnitTests {
                 "NoPrefix",
                 "Passthru",
                 "ObjectLevel",
+                "IncludeRolePermissions",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -51,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $login2 = "dbatoolsci_exportdbalogin_login2$random"
         $user2 = "dbatoolsci_exportdbalogin_user2$random"
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $db1 = New-DbaDatabase -SqlInstance $server -Name $dbname1
         $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
         $db1.Query("CREATE USER [$user1] FOR LOGIN [$login1]")
@@ -73,37 +74,53 @@ Describe $CommandName -Tag IntegrationTests {
         $login3 = "dbatoolsci_exportdbalogin_login3$random"
         $server.Query("CREATE LOGIN [$login3] WITH PASSWORD = 'GoodPass1234!'")
         $db1.Query("CREATE USER [$login3] WITHOUT LOGIN")
+
+        # login with a custom role that has granted permissions (for IncludeRolePermissions tests)
+        $login4 = "dbatoolsci_exportdbalogin_login4$random"
+        $user4 = "dbatoolsci_exportdbalogin_user4$random"
+        $role4 = "dbatoolsci_exportdbalogin_role4$random"
+        $null = $server.Query("CREATE LOGIN [$login4] WITH PASSWORD = 'GoodPass1234!'")
+        $db1.Query("CREATE USER [$user4] FOR LOGIN [$login4]")
+        $db1.Query("CREATE ROLE [$role4]")
+        $db1.Query("GRANT SELECT ON SCHEMA::dbo TO [$role4]")
+        $db1.Query("GRANT EXECUTE ON SCHEMA::dbo TO [$role4]")
+        if ($server.VersionMajor -lt 11) {
+            $db1.Query("EXEC sp_addrolemember @rolename = N'$role4', @membername = N'$user4'")
+        } else {
+            $db1.Query("ALTER ROLE [$role4] ADD MEMBER [$user4]")
+        }
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname2
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login2
         $timenow = (Get-Date -uformat "%m%d%Y%H")
         $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
         if ($ExportedCredential) {
             $null = Remove-Item -Path $($ExportedCredential.FullName)
         }
 
-        Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login3
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login3
+        Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login4
     }
 
     Context "Executes with Exclude Parameters" {
         It "Should exclude databases when exporting" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Match '\nGo\r'
         }
         It "Should exclude Jobs when exporting" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeJobs -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeJobs -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Not -Match 'Job'
         }
         It "Should exclude Go when exporting" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Not -Match 'GO'
@@ -113,13 +130,13 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match "USE \[$dbname2\]"
         }
         It "Should exclude a specific login" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeLogin $login1 -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Not -Match "$login1"
         }
         It "Should exclude passwords" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue -ExcludePassword
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeLogin $login1 -WarningAction SilentlyContinue -ExcludePassword
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Not -Match '(?<=PASSWORD =\s0x)(\w+)'
@@ -127,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Executes for various users, databases, and environments" {
         It "Should Export a specific user" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
             $results = Get-Content -Path $file -Raw
             $allfiles += $file.FullName
             $results | Should -Not -Match "$login2|$dbname2"
@@ -135,7 +152,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
         }
         It "Should Export with object level permissions" {
-            $results = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -ObjectLevel -PassThru -WarningAction SilentlyContinue
+            $results = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login2 -ObjectLevel -PassThru -WarningAction SilentlyContinue
             $results | Should -Not -Match "$login1|$dbname1"
             $results | Should -Match "GRANT SELECT ON OBJECT::\[sys\]\.\[tables\] TO \[$user2\] WITH GRANT OPTION"
             $results | Should -Match "CREATE USER \[$user2\] FOR LOGIN \[$login2\]"
@@ -144,7 +161,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should Export for all SQL Server versions" {
             foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
-                $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
+                $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
                 $results = Get-Content -Path $file -Raw
                 $allfiles += $file.FullName
                 $results | Should -Match "$login2|$dbname2"
@@ -159,32 +176,50 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
         }
     }
+    Context "Executes with IncludeRolePermissions" {
+        It "Should include role permissions in non-ObjectLevel export" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
+            $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
+            $results | Should -Match ([regex]::Escape("[$role4]"))
+        }
+        It "Should include role permissions in ObjectLevel export" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -ObjectLevel -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
+            $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
+            $results | Should -Match ([regex]::Escape("[$role4]"))
+        }
+        It "Should not include role permissions without the switch" {
+            $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -Passthru -WarningAction SilentlyContinue
+            $results | Should -Not -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
+        }
+    }
     Context "Exports file to random and specified paths" {
         It "Should export file to the configured path" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.DirectoryName
             $allfiles += $file.FullName
             $results | Should -Be $DefaultExportPath
         }
         It "Should export file to custom folder path" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -Path $AltExportPath -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Path $AltExportPath -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.DirectoryName
             $allfiles += $file.FullName
             $results | Should -Be $AltExportPath
         }
         It "Should export file to custom file path" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabase -WarningAction SilentlyContinue
             $results = $file.Name
             $allfiles += $file.FullName
             $results | Should -Be "Dbatoolsci_login_CustomFile.sql"
         }
         It "Should export file to custom file path and Append" {
-            $file = Export-DbaLogin -SqlInstance $TestConfig.instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabase -WarningAction SilentlyContinue
+            $file = Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabase -WarningAction SilentlyContinue
             $allfiles += $file.FullName
             $file.CreationTimeUtc.Ticks | Should -BeLessThan $file.LastWriteTimeUtc.Ticks
         }
         It "Should not export file to custom file path with NoClobber" {
-            { Export-DbaLogin -SqlInstance $TestConfig.instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
+            { Export-DbaLogin -SqlInstance $TestConfig.InstanceSingle -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should -Throw
         }
     }
 }

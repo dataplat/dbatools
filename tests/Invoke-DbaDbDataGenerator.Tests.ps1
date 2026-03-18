@@ -53,8 +53,8 @@ Describe $CommandName -Tag IntegrationTests {
                 ) ON [PRIMARY];"
 
         # Create the objects.
-        New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $generatorDb
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $generatorDb -Query $createTableSql
+        New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $generatorDb
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query $createTableSql
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $generatorDb
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -75,13 +75,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command works" {
         It "Starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $generatorDb -Query "select * from people" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select * from people" | Should -Be $null
         }
 
         It "Returns the proper output" {
-            $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance2 -Database $generatorDb -Path $backupPath -Rows 10
+            $configFile = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Path $backupPath -Rows 10
 
-            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.instance2 -Database $generatorDb -FilePath $configFile.FullName
+            $results = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $configFile.FullName
 
             foreach ($result in $results) {
                 $result.Rows | Should -Be 10
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         }
         It "Generates the data" {
-            Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $generatorDb -Query "select * from people" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select * from people" | Should -Not -Be $null
         }
     }
 }

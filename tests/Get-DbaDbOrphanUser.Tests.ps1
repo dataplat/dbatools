@@ -34,9 +34,7 @@ CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION
 CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE DATABASE dbatoolsci_orphan;
 "@
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force
-        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
         $usersq = @"
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
@@ -55,16 +53,16 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -ErrorAction SilentlyContinue
-        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -ErrorAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $null = Get-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 | Remove-DbaLogin -Force
+        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When checking for orphan users" {
         BeforeAll {
-            $results = @(Get-DbaDbOrphanUser -SqlInstance $TestConfig.instance1 -Database dbatoolsci_orphan)
+            $results = @(Get-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan)
         }
 
         It "Shows time taken for preparation" {

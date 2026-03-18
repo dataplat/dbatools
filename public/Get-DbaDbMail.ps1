@@ -21,6 +21,22 @@ function Get-DbaDbMail {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.SqlMail
+
+        Returns one SqlMail object per SQL Server instance with Database Mail configuration details. Each object includes comprehensive collections of mail profiles, accounts, and configuration settings for that instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Profiles: Collection of Database Mail profile objects configured on the instance
+        - Accounts: Collection of Database Mail account objects configured on the instance
+        - ConfigurationValues: Collection of Database Mail configuration settings (MaxFileSize, ProhibitedExtensions, etc.)
+        - Properties: Collection of additional mail properties
+
+        All properties from the base SMO SqlMail object are accessible using Select-Object *. Use Get-DbaDbMailProfile, Get-DbaDbMailAccount, Get-DbaDbMailConfig, and Get-DbaDbMailServer commands to retrieve detailed information about specific profiles, accounts, configuration settings, and mail servers from these collections.
+
     .NOTES
         Tags: Mail, DbMail, Email
         Author: Chrissy LeMaire (@cl), netnerds.net

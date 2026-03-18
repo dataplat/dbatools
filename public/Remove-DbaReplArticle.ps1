@@ -64,6 +64,21 @@ function Remove-DbaReplArticle {
 
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/delete-an-article
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per article removed from the replication publication.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The publication database name
+        - ObjectName: The name of the replicated object (table, view, or stored procedure)
+        - ObjectSchema: The schema that owns the replicated object
+        - Status: "Removed" on successful removal, or an error message if the operation failed
+        - IsRemoved: Boolean indicating whether the article was successfully removed (true) or failed (false)
+
     .LINK
         https://dbatools.io/Remove-DbaReplArticle
 

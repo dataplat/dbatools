@@ -98,6 +98,27 @@ function Set-DbaAgReplica {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityReplica
+
+        Returns the modified availability replica object for each replica that was successfully updated. This is the same object type as returned by Get-DbaAgReplica, but with the modified properties applied.
+
+        Properties available on the returned object include:
+        - Name: The name of the availability replica (server instance name)
+        - AvailabilityGroup: The name of the parent availability group
+        - AvailabilityMode: Current availability mode (SynchronousCommit or AsynchronousCommit)
+        - FailoverMode: Current failover mode (Automatic, Manual, or External)
+        - BackupPriority: Backup priority value (0-100)
+        - ConnectionModeInPrimaryRole: Connection mode when this replica is primary
+        - ConnectionModeInSecondaryRole: Connection mode when this replica is secondary
+        - EndpointUrl: The endpoint URL for availability group communication
+        - ReadonlyRoutingConnectionUrl: The URL used for read-only routing
+        - SeedingMode: Database seeding mode (Automatic or Manual)
+        - SessionTimeout: Session timeout value in seconds
+        - Parent: Reference to the parent AvailabilityGroup object
+
+        All properties from the base SMO AvailabilityReplica object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Set-DbaAgReplica
 

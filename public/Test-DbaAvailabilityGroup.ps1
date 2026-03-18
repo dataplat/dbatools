@@ -64,6 +64,28 @@ function Test-DbaAvailabilityGroup {
     .LINK
         https://dbatools.io/Test-DbaAvailabilityGroup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Without the -AddDatabase parameter, returns one object per Availability Group tested with the following properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: The name of the Availability Group being tested
+
+        With the -AddDatabase parameter, returns one object per database being added with the following properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroupName: The name of the Availability Group
+        - DatabaseName: The name of the database being added to the AG
+        - AvailabilityGroupSMO: The Microsoft.SqlServer.Management.Smo.AvailabilityGroup object for the AG
+        - DatabaseSMO: The Microsoft.SqlServer.Management.Smo.Database object for the database
+        - PrimaryServerSMO: The Microsoft.SqlServer.Management.Smo.Server object for the primary replica
+        - ReplicaServerSMO: A hashtable mapping secondary replica names to their Microsoft.SqlServer.Management.Smo.Server objects
+        - RestoreNeeded: A hashtable mapping replica names to boolean values indicating if database restore is needed on that replica
+        - Backups: An array of backup history objects from Get-DbaDbBackupHistory (when -UseLastBackup is specified)
+
     .EXAMPLE
         PS C:\> Test-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1
 

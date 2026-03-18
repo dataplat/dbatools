@@ -43,8 +43,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $db1 = "dbatoolsci_safely"
         $db2 = "dbatoolsci_safely_otherInstance"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $db1
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $db2
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -54,9 +54,9 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $db1, $db2
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "Rationalised Database Restore Script for $db1"
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance3 -Job "Rationalised Database Restore Script for $db2"
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $db1, $db2
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "Rationalised Database Restore Script for $db1"
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "Rationalised Database Restore Script for $db2"
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -65,18 +65,18 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command actually works" {
         It "Should restore to the same server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb
+            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb
             $results.DatabaseName | Should -Be $db1
-            $results.SqlInstance | Should -Be $TestConfig.instance2
-            $results.TestingInstance | Should -Be $TestConfig.instance2
+            $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
+            $results.TestingInstance | Should -Be $TestConfig.InstanceCopy1
             $results.BackupFolder | Should -Be $backupPath
         }
 
         It "Should restore to another server" {
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.instance2 -Database $db2 -BackupFolder $backupPath -NoDbccCheckDb -Destination $TestConfig.instance3
+            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db2 -BackupFolder $backupPath -NoDbccCheckDb -Destination $TestConfig.InstanceCopy2
             $results.DatabaseName | Should -Be $db2
-            $results.SqlInstance | Should -Be $TestConfig.instance2
-            $results.TestingInstance | Should -Be $TestConfig.instance3
+            $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
+            $results.TestingInstance | Should -Be $TestConfig.InstanceCopy2
             $results.BackupFolder | Should -Be $backupPath
         }
     }

@@ -23,6 +23,8 @@ function Export-DbaCredential {
     .PARAMETER Credential
         Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
 
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER Path
         Specifies the directory where the exported T-SQL script file will be saved. Defaults to the configured DbatoolsExport path.
         Use this when you want to control where credential scripts are stored for organization or compliance requirements.
@@ -35,10 +37,6 @@ function Export-DbaCredential {
         Specifies which credential names to export by filtering on the Identity property. Accepts an array of credential names.
         Use this to export specific credentials instead of all credentials, particularly useful when migrating only certain application or service accounts.
 
-    .PARAMETER InputObject
-        Accepts credential objects piped from Get-DbaCredential, allowing for advanced filtering and processing scenarios.
-        Use this in pipeline operations when you need to filter or process credentials before exporting them.
-
     .PARAMETER ExcludePassword
         Exports credential definitions without the actual password values, replacing them with placeholder text.
         Use this for documentation purposes or when you need credential structure without sensitive data for security reviews.
@@ -46,6 +44,10 @@ function Export-DbaCredential {
     .PARAMETER Append
         Adds the exported credential scripts to an existing file instead of overwriting it.
         Use this when consolidating credentials from multiple instances into a single deployment script.
+
+    .PARAMETER Passthru
+        Returns the generated T-SQL script to the PowerShell pipeline instead of saving to file.
+        Use this to capture the script in a variable, pipe to other commands, or display directly in the console.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -63,6 +65,18 @@ function Export-DbaCredential {
     .LINK
         https://dbatools.io/Export-DbaCredential
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns a file object representing the exported T-SQL script file(s) containing the CREATE CREDENTIAL statements. One file is returned for each SQL Server instance from which credentials were exported.
+
+        Properties:
+        - FullName: The complete path to the exported script file
+        - Name: The name of the exported script file
+        - Length: The size of the exported file in bytes
+        - LastWriteTime: The date and time the file was created or last modified
+        - Directory: The directory containing the exported file
+
     .EXAMPLE
         PS C:\> Export-DbaCredential -SqlInstance sql2017 -Path C:\temp\cred.sql
 
@@ -72,23 +86,19 @@ function Export-DbaCredential {
     [CmdletBinding()]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [string[]]$Identity,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
+        [string[]]$Identity,
         [switch]$ExcludePassword,
         [switch]$Append,
-        [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Credential[]]$InputObject,
+        [switch]$Passthru,
         [switch]$EnableException
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $serverArray = @()
-        $credentialArray = @{ }
-        $credentialCollection = New-Object System.Collections.ArrayList
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -98,137 +108,91 @@ function Export-DbaCredential {
             return
         }
 
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a Credential or specify a SqlInstance"
-            return
-        }
-
-        if (Test-Bound -ParameterName SqlInstance) {
-            foreach ($instance in $SqlInstance) {
-                try {
-                    try {
-                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                    } catch {
-                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                    }
-
-                    $serverCreds = $server.Credentials
-                    if (Test-Bound -ParameterName Identity) {
-                        $serverCreds = $serverCreds | Where-Object Identity -In $Identity
-                    }
-
-                    $InputObject += $serverCreds
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-            }
-        }
-
-        foreach ($input in $InputObject) {
-            $server = $input.Parent
-            $instance = $server.DomainInstanceName
-
-            if ($serverArray -notcontains $instance) {
-                try {
-                    if ($ExcludePassword) {
-                        $serverCreds = $server.Credentials
-                        $creds = New-Object System.Collections.ArrayList
-
-                        foreach ($cred in $server.Credentials) {
-                            $credObject = [PSCustomObject]@{
-                                Name            = $cred.Name
-                                Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS Quotename").Quotename
-                                Identity        = $cred.Identity.ToString()
-                                Password        = ''
-                                MappedClassType = $cred.MappedClassType
-                                ProviderName    = $cred.ProviderName
-                            }
-                            $creds.Add($credObject) | Out-Null
-                        }
-                        $creds | Add-Member -MemberType NoteProperty -Name 'SqlInstance' -Value $instance
-                        $creds | Add-Member -MemberType NoteProperty -Name 'ExcludePassword' -Value $ExcludePassword
-                        $credentialCollection.Add($credObject) | Out-Null
-                    } else {
-                        if (-not (Test-SqlSa -SqlInstance $server)) {
-                            Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
-                        }
-
-                        Write-Message -Level Verbose -Message "Getting FullComputerName name for $instance."
-                        $fullComputerName = Resolve-DbaComputerName -ComputerName $server -Credential $Credential
-
-                        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
-                        try {
-                            Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-                        } catch {
-                            Stop-Function -Message "Can't connect to registry on $instance." -Target $fullComputerName -ErrorRecord $_
-                            return
-                        }
-
-                        $creds = Get-DecryptedObject -SqlInstance $server -Type Credential
-                        Write-Message -Level Verbose -Message "Adding Members"
-                        $creds | Add-Member -MemberType NoteProperty -Name 'SqlInstance' -Value $instance
-                        $creds | Add-Member -MemberType NoteProperty -Name 'ExcludePassword' -Value $ExcludePassword
-                        $credentialCollection.Add($creds) | Out-Null
-                    }
-                } catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_
-                }
-
-                $serverArray += $instance
-
-                $key = $instance + '::' + $input.Name
-                $credentialArray.add( $key, $true )
-            } else {
-                $key = $instance + '::' + $input.Name
-                $credentialArray.add( $key, $true )
-            }
-        }
-    }
-
-    end {
-        $sql = @()
-        foreach ($cred in $credentialCollection) {
-            Write-Message -Level Verbose -Message "Credentials in object = $($cred.Count)"
-
-            foreach ($currentCred in $creds) {
-                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -ServerName $currentCred.SqlInstance -Type Sql
-
-                $key = $currentCred.SqlInstance + '::' + $currentCred.Name
-                if ( $credentialArray.ContainsKey($key) ) {
-                    $quotename = $currentCred.Quotename
-                    $identity = $currentCred.Identity.Replace("'", "''")
-
-                    if ($currentCred.MappedClassType -like 'Cryptographic*') {
-                        $providerName = $currentCred.ProviderName
-                        $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
-                    } else {
-                        $cryptoSql = ""
-                    }
-
-                    if ($currentCred.ExcludePassword) {
-                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'" + $cryptoSql
-                    } else {
-                        $password = $currentCred.Password.Replace("'", "''")
-                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
-
-
-                    }
-
-                    Write-Message -Level Verbose -Message "Created Script for $quotename"
-                }
-            }
-
+        foreach ($instance in $SqlInstance) {
             try {
-                if ($Append) {
-                    Add-Content -Path $FilePath -Value $sql
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
                 } else {
-                    Set-Content -Path $FilePath -Value $sql
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 }
             } catch {
-                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            Get-ChildItem -Path $FilePath
-            Write-Message -Level Verbose -Message "Credentials exported to $FilePath"
+
+            if ($ExcludePassword) {
+                $credentials = foreach ($cred in $server.Credentials) {
+                    [PSCustomObject]@{
+                        Name            = $cred.Name
+                        Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS Quotename").Quotename
+                        Identity        = $cred.Identity.ToString()
+                        Password        = '<EnterStrongPasswordHere>'
+                        MappedClassType = $cred.MappedClassType
+                        ProviderName    = $cred.ProviderName
+                    }
+                }
+            } else {
+                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException
+            }
+
+            if ($Identity) {
+                $credentials = $credentials | Where-Object Identity -in $Identity
+            }
+
+            if (-not $credentials) {
+                Write-Message -Level Verbose -Message "Nothing to export"
+                continue
+            }
+
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+
+            $sql = @()
+
+            foreach ($cred in $credentials) {
+                $quotename = $cred.Quotename
+                $identity = $cred.Identity.Replace("'", "''")
+                $password = $cred.Password.Replace("'", "''")
+                $cryptoSql = ""
+                if ($cred.MappedClassType -like 'Cryptographic*') {
+                    $providerName = $cred.ProviderName
+                    $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
+                }
+                $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
+            }
+
+            if ($Passthru) {
+                $sql
+            } else {
+                try {
+                    if ($Append) {
+                        Add-Content -Path $FilePath -Value $sql
+                    } else {
+                        Set-Content -Path $FilePath -Value $sql
+                    }
+                    Get-ChildItem -Path $FilePath
+                } catch {
+                    Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+                }
+            }
+
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            }
         }
     }
 }

@@ -31,6 +31,26 @@ function Get-DbaWsfcNetworkInterface {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Management.ManagementObject
+
+        Returns one network interface object per adapter found on cluster nodes queried. Each object represents a network interface configuration with IP address and DHCP settings.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - Name: The name of the network interface
+        - Network: The name or identifier of the network this interface belongs to
+        - Node: The name of the cluster node this interface is assigned to
+        - Adapter: The network adapter identifier or friendly name
+        - Address: The IP address assigned to this interface
+        - DhcpEnabled: Boolean indicating if DHCP is enabled for this interface
+        - IPv4Addresses: String array of IPv4 addresses configured on this interface
+        - IPv6Addresses: String array of IPv6 addresses configured on this interface
+
+        Additional properties available via Select-Object *:
+        All properties from the MSCluster_NetworkInterface WMI class, including network role, state, and adapter-level details.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcNetworkInterface
 

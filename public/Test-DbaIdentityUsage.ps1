@@ -45,6 +45,28 @@ function Test-DbaIdentityUsage {
     .LINK
         https://dbatools.io/Test-DbaIdentityUsage
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per IDENTITY column found in accessible databases, containing seed consumption analysis and identity range usage metrics.
+
+        Default display properties (via Select-DefaultView with MaxNumberRows and NumberOfUses excluded):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The database name containing the table with the identity column
+        - Schema: The schema name containing the table
+        - Table: The table name containing the identity column
+        - Column: The column name with the identity property
+        - SeedValue: The initial seed value of the identity column (bigint)
+        - IncrementValue: The increment value for identity generation (bigint)
+        - LastValue: The last identity value that was assigned (bigint)
+        - PercentUsed: Percentage of the available seed range consumed based on data type limits (0-100, numeric with 2 decimal places)
+
+        Additional properties available via Select-Object *:
+        - MaxNumberRows: Maximum number of rows possible for the data type (tinyint, smallint, int, or bigint)
+        - NumberOfUses: Number of times the identity value has been used (calculated from seed and last values)
+
     .EXAMPLE
         PS C:\> Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
 

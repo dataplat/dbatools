@@ -50,6 +50,33 @@ function Get-DbaFirewallRule {
     .LINK
         https://dbatools.io/Get-DbaFirewallRule
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one firewall rule object per matching SQL Server firewall rule on the target computer. Each object contains details about the rule's protocol, port, and program path.
+
+        Default properties returned:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name (null for Browser rules)
+        - SqlInstance: The full SQL Server instance name (computer\instance format; null for Browser)
+        - DisplayName: The display name of the firewall rule
+        - Type: Category of rule (Engine, Browser, DAC, or DatabaseMirroring)
+        - Protocol: Protocol type used by the rule (TCP, UDP, etc.)
+        - LocalPort: The port number(s) the rule applies to
+        - Program: The executable path allowed through the firewall
+
+        Additional properties available:
+        - Name: The internal name of the firewall rule
+        - Rule: The raw Get-NetFirewallRule object with all native properties
+        - Credential: The credential object used for execution
+
+        When an error occurs during remote execution, an error object is returned instead with:
+        - ComputerName: The target computer name
+        - Warning: Any warning messages from Get-NetFirewallRule
+        - Error: Error message details if the operation failed
+        - Exception: The exception object containing full error information
+        - Details: Full diagnostic information from the remote execution
+
     .EXAMPLE
         PS C:\> Get-DbaFirewallRule -SqlInstance SRV1
 

@@ -37,6 +37,28 @@ function Test-DbaDbDataMaskingConfig {
     .LINK
         https://dbatools.io/Test-DbaDbDataMaskingConfig
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns validation error objects for any configuration issues found. If the configuration file is valid with no errors, no output is returned.
+
+        Each error object contains the following properties:
+
+        - Table (string): Name of the table in the configuration where the error was found
+        - Column (string): Name of the column in the table where the error was found
+        - Value (string): The problematic value or comma-separated list of property names causing the error
+        - Error (string): Description of the validation error encountered
+
+        Common validation errors include:
+        - Missing required column properties (Action, CharacterString, ColumnType, Composite, Deterministic, Format, MaskingType, MaxValue, MinValue, Name, Nullable, KeepNull, SubType)
+        - Invalid column data types (unsupported by SQL Server or dbatools)
+        - Invalid masking types or subtypes (not available in dbatools randomization library)
+        - Unsupported action categories, types, or subcategories
+        - Invalid date range values or missing required min/max values for 'Between' subtype
+        - Missing required action properties (Category, Type, Value for datetime actions; Category, Type, Value for number actions)
+        - Action category incompatibility with column data type
+        - Additional properties in columns that are not in the allowed properties list
+
     .EXAMPLE
         Test-DbaDbDataMaskingConfig -FilePath C:\temp\_datamasking\db1.json
 

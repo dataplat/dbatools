@@ -62,6 +62,31 @@ function Get-DbaDbRestoreHistory {
     .LINK
         https://dbatools.io/Get-DbaDbRestoreHistory
 
+    .OUTPUTS
+        System.Data.DataRow
+
+        Returns one object per restore operation found in MSDB.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database that was restored
+        - Username: Login name of the user who performed the restore
+        - RestoreType: Type of restore operation (Database, File, Filegroup, Differential, Log, Verifyonly, or Revert)
+        - Date: Timestamp when the restore operation completed
+        - From: Comma-separated list of physical device names where the backup source(s) are located
+        - To: Comma-separated list of physical file paths where the database files were restored
+
+        Additional properties available (from MSDB backupset table):
+        - first_lsn: First log sequence number in the backup
+        - last_lsn: Last log sequence number in the backup
+        - checkpoint_lsn: Checkpoint log sequence number
+        - database_backup_lsn: Log sequence number of database backup
+        - BackupFinishDate: Timestamp when the backup operation completed
+
+        All properties from the underlying DataRow object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016
 

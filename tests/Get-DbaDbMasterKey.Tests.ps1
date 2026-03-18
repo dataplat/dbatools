@@ -26,9 +26,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname
         $splatMasterKey = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = $dbname
             Password    = (ConvertTo-SecureString -AsPlainText -Force -String "ThisIsAPassword!")
         }
@@ -36,11 +36,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
     }
 
     It "Gets DbMasterKey" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 | Where-Object Database -eq $dbname
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle | Where-Object Database -eq $dbname
 
         $results | Should -Not -BeNullOrEmpty
         $results.Database | Should -BeExactly $dbname
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Gets DbMasterKey when using -Database" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $dbname
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname
 
         $results | Should -Not -BeNullOrEmpty
         $results.Database | Should -BeExactly $dbname
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Gets no DbMasterKey when using -ExcludeDatabase" {
-        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -ExcludeDatabase master, $dbname
+        $results = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master, $dbname
 
         $results | Should -BeNullOrEmpty
     }

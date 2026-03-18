@@ -87,6 +87,28 @@ function Copy-DbaDbCertificate {
         https://dbatools.io/Copy-DbaDbCertificate
 
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per certificate copy operation attempted, regardless of success or failure. Each object represents the result of copying a single certificate from a source database to a destination database.
+
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: The date and time when the copy operation occurred
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the certificate being copied
+        - Type: Always "Database Certificate" indicating the object type
+        - Status: The result of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional information about the operation (reason for skipping, error details, etc.)
+
+        Additional properties available (not shown by default):
+        - SourceDatabase: The name of the source database containing the certificate
+        - SourceDatabaseID: The ID of the source database
+        - DestinationDatabase: The name of the destination database where the certificate was restored
+        - DestinationDatabaseID: The ID of the destination database
+
+        All properties from the PSCustomObject are accessible via Select-Object * even though only default properties display without explicitly using Select-Object.
+
     .EXAMPLE
         PS C:\> Copy-DbaDbCertificate -Source sql01 -Destination sql02 -EncryptionPassword $cred.Password -MasterKeyPassword $cred.Password -SharedPath \\nas\sql\shared
 

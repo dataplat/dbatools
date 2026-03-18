@@ -46,6 +46,48 @@ function Test-DbaConnectionAuthScheme {
     .LINK
         https://dbatools.io/Test-DbaConnectionAuthScheme
 
+    .OUTPUTS
+        PSCustomObject
+
+        Default output (no -Kerberos or -Ntlm switch):
+        Returns one object per instance queried showing the current connection details from sys.dm_exec_connections.
+
+        Default display properties:
+        - ComputerName: The computer name from SERVERPROPERTY
+        - InstanceName: The instance name from SERVERPROPERTY
+        - SqlInstance: The server name from SERVERPROPERTY
+        - Transport: Network transport type (TCP, Named Pipes, Shared Memory, etc.)
+        - AuthScheme: Authentication scheme used (Kerberos or NTLM)
+
+        Additional properties available (via Select-Object *):
+        - SessionId: Current session ID
+        - MostRecentSessionId: Most recent session ID
+        - ConnectTime: DateTime when the connection was established
+        - ProtocolType: Type of protocol used
+        - ProtocolVersion: Version of the protocol
+        - EndpointId: Endpoint identifier
+        - EncryptOption: Encryption option setting
+        - NodeAffinity: Node affinity setting
+        - NumReads: Number of read operations
+        - NumWrites: Number of write operations
+        - LastRead: DateTime of last read operation
+        - LastWrite: DateTime of last write operation
+        - PacketSize: Network packet size in bytes
+        - ClientNetworkAddress: Client network address
+        - ClientTcpPort: Client TCP port number
+        - ServerNetworkAddress: Server network address
+        - ServerTcpPort: Server TCP port number
+        - ConnectionId: Connection identifier
+        - ParentConnectionId: Parent connection identifier
+        - MostRecentSqlHandle: Most recent SQL handle
+
+        With -Kerberos or -Ntlm switch:
+        Returns a filtered object with these properties:
+        - ComputerName: The computer name
+        - InstanceName: The instance name
+        - SqlInstance: The server instance name
+        - Result: Boolean indicating if the connection uses the specified authentication scheme ($true if using Kerberos or NTLM as specified, $false otherwise)
+
     .EXAMPLE
         PS C:\> Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a, sql2016
 

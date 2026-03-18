@@ -43,6 +43,17 @@ function Get-DbaRandomizedDatasetTemplate {
     .LINK
         https://dbatools.io/Get-DbaRandomizedDatasetTemplate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per available template file. Each object contains information about a single template that can be used with Get-DbaRandomizedDataset to generate test data.
+
+        Properties:
+        - BaseName: The template name without the .json extension (string)
+        - FullName: The complete file path to the JSON template file (string)
+
+        When called without filters, returns all templates from the default dbatools templates directory. When -Path is specified, also includes templates from custom directories. The -Template parameter filters results to only matching template names. The -ExcludeDefault switch excludes built-in templates and only returns custom templates from specified paths.
+
     .EXAMPLE
         Get-DbaRandomizedDatasetTemplate
 

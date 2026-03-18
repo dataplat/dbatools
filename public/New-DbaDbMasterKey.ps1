@@ -54,6 +54,25 @@ function New-DbaDbMasterKey {
     .LINK
         https://dbatools.io/New-DbaDbMasterKey
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.MasterKey
+
+        Returns one MasterKey object for the database where the master key was created.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name where the master key was created
+        - CreateDate: DateTime when the master key was created
+        - DateLastModified: DateTime when the master key was last modified
+        - IsEncryptedByServer: Boolean indicating if the master key is encrypted by the server
+
+        Additional properties available (from SMO MasterKey object):
+        - Urn: The Uniform Resource Name of the master key
+        - State: Current state of the object (Existing, Creating, etc.)
+        - Parent: Reference to parent database object
+
     .EXAMPLE
         PS C:\> New-DbaDbMasterKey -SqlInstance Server1
 

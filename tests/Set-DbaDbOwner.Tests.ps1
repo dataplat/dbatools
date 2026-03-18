@@ -29,15 +29,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $svr = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $svr = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $owner = "dbatoolssci_owner_$(Get-Random)"
         $ownertwo = "dbatoolssci_owner2_$(Get-Random)"
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $owner -Password ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $ownertwo -Password ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $owner -Password ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $ownertwo -Password ("Password1234!" | ConvertTo-SecureString -asPlainText -Force)
         $dbname = "dbatoolsci_$(Get-Random)"
         $dbnametwo = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname -Owner sa
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbnametwo -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbnametwo -Owner sa
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,14 +46,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbnametwo
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $owner, $ownertwo
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbnametwo
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $owner, $ownertwo
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     Context "Should set the database owner" {
         It "Sets the database owner on a specific database" {
-            $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -Database $dbName -TargetLogin $owner
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName -TargetLogin $owner
             $results.Owner | Should -Be $owner
         }
         It "Check it actually set the owner" {
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Sets multiple database owners" {
         BeforeAll {
-            $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -Database $dbName, $dbnametwo -TargetLogin $ownertwo
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbName, $dbnametwo -TargetLogin $ownertwo
         }
 
         It "Sets the database owner on multiple databases" {
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Excludes databases" {
         BeforeAll {
             $svr.Databases[$dbName].refresh()
-            $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1 -ExcludeDatabase $dbnametwo -TargetLogin $owner
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbnametwo -TargetLogin $owner
         }
 
         It "Excludes specified database" {
@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Enables input from Get-DbaDatabase" {
         BeforeAll {
             $svr.Databases[$dbnametwo].refresh()
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbnametwo
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbnametwo
             $results = Set-DbaDbOwner -InputObject $db -TargetLogin $owner
         }
 
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Sets database owner to sa" {
         BeforeAll {
-            $results = Set-DbaDbOwner -SqlInstance $TestConfig.instance1
+            $results = Set-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Sets the database owner on multiple databases" {

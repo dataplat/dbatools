@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Return values" {
         It "Get the log shipping errors" {
-            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.instance2)
+            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle)
             $results.Status.Count | Should -BeExactly 0
         }
     }

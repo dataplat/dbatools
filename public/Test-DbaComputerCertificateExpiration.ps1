@@ -56,6 +56,28 @@ function Test-DbaComputerCertificateExpiration {
     .LINK
         https://dbatools.io/Test-DbaComputerCertificateExpiration
 
+    .OUTPUTS
+        Certificate objects with added properties
+
+        Returns certificate objects from either Get-DbaNetworkCertificate or Get-DbaComputerCertificate for any certificates that are expired or will expire within the threshold period. If no certificates meet the expiration criteria, nothing is returned.
+
+        Displayed properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the certificate is stored
+        - Store: The certificate store location (LocalMachine, CurrentUser, etc.)
+        - Folder: The certificate folder within the store (My, Root, CA, etc.)
+        - Name: The friendly name of the certificate
+        - DnsNameList: Array of DNS names associated with the certificate (Subject Alternative Names)
+        - Thumbprint: The SHA-1 hash of the certificate used for identification
+        - NotBefore: DateTime when the certificate becomes valid (validity start date)
+        - NotAfter: DateTime when the certificate expires (validity end date)
+        - Subject: The certificate subject Distinguished Name (DN)
+        - Issuer: The certificate issuer Distinguished Name (DN)
+        - Algorithm: The signature algorithm used by the certificate (e.g., sha256RSA)
+        - ExpiredOrExpiring: Boolean value indicating the certificate is expired or expiring (always $true for returned objects)
+        - Note: Human-readable description of the expiration status (e.g., "This certificate expires in 15 days" or "This certificate has expired and is no longer valid")
+
+        All standard X.509 certificate properties are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Test-DbaComputerCertificateExpiration
 

@@ -29,14 +29,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Create an endpoint for testing
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring | Start-DbaEndpoint
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Type DatabaseMirroring -Role Partner -Name Mirroring | Start-DbaEndpoint
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "removes an endpoint" {
-        $results = Get-DbaEndpoint -SqlInstance $TestConfig.instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
+        $results = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
         $results.Status | Should -Be 'Removed'
     }
 }

@@ -24,6 +24,25 @@ function Remove-DbaSpn {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one or two objects per SPN removal operation, depending on what was removed:
+
+        First object indicates the SPN removal result:
+        - Name: The Service Principal Name that was processed
+        - ServiceAccount: The Active Directory account from which the SPN was removed
+        - Property: Always "servicePrincipalName" for the first object
+        - IsSet: Boolean indicating whether the SPN is still set (true if removal failed, false if successful or not found)
+        - Notes: Status message such as "Successfully removed SPN", "SPN not found", or "Failed to remove SPN"
+
+        Second object (if SPN removal succeeded) indicates the delegation cleanup result:
+        - Name: The Service Principal Name that was processed
+        - ServiceAccount: The Active Directory account from which delegation was removed
+        - Property: Always "msDS-AllowedToDelegateTo" for the second object
+        - IsSet: Boolean indicating whether the delegation entry is still set (true if removal failed, false if successful or not found)
+        - Notes: Status message such as "Successfully removed delegation", "Delegation not found", or "Failed to remove delegation"
+
     .PARAMETER Confirm
         Turns confirmations before changes on or off
 

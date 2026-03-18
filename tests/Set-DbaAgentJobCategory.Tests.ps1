@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
             # Create test category for modification
             $testCategoryName = "CategoryTest1"
             $newCategoryName = "CategoryTest2"
-            $testCategory = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategoryName
+            $testCategory = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategoryName
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -43,8 +43,8 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup and ignore all output
-            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $newCategoryName -ErrorAction SilentlyContinue
-            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $testCategoryName -ErrorAction SilentlyContinue
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $newCategoryName -ErrorAction SilentlyContinue
+            Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $testCategoryName -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -55,13 +55,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should actually for sure exist" {
-            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1
+            $newresults = Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1
             $newresults.Name | Should -Be "CategoryTest1"
             $newresults.CategoryType | Should -Be "LocalJob"
         }
 
         It "Change the name of the job category" {
-            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category CategoryTest1 -NewName CategoryTest2
+            $results = Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category CategoryTest1 -NewName CategoryTest2
             $results.Name | Should -Be "CategoryTest2"
         }
     }

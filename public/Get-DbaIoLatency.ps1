@@ -35,6 +35,40 @@ function Get-DbaIoLatency {
     .LINK
         https://dbatools.io/Get-DbaIoLatency
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file on the SQL Server instance, providing detailed I/O performance metrics collected from sys.dm_io_virtual_file_stats.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseId: Internal ID of the database containing the file
+        - DatabaseName: Name of the database containing the file
+        - FileId: Internal ID of the file within the database
+        - PhysicalName: Operating system file path of the file
+        - NumberOfReads: Total count of read operations since SQL Server instance startup
+        - IoStallRead: Total wait time in milliseconds spent waiting for read operations to complete
+        - NumberOfwrites: Total count of write operations since SQL Server instance startup
+        - IoStallWrite: Total wait time in milliseconds spent waiting for write operations to complete
+        - IoStall: Total cumulative I/O wait time in milliseconds (reads + writes)
+        - NumberOfBytesRead: Total number of bytes read from this file since instance startup
+        - NumberOfBytesWritten: Total number of bytes written to this file since instance startup
+        - SampleMilliseconds: Time in milliseconds since the SQL Server instance started (used for duration calculations)
+        - SizeOnDiskBytes: Current size of the file on disk in bytes
+
+        Hidden properties (excluded from default display but available with Select-Object *):
+        - FileHandle: Internal file handle reference
+        - ReadLatency: Average read latency calculated as IoStallRead / NumberOfReads in milliseconds
+        - WriteLatency: Average write latency calculated as IoStallWrite / NumberOfwrites in milliseconds
+        - Latency: Average I/O latency for both reads and writes calculated as IoStall / (NumberOfReads + NumberOfwrites) in milliseconds
+        - AvgBPerRead: Average bytes per read operation calculated as NumberOfBytesRead / NumberOfReads
+        - AvgBPerWrite: Average bytes per write operation calculated as NumberOfBytesWritten / NumberOfwrites
+        - AvgBPerTransfer: Average bytes per I/O operation (both reads and writes combined)
+
+        All latency values are in milliseconds and are calculated to handle division by zero when no I/O has occurred (returns 0 in such cases).
+
     .EXAMPLE
         PS C:\> Get-DbaIoLatency -SqlInstance sql2008, sqlserver2012
 

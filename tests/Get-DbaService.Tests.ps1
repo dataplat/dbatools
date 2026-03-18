@@ -35,10 +35,10 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).ServiceName
-            $allServicesResults = Get-DbaService -ComputerName $TestConfig.instance2
-            $agentServicesResults = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent
-            $specificInstanceResults = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent -AdvancedProperties
+            $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).ServiceName
+            $allServicesResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle
+            $agentServicesResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent
+            $specificInstanceResults = Get-DbaService -ComputerName $TestConfig.InstanceSingle -InstanceName $instanceName -Type Agent -AdvancedProperties
         }
 
         It "shows some services" {
@@ -60,22 +60,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "sets startup mode of the service to 'Manual'" {
-            $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
+            $service = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent -InstanceName $instanceName
             { $service.ChangeStartMode("Manual") } | Should -Not -Throw
         }
 
         It "verifies that startup mode of the service is 'Manual'" {
-            $results = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
+            $results = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent -InstanceName $instanceName
             $results.StartMode | Should -Be "Manual"
         }
 
         It "sets startup mode of the service to 'Automatic'" {
-            $service = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
+            $service = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent -InstanceName $instanceName
             { $service.ChangeStartMode("Automatic") } | Should -Not -Throw
         }
 
         It "verifies that startup mode of the service is 'Automatic'" {
-            $results = Get-DbaService -ComputerName $TestConfig.instance2 -Type Agent -InstanceName $instanceName
+            $results = Get-DbaService -ComputerName $TestConfig.InstanceSingle -Type Agent -InstanceName $instanceName
             $results.StartMode | Should -Be "Automatic"
         }
     }
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works with SqlInstance" {
         BeforeAll {
             $sqlInstanceResults = @()
-            $sqlInstanceResults += Get-DbaService -SqlInstance $TestConfig.instance2 -Type Engine
+            $sqlInstanceResults += Get-DbaService -SqlInstance $TestConfig.InstanceSingle -Type Engine
         }
 
         It "shows exactly one service" {

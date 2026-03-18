@@ -63,6 +63,32 @@ function Restore-DbaDbSnapshot {
     .LINK
         https://dbatools.io/Restore-DbaDbSnapshot
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each database that was successfully restored from a snapshot. The returned object represents the state of the database after the restore operation completed and log file growth settings were restored to their pre-snapshot values.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Database name
+        - Status: Current database status (Normal, Suspect, Offline, etc.)
+        - IsAccessible: Boolean indicating if the database is currently accessible
+        - RecoveryModel: Database recovery model (Full, Simple, BulkLogged)
+        - Owner: Database owner login name
+
+        Additional properties available from the SMO Database object:
+        - Size: Current size of the database in megabytes
+        - CreateDate: DateTime when the database was created
+        - LastBackupDate: DateTime of the most recent backup
+        - LastDiffBackup: DateTime of the most recent differential backup
+        - LastLogBackup: DateTime of the most recent transaction log backup
+        - Collation: Database collation setting
+        - CompatibilityLevel: Database compatibility level
+
+        All properties from the base SMO Database object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
 

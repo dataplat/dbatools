@@ -44,6 +44,38 @@ function Get-DbaAgReplica {
     .LINK
         https://dbatools.io/Get-DbaAgReplica
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityReplica
+
+        Returns one AvailabilityReplica object per replica found in the queried availability groups. The objects include added properties for context about the parent SQL Server instance and availability group.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance hosting the replica
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group that contains this replica
+        - Name: The name/display name of the availability group replica
+        - Role: Current role of the replica (Primary or Secondary)
+        - ConnectionState: Current connectivity state with the local server (Connected, Disconnected, etc.)
+        - RollupSynchronizationState: Overall database synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - AvailabilityMode: Commit mode (SynchronousCommit or AsynchronousCommit)
+        - BackupPriority: Backup preference priority value (0-100, where higher values are preferred for backups)
+        - EndpointUrl: Database mirroring endpoint URL used for replica communication (format: TCP://hostname:port)
+        - SessionTimeout: Session timeout in seconds for detecting communication failures (minimum 10 seconds recommended)
+        - FailoverMode: Failover capability (Automatic or Manual)
+        - ReadonlyRoutingList: Priority-ordered list of secondary replicas for routing read-only connections
+
+        Additional properties available (from SMO AvailabilityReplica object):
+        - ConnectionModeInPrimaryRole: Connection mode when this replica is primary (AllowAllConnections or AllowReadWriteConnections)
+        - ConnectionModeInSecondaryRole: Connection mode when this replica is secondary (AllowNoConnections, AllowReadIntentConnectionsOnly, or AllowAllConnections)
+        - ReadonlyRoutingConnectionUrl: Connection URL used by read-only routing for this replica
+        - SeedingMode: Database seeding mode (Automatic or Manual) - SQL Server 2016+
+        - Parent: Reference to the parent AvailabilityGroup object
+        - State: The state of the SMO object (Existing, Creating, Pending, etc.)
+        - Urn: Uniform resource name for programmatic identification of the replica
+
+        All properties from the base SMO AvailabilityReplica object are accessible using Select-Object *, even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Get-DbaAgReplica -SqlInstance sql2017a
 

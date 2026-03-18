@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $startupProc = "dbo.StartUpProc$random"
         $dbname = "master"
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When retrieving all startup procedures" {
         It "Returns correct results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When filtering by StartupProcedure parameter" {
         It "Returns correct results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure $startupProc
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure $startupProc
             $result.Schema -eq "dbo" | Should -Be $true
             $result.Name -eq "StartUpProc$random" | Should -Be $true
         }
@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When filtering by incorrect StartupProcedure parameter" {
         It "Returns no results" {
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 -StartupProcedure "Not.Here"
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure "Not.Here"
             $null -eq $result | Should -Be $true
         }
     }

@@ -83,6 +83,12 @@ function Add-DbaAgDatabase {
         When enabled, Restore-DbaDatabase uses the replica's default data and log directories instead of attempting to replicate the primary's folder structure.
         This is automatically set to true when the primary and replica servers run on different operating system platforms (e.g., Windows primary with Linux replica).
 
+    .PARAMETER MasterKeySecurePassword
+        Password for creating or opening the database master key on secondary replicas when adding TDE-encrypted databases.
+        When a database is protected by Transparent Data Encryption (TDE), the certificate used to protect the Database Encryption Key must exist on every secondary replica.
+        Providing this parameter together with SharedPath allows the command to automatically copy the TDE certificate from the primary to each secondary replica.
+        If the secondary already has a master key, this password is used to create one if it is missing.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -146,6 +152,61 @@ function Add-DbaAgDatabase {
         PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1 -NoWait
 
         Adds db1 to ag1 on sql2017a and returns immediately without waiting for seeding to complete on secondary replicas. Seeding will continue in the background.
+
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityDatabase
+
+        Returns one AvailabilityDatabase object per replica where the database was added. For example, adding one database to an AG with two replicas returns two objects - one for the primary and one for each secondary.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group
+        - LocalReplicaRole: Role of this replica (Primary or Secondary)
+        - Name: Database name
+        - SynchronizationState: Current synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover
+        - IsJoined: Boolean indicating if the database has joined the availability group
+        - IsSuspended: Boolean indicating if data movement is suspended
+
+        Additional properties available (from SMO AvailabilityDatabase object):
+        - DatabaseGuid: Unique identifier for the database
+        - EstimatedDataLoss: Estimated data loss in seconds
+        - EstimatedRecoveryTime: Estimated recovery time in seconds
+        - FileStreamSendRate: Rate of FILESTREAM data being sent (bytes/sec)
+        - GroupDatabaseId: Unique identifier for the database within the AG
+        - ID: Internal object ID
+        - IsAvailabilityDatabaseSuspended: Boolean indicating suspension state
+        - IsDatabaseDiskHealthy: Boolean indicating if database disk health is good
+        - IsDatabaseJoined: Boolean indicating database join state
+        - IsInstanceDiskHealthy: Boolean indicating if instance disk health is good
+        - IsInstanceHealthy: Boolean indicating overall instance health
+        - IsPendingSecondarySuspend: Boolean indicating if secondary suspend is pending
+        - LastCommitLsn: Last commit log sequence number
+        - LastCommitTime: Timestamp of last committed transaction
+        - LastHardenedLsn: Last hardened log sequence number
+        - LastHardenedTime: Timestamp when last LSN was hardened
+        - LastReceivedLsn: Last received log sequence number
+        - LastReceivedTime: Timestamp when last LSN was received
+        - LastRedoneLsn: Last redone log sequence number
+        - LastRedoneTime: Timestamp when last LSN was redone
+        - LastSentLsn: Last sent log sequence number
+        - LastSentTime: Timestamp when last LSN was sent
+        - LogSendQueue: Size of log send queue in KB
+        - LogSendRate: Rate of log sending (bytes/sec)
+        - LowWaterMarkForGhostCleanup: Low water mark LSN for ghost cleanup
+        - Parent: Reference to parent AvailabilityGroup SMO object
+        - RecoveryLsn: Recovery log sequence number
+        - RedoQueue: Size of redo queue in KB
+        - RedoRate: Rate of redo operations (bytes/sec)
+        - SecondaryLagSeconds: Lag in seconds for secondary replica
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - SuspendReason: Reason for suspension if database is suspended
+        - Urn: Uniform Resource Name for the SMO object
+        - UserAccess: User access state
+
+        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -185,6 +246,9 @@ function Add-DbaAgDatabase {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$SkipReuseSourceFolderStructure,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
+        [Security.SecureString]$MasterKeySecurePassword,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
@@ -307,6 +371,49 @@ function Add-DbaAgDatabase {
                 }
                 if ($failure) {
                     Stop-Function -Message "Failed setting seeding mode to $SeedingMode." -Continue
+                }
+            }
+
+            # For TDE-encrypted databases, the master certificate must exist on every secondary replica
+            # before a backup can be restored or automatic seeding can succeed.
+            if ($db.EncryptionEnabled -and $db.HasDatabaseEncryptionKey -and $db.DatabaseEncryptionKey.EncryptorType -eq "ServerCertificate") {
+                $encryptorName = $db.DatabaseEncryptionKey.EncryptorName
+                Write-Message -Level Verbose -Message "Database $($db.Name) is TDE-encrypted using certificate '$encryptorName'. Checking secondary replicas."
+                if ($SharedPath) {
+                    $failure = $false
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        $replicaServer = $replicaServerSMO[$replicaName]
+                        $existingCert = Get-DbaDbCertificate -SqlInstance $replicaServer -Database master -Certificate $encryptorName
+                        if (-not $existingCert) {
+                            if ($Pscmdlet.ShouldProcess($replicaServer, "Copy TDE certificate '$encryptorName' from primary to replica $replicaName")) {
+                                try {
+                                    Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' not found on $replicaName. Copying from primary."
+                                    $splatTdeCert = @{
+                                        Source          = $server
+                                        Destination     = $replicaServer
+                                        Database        = "master"
+                                        Certificate     = $encryptorName
+                                        SharedPath      = $SharedPath
+                                        EnableException = $true
+                                    }
+                                    if ($MasterKeySecurePassword) {
+                                        $splatTdeCert.MasterKeyPassword = $MasterKeySecurePassword
+                                    }
+                                    $null = Copy-DbaDbCertificate @splatTdeCert
+                                } catch {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed to copy TDE certificate '$encryptorName' to replica $replicaName." -ErrorRecord $_ -Continue
+                                }
+                            }
+                        } else {
+                            Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' already exists on replica $replicaName."
+                        }
+                    }
+                    if ($failure) {
+                        Stop-Function -Message "Failed to copy TDE certificate to all replicas for database $($db.Name)." -Continue
+                    }
+                } else {
+                    Write-Message -Level Warning -Message "Database $($db.Name) is TDE-encrypted with certificate '$encryptorName', but no SharedPath was provided. The TDE certificate must exist on all secondary replicas before the database can be added. Use -SharedPath and optionally -MasterKeySecurePassword to enable automatic certificate copying."
                 }
             }
 

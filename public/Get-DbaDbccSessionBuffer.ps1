@@ -56,6 +56,30 @@ function Get-DbaDbccSessionBuffer {
     .LINK
         https://dbatools.io/Get-DbaDbccSessionBuffer
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per row of DBCC buffer output. The exact properties depend on the -Operation parameter value.
+
+        When Operation is InputBuffer:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The fully qualified SQL Server instance name (computer\instance)
+        - SessionId: The session ID being examined (integer)
+        - EventType: The event type of the SQL statement (string)
+        - Parameters: Parameters associated with the SQL statement (string)
+        - EventInfo: Additional event information or the SQL statement itself (string)
+
+        When Operation is OutputBuffer:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The fully qualified SQL Server instance name (computer\instance)
+        - SessionId: The session ID being examined (integer)
+        - Buffer: The output buffer contents in ASCII format with non-printable characters removed (string)
+        - HexBuffer: The raw hexadecimal representation of the output buffer data (string, available but not displayed by default)
+
+        The default display via Select-DefaultView shows only ComputerName, InstanceName, SqlInstance, SessionId, and Buffer (or EventType/Parameters/EventInfo for InputBuffer) to maintain readability. Use Select-Object * to view all properties including HexBuffer.
+
     .EXAMPLE
         PS C:\> Get-DbaDbccSessionBuffer -SqlInstance Server1 -Operation InputBuffer -SessionId 51
 

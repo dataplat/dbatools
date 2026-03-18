@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "returns proper information" {
         BeforeAll {
-            $results = Get-DbaDefaultPath -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Data returns a value that contains :\" {

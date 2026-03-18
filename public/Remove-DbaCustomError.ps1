@@ -47,6 +47,11 @@ function Remove-DbaCustomError {
     .LINK
         https://dbatools.io/Remove-DbaCustomError
 
+    .OUTPUTS
+        None
+
+        This command does not return any output objects. It performs the removal operation on the SQL Server instance and returns control to the pipeline without emitting results.
+
     .EXAMPLE
         PS C:\> Remove-DbaCustomError -SqlInstance sqldev01, sqldev02 -MessageID 70001 -Language "French"
 

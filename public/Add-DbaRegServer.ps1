@@ -78,6 +78,34 @@ function Add-DbaRegServer {
     .LINK
         https://dbatools.io/Add-DbaRegServer
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer
+
+        Returns one RegisteredServer object for each server registered. Multiple servers can be returned when registering to different server groups or Central Management Server instances.
+
+        Default display properties (via Select-DefaultView):
+        - Name: Display name of the registered server as it appears in SSMS Registered Servers pane
+        - ServerName: The actual SQL Server connection string or instance name
+        - Group: The server group hierarchy path where the server is registered (null if in root)
+        - Description: User-provided description of the registered server
+        - Source: Origin of the registration (Central Management Servers, Local Server Groups, or Azure Data Studio)
+
+        Additional properties available (from SMO RegisteredServer object):
+        - ComputerName: The computer name of the CMS or local registration location
+        - InstanceName: The instance name of the CMS or local registration location
+        - SqlInstance: The full SQL instance identifier of the CMS (computer\instance)
+        - ParentServer: Reference to the parent server store object
+        - Id: Unique identifier of the registered server within its store
+        - ConnectionString: The connection string used to connect to the server
+        - SecureConnectionString: Encrypted version of the connection string
+        - ActiveDirectoryTenant: Azure AD tenant ID if using Azure AD authentication
+        - ActiveDirectoryUserId: Azure AD user principal name if using Azure AD authentication
+        - OtherParams: Additional connection string parameters
+        - CredentialPersistenceType: How credentials are stored (PersistLoginNameAndPassword, etc.)
+        - ServerType: Type of server (DatabaseEngine, AnalysisServices, etc.)
+        - FQDN: Fully qualified domain name (populated when -ResolveNetworkName is used on Get-DbaRegServer)
+        - IPAddress: IP address of the server (populated when -ResolveNetworkName is used on Get-DbaRegServer)
+
     .EXAMPLE
         PS C:\> Add-DbaRegServer -SqlInstance sql2008 -ServerName sql01
 

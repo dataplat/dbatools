@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $allDatabases = $instance.Databases
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -40,32 +40,32 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality" {
         It "Returns Results" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle
 
             $result.Count | Should -BeGreaterThan $allDatabases.Count
         }
 
         It "Includes Fixed Roles" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle
 
             $result.IsFixedRole | Select-Object -Unique | Should -Contain $true
         }
 
         It "Returns all role membership for all databases" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle
 
             $uniqueDatabases = $result.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeExactly $allDatabases.Count
         }
 
         It "Accepts a list of databases" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database "msdb"
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database "msdb"
 
             $result.Database | Select-Object -Unique | Should -Be "msdb"
         }
 
         It "Excludes databases" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -ExcludeDatabase "msdb"
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase "msdb"
 
             $uniqueDatabases = $result.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeExactly ($allDatabases.Count - 1)
@@ -73,19 +73,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts a list of roles" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Role "db_owner"
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Role "db_owner"
 
             $result.Name | Select-Object -Unique | Should -Be "db_owner"
         }
 
         It "Excludes roles" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -ExcludeRole "db_owner"
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -ExcludeRole "db_owner"
 
             $result.Name | Select-Object -Unique | Should -Not -Contain "db_owner"
         }
 
         It "Excludes fixed roles" {
-            $result = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -ExcludeFixedRole
+            $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -ExcludeFixedRole
 
             $result.IsFixedRole | Should -Not -Contain $true
             $result.Name | Select-Object -Unique | Should -Not -Contain "db_owner"

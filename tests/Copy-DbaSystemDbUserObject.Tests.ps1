@@ -67,30 +67,30 @@ CREATE RULE dbo.dbatoolsci_range_rule
 AS
 @range>= 1000 AND @range <20000;
 "@
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Function
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $TableFunction
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $Rule
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $Function
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $TableFunction
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $Rule
     }
 
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "DROP RULE dbo.dbatoolsci_range_rule;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP RULE dbo.dbatoolsci_range_rule;"
     }
 
     Context "When copying objects to the same instance" {
         It "Should execute successfully with default parameters" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute successfully with -Classic parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Classic
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute successfully with -Force parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.instance2 -Destination $TestConfig.instance2 -Force
+            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Force
             $results | Should -Not -BeNullOrEmpty
         }
     }

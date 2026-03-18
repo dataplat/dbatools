@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set up test database and table with duplicate indexes
         $dbName = "dbatools_dupeindex"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "create database [$dbName]"
         $server.Query($sql)
         $sql = "CREATE TABLE [$dbName].[dbo].[WABehaviorEvent](
@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup test database
         $splatRemove = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             Database    = "dbatools_dupeindex"
         }
         Remove-DbaDatabase @splatRemove -ErrorAction SilentlyContinue
@@ -81,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets back some results" {
         It "return at least two results" {
             $splatFind = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "dbatools_dupeindex"
             }
             $results = @(Find-DbaDbDuplicateIndex @splatFind)

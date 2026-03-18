@@ -55,6 +55,25 @@ function Resolve-DbaNetworkName {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one network information object per input computer name. Each object contains comprehensive network resolution details with the following properties:
+
+        - InputName (string): The original input value as provided by the user (computer name, IP address, or instance name)
+        - ComputerName (string): The hostname only, in uppercase (e.g., "SERVER01")
+        - IPAddress (string): The IP address that responded to connectivity tests, either IPv4 or IPv6
+        - DNSHostname (string): The hostname portion from DNS resolution (lowercase), coming from DNS as reported by the local system
+        - DNSDomain (string): The domain suffix from DNS resolution, as reported by the local system's DNS configuration
+        - Domain (string): The domain name from Active Directory, representing the domain the computer is joined to
+        - DNSHostEntry (string): The fully qualified domain name as returned by [System.Net.Dns]::GetHostEntry()
+        - FQDN (string): Legacy notation combining ComputerName and Domain with a dot separator (e.g., "SERVER01.CONTOSO.COM")
+        - FullComputerName (string): The full computer name as configured within the operating system, matching the DNSHostName property in Active Directory
+
+        When -Turbo is specified, the same object structure is returned but with results based on DNS resolution only, without connecting to the target computer or performing ICMP ping tests. This provides faster results but may be less accurate in disjoint-domain environments.
+
+        Note: FullComputerName is the most reliable property across all network configurations as it matches between AD and DNS in both standard and disjoint-domain environments.
+
     .NOTES
         Tags: Network, Connection, Resolve
         Author: Klaas Vandenberghe (@PowerDBAKlaas) | Simone Bizzotto (@niphold)

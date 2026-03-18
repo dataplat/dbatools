@@ -67,6 +67,11 @@ function Remove-DbaDbRole {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        None
+
+        This function performs role removal operations but does not return any output objects. Success or failure information is provided through verbose messages and warning messages during execution.
+
     .LINK
         https://dbatools.io/Remove-DbaDbRole
 

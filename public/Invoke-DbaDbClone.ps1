@@ -67,6 +67,34 @@ function Invoke-DbaDbClone {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each cloned database created. When cloning a source database to multiple clone names (via -CloneDatabase parameter with multiple values), one Database object is returned per clone created.
+
+        Default display properties (via Select-DefaultView from Get-DbaDatabase):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the cloned database
+        - Status: Current database status (Normal, Offline, Recovering, etc.)
+        - IsAccessible: Boolean indicating if the database is currently accessible
+        - RecoveryModel: Database recovery model (Full, Simple, or BulkLogged)
+        - LogReuseWaitStatus: Status of transaction log reuse
+        - Size: Database size in megabytes
+        - Owner: Database owner login name
+        - Collation: Database collation setting
+        - Encrypted: Boolean indicating if Transparent Data Encryption (TDE) is enabled
+
+        Additional properties available from the SMO Database object using Select-Object *:
+        - CreateDate: DateTime when the database was created
+        - LastFullBackup: DateTime of the most recent full backup
+        - LastDiffBackup: DateTime of the most recent differential backup
+        - LastLogBackup: DateTime of the most recent transaction log backup
+        - DatabaseEngineEdition: Edition of SQL Server (Enterprise, Standard, Express, etc.)
+        - ID: Database ID assigned by SQL Server
+        - And many other SMO Database properties (see https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.database)
+
     .LINK
         https://dbatools.io/Invoke-DbaDbClone
 

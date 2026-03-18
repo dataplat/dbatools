@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailSettings = @{
             AccountRetryAttempts           = "1"
             AccountRetryDelay              = "60"
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Settings" {
         BeforeAll {
-            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.InstanceSingle
             $mailSettings = @{
                 AccountRetryAttempts           = "1"
                 AccountRetryDelay              = "60"
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Settings when using -Name" {
         BeforeAll {
-            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.instance2 -Name "ProhibitedExtensions"
+            $results = Get-DbaDbMailConfig -SqlInstance $TestConfig.InstanceSingle -Name "ProhibitedExtensions"
         }
 
         It "Gets results" {

@@ -62,6 +62,20 @@ function Install-DbaWhoIsActive {
     .LINK
         https://dbatools.io/Install-DbaWhoIsActive
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance where sp_WhoIsActive was installed or updated.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database where sp_WhoIsActive was installed
+        - Name: Always 'sp_WhoisActive', the name of the installed stored procedure
+        - Version: The version of sp_WhoIsActive that was installed (extracted from the procedure source code)
+        - Status: String indicating 'Installed' for new installations or 'Updated' if the procedure already existed
+
     .EXAMPLE
         PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
 
@@ -129,7 +143,6 @@ function Install-DbaWhoIsActive {
 
             $sql = [IO.File]::ReadAllText($sqlfile)
             $sql = $sql -replace 'USE master', ''
-            $batches = $sql -split "GO\r\n"
 
             $matchString = 'Who Is Active? v'
 
@@ -173,12 +186,11 @@ function Install-DbaWhoIsActive {
 
                     if ($server.Databases[$Database]) {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
-                        foreach ($batch in $batches) {
-                            try {
-                                $null = $server.databases[$Database].ExecuteNonQuery($batch)
-                            } catch {
-                                Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
-                            }
+                        try {
+                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
+                        } catch {
+                            Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
                         }
 
                         if ($ProcedureExists -gt 0) {

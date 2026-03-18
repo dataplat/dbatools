@@ -38,15 +38,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase
-        New-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 -Name dbatoolsciqs
+        Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase
+        New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Name dbatoolsciqs
     }
     AfterAll {
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1, $TestConfig.instance2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase
+        Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase
     }
     Context "When testing Query Store functionality" {
         It "should warn for SQL Server versions below 2016" {
-            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+            foreach ($instance in ($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 
@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should return valid results for supported SQL Server versions" {
-            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+            foreach ($instance in ($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
                 $results = Get-DbaDbQueryStoreOption -SqlInstance $server -WarningVariable warning 3>&1
 
@@ -74,7 +74,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should change the specified param to the new value" {
-            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+            foreach ($instance in ($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
                 if ($server.VersionMajor -ge 13) {
                     $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval 901 -State ReadWrite
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should only get one database when specified" {
-            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+            foreach ($instance in ($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
                 if ($server.VersionMajor -ge 13) {
                     $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs
@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should not get excluded database" {
-            foreach ($instance in ($TestConfig.instance1, $TestConfig.instance2)) {
+            foreach ($instance in ($TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2)) {
                 $server = Connect-DbaInstance -SqlInstance $instance
                 if ($server.VersionMajor -ge 13) {
                     $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -ExcludeDatabase dbatoolsciqs

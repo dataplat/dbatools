@@ -33,6 +33,20 @@ function Get-DbaInstanceUserOption {
     .LINK
         https://dbatools.io/Get-DbaInstanceUserOption
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Property
+
+        Returns one Property object per user option configured at the instance level, representing the default user options that apply to new database connections.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the user option (e.g., ANSI_NULLS, QUOTED_IDENTIFIER, ANSI_PADDING, ANSI_WARNINGS, ARITHABORT, CONCAT_NULL_YIELDS_NULL, CURSOR_CLOSE_ON_COMMIT, NUMERIC_ROUNDABORT, IMPLICIT_TRANSACTIONS)
+        - Value: The current value of the user option (typically ON or OFF for boolean options, or a numeric value)
+
+        All properties from the base SMO Property object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaInstanceUserOption -SqlInstance localhost
 

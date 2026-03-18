@@ -45,6 +45,22 @@ function Test-DbaInstanceName {
     .LINK
         https://dbatools.io/Test-DbaInstanceName
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance analyzed, containing instance identification, current vs. expected server names, rename requirements, and any blockers preventing safe rename operations.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - ServerName: The current configured server name from @@servername
+        - NewServerName: The expected server name based on hostname and instance name
+        - RenameRequired: Boolean indicating whether a rename is needed (true when NewServerName differs from ServerName)
+        - Updatable: Boolean or "N/A" - indicates if the instance can be safely renamed (false when blockers exist, true when safe, "N/A" when no rename needed)
+        - Warnings: Warning message about SQL Server Reporting Services needing update if found, or "N/A" if not applicable
+        - Blockers: Array of reasons preventing rename (database mirroring, replication, or remote logins), or "N/A" if no blockers exist
+
     .EXAMPLE
         PS C:\> Test-DbaInstanceName -SqlInstance sqlserver2014a
 

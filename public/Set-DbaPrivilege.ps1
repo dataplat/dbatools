@@ -4,7 +4,7 @@ function Set-DbaPrivilege {
         Grants essential Windows privileges to SQL Server service accounts for optimal performance and security.
 
     .DESCRIPTION
-        Configures critical Windows privileges for SQL Server service accounts including Lock Pages in Memory (LPIM), Instant File Initialization (IFI), Logon as Batch, Logon as Service, and Generate Security Audits. These privileges are essential for SQL Server performance optimization and proper service operation, eliminating the need to manually configure them through Local Security Policy. The function automatically discovers SQL service accounts on target computers or allows you to specify custom accounts, then uses secedit to update the local security policy.
+        Configures critical Windows privileges for SQL Server service accounts including Lock Pages in Memory (LPIM), Instant File Initialization (IFI), Logon as Batch, Logon as Service, Generate Security Audits, and Create Global Objects. These privileges are essential for SQL Server performance optimization and proper service operation, eliminating the need to manually configure them through Local Security Policy. The function automatically discovers SQL service accounts on target computers or allows you to specify custom accounts, then uses secedit to update the local security policy.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -15,8 +15,8 @@ function Set-DbaPrivilege {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Type
-        Specifies which Windows privileges to grant to the SQL Server service accounts. Accepts one or more values: 'IFI' (Instant File Initialization), 'LPIM' (Lock Pages in Memory), 'BatchLogon' (Log on as a batch job), 'SecAudit' (Generate security audits), and 'ServiceLogon' (Log on as a service).
-        These privileges are essential for SQL Server performance and functionality - IFI speeds up database file operations, LPIM prevents memory paging for better performance, and the logon rights ensure services can start properly.
+        Specifies which Windows privileges to grant to the SQL Server service accounts. Accepts one or more values: 'IFI' (Instant File Initialization), 'LPIM' (Lock Pages in Memory), 'BatchLogon' (Log on as a batch job), 'SecAudit' (Generate security audits), 'ServiceLogon' (Log on as a service), and 'CreateGlobalObjects' (Create global objects).
+        These privileges are essential for SQL Server performance and functionality - IFI speeds up database file operations, LPIM prevents memory paging for better performance, the logon rights ensure services can start properly, and CreateGlobalObjects is required by certain backup solutions (e.g. Dell PowerProtect, Redgate, Veritas) whose SQL backup agents need to create named objects in the Global namespace.
         Multiple privileges can be specified together for comprehensive SQL Server optimization.
 
     .PARAMETER User
@@ -46,6 +46,11 @@ function Set-DbaPrivilege {
     .LINK
         https://dbatools.io/Set-DbaPrivilege
 
+    .OUTPUTS
+        None
+
+        This command performs configuration operations and does not return any objects to the pipeline. Status and informational messages are displayed through Write-Message during execution (visible at Verbose level).
+
     .EXAMPLE
         PS C:\> Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI
 
@@ -64,7 +69,7 @@ function Set-DbaPrivilege {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
-        [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit', 'ServiceLogon')]
+        [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit', 'ServiceLogon', 'CreateGlobalObjects')]
         [string[]]$Type,
         [switch]$EnableException,
         [string]$User
@@ -91,19 +96,27 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                         }
 
-                        $SQLServiceAccounts = @();
+                        $SQLServiceAccounts = @()
+                        $SQLPerServiceSIDs = @()
                         if (Test-Bound 'User') {
-                            $SQLServiceAccounts += $User;
+                            $SQLServiceAccounts += $User
+                            $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $SQLServiceAccounts += (Get-DbaService -ComputerName $computer -Type Engine).StartName
+                            $services = Get-DbaService -ComputerName $computer -Type Engine
+                            $SQLServiceAccounts += $services.StartName
+                            # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
+                            # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID
+                            # for file operations (IFI) and memory operations (LPIM), matching setup.exe behavior.
+                            $SQLPerServiceSIDs += $services | ForEach-Object { "NT SERVICE\$($_.ServiceName)" }
                         }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $Type -ScriptBlock {
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type -ScriptBlock {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
+                                    $SQLPerServiceSIDs,
                                     $Type
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
@@ -120,7 +133,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
                                         } elseif ($BLline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
+                                            (Get-Content $tempfile) -replace "(SeBatchLogonRight = .+)", "`$1,*$SID" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
@@ -132,7 +145,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                                 if ('IFI' -in $Type) {
                                     $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    # Use per-service SIDs for IFI: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID for volume maintenance tasks, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if (-not $IFIline) {
                                             $IFIline = "SeManageVolumePrivilege = *$SID"
@@ -141,7 +156,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
                                         } elseif ($IFIline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
+                                            (Get-Content $tempfile) -replace "(SeManageVolumePrivilege = .+)", "`$1,*$SID" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
@@ -153,7 +168,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                                 if ('LPIM' -in $Type) {
                                     $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    # Use per-service SIDs for LPIM: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID for locked memory pages, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
                                         if (-not $LPIMline) {
                                             $LPIMline = "SeLockMemoryPrivilege = *$SID"
@@ -162,7 +179,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
                                         } elseif ($LPIMline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
+                                            (Get-Content $tempfile) -replace "(SeLockMemoryPrivilege = .+)", "`$1,*$SID" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
@@ -173,17 +190,19 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     }
                                 }
                                 if ('SecAudit' -in $Type) {
-                                    $Line = Get-Content $tempfile | Where-Object { $_ -match "SeAuditPrivilege" }
-                                    ForEach ($acc in $SQLServiceAccounts) {
+                                    $SALine = Get-Content $tempfile | Where-Object { $_ -match "SeAuditPrivilege" }
+                                    # Use per-service SIDs for SecAudit: SQL Server uses the NT SERVICE\<ServiceName>
+                                    # SID when writing security audit events, matching SQL Server setup.exe behavior.
+                                    ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
-                                        if (-not $Line) {
-                                            $Line = "SeAuditPrivilege = *$SID"
-                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$Line" |
+                                        if (-not $SALine) {
+                                            $SALine = "SeAuditPrivilege = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$SALine" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Security Log Privileges on $env:ComputerName"
-                                        } elseif ($Line -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "SeAuditPrivilege = ", "SeAuditPrivilege = *$SID," |
+                                        } elseif ($SALine -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "(SeAuditPrivilege = .+)", "`$1,*$SID" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Write to Security Log Privileges on $env:ComputerName"
@@ -204,7 +223,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
                                         } elseif ($SLline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "SeServiceLogonRight = ", "SeServiceLogonRight = *$SID," |
+                                            (Get-Content $tempfile) -replace "(SeServiceLogonRight = .+)", "`$1,*$SID" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
@@ -214,8 +233,29 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
+                                if ('CreateGlobalObjects' -in $Type) {
+                                    $CGOline = Get-Content $tempfile | Where-Object { $_ -match "SeCreateGlobalPrivilege" }
+                                    ForEach ($acc in $SQLServiceAccounts) {
+                                        $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $CGOline) {
+                                            $CGOline = "SeCreateGlobalPrivilege = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$CGOline" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Create Global Objects Privileges on $env:ComputerName"
+                                        } elseif ($CGOline -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "(SeCreateGlobalPrivilege = .+)", "`$1,*$SID" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Create Global Objects Privileges on $env:ComputerName"
+                                        } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "$acc already has Create Global Objects Privilege on $env:ComputerName"
+                                        }
+                                    }
+                                }
                                 $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite /quiet
-                            } -ErrorAction SilentlyContinue
+                            }
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
                             Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
                         } else {

@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname = "dbatoolsci_test_$(Get-Random)"
 
         # Create the objects.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("Create Database [$dbname]")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -43,14 +43,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets Changed Extents for Multiple Databases" {
         BeforeAll {
-            $multiDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.instance2
+            $multiDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Gets results" {
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Changed Extents for Single Database" {
         BeforeAll {
-            $singleDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.instance2 -Database $dbname
+            $singleDbResults = Get-DbaDbExtentDiff -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         }
 
         It "Gets results" {

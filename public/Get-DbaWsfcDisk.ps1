@@ -28,6 +28,30 @@ function Get-DbaWsfcDisk {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per clustered disk partition found on the failover cluster.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: The name of the Windows Server Failover Cluster
+        - ClusterFqdn: The fully qualified domain name of the cluster
+        - ResourceGroup: The owner group of the disk resource
+        - Disk: The disk resource name
+        - State: The current state of the disk resource
+        - FileSystem: The file system type (NTFS, ReFS, etc.)
+        - Path: The mount path of the disk partition
+        - Label: The volume label assigned to the disk
+        - Size: Total size of the disk partition; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - Free: Free space available on the disk partition; dbasize object with unit conversion
+        - SerialNumber: The serial number of the physical disk
+
+        Additional properties available (using Select-Object *):
+        - MountPoints: Array of mount points for the disk partition
+        - ClusterDisk: The CIM MSCluster_Disk object representing the physical disk
+        - ClusterDiskPart: The CIM MSCluster_DiskPartition object with full partition metadata
+        - ClusterResource: The CIM MSCluster_Resource object representing the cluster resource
+
     .LINK
         https://dbatools.io/Get-DbaWsfcDisk
 

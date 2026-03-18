@@ -46,6 +46,35 @@ function Get-DbaWaitResource {
     .LINK
         https://dbatools.io/Get-DbaWaitResource
 
+    .OUTPUTS
+        PSCustomObject
+
+        Output varies based on the wait resource type specified:
+
+        PAGE Wait Resources (when WaitResource matches 'PAGE: dbid:fileid:pageid' format):
+        Returns one object with the following properties:
+        - DatabaseID: The database ID from the wait resource
+        - DatabaseName: The name of the database containing the page
+        - DataFileName: The logical name of the data file containing the page
+        - DataFilePath: The physical file system path to the data file
+        - ObjectID: The internal object ID (table or index) owning the page
+        - ObjectName: The name of the table or index that owns the page
+        - ObjectSchema: The schema name containing the object
+        - ObjectType: The type of object (USER_TABLE, CLUSTERED_INDEX, NONCLUSTERED_INDEX, HEAP, etc.)
+
+        KEY Wait Resources (when WaitResource matches 'KEY: hobtid (physicallocation)' format):
+        Returns one object with the following properties:
+        - DatabaseID: The database ID from the wait resource
+        - DatabaseName: The name of the database containing the key
+        - SchemaName: The schema name containing the object
+        - IndexName: The name of the index or heap being waited on
+        - ObjectID: The internal object ID of the table
+        - ObjectName: The name of the table that owns the index or heap
+        - HobtID: The heap or B-tree ID (allocation unit ID) being waited on
+
+        When -Row is specified with KEY wait resources:
+        The output is expanded to include the actual data row from the table. The full row contents are returned as properties matching the table's column names. When the row data cannot be retrieved (row was deleted or moved), only the key resource object properties are returned.
+
     .EXAMPLE
         PS C:\> Get-DbaWaitResource -SqlInstance server1 -WaitResource 'PAGE: 10:1:9180084'
 

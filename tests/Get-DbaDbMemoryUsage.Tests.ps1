@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
     }
 
     Context "Functionality" {

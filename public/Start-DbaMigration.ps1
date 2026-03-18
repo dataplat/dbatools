@@ -52,6 +52,11 @@ function Start-DbaMigration {
         Specifies credentials to connect to the destination SQL Server instance(s). Use when the current Windows account lacks sufficient permissions.
         Accepts PowerShell credential objects created with Get-Credential for SQL Authentication or alternative Windows accounts.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER BackupRestore
         Uses backup and restore method to migrate databases instead of detach/attach. Creates copy-only backups to preserve existing backup chains.
         Requires either -SharedPath for new backups or -UseLastBackup to restore from existing backup files.
@@ -96,6 +101,11 @@ function Start-DbaMigration {
         Sets migrated databases to read-only mode on the source server before migration begins.
         This prevents data changes during migration and helps ensure data consistency.
         When combined with -Reattach, databases remain read-only after being reattached to the source.
+
+    .PARAMETER SetSourceOffline
+        Sets migrated databases offline on the source server before migration begins.
+        This prevents any connections to the source databases during migration, ensuring complete isolation.
+        When combined with -Reattach, databases are brought back online after being reattached to the source.
 
     .PARAMETER AzureCredential
         Specifies the name of a SQL Server credential for accessing Azure Storage when SharedPath points to an Azure Storage account.
@@ -147,6 +157,10 @@ function Start-DbaMigration {
         Required when migrating databases with encrypted objects or certificates that need master key protection.
         Must be provided as a SecureString object for security.
 
+    .PARAMETER ExcludePassword
+        Copies credentials, linked servers, and other objects without the actual password values.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+
     .PARAMETER Force
         Overwrites existing objects on the destination server without prompting for confirmation.
         For databases: drops existing databases with matching names before restoring.
@@ -175,6 +189,21 @@ function Start-DbaMigration {
     .LINK
         https://dbatools.io/Start-DbaMigration
 
+    .OUTPUTS
+        Object (output from Copy-DbaDatabase command when -Exclude Databases is not specified)
+
+        When databases are migrated (default behavior unless -Exclude Databases is used), this function returns the output from Copy-DbaDatabase. The specific object type and properties depend on the migration method selected:
+
+        When using -BackupRestore method:
+        Returns database migration status objects showing which databases were successfully restored on destination servers.
+
+        When using -DetachAttach method:
+        Returns database reattachment status objects showing which databases were successfully attached on destination servers.
+
+        No output is returned when -Exclude Databases is specified, as the function then only migrates server-level objects without providing pipeline output.
+
+        All other migration operations (logins, SQL Agent jobs, configuration, etc.) perform their tasks without returning objects to the pipeline. Use -Verbose to see detailed progress messages for all migration steps.
+
     .EXAMPLE
         PS C:\> Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach
 
@@ -202,6 +231,11 @@ function Start-DbaMigration {
         Migrates databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
 
     .EXAMPLE
+        PS C:\> Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -BackupRestore -SharedPath "\\fileserver\backups" -SetSourceOffline
+
+        Migrates databases using backup/restore method. Sets source databases offline before migration to prevent any connections during the process.
+
+    .EXAMPLE
         PS C:\> $PSDefaultParameters = @{
         >> "dbatools:Source" = "sqlcluster"
         >> "dbatools:Destination" = "sql2016"
@@ -217,6 +251,7 @@ function Start-DbaMigration {
     param (
         [DbaInstanceParameter]$Source,
         [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$Credential,
         [switch]$DetachAttach,
         [switch]$Reattach,
         [switch]$BackupRestore,
@@ -225,6 +260,7 @@ function Start-DbaMigration {
         [switch]$WithReplace,
         [switch]$NoRecovery,
         [switch]$SetSourceReadOnly,
+        [switch]$SetSourceOffline,
         [switch]$ReuseSourceFolderStructure,
         [switch]$IncludeSupportDbs,
         [PSCredential]$SourceSqlCredential,
@@ -238,6 +274,7 @@ function Start-DbaMigration {
         [switch]$KeepCDC,
         [switch]$KeepReplication,
         [switch]$Continue,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [string]$AzureCredential,
         [Security.SecureString]$MasterKeyPassword,
@@ -322,7 +359,40 @@ function Start-DbaMigration {
         }
 
         try {
-            $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            # Do we need a dedicated admin connection to the source for password retrieval?
+            # If not all of the three are excluded, we do
+            $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'DatabaseMail' -or $Exclude -notcontains 'LinkedServers'
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+
+            $dacOpened = $false
+            if ($dacNeeded) {
+                if ($dacConnected) {
+                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                    $sourceServerDac = $Source.InputObject
+                    # Reconnect without DAC for Copy-DbaDatabase
+                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                    Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                }
+            } else {
+                if ($dacConnected) {
+                    # Reconnect without DAC for Copy-DbaDatabase
+                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                }
+            }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -356,13 +426,21 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'Credentials') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL credentials"
             Write-Message -Level Verbose -Message "Migrating SQL credentials"
-            Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaCredential -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'DatabaseMail') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating database mail"
             Write-Message -Level Verbose -Message "Migrating database mail"
-            Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaDbMail -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'CentralManagementServer') {
@@ -392,6 +470,7 @@ function Start-DbaMigration {
                 Destination                = $Destination
                 DestinationSqlCredential   = $DestinationSqlCredential
                 SetSourceReadOnly          = $SetSourceReadOnly
+                SetSourceOffline           = $SetSourceOffline
                 ReuseSourceFolderStructure = $ReuseSourceFolderStructure
                 AllDatabases               = $true
                 Force                      = $Force
@@ -424,7 +503,9 @@ function Start-DbaMigration {
                 }
             }
 
-            Copy-DbaDatabase @CopyDatabaseSplat
+            Copy-DbaDatabase @CopyDatabaseSplat | ForEach-Object {
+                $PSItem
+            }
         }
 
         if ($Exclude -notcontains 'Logins') {
@@ -445,7 +526,11 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'LinkedServers') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating linked servers"
             Write-Message -Level Verbose -Message "Migrating linked servers"
-            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            if ($dacNeeded) {
+                Copy-DbaLinkedServer -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            } else {
+                Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
         }
 
         if ($Exclude -notcontains 'DataCollector') {
@@ -518,6 +603,9 @@ function Start-DbaMigration {
         }
     }
     end {
+        if ($dacOpened) {
+            $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+        }
         if (Test-FunctionInterrupt) { return }
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
         Write-Message -Level Verbose -Message "SQL Server migration complete."

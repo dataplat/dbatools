@@ -62,6 +62,22 @@ function Copy-DbaAgentOperator {
     .LINK
         https://dbatools.io/Copy-DbaAgentOperator
 
+    .OUTPUTS
+        MigrationObject (PSCustomObject)
+
+        Returns one object per operator processed, containing the migration status for that operator.
+
+        Default display properties:
+        - DateTime: Timestamp when the copy operation was executed
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: The name of the Agent Operator that was copied
+        - Type: Always set to "Agent Operator"
+        - Status: Result of the copy operation (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation result (e.g., "Already exists on destination")
+
+        All properties from the object are accessible via Select-Object * if needed.
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
 

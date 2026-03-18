@@ -96,6 +96,39 @@ function Invoke-DbaDbShrink {
         Accepts database objects from the pipeline, typically from Get-DbaDatabase output.
         Use this for advanced filtering scenarios or when combining multiple database operations in a pipeline.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file that was successfully shrunk, providing detailed metrics about the shrink operation including space reclaimed, fragmentation changes, and execution time.
+
+        Default properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the file
+        - File: The logical name of the database file that was shrunk
+        - Start: DateTime when the shrink operation began
+        - End: DateTime when the shrink operation completed
+        - Elapsed: Total execution time in HH:mm:ss format
+        - Success: Boolean indicating if the shrink operation completed successfully
+        - InitialSize: Original size of the file before shrinking (dbasize object)
+        - InitialUsed: Amount of space used in the file before shrinking (dbasize object)
+        - InitialAvailable: Amount of free space in the file before shrinking (dbasize object)
+        - TargetAvailable: Target amount of free space requested via -PercentFreeSpace parameter (dbasize object)
+        - FinalAvailable: Amount of free space remaining in the file after shrinking (dbasize object)
+        - FinalSize: Final size of the file after shrinking (dbasize object)
+        - InitialAverageFragmentation: Average index fragmentation percentage before shrinking (numeric, 0-100); null if -ExcludeIndexStats was used or SQL Server 2000
+        - FinalAverageFragmentation: Average index fragmentation percentage after shrinking (numeric, 0-100); null if -ExcludeIndexStats was used or SQL Server 2000
+        - InitialTopFragmentation: Maximum index fragmentation percentage before shrinking (numeric, 0-100); null if -ExcludeIndexStats was used or SQL Server 2000
+        - FinalTopFragmentation: Maximum index fragmentation percentage after shrinking (numeric, 0-100); null if -ExcludeIndexStats was used or SQL Server 2000
+        - Notes: Warning message about potential index fragmentation and recommended post-shrink maintenance
+
+        When -ExcludeIndexStats is specified:
+        - The four fragmentation properties (InitialAverageFragmentation, FinalAverageFragmentation, InitialTopFragmentation, FinalTopFragmentation) are excluded from the output
+        - All other properties remain available
+
+        All size properties (InitialSize, InitialUsed, etc.) are dbasize objects that automatically format as human-readable units (Bytes, KB, MB, GB, TB) when displayed. Access the .Bytes, .Kilobytes, .Megabytes, .Gigabytes, or .Terabytes properties for specific unit conversions.
+
     .NOTES
         Tags: Shrink, Database
         Author: Chrissy LeMaire (@cl), netnerds.net

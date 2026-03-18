@@ -43,6 +43,24 @@ function Find-DbaBackup {
     .LINK
         https://dbatools.io/Find-DbaBackup
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one file object for each backup file found in the specified directory and subdirectories that meets the age and archive bit criteria.
+
+        Properties:
+        - FullName: The complete path to the backup file
+        - Name: The file name including extension
+        - Extension: The file extension (e.g., .bak, .trn, .dif, .log)
+        - DirectoryName: The directory containing the file
+        - Length: The file size in bytes
+        - LastWriteTime: The timestamp when the file was last modified, used to determine if it meets the retention period
+        - Attributes: File attributes including the Archive bit status (checked when -CheckArchiveBit is specified)
+        - CreationTime: The timestamp when the file was created
+        - LastAccessTime: The timestamp when the file was last accessed
+
+        These file objects are suitable for piping to Remove-Item or other file management cmdlets for automated cleanup workflows.
+
     .EXAMPLE
         PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
 

@@ -44,6 +44,10 @@ function Set-DbaDbCompression {
         Forces compression operations to use offline rebuilds instead of the default online rebuilds when possible. Online rebuilds keep tables accessible during compression but use more resources.
         Use this switch when you need to minimize resource usage during compression or when experiencing issues with online operations. Offline rebuilds will make tables unavailable during the compression process.
 
+    .PARAMETER SortInTempDB
+        Specifies that intermediate sort operations during index rebuilds should use the tempdb database. This can speed up index creation and reduce space usage in the user database at the expense of tempdb.
+        Use this switch when rebuilding large indexes to avoid filling the user database's log or data files. Requires sufficient space in tempdb for the sort operations.
+
     .PARAMETER InputObject
         Accepts compression recommendations from Test-DbaDbCompression and applies those specific recommendations instead of running a new analysis.
         Use this when you want to review compression recommendations first, then apply only the ones you approve of. This approach gives you more control over which objects get compressed.
@@ -69,6 +73,36 @@ function Set-DbaDbCompression {
 
     .LINK
         https://dbatools.io/Set-DbaDbCompression
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per partition for each table or index that was compressed. When using Recommended compression mode, returns the original compression analysis object with an additional AlreadyProcessed property indicating whether the recommendation was applied.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name
+        - Schema: The schema name containing the table
+        - TableName: The name of the table
+        - IndexName: The name of the index; null for heap partitions, contains index name for indexed partitions
+        - Partition: The partition number (1-based, or 1 for non-partitioned objects)
+        - IndexID: The index ID number - 0 for heaps, greater than 0 for indexes
+        - IndexType: The type of index structure (Heap, ClusteredIndex, or other SMO index type values)
+        - CompressionTypeRecommendation: The compression type that was applied (ROW, PAGE, or NONE in uppercase)
+        - AlreadyProcessed: A flag indicating if the object was successfully processed (True or False as string)
+        - PercentScan: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PercentUpdate: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - RowEstimatePercentOriginal: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PageEstimatePercentOriginal: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - SizeCurrent: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - SizeRequested: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+        - PercentCompression: Placeholder property from Test-DbaDbCompression analysis (always null in output)
+
+        When using CompressionType parameter (Row, Page, or None), returns objects for each partition that was compressed.
+        When using CompressionType Recommended (default), returns objects from Test-DbaDbCompression with the AlreadyProcessed property added.
+        In Recommended mode, only objects with CompressionTypeRecommendation that is not 'NO_GAIN' or '?' and meets the PercentCompression threshold are output.
 
     .EXAMPLE
         PS C:\> Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
@@ -120,6 +154,7 @@ function Set-DbaDbCompression {
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         [switch]$ForceOfflineRebuilds,
+        [switch]$SortInTempDB,
         $InputObject,
         [switch]$EnableException
     )
@@ -215,6 +250,7 @@ function Set-DbaDbCompression {
                                     $underlyingObj = $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName]
                                     ($underlyingObj.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $obj.Partition }).DataCompression = $obj.CompressionTypeRecommendation
                                     $underlyingObj.OnlineIndexOperation = $CanDoOnlineOperation
+                                    $underlyingObj.SortInTempdb = $SortInTempDB
                                     $underlyingObj.Rebuild()
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.TableName) - index $($obj.IndexName) - partition $($obj.Partition)" -Target $db -ErrorRecord $_ -Continue
@@ -280,16 +316,19 @@ function Set-DbaDbCompression {
                                         ## Once this UserVoice item is fixed the workaround can be removed
                                         ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
                                         if ($CompressionType -eq "None") {
-                                            $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH"
+                                            $withOptions = @("DATA_COMPRESSION = $CompressionType")
                                             if ($CanDoOnlineOperation) {
-                                                $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
-                                            } else {
-                                                $query += "(DATA_COMPRESSION = $CompressionType)"
+                                                $withOptions += "ONLINE = ON"
                                             }
+                                            if ($SortInTempDB) {
+                                                $withOptions += "SORT_IN_TEMPDB = ON"
+                                            }
+                                            $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH ($($withOptions -join ", "))"
                                             $Server.Query($query, $db.Name)
                                         } else {
                                             $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                             $index.OnlineIndexOperation = $CanDoOnlineOperation
+                                            $index.SortInTempdb = $SortInTempDB
                                             $index.Rebuild()
                                         }
                                     } catch {
@@ -327,15 +366,19 @@ function Set-DbaDbCompression {
                                     ## Once this UserVoice item is fixed the workaround can be removed
                                     ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
                                     if ($CompressionType -eq "None") {
+                                        $withOptions = @("DATA_COMPRESSION = $CompressionType")
                                         if ($CanDoOnlineOperation) {
-                                            $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
-                                        } else {
-                                            $query += "(DATA_COMPRESSION = $CompressionType)"
+                                            $withOptions += "ONLINE = ON"
                                         }
+                                        if ($SortInTempDB) {
+                                            $withOptions += "SORT_IN_TEMPDB = ON"
+                                        }
+                                        $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH ($($withOptions -join ", "))"
                                         $Server.Query($query, $db.Name)
                                     } else {
                                         $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                         $index.OnlineIndexOperation = $CanDoOnlineOperation
+                                        $index.SortInTempdb = $SortInTempDB
                                         $index.Rebuild()
                                     }
                                 } catch {

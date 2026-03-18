@@ -133,6 +133,33 @@ function New-DbaFirewallRule {
     .LINK
         https://dbatools.io/New-DbaFirewallRule
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per firewall rule created, providing comprehensive details about the rule configuration and creation status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the firewall rule was created
+        - InstanceName: The SQL Server instance name; $null for Browser rules
+        - SqlInstance: The full SQL Server instance name (computer\instance); $null for Browser rules
+        - DisplayName: The display name of the firewall rule (e.g., 'SQL Server default instance', 'SQL Server Browser')
+        - Type: The type of firewall rule created (Engine, Browser, DAC, DatabaseMirroring)
+        - Successful: Boolean indicating if the rule creation was successful
+        - Status: Human-readable status message describing the outcome (e.g., 'The rule was successfully created.', 'The desired rule already exists. Use -Force to remove and recreate the rule.')
+        - Protocol: The protocol type of the rule (TCP, UDP, or Any)
+        - LocalPort: The TCP/UDP port number for port-based rules; $null for Program-based rules
+        - Program: The executable program path for Program-based rules; $null for Port-based rules
+
+        Additional properties available (using Select-Object *):
+        - Name: The internal name of the firewall rule (same as DisplayName)
+        - RuleConfig: Complete hashtable containing all New-NetFirewallRule parameters used to create the rule
+        - Details: PSCustomObject containing remote command execution details with properties:
+            - Successful: Boolean indicating overall success status
+            - CimInstance: The CIM instance object returned by New-NetFirewallRule
+            - Warning: Warning messages from rule creation (if any)
+            - Error: Error messages from rule creation (if any)
+            - Exception: Exception details if an error occurred (if any)
+
     .EXAMPLE
         PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST
 

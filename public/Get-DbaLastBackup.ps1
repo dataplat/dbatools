@@ -25,6 +25,12 @@ function Get-DbaLastBackup {
         Excludes specific databases from the backup history check. Commonly used to skip system databases or test databases.
         Use this when you want to check most databases but exclude certain ones like tempdb, development databases, or databases with known backup exemptions.
 
+    .PARAMETER ExcludeReplica
+        When this switch is enabled, databases in an AlwaysOn Availability Group where the current SQL Server instance
+        is not the preferred backup replica are excluded from the results.
+        This is useful when running Get-DbaLastBackup against multiple servers in an availability group to avoid
+        false positives where secondary replicas appear to have missing backups because backups are taken on the preferred replica only.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -40,6 +46,34 @@ function Get-DbaLastBackup {
 
     .LINK
         https://dbatools.io/Get-DbaLastBackup
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed, containing backup status information and compliance metrics.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database
+        - LastFullBackup: DateTime of the most recent full backup (DbaDateTime object with Date subproperty)
+        - LastDiffBackup: DateTime of the most recent differential backup (DbaDateTime object with Date subproperty)
+        - LastLogBackup: DateTime of the most recent transaction log backup (DbaDateTime object with Date subproperty)
+
+        Additional properties available (use Select-Object * to display):
+        - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged)
+        - SinceFull: DbaTimeSpan representing time elapsed since last full backup; null if never backed up
+        - SinceDiff: DbaTimeSpan representing time elapsed since last differential backup; null if never backed up
+        - SinceLog: DbaTimeSpan representing time elapsed since last transaction log backup; null if never backed up
+        - LastFullBackupIsCopyOnly: Boolean indicating if the last full backup was copy-only
+        - LastDiffBackupIsCopyOnly: Boolean indicating if the last differential backup was copy-only (always false per SQL Server rules)
+        - LastLogBackupIsCopyOnly: Boolean indicating if the last transaction log backup was copy-only
+        - DatabaseCreated: DateTime when the database was created
+        - DaysSinceDbCreated: Integer number of days since database creation
+        - Status: String status indicator - "OK", "New database, not backed up yet", "No Full or Diff Back Up in the last day", or "No Log Back Up in the last hour"
+
+        The LastFullBackup, LastDiffBackup, and LastLogBackup properties are DbaDateTime objects that can be compared with .Date subproperty.
 
     .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
@@ -66,6 +100,13 @@ function Get-DbaLastBackup {
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Where-Object { $_.LastFullBackupIsCopyOnly -eq $true }
 
         Filters for the databases that had a copy_only full backup done as the last backup.
+
+    .EXAMPLE
+        PS C:\> Get-DbaLastBackup -SqlInstance sql2019, sql2019b -ExcludeReplica
+
+        Returns last backup information for all databases on both instances, excluding availability group databases
+        where the current instance is not the preferred backup replica. This prevents false alerts when secondary
+        replicas appear to have no recent backups because backups are only performed on the preferred replica.
     #>
     [CmdletBinding()]
     param (
@@ -75,6 +116,7 @@ function Get-DbaLastBackup {
         $SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [switch]$ExcludeReplica,
         [switch]$EnableException
     )
     begin {
@@ -103,6 +145,16 @@ function Get-DbaLastBackup {
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
+
+            if ($ExcludeReplica -and $server.IsHadrEnabled) {
+                Write-Message -Level Verbose -Message "Excluding non-preferred backup replicas for $instance"
+                $notPreferredQuery = "SELECT DB_NAME(database_id) AS DatabaseName FROM sys.databases WHERE sys.fn_hadr_backup_is_preferred_replica(DB_NAME(database_id)) = 0"
+                $notPreferredDbs = ($server.Query($notPreferredQuery)).DatabaseName
+                if ($notPreferredDbs) {
+                    $dbs = $dbs | Where-Object { $_.Name -notin $notPreferredDbs }
+                }
+            }
+
             # Get-DbaDbBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type regardless of the chain
             $FullHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
             $DiffHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw

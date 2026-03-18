@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test database and tables for check constraint testing
-        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $testServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $testTableName1 = "dbatools_getdbtbl1"
         $testTableName2 = "dbatools_getdbtbl2"
@@ -50,30 +50,30 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test database
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName | Remove-DbaDatabase -ErrorAction SilentlyContinue
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName | Remove-DbaDatabase -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         It "returns no check constraints from excluded DB with -ExcludeDatabase" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
+            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
             $results | Where-Object { $PSItem.Database -eq "master" } | Should -BeNullOrEmpty
         }
 
         It "returns only check constraints from selected DB with -Database" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $results | Where-Object { $PSItem.Database -ne "master" } | Should -HaveCount 1
-            $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName).Id
+            $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName).Id
         }
 
         It "Should include test check constraint: $testCkName" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database $testDbName -ExcludeSystemTable
+            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ExcludeSystemTable
             $results | Where-Object Name -eq $testCkName | Select-Object -ExpandProperty Name | Should -Be $testCkName
         }
 
         It "Should exclude system tables" {
-            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemTable
+            $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.InstanceSingle -Database master -ExcludeSystemTable
             $results | Where-Object Name -eq "spt_fallback_db" | Should -BeNullOrEmpty
         }
     }

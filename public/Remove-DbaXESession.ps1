@@ -42,6 +42,20 @@ function Remove-DbaXESession {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Extended Events session removed.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Session: The name of the Extended Events session that was removed
+        - Status: String value "Removed" indicating the session was successfully dropped
+
+        No output is generated for sessions that fail to be removed due to errors.
+
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
         Author: Chrissy LeMaire (@cl), netnerds.net

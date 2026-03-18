@@ -51,6 +51,40 @@ function Add-DbaReplArticle {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.TransArticle or Microsoft.SqlServer.Replication.MergeArticle
+
+        Returns one article object for each successfully added article. For transactional and snapshot replication, a TransArticle object is returned. For merge replication, a MergeArticle object is returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The name of the database containing the article
+        - PublicationName: The name of the publication containing the article
+        - Name: The name of the article as it appears in the publication
+        - Type: The type of article (table, view, stored procedure, etc.)
+        - VerticalPartition: Boolean indicating if the article uses vertical partitioning (column filtering)
+        - SourceObjectOwner: The schema of the source object (typically 'dbo')
+        - SourceObjectName: The name of the source object being replicated
+
+        Additional properties available (from SMO Article object):
+        - BusinessLogicHandlerName: Name of the business logic handler (merge replication only)
+        - ColumnTrackingLevel: Column tracking level for merge replication
+        - CreationScript: Script containing the CREATE TABLE statement for the article
+        - DestinationObjectName: Optional different object name on the subscriber
+        - DestinationObjectOwner: Optional different schema name on the subscriber
+        - FilterClause: WHERE clause used for horizontal partitioning (row filtering)
+        - HorizontalPartition: Boolean indicating if the article uses horizontal partitioning
+        - IdentityRange: Range for identity column values (transactional replication only)
+        - IdentityRangeManagementOption: How identity ranges are managed
+        - IdentitySeed: Starting value for identity column replication
+        - PreCreatedObject: Boolean indicating if the object already exists on the subscriber
+        - PublicationName: Name of the publication containing the article
+        - SchemaOption: Defines which schema elements are included in the replication
+
+        All properties from the SMO Article object are accessible using Select-Object *.
+
     .NOTES
         Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com

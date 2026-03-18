@@ -47,6 +47,20 @@ function Export-DbaPfDataCollectorSetTemplate {
     .LINK
         https://dbatools.io/Export-DbaPfDataCollectorSetTemplate
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object for each exported XML template file. The file contains the complete configuration of the data collector set including counter selections, sampling intervals, and output settings.
+
+        Properties:
+        - Name: The filename of the exported template (e.g., 'System Correlation.xml')
+        - FullName: The complete path to the exported XML file
+        - Directory: The parent folder where the file was created
+        - Length: File size in bytes
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last modified
+        - Extension: File extension (.xml)
+
     .EXAMPLE
         PS C:\> Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf
 

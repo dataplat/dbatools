@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.Instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $startupProcName = "StartUpProc$random"
         $startupProc = "dbo.$startupProcName"
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When enabling a startup procedure" {
         BeforeAll {
             $splatEnable = @{
-                SqlInstance      = $TestConfig.Instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = $startupProc
             }
             $result = Enable-DbaStartupProcedure @splatEnable
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When enabling an already enabled procedure" {
         BeforeAll {
             $splatAlreadyEnabled = @{
-                SqlInstance      = $TestConfig.Instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = $startupProc
             }
             $result = Enable-DbaStartupProcedure @splatAlreadyEnabled
@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When enabling a non-existent procedure" {
         BeforeAll {
             $splatNonExistent = @{
-                SqlInstance      = $TestConfig.Instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = "Unknown.NotHere"
                 WarningVariable  = "warn"
                 WarningAction    = "SilentlyContinue"
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using an invalid procedure name format" {
         BeforeAll {
             $splatInvalidFormat = @{
-                SqlInstance      = $TestConfig.Instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = "Four.Part.Schema.Name"
                 WarningVariable  = "warn"
                 WarningAction    = "SilentlyContinue"

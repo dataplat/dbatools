@@ -52,6 +52,23 @@ function Save-DbaKbUpdate {
     .LINK
         https://dbatools.io/Save-DbaKbUpdate
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one FileInfo object for each successfully downloaded KB file. The objects represent the downloaded files saved to the local file system.
+
+        Properties:
+        - Name: The filename of the downloaded KB file
+        - FullName: The complete file path where the file was saved
+        - Length: The file size in bytes
+        - Directory: The directory where the file was saved
+        - CreationTime: DateTime when the file was created
+        - LastWriteTime: DateTime when the file was last modified
+        - Attributes: File attributes (Archive, ReadOnly, Hidden, etc.)
+        - Mode: File permissions string (e.g., -a--- for archive)
+
+        Only files that successfully download and exist on disk are returned. If download fails or the file is not found after download, no object is returned for that file.
+
     .EXAMPLE
         PS C:\> Save-DbaKbUpdate -Name KB4057119
 
@@ -127,19 +144,9 @@ function Save-DbaKbUpdate {
             if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
                 Start-BitsTransfer -Source $link -Destination $file
             } else {
-                # IWR is crazy slow for large downloads
-                $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
-                $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
-                $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
-                $availableTls | ForEach-Object {
-                    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
-                }
-
                 Write-Progress -Activity "Downloading $fileName" -Id 1
-                (New-Object Net.WebClient).DownloadFile($link, $file)
+                Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
                 Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
-
-                [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
             }
             if (Test-Path -Path $file) {
                 Get-ChildItem -Path $file

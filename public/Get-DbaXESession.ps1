@@ -36,6 +36,40 @@ function Get-DbaXESession {
     .LINK
         https://dbatools.io/Get-DbaXESession
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Session
+
+        Returns one Session object per Extended Events session found on the specified SQL Server instance(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - Status: Current session status - either "Running" or "Stopped"
+        - StartTime: DateTime when the session was started (null if stopped)
+        - AutoStart: Boolean indicating if the session starts automatically when SQL Server starts
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Targets: Collection of target objects configured for this session
+        - TargetFile: Array of resolved file paths for all event_file targets (includes UNC paths for network access)
+        - Events: Collection of Extended Events configured in this session
+        - MaxMemory: Maximum memory allocation for the session in KB
+        - MaxEventSize: Maximum event size the session will capture in KB
+
+        Additional properties added as NoteProperties:
+        - Session: The session name (alias for Name property)
+        - RemoteTargetFile: Array of UNC paths for all target files (for remote file access)
+        - Parent: Reference to the parent Microsoft.SqlServer.Management.Smo.Server object
+        - Store: Reference to the Microsoft.SqlServer.Management.XEvent.XEStore object
+
+        Additional properties available from SMO Session object (via Select-Object *):
+        - ID: Unique identifier for the session
+        - EventRetentionMode: Event retention behavior setting
+        - MaxDispatchLatency: Maximum dispatch latency in seconds
+        - MemoryPartitionMode: Memory partitioning strategy
+        - TrackCausality: Boolean indicating if causality tracking is enabled
+        - IdentityKey: Identity key of the session object
+
     .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance ServerA\sql987
 

@@ -39,21 +39,21 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Count system databases on localhost" {
         It "reports the right number of databases" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -ExcludeUser
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser
             $results.Count | Should -Be 4
         }
     }
 
     Context "Check that tempdb database is in Simple recovery mode" {
         It "tempdb's recovery mode is Simple" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $results.RecoveryModel | Should -Be "Simple"
         }
     }
 
     Context "Check that master database is accessible" {
         It "master is accessible" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master
             $results.IsAccessible | Should -BeTrue
         }
     }
@@ -65,20 +65,20 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbname1 = "dbatoolsci_Backup_$random"
         $dbname2 = "dbatoolsci_NoBackup_$random"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1 , $dbname2
-        $null = Backup-DbaDatabase -SqlInstance $TestConfig.instance1 -Type Full -FilePath nul -Database $dbname1
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname1 , $dbname2
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Type Full -FilePath nul -Database $dbname1
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1, $dbname2 | Remove-DbaDatabase
     }
 
     Context "Results return if no backup" {
         It "Should not report as database has full backup" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1 -NoFullBackup
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -NoFullBackup
             ($results).Count | Should -Be 0
         }
         It "Should report 1 database with no full backup" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname2 -NoFullBackup
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2 -NoFullBackup
             ($results).Count | Should -Be 1
         }
     }
@@ -92,15 +92,15 @@ Describe $CommandName -Tag IntegrationTests {
         $dbname2 = "${dbPrefix}_test2_$random"
         $dbname3 = "${dbPrefix}_prod1_$random"
         $dbname4 = "other_database_$random"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbname1, $dbname2, $dbname3, $dbname4
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbname1, $dbname2, $dbname3, $dbname4
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname1, $dbname2, $dbname3, $dbname4 | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1, $dbname2, $dbname3, $dbname4 | Remove-DbaDatabase
     }
 
     Context "Pattern parameter filtering" {
         It "Should return databases matching pattern with regex" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^${dbPrefix}_"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Contain $dbname3
@@ -108,7 +108,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return databases matching pattern with _test segment" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^${dbPrefix}_test"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Not -Contain $dbname3
@@ -116,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return databases matching multiple patterns" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^${dbPrefix}_test", "^${dbPrefix}_prod"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^${dbPrefix}_test", "^${dbPrefix}_prod"
             $results.Name | Should -Contain $dbname1
             $results.Name | Should -Contain $dbname2
             $results.Name | Should -Contain $dbname3
@@ -124,7 +124,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return no results for non-matching pattern" {
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Pattern "^nonexistent_"
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^nonexistent_"
             $results | Should -BeNullOrEmpty
         }
     }

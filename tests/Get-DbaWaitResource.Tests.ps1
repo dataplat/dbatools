@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $WaitResourceDB = "WaitResource$random"
-        Restore-DbaDatabase -SqlInstance $TestConfig.instance1 -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
+        Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $WaitResourceDB -ReplaceDbNameInFile -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak"
         $sql = "
                 create table waittest (
                 col1 int,
@@ -40,7 +40,7 @@ Describe $CommandName -Tag IntegrationTests {
                 go
             "
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $sql
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $sql
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Remove-DbaDatabase
+        Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -82,9 +82,9 @@ Describe $CommandName -Tag IntegrationTests {
                 select @pageid=PagePid from #TmpIndex where PageType=10
                 select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
             "
-            $page = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-            $file = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
-            $results = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $page
+            $page = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $Pagesql).Column1
+            $file = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB | Where-Object TypeDescription -eq "ROWS"
+            $results = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $page
         }
 
         It "Should return databasename $WaitResourceDB" {
@@ -125,8 +125,8 @@ Describe $CommandName -Tag IntegrationTests {
 
                 select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
             "
-            $key = (Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
-            $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.instance1 -WaitResource $key -row
+            $key = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $WaitResourceDB -Query $SqlKey).Column1
+            $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $key -row
         }
 
         It "Should Return DatabaseName $WaitResourceDB" {

@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
         $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
         $computerName = $server.NetName
         $instanceName = $server.ServiceName
         $winLogin = "$computerName\$login"
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $user.SetInfo()
 
         #Get current service users
-        $services = Get-DbaService -ComputerName $TestConfig.instance2 -Type Engine, Agent -Instance $instanceName
+        $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine, Agent -Instance $instanceName
         $currentAgentUser = ($services | Where-Object { $PSItem.ServiceType -eq "Agent" }).StartName
         $currentEngineUser = ($services | Where-Object { $PSItem.ServiceType -eq "Engine" }).StartName
 

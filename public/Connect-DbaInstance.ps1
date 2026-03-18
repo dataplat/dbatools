@@ -152,6 +152,45 @@ function Connect-DbaInstance {
         Changes exception handling from throwing errors to displaying warnings.
         Use this in interactive sessions where you want graceful error handling instead of script-stopping exceptions, which is the default behavior for this command.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Server (default)
+
+        Returns a fully initialized SMO Server connection object configured for the specified SQL Server instance. This object provides the foundation for most dbatools operations, allowing you to execute queries, access database objects, and perform administrative tasks.
+
+        The returned object includes both standard SMO properties and dbatools-specific added properties:
+
+        Added dbatools properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - IsAzure: Boolean indicating if the target is Azure SQL Database
+        - DbaInstanceName: The instance name component (for named instances like "SQLSERVER\INSTANCENAME")
+        - SqlInstance: The full SQL Server instance name in DomainInstanceName format (e.g., "COMPUTERNAME\INSTANCENAME")
+        - NetPort: The TCP port number used for the connection
+        - ConnectedAs: The login used to establish the connection (from ConnectionContext.TrueLogin)
+
+        Standard SMO Server object properties (selected):
+        - Databases: Collection of Database objects on the server
+        - Logins: Collection of Login objects on the server
+        - LinkedServers: Collection of LinkedServer objects
+        - Endpoints: Collection of Endpoint objects
+        - ConnectionContext: ServerConnection object containing connection details and configuration
+        - VersionMajor: Major version number of SQL Server (8=2000, 9=2005, 10=2008, 11=2012, 12=2014, 13=2016, 14=2017, 15=2019, 16=2022)
+        - VersionMinor: Minor version number
+        - Version: Full version object
+        - ServiceInstanceId: Service instance ID
+        - DefaultFile: Default data file path
+        - DefaultLog: Default log file path
+        - MasterDBLogPath: Master database log file path
+        - MasterDBPath: Master database path
+        - InstallDataDirectory: SQL Server installation data directory
+        - BackupDirectory: Default backup directory
+        - Name: The server name
+        - DatabaseEngineType: Engine type (Standard, Compact, SqlAzureDatabase, etc.)
+        - HostPlatform: Platform the server is running on (Windows or Linux)
+
+        Microsoft.Data.SqlClient.SqlConnection (when -SqlConnectionOnly is specified)
+
+        Returns only the underlying SQL connection object from the SMO Server's ConnectionContext.SqlConnectionObject. Use this when you need basic connection functionality without the overhead of initializing the full SMO Server object. The connection can be used with ADO.NET code or when integrating with other .NET libraries.
+
     .NOTES
         Tags: Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -601,7 +640,17 @@ function Connect-DbaInstance {
 
             if ($DedicatedAdminConnection -and $serverName) {
                 Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used, so serverName will be changed and NonPooledConnection will be set."
-                $serverName = 'ADMIN:' + $serverName
+                if ($instance.IsLocalHost) {
+                    # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                    if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                        $serverName = "ADMIN:localhost\$($instance.InstanceName)"
+                    } else {
+                        $serverName = "ADMIN:localhost"
+                    }
+                    Write-Message -Level Debug -Message "IsLocalHost is true, using '$serverName' for DAC to avoid multi-IP resolution."
+                } else {
+                    $serverName = "ADMIN:$serverName"
+                }
                 $NonPooledConnection = $true
             }
 
@@ -665,7 +714,16 @@ function Connect-DbaInstance {
                         $connContext.StatementTimeout = $StatementTimeout
                     }
                     if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
-                        $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        if ($instance.IsLocalHost) {
+                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
+                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                            } else {
+                                $connContext.ServerInstance = "ADMIN:localhost"
+                            }
+                        } else {
+                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                        }
                         $connContext.NonPooledConnection = $true
                     }
                     if ($Database) {
@@ -1068,6 +1126,37 @@ function Connect-DbaInstance {
                     } catch {
                         Write-Message -Level Debug -Message "Retry with TrustServerCertificate also failed: $($_.Exception.Message)"
                         # Use the original error for reporting since the retry also failed
+                        $connectionError = $_
+                    }
+                }
+
+                # Check if the error is about Failover Partner requiring Initial Catalog.
+                # This happens when connecting to a SQL Server instance configured for database mirroring.
+                # The .NET SqlClient sends Failover Partner info from the server's TDS handshake to the
+                # connection pool, and the pool then requires Initial Catalog to be set in the connection string.
+                $isFailoverPartnerError = $errorMessage -match "Failover Partner" -and $errorMessage -match "Initial Catalog"
+                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -eq 'String') {
+                    Write-Message -Level Verbose -Message "Connection failed because the server is configured for database mirroring (Failover Partner requires Initial Catalog). Retrying with Initial Catalog=master."
+                    Write-Message -Level Debug -Message "Original error: $errorMessage"
+
+                    try {
+                        # Add Initial Catalog=master to satisfy the Failover Partner connection string requirement
+                        if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Initial Catalog" -and $server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Database=") {
+                            if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -match ";$") {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += "Initial Catalog=master;"
+                            } else {
+                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += ";Initial Catalog=master;"
+                            }
+                        }
+
+                        # Retry the connection
+                        Write-Message -Level Debug -Message "Retrying connection with Initial Catalog=master for server with database mirroring"
+                        $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection with Initial Catalog'")
+                        Write-Message -Level Verbose -Message "Connection succeeded with Initial Catalog=master for server with database mirroring"
+                        $connectionSucceeded = $true
+                    } catch {
+                        Write-Message -Level Debug -Message "Retry with Initial Catalog=master also failed: $($_.Exception.Message)"
+                        # Keep the original error for reporting
                         $connectionError = $_
                     }
                 }

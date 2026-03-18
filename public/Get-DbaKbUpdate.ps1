@@ -34,6 +34,53 @@ function Get-DbaKbUpdate {
     .LINK
         https://dbatools.io/Get-DbaKbUpdate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per KB update link found in the Microsoft update catalog. The properties returned depend on whether the -Simple switch is used and whether build version information is available from Get-DbaBuild.
+
+        Default display properties (full detailed output, when -Simple is NOT used):
+        - Title: The name/title of the KB update (e.g., "Cumulative Update 23 for SQL Server 2019")
+        - NameLevel: SQL Server release name (SQL Server 2019, 2017, etc.) from Get-DbaBuild
+        - SPLevel: Service Pack level (SP0, SP1, etc.) from Get-DbaBuild
+        - KBLevel: KB article number from Get-DbaBuild
+        - CULevel: Cumulative Update number from Get-DbaBuild
+        - BuildLevel: Full build number from Get-DbaBuild
+        - SupportedUntil: Support end date from Get-DbaBuild
+        - Architecture: CPU architecture - "x64", "x86", or "ARM64" based on extracted architecture information
+        - Language: Language identifier for the KB update (e.g., "en-US" for English)
+        - Hotfix: Boolean or status indicating if this is a hotfix (True/False)
+        - Description: Full description of the KB update contents and fixes
+        - LastModified: DateTime when the KB update was last modified
+        - Size: File size of the download package
+        - Classification: Microsoft classification (Critical, Important, Security Update, etc.)
+        - SupportedProducts: Array of supported SQL Server versions/editions
+        - MSRCNumber: Microsoft Security Response Center bulletin number if applicable
+        - MSRCSeverity: MSRC severity rating (Critical, Important, Moderate, Low)
+        - RebootBehavior: Whether installation requires reboot (Yes, No, Can be deferred)
+        - RequestsUserInput: Whether installation requires user input (Yes, No)
+        - ExclusiveInstall: Whether this update is exclusive/incompatible with other updates (Yes, No)
+        - NetworkRequired: Whether network connectivity is required during installation (Yes, No)
+        - UninstallNotes: Notes about uninstalling this update
+        - UninstallSteps: Steps required to uninstall this update
+        - UpdateId: Internal Microsoft update catalog GUID
+        - Supersedes: Array of KB articles superseded by this update
+        - SupersededBy: Array of KB articles that supersede this update
+        - Link: Direct HTTP/HTTPS download URL from download.windowsupdate.com
+
+        When -Simple switch is specified (reduced property set for performance):
+        - Title: The name/title of the KB update
+        - Architecture: CPU architecture (x64, x86, etc.)
+        - Language: Language identifier
+        - Hotfix: Boolean indicating if this is a hotfix
+        - UpdateId: Internal Microsoft update catalog GUID
+        - Link: Direct download URL
+
+        When build information is unavailable from Get-DbaBuild:
+        The following properties are excluded: NameLevel, SPLevel, KBLevel, CULevel, BuildLevel, SupportedUntil
+
+        Note: The function returns one object per download link found. A single KB article may have multiple links if different architectures or languages are available.
+
     .EXAMPLE
         PS C:\> Get-DbaKbUpdate -Name KB4057119
 

@@ -26,6 +26,15 @@ function Resolve-DbaPath {
         Use when specifying backup file destinations, new database file paths, or log file locations that will be created.
         The parent folder must be accessible, but the final filename can be new.
 
+    .OUTPUTS
+        System.String
+
+        Returns one or more resolved file system paths as strings. Each input path that resolves successfully is output as a separate string value.
+        When processing multiple paths via pipeline or array, each path is returned individually to the pipeline, enabling pipeline chaining with other commands like Copy-Item or Remove-Item.
+
+        The returned paths are fully qualified file system paths in the format expected by PowerShell cmdlets and .NET APIs.
+        When using -NewChild, returns the constructed path for the new file even if it does not yet exist, but the parent directory must be accessible.
+
     .NOTES
         Tags: Path, Resolve, Utility
         Author: Friedrich Weinmann (@FredWeinmann)

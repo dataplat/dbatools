@@ -81,6 +81,33 @@ function New-DbaDbTransfer {
         Copyright: (c) 2020 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Transfer
+
+        Returns a single configured SMO Transfer object that defines what database objects to copy and how to copy them to a destination SQL Server instance.
+        The returned object is not executed - you must call .TransferData() on it or pipe it to Invoke-DbaDbTransfer to perform the actual transfer operation.
+
+        Default properties configured based on parameters:
+        - BatchSize: Number of rows to transfer in each batch (rows)
+        - BulkCopyTimeOut: Timeout in seconds for bulk copy operations
+        - CopyAllObjects: Boolean indicating if all transferable objects are included
+        - CopyAll[ObjectType]: Individual boolean properties for each object type (CopyAllTables, CopyAllViews, CopyAllStoredProcedures, etc.)
+        - Options: Scripting options controlling how objects are scripted (from -ScriptingOption parameter)
+        - ObjectList: Collection of specific objects to transfer (populated from InputObject pipeline parameter)
+        - DestinationServer: Target SQL Server instance name
+        - DestinationDatabase: Target database name on destination instance
+        - DestinationServerConnection: ServerConnection object configured for destination with SSL/TLS settings from source
+        - DestinationLoginSecure: Boolean indicating if destination uses integrated security (True) or SQL authentication (False)
+        - DestinationLogin: Username for SQL Server authentication on destination (only set if not using integrated security)
+        - DestinationPassword: Password for SQL Server authentication on destination (only set if not using integrated security)
+        - CopyData: Boolean indicating if table data will be copied (False when -SchemaOnly specified)
+        - CopySchema: Boolean indicating if database object schema will be copied (False when -DataOnly specified)
+
+        When -SchemaOnly is specified: CopyData property is set to False (schema only, no data)
+        When -DataOnly is specified: CopySchema property is set to False (data only, assumes objects exist on destination)
+
+        The Transfer object maintains all SMO Transfer properties and can be further customized by modifying returned object properties before calling TransferData().
+
     .LINK
         https://dbatools.io/New-DbaDbTransfer
 

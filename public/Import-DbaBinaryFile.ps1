@@ -89,6 +89,20 @@ function Import-DbaBinaryFile {
     .LINK
         https://dbatools.io/Import-DbaBinaryFile
 
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per file imported. Each object contains status and context information about the import operation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance where the file was imported
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The name of the database where the file was imported
+        - Table: The name of the table where the binary file was stored
+        - FilePath: The full file system path of the source file that was imported
+        - Status: The import operation status ("Success" when file was successfully imported)
     .EXAMPLE
         PS C:\> Get-ChildItem C:\photos | Import-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos
 

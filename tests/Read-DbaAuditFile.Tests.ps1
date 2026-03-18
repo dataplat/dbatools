@@ -25,7 +25,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $auditPath = $server.ErrorLogPath
         $auditName = "LoginAudit"
         $specName = "TrackAllLogins"
@@ -40,8 +40,8 @@ Describe $CommandName -Tag IntegrationTests {
                 ALTER SERVER AUDIT $auditName WITH (STATE = ON)"
         $server.Query($sql)
         # generate a login
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2
-        $null = Get-DbaDbFile -SqlInstance $TestConfig.instance2
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+        $null = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle
         # Give it a chance to write
         Start-Sleep 2
 
@@ -63,12 +63,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Verifying command output" {
         It "returns some results with Raw parameter" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit $auditName | Read-DbaAuditFile -Raw
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile -Raw
             $results | Should -Not -BeNullOrEmpty
         }
 
         It "returns structured results with server_principal_name property" {
-            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.instance2 -Audit $auditName | Read-DbaAuditFile | Select-Object -First 1
+            $results = Get-DbaInstanceAudit -SqlInstance $TestConfig.InstanceSingle -Audit $auditName | Read-DbaAuditFile | Select-Object -First 1
             $results.server_principal_name | Should -Not -BeNullOrEmpty
         }
     }

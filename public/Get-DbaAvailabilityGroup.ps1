@@ -31,6 +31,44 @@ function Get-DbaAvailabilityGroup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroup
+
+        Returns one AvailabilityGroup object per availability group found on the specified instance(s). Three custom properties are added to each object for convenience: ComputerName, InstanceName, and SqlInstance.
+
+        Default display properties (without -IsPrimary):
+        - ComputerName: The computer name of the SQL Server instance hosting the availability group
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - LocalReplicaRole: The role of the current replica in the availability group (Primary or Secondary)
+        - AvailabilityGroup: Name of the availability group (from the Name property)
+        - PrimaryReplica: The server name of the primary replica (from PrimaryReplicaServerName property)
+        - ClusterType: Type of cluster supporting the availability group (Wsfc, External, None)
+        - DtcSupportEnabled: Boolean indicating if Distributed Transaction Coordinator support is enabled
+        - AutomatedBackupPreference: Preference for automated backups (Primary, SecondaryOnly, Secondary, None)
+        - AvailabilityReplicas: Collection of replicas that are part of this availability group
+        - AvailabilityDatabases: Collection of databases that are part of this availability group
+        - AvailabilityGroupListeners: Collection of listeners configured for this availability group
+
+        Default display properties (with -IsPrimary):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group (from the Name property)
+        - IsPrimary: Boolean indicating whether the queried instance is the primary replica for this availability group
+
+        Additional properties available from the SMO AvailabilityGroup object:
+        - Name: Name of the availability group
+        - DtcSupportEnabled: Boolean for DTC support
+        - AutomatedBackupPreference: Backup preference setting
+        - FailureConditionLevel: Failure condition threshold level
+        - HealthCheckTimeout: Health check timeout in milliseconds
+        - BasicAvailabilityGroup: Boolean indicating if this is a basic availability group (SQL Server 2016+)
+        - DatabaseHealthTrigger: Boolean for database health trigger setting
+        - Urn: Uniform Resource Name for the SMO object
+
+        All properties from the SMO AvailabilityGroup object are accessible by using Select-Object *.
+
     .NOTES
         Tags: AG, HA
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)

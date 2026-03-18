@@ -47,6 +47,39 @@ function Get-DbaAgentSchedule {
     .LINK
         https://dbatools.io/Get-DbaAgentSchedule
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.SharedSchedule
+
+        Returns one SharedSchedule object per shared schedule found. Shared schedules can be reused across multiple SQL Server Agent jobs to standardize maintenance windows and reduce administrative overhead.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ScheduleName: The display name of the shared schedule
+        - ActiveStartDate: The date when the schedule becomes active (format depends on system locale)
+        - ActiveStartTimeOfDay: The time of day when the schedule becomes active
+        - ActiveEndDate: The date when the schedule stops being active (year 9999 indicates no end date)
+        - ActiveEndTimeOfDay: The time of day when the schedule stops being active
+        - DateCreated: Timestamp when the schedule was created in SQL Agent
+        - FrequencyTypes: How often the schedule runs (Once, Daily, Weekly, Monthly, MonthlyRelative, AutoStart, OnIdle)
+        - FrequencyInterval: The interval at which the schedule recurs (meaning depends on FrequencyTypes)
+        - FrequencySubDayTypes: How often within a day the schedule runs (None, Once, Seconds, Minutes, Hours)
+        - FrequencySubDayInterval: The interval in seconds, minutes, or hours between executions
+        - FrequencyRecurrenceFactor: The number of periods between schedule executions (e.g., 2 for every 2 weeks)
+        - FrequencyRelativeIntervals: Relative position for monthly schedules (First, Second, Third, Fourth, Last)
+        - IsEnabled: Boolean indicating whether the schedule is active and available for job execution
+        - JobCount: Number of SQL Server Agent jobs currently using this shared schedule
+        - ScheduleUid: The unique GUID identifier for this schedule (immutable even if schedule is renamed)
+        - Description: Human-readable description of the schedule timing pattern (auto-generated from frequency settings)
+
+        Additional properties available from the SMO SharedSchedule object:
+        - Id: Numeric identifier for the shared schedule (assigned sequentially by SQL Server)
+        - Name: Display name of the shared schedule
+        - Owner: Login name that owns the schedule
+
+        All properties from the base SMO object are accessible using Select-Object *, even though only default properties are displayed without explicit selection.
+
     .EXAMPLE
         PS C:\> Get-DbaAgentSchedule -SqlInstance localhost
 

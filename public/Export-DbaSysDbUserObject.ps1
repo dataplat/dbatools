@@ -51,6 +51,26 @@ function Export-DbaSysDbUserObject {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.String (when -PassThru is specified)
+
+        Returns the generated T-SQL CREATE scripts as strings. One string per user-defined object discovered in the system databases.
+        Each script includes a comment prefix (unless -NoPrefix is used) with generation timestamp, username, and dbatools version.
+        Script sections are separated by the configured batch terminator (typically "GO").
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns one file object per system database that contains user-defined objects, representing the generated SQL script file(s) written to disk.
+
+        Properties:
+        - Name: The filename of the exported script (e.g., "server1-Export-DbaSysDbUserObject-master-20231215_143022.sql")
+        - FullName: The complete path to the exported script file
+        - Directory: The directory object containing the file
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last modified
+        - Length: Size of the file in bytes
+        - Extension: Always ".sql"
+
     .EXAMPLE
         PS C:\> Export-DbaSysDbUserObject -SqlInstance server1
 

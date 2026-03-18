@@ -32,7 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $safeTraceFlag = 3226
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $startingTraceFlags = Get-DbaTraceFlag -SqlInstance $server
 
         # Create the objects.

@@ -30,8 +30,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $randomSuffix = Get-Random
-        $server1Instance = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $server2Instance = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server1Instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $server2Instance = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
         $null = Get-DbaProcess -SqlInstance $server1Instance, $server2Instance | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $testDbName = "dbatoolsci_newdb_$randomSuffix"
         $testDatabases = New-DbaDatabase -SqlInstance $server1Instance, $server2Instance -Name $testDbName

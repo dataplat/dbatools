@@ -61,6 +61,37 @@ function Get-DbaDiskSpace {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Dataplat.Dbatools.Computer.DiskSpace
+
+        Returns one object per disk volume on the target computer(s). The output includes comprehensive disk space information retrieved from Windows WMI, with capacity and free space available in multiple unit formats (Bytes, KB, MB, GB, TB, PB).
+
+        Default display properties (shown without using Select-Object):
+        - ComputerName: The name of the computer
+        - Name: The volume name (drive letter or UNC path, e.g., 'C:\' or '\\server\share')
+        - Label: The volume label/name if assigned
+        - Capacity: Total disk capacity in the specified unit (default GB)
+        - Free: Free space available in the specified unit (default GB)
+        - PercentFree: Percentage of disk space that is free
+        - BlockSize: File system block size in bytes
+
+        Additional properties available (use Select-Object * to view):
+        - FileSystem: File system type (NTFS, FAT32, ReFS, etc.)
+        - Type: Drive type identifier (corresponds to DriveType)
+        - DriveType: Enumerated drive type (LocalDisk, RemovableDisk, NetworkDrive, etc.)
+        - IsSqlDisk: Boolean indicating if SQL Server files are detected on this disk
+        - Server: Server name (same as ComputerName)
+
+        Size information in all units (dynamically calculated):
+        - SizeInBytes, FreeInBytes: Capacity and free space in bytes
+        - SizeInKB, FreeInKB: Capacity and free space in kilobytes
+        - SizeInMB, FreeInMB: Capacity and free space in megabytes
+        - SizeInGB, FreeInGB: Capacity and free space in gigabytes
+        - SizeInTB, FreeInTB: Capacity and free space in terabytes
+        - SizeInPB, FreeInPB: Capacity and free space in petabytes
+
+        By default, only local disks (DriveType 2) and removable disks (DriveType 3) are returned. Use -Force to include all drive types (network drives, CD/DVD, etc.). Use -ExcludeDrive to filter out specific volumes.
+
     .LINK
         https://dbatools.io/Get-DbaDiskSpace
 

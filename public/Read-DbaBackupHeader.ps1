@@ -32,14 +32,99 @@ function Read-DbaBackupHeader {
         Returns detailed information about each data and log file contained within the backup set, including logical names, physical paths, file sizes, and file types.
         Use this when planning restores to different locations or when you need to understand the file structure before performing a restore operation.
 
-    .PARAMETER AzureCredential
-        Specifies the name of a SQL Server credential object that contains the authentication information for accessing Azure blob storage.
-        Required when reading backup files stored in Azure blob storage. The credential must already exist on the target SQL Server instance and contain valid Azure storage account keys or SAS tokens.
+    .PARAMETER StorageCredential
+        Specifies the name of a SQL Server credential object that contains the authentication information for accessing Azure blob storage or S3-compatible object storage.
+        Required when reading backup files stored in Azure blob storage or S3. The credential must already exist on the target SQL Server instance.
+        For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
+        For S3: The credential must use Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or higher.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .OUTPUTS
+        System.Data.DataRow (default output)
+
+        Returns one object per backup set found in the backup file. When -Simple is not specified, returns the full DataTable with backup header metadata including:
+
+        Default properties:
+        - DatabaseName: Name of the database that was backed up
+        - BackupFinishDate: DateTime when the backup completed
+        - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged)
+        - BackupSize: Size of the backup (dbasize object with Byte, KB, MB, GB properties)
+        - CompressedBackupSize: Size of the compressed backup if compression was used (dbasize object)
+        - DatabaseCreationDate: DateTime the database was created
+        - UserName: Login that performed the backup
+        - ServerName: SQL Server instance name where backup was created
+        - SqlVersion: SQL Server version string (e.g., "SQL Server 2016", "SQL Server 2019")
+        - BackupPath: Full path to the backup file
+        - FileList: Collection of backup file details (see -FileList for details)
+
+        Additional properties from SMO Restore.ReadBackupHeader():
+        - BackupType: Type of backup (Database, Differential, Log, etc.)
+        - BackupName: Name given to the backup set
+        - Position: Position of this backup set within the file (1 for first, 2 for second, etc.)
+        - DatabaseVersion: Internal database version number
+        - IsPassword: Whether the backup is password-protected (0 or 1)
+        - IsCopyOnly: Whether this is a copy-only backup (0 or 1)
+        - ContinuationFolk: Whether this is a continuation of a previous backup (0 or 1)
+        - HasBulkLoggedData: Whether the backup contains bulk-logged operations (0 or 1)
+        - IsSnapshot: Whether this is a snapshot backup (0 or 1)
+        - IsDamaged: Whether the backup is marked as damaged (0 or 1)
+        - StarTime: DateTime when backup started
+        - CompatibilityLevel: Compatibility level of the database
+        - SoftwareVendorId: Software vendor identifier
+        - SoftwareVersionMajor: Major version of SQL Server that created backup
+        - SoftwareVersionMinor: Minor version of SQL Server that created backup
+        - SoftwareVersionBuild: Build number of SQL Server that created backup
+        - MachineName: Computer name where backup was created
+        - Flags: Backup flags and options
+        - BindingId: Binding ID
+        - RecoveryFork: Recovery fork identifier
+        - Collation: Database collation
+        - FamilyGuid: Family GUID for backup family tracking
+        - HasBackupChecksums: Whether checksums are present (0 or 1)
+        - IsSealedBackup: Whether backup is sealed/complete (0 or 1)
+
+        System.Data.DataRow (when -Simple is specified)
+
+        Returns one object per backup set with only essential backup metadata columns:
+        - DatabaseName: Name of the database that was backed up
+        - BackupFinishDate: DateTime when the backup completed
+        - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged)
+        - BackupSize: Size of the backup (dbasize object with Byte, KB, MB, GB properties)
+        - CompressedBackupSize: Size of the compressed backup (dbasize object)
+        - DatabaseCreationDate: DateTime the database was created
+        - UserName: Login that performed the backup
+        - ServerName: SQL Server instance name
+        - SqlVersion: SQL Server version string
+        - BackupPath: Full path to the backup file
+
+        System.Data.DataRow (when -FileList is specified)
+
+        Returns detailed information about each data and log file contained within the backup set(s):
+        - LogicalName: Logical name of the file as defined in the database
+        - PhysicalName: Physical file path where the file is stored
+        - Type: File type (D for Data, L for Log, etc.)
+        - FileGroupName: Filegroup that contains this file
+        - Size: Size of the file in bytes
+        - MaxSize: Maximum size of the file in bytes
+        - FileId: File ID number in the database
+        - CreateLsn: Log sequence number when file was created
+        - DropLsn: Log sequence number when file was dropped (if applicable)
+        - UniqueId: Unique identifier for the file
+        - ReadOnlyLsn: Log sequence number when file became read-only
+        - ReadWriteLsn: Log sequence number when file became read-write
+        - BackupSizeInBytes: Size of this file in the backup
+        - SourceBlockSize: Original block size when file was created
+        - FileGroupId: ID of the filegroup containing this file
+        - LogGroupGuid: Identifier for log group
+        - DifferentialBaseLsn: LSN of the differential base
+        - DifferentialBaseGuid: GUID of the differential base
+        - IsReadOnly: Whether the file is read-only (0 or 1)
+        - IsPresent: Whether the file is present in this backup (0 or 1)
+        - TdeThumbprint: Transparent Data Encryption thumbprint if applicable
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
@@ -91,12 +176,17 @@ function Read-DbaBackupHeader {
         Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 
     .EXAMPLE
-        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -StorageCredential AzureBackupUser
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2022 -Path s3://s3.us-west-2.amazonaws.com/mybucket/backups/mydb.bak -StorageCredential MyS3Credential
+
+        Gets the backup header information from the SQL Server backup file stored in an AWS S3 bucket. Requires SQL Server 2022 or higher and a credential configured with S3 access keys.
+
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'StorageCredential', Justification = "For Parameter StorageCredential")]
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
@@ -106,7 +196,8 @@ function Read-DbaBackupHeader {
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [switch]$EnableException
     )
 
@@ -130,14 +221,14 @@ function Read-DbaBackupHeader {
                 $SqlInstance,
                 $Path,
                 $DeviceType,
-                $AzureCredential
+                $StorageCredential
             )
             #Copy existing connection to create an independent TSQL session
             $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.ConnectionContext.Copy()
             $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 
             if ($DeviceType -eq 'URL') {
-                $restore.CredentialName = $AzureCredential
+                $restore.CredentialName = $StorageCredential
             }
 
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
@@ -205,7 +296,7 @@ function Read-DbaBackupHeader {
         $threads = @()
 
         foreach ($file in $pathGroup) {
-            if ($file -like 'http*') {
+            if ($file -like 'http*' -or $file -like 's3*') {
                 $deviceType = 'URL'
             } else {
                 $deviceType = 'FILE'
@@ -218,10 +309,10 @@ function Read-DbaBackupHeader {
             if ($fileExists -or $deviceType -eq 'URL') {
                 #Create parameters hashtable
                 $argsRunPool = @{
-                    SqlInstance     = $server
-                    Path            = $file
-                    AzureCredential = $AzureCredential
-                    DeviceType      = $deviceType
+                    SqlInstance       = $server
+                    Path              = $file
+                    StorageCredential = $StorageCredential
+                    DeviceType        = $deviceType
                 }
                 Write-Message -Level Verbose -Message "Scanning file $file."
                 #Create new runspace thread
@@ -257,7 +348,7 @@ function Read-DbaBackupHeader {
                         if ($thread.deviceType -eq 'FILE') {
                             Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
                         } else {
-                            Stop-Function -Message "Unable to read $($thread.file), check credential $AzureCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+                            Stop-Function -Message "Unable to read $($thread.file), check credential $StorageCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
                         }
                     }
                     #Process the result of this thread

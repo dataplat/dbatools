@@ -35,6 +35,23 @@ function Enable-DbaTraceFlag {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per trace flag operation, indicating the result of enabling each trace flag.
+
+        Properties:
+        - SourceServer: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - TraceFlag: The trace flag number that was enabled or attempted
+        - Status: The operation status (Successful, Skipped, or Failed)
+          - Successful: Trace flag was successfully enabled
+          - Skipped: Trace flag was already enabled globally
+          - Failed: An error occurred while enabling the trace flag
+        - Notes: Additional information about the operation result or error message
+        - DateTime: Timestamp when the operation was executed
+
     .NOTES
         Tags: Diagnostic, TraceFlag, DBCC
         Author: Garry Bargsley (@gbargsley), blog.garrybargsley.com

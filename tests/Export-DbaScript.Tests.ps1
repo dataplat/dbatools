@@ -53,22 +53,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should export some text matching create table" {
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
             $results -match "CREATE TABLE"
         }
 
         It "Should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
             $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
         }
 
         It "Should include the defined BatchSeparator" {
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $results -match "MakeItSo"
         }
 
         It "Should not accept non-SMO objects" {
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
             $invalid -match "not a SQL Management Object"
         }
@@ -76,12 +76,12 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should not append when using NoPrefix (#7455)" {
             $tempFile = "$tempPath\msdb-$(Get-Random).txt"
 
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
             $linecount1 = (Get-Content $tempFile).Count
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile
             $linecount2 = (Get-Content $tempFile).Count
             $linecount1 | Should -Be $linecount2
-            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
         }

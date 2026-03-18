@@ -9,6 +9,34 @@ function Get-DbaDbQueryStoreOption {
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.QueryStoreOptions
 
+        Returns one object per database with Query Store configuration settings. The base object is the QueryStoreOptions SMO object enhanced with additional properties and adjusted based on the SQL Server version.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database
+        - ActualState: Current Query Store state (ReadWrite, ReadOnly, or Off)
+        - DataFlushIntervalInSeconds: Interval in seconds for flushing data to storage
+        - StatisticsCollectionIntervalInMinutes: Interval in minutes for statistics collection
+        - MaxStorageSizeInMB: Maximum storage size allocated for Query Store (in megabytes)
+        - CurrentStorageSizeInMB: Current storage size being used by Query Store (in megabytes)
+        - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
+        - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
+        - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+
+        Additional properties for SQL Server 2017 (v14) and later:
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
+        - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
+
+        Additional properties for SQL Server 2019 (v15) and later:
+        - CustomCapturePolicyExecutionCount: Custom capture policy execution count threshold
+        - CustomCapturePolicyTotalCompileCPUTimeMS: Custom capture policy compile CPU time threshold in milliseconds
+        - CustomCapturePolicyTotalExecutionCPUTimeMS: Custom capture policy execution CPU time threshold in milliseconds
+        - CustomCapturePolicyStaleThresholdHours: Custom capture policy stale threshold in hours
+
+        All properties from the base SMO QueryStoreOptions object are accessible via Select-Object *, even though only default properties are displayed in standard output. The number of properties returned varies based on the SQL Server version of the target instance.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 

@@ -108,6 +108,20 @@ function Export-DbaCsv {
 
         Addresses GitHub issue #8646 for Export-DbaCsv with compression options.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns a single object containing export summary information only when rows are successfully exported. If no rows are exported, no output is returned.
+
+        Properties:
+        - Path: The full file system path where the CSV file was written (string)
+        - RowsExported: The total number of rows written to the CSV file (int)
+        - FileSizeBytes: The size of the output file in bytes (long)
+        - FileSizeMB: The size of the output file in megabytes, rounded to 2 decimal places (double)
+        - CompressionType: The compression format applied to the file - None, GZip, Deflate, Brotli, or ZLib (string)
+        - Elapsed: A TimeSpan object representing the total time taken to export all data (TimeSpan)
+        - RowsPerSecond: The average export throughput calculated as rows written per second (double)
+
     .LINK
         https://dbatools.io/Export-DbaCsv
 
