@@ -27,6 +27,7 @@ Describe $CommandName -Tag UnitTests {
                 "WithReplace",
                 "KeepReplication",
                 "KeepCDC",
+                "ErrorBrokerConversations",
                 "PageRestore",
                 "ExecuteAs",
                 "StopBefore",

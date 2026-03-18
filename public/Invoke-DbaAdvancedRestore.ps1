@@ -95,6 +95,11 @@ function Invoke-DbaAdvancedRestore {
         Essential when restoring databases where CDC is actively capturing data changes for auditing or ETL processes.
         Cannot be combined with NoRecovery or StandbyDirectory parameters as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER PageRestore
         Array of page objects from Get-DbaSuspectPage specifying corrupted pages to restore using page-level restore.
         Use this for targeted repair of specific corrupted pages without restoring the entire database.
@@ -234,6 +239,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$WithReplace,
         [switch]$KeepReplication,
         [switch]$KeepCDC,
+        [switch]$ErrorBrokerConversations,
         [object[]]$PageRestore,
         [string]$ExecuteAs,
         [switch]$StopBefore,
@@ -406,12 +412,15 @@ function Invoke-DbaAdvancedRestore {
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Restoring $database to $SqlInstance based on these files: $($backup.FullName -join ', ')")) {
                     try {
                         $restoreComplete = $true
-                        if ($KeepCDC -and $restore.NoRecovery -eq $false) {
+                        if (($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
                             $script = $restore.Script($server)
+                            $withOptions = @()
+                            if ($KeepCDC) { $withOptions += 'KEEP_CDC' }
+                            if ($ErrorBrokerConversations) { $withOptions += 'ERROR_BROKER_CONVERSATIONS' }
                             if ($script -like '*WITH*') {
-                                $script = $script.TrimEnd() + ' , KEEP_CDC'
+                                $script = $script.TrimEnd() + ' , ' + ($withOptions -join ' , ')
                             } else {
-                                $script = $script.TrimEnd() + ' WITH KEEP_CDC'
+                                $script = $script.TrimEnd() + ' WITH ' + ($withOptions -join ' , ')
                             }
                             if ($true -ne $OutputScriptOnly) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))

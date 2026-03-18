@@ -216,6 +216,11 @@ function Restore-DbaDatabase {
         Use this when restoring databases with CDC enabled and you need to maintain change tracking functionality.
         Cannot be combined with NoRecovery or Standby modes as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER KeepReplication
         Maintains replication settings and objects when restoring databases involved in replication topologies.
         Use this when restoring publisher or subscriber databases where you need to preserve replication configuration.
@@ -485,6 +490,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
+        [parameter(ParameterSetName = "Restore")][switch]$ErrorBrokerConversations,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -873,28 +879,29 @@ function Restore-DbaDatabase {
             }
             try {
                 $parms = @{
-                    SqlInstance       = $RestoreInstance
-                    WithReplace       = $WithReplace
-                    RestoreTime       = $RestoreTime
-                    StandbyDirectory  = $StandbyDirectory
-                    NoRecovery        = $NoRecovery
-                    Continue          = $Continue
-                    OutputScriptOnly  = $OutputScriptOnly
-                    BlockSize         = $BlockSize
-                    MaxTransferSize   = $MaxTransferSize
-                    BufferCount       = $Buffercount
-                    KeepCDC           = $KeepCDC
-                    VerifyOnly        = $VerifyOnly
-                    PageRestore       = $PageRestore
-                    StorageCredential = $StorageCredential
-                    KeepReplication   = $KeepReplication
-                    StopMark          = $StopMark
-                    StopAfterDate     = $StopAfterDate
-                    StopBefore        = $StopBefore
-                    ExecuteAs         = $ExecuteAs
-                    Checksum          = $Checksum
-                    Restart           = $Restart
-                    EnableException   = $true
+                    SqlInstance              = $RestoreInstance
+                    WithReplace              = $WithReplace
+                    RestoreTime              = $RestoreTime
+                    StandbyDirectory         = $StandbyDirectory
+                    NoRecovery               = $NoRecovery
+                    Continue                 = $Continue
+                    OutputScriptOnly         = $OutputScriptOnly
+                    BlockSize                = $BlockSize
+                    MaxTransferSize          = $MaxTransferSize
+                    BufferCount              = $Buffercount
+                    KeepCDC                  = $KeepCDC
+                    ErrorBrokerConversations = $ErrorBrokerConversations
+                    VerifyOnly               = $VerifyOnly
+                    PageRestore              = $PageRestore
+                    StorageCredential        = $StorageCredential
+                    KeepReplication          = $KeepReplication
+                    StopMark                 = $StopMark
+                    StopAfterDate            = $StopAfterDate
+                    StopBefore               = $StopBefore
+                    ExecuteAs                = $ExecuteAs
+                    Checksum                 = $Checksum
+                    Restart                  = $Restart
+                    EnableException          = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
