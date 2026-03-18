@@ -448,6 +448,24 @@ function Restore-DbaDatabase {
 
         Demonstrates the recommended workflow for restoring from S3 storage. Since SQL Server cannot enumerate S3 bucket contents via T-SQL, you must first use PowerShell's Get-S3Object cmdlet to list backup files, then pass the full S3 URLs to Restore-DbaDatabase.
         The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem \\server\backups | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Scans the \\server\backups share and restores only files with a .bak extension, excluding any incomplete or in-progress files
+        such as those with extensions like .bak.part that may be created by SFTP clients or other upload tools during file transfer.
+
+        When backup files are uploaded to a share while a restore job is running, incomplete files with non-standard extensions
+        can cause Restore-DbaDatabase to hang while trying to read the backup header of a locked or partial file. Always filter
+        your file list to include only complete backup files before passing them to this command.
+
+    .EXAMPLE
+        PS C:\> $backupFiles = Get-ChildItem \\server\backups -Recurse | Where-Object { $_.Name -match '\.(bak|trn|dif)$' }
+        PS C:\> $backupFiles | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Recursively scans \\server\backups and filters files to only those ending in .bak, .trn, or .dif using a regex match,
+        then restores them to server1\instance1. This pattern is recommended when your backup directory may contain non-backup
+        files or files from in-progress uploads, ensuring only complete backup files are processed.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
