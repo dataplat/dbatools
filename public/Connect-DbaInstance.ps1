@@ -648,6 +648,8 @@ function Connect-DbaInstance {
                         $serverName = "ADMIN:localhost"
                     }
                     Write-Message -Level Debug -Message "IsLocalHost is true, using '$serverName' for DAC to avoid multi-IP resolution."
+                    # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
+                    $TrustServerCertificate = $true
                 } else {
                     $serverName = "ADMIN:$serverName"
                 }
@@ -721,6 +723,8 @@ function Connect-DbaInstance {
                             } else {
                                 $connContext.ServerInstance = "ADMIN:localhost"
                             }
+                            # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
+                            $connContext.TrustServerCertificate = $true
                         } else {
                             $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
                         }
