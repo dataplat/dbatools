@@ -329,12 +329,11 @@ namespace DbaTools {
                 # TdsWrappingStream adds/strips that framing so SslStream negotiates correctly.
                 $tdsStream = New-Object DbaTools.TdsWrappingStream($networkStream, [byte]0x12)
 
-                # The server certificate is captured via the validation callback
-                $script:capturedCertificate = $null
-
-                $certValidationCallback = {
+                # Use a validation callback that always accepts the certificate so we can
+                # complete the handshake regardless of chain/policy errors, then read
+                # RemoteCertificate from the stream after authentication.
+                $certValidationCallback = [System.Net.Security.RemoteCertificateValidationCallback] {
                     param($sender, $certificate, $chain, $sslPolicyErrors)
-                    $script:capturedCertificate = $certificate
                     return $true
                 }
 
@@ -346,7 +345,9 @@ namespace DbaTools {
 
                 $sslStream.AuthenticateAsClient($TargetHost)
 
-                return $script:capturedCertificate
+                # RemoteCertificate is the reliable way to retrieve the server certificate
+                # after a successful TLS handshake.
+                return $sslStream.RemoteCertificate
             } catch {
                 throw
             } finally {
