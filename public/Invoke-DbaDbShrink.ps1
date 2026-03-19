@@ -295,6 +295,7 @@ function Invoke-DbaDbShrink {
                         $start = Get-Date
                         # saving previous timeout to be restored at the end
                         $previousStatementTimeout = $instance.ConnectionContext.StatementTimeout
+                        $errorDetails = $null
                         try {
                             Write-Message -Level Verbose -Message 'Beginning shrink of files'
                             $instance.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
@@ -327,8 +328,8 @@ function Invoke-DbaDbShrink {
                             $success = $true
                         } catch {
                             $success = $false
-                            Stop-Function -Message 'Failure' -EnableException $EnableException -ErrorRecord $_ -Continue
-                            continue
+                            $errorDetails = $_.Exception.Message
+                            Stop-Function -Message "Shrink operation failed for file $($file.Name): $errorDetails" -ErrorRecord $_
                         } finally {
                             $instance.ConnectionContext.StatementTimeout = $previousStatementTimeout
                         }
@@ -337,6 +338,14 @@ function Invoke-DbaDbShrink {
                         [dbasize]$finalSpaceAvailableKB = ($finalFileSizeKB - ($file.UsedSpace * 1024))
                         Write-Message -Level Verbose -Message "Final file size: $($finalFileSizeKB)"
                         Write-Message -Level Verbose -Message "Final file space available: $($finalSpaceAvailableKB)"
+
+                        # Check if shrink didn't achieve target and provide feedback
+                        if ($success -and $finalFileSizeKB -gt $desiredFileSizeKB) {
+                            $shrinkShortfall = $finalFileSizeKB - $desiredFileSizeKB
+                            $partialShrinkMessage = "File only shrunk to $finalFileSizeKB (target was $desiredFileSizeKB). Shortfall: $shrinkShortfall. This may be due to active transactions, data distribution, or minimum file size constraints."
+                            Write-Message -Level Warning -Message $partialShrinkMessage
+                            $errorDetails = $partialShrinkMessage
+                        }
 
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                             Write-Message -Level Verbose -Message 'Getting ending average fragmentation'
@@ -350,6 +359,13 @@ function Invoke-DbaDbShrink {
                         $timSpan = New-TimeSpan -Start $start -End $end
                         $ts = [TimeSpan]::FromSeconds($timSpan.TotalSeconds)
                         $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+
+                        $notesText = 'Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE'
+                        if ($errorDetails) {
+                            $notesText = "$errorDetails | $notesText"
+                        } else {
+                            $notesText = $notesText
+                        }
 
                         $object = [PSCustomObject]@{
                             ComputerName                = $server.ComputerName
@@ -371,7 +387,7 @@ function Invoke-DbaDbShrink {
                             FinalAverageFragmentation   = [math]::Round($endingDefrag, 1)
                             InitialTopFragmentation     = [math]::Round($startingTopFrag, 1)
                             FinalTopFragmentation       = [math]::Round($endingTopDefrag, 1)
-                            Notes                       = 'Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE'
+                            Notes                       = $notesText
                         }
                         if ($ExcludeIndexStats) {
                             Select-DefaultView -InputObject $object -ExcludeProperty InitialAverageFragmentation, FinalAverageFragmentation, InitialTopFragmentation, FinalTopFragmentation
