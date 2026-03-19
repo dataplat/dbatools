@@ -894,6 +894,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaDbFileGroup',
         'Set-DbaDbFileGroup',
         'Remove-DbaLinkedServer',
+        'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Export-DbaUser',
         'Get-DbaSsisExecutionHistory',

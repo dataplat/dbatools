@@ -669,6 +669,7 @@
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaAgentJobOwner',
+        'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaBackupInformation',
         'Test-DbaBuild',
