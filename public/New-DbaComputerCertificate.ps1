@@ -88,6 +88,13 @@ function New-DbaComputerCertificate {
         Useful for development environments or when no domain CA is available.
         Self-signed certificates will generate trust warnings unless manually added to client trust stores.
 
+    .PARAMETER DocumentEncryptionCert
+        Creates a certificate suitable for use as a Column Master Key for Always Encrypted.
+        When specified, the certificate uses KeyEncipherment key usage and includes the
+        Document Encryption (1.3.6.1.4.1.311.10.3.11) and IKE Intermediate (1.3.6.1.5.5.8.2.2)
+        Extended Key Usage OIDs required by Always Encrypted, instead of the default Server
+        Authentication OID (1.3.6.1.5.5.7.3.1).
+
     .PARAMETER HashAlgorithm
         Specifies the cryptographic hash algorithm used for certificate signing.
         Defaults to "Sha256" which meets current industry security standards for production environments.
@@ -180,6 +187,13 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate using the SHA256 hashing algorithm that does not expire for 5 years
 
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -SelfSigned -DocumentEncryptionCert
+
+        Creates a self-signed certificate suitable for use as a Column Master Key for Always Encrypted.
+        The certificate includes the Document Encryption and IKE Intermediate Extended Key Usage OIDs
+        required by SQL Server Always Encrypted.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -201,6 +215,7 @@ function New-DbaComputerCertificate {
         [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [string[]]$Dns,
         [switch]$SelfSigned,
+        [switch]$DocumentEncryptionCert,
         [switch]$EnableException,
         [ValidateSet("Sha256", "sha384", "sha512")]
         [string]$HashAlgorithm = "Sha256",
@@ -400,9 +415,16 @@ function New-DbaComputerCertificate {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }
                 Add-Content $certCfg "HashAlgorithm = $HashAlgorithm"
-                Add-Content $certCfg "KeyUsage = 0xa0"
-                Add-Content $certCfg "[EnhancedKeyUsageExtension]"
-                Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                if ($DocumentEncryptionCert) {
+                    Add-Content $certCfg "KeyUsage = 0x20"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.8.2.2"
+                    Add-Content $certCfg "OID=1.3.6.1.4.1.311.10.3.11"
+                } else {
+                    Add-Content $certCfg "KeyUsage = 0xa0"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                }
                 Add-Content $certCfg "[Extensions]"
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
