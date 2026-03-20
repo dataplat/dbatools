@@ -544,7 +544,7 @@ function Expand-DbaDbLogFile {
                                     continue
                                 }
 
-                                Write-Message -Level Verbose -Message "$step - TargetVlfCount $TargetVlfCount: overriding increment size to $([Math]::Round($calculatedIncrementKB / 1024.0, 2))MB (was $([Math]::Round($LogIncrementSize / 1024.0, 2))MB)."
+                                Write-Message -Level Verbose -Message "$step - TargetVlfCount ${TargetVlfCount}: overriding increment size to $([Math]::Round($calculatedIncrementKB / 1024.0, 2))MB (was $([Math]::Round($LogIncrementSize / 1024.0, 2))MB)."
                                 $LogIncrementSize = [int]$calculatedIncrementKB
                             }
                         }
