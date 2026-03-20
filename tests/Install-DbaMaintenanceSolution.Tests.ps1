@@ -156,10 +156,10 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplaceExisting   = $true
                 CleanupTime       = 168
                 ChangeBackupType  = $true
-                Compress          = $true
+                Compress          = "ForceOn"
                 CopyOnly          = $true
-                Verify            = $true
-                CheckSum          = $true
+                Verify            = "ForceOn"
+                CheckSum          = "ForceOn"
                 ModificationLevel = 12
             }
             $installResult = Install-DbaMaintenanceSolution @splatInstall
@@ -387,10 +387,10 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplaceExisting  = $true
                 CleanupTime      = 168
                 ChangeBackupType = $false
-                Compress         = $false
+                Compress         = "ForceOff"
                 CopyOnly         = $false
-                Verify           = $false
-                CheckSum         = $false
+                Verify           = "ForceOff"
+                CheckSum         = "ForceOff"
             }
             $installResult = Install-DbaMaintenanceSolution @splatInstall
 
@@ -613,10 +613,10 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplaceExisting  = $true
                 CleanupTime      = 168
                 ChangeBackupType = $false
-                Compress         = $false
+                Compress         = "ForceOff"
                 CopyOnly         = $false
-                Verify           = $true
-                CheckSum         = $false
+                Verify           = "ForceOn"
+                CheckSum         = "ForceOff"
             }
             $installResult = Install-DbaMaintenanceSolution @splatInstall
 
@@ -781,13 +781,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should error out and tell us our mistake" {
             $splatInstall = @{
-                SqlInstance      = $TestConfig.InstanceMulti2
-                Database         = $testDbName
-                InstallJobs      = $true
-                ReplaceExisting  = $true
-                Verify           = $true
-                BackupLocation   = "NUL"
-                EnableException  = $true
+                SqlInstance     = $TestConfig.InstanceMulti2
+                Database        = $testDbName
+                InstallJobs     = $true
+                ReplaceExisting = $true
+                Verify          = "ForceOn"
+                BackupLocation  = "NUL"
+                EnableException = $true
             }
             $installResult = { Install-DbaMaintenanceSolution @splatInstall } | Should -Throw -ExpectedMessage '*NUL*'
         }
@@ -853,10 +853,10 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplaceExisting  = $true
                 CleanupTime      = 168
                 ChangeBackupType = $false
-                Compress         = $false
+                Compress         = "ForceOff"
                 CopyOnly         = $false
-                Verify           = $false
-                CheckSum         = $false
+                Verify           = "ForceOff"
+                CheckSum         = "ForceOff"
             }
             $installResult = Install-DbaMaintenanceSolution @splatInstall
 
@@ -970,10 +970,10 @@ Describe $CommandName -Tag IntegrationTests {
                 ReplaceExisting  = $true
                 CleanupTime      = 168
                 ChangeBackupType = $false
-                Compress         = $false
+                Compress         = "ForceOff"
                 CopyOnly         = $false
-                Verify           = $false
-                CheckSum         = $true
+                Verify           = "ForceOff"
+                CheckSum         = "ForceOn"
             }
             $installResult = Install-DbaMaintenanceSolution @splatInstall
 
