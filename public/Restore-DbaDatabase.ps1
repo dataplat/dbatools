@@ -216,6 +216,11 @@ function Restore-DbaDatabase {
         Use this when restoring databases with CDC enabled and you need to maintain change tracking functionality.
         Cannot be combined with NoRecovery or Standby modes as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER KeepReplication
         Maintains replication settings and objects when restoring databases involved in replication topologies.
         Use this when restoring publisher or subscriber databases where you need to preserve replication configuration.
@@ -443,6 +448,24 @@ function Restore-DbaDatabase {
 
         Demonstrates the recommended workflow for restoring from S3 storage. Since SQL Server cannot enumerate S3 bucket contents via T-SQL, you must first use PowerShell's Get-S3Object cmdlet to list backup files, then pass the full S3 URLs to Restore-DbaDatabase.
         The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem \\server\backups | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Scans the \\server\backups share and restores only files with a .bak extension, excluding any incomplete or in-progress files
+        such as those with extensions like .bak.part that may be created by SFTP clients or other upload tools during file transfer.
+
+        When backup files are uploaded to a share while a restore job is running, incomplete files with non-standard extensions
+        can cause Restore-DbaDatabase to hang while trying to read the backup header of a locked or partial file. Always filter
+        your file list to include only complete backup files before passing them to this command.
+
+    .EXAMPLE
+        PS C:\> $backupFiles = Get-ChildItem \\server\backups -Recurse | Where-Object { $_.Name -match '\.(bak|trn|dif)$' }
+        PS C:\> $backupFiles | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Recursively scans \\server\backups and filters files to only those ending in .bak, .trn, or .dif using a regex match,
+        then restores them to server1\instance1. This pattern is recommended when your backup directory may contain non-backup
+        files or files from in-progress uploads, ensuring only complete backup files are processed.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
@@ -485,6 +508,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
+        [parameter(ParameterSetName = "Restore")][switch]$ErrorBrokerConversations,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -873,28 +897,29 @@ function Restore-DbaDatabase {
             }
             try {
                 $parms = @{
-                    SqlInstance       = $RestoreInstance
-                    WithReplace       = $WithReplace
-                    RestoreTime       = $RestoreTime
-                    StandbyDirectory  = $StandbyDirectory
-                    NoRecovery        = $NoRecovery
-                    Continue          = $Continue
-                    OutputScriptOnly  = $OutputScriptOnly
-                    BlockSize         = $BlockSize
-                    MaxTransferSize   = $MaxTransferSize
-                    BufferCount       = $Buffercount
-                    KeepCDC           = $KeepCDC
-                    VerifyOnly        = $VerifyOnly
-                    PageRestore       = $PageRestore
-                    StorageCredential = $StorageCredential
-                    KeepReplication   = $KeepReplication
-                    StopMark          = $StopMark
-                    StopAfterDate     = $StopAfterDate
-                    StopBefore        = $StopBefore
-                    ExecuteAs         = $ExecuteAs
-                    Checksum          = $Checksum
-                    Restart           = $Restart
-                    EnableException   = $true
+                    SqlInstance              = $RestoreInstance
+                    WithReplace              = $WithReplace
+                    RestoreTime              = $RestoreTime
+                    StandbyDirectory         = $StandbyDirectory
+                    NoRecovery               = $NoRecovery
+                    Continue                 = $Continue
+                    OutputScriptOnly         = $OutputScriptOnly
+                    BlockSize                = $BlockSize
+                    MaxTransferSize          = $MaxTransferSize
+                    BufferCount              = $Buffercount
+                    KeepCDC                  = $KeepCDC
+                    ErrorBrokerConversations = $ErrorBrokerConversations
+                    VerifyOnly               = $VerifyOnly
+                    PageRestore              = $PageRestore
+                    StorageCredential        = $StorageCredential
+                    KeepReplication          = $KeepReplication
+                    StopMark                 = $StopMark
+                    StopAfterDate            = $StopAfterDate
+                    StopBefore               = $StopBefore
+                    ExecuteAs                = $ExecuteAs
+                    Checksum                 = $Checksum
+                    Restart                  = $Restart
+                    EnableException          = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
