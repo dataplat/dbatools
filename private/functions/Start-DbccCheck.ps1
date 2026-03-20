@@ -8,6 +8,7 @@ function Start-DbccCheck {
     )
 
     $servername = $server.name
+    $escapedDbName = $DbName.Replace("]", "]]")
 
     if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $DbName on $servername")) {
         if ($server.ConnectionContext.StatementTimeout -ne 0) {
@@ -17,17 +18,24 @@ function Start-DbccCheck {
         try {
             if ($table) {
                 $null = $server.databases[$DbName].CheckTables('None')
-                Write-Verbose "Dbcc CheckTables finished successfully for $DbName on $servername"
+                Write-Verbose "DBCC CheckTables finished successfully for $DbName on $servername"
+                return [PSCustomObject]@{
+                    Status = "Success"
+                    Output = $null
+                }
             } else {
                 if ($MaxDop) {
-                    $null = $server.Query("DBCC CHECKDB ([$DbName]) WITH MAXDOP = $MaxDop")
-                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                    $query = "DBCC CHECKDB ([$escapedDbName]) WITH MAXDOP = $MaxDop"
                 } else {
-                    $null = $server.Query("DBCC CHECKDB ([$DbName])")
-                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                    $query = "DBCC CHECKDB ([$escapedDbName])"
+                }
+                $dbccOutput = Invoke-DbaQuery -SqlInstance $server -Query $query -MessagesToOutput -EnableException
+                Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
+                return [PSCustomObject]@{
+                    Status = "Success"
+                    Output = $dbccOutput
                 }
             }
-            return "Success"
         } catch {
             $originalException = $_.Exception
             $loopNo = 0
@@ -61,7 +69,10 @@ function Start-DbccCheck {
             } catch {
                 $null
             }
-            return $message.Trim()
+            return [PSCustomObject]@{
+                Status = $message.Trim()
+                Output = $null
+            }
         }
     }
 }
