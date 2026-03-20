@@ -26,6 +26,10 @@ function Get-DbaAgDatabase {
         Specifies which availability group databases to return information for. Accepts multiple database names with tab completion.
         Use this to focus on specific databases when troubleshooting AG issues or monitoring particular applications.
 
+    .PARAMETER ExcludeDatabase
+        Specifies one or more databases to exclude from the results using exact name matching.
+        Use this to filter out specific databases like test or staging environments from your results.
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup via pipeline input.
         Use this when you want to chain commands to get database details from already retrieved availability groups.
@@ -109,6 +113,11 @@ function Get-DbaAgDatabase {
         Returns all the databases in the availability group AG101 on sql2017a
 
     .EXAMPLE
+        PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a -ExcludeDatabase TestDB,StagingDB
+
+        Returns all the databases in each availability group found on sql2017a, excluding TestDB and StagingDB.
+
+    .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint | Get-DbaAgDatabase -Database Sharepoint_Config
 
         Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
@@ -119,6 +128,7 @@ function Get-DbaAgDatabase {
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
         [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
@@ -134,9 +144,8 @@ function Get-DbaAgDatabase {
         }
 
         foreach ($db in $InputObject.AvailabilityDatabases) {
-            if ($Database) {
-                if ($db.Name -notin $Database) { continue }
-            }
+            if ($Database -and $db.Name -notin $Database) { continue }
+            if ($ExcludeDatabase -and $db.Name -in $ExcludeDatabase) { continue }
             $ag = $db.Parent
             $server = $db.Parent.Parent
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
