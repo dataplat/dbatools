@@ -823,7 +823,9 @@ function Test-DbaLastBackup {
                             Write-Message -Level Verbose -Message "Starting DBCC."
 
                             $startDbcc  = Get-Date
-                            $dbccresult = Start-DbccCheck -Server $destserver -DbName $prefixedDbName -MaxDop $MaxDop 3>$null
+                            $dbccCheckResult = Start-DbccCheck -Server $destserver -DbName $dbName -MaxDop $MaxDop 3>$null
+                            $dbccresult = $dbccCheckResult.Status
+                            $dbccOutput = $dbccCheckResult.Output
                             $endDbcc    = Get-Date
 
                             $dbccts      = New-TimeSpan -Start $startDbcc -End $endDbcc
