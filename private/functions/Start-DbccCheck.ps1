@@ -18,7 +18,7 @@ function Start-DbccCheck {
         try {
             if ($table) {
                 $null = $server.databases[$DbName].CheckTables('None')
-                Write-Verbose "Dbcc CheckTables finished successfully for $DbName on $servername"
+                Write-Verbose "DBCC CheckTables finished successfully for $DbName on $servername"
                 return [PSCustomObject]@{
                     Status = "Success"
                     Output = $null
@@ -30,7 +30,7 @@ function Start-DbccCheck {
                     $query = "DBCC CHECKDB ([$escapedDbName])"
                 }
                 $dbccOutput = Invoke-DbaQuery -SqlInstance $server -Query $query -MessagesToOutput -EnableException
-                Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
                 return [PSCustomObject]@{
                     Status = "Success"
                     Output = $dbccOutput
