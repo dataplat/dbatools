@@ -539,6 +539,7 @@
         'Remove-DbaAgentAlert',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobCategory',
+        'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
         'Remove-DbaAgentOperator',
         'Remove-DbaAgentSchedule',

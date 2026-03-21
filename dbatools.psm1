@@ -555,6 +555,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaAgentJob',
         'New-DbaAgentJobStep',
         'Set-DbaAgentJobStep',
+        'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
         'New-DbaAgentSchedule',
         'Set-DbaAgentSchedule',
