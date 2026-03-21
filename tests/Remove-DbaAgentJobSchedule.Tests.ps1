@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Remove-DbaAgentJobSchedule @splatDetach
             $result | Should -BeNullOrEmpty
-            $WarnVar | Should -BeLike "Schedule '$scheduleName' is not attached to job '$jobName'*"
+            $WarnVar | Should -BeLike "*Schedule '$scheduleName' is not attached to job '$jobName'*"
         }
     }
 
