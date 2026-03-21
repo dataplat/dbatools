@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaRegistryRoot
+            $results = Get-DbaRegistryRoot -ComputerName ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
             $regexPath = "Software\\Microsoft\\Microsoft SQL Server"
         }
 

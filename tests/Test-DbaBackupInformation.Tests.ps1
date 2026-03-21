@@ -68,10 +68,10 @@ Describe $CommandName -Tag IntegrationTests {
                     }
                 }
                 Mock New-DbaDirectory { $True }
-                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
-                ($output.Count) -gt 0 | Should -Be $true
-                "False" -in ($Output.IsVerified) | Should -Be $False
-                ($null -ne $WarnVar) | Should -Be $True
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningAction SilentlyContinue
+                $WarnVar | Should -BeNullOrEmpty
+                $output | Should -Not -BeNullOrEmpty
+                $output.IsVerified | Should -Not -Contain $false
             }
         }
         Context "Not being able to see backups is bad" {

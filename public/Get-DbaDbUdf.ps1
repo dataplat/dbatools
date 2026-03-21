@@ -1,10 +1,10 @@
 function Get-DbaDbUdf {
     <#
     .SYNOPSIS
-        Retrieves User Defined Functions from SQL Server databases with filtering and metadata
+        Retrieves User Defined Functions and User Defined Aggregates from SQL Server databases with filtering and metadata
 
     .DESCRIPTION
-        Retrieves all User Defined Functions (UDFs) from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
+        Retrieves all User Defined Functions (UDFs) and User Defined Aggregates from one or more SQL Server databases, returning detailed metadata including schema, creation dates, and data types. This function helps DBAs inventory custom database logic, analyze code dependencies during migrations, and audit user-created functions for security or performance reviews. You can filter results by database, schema, or function name, and exclude system functions to focus on custom business logic.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -60,30 +60,59 @@ function Get-DbaDbUdf {
     .LINK
         https://dbatools.io/Get-DbaDbUdf
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedFunction, Microsoft.SqlServer.Management.Smo.UserDefinedAggregate
+
+        Returns one object per User Defined Function or User Defined Aggregate found in the specified databases. Both SMO object types are combined in a single output stream, with UserDefinedAggregates always being user-created (no system aggregates exist in SQL Server).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the function/aggregate
+        - Schema: The schema that contains the function/aggregate
+        - CreateDate: DateTime when the function/aggregate was originally created
+        - DateLastModified: DateTime of the most recent modification to the function/aggregate
+        - Name: The name of the User Defined Function or User Defined Aggregate
+        - DataType: The return data type of the function/aggregate (for example, 'int', 'varchar', 'table', etc.)
+
+        Additional properties available from SMO (UserDefinedFunction):
+        - IsSystemObject: Boolean indicating if this is a system-created object (True for system functions, False for user-created)
+        - AssemblyName: Name of the .NET assembly if this is a CLR-based function
+        - ClassName: Class name within the assembly for CLR-based functions
+        - ExecutionContext: Whether function executes in caller or owner context
+        - IsInlineTableValuedFunction: Boolean for inline table-valued functions
+        - IsSqlTabular: Boolean indicating if this is a SQL table-valued function
+        - QuotedIdentifierStatus: Boolean indicating quoted identifier setting
+        - ReturnsNullOnNullInput: Boolean indicating NULL handling behavior
+        - Text: The T-SQL source code or assembly reference of the function
+
+        Note: UserDefinedAggregate objects do not have the IsSystemObject property. The -ExcludeSystemUdf switch filters out system functions but does not affect aggregates (which are never system objects).
+
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance sql2016
 
-        Gets all database User Defined Functions
+        Gets all database User Defined Functions and User Defined Aggregates
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -Database db1
 
-        Gets the User Defined Functions for the db1 database
+        Gets the User Defined Functions and User Defined Aggregates for the db1 database
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -ExcludeDatabase db1
 
-        Gets the User Defined Functions for all databases except db1
+        Gets the User Defined Functions and User Defined Aggregates for all databases except db1
 
     .EXAMPLE
         PS C:\> Get-DbaDbUdf -SqlInstance Server1 -ExcludeSystemUdf
 
-        Gets the User Defined Functions for all databases that are not system objects (there can be 100+ system User Defined Functions in each DB)
+        Gets the User Defined Functions and User Defined Aggregates for all databases that are not system objects (there can be 100+ system User Defined Functions in each DB)
 
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbUdf
 
-        Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
+        Gets the User Defined Functions and User Defined Aggregates for the databases on Sql1 and Sql2/sqlexpress
 
     #>
     [CmdletBinding()]
@@ -122,16 +151,32 @@ function Get-DbaDbUdf {
 
                 # Let the SMO read all properties referenced in this command for all user defined functions in the database in one query.
                 # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-                $db.UserDefinedFunctions.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+                try {
+                    $db.UserDefinedFunctions.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType', 'IsSystemObject'))
+                } catch {
+                    Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+                }
+
+                # UserDefinedAggregates don't have IsSystemObject property, so initialize separately
+                try {
+                    $db.UserDefinedAggregates.ClearAndInitialize('', [string[]]('Schema', 'Name', 'CreateDate', 'DateLastModified', 'DataType'))
+                } catch {
+                    Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+                }
 
                 $userDefinedFunctions = $db.UserDefinedFunctions
 
-                if (!$userDefinedFunctions) {
-                    Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
-                    continue
-                }
                 if ($ExcludeSystemUdf) {
                     $userDefinedFunctions = $userDefinedFunctions | Where-Object IsSystemObject -eq $false
+                }
+
+                # Combine UserDefinedFunctions and UserDefinedAggregates
+                # UserDefinedAggregates are always user-created (no system aggregates exist)
+                $userDefinedFunctions = @($userDefinedFunctions) + @($db.UserDefinedAggregates)
+
+                if (!$userDefinedFunctions -or $userDefinedFunctions.Count -eq 0) {
+                    Write-Message -Message "No User Defined Functions or Aggregates exist in the $db database on $instance" -Target $db -Level Verbose
+                    continue
                 }
 
                 if ($Schema) {

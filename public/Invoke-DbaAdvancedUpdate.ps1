@@ -64,6 +64,24 @@ Function Invoke-DbaAdvancedUpdate {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per action processed, with the following properties:
+
+        - TargetLevel: The target SQL Server patch level that was installed
+        - KB: The KB number of the patch that was applied
+        - Installer: Path to the KB installer file that was used
+        - MajorVersion: The major version of SQL Server (e.g., 2019, 2022)
+        - Build: The specific build number of the installation
+        - InstanceName: Name of the SQL Server instance targeted, or null if all instances were updated
+        - Successful: Boolean indicating whether the update installation completed successfully
+        - Restarted: Boolean indicating whether the computer was restarted as part of this update
+        - ExitCode: The exit code returned by the SQL Server setup.exe program
+        - ExtractPath: The directory path where update files were extracted on the target computer
+        - Log: The output log from the setup.exe installation process
+        - Notes: Array of error messages, warnings, or status notes encountered during installation
+
     .LINK
         https://dbatools.io/Invoke-DbaAdvancedUpdate
 

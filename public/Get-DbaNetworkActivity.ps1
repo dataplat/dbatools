@@ -31,6 +31,31 @@ function Get-DbaNetworkActivity {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Win32_PerfFormattedData_Tcpip_NetworkInterface
+
+        Returns one object per network interface found on the target computer(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer containing the network interface
+        - NIC: The name of the network interface (alias for Name property)
+        - BytesReceivedPersec: Bytes received per second on this interface (numeric value)
+        - BytesSentPersec: Bytes sent per second on this interface (numeric value)
+        - BytesTotalPersec: Total bytes per second (received + sent) on this interface (numeric value)
+        - Bandwidth: Human-readable interface bandwidth capacity (10Gb, 1Gb, 100Mb, 10Mb, 1Mb, 100Kb, or Low)
+
+        Additional properties available (from Win32_PerfFormattedData_Tcpip_NetworkInterface):
+        - CurrentBandwidth: Numeric bandwidth in bits per second (used to calculate display Bandwidth)
+        - OutputQueueLength: Queue length for outbound data
+        - PacketsReceivedPersec: Number of packets received per second
+        - PacketsSentPersec: Number of packets sent per second
+        - PacketsOutboundErrors: Number of transmission errors
+        - PacketsReceivedErrors: Number of receive errors
+        - PacketsReceivedDiscarded: Number of received packets discarded
+        - PacketsOutboundDiscarded: Number of transmitted packets discarded
+
+        All properties from the base WMI object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaNetworkActivity
 

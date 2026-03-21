@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
             "Cmd",
             "Output"
         )
-        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.instance2 -Operation FreeSystemCache
+        $resultFreeSystemCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSystemCache
     }
 
     Context "Validate standard output" {
@@ -53,19 +53,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns the right results for FREESESSIONCACHE" {
-            $resultFreeSessionCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.instance2 -Operation FreeSessionCache
+            $resultFreeSessionCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSessionCache
             $resultFreeSessionCache.Operation | Should -Match "FREESESSIONCACHE"
             $resultFreeSessionCache.Output | Should -Match "DBCC execution completed. If DBCC printed error messages, contact your system administrator."
         }
 
         It "returns the right results for FREEPROCCACHE" {
-            $resultFreeProcCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.instance2 -Operation FREEPROCCACHE
+            $resultFreeProcCache = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FREEPROCCACHE
             $resultFreeProcCache.Operation | Should -Match "FREEPROCCACHE"
             $resultFreeProcCache.Output | Should -Match "DBCC execution completed. If DBCC printed error messages, contact your system administrator."
         }
 
         It "returns the right results for FREESESSIONCACHE and using NoInformationalMessages" {
-            $resultNoInfo = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.instance2 -Operation FreeSessionCache -NoInformationalMessages
+            $resultNoInfo = Invoke-DbaDbccFreeCache -SqlInstance $TestConfig.InstanceSingle -Operation FreeSessionCache -NoInformationalMessages
             $resultNoInfo.Operation | Should -Match "FREESESSIONCACHE"
             $resultNoInfo.Output | Should -BeNullOrEmpty
         }

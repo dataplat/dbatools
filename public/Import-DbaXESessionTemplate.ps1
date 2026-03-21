@@ -60,6 +60,35 @@ function Import-DbaXESessionTemplate {
     .LINK
         https://dbatools.io/Import-DbaXESessionTemplate
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Session
+
+        Returns one Extended Events session object for each template successfully imported and created. When -StartUpState On is specified, the session is also started and configured to autostart on server restart.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - Status: Current session status (Running, Stopped, or other state values)
+        - StartTime: DateTime when the session was started (null if stopped)
+        - AutoStart: Boolean indicating if the session starts automatically on SQL Server restart
+        - State: SMO object state (Existing, Creating, Pending, Dropping, etc.)
+        - Targets: Target collection for the session (event file, ring buffer, etc.)
+        - TargetFile: File path(s) where XE trace data is being written
+        - Events: Events configured in the session
+        - MaxMemory: Maximum memory in MB allocated to the session
+        - MaxEventSize: Maximum size in MB for individual events
+
+        Additional properties available (from SMO Session object):
+        - Parent: Reference to the parent XEStore object
+        - Store: Reference to the parent XEStore object
+        - Session: Copy of the session name property
+        - RemoteTargetFile: UNC paths for remote target files
+        - All other standard SMO Session properties accessible via Select-Object *
+
+        All properties from the base SMO XEvent.Session object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "15 Second IO Error"
 
@@ -148,28 +177,48 @@ function Import-DbaXESessionTemplate {
                     }
                 } else {
                     Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
-                    Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
 
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\").TrimEnd("/")
-                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                        Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
+                        $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    }
                     if ((Test-HostOSLinux -SqlInstance $server)) {
-                        $TargetFilePath = "$TargetFilePath/".$file.TrimEnd("\").TrimEnd("/")
-                        $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                        $TargetFilePath = "$TargetFilePath/"
+                        if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                            $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                        }
                     } else {
                         $TargetFilePath = "$TargetFilePath\"
-                        $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                        if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                            $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                        }
                     }
-
-                    # Perform replace
-                    $xelphrase = 'name="filename" value="'
-                    $xemphrase = 'name="metadatafile" value="'
 
                     try {
                         $basename = (Get-ChildItem $file).Basename
-                        $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
-                        $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
+                        $contents = Get-Content $file -Raw -ErrorAction Stop
+
+                        if ($contents -notmatch 'name="event_file"') {
+                            # No event_file target found in template - add one so TargetFilePath is honored
+                            Write-Message -Level Verbose -Message "No event_file target found in template, adding one with TargetFilePath."
+                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /><parameter name=""metadatafile"" value=""$TargetFileMetadataPath$basename"" /></target>"
+                            } else {
+                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /></target>"
+                            }
+                            $contents = $contents.Replace("</event_session>", "$newTarget</event_session>")
+                        } else {
+                            # Perform replace on existing event_file target parameters
+                            $xelphrase = 'name="filename" value="'
+                            $xemphrase = 'name="metadatafile" value="'
+                            $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
+                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                                $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
+                            }
+                        }
+
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\").TrimEnd("/")
                         $tempfile = Join-DbaPath $temp $basename
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8

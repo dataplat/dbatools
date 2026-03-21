@@ -47,6 +47,22 @@ function Get-DbaPfDataCollectorCounter {
     .LINK
         https://dbatools.io/Get-DbaPfDataCollectorCounter
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per counter added to the Data Collector Set.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - DataCollectorSet: The name of the parent Data Collector Set containing the collector
+        - DataCollector: The name of the specific Data Collector within the Collector Set
+        - Name: The full path of the performance counter (e.g., '\Processor(_Total)\% Processor Time')
+        - FileName: The output file name where performance counter data will be stored
+
+        Additional properties available:
+        - DataCollectorSetXml: XML configuration of the Data Collector Set
+        - Credential: The credential object used for authentication
+
     .EXAMPLE
         PS C:\> Get-DbaPfDataCollectorCounter
 

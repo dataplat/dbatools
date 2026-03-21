@@ -28,13 +28,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
         }
 
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2
+        $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
         $db | New-DbaDbEncryptionKey -Force
@@ -68,11 +68,11 @@ Describe $CommandName -Tag IntegrationTests {
                 Start-Sleep -Seconds 2
                 $elapsed += 2
                 $db.Refresh()
-                $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($db.Name)')"
+                $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($db.Name)')"
                 $encrypted = ($dbState.encryption_state -eq 3)
             } while (-not $encrypted -and $elapsed -lt $timeout)
 
-            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -WarningVariable warn
+            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             foreach ($result in $results) {
                 $result.EncryptionEnabled | Should -Be $false
@@ -85,15 +85,15 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $parallelMastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+            $parallelMastercert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
             if (-not $parallelMastercert) {
                 $parallelDelmastercert = $true
-                $parallelMastercert = New-DbaDbCertificate -SqlInstance $TestConfig.instance2
+                $parallelMastercert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle
             }
 
             $parallelDatabases = @()
             1..3 | ForEach-Object {
-                $parallelDb = New-DbaDatabase -SqlInstance $TestConfig.instance2
+                $parallelDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
                 $parallelDb | New-DbaDbMasterKey -SecurePassword $passwd
                 $parallelDb | New-DbaDbCertificate
                 $parallelDb | New-DbaDbEncryptionKey -Force
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $encryptedCount = 0
                 foreach ($parallelDb in $parallelDatabases) {
                     $parallelDb.Refresh()
-                    $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($parallelDb.Name)')"
+                    $dbState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($parallelDb.Name)')"
                     if ($dbState.encryption_state -eq 3) {
                         $encryptedCount++
                     }
@@ -136,7 +136,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $allEncrypted = ($encryptedCount -eq $parallelDatabases.Count)
             } while (-not $allEncrypted -and $elapsed -lt $timeout)
 
-            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.instance2 -Parallel -WarningVariable warn
+            $results = Stop-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -Parallel -WarningVariable warn
             $warn | Should -BeNullOrEmpty
             $results.Count | Should -BeGreaterOrEqual 3
             foreach ($result in $results) {

@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Components are properly retreived" {
         It "Should return the right values" {
-            $results = Get-DbaRegServerStore -SqlInstance $TestConfig.instance2
+            $results = Get-DbaRegServerStore -SqlInstance $TestConfig.InstanceSingle
             $results.InstanceName | Should -Not -Be $null
             $results.DisplayName | Should -Be "Central Management Servers"
         }

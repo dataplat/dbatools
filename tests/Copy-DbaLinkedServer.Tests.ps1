@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SourceSqlCredential",
                 "Destination",
                 "DestinationSqlCredential",
+                "Credential",
                 "LinkedServer",
                 "ExcludeLinkedServer",
                 "UpgradeSqlClient",
@@ -32,8 +33,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
 
         $createSql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool'"
@@ -59,8 +60,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When copying linked server with the same properties" {
         It "Copies successfully" {
             $splatCopy = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 LinkedServer  = "dbatoolsci_localhost"
                 WarningAction = "SilentlyContinue"
             }
@@ -83,8 +84,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Skips existing linked servers" {
             $splatCopySkip = @{
-                Source        = $TestConfig.instance2
-                Destination   = $TestConfig.instance3
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
                 LinkedServer  = "dbatoolsci_localhost"
                 WarningAction = "SilentlyContinue"
             }

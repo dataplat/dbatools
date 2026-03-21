@@ -28,16 +28,16 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaProcess -SqlInstance $TestConfig.instance3 -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
         $agname = "dbatoolsci_removeagdb_agroup"
         $dbname = "dbatoolsci_removeagdb_agroupdb-$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance3 -Name $dbName
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $dbName
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.bak"
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname | Backup-DbaDatabase -FilePath "$($TestConfig.Temp)\$dbname.trn" -Type Log
 
         $splatAvailabilityGroup = @{
-            Primary       = $TestConfig.instance3
+            Primary       = $TestConfig.InstanceHadr
             Name          = $agname
             ClusterType   = "None"
             FailoverMode  = "Manual"
@@ -56,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
-        $null = Get-DbaEndpoint -SqlInstance $TestConfig.instance3 -Type DatabaseMirroring | Remove-DbaEndpoint
+        $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn" -ErrorAction SilentlyContinue
 
@@ -65,16 +65,16 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "removes ag db" {
         It "returns removed results" {
-            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.instance3 -Database $dbname
+            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Database | Should -Be $dbname
             $results.Status | Should -Be "Removed"
         }
 
         It "really removed the db from the ag" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname
             $results.AvailabilityDatabases.Name | Should -Not -Contain $dbname
         }
     }
-} #$TestConfig.instance2 for appveyor
+}

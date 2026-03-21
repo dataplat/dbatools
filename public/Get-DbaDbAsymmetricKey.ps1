@@ -70,6 +70,27 @@ function Get-DbaDbAsymmetricKey {
 
         Gets the key1 Asymmetric Key within the db1 database
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AsymmetricKey
+
+        Returns one AsymmetricKey object per asymmetric key found in the specified databases. Each object represents a single asymmetric key stored in the database's encryption hierarchy.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the asymmetric key
+        - Name: The name of the asymmetric key
+        - Owner: The principal that owns the asymmetric key
+        - KeyEncryptionAlgorithm: The encryption algorithm used for the key (RSA_512, RSA_1024, RSA_2048, RSA_3072, RSA_4096)
+        - KeyLength: The length of the key in bits (512, 1024, 2048, 3072, or 4096)
+        - PrivateKeyEncryptionType: How the private key is encrypted (NoEncryption, EncryptedByMasterKey, EncryptedByPassword)
+        - Thumbprint: The thumbprint (fingerprint) of the asymmetric key for verification and identification
+
+        Additional properties available (from SMO AsymmetricKey object):
+        - DatabaseId: Unique identifier of the database containing the key
+        - And all other standard SMO AsymmetricKey properties (use Select-Object * to see all)
+
     #>
     [CmdletBinding()]
     param (

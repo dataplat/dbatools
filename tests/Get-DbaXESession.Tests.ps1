@@ -24,12 +24,12 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2
+            $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle
             $results.Count -gt 1 | Should -Be $true
         }
 
         It "returns only the system_health session" {
-            $results = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+            $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             $results.Name -eq "system_health" | Should -Be $true
         }
     }

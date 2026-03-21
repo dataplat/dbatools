@@ -43,6 +43,11 @@ function Remove-DbaLinkedServer {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command removes linked servers but does not return any output objects. It performs the deletion operation and handles any errors or confirmation prompts via -WhatIf and -Confirm parameters.
+
     .NOTES
         Tags: LinkedServer, Server
         Author: Adam Lancaster, github.com/lancasteradam

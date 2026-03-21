@@ -50,6 +50,22 @@ function Start-DbaEndpoint {
     .LINK
         https://dbatools.io/Start-DbaEndpoint
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Endpoint
+
+        Returns the Endpoint object(s) that were successfully started.
+
+        Properties:
+        - Name: The endpoint name
+        - EndpointState: The state of the endpoint (Started, Stopped, Disabled)
+        - EndpointType: The type of endpoint (DatabaseMirroring, ServiceBroker, Tsql, SoapEndpoint, etc.)
+        - ProtocolType: The communication protocol used (TCP, NamedPipes, SharedMemory)
+        - Owner: The owner of the endpoint
+        - IsAdminEndpoint: Boolean indicating if this is an administrative endpoint
+        - IsSystemObject: Boolean indicating if this is a system-created endpoint
+        - ID: Unique identifier for the endpoint
+        - Parent: References the parent Server object
+
     .EXAMPLE
         PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
 

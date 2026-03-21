@@ -57,6 +57,24 @@ function Get-DbaDbRecoveryModel {
 
         Gets recovery model information for TestDB. If TestDB does not exist on the instance nothing is returned.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one SMO Database object for each database on the specified instance(s), with the following properties displayed:
+
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Database name
+        - Status: Current database status (EmergencyMode, Normal, Offline, Recovering, RecoveryPending, Restoring, Standby, Suspect)
+        - IsAccessible: Boolean indicating if the database is currently accessible
+        - RecoveryModel: Database recovery model (Full, Simple, or BulkLogged)
+        - LastFullBackup: DateTime of the most recent full backup
+        - LastDiffBackup: DateTime of the most recent differential backup
+        - LastLogBackup: DateTime of the most recent transaction log backup
+
+        Note: The output is filtered by the Select-DefaultView function to show only the properties listed above. All other properties from the underlying SMO Database object remain accessible via Select-Object *.
+
     #>
     [CmdletBinding()]
     param (

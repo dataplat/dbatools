@@ -19,6 +19,23 @@ function Read-DbaAuditFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        System.Object (when -Raw is specified)
+
+        Returns the raw enumeration object containing unprocessed audit event data from Read-XEvent.
+
+        PSCustomObject (default)
+
+        Returns one object per audit event with the following standard properties:
+        - name: The name of the audit event (string)
+        - timestamp: The timestamp when the event occurred (datetime)
+
+        Additional properties are dynamically added based on the audit file contents and include:
+        - Fields.*: All field names present in the audit events (properties vary based on audit configuration)
+        - Actions.*: All action names from the audit events with the action suffix only (e.g., 'session_id' from 'server_principal_name.session_id')
+
+        The exact set of additional properties depends on what SQL Server Audit events and fields are present in the .sqlaudit files being read. Use Select-Object * to see all available properties for a given audit file.
+
     .NOTES
         Tags: XE, Audit, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

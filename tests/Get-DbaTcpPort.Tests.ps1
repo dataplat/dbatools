@@ -25,9 +25,9 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command functionality" {
         BeforeAll {
-            $results = Get-DbaTcpPort -SqlInstance $TestConfig.instance2
-            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All -ExcludeIpv6
-            $resultsAll = Get-DbaTcpPort -SqlInstance $TestConfig.instance2 -All
+            $results = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle
+            $resultsIpv6 = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -All -ExcludeIpv6
+            $resultsAll = Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle -All
         }
 
         It "Should return a result" {

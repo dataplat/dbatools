@@ -44,6 +44,25 @@ function Get-DbaDbVirtualLogFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per virtual log file (VLF) found in each database transaction log.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database containing the virtual log file
+        - RecoveryUnitId: The recovery unit identifier for the VLF
+        - FileId: The transaction log file ID (typically 0 for the primary log file)
+        - FileSize: The size of the virtual log file in bytes
+        - StartOffset: The starting offset of this VLF within the transaction log file in bytes
+        - FSeqNo: The virtual log file sequence number - indicates the order of VLFs in the transaction log
+        - Status: The status of the VLF (0=unused, 1=active, 2=recoverable)
+        - Parity: The parity value used for recovery tracking and alternate backup validation
+        - CreateLsn: The Log Sequence Number (LSN) at which this VLF was created
+
     .NOTES
         Tags: Diagnostic, VLF, Database, LogFile
         Author: Chrissy LeMaire (@cl), netnerds.net

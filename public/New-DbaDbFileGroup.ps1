@@ -52,6 +52,27 @@ function New-DbaDbFileGroup {
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.FileGroup
+
+        Returns one FileGroup object per filegroup created. If creation fails or is skipped (e.g., filegroup already exists), no object is returned for that filegroup.
+
+        Properties (all from SMO FileGroup object with added connection context):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Parent: The parent Database object reference
+        - FileGroupType: Type of filegroup (RowsFileGroup, FileStreamFileGroup, or MemoryOptimizedFileGroup)
+        - Name: Name of the filegroup (the value specified in -FileGroup parameter)
+        - Size: Total size of the filegroup in kilobytes
+        - AbsolutePhysicalName: Absolute physical name of the filegroup
+        - DefaultFileGroup: Boolean indicating if this is the default filegroup
+        - IsDefault: Boolean indicating if this is the default filegroup
+        - State: State of the filegroup (Normal, Offline, Defunct)
+        - Files: Collection of DataFile objects in the filegroup
+
+        All properties from the base SMO FileGroup object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/New-DbaDbFileGroup
 

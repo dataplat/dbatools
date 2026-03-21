@@ -12,7 +12,7 @@ function Test-DbaDbCompression {
         - Percent_Scan shows the percentage of scan operations relative to total operations. Higher scan percentages indicate better candidates for page compression.
         - Compression_Type_Recommendation provides specific guidance: 'PAGE', 'ROW', 'NO_GAIN' or '?' when the algorithm cannot determine the best option.
 
-        The function automatically excludes tables that cannot be compressed: memory-optimized tables (SQL 2014+), tables with encrypted columns (SQL 2016+), graph tables (SQL 2017+), and tables with sparse columns. It only analyzes user tables with no existing compression and requires SQL Server 2016 SP1 or higher for non-Enterprise editions.
+        The function automatically excludes tables that cannot be compressed: memory-optimized tables (SQL 2014+), tables with encrypted columns (SQL 2016+), graph tables (SQL 2017+), tables with sparse columns, tables with FileStream columns, and FileTables (SQL 2012+). It only analyzes user tables with no existing compression and requires SQL Server 2016 SP1 or higher for non-Enterprise editions.
 
         Test-DbaDbCompression script derived from GitHub and the Tiger Team's repository: (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
 
@@ -65,7 +65,35 @@ function Test-DbaDbCompression {
         Accepts a DbaInstanceParameter. Any collection of SQL Server Instance names or SMO objects can be piped to command.
 
     .OUTPUTS
-        Returns a PSCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
+        PSCustomObject
+
+        Returns one object per table/index/partition analyzed (depending on -FilterBy parameter), providing compression analysis recommendations and estimated space savings.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database analyzed
+        - Schema: Name of the schema containing the table
+        - TableName: Name of the table being analyzed
+        - IndexName: Name of the index; null for heap analysis or when FilterBy is 'Table'
+        - Partition: Partition number; 0 when FilterBy is 'Table' or 'Index', otherwise partition number
+        - IndexID: Index ID number; 0 when FilterBy is 'Table', internal SQL Server index ID for other FilterBy values
+        - IndexType: Type of index structure (Heap, ClusteredIndex, NonClusteredIndex, etc.)
+        - PercentScan: Percentage of operations that are scans (0-100); higher values indicate PAGE compression suitability
+        - PercentUpdate: Percentage of operations that are updates (0-100); higher values indicate ROW compression suitability
+        - RowEstimatePercentOriginal: Estimated size with ROW compression as percentage of original size
+        - PageEstimatePercentOriginal: Estimated size with PAGE compression as percentage of original size
+        - CompressionTypeRecommendation: Recommended compression type (ROW, PAGE, NO_GAIN, or ? when undetermined)
+        - SizeCurrent: Current size in bytes; dbasize object (displays as B, KB, MB, GB, or TB)
+        - SizeRequested: Estimated size after applying recommended compression type
+        - PercentCompression: Percentage of space savings with recommended compression (0-100 range)
+
+        Granularity and filtering controlled by parameters:
+        - When -FilterBy is 'Partition' (default): One object per partition per index
+        - When -FilterBy is 'Index': One object per index grouped across partitions
+        - When -FilterBy is 'Table': One object per table grouped across all indexes and partitions
+        - When -ResultSize is specified: Only top N objects by -Rank (TotalPages, UsedPages, or TotalRows) are returned per database
 
     .NOTES
         Tags: Compression, Table
@@ -260,6 +288,16 @@ function Test-DbaDbCompression {
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
                 WHERE t.is_memory_optimized = 1
             END"
+                $sqlVersionRestrictions += "
+            BEGIN
+                -- remove FileTables (SQL Server 2012+)
+                DELETE tdc
+                FROM ##TestDbaCompression tdc
+                INNER JOIN sys.tables t
+                    ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+                    AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+                WHERE t.is_filetable = 1
+            END"
             }
             if ($sqlVersion -ge 13) {
                 $sqlVersionRestrictions += "
@@ -381,6 +419,23 @@ BEGIN
     INNER JOIN sys.columns c
         ON tdc.ObjectId = c.object_id
     WHERE c.is_sparse = 1
+END
+
+BEGIN
+    -- remove tables with FileStream columns
+    -- FileStream columns are incompatible with sp_estimate_data_compression_savings
+    -- when RCSI or Snapshot Isolation is enabled
+    DELETE tdc
+    FROM ##TestDbaCompression tdc
+    INNER JOIN sys.tables t
+        ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+        AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+    WHERE EXISTS (
+        SELECT 1
+        FROM sys.columns c
+        WHERE c.object_id = t.object_id
+        AND c.is_filestream = 1
+    )
 END
 
 $sqlVersionRestrictions

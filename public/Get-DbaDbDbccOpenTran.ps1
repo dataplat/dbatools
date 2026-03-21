@@ -36,6 +36,25 @@ function Get-DbaDbDbccOpenTran {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per active transaction found, or one object per database when no active transactions exist.
+
+        Properties:
+        - ComputerName: The name of the server where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The database name that was scanned
+        - DatabaseId: The unique identifier of the database
+        - Cmd: The DBCC OPENTRAN command executed (for reference/debugging)
+        - Output: Human-readable summary of the result ("Oldest active transaction" or "No active open transactions.")
+        - Field: The property name from DBCC OPENTRAN output (e.g., "Transaction ID", "OldestOpenTrxn", "SPID", "StartTime", "Program Name", "Host Name"), or $null if no active transactions
+        - Data: The corresponding value for the Field (e.g., transaction ID number, SPID number, timestamp, program name), or $null if no active transactions
+
+        When no open transactions are found, all rows return the same database-level information with Output set to "No active open transactions." and Field/Data set to $null.
+        When open transactions are found, Field and Data contain the result columns from DBCC OPENTRAN output, providing detailed transaction details.
+
     .NOTES
         Tags: DBCC
         Author: Patrick Flynn (@sqllensman)

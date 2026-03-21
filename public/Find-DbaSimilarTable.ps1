@@ -68,6 +68,32 @@ function Find-DbaSimilarTable {
     .LINK
         https://dbatools.io/Find-DbaSimilarTable
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per matching table pair found. Each object represents one source table matched against one similar table.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Table: The fully qualified name of the source table (database.schema.table)
+        - MatchingTable: The fully qualified name of the matching table found (database.schema.table)
+        - MatchPercent: Percentage of matching column names between the two tables (0-100)
+        - OriginalDatabaseName: Name of the database containing the source table
+        - OriginalDatabaseId: System database ID for the source table's database
+        - OriginalSchemaName: Name of the schema containing the source table
+        - OriginalTableName: Name of the source table
+        - OriginalTableNameRankInDB: Dense ranking of the table among all tables in its database (used for processing order)
+        - OriginalTableType: Type of the source table (TABLE or VIEW)
+        - OriginalColumnCount: Number of columns in the source table
+        - MatchingDatabaseName: Name of the database containing the matching table
+        - MatchingDatabaseId: System database ID for the matching table's database
+        - MatchingSchemaName: Name of the schema containing the matching table
+        - MatchingTableName: Name of the matching table
+        - MatchingTableType: Type of the matching table (TABLE or VIEW)
+        - MatchingColumnCount: Number of columns in the matching table
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01
 

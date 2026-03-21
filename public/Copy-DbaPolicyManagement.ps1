@@ -4,9 +4,9 @@ function Copy-DbaPolicyManagement {
         Copies Policy-Based Management policies, conditions, and categories between SQL Server instances
 
     .DESCRIPTION
-        Transfers your entire Policy-Based Management framework from one SQL Server instance to another, including custom policies, conditions, and categories. This streamlines environment standardization and disaster recovery scenarios where you need identical compliance policies across multiple servers.
+        Transfers your entire Policy-Based Management framework from one SQL Server instance to another, including custom policies, conditions, object sets, and categories. This streamlines environment standardization and disaster recovery scenarios where you need identical compliance policies across multiple servers.
 
-        By default, all non-system policies and conditions are copied. Existing objects on the destination are skipped unless -Force is used to overwrite them. You can selectively copy specific policies or conditions using the include/exclude parameters, which provide auto-completion from the source server.
+        By default, all non-system policies, conditions, and object sets are copied. Object sets are migrated after conditions and before policies to ensure policy dependencies are satisfied. Existing objects on the destination are skipped unless -Force is used to overwrite them. You can selectively copy specific policies or conditions using the include/exclude parameters, which provide auto-completion from the source server.
 
     .PARAMETER Source
         Specifies the source SQL Server instance containing the Policy-Based Management objects to copy. Must be SQL Server 2008 or higher with sysadmin access.
@@ -68,6 +68,20 @@ function Copy-DbaPolicyManagement {
     .LINK
         https://dbatools.io/Copy-DbaPolicyManagement
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per policy category, condition, object set, and policy successfully copied or skipped. All objects use a common schema with the following properties:
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp of when the copy operation was attempted (DbaDateTime)
+        - SourceServer: The source SQL Server instance name where the object was copied from
+        - DestinationServer: The destination SQL Server instance name where the object was copied to
+        - Name: The name of the policy category, condition, object set, or policy that was processed
+        - Type: The type of object being copied - one of "Policy Category", "Policy Condition", "Policy ObjectSet", or "Policy"
+        - Status: The result of the operation - "Successful", "Skipped", or "Failed"
+        - Notes: Additional information about the operation result, such as "Already exists on destination" or error details
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster
 
@@ -125,6 +139,7 @@ function Copy-DbaPolicyManagement {
         $sourceStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $sourceSqlStoreConnection
         $storePolicies = $sourceStore.Policies | Where-Object { $_.IsSystemObject -eq $false }
         $storeConditions = $sourceStore.Conditions | Where-Object { $_.IsSystemObject -eq $false }
+        $storeObjectSets = $sourceStore.ObjectSets | Where-Object { $_.IsSystemObject -eq $false }
 
         if ($Force) { $ConfirmPreference = 'none' }
     }
@@ -271,6 +286,54 @@ function Copy-DbaPolicyManagement {
                         $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Write-Message -Level Verbose -Message "Issue creating policy condition $conditionName on $destinstance | $PSItem"
+                        continue
+                    }
+                }
+            }
+
+            <#
+                        ObjectSets
+            #>
+
+            Write-Message -Level Verbose -Message "Migrating object sets"
+            foreach ($objectSet in $storeObjectSets) {
+                $objectSetName = $objectSet.Name
+
+                $copyObjectSetStatus = [PSCustomObject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $objectSetName
+                    Type              = "Policy ObjectSet"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
+
+                if ($null -ne $destStore.ObjectSets[$objectSetName]) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "ObjectSet '$objectSetName' was skipped because it already exists on $destinstance")) {
+                        Write-Message -Level Verbose -Message "ObjectSet '$objectSetName' was skipped because it already exists on $destinstance."
+                        $copyObjectSetStatus.Status = "Skipped"
+                        $copyObjectSetStatus.Notes = "Already exists on destination"
+                        $copyObjectSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
+                }
+
+                if ($Pscmdlet.ShouldProcess($destinstance, "Migrating object set $objectSetName")) {
+                    try {
+                        $sql = $objectSet.ScriptCreate().GetScript() | Out-String
+                        Write-Message -Level Debug -Message $sql
+                        Write-Message -Level Verbose -Message "Copying object set $objectSetName"
+                        $null = $destServer.Query($sql)
+                        $destStore.ObjectSets.Refresh()
+
+                        $copyObjectSetStatus.Status = "Successful"
+                        $copyObjectSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyObjectSetStatus.Status = "Failed"
+                        $copyObjectSetStatus.Notes = (Get-ErrorMessage -Record $_).Message
+                        $copyObjectSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue creating object set $objectSetName on $destinstance | $PSItem"
                         continue
                     }
                 }

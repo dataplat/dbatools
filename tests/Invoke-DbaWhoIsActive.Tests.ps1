@@ -54,8 +54,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $testzippath = "$($TestConfig.appveyorlabrepo)\CommunitySoftware\sp_whoisactive-12.00.zip"
-        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testzippath -Database master
-        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -LocalFile $testzippath -Database tempdb
+        $resultInstallMaster = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -LocalFile $testzippath -Database master
+        $resultInstallTempdb = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -LocalFile $testzippath -Database tempdb
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -64,8 +64,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database master -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Database tempdb -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "DROP PROCEDURE [dbo].[sp_WhoIsActive];" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -79,13 +79,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     }
     Context "Should Execute SPWhoisActive" {
         It "Should execute and return Help" {
-            $resultsHelp = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Help
+            $resultsHelp = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Help
             $WarnVar | Should -BeNullOrEmpty
             $resultsHelp | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with no parameters in default location" {
-            $resultsDefault = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1
+            $resultsDefault = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }
@@ -94,43 +94,43 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # Skip It because it warns: Failed during execution | Name cannot begin with the ' ' character, hexadecimal value 0x20. Line 5372, position 60.
             # TODO: The command runs correct in an interactive session and only fails if executed by pester
 
-            $resultsSleeping = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -ShowSleepingSpids 2
+            $resultsSleeping = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowSleepingSpids 2
             $WarnVar | Should -BeNullOrEmpty
             $resultsSleeping | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with no parameters against alternate install location" {
-            $resultsTempdb = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database tempdb
+            $resultsTempdb = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }
 
         It "Should execute with ShowOwnSpid" {
-            $resultsOwnSpid = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -ShowOwnSpid
+            $resultsOwnSpid = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowOwnSpid
             $WarnVar | Should -BeNullOrEmpty
             $resultsOwnSpid | Should -Not -BeNullOrEmpty
         }
 
         It "Should execute with ShowSystemSpids" {
-            $resultsSystemSpids = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -ShowSystemSpids
+            $resultsSystemSpids = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowSystemSpids
             $WarnVar | Should -BeNullOrEmpty
             $resultsSystemSpids | Should -Not -BeNull
         }
 
         It "Should execute with averagetime" {
-            $resultsAverageTime = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -Database Tempdb -GetAverageTime
+            $resultsAverageTime = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database Tempdb -GetAverageTime
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }
 
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
-            $resultsOuterCommand = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -GetOuterCommand -FindBlockLeaders
+            $resultsOuterCommand = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -GetOuterCommand -FindBlockLeaders
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }
 
         It "Should execute with NotFilter and NotFilterType" {
-            $resultsNotFilter = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.instance1 -NotFilter 0 -NotFilterType Program
+            $resultsNotFilter = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -NotFilter 0 -NotFilterType Program
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }

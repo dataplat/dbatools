@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set up test environment
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $startupProcName = "StartUpProc$random"
         $startupProc = "dbo.$startupProcName"
@@ -54,7 +54,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling a startup procedure" {
         BeforeAll {
             $splatDisable = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = $startupProc
             }
             $result = Disable-DbaStartupProcedure @splatDisable
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling an already disabled procedure" {
         BeforeAll {
             $splatDisableAgain = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = $startupProc
             }
             $result = Disable-DbaStartupProcedure @splatDisableAgain
@@ -114,11 +114,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When using pipeline input" {
         BeforeAll {
             $splatEnable = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 StartupProcedure = $startupProc
             }
             $null = Enable-DbaStartupProcedure @splatEnable
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.instance2 | Disable-DbaStartupProcedure
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle | Disable-DbaStartupProcedure
         }
 
         It "Should return correct schema" {

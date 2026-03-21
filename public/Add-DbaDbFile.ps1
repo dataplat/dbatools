@@ -72,6 +72,38 @@ function Add-DbaDbFile {
         Copyright: (c) 2025 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.DataFile
+
+        Returns one DataFile object for each file successfully added to the specified filegroup. When adding files to multiple databases, one DataFile object is returned per database.
+
+        Common properties:
+        - Name: The logical name of the data file as specified in the FileName parameter
+        - FileName: The physical path to the file on disk
+        - Size: The initial size of the file in kilobytes (KB) - set based on the Size parameter multiplied by 1024. Not set for memory-optimized filegroups.
+        - Growth: The file growth increment in kilobytes (KB) - set based on the Growth parameter multiplied by 1024. Not set for memory-optimized filegroups.
+        - GrowthType: The type of growth (KB or Percent). Set to "KB" for standard data files. Not set for memory-optimized filegroups.
+        - MaxSize: The maximum size the file can grow to in kilobytes (KB) - set to -1 (unlimited) by default, or based on the MaxSize parameter multiplied by 1024. Not set for memory-optimized filegroups.
+        - Parent: The FileGroup object that contains this file
+        - IsPrimaryFile: Boolean indicating if this is the primary data file for the database
+        - IsReadOnly: Boolean indicating if the file is marked as read-only
+        - IsOffline: Boolean indicating if the file is offline
+
+        Additional properties available from SMO DataFile object:
+        - ID: Unique identifier for the file
+        - AvailableSpace: Available space in the file in bytes
+        - UsedSpace: Space currently used by data in the file in bytes
+        - BytesReadFromDisk: Total bytes read from the file since SQL Server started
+        - BytesWrittenToDisk: Total bytes written to the file since SQL Server started
+        - NumberOfDiskReads: Total number of read operations on the file
+        - NumberOfDiskWrites: Total number of write operations on the file
+        - VolumeFreeSpace: Free space available on the volume containing the file in bytes
+        - IsReadOnlyMedia: Boolean indicating if the file's media is read-only
+        - IsSparse: Boolean indicating if the file is a sparse file
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties are accessible via Select-Object * or by referencing the property directly on the returned object.
+
     .LINK
         https://dbatools.io/Add-DbaDbFile
 

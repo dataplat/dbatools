@@ -50,6 +50,23 @@ function Move-DbaRegServerGroup {
     .LINK
         https://dbatools.io/Move-DbaRegServerGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.RegisteredServers.ServerGroup
+
+        Returns one ServerGroup object for the group that was successfully moved to its new location. The object represents the moved group at its new position within the Central Management Server hierarchy.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the CMS host
+        - InstanceName: The SQL Server instance name of the CMS
+        - SqlInstance: The full SQL Server instance name in computer\instance format
+        - Name: The name of the moved server group
+        - DisplayName: Display name of the server group for UI presentation
+        - Description: Text description of the group's purpose or contents
+        - ServerGroups: Collection of child server groups nested under this group
+        - RegisteredServers: Collection of registered servers that belong to this group
+
+        All properties from the base SMO ServerGroup object are accessible using Select-Object *, including Urn, Parent, ParentServer, and other internal properties.
+
     .EXAMPLE
         PS C:\> Move-DbaRegServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
 

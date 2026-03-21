@@ -25,28 +25,28 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Get configuration" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $configs = $server.Query("sp_configure")
             $remoteQueryTimeout = $configs | Where-Object name -match "remote query timeout"
         }
 
         It "returns equal to results of the straight T-SQL query" {
-            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1
+            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle
             $results.count -eq $configs.count
         }
 
         It "returns two results" {
-            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -Name RemoteQueryTimeout, AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout, AllowUpdates
             $results.Count | Should -Be 2
         }
 
         It "returns two results less than all data" {
-            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ExcludeName "remote query timeout (s)", AllowUpdates
+            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ExcludeName "remote query timeout (s)", AllowUpdates
             $results.Count -eq $configs.count - 2
         }
 
         It "matches the output of sp_configure" {
-            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -Name RemoteQueryTimeout
+            $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout
             $results.ConfiguredValue -eq $remoteQueryTimeout.config_value | Should -Be $true
             $results.RunningValue -eq $remoteQueryTimeout.run_value | Should -Be $true
         }

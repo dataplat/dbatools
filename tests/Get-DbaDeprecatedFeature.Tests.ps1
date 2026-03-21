@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Use a deprecated feature
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance1 -Query "SELECT * FROM sys.sysdatabases"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "SELECT * FROM sys.sysdatabases"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets Deprecated Features" {
         It "Gets results" {
-            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.instance1
+            $deprecatedResults = Get-DbaDeprecatedFeature -SqlInstance $TestConfig.InstanceSingle
             $deprecatedResults.DeprecatedFeature | Should -Contain "sysdatabases"
         }
     }

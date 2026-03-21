@@ -70,8 +70,10 @@ function Get-DbaBackupInformation {
         This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the DIFF folder contains only differential backups and skip it.
         For all other scenarios we need to read the file headers to be sure.
 
-    .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+    .PARAMETER StorageCredential
+        The name of the SQL Server credential to be used if restoring from cloud storage (Azure Blob Storage or S3-compatible object storage).
+        For Azure, this is typically a credential with access to the storage account.
+        For S3, this should be a credential created with Identity 'S3 Access Key' matching the S3 URL path.
 
     .PARAMETER Import
         When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
@@ -80,6 +82,42 @@ function Get-DbaBackupInformation {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .OUTPUTS
+        Dataplat.Dbatools.Database.BackupHistory
+
+        Returns one BackupHistory object per backup set (group of files from the same backup operation). This object contains all necessary information to restore databases using Restore-DbaDatabase and supports being piped directly into that command.
+
+        The object includes the following properties:
+
+        - ComputerName: The computer name where the backup originated from (SQL Server host)
+        - InstanceName: The SQL Server instance name where the backup was taken
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database that was backed up
+        - UserName: The Windows/SQL login that performed the backup
+        - Start: DateTime of when the backup started
+        - End: DateTime of when the backup finished
+        - Duration: TimeSpan representing the duration of the backup operation
+        - Type: String indicating the backup type (Full, Differential, or Log)
+        - Path: String array of file paths containing the backup files
+        - FullName: Array of backup file paths (same as Path)
+        - FileList: Array of PSCustomObjects containing backup file details with properties: Type (MDF/LDF/NDF), LogicalName, PhysicalName, Size
+        - TotalSize: Total size of the backup in bytes
+        - CompressedBackupSize: Size of the compressed backup in bytes
+        - BackupSetId: GUID uniquely identifying this backup set
+        - Position: Position of the backup within the device
+        - DeviceType: The type of backup device (typically 'Disk')
+        - FirstLsn: BigInt representing the first log sequence number in the backup
+        - DatabaseBackupLsn: BigInt representing the database backup LSN for log backups
+        - CheckpointLSN: BigInt representing the checkpoint LSN
+        - LastLsn: BigInt representing the last log sequence number in the backup
+        - SoftwareVersionMajor: Major version of SQL Server that created the backup
+        - RecoveryModel: The recovery model of the database (Simple, Full, or BulkLogged)
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+
+        When -Anonymise is specified, the following properties are hashed: ComputerName, InstanceName, SqlInstance, Database, UserName, Path, FullName, and file logical/physical names in FileList.
+
+        When -Import is specified, the BackupHistory object is deserialized from the exported CliXml file, preserving all properties for later use with Restore-DbaDatabase.
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
@@ -132,9 +170,14 @@ function Get-DbaBackupInformation {
 
         As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
 
+    .EXAMPLE
+        PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance sql2022 -Path s3://s3.us-west-2.amazonaws.com/mybucket/backups/mydb.bak -StorageCredential MyS3Credential
+
+        Gets backup information from an S3-compatible object storage location. Requires SQL Server 2022 or higher. The credential must be configured with Identity = 'S3 Access Key' and Secret containing the access key and secret key.
+
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter StorageCredential")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
@@ -155,7 +198,8 @@ function Get-DbaBackupInformation {
         [switch]$IgnoreLogBackup,
         [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [parameter(ParameterSetName = "Import")]
         [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
@@ -218,7 +262,9 @@ function Get-DbaBackupInformation {
         } else {
             $Files = @()
             $groupResults = @()
-            if ($Path[0] -match 'http') { $NoXpDirTree = $true }
+
+            # Detect cloud storage URLs (Azure http:// or S3 s3://)
+            if ($Path[0] -match '^https?://' -or $Path[0] -match '^s3://') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
@@ -275,8 +321,8 @@ function Get-DbaBackupInformation {
                         }
                     } else {
                         if ($true -eq $MaintenanceSolution) {
-                            # Use forward slashes for URLs, backslashes for file system paths
-                            $separator = if ($f -match '^https?://') { "/" } else { "\" }
+                            # Use forward slashes for URLs (Azure https:// or S3 s3://), backslashes for file system paths
+                            $separator = if ($f -match '^https?://' -or $f -match '^s3://') { "/" } else { "\" }
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)FULL" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)DIFF" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)LOG" -SqlInstance $server -NoRecurse
@@ -301,7 +347,7 @@ function Get-DbaBackupInformation {
             if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
                 try {
-                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
+                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -StorageCredential $StorageCredential -EnableException
                 } catch {
                     Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
                 }

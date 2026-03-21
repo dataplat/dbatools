@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $conn = $server.ConnectionContext
         # Get the systemhealth session
         $systemhealth = Get-DbaXESession -SqlInstance $server -Session system_health
@@ -75,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
-        Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force
+        Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -125,8 +125,8 @@ Describe $CommandName -Tag IntegrationTests {
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
-            # Using $TestConfig.instance2 because the SMO $server is not updated after the job is removed
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+            # Using $TestConfig.InstanceSingle because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
 
         It "works when -StartAt is passed" {
@@ -142,8 +142,8 @@ Describe $CommandName -Tag IntegrationTests {
             Start-Sleep -Seconds 11
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $true
-            # Using $TestConfig.instance2 because the SMO $server is not updated after the job is removed
-            (Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+            # Using $TestConfig.InstanceSingle because the SMO $server is not updated after the job is removed
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
         }
     }
 }

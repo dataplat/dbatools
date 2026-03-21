@@ -28,15 +28,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $instance2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
+        $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $null = Get-DbaProcess -SqlInstance $InstanceSingle | Where-Object Program -match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname1 = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $instance2 -Name $dbname1
+        $null = New-DbaDatabase -SqlInstance $InstanceSingle -Name $dbname1
 
         $table1 = "dbatoolssci_table1_$(Get-Random)"
         $table2 = "dbatoolssci_table2_$(Get-Random)"
-        $null = $instance2.Query("CREATE TABLE $table1 (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
-        $null = $instance2.Query("CREATE TABLE $table2 (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
+        $null = $InstanceSingle.Query("CREATE TABLE $table1 (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
+        $null = $InstanceSingle.Query("CREATE TABLE $table2 (Id int IDENTITY PRIMARY KEY, Value int DEFAULT 0);", $dbname1)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,22 +46,22 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $instance2 -Database $dbname1
+        $null = Remove-DbaDatabase -SqlInstance $InstanceSingle -Database $dbname1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Commands work as expected" {
         It "Removes a table" {
-            (Get-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table1) | Should -Not -BeNullOrEmpty
-            Remove-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table1
-            (Get-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table1) | Should -BeNullOrEmpty
+            (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1) | Should -Not -BeNullOrEmpty
+            Remove-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1
+            (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table1) | Should -BeNullOrEmpty
         }
 
         It "Supports piping table" {
-            (Get-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table2) | Should -Not -BeNullOrEmpty
-            Get-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table2 | Remove-DbaDbTable
-            (Get-DbaDbTable -SqlInstance $instance2 -Database $dbname1 -Table $table2) | Should -BeNullOrEmpty
+            (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -Not -BeNullOrEmpty
+            Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2 | Remove-DbaDbTable
+            (Get-DbaDbTable -SqlInstance $InstanceSingle -Database $dbname1 -Table $table2) | Should -BeNullOrEmpty
         }
     }
 }

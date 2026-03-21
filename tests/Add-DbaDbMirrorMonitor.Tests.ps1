@@ -23,11 +23,11 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When adding mirror monitor" {
         AfterAll {
-            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
+            $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Adds the mirror monitor" {
-            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.instance2
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
             $results.MonitorStatus | Should -Be "Added"
         }
     }

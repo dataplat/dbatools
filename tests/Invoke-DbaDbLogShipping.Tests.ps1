@@ -90,6 +90,7 @@ Describe $CommandName -Tag UnitTests {
                 "StandbyDirectory",
                 "UseExistingFullBackup",
                 "UseBackupFolder",
+                "IgnoreFileChecks",
                 "AzureBaseUrl",
                 "AzureCredential",
                 "Force",
@@ -110,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests -Skip {
 
     It "returns success" {
         $splatLogShipping = @{
-            SourceSqlInstance       = $TestConfig.instance2
+            SourceSqlInstance       = $TestConfig.InstanceSingle
             DestinationSqlInstance  = $TestConfig.instance
             Database                = $dbname
             BackupNetworkPath       = "C:\temp"

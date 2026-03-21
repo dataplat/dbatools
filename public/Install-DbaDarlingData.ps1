@@ -79,6 +79,19 @@ function Install-DbaDarlingData {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per script file processed. When installing all procedures, one object is returned per SQL script file encountered. When using the -Procedure parameter to install specific procedures, only scripts matching those procedures are processed and returned.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The target database where scripts are installed
+        - Name: The base name of the script file (without extension)
+        - Status: Installation status - 'Installed' (newly created), 'Updated' (already existed and was overwritten), 'Skipped' (version incompatible like sp_QuickieStore on SQL Server < 2016), or 'Error' (script execution failed)
+
     .LINK
         https://dbatools.io/Install-DbaDarlingData
 
@@ -219,9 +232,8 @@ function Install-DbaDarlingData {
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
                         try {
-                            foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
-                            }
+                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
                         } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true

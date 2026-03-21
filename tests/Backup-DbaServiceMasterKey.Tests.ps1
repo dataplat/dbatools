@@ -65,7 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "backs up the SMK" {
             $splatBackup = @{
-                SqlInstance    = $TestConfig.instance1
+                SqlInstance    = $TestConfig.InstanceSingle
                 SecurePassword = $securePassword
                 Path           = $backupPath
             }
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "backs up the SMK with a specific filename (see #9483)" {
             $randomNum = Get-Random
             $splatFileBackup = @{
-                SqlInstance    = $TestConfig.instance1
+                SqlInstance    = $TestConfig.InstanceSingle
                 SecurePassword = $securePassword
                 Path           = $backupPath
                 FileBaseName   = "smk($randomNum)"

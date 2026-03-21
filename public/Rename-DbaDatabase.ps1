@@ -103,6 +103,31 @@ function Rename-DbaDatabase {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed, containing detailed information about all renames performed.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance where the database resides
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: The Microsoft.SqlServer.Management.Smo.Database object representing the database
+        - DBN: Hashtable containing database name renames (original name as key, new name as value)
+        - FGN: Hashtable containing filegroup name renames (original name as key, new name as value)
+        - LGN: Hashtable containing logical file name renames (original name as key, new name as value)
+        - FNN: Hashtable containing physical file name renames (original path as key, new path as value)
+        - PendingRenames: ArrayList of PSCustomObject items with Source and Destination properties for files that need to be moved on disk (empty if no file renames)
+        - Status: String indicating completion status - "FULL" for complete success, "PARTIAL" if some operations were skipped or failed
+
+        Hidden display properties (accessible with Select-Object *):
+        - DatabaseRenames: String with newline-separated list showing database rename transformations (e.g., "OldDB --> NewDB")
+        - FileGroupsRenames: String with newline-separated list showing filegroup rename transformations
+        - LogicalNameRenames: String with newline-separated list showing logical file name transformations
+        - FileNameRenames: String with newline-separated list showing physical file path transformations
+
+        All hashtable properties (DBN, FGN, LGN, FNN) are empty when no renames of that type occur. Hidden string properties show human-readable summaries of changes for troubleshooting.
+
     .NOTES
         Tags: Database, Rename
         Author: Simone Bizzotto (@niphold)

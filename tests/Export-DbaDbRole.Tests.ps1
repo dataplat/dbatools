@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbRole = "dbatoolsci_SpExecute$random"
 
         try {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $null = $server.Query("CREATE DATABASE [$dbname1]")
             $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
             $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
@@ -70,8 +70,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname1
-            Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1
         } catch {
             # Ignore cleanup errors
         }
@@ -83,7 +83,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaDbRole -SqlInstance $TestConfig.instance2 -Database msdb -FilePath $outputFile1
+            $null = Export-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database msdb -FilePath $outputFile1
         }
 
         It "Exports results to one sql file" {
@@ -97,7 +97,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check piping support" {
         BeforeAll {
-            $role = Get-DbaDbRole -SqlInstance $TestConfig.instance2 -Database $dbname1 -Role $dbRole
+            $role = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $dbRole
             $null = $role | Export-DbaDbRole -FilePath $outputFile1
             $results = $role | Export-DbaDbRole -Passthru
         }

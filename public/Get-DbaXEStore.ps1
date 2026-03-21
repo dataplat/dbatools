@@ -29,6 +29,22 @@ function Get-DbaXEStore {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.XEStore
+
+        Returns one XEStore object per SQL Server instance specified, providing access to Extended Events sessions, packages, and configuration management.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - ServerName: The name of the SQL Server instance from the XEStore object
+        - Sessions: Collection of Extended Events sessions on the instance
+        - Packages: Collection of XEvent packages available on the instance
+        - RunningSessionCount: The number of currently active/running XEvent sessions
+
+        All properties from the base SMO XEStore object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaXEStore
 

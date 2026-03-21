@@ -50,6 +50,18 @@ function Get-DbaDbCompatibility {
     .LINK
         https://dbatools.io/Get-DbaDbCompatibility
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database checked. Each object contains the following properties:
+
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database
+        - DatabaseId: The internal ID of the database
+        - Compatibility: The compatibility level of the database (numeric value corresponding to SQL Server version, e.g., 150 for SQL Server 2019, 160 for SQL Server 2022)
+
     .EXAMPLE
         PS C:\> Get-DbaDbCompatibility -SqlInstance localhost\sql2017
 

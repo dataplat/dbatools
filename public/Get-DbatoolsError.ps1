@@ -33,6 +33,24 @@ function Get-DbatoolsError {
     .LINK
         https://dbatools.io/Get-DbatoolsError
 
+    .OUTPUTS
+        System.Management.Automation.ErrorRecord
+
+        Returns one or more ErrorRecord objects from the PowerShell global error collection, filtered to show only dbatools-related errors based on the FullyQualifiedErrorId containing "dbatools".
+
+        Properties (selected from ErrorRecord):
+        - CategoryInfo: The error category classification (e.g., ConnectionError, PermissionDenied, SyntaxError)
+        - ErrorDetails: Additional structured error information including message and recommendations
+        - Exception: The underlying .NET exception that was thrown
+        - FullyQualifiedErrorId: Fully qualified error identifier used to identify dbatools-related errors
+        - InvocationInfo: Details about where and how the error occurred in the script (file, line, column, command name)
+        - PipelineIterationInfo: Information about the position in the pipeline when the error occurred
+        - PSMessageDetails: Additional PowerShell message details if available
+        - ScriptStackTrace: Stack trace showing the call hierarchy at the point of the error
+        - TargetObject: The object that was being processed when the error occurred
+
+        All properties from the full ErrorRecord object are available using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbatoolsError
 

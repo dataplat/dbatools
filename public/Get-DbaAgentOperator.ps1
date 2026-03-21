@@ -60,6 +60,50 @@ function Get-DbaAgentOperator {
 
         Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Operator
+
+        Returns one Operator object per SQL Agent operator found on the SQL Server instance. Each object represents an operator configured to receive notifications through email, pager, or net send.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name where the SQL Server instance is running
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Name: The operator name
+        - ID: The unique ID of the operator in SQL Agent
+        - IsEnabled: Boolean indicating whether the operator is enabled to receive notifications
+        - EmailAddress: Email address configured for the operator
+        - LastEmail: DateTime when the operator last received an email notification
+
+        Additional properties added by this command:
+        - RelatedJobs: Array of job objects (Microsoft.SqlServer.Management.Smo.Job) that notify this operator via email, net send, or pager
+        - RelatedAlerts: Array of alert names (strings) for which this operator is configured to receive notifications
+        - AlertLastEmail: DateTime when the operator last received notification from any alert
+        - Enabled: Boolean indicating the operator's enabled status (same as IsEnabled in default view)
+        - LastEmailDate: DateTime of last email notification (raw SMO property)
+
+        Other SMO properties available (select with Select-Object *):
+        - FullyQualifiedName: Fully qualified name of the operator
+        - NetSendAddress: Net send address configured for the operator
+        - PagerAddress: Pager address configured for the operator
+        - PagerDayFridayEnd: End time for Friday pager notifications
+        - PagerDayFridayStart: Start time for Friday pager notifications
+        - PagerDayMondayEnd: End time for Monday pager notifications
+        - PagerDayMondayStart: Start time for Monday pager notifications
+        - PagerDaySaturdayEnd: End time for Saturday pager notifications
+        - PagerDaySaturdayStart: Start time for Saturday pager notifications
+        - PagerDaySundayEnd: End time for Sunday pager notifications
+        - PagerDaySundayStart: Start time for Sunday pager notifications
+        - PagerDayThursdayEnd: End time for Thursday pager notifications
+        - PagerDayThursdayStart: Start time for Thursday pager notifications
+        - PagerDayTuesdayEnd: End time for Tuesday pager notifications
+        - PagerDayTuesdayStart: Start time for Tuesday pager notifications
+        - PagerDayWednesdayEnd: End time for Wednesday pager notifications
+        - PagerDayWednesdayStart: Start time for Wednesday pager notifications
+        - SaturdayPagerStartTime: Saturday pager start time
+        - SaturdayPagerEndTime: Saturday pager end time
+        - State: Current state of the SMO object
+
     #>
     [CmdletBinding()]
     param (

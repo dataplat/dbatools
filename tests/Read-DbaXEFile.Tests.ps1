@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Get the system_health session for testing
-        $xeSession = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health
+        $xeSession = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

@@ -63,6 +63,27 @@ function Set-DbaDbFileGroup {
     .LINK
         https://dbatools.io/Set-DbaDbFileGroup
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.FileGroup
+
+        Returns the modified FileGroup object(s) after the specified changes have been applied. One object is returned per filegroup that was successfully modified.
+
+        Default display properties:
+        - Name: The name of the filegroup
+        - IsDefault: Boolean indicating if this is the default filegroup for new objects
+        - ReadOnly: Boolean indicating if the filegroup is read-only
+        - AutogrowAllFiles: Boolean indicating if all files in the filegroup grow proportionally
+
+        Additional properties available (from SMO FileGroup object):
+        - ID: The filegroup ID number
+        - Parent: Reference to the parent Database object
+        - Files: Collection of files contained in the filegroup
+        - FileGroupType: Type of filegroup (PRIMARY, FILESTREAM, MEMORY_OPTIMIZED, etc.)
+        - Urn: The Uniform Resource Name of the filegroup object
+        - State: The current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO FileGroup object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -Default -AutoGrowAllFiles
 

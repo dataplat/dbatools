@@ -34,6 +34,19 @@ function Disconnect-DbaInstance {
     .LINK
         https://dbatools.io/Disconnect-DbaInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per connection successfully disconnected. Contains the following properties:
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The name of the SQL Server instance that was disconnected
+        - ConnectionType: The full type name of the connection object (e.g., Microsoft.SqlServer.Management.Smo.Server or System.Data.SqlClient.SqlConnection)
+        - State: The state of the connection after disconnection (Disconnected or Closed)
+
+        Additional properties available:
+        - ConnectionString: The masked/hidden connection string used for the connection
+
     .EXAMPLE
         PS C:\> Get-DbaConnectedInstance | Disconnect-DbaInstance
 

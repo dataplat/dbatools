@@ -42,6 +42,17 @@ function Enable-DbaHideInstance {
     .LINK
         https://dbatools.io/Enable-DbaHideInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance processed, with information about the Hide Instance setting change.
+
+        Properties:
+        - ComputerName: The name of the computer where the registry change was made
+        - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQL2008R2SP2)
+        - SqlInstance: The full SQL Server instance identifier (computer\instance format)
+        - HideInstance: Boolean indicating whether the Hide Instance setting was successfully enabled (true) or not (false)
+
     .EXAMPLE
         PS C:\> Enable-DbaHideInstance
 

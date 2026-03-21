@@ -35,6 +35,33 @@ function Get-DbaStartupParameter {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance containing startup parameter configuration.
+
+        When -Simple is specified, returns 9 essential properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - MasterData: Path to the master database file
+        - MasterLog: Path to the master transaction log file
+        - ErrorLog: Path to the SQL Server error log file
+        - TraceFlags: Array of trace flag integers, or "None" if no trace flags are configured
+        - DebugFlags: Array of debug flag integers, or "None" if no debug flags are configured
+        - ParameterString: The complete raw startup parameter string from Windows service configuration
+
+        When -Simple is not specified (default), additional properties are included:
+        - CommandPromptStart: Boolean indicating if -c parameter is set (startup without GUI)
+        - MinimalStart: Boolean indicating if -f parameter is set (minimal configuration startup)
+        - MemoryToReserve: Integer value of -g parameter in MB, or 0 if not set (memory reserved for SQL Server)
+        - SingleUser: Boolean indicating if -m parameter is set (single-user mode enabled)
+        - SingleUserName: Application name for single-user mode, or empty string if not applicable
+        - NoLoggingToWinEvents: Boolean indicating if -n parameter is set (Windows event logging disabled)
+        - StartAsNamedInstance: Boolean indicating if -s parameter is set (named instance startup)
+        - DisableMonitoring: Boolean indicating if -x parameter is set (monitoring disabled)
+        - IncreasedExtents: Boolean indicating if -E parameter is set (increased extents enabled)
+
     .LINK
         https://dbatools.io/Get-DbaStartupParameter
 
@@ -67,18 +94,14 @@ function Get-DbaStartupParameter {
                 $instanceName = $instance.InstanceName
                 $ogInstance = $instance.FullSmoName
 
-                $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
-
-
-                if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
-
-                $displayName = "SQL Server ($instanceName)"
-
                 $scriptBlock = {
                     $computerName = $args[0]
-                    $displayName = $args[1]
+                    $instanceName = $args[1]
+                    $ogInstance = $args[2]
+                    $Simple = $args[3]
 
-                    $wmisvc = $wmi.Services | Where-Object DisplayName -eq $displayName
+                    $wmisvc = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instanceName)"
+                    if (-not $wmisvc) { return }
 
                     $params = $wmisvc.StartupParameters -split ';'
 
@@ -180,10 +203,10 @@ function Get-DbaStartupParameter {
 
                 # This command is in the internal function
                 # It's sorta like Invoke-Command.
-                if ($credential) {
-                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
+                if ($Credential) {
+                    Invoke-ManagedComputerCommand -Server $computerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $instanceName, $ogInstance, $Simple
                 } else {
-                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
+                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $instanceName, $ogInstance, $Simple
                 }
             } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance

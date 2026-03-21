@@ -37,14 +37,14 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $dbName = "dbatoolsci_mirroring"
         $endpointName = "dbatoolsci_MirroringEndpoint"
 
         # Create the objects.
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Name $endpointName -Type DatabaseMirroring -Port 5022 -Owner sa
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.instance3 -Name $endpointName -Type DatabaseMirroring -Port 5023 -Owner sa
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $dbName
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceCopy1 -Name $endpointName -Type DatabaseMirroring -Port 5022 -Owner sa
+        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceCopy2 -Name $endpointName -Type DatabaseMirroring -Port 5023 -Owner sa
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -54,17 +54,17 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -Database $dbName
-        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName
+        $null = Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $dbName
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -EndPoint $endpointName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     It "returns success" {
         $splatMirroring = @{
-            Primary    = $TestConfig.instance2
-            Mirror     = $TestConfig.instance3
+            Primary    = $TestConfig.InstanceCopy1
+            Mirror     = $TestConfig.InstanceCopy2
             Database   = $dbName
             Force      = $true
             SharedPath = $TestConfig.Temp

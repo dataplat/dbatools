@@ -47,6 +47,43 @@ function Get-DbaDbForeignKey {
     .LINK
         https://dbatools.io/Get-DbaDbForeignKey
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ForeignKey
+
+        Returns one ForeignKey object per foreign key constraint found in the specified databases. Each object represents a single foreign key relationship between tables.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the foreign key
+        - Schema: The schema name containing the table with the foreign key
+        - Table: The table name that contains the foreign key (referencing table)
+        - ID: Unique identifier of the foreign key constraint
+        - CreateDate: DateTime when the foreign key constraint was created
+        - DateLastModified: DateTime when the foreign key constraint was last modified
+        - Name: The name of the foreign key constraint
+        - IsEnabled: Boolean indicating if the foreign key constraint is currently enabled
+        - IsChecked: Boolean indicating if the constraint is enforced during INSERT/UPDATE operations
+        - NotForReplication: Boolean indicating if the constraint applies to replication operations
+        - ReferencedKey: The primary key or unique key being referenced by this foreign key
+        - ReferencedTable: The name of the table being referenced (referenced table)
+        - ReferencedTableSchema: The schema name of the referenced table
+
+        Additional properties available (from SMO ForeignKey object):
+        - Columns: Collection of columns that make up the foreign key
+        - DeleteAction: Action to take when the referenced row is deleted (NoAction, Cascade, SetNull, SetDefault)
+        - UpdateAction: Action to take when the referenced key is updated (NoAction, Cascade, SetNull, SetDefault)
+        - DatabaseEngineEdition: The SQL Server edition where the foreign key exists
+        - DatabaseEngineType: The type of database engine
+        - IsMemoryOptimized: Boolean indicating if the parent table is memory-optimized
+        - IsSystemNamed: Boolean indicating if the constraint was system-generated (auto-named)
+        - State: SMO object state (Existing, Creating, Dropping, etc.)
+        - Urn: Unique Resource Name for the constraint
+        - ExtendedProperties: Extended properties attached to the constraint
+
+        All properties from the base SMO ForeignKey object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbForeignKey -SqlInstance sql2016
 

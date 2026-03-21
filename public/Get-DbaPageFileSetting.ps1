@@ -35,6 +35,25 @@ function Get-DbaPageFileSetting {
     .LINK
         https://dbatools.io/Get-DbaPageFileSetting
 
+    .OUTPUTS
+        Dataplat.Dbatools.Computer.PageFileSetting
+
+        Returns one object per page file on the target computer, unless page files are automatically managed by Windows, in which case one object is returned with all file-specific properties set to null.
+
+        Properties:
+        - ComputerName: The name of the target computer
+        - AutoPageFile: Boolean indicating if page file is automatically managed by Windows
+        - FileName: Logical name of the page file (null for auto-managed)
+        - Status: Status of the page file from WMI (typically "OK", null for auto-managed)
+        - SystemManaged: Boolean indicating if both InitialSize and MaximumSize are zero (null for auto-managed)
+        - LastModified: DateTime of last page file modification (null for auto-managed)
+        - LastAccessed: DateTime of last page file access (null for auto-managed)
+        - AllocatedBaseSize: Current allocated size in megabytes between Initial and Maximum sizes (null for auto-managed)
+        - InitialSize: Initial page file size in megabytes (null for auto-managed)
+        - MaximumSize: Maximum page file size in megabytes (null for auto-managed)
+        - PeakUsage: Peak page file usage in megabytes since system startup (null for auto-managed)
+        - CurrentUsage: Current page file usage in megabytes (null for auto-managed)
+
     .EXAMPLE
         PS C:\> Get-DbaPageFileSetting -ComputerName ServerA,ServerB
 

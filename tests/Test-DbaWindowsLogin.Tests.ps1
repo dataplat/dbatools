@@ -29,7 +29,7 @@ Did not include these tests yet as I was unsure if AppVeyor was capable of testi
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $results = Test-DbaWindowsLogin -SqlInstance $TestConfig.instance2
+            $results = Test-DbaWindowsLogin -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should return correct properties" {

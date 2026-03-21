@@ -42,6 +42,20 @@ function Set-DbaAgentJobOutputFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per job step that was successfully updated with the new output file configuration. No output is returned if the operation fails or is cancelled via -WhatIf.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Job: The SQL Agent job name containing the step
+        - JobStep: The name of the job step that was updated
+        - OutputFileName: The new output file path that was set
+        - OldOutputFileName: The previous output file path before the change
+
     .NOTES
         Tags: Agent, Job, SqlAgent
         Author: Rob Sewell, sqldbawithabeard.com

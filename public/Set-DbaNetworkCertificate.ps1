@@ -56,6 +56,18 @@ function Set-DbaNetworkCertificate {
     .LINK
         https://dbatools.io/Set-DbaNetworkCertificate
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance processed, containing the following properties:
+
+        - ComputerName: The name of the computer where the SQL Server instance is hosted
+        - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQL2008R2SP2)
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ServiceAccount: The service account running the SQL Server instance
+        - CertificateThumbprint: The SHA-1 thumbprint of the newly configured certificate in lowercase
+        - Notes: Summary of actions performed, including whether an old certificate was replaced and which service account was granted read permissions
+
     .EXAMPLE
         PS C:\> New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
 

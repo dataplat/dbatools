@@ -57,6 +57,17 @@ function Remove-DbaRgWorkloadGroup {
     .LINK
         https://dbatools.io/Remove-DbaRgWorkloadGroup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per workload group removed, containing the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (service name)
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the workload group that was removed
+        - Status: Status of the removal operation ("Dropped" on success, or error message on failure)
+        - IsRemoved: Boolean indicating whether the workload group was successfully removed ($true or $false)
+
     .EXAMPLE
         PS C:\> Remove-DbaRgResourcePool -SqlInstance sql2016 -WorkloadGroup "groupAdmin" -ResourcePool "poolAdmin" -ResourcePoolType Internal
 

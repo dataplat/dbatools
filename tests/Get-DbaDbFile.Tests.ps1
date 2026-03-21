@@ -34,14 +34,14 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Should return file information" {
         It "Returns information about tempdb files" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle
             $results.Database -contains "tempdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only tempdb" {
         It "Returns only tempdb files" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             foreach ($result in $results) {
                 $result.Database | Should -Be "tempdb"
             }
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should return file information for only tempdb primary filegroup" {
         It "Returns only tempdb files that are in Primary filegroup" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database tempdb -FileGroup Primary
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database tempdb -FileGroup Primary
             foreach ($result in $results) {
                 $result.Database | Should -Be "tempdb"
                 $result.FileGroupName | Should -Be "Primary"
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Physical name is populated" {
         It "Master returns proper results" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database master
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
             $result = $results | Where-Object LogicalName -eq "master"
             $result.PhysicalName -match "master.mdf" | Should -Be $true
             $result = $results | Where-Object LogicalName -eq "mastlog"
@@ -70,12 +70,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Database ID is populated" {
         It "Returns proper results for the master db" {
-            $results = Get-DbaDbFile -SqlInstance $TestConfig.instance1 -Database master
-            $results.DatabaseID | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).ID
+            $results = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master
+            $results.DatabaseID | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).ID
         }
 
         It "Uses a pipeline input and returns proper results for the tempdb" {
-            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+            $tempDB = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
             $results = $tempDB | Get-DbaDbFile
             $results.DatabaseID | Get-Unique | Should -Be $tempDB.ID
         }

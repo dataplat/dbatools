@@ -31,7 +31,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Testing Get-DbaProcess results" {
         BeforeAll {
-            $allResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1)
+            $allResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle)
         }
 
         It "matches self as a login at least once" {
@@ -40,21 +40,21 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns only dbatools processes when filtered by Program" {
-            $dbatoolsResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io")
+            $dbatoolsResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io")
             foreach ($result in $dbatoolsResults) {
                 $result.Program | Should -Be "dbatools PowerShell module - dbatools.io"
             }
         }
 
         It "returns only processes from master database when filtered by Database" {
-            $masterResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1 -Database master)
+            $masterResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Database master)
             foreach ($result in $masterResults) {
                 $result.Database | Should -Be "master"
             }
         }
 
         It "returns only dbatools processes and master when filtered by Program and Database and told to intersect" {
-            $dbatoolsResults = @(Get-DbaProcess -SqlInstance $TestConfig.instance1 -Program "dbatools PowerShell module - dbatools.io" -Database master -Intersect)
+            $dbatoolsResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program "dbatools PowerShell module - dbatools.io" -Database master -Intersect)
             foreach ($result in $dbatoolsResults) {
                 $result.Program | Should -Be "dbatools PowerShell module - dbatools.io"
                 $result.Database | Should -Be "master"

@@ -53,6 +53,33 @@ function New-DbatoolsSupportPackage {
     .LINK
         https://dbatools.io/New-DbatoolsSupportPackage
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns a FileInfo object representing the created diagnostic support package ZIP file.
+
+        Properties:
+        - FullName: The complete file path to the ZIP archive (e.g., C:\Users\username\Desktop\dbatools_support_pack_2024_12_29-14_30_45.zip)
+        - Name: The filename of the ZIP archive (e.g., dbatools_support_pack_2024_12_29-14_30_45.zip)
+        - DirectoryName: The directory path containing the ZIP file
+        - Directory: The parent directory object
+        - Length: The size of the ZIP file in bytes
+        - Exists: Boolean indicating the file exists ($true upon successful creation)
+        - CreationTime: DateTime when the file was created
+        - LastWriteTime: DateTime when the file was last modified
+        - LastAccessTime: DateTime when the file was last accessed
+
+        The ZIP archive contains comprehensive diagnostic data for troubleshooting:
+        - Operating system and hardware information
+        - PowerShell and .NET framework versions
+        - Loaded modules, snapins (on Windows PowerShell), and assemblies
+        - Complete console buffer (all visible commands and output)
+        - PowerShell command history from the current session
+        - dbatools message and error logs
+        - Any additional variables specified via -Variables parameter
+
+        Note: No output is returned if -WhatIf is specified or if an error occurs during package creation. Use -PassThru to programmatically access the FileInfo object even if it would normally only be displayed.
+
     .EXAMPLE
         PS C:\> New-DbatoolsSupportPackage
 

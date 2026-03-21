@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
         $svRole = "dbatoolsci_ScriptPermissions$random"
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
         $null = $server.Query("CREATE SERVER ROLE [$svRole] AUTHORIZATION [$login1]")
         $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$svRole]")
@@ -66,8 +66,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $login1
+        $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login1
 
         # Remove test files
         Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaServerRole -SqlInstance $TestConfig.instance2 -FilePath $outputFile
+            $null = Export-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {
@@ -91,7 +91,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check using piped input created" {
         BeforeAll {
-            $role = Get-DbaServerRole -SqlInstance $TestConfig.instance2 -ServerRole $svRole
+            $role = Get-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $svRole
             $null = $role | Export-DbaServerRole -FilePath $outputFile
             $results = $role | Export-DbaServerRole -Passthru
         }

@@ -39,6 +39,18 @@ function Disable-DbaForceNetworkEncryption {
     .LINK
         https://dbatools.io/Disable-DbaForceNetworkEncryption
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance processed, indicating whether Force Network Encryption was successfully disabled.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance (e.g., MSSQLSERVER, SQL2008R2SP2)
+        - SqlInstance: The full SQL Server instance identifier in the format ComputerName\InstanceName
+        - ForceEncryption: Boolean indicating the current state of Force Encryption setting after the operation (False indicates encryption is not forced)
+        - CertificateThumbprint: The thumbprint of the certificate assigned to the SQL Server instance for network encryption
+
     .EXAMPLE
         PS C:\> Disable-DbaForceNetworkEncryption
 

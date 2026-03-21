@@ -55,6 +55,36 @@ function Get-DbaComputerCertificate {
     .LINK
         https://dbatools.io/Get-DbaComputerCertificate
 
+    .OUTPUTS
+        System.Security.Cryptography.X509Certificates.X509Certificate2
+
+        Returns one X509Certificate2 object per certificate found in the specified store and folder.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer where the certificate is stored
+        - Store: The certificate store location (CurrentUser or LocalMachine)
+        - Folder: The certificate folder/container name (My, Root, AddressBook, etc.)
+        - Name: The friendly name of the certificate (added via Add-Member)
+        - DnsNameList: Collection of DNS names associated with the certificate
+        - Thumbprint: The SHA-1 hash fingerprint uniquely identifying the certificate
+        - NotBefore: DateTime when the certificate becomes valid
+        - NotAfter: DateTime when the certificate expires
+        - Subject: The distinguished name of the subject (entity the certificate is issued to)
+        - Issuer: The distinguished name of the certificate issuer (CA that signed it)
+        - Algorithm: The signature algorithm used by the certificate (added via Add-Member)
+
+        Additional properties available from the X509Certificate2 object:
+        - PublicKey: The public key cryptographic information
+        - PrivateKey: The private key (when available)
+        - Version: The X.509 certificate version
+        - SerialNumber: The serial number assigned by the issuer
+        - SignatureAlgorithm: Algorithm details for the certificate signature
+        - Extensions: Collection of certificate extensions
+        - SignatureAlgorithmOid: Object identifier for the signature algorithm
+        - IssuerName: X500DistinguishedName of the issuer
+        - SubjectName: X500DistinguishedName of the subject
+        - Verify: Method to verify the certificate
+
     .EXAMPLE
         PS C:\> Get-DbaComputerCertificate
 

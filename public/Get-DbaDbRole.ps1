@@ -62,6 +62,27 @@ function Get-DbaDbRole {
     .LINK
         https://dbatools.io/Get-DbaDbRole
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Role
+
+        Returns one Role object per database role found. The output is filtered based on the -Role, -ExcludeRole, and -ExcludeFixedRole parameters.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - Database: The name of the database containing the role
+        - Name: The name of the database role
+        - IsFixedRole: Boolean indicating if this is a built-in fixed database role (db_owner, db_datareader, etc.) or a custom user-defined role
+
+        Additional properties available (from SMO Role object):
+        - Owner: The principal that owns the role
+        - CreateDate: DateTime when the role was created
+        - DateLastModified: DateTime when the role was last modified
+        - ID: The role's unique object ID within the database
+        - Urn: The Urn identifier for the role
+
+        All properties from the base SMO Role object are accessible via Select-Object * even though only default properties are displayed.
+
     .EXAMPLE
         PS C:\> Get-DbaDbRole -SqlInstance localhost
 

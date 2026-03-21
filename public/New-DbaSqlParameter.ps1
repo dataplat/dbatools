@@ -90,6 +90,32 @@ function New-DbaSqlParameter {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.Data.SqlClient.SqlParameter
+
+        Returns a single SqlParameter object configured with the specified properties. The returned parameter object is ready to be used with Invoke-DbaQuery or other data access operations that accept parameterized queries.
+
+        Properties available on the returned object include:
+        - CompareInfo: String comparison rules for the parameter
+        - DbType: .NET data type from System.Data.DbType enumeration
+        - Direction: Parameter direction (Input, Output, InputOutput, or ReturnValue)
+        - ForceColumnEncryption: Boolean indicating Always Encrypted enforcement
+        - IsNullable: Boolean indicating if parameter accepts null values
+        - LocaleId: Integer locale identifier (LCID) for formatting
+        - Offset: Starting position within parameter value for binary/text data
+        - ParameterName: The name of the parameter (including '@' prefix)
+        - Precision: Total number of digits for numeric types
+        - Scale: Number of decimal places for numeric types
+        - Size: Maximum length for variable-length data types (use -1 for MAX)
+        - SourceColumn: Column name mapping for DataTable operations
+        - SourceColumnNullMapping: Boolean for DataAdapter null mapping
+        - SourceVersion: Data version selection (Original, Current, Proposed, Default)
+        - SqlDbType: SQL Server-specific data type
+        - SqlValue: Parameter value using SQL Server-specific types
+        - TypeName: User-defined table type name for table-valued parameters
+        - UdtTypeName: User-defined data type (UDT) or CLR type name
+        - Value: The actual parameter value passed to SQL
+
     .NOTES
         Tags: Utility, Query
         Author: Chrissy LeMaire (@cl), netnerds.net

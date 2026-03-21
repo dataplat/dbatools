@@ -41,6 +41,34 @@ function Test-DbaConnection {
     .LINK
         https://dbatools.io/Test-DbaConnection
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with comprehensive connection and environment diagnostics.
+
+        Properties:
+        - ComputerName: The resolved computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (MSSQLSERVER for default instance)
+        - SqlInstance: The full SMO instance name (computer\instance format)
+        - SqlVersion: The SQL Server version number (e.g., 13.0.4001 for SQL Server 2016)
+        - ConnectingAsUser: The login name used to establish the SQL connection
+        - ConnectSuccess: Boolean indicating whether the SQL Server connection was successful
+        - AuthType: The type of authentication used (Windows Authentication or SQL Authentication)
+        - AuthScheme: The authentication scheme (KERBEROS, NTLM, SQL, etc.) or error if retrieval failed
+        - TcpPort: The TCP port number used by the SQL Server instance; contains error details if port detection failed
+        - IPAddress: The IP address of the target server
+        - NetBiosName: The fully qualified domain name (FQDN) of the server
+        - IsPingable: Boolean indicating whether the server responds to ICMP ping requests
+        - PSRemotingAccessible: Boolean indicating PSRemoting connectivity status; contains error details if test failed or skipped
+        - DomainName: The Active Directory domain name
+        - LocalWindows: The Windows OS version on the local machine where the command runs
+        - LocalPowerShell: The PowerShell version on the local machine
+        - LocalCLR: The CLR (Common Language Runtime) version on the local machine
+        - LocalSMOVersion: The SQL Server Management Objects (SMO) version on the local machine
+        - LocalDomainUser: Boolean indicating whether the local session is running as a domain user
+        - LocalRunAsAdmin: Boolean indicating whether the local session is running with administrator privileges
+        - LocalEdition: The PowerShell edition (Desktop or Core)
+
     .EXAMPLE
         PS C:\> Test-DbaConnection SQL2016
 

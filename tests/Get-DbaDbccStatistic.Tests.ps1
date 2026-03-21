@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -82,7 +82,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "UnfilteredRows",
                 "PersistedSamplePercent"
             )
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatHeader
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatHeader
         }
 
         It "returns correct results" {
@@ -110,7 +110,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "AverageLength",
                 "Columns"
             )
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option DensityVector
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option DensityVector
         }
 
         It "returns results" {
@@ -140,7 +140,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "DistinctRangeRows",
                 "AverageRangeRows"
             )
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option Histogram
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option Histogram
         }
 
         It "returns results" {
@@ -168,7 +168,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "Rows",
                 "DataPages"
             )
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatsStream
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Option StatsStream
         }
 
         It "returns results" {
@@ -184,14 +184,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate returns results for single Object" {
         It "returns results" {
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Object $tableName2 -Option StatsStream
             $result.Count | Should -BeGreaterThan 0
         }
     }
 
     Context "Validate returns results for single Object and Target" {
         It "returns results" {
-            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target "TestStat2" -Option DensityVector
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Object $tableName2 -Target "TestStat2" -Option DensityVector
             $result.Count | Should -BeGreaterThan 0
         }
     }

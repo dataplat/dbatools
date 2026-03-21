@@ -50,6 +50,25 @@ function Set-DbaAgentJobCategory {
     .LINK
         https://dbatools.io/Set-DbaAgentJobCategory
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobCategory
+
+        Returns one job category object per successfully renamed category. The returned object represents the renamed SQL Server Agent job category with updated properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the job category
+        - ID: The unique identifier for the job category
+        - CategoryType: The type of category (LocalJob, MultiServerJob, or DatabaseMaintenance)
+
+        Additional properties available (from SMO JobCategory object):
+        - Urn: The Uniform Resource Name of the job category object
+        - State: The current state of the SMO object (Existing, Creating, Pending, Dropping)
+
+        All properties from the base SMO JobCategory object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'
 

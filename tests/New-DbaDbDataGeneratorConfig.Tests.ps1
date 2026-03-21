@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
                     [LastName] [varchar](50) NULL,
                     [City] [datetime] NULL
                 ) ON [PRIMARY]"
-        $testDb = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbNameGenerator
+        $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbNameGenerator
         $testDb.Query($sqlCreateTable)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup database and temp directory
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbNameGenerator -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -ErrorAction SilentlyContinue
         Remove-Item -Path $tempConfigPath -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command works" {
 
         It "Should output a file with specific content" {
-            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.instance1 -Database $dbNameGenerator -Path $tempConfigPath
+            $configResults = New-DbaDbDataGeneratorConfig -SqlInstance $TestConfig.InstanceSingle -Database $dbNameGenerator -Path $tempConfigPath
             $configResults.Directory.Name | Should -Be (Split-Path $tempConfigPath -Leaf)
 
             $configResults.FullName | Should -FileContentMatch $dbNameGenerator

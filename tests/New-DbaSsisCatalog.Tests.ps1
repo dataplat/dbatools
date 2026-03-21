@@ -31,13 +31,13 @@ Describe $CommandName -Tag IntegrationTests {
 
             # database name is currently fixed
             $database = "SSISDB"
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.ssisserver -Database $database
+            $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database
             $results = $null
             $shouldRunTests = $false
 
             if (-not $db) {
                 $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-                $results = New-DbaSsisCatalog -SqlInstance $TestConfig.ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable warn
+                $results = New-DbaSsisCatalog -SqlInstance $TestConfig.InstanceSingle -Password $password -WarningAction SilentlyContinue -WarningVariable warn
 
                 # Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
                 if ($warn -match "not running") {
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Cleanup the created catalog if it exists
             if ($shouldRunTests -and $database) {
-                Remove-DbaDatabase -SqlInstance $TestConfig.ssisserver -Database $database -ErrorAction SilentlyContinue
+                Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $database -ErrorAction SilentlyContinue
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

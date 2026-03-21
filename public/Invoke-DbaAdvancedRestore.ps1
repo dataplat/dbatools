@@ -74,10 +74,11 @@ function Invoke-DbaAdvancedRestore {
         Use this when applying additional transaction log backups to a database that was restored WITH NORECOVERY.
         Automatically enables WithReplace to allow the operation on existing database objects.
 
-    .PARAMETER AzureCredential
-        Name of the SQL Server credential object required to access backup files stored in Azure Blob Storage.
+    .PARAMETER StorageCredential
+        Name of the SQL Server credential object required to access backup files stored in Azure Blob Storage or S3-compatible object storage.
         The credential must already exist on the target SQL Server instance with proper access keys for the storage account.
-        Required when restoring from URLs that point to Azure blob storage containers instead of local file paths.
+        For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
+        For S3: The credential must use Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or higher.
 
     .PARAMETER WithReplace
         Allows the restore operation to overwrite an existing database with the same name.
@@ -93,6 +94,11 @@ function Invoke-DbaAdvancedRestore {
         Preserves Change Data Capture (CDC) configuration and metadata during database restore operations.
         Essential when restoring databases where CDC is actively capturing data changes for auditing or ETL processes.
         Cannot be combined with NoRecovery or StandbyDirectory parameters as CDC requires the database to be fully recovered.
+
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
 
     .PARAMETER PageRestore
         Array of page objects from Get-DbaSuspectPage specifying corrupted pages to restore using page-level restore.
@@ -130,6 +136,11 @@ function Invoke-DbaAdvancedRestore {
         Use this to ensure backup files contain checksums and validate them during restore, following backup best practices.
         Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
 
+    .PARAMETER Restart
+        Instructs the restore operation to restart an interrupted restore sequence.
+        Use this when a previous restore operation was interrupted due to a reboot, service failure, or other system event.
+        Allows resuming large transaction log restores that were partially completed before interruption.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -142,6 +153,53 @@ function Invoke-DbaAdvancedRestore {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .OUTPUTS
+        PSCustomObject (default operation)
+
+        Returns one object per backup file processed in the restore sequence, containing comprehensive restore operation details and status.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance where the restore occurred
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - BackupFile: Comma-separated list of backup file paths processed in this restore operation
+        - BackupFilesCount: Number of backup files included in the restore operation (int)
+        - BackupSize: Total size of backup files; dbasize object convertible to Bytes, KB, MB, GB, TB
+        - CompressedBackupSize: Compressed size of backup files if available in backup metadata
+        - Database: The name of the database being restored
+        - Owner: The database owner, typically the login that performed the restore
+        - DatabaseRestoreTime: Total elapsed time for the complete database restore operation (TimeSpan)
+        - FileRestoreTime: Elapsed time for the current backup file restore (TimeSpan)
+        - NoRecovery: Boolean indicating if the database was left in RESTORING state for log restore sequences
+        - RestoreComplete: Boolean indicating if the restore operation completed successfully
+        - RestoredFile: Comma-separated list of logical file names restored to the database
+        - RestoredFilesCount: Number of files restored in the database (int)
+        - Script: The T-SQL RESTORE script executed or generated (populated when actual T-SQL is run or when OutputScriptOnly is used)
+        - RestoreDirectory: Directory path(s) where the restored database files are located on the target server
+        - WithReplace: Boolean indicating if the restore was performed with the REPLACE option to overwrite existing database
+
+        Additional properties available:
+        - DatabaseName: Alternate property containing the database name (duplicate of Database)
+        - DatabaseOwner: Alternate property containing the database owner (duplicate of Owner)
+        - BackupSizeMB: Backup size expressed in megabytes (double)
+        - CompressedBackupSizeMB: Compressed backup size expressed in megabytes (double)
+        - RestoredFileFull: Full physical paths of all restored files separated by commas
+        - BackupStartTime: DateTime when the backup operation started
+        - BackupEndTime: DateTime when the backup operation completed
+        - RestoreTargetTime: Target point-in-time for log recovery operations, or string "Latest" if restoring to current time
+        - BackupFileRaw: Raw array of all backup file paths without string conversion
+        - ExitError: Any exception object that occurred during restoration
+        - KeepReplication: Boolean indicating if replication settings were preserved during restore
+        - SACredential: The SA credential passed (if applicable)
+
+        System.String (when -VerifyOnly is specified)
+
+        Returns verification result strings: "Verify successful" or "Verify failed"
+
+        System.String (when -OutputScriptOnly is specified)
+
+        Returns the generated T-SQL RESTORE script as a string without executing the restore operation. Script can include EXECUTE AS LOGIN clause if ExecuteAs parameter was specified.
 
     .LINK
         https://dbatools.io/Invoke-DbaAdvancedRestore
@@ -160,7 +218,7 @@ function Invoke-DbaAdvancedRestore {
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -176,16 +234,19 @@ function Invoke-DbaAdvancedRestore {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$Continue,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [switch]$WithReplace,
         [switch]$KeepReplication,
         [switch]$KeepCDC,
+        [switch]$ErrorBrokerConversations,
         [object[]]$PageRestore,
         [string]$ExecuteAs,
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
         [switch]$Checksum,
+        [switch]$Restart,
         [switch]$EnableException
     )
     begin {
@@ -306,6 +367,9 @@ function Invoke-DbaAdvancedRestore {
                 if ($Checksum) {
                     $restore.Checksum = $Checksum
                 }
+                if ($Restart) {
+                    $restore.Restart = $Restart
+                }
                 if ($KeepReplication) {
                     $restore.KeepReplication = $KeepReplication
                 }
@@ -331,14 +395,14 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $device.Name = $file
-                    if ($file.StartsWith("http")) {
+                    if ($file -like "http*" -or $file -like "s3*") {
                         $device.devicetype = "URL"
                     } else {
                         $device.devicetype = "File"
                     }
 
-                    if ($AzureCredential) {
-                        $restore.CredentialName = $AzureCredential
+                    if ($StorageCredential) {
+                        $restore.CredentialName = $StorageCredential
                     }
 
                     $restore.FileNumber = $backup.Position
@@ -348,12 +412,15 @@ function Invoke-DbaAdvancedRestore {
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Restoring $database to $SqlInstance based on these files: $($backup.FullName -join ', ')")) {
                     try {
                         $restoreComplete = $true
-                        if ($KeepCDC -and $restore.NoRecovery -eq $false) {
+                        if (($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
                             $script = $restore.Script($server)
+                            $withOptions = @()
+                            if ($KeepCDC) { $withOptions += 'KEEP_CDC' }
+                            if ($ErrorBrokerConversations) { $withOptions += 'ERROR_BROKER_CONVERSATIONS' }
                             if ($script -like '*WITH*') {
-                                $script = $script.TrimEnd() + ' , KEEP_CDC'
+                                $script = $script.TrimEnd() + ' , ' + ($withOptions -join ' , ')
                             } else {
-                                $script = $script.TrimEnd() + ' WITH KEEP_CDC'
+                                $script = $script.TrimEnd() + ' WITH ' + ($withOptions -join ' , ')
                             }
                             if ($true -ne $OutputScriptOnly) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))

@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
         $customErrorText = "Dbatools is Awesome!"
 
         # Create the custom error.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "EXEC msdb.dbo.sp_addmessage $customErrorId, 9, N'$customErrorText';"
         $server.Query($sql)
 
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
         $server.Query($sql)
 
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the custom errors" {
         BeforeAll {
-            $results = Get-DbaCustomError -SqlInstance $TestConfig.instance1
+            $results = Get-DbaCustomError -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Results are not empty" {

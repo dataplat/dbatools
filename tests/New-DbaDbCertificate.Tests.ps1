@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Create tempdb master key for testing
             $splatTempDbKey = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = "tempdb"
                 Password    = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             }
@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Successfully creates a new database certificate in default, master database" {
             $splatCert1 = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $certificateName1
             }
             $cert1 = New-DbaDbCertificate @splatCert1
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Successfully creates a new database certificate in the tempdb database" {
             $splatCert2 = @{
-                SqlInstance = $TestConfig.instance1
+                SqlInstance = $TestConfig.InstanceSingle
                 Name        = $certificateName2
                 Database    = "tempdb"
             }

@@ -61,6 +61,32 @@ function Get-DbatoolsLog {
     .LINK
         https://dbatools.io/Get-DbatoolsLog
 
+    .OUTPUTS
+        Dataplat.Dbatools.Message.LogEntry (when -Raw is specified)
+
+        Returns raw internal LogEntry objects from the dbatools logging system without any property filtering or flattening of multiline content.
+
+        PSCustomObject (default)
+
+        Returns log entries with the following properties formatted for user display:
+
+        - CallStack: The PowerShell call stack at the point the log entry was created
+        - ComputerName: The name of the computer where the log entry was generated
+        - File: The PowerShell script file name where the log entry originated
+        - FunctionName: The name of the dbatools function that created the log entry
+        - Level: The severity level of the log message (Critical, Error, Warning, Info, Verbose, Debug, etc.)
+        - Line: The line number in the script file where the log entry was generated
+        - Message: The log message text with multiline content (SQL statements, multiline errors) flattened to single line by joining with spaces and collapsing multiple spaces
+        - ModuleName: The name of the module that generated the log entry (typically "dbatools")
+        - Runspace: The PowerShell runspace GUID in which the log entry was created
+        - Tags: Array of tag strings associated with the log entry for categorization (e.g., "backup", "restore", "connection")
+        - TargetObject: The SQL Server object being processed when the log entry was created (e.g., server name, database name)
+        - Timestamp: The DateTime when the log entry was created
+        - Type: The type of log entry (Information, Error, Warning, etc.)
+        - Username: The username of the person executing the command that generated the log entry
+
+        Note: Use -Raw to return unmodified LogEntry objects with Message content preserved in original multiline format for detailed troubleshooting of SQL statements.
+
     .EXAMPLE
         PS C:\> Get-DbatoolsLog
 

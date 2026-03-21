@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $db1Name = "dbatoolsci_expand"
-        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,14 +46,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1Name
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Ensure command functionality" {
         BeforeAll {
-            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1Name -TargetLogSize 128
+            $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -TargetLogSize 128
         }
 
         It "Should have correct properties" {

@@ -41,6 +41,37 @@ function Get-DbaLinkedServer {
     .LINK
         https://dbatools.io/Get-DbaLinkedServer
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.LinkedServer
+
+        Returns one LinkedServer object per configured linked server found on the target instance(s). When filtered, returns only the linked servers matching the specified criteria.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the linked server
+        - RemoteServer: The data source or remote server name (from DataSource property)
+        - ProductName: The product type of the linked server
+        - Impersonate: Boolean or collection indicating if impersonation is enabled
+        - RemoteUser: The remote user login mapped for this linked server connection
+        - Publisher: The distribution publisher for the linked server (if applicable)
+        - Distributor: The distributor server (if applicable)
+        - DateLastModified: DateTime indicating when the linked server configuration was last modified
+
+        Additional properties available from SMO LinkedServer object (accessible via Select-Object *):
+        - LinkedServerType: Type of linked server (SqlServer, OleDbProvider, etc.)
+        - RpsSiteUrl: RPS site URL if configured
+        - LoginSecure: Boolean indicating if Windows authentication is enforced
+        - ConnectionTimeout: Timeout in seconds for linked server connections
+        - QueryTimeout: Query timeout in seconds on the linked server
+        - Collation: Collation setting for the linked server
+        - LazySchemaValidation: Boolean indicating lazy schema validation setting
+        - UseRemoteCollation: Boolean indicating if remote collation is used
+        - IsPublisher: Boolean indicating if this linked server is a publisher
+        - IsDistributor: Boolean indicating if this linked server is a distributor
+        - IsSubscriber: Boolean indicating if this linked server is a subscriber
+
     .EXAMPLE
         PS C:\> Get-DbaLinkedServer -SqlInstance DEV01
 

@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $accountName = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_add_account_sp
             @account_name='$accountName',
             @description='Mail account for email alerts',
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp
             @account_name = '$accountName';"
         $server.Query($mailAccountSettings)
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Account" {
         BeforeAll {
-            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $accountName
+            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $accountName
         }
 
         It "Gets results" {
@@ -89,7 +89,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail when using -Account" {
         BeforeAll {
-            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 -Account $accountName
+            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.InstanceSingle -Account $accountName
         }
 
         It "Gets results" {
@@ -119,7 +119,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets no DbMail when using -ExcludeAccount" {
         It "Gets no results" {
-            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.instance2 -ExcludeAccount $accountName
+            $results = Get-DbaDbMailAccount -SqlInstance $TestConfig.InstanceSingle -ExcludeAccount $accountName
             $results | Should -BeNullOrEmpty
         }
     }

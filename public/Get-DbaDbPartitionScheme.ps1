@@ -41,6 +41,27 @@ function Get-DbaDbPartitionScheme {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.PartitionScheme
+
+        Returns one PartitionScheme object per partition scheme found in the specified databases. When no filters are applied, all accessible databases are scanned and all partition schemes are returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database containing this partition scheme
+        - Name: The name of the partition scheme
+        - PartitionFunction: The name of the partition function used by this scheme
+
+        Additional properties available (from SMO PartitionScheme object):
+        - PartitionFunctionName: The partition function name (same as PartitionFunction)
+        - Urn: The Uniform Resource Name of the partition scheme object
+        - State: The current state of the SMO object (Existing, Creating, Pending, Dropping, etc.)
+        - Parent: The database object that contains this partition scheme
+
+        All properties from the base SMO PartitionScheme object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaDbPartitionScheme
 

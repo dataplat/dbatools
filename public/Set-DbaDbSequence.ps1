@@ -79,6 +79,31 @@ function Set-DbaDbSequence {
     .LINK
         https://dbatools.io/Set-DbaDbSequence
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Sequence
+
+        Returns the updated Sequence object for each modified sequence, with all properties reflecting the changes applied.
+
+        Default display properties (when piping to Select-Object):
+        - Name: The name of the sequence object
+        - Schema: The schema containing the sequence
+        - Owner: The principal that owns the sequence
+        - StartValue: The starting value for the sequence
+        - CurrentValue: The current value of the sequence
+        - IncrementValue: The increment applied with each NEXT VALUE FOR call
+        - MinValue: The minimum value the sequence can generate
+        - MaxValue: The maximum value the sequence can generate
+        - IsCycleEnabled: Boolean indicating if the sequence cycles after reaching MinValue or MaxValue
+        - SequenceCacheType: The cache setting (NoCache, CacheWithSize, or DefaultCache)
+        - CacheSize: The number of pre-allocated values (when applicable)
+
+        All properties from the SMO Sequence object are accessible using Select-Object *. Additional properties include:
+        - CreationDate: DateTime when the sequence was created
+        - LastModificationTime: DateTime when the sequence was last modified
+        - Urn: The Uniform Resource Name (URN) of the sequence object
+        - State: The SMO object state (Existing, Creating, Pending, Dropping, etc.)
+        - Parent: Reference to the parent Database object
+
     .EXAMPLE
         PS C:\> Set-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -RestartWith 10000 -IncrementBy 10
 

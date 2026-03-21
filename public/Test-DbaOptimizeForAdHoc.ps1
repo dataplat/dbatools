@@ -37,6 +37,19 @@ function Test-DbaOptimizeForAdHoc {
     .LINK
         https://dbatools.io/Test-DbaOptimizeForAdHoc
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance queried, with configuration details and recommendations.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - CurrentOptimizeAdHoc: Current value of the optimize for ad-hoc workloads setting (0 or 1, where 1 is enabled)
+        - RecommendedOptimizeAdHoc: The recommended value for this setting (always 1 for enabled)
+        - Notes: Guidance message indicating if the setting is optimally configured or needs adjustment
+
     .EXAMPLE
         PS C:\> Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
 

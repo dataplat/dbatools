@@ -142,6 +142,34 @@ function Invoke-DbaWhoIsActive {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Output type depends on the -As parameter:
+
+        DataRow (default)
+            System.Data.DataRow for each row of sp_WhoIsActive results
+
+        DataTable
+            System.Data.DataTable containing all sp_WhoIsActive result rows with columns for session activity
+
+        DataSet
+            System.Data.DataSet containing one DataTable from sp_WhoIsActive results
+
+        PSObject
+            PSCustomObject with properties for each column returned by sp_WhoIsActive
+
+        The actual properties and columns returned depend on which feature parameters are enabled:
+        - Base columns include: session_id, sql_text, login_name, start_time, status, host_name, etc.
+        - GetPlans adds: query_plan (XML execution plan)
+        - GetLocks adds: locks (XML lock information)
+        - GetTransactionInfo adds: tran_log_used_percent, tran_start_time, tran_duration_sec
+        - GetTaskInfo adds: wait_info, tasks, CPU usage information
+        - GetAverageTime adds: avg_elapsed_time_ms
+        - DeltaInterval adds: CPU delta, IO delta, and other rate-of-change metrics
+        - OutputColumnList parameter controls which columns are included in results
+
+        When -ReturnSchema or -Schema is specified, a CREATE TABLE statement is returned instead of data.
+        When -DestinationTable is specified, data is inserted to the specified table and no results are returned to PowerShell.
+
     .NOTES
         Tags: Community, WhoIsActive
         Author: Chrissy LeMaire (@cl), netnerds.net

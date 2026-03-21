@@ -67,6 +67,21 @@ function Export-DbaRegServer {
     .LINK
         https://dbatools.io/Export-DbaRegServer
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one file object for each exported registered server or server group. The file object contains information about the exported XML file that was created.
+
+        Properties:
+        - Name: The filename of the exported registered server file
+        - FullName: The complete file path to the exported file
+        - Directory: The directory containing the exported file
+        - Extension: The file extension (.xml or .regsrvr)
+        - Length: The size of the exported file in bytes
+        - CreationTime: When the file was created
+        - LastWriteTime: When the file was last modified
+        - Attributes: File attributes (Archive, etc.)
+
     .EXAMPLE
         PS C:\> Export-DbaRegServer -SqlInstance sql2008
 

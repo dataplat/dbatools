@@ -35,6 +35,18 @@ function Remove-DbaDbEncryptionKey {
         Accepts database encryption key objects from Get-DbaDbEncryptionKey via pipeline.
         Use this when you need to remove keys from a filtered set of databases or when chaining commands together.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successfully removed encryption key with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database from which the encryption key was removed
+        - Status: The status of the operation ("Success")
+
+        No objects are returned if the operation fails or is skipped by WhatIf.
+
     .NOTES
         Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net

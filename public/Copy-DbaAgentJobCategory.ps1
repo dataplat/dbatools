@@ -59,6 +59,22 @@ function Copy-DbaAgentJobCategory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per category processed (whether skipped, successfully copied, or failed). When multiple categories or multiple destination servers are specified, returns multiple objects.
+
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: The date and time when the category copy was attempted (DbaDateTime object)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the category being copied
+        - Type: The type of category ("Agent Job Category", "Agent Operator Category", or "Agent Alert Category")
+        - Status: The outcome of the copy operation (Successful, Failed, or Skipped)
+        - Notes: Additional context about the operation result (e.g., "Already exists on destination")
+
+        All properties are accessible using Select-Object * even though only the above default properties are displayed.
+
     .NOTES
         Tags: Migration, Agent
         Author: Chrissy LeMaire (@cl), netnerds.net

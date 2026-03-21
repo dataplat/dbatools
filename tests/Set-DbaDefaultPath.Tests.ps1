@@ -27,7 +27,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $oldBackupDirectory = (Connect-DbaInstance -SqlInstance $TestConfig.instance1).BackupDirectory
+        $oldBackupDirectory = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).BackupDirectory
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -37,14 +37,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $oldBackupDirectory
+        Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $oldBackupDirectory
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "returns proper information" {
         It "Backup returns the correct value" {
-            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.instance1 -Type Backup -Path $TestConfig.Temp
+            $results = Set-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle -Type Backup -Path $TestConfig.Temp
             $results.Backup | Should -BeExactly $TestConfig.Temp
         }
     }

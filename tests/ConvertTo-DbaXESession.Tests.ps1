@@ -29,13 +29,16 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tracePath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tracePath -ItemType Directory
+
         $sql = @"
 -- Create a Queue
 declare @rc int
 declare @TraceID int
 declare @maxfilesize bigint
 set @maxfilesize = 5
-exec @rc = sp_trace_create @TraceID output, 0, N'C:\windows\temp\temptrace', @maxfilesize, NULL
+exec @rc = sp_trace_create @TraceID output, 0, N'$tracePath\temptrace', @maxfilesize, NULL
 
 -- Set the events
 declare @on bit
@@ -109,7 +112,7 @@ exec sp_trace_setstatus @TraceID, 1
 select TraceID=@TraceID
 "@
         $splatConnect = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
         }
         $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
@@ -124,16 +127,16 @@ select TraceID=@TraceID
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatRemoveSession = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Session     = $sessionName
         }
         $null = Remove-DbaXESession @splatRemoveSession
         $splatRemoveTrace = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Id          = $traceid
         }
         $null = Remove-DbaTrace @splatRemoveTrace
-        Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
+        Remove-Item -Path $tracePath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -141,12 +144,12 @@ select TraceID=@TraceID
     Context "Test Trace Conversion" {
         BeforeAll {
             $splatGetTrace = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Id          = $traceid
             }
             $null = Get-DbaTrace @splatGetTrace | ConvertTo-DbaXESession -Name $sessionName
             $splatStartSession = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Session     = $sessionName
             }
             $results = Start-DbaXESession @splatStartSession

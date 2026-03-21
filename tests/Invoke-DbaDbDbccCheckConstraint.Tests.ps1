@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $splatConnection = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
         }
         $server = Connect-DbaInstance @splatConnection
         $random = Get-Random
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -72,7 +72,7 @@ Describe $CommandName -Tag IntegrationTests {
             )
 
             $splatCheckConstraint = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbname
                 Object      = $tableName
             }

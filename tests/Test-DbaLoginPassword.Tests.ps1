@@ -28,10 +28,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $weaksauce = "dbatoolsci_testweak"
         $weakpass = ConvertTo-SecureString $weaksauce -AsPlainText -Force
-        $newlogin = New-DbaLogin -SqlInstance $TestConfig.instance1 -Login $weaksauce -HashedPassword (Get-PasswordHash $weakpass $server.VersionMajor) -Force
+        $newlogin = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce -HashedPassword (Get-PasswordHash $weakpass $server.VersionMajor) -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -51,15 +51,15 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "making sure command works" {
         It "finds the new weak password and supports piping" {
-            $results = Get-DbaLogin -SqlInstance $TestConfig.instance1 | Test-DbaLoginPassword
+            $results = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle | Test-DbaLoginPassword
             $results.SqlLogin | Should -Contain $weaksauce
         }
         It "returns just one login" {
-            $results = Test-DbaLoginPassword -SqlInstance $TestConfig.instance1 -Login $weaksauce
+            $results = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce
             $results.SqlLogin | Should -Be $weaksauce
         }
         It "handles passwords with quotes, see #9095" {
-            $results = Test-DbaLoginPassword -SqlInstance $TestConfig.instance1 -Login $weaksauce -Dictionary "&é`"'(-", "hello"
+            $results = Test-DbaLoginPassword -SqlInstance $TestConfig.InstanceSingle -Login $weaksauce -Dictionary "&é`"'(-", "hello"
             $results.SqlLogin | Should -Be $weaksauce
         }
     }

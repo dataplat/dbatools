@@ -34,8 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         # scenario for testing with a db in the simple recovery model
         $dbnameSimpleModel = "dbatoolsci_$(Get-Random)"
@@ -179,11 +179,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Functionality with bulk_logged recovery model" {
         BeforeEach {
-            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
+            $addRowsToBulkLoggedDb = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database $dbnameBulkLoggedModel -Query $sqlAddRows
         }
 
         It "Removes Data for a specified database" {
-            $bulkLoggedServer = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database $dbnameBulkLoggedModel -NonPooledConnection
+            $bulkLoggedServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database $dbnameBulkLoggedModel -NonPooledConnection
             $result = Remove-DbaDbTableData -SqlInstance $bulkLoggedServer -Database $dbnameBulkLoggedModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100

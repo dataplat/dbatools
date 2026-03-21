@@ -43,6 +43,19 @@ function Remove-DbaAgentProxy {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per proxy processed, containing removal status and details.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL Agent proxy that was removed
+        - Status: Result of the removal operation ("Dropped" for success, or error message for failures)
+        - IsRemoved: Boolean indicating if the proxy was successfully removed ($true for success, $false for failures)
+
     .NOTES
         Tags: Agent, Proxy
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

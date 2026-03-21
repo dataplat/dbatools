@@ -34,6 +34,29 @@ function Get-DbaXEObject {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Extended Events component available on the SQL Server instance. The number of objects returned depends on the SQL Server version and installed components.
+
+        Default display properties (excludes ComputerName, InstanceName, ObjectTypeRaw):
+        - PackageName: Name of the Extended Events package (e.g., 'package0', 'sqlserver')
+        - ObjectType: Type of XE object (Event, Action, Target, Map, Message, Type, PredicateComparator, PredicateSource)
+        - TargetName: Name of the Extended Events object
+        - Description: Description of what the XE object does
+
+        All properties available when using Select-Object *:
+        - ComputerName: The computer name hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - PackageName: Name of the Extended Events package
+        - ObjectType: Friendly-formatted object type
+        - ObjectTypeRaw: Raw database value ('type', 'event', 'target', 'pred_compare', 'pred_source', 'action', 'map', 'message')
+        - TargetName: Name of the Extended Events object
+        - Description: Description of the XE object
+
+        Use the -Type parameter to filter results to specific component types without changing the output structure.
+
     .LINK
         https://dbatools.io/Get-DbaXEObject
 

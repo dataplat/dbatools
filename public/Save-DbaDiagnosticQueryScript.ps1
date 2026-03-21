@@ -32,6 +32,21 @@ function Save-DbaDiagnosticQueryScript {
     .LINK
         https://dbatools.io/Save-DbaDiagnosticQueryScript
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns one file information object for each diagnostic script downloaded. Each object represents a downloaded SQL script file containing Glenn Berry's diagnostic queries.
+
+        Properties:
+        - FullName: Full file path of the downloaded diagnostic query script (e.g., C:\Users\UserName\Documents\SQLServerDiagnosticQueries_2022.sql)
+        - Name: The filename of the script (e.g., SQLServerDiagnosticQueries_2022.sql)
+        - Extension: File extension (.sql)
+        - Length: File size in bytes
+        - CreationTime: DateTime when the file was created
+        - LastWriteTime: DateTime when the file was last modified
+        - Directory: The directory object containing the file
+        - Attributes: File attributes (Archive, etc.)
+
     .EXAMPLE
         PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp
 

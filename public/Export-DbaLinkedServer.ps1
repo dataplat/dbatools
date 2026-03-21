@@ -17,7 +17,9 @@ function Export-DbaLinkedServer {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
-        Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
 
     .PARAMETER Path
         Specifies the directory where the linked server export file will be created. Defaults to the configured DbatoolsExport path.
@@ -78,6 +80,20 @@ function Export-DbaLinkedServer {
 
         Returns the T-SQL script for linked servers to the console instead of writing to a file
 
+    .OUTPUTS
+        System.String (when -Passthru is specified or when no -Path/-FilePath is provided)
+
+        Returns the generated T-SQL script as a string or array of strings. The script contains the necessary T-SQL commands to recreate the linked server configuration on another SQL Server instance.
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns file information for the exported T-SQL script file. Properties include:
+        - FullName: Complete file path including filename
+        - Name: The filename (e.g., "sql2017_linkedservers.sql")
+        - Directory: The directory where the file is located
+        - Length: File size in bytes
+        - LastWriteTime: Timestamp of when the file was created or last modified
+
     #>
     [CmdletBinding()]
     param (
@@ -108,8 +124,28 @@ function Export-DbaLinkedServer {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                $InputObject += $server.LinkedServers
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+
+                $dacOpened = $false
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $server = $instance.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                }
+                $InputObject = $server.LinkedServers
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -123,21 +159,6 @@ function Export-DbaLinkedServer {
                 continue
             }
 
-            if (!(Test-SqlSa -SqlInstance $instance -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Getting FullComputerName name for $instance."
-            $fullComputerName = Resolve-DbaComputerName -ComputerName $instance -Credential $Credential
-
-            Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
-            try {
-                Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
-            } catch {
-                Stop-Function -Message "Can't connect to registry on $instance." -Target $fullComputerName -ErrorRecord $_
-                return
-            }
-
             $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
 
             $sql = @()
@@ -146,7 +167,7 @@ function Export-DbaLinkedServer {
                 $sql += $InputObject.Script()
             } else {
                 try {
-                    $decrypted = Get-DecryptedObject -SqlInstance $server -Type LinkedServer
+                    $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException
                 } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
@@ -184,6 +205,10 @@ function Export-DbaLinkedServer {
                 }
             } else {
                 $sql
+            }
+
+            if ($dacOpened) {
+                $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
     }

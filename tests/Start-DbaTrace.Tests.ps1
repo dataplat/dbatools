@@ -27,12 +27,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $tracePath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $tracePath -ItemType Directory
+
         $sql = "-- Create a Queue
                 declare @rc int
                 declare @TraceID int
                 declare @maxfilesize bigint
                 set @maxfilesize = 5
-                exec @rc = sp_trace_create @TraceID output, 0, N'C:\windows\temp\temptrace', @maxfilesize, NULL
+                exec @rc = sp_trace_create @TraceID output, 0, N'$tracePath\temptrace', @maxfilesize, NULL
 
                 -- Set the events
                 declare @on bit
@@ -104,9 +107,9 @@ Describe $CommandName -Tag IntegrationTests {
 
                 -- display trace id for future references
                 select TraceID=@TraceID"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $traceid = ($server.Query($sql)).TraceID
-        $null = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Stop-DbaTrace
+        $null = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -116,15 +119,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
-        Remove-Item C:\windows\temp\temptrace.trc -ErrorAction SilentlyContinue
+        $null = Remove-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+        Remove-Item -Path $tracePath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Test Starting Trace" {
         BeforeAll {
-            $initialResults = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid
+            $initialResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
         }
 
         It "starts in a stopped state" {
@@ -133,7 +136,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "is now running after start" {
-            $runningResults = Get-DbaTrace -SqlInstance $TestConfig.instance1 -Id $traceid | Start-DbaTrace
+            $runningResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
             $runningResults.Id | Should -Be $traceid
             $runningResults.IsRunning | Should -Be $true
         }

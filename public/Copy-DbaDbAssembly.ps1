@@ -62,6 +62,26 @@ function Copy-DbaDbAssembly {
     .LINK
         https://dbatools.io/Copy-DbaDbAssembly
 
+    .OUTPUTS
+        MigrationObject (PSCustomObject)
+
+        Returns one object per assembly processed, documenting the copy operation result for each assembly migration attempt.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp when the operation was performed
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the assembly being copied
+        - Type: Always "Database Assembly" indicating the object type
+        - Status: Result of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional information about why the operation was skipped or failed (null if successful)
+
+        Additional properties available:
+        - SourceDatabase: Database name on the source server containing the assembly
+        - SourceDatabaseID: Unique identifier of the source database
+        - DestinationDatabase: Database name on the destination server
+        - DestinationDatabaseID: Unique identifier of the destination database
+
     .EXAMPLE
         PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
 

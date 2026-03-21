@@ -45,6 +45,35 @@ function Test-DbaTempDbConfig {
     .LINK
         https://dbatools.io/Test-DbaTempDbConfig
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns exactly 6 objects per SQL Server instance - one for each tempdb configuration rule evaluated. Each object contains compliance status for a single best practice rule.
+
+        Properties (consistent across all 6 rule objects):
+        - ComputerName: The computer name hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Rule: The name of the configuration rule being evaluated (string):
+            * "TF 1118 Enabled" - Trace Flag 1118 status for proportional fill algorithm
+            * "File Count" - Number of tempdb data files compared to recommended count
+            * "File Growth in Percent" - Whether any files use percentage-based growth (should be KB-based)
+            * "File Location" - Whether any files are located on C:\ drive
+            * "File MaxSize Set" - Whether any files have maximum size limits set
+            * "Data File Size Equal" - Whether all tempdb data files are equally sized
+        - Recommended: The recommended value for this rule (bool or int):
+            * Integer for "File Count" rule (recommended = min(8, processor count))
+            * Boolean false for "File Growth in Percent", "File Location", "File MaxSize Set"
+            * Boolean true for "TF 1118 Enabled" (SQL 2012 and below) or false (SQL 2016+)
+            * Boolean true for "Data File Size Equal"
+        - CurrentSetting: The actual current value on this instance (bool or int):
+            * Integer for "File Count" rule (actual count of tempdb data files)
+            * Boolean for all other rules
+        - IsBestPractice: Boolean indicating whether the current setting meets Microsoft's best practice recommendations
+        - Notes: Explanatory text describing the rule and recommendations
+
+        All properties are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Test-DbaTempDbConfig -SqlInstance localhost
 

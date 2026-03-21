@@ -50,6 +50,33 @@ function Suspend-DbaAgDbDataMovement {
     .LINK
         https://dbatools.io/Suspend-DbaAgDbDataMovement
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityDatabase
+
+        Returns one AvailabilityDatabase object for each database where data movement was suspended. When suspending data movement for multiple databases, one object is returned per database.
+
+        Default display properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group
+        - LocalReplicaRole: Role of this replica (Primary or Secondary)
+        - Name: Database name
+        - SynchronizationState: Current synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover
+        - IsJoined: Boolean indicating if the database has joined the availability group
+        - IsSuspended: Boolean indicating if data movement is suspended (true after suspension completes)
+
+        Additional properties available on the SMO AvailabilityDatabase object (via Select-Object *):
+        - DatabaseGuid: Unique identifier for the database
+        - EstimatedDataLoss: Estimated data loss in seconds
+        - EstimatedRecoveryTime: Estimated recovery time in seconds
+        - FileStreamSendRate: Rate of FILESTREAM data being sent (bytes/sec)
+        - GroupDatabaseId: Unique identifier for the database within the AG
+        - LastCommitTime: Timestamp of last committed transaction
+        - LogSendQueue: Size of log send queue in KB
+        - RedoRate: Rate of redo operations (bytes/sec)
+
     .EXAMPLE
         PS C:\> Suspend-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2
 

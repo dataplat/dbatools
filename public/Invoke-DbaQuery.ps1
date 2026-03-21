@@ -80,6 +80,10 @@ function Invoke-DbaQuery {
         Enables syntax and semantic validation without executing the actual statements. The SQL engine parses and compiles queries but doesn't run them.
         Use this to validate T-SQL syntax, check object references, and verify permissions before running potentially destructive scripts in production environments.
 
+    .PARAMETER QuotedIdentifier
+        Prepends SET QUOTED_IDENTIFIER ON to each batch before execution. This is required for INSERT, UPDATE, and DELETE operations on tables with filtered indexes, indexed views, computed columns, or XML indexes.
+        Use this when modifying tables with filtered indexes and experiencing silent failures, as SMO connections may have QUOTED_IDENTIFIER set to OFF depending on server/database configuration.
+
     .PARAMETER AppendConnectionString
         Adds custom connection string parameters for specialized connection requirements like MultiSubnetFailover, encryption settings, or timeout values.
         Use this for Availability Group connections, Always Encrypted scenarios, or when you need connection properties not available through standard parameters. Authentication must still be handled via SqlInstance and SqlCredential.
@@ -94,6 +98,33 @@ function Invoke-DbaQuery {
 
     .LINK
         https://dbatools.io/Invoke-DbaQuery
+
+    .OUTPUTS
+        System.Data.DataSet (when -As DataSet is specified)
+
+        Returns a DataSet object containing all result tables from the query. This format preserves table relationships and metadata.
+
+        System.Data.DataTable[] (when -As DataTable is specified)
+
+        Returns an array of DataTable objects, one for each result set returned by the query. Use this when you need access to individual result sets with full DataTable methods and properties.
+
+        System.Data.DataRow[] (when -As DataRow is specified - default)
+
+        Returns an array of DataRow objects representing the rows from the first result set. This is the most common format for typical SELECT queries. When -MessagesToOutput is specified, T-SQL PRINT and RAISERROR messages are also included in the output stream alongside the data rows.
+
+        PSObject (when -As PSObject is specified)
+
+        Returns individual PSObject objects, one per row from each result set in the query results. DBNull values are converted to $null for easier comparison and PowerShell integration. Use this when you need to pipe results to other PowerShell commands that expect objects.
+
+        PSObject[] (when -As PSObjectArray is specified)
+
+        Returns an array of PSObject objects per result set. When multiple result sets are returned, each result set is returned as a separate array. DBNull values are converted to $null.
+
+        System.Object (when -As SingleValue is specified)
+
+        Returns a single scalar value (the first column of the first row). Use this for queries returning a count, sum, or other single value like SELECT COUNT(*) or SELECT @@SERVERNAME.
+
+        When -AppendServerInstance is specified, an additional ServerInstance column is added to DataRow and PSObject output, containing the source SQL Server instance name.
 
     .EXAMPLE
         PS C:\> Invoke-DbaQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'
@@ -184,6 +215,11 @@ function Invoke-DbaQuery {
 
         Leverages your own parameters, giving you full power, mimicking Connect-DbaInstance's `-MultiSubnetFailover -ConnectTimeout 60`, to adhere to official guidelines to target FCI or AG listeners.
         See https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/sqlclient-support-for-high-availability-disaster-recovery#connecting-with-multisubnetfailover
+
+    .EXAMPLE
+        PS C:\> Invoke-DbaQuery -SqlInstance server1 -Database tempdb -Query "INSERT INTO dbo.TableWithFilteredIndex (Id, Name) VALUES (1, 'Test')" -QuotedIdentifier
+
+        Executes an INSERT statement with QUOTED_IDENTIFIER set to ON. This is required when modifying tables that have filtered indexes, as SQL Server requires this setting for such operations.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -213,6 +249,7 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$ReadOnly,
         [switch]$NoExec,
+        [switch]$QuotedIdentifier,
         [string]$AppendConnectionString,
         [switch]$EnableException
     )
@@ -253,6 +290,9 @@ function Invoke-DbaQuery {
         }
         if (Test-Bound -ParameterName "NoExec") {
             $splatInvokeDbaSqlAsync["NoExec"] = $NoExec
+        }
+        if (Test-Bound -ParameterName "QuotedIdentifier") {
+            $splatInvokeDbaSqlAsync["QuotedIdentifier"] = $QuotedIdentifier
         }
 
         if (Test-Bound -ParameterName "File") {

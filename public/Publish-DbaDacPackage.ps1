@@ -69,6 +69,37 @@ function Publish-DbaDacPackage {
         Specifies the path to a specific version of the Microsoft.SqlServer.Dac.dll library to use for deployment operations.
         Use this when you need a specific DacFx version for compatibility with your SQL Server version or to use features from a newer DacFx release.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database deployed, with properties varying based on the deployment type and options specified.
+
+        Properties when deploying DACPAC (Type = 'Dacpac'):
+        Default properties (always included):
+        - ComputerName: The computer name of the SQL Server instance (string)
+        - InstanceName: The SQL Server instance name (string)
+        - SqlInstance: The full SQL Server instance name in computer\instance format (string)
+        - Database: The target database name (string)
+        - Dacpac: Path to the deployed DACPAC file (string)
+        - PublishXml: Path to the publish profile XML file used, if any (string)
+        - Result: Deployment result messages and status output (string)
+        - DeployOptions: The deployment options object used for the deployment, excluding SqlCommandVariableValues (object)
+        - SqlCmdVariableValues: Array of SqlCmd variable names that were applied (string[])
+
+        Additional properties when using -ScriptOnly or -GenerateDeploymentReport:
+        - DatabaseScriptPath: Full path to the generated database deployment script file (string)
+        - MasterDbScriptPath: Full path to the generated master database script file, if generated (string)
+        - DeploymentReport: Full path to the XML deployment report file (string)
+
+        Properties when deploying BACPAC (Type = 'Bacpac'):
+        - ComputerName: The computer name of the SQL Server instance (string)
+        - InstanceName: The SQL Server instance name (string)
+        - SqlInstance: The full SQL Server instance name in computer\instance format (string)
+        - Database: The target database name (string)
+        - Bacpac: Path to the deployed BACPAC file (string)
+        - Result: Deployment result messages and status output (string)
+        - DeployOptions: The deployment options object used for the import (object)
+
     .NOTES
         Tags: Deployment, Dacpac, Bacpac
         Author: Richie lee (@richiebzzzt)

@@ -40,6 +40,52 @@ function Get-DbaDbFileGrowth {
     .LINK
         https://dbatools.io/Get-DbaDbFileGrowth
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file across all specified databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the file
+        - MaxSize: Maximum size the file can grow to - displays as dbasize object (KB, MB, GB, etc.)
+        - GrowthType: How the file grows - either "Percent" or "kb"
+        - Growth: Growth increment value - interpretation depends on GrowthType (percentage or KB)
+        - File: Logical name of the file within SQL Server (aliased from LogicalName)
+        - FileName: Operating system file path (aliased from PhysicalName)
+        - State: Current state of the file (ONLINE, OFFLINE, etc.)
+
+        Additional properties available (from Get-DbaDbFile object):
+        - DatabaseID: Internal ID of the database
+        - FileGroupName: Name of the filegroup containing this file (NULL for log files)
+        - ID: File ID within the database
+        - Type: Type of file - 0 for data file, 1 for log file (Integer)
+        - TypeDescription: Human-readable file type (ROWS or LOG)
+        - LogicalName: Logical name of the file within SQL Server
+        - PhysicalName: Operating system file path
+        - NextGrowthEventSize: Size that will be added during the next autogrow event - displays as dbasize object
+        - Size: Current size of the file - displays as dbasize object
+        - UsedSpace: Space currently used within the file - displays as dbasize object
+        - AvailableSpace: Free space within the file (Size - UsedSpace) - displays as dbasize object
+        - IsOffline: Boolean indicating if the file is offline
+        - IsReadOnly: Boolean indicating if the file is read-only
+        - IsReadOnlyMedia: Boolean indicating if the underlying storage media is read-only
+        - IsSparse: Boolean indicating if the file is sparse (snapshots)
+        - NumberOfDiskWrites: Count of write operations to the file since instance startup
+        - NumberOfDiskReads: Count of read operations from the file since instance startup
+        - ReadFromDisk: Total bytes read from the file since instance startup - displays as dbasize object
+        - WrittenToDisk: Total bytes written to the file since instance startup - displays as dbasize object
+        - VolumeFreeSpace: Free space available on the volume containing this file - displays as dbasize object
+        - FileGroupDataSpaceId: Internal ID of the filegroup data space
+        - FileGroupType: Type of filegroup (NULL for log files, or name for data filegroups)
+        - FileGroupTypeDescription: Description of filegroup type
+        - FileGroupDefault: Boolean indicating if this is the default filegroup
+        - FileGroupReadOnly: Boolean indicating if the filegroup is read-only
+
+        All properties from the base object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012
 

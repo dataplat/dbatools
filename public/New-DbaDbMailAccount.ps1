@@ -40,6 +40,28 @@ function New-DbaDbMailAccount {
         Specifies the SMTP server hostname or IP address that SQL Server will use to send emails through this account. The server must be accessible from the SQL Server instance.
         If not specified, uses the SQL Server instance name as the mail server. The function validates that the mail server exists unless -Force is used.
 
+    .PARAMETER Port
+        Specifies the TCP port number used to connect to the SMTP server. Common values are 25 (standard SMTP), 465 (SMTPS), and 587 (SMTP with STARTTLS).
+        Use 587 for Office 365 and Gmail which require STARTTLS. If not specified, the default port of 25 is used.
+
+    .PARAMETER EnableSSL
+        Enables SSL/TLS encryption for the SMTP connection. Required for connecting to Office 365 (smtp.office365.com:587) and Gmail (smtp.gmail.com:587).
+        When enabled, the connection uses STARTTLS to upgrade to an encrypted connection.
+
+    .PARAMETER UseDefaultCredentials
+        Configures the mail account to use Windows integrated security (the SQL Server service account credentials) for SMTP authentication.
+        Use this for internal mail relays in Windows domains that support Windows Authentication. Cannot be combined with UserName/Password.
+
+    .PARAMETER UserName
+        Specifies the username for SMTP authentication when connecting to mail servers that require credentials.
+        For Office 365, use the full email address (e.g., 'alerts@company.com'). For Gmail, use the Gmail address.
+        Requires the -Password parameter to be specified as well.
+
+    .PARAMETER Password
+        Specifies the password for SMTP authentication as a SecureString. Used in combination with -UserName for Basic authentication.
+        Create with: ConvertTo-SecureString 'yourpassword' -AsPlainText -Force
+        For Office 365, use an app-specific password if multi-factor authentication is enabled on the account.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -66,10 +88,62 @@ function New-DbaDbMailAccount {
     .LINK
         https://dbatools.io/New-DbaDbMailAccount
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Mail.MailAccount
+
+        Returns a newly created MailAccount object from the specified SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: Unique identifier for the mail account
+        - Name: Name of the mail account
+        - DisplayName: Friendly name that appears in the 'From' field of emails
+        - Description: Description of the account's purpose
+        - EmailAddress: Sender email address for outgoing messages
+        - ReplyToAddress: Alternate email address for replies
+        - IsBusyAccount: Boolean indicating if the account is currently processing emails
+        - MailServers: Collection of mail servers associated with this account
+
+        Additional properties available (from SMO MailAccount object):
+        - Parent: Reference to the parent SqlMail object
+        - State: Current state of the object (Existing, Creating, Pending, Dropping, etc.)
+        - Urn: The Uniform Resource Name of the mail account object
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Account 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local
 
         Creates a new database mail account with the email address admin@ad.local on sql2017 named "The DBA Team" using the smtp.ad.local mail server.
+
+    .EXAMPLE
+        PS C:\> $splatAccount = @{
+        >>     SqlInstance  = 'sql2017'
+        >>     Account      = 'Office365Alerts'
+        >>     EmailAddress = 'alerts@company.com'
+        >>     MailServer   = 'smtp.office365.com'
+        >>     Port         = 587
+        >>     EnableSSL    = $true
+        >>     UserName     = 'alerts@company.com'
+        >>     Password     = (ConvertTo-SecureString 'app-password' -AsPlainText -Force)
+        >> }
+        PS C:\> New-DbaDbMailAccount @splatAccount
+
+        Creates a new database mail account configured for Office 365 with SSL and authentication on sql2017.
+
+    .EXAMPLE
+        PS C:\> $splatAccount = @{
+        >>     SqlInstance          = 'sql2017'
+        >>     Account              = 'DomainRelay'
+        >>     EmailAddress         = 'sqlserver@company.local'
+        >>     MailServer           = 'smtp.company.local'
+        >>     UseDefaultCredentials = $true
+        >> }
+        PS C:\> New-DbaDbMailAccount @splatAccount
+
+        Creates a mail account that uses Windows integrated authentication (the SQL Server service account) for an internal domain mail relay.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -86,6 +160,11 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
+        [int]$Port,
+        [switch]$EnableSSL,
+        [switch]$UseDefaultCredentials,
+        [string]$UserName,
+        [System.Security.SecureString]$Password,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -116,8 +195,24 @@ function New-DbaDbMailAccount {
                 }
 
                 try {
-                    $accountObj.MailServers.Item($($server.DomainInstanceName)).Rename($MailServer)
-                    $accountObj.Alter()
+                    if (Test-Bound -ParameterName MailServer) {
+                        $mailServerObj = $accountObj.MailServers.Item($server.DomainInstanceName)
+                        $mailServerObj.Rename($MailServer)
+                    } else {
+                        $mailServerObj = $accountObj.MailServers | Select-Object -First 1
+                    }
+
+                    if ($null -ne $mailServerObj) {
+                        if (Test-Bound -ParameterName Port) { $mailServerObj.Port = $Port }
+                        if (Test-Bound -ParameterName EnableSSL) { $mailServerObj.EnableSsl = $EnableSSL.IsPresent }
+                        if (Test-Bound -ParameterName UseDefaultCredentials) { $mailServerObj.UseDefaultCredentials = $UseDefaultCredentials.IsPresent }
+                        if (Test-Bound -ParameterName UserName) { $mailServerObj.UserName = $UserName }
+                        if (Test-Bound -ParameterName Password) {
+                            $mailServerObj.Password = (New-Object System.Net.NetworkCredential("", $Password)).Password
+                        }
+                        $mailServerObj.Alter()
+                    }
+
                     $accountObj.Refresh()
                     Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

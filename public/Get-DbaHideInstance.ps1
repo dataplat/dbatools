@@ -28,6 +28,17 @@ function Get-DbaHideInstance {
     .LINK
         https://dbatools.io/Get-DbaHideInstance
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per instance containing the current Hide Instance setting.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - HideInstance: Boolean indicating if the instance is hidden from network discovery ($true if hidden, $false if visible)
+
     .EXAMPLE
         PS C:\> Get-DbaHideInstance
 

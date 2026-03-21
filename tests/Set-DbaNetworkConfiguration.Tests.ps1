@@ -32,8 +32,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Store original configuration for restoration after tests
-        $originalNetConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
-        $originalNetConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+        $originalNetConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
+        $originalNetConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -49,9 +49,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Restore Named Pipes to original state
         if ($originalNetConfCommandline.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableProtocol NamedPipes -WarningAction SilentlyContinue
         } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
+            $null = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -DisableProtocol NamedPipes -WarningAction SilentlyContinue
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command works with piped input" {
         BeforeAll {
-            $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+            $netConfPiped = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
             $netConfPiped.TcpIpProperties.KeepAlive = 60000
             $pipedResults = $netConfPiped | Set-DbaNetworkConfiguration -WarningAction SilentlyContinue
         }
@@ -75,11 +75,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command works with commandline input" {
         BeforeAll {
-            $netConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2
+            $netConfCommandline = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle
             if ($netConfCommandline.NamedPipesEnabled) {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -DisableProtocol NamedPipes -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -DisableProtocol NamedPipes -WarningAction SilentlyContinue
             } else {
-                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.instance2 -EnableProtocol NamedPipes -WarningAction SilentlyContinue
+                $commandlineResults = Set-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableProtocol NamedPipes -WarningAction SilentlyContinue
             }
         }
 

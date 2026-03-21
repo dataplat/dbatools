@@ -52,6 +52,48 @@ function Get-DbaDbFile {
     .LINK
         https://dbatools.io/Get-DbaDbFile
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database file on the SQL Server instance(s).
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the file
+        - DatabaseID: Internal ID of the database
+        - FileGroupName: Name of the filegroup containing this file (NULL for log files)
+        - ID: File ID within the database
+        - Type: Type of file - 0 for data file, 1 for log file (Integer)
+        - TypeDescription: Human-readable file type (ROWS or LOG)
+        - LogicalName: Logical name of the file within SQL Server
+        - PhysicalName: Operating system file path
+        - State: Current state of the file (ONLINE, OFFLINE, etc.)
+        - MaxSize: Maximum size the file can grow to - displays as dbasize object (KB, MB, GB, etc.)
+        - Growth: Growth increment - value depends on GrowthType
+        - GrowthType: How the file grows (Percent or KB)
+        - NextGrowthEventSize: Size added during next autogrow event - displays as dbasize object
+        - Size: Current size of the file - displays as dbasize object
+        - UsedSpace: Space currently used within the file - displays as dbasize object
+        - AvailableSpace: Free space within the file (Size - UsedSpace) - displays as dbasize object
+        - IsOffline: Boolean indicating if the file is offline
+        - IsReadOnly: Boolean indicating if the file is read-only
+        - IsReadOnlyMedia: Boolean indicating if the underlying storage media is read-only
+        - IsSparse: Boolean indicating if the file is sparse (snapshots)
+        - NumberOfDiskWrites: Count of write operations to the file since instance startup
+        - NumberOfDiskReads: Count of read operations from the file since instance startup
+        - ReadFromDisk: Total bytes read from the file since instance startup - displays as dbasize object
+        - WrittenToDisk: Total bytes written to the file since instance startup - displays as dbasize object
+        - VolumeFreeSpace: Free space available on the volume containing this file - displays as dbasize object
+        - FileGroupDataSpaceId: Internal ID of the filegroup data space
+        - FileGroupType: Type of filegroup (NULL for log files, or name for data filegroups)
+        - FileGroupTypeDescription: Description of filegroup type
+        - FileGroupDefault: Boolean indicating if this is the default filegroup
+        - FileGroupReadOnly: Boolean indicating if the filegroup is read-only
+
+        Note: Size-related properties (Size, UsedSpace, MaxSize, etc.) are returned as dbasize objects which automatically format as human-readable units (KB, MB, GB, TB) when displayed.
+
     .EXAMPLE
         PS C:\> Get-DbaDbFile -SqlInstance sql2016
 

@@ -18,6 +18,19 @@ function Get-DbatoolsConfigValue {
         Forces the function to throw an error instead of returning null when no configuration value is found.
         Use this when your script requires a specific configuration setting to be present and should fail gracefully rather than continue with null values that could cause unexpected behavior.
 
+    .OUTPUTS
+        object
+
+        Returns the value stored in the specified dbatools configuration setting. The return type depends on which configuration setting is retrieved - can be string, int, bool, datetime, or any object type stored in that configuration.
+
+        Return behavior:
+        - If the configuration exists and has a value, returns that value
+        - If the configuration doesn't exist or is null AND -Fallback is specified, returns the Fallback value
+        - If the configuration doesn't exist or is null AND -NotNull is specified, throws an error
+        - If the configuration doesn't exist or is null AND neither -Fallback nor -NotNull is specified, returns $null
+
+        Special handling: String values of "Mandatory" are automatically converted to $true and "Optional" are converted to $false to prevent switch parameter parsing issues.
+
     .NOTES
         Tags: Module
         Author: Friedrich Weinmann (@FredWeinmann)

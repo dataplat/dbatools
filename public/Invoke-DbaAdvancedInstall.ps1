@@ -100,6 +100,30 @@ function Invoke-DbaAdvancedInstall {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object with detailed installation results and status information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The target computer where SQL Server was installed
+        - InstanceName: The SQL Server instance name
+        - Version: The SQL Server version being installed
+        - Port: The TCP port configured for the instance (nullable int)
+        - Successful: Boolean indicating if the installation completed successfully
+        - Restarted: Boolean indicating if the computer was restarted during installation
+        - Installer: The path to the SQL Server setup.exe file used
+        - ExitCode: The exit code returned by setup.exe (nullable int, 0 = success, 3010 = reboot required)
+        - LogFile: The full path to the installation Summary.txt log file
+        - Notes: Array of messages about installation warnings, errors, or post-installation actions
+
+        Additional properties available:
+        - SACredential: The SA credential provided (if mixed-mode authentication was used)
+        - Configuration: The hashtable of configuration settings used for installation
+        - ExitMessage: Detailed exit message extracted from the installation summary
+        - Log: Full contents of the installation Summary.txt file (array of strings)
+        - ConfigurationFile: Path to the ConfigurationFile.ini used during installation
+
     .LINK
     https://dbatools.io/Invoke-DbaAdvancedInstall
 

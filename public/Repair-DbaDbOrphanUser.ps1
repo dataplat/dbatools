@@ -51,6 +51,25 @@ function Repair-DbaDbOrphanUser {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per orphaned user found, regardless of whether it was successfully repaired or not. The output indicates the repair status for each user encountered.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - DatabaseName: The name of the database where the orphaned user exists
+        - User: The name of the orphaned database user
+        - Status: The outcome of the repair attempt. Values are:
+            - "Success": User was successfully remapped to their matching server login
+            - "No matching login": No matching server login was found for the user (returned only when -RemoveNotExisting is not specified)
+
+        When -RemoveNotExisting is specified, users without matching logins are passed to Remove-DbaDbOrphanUser instead of being returned in the output.
+
+        No output is returned if no orphaned users are found in the specified database(s).
+
     .NOTES
         Tags: Orphan
         Author: Claudio Silva (@ClaudioESSilva) | Simone Bizzotto (@niphlod)

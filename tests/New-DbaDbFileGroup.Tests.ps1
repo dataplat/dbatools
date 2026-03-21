@@ -33,11 +33,11 @@ Describe $CommandName -Tag IntegrationTests {
         $db1name = "dbatoolsci_filegroup_test_$random"
         $db2name = "dbatoolsci_filegroup_test2_$random"
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db1name
-        $newDb2 = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $db2name
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart
+        $newDb1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceRestart -Name $db1name
+        $newDb2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceRestart -Name $db2name
 
-        $null = Enable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
+        $null = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -49,34 +49,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         $newDb1, $newDb2 | Remove-DbaDatabase
 
-        $null = Disable-DbaFilestream -SqlInstance $TestConfig.instance2 -Force
+        $null = Disable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "ensure command works" {
         It "Creates a filegroup" {
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_$random"
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random"
             $results.Parent.Name | Should -Be $db1name
             $results.Name | Should -Be "filegroup_$random"
             $results.FileGroupType | Should -Be RowsFileGroup
         }
 
         It "Check the validation for duplicate filegroup names" {
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_$random" -WarningAction SilentlyContinue
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_$random" -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
         }
 
         It "Creates a filegroup of each FileGroupType" {
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_rows_$random" -FileGroupType RowsFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_rows_$random" -FileGroupType RowsFileGroup
             $results.Name | Should -Be "filegroup_rows_$random"
             $results.FileGroupType | Should -Be RowsFileGroup
 
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_filestream_$random" -FileGroupType FileStreamDataFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_filestream_$random" -FileGroupType FileStreamDataFileGroup
             $results.Name | Should -Be "filegroup_filestream_$random"
             $results.FileGroupType | Should -Be FileStreamDataFileGroup
 
-            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db1name -FileGroup "filegroup_memory_optimized_$random" -FileGroupType MemoryOptimizedDataFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db1name -FileGroup "filegroup_memory_optimized_$random" -FileGroupType MemoryOptimizedDataFileGroup
             $results.Name | Should -Be "filegroup_memory_optimized_$random"
             $results.FileGroupType | Should -Be MemoryOptimizedDataFileGroup
         }
@@ -86,7 +86,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "filegroup_pipeline_$random"
             $results.Parent.Name | Should -Be $db1name
 
-            $results = $newDb1 | New-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $db2name -FileGroup "filegroup_pipeline2_$random"
+            $results = $newDb1 | New-DbaDbFileGroup -SqlInstance $TestConfig.InstanceRestart -Database $db2name -FileGroup "filegroup_pipeline2_$random"
             $results.Name | Should -Be "filegroup_pipeline2_$random", "filegroup_pipeline2_$random"
             $results.Parent.Name | Should -Be $db1name, $db2name
         }

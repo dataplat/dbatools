@@ -41,7 +41,7 @@ CREATE PARTITION SCHEME $PFScheme AS PARTITION [$PFName] ALL TO ( [PRIMARY] );
 "@
 
         $splatCreate = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Query       = $CreateTestPartitionScheme
             Database    = "master"
         }
@@ -62,7 +62,7 @@ GO
 DROP PARTITION FUNCTION [$PFName];
 "@
         $splatDrop = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Query           = $DropTestPartitionScheme
             Database        = "master"
             EnableException = $true
@@ -74,8 +74,8 @@ DROP PARTITION FUNCTION [$PFName];
 
     Context "Partition Schemes are correctly located" {
         BeforeAll {
-            $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -Database master | Select-Object *
-            $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2
+            $results1 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object *
+            $results2 = Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should execute and return results" {
@@ -99,7 +99,7 @@ DROP PARTITION FUNCTION [$PFName];
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbPartitionScheme -SqlInstance $TestConfig.instance2 -ExcludeDatabase master } | Should -Not -Throw
+            { Get-DbaDbPartitionScheme -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master } | Should -Not -Throw
         }
     }
 }

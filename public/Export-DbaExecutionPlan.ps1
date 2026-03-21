@@ -74,6 +74,31 @@ function Export-DbaExecutionPlan {
     .LINK
         https://dbatools.io/Export-DbaExecutionPlan
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per execution plan exported. Each object contains information about the exported plan and the file where it was saved.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: The name of the database containing the execution plan
+        - SqlHandle: Hexadecimal identifier for the SQL statement (used internally by SQL Server)
+        - CreationTime: DateTime when the plan was first compiled/cached
+        - LastExecutionTime: DateTime when the plan was last executed
+        - OutputFile: Full path to the .sqlplan file saved to disk
+
+        Additional properties available (not displayed by default):
+        - PlanHandle: Hexadecimal identifier for the compiled plan
+        - QueryPosition: Position of the statement within the batch (determined by row number)
+        - SingleStatementPlan: XML string representation of the single-statement execution plan
+        - BatchQueryPlan: XML string representation of the batch query execution plan
+        - SingleStatementPlanRaw: XML object parsed from SingleStatementPlan
+        - BatchQueryPlanRaw: XML object parsed from BatchQueryPlan
+
+        Use Select-Object * to access all properties if needed for scripting or further processing.
+
     .EXAMPLE
         PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
 
