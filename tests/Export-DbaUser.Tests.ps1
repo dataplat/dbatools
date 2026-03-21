@@ -221,12 +221,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Schema ownership" {
         It "Exports schema ownership for users that own schemas" {
-            $results = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -Passthru
+            $results = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru
             $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]$user]*"
         }
 
         It "Exports schema ownership with template placeholders" {
-            $results = Export-DbaUser -SqlInstance $TestConfig.instance1 -Database $dbname -User $user -Template -Passthru
+            $results = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Template -Passthru
             $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]``{templateUser``}]*"
         }
     }
