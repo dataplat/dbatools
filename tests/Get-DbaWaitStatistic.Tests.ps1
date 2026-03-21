@@ -69,8 +69,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "ExcludeWaitType parameter filters out additional wait types" {
         BeforeAll {
-            $allResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable
-            $filteredResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable -ExcludeWaitType "CXPACKET", "CXCONSUMER"
+            $allResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable
+            $filteredResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable -ExcludeWaitType "CXPACKET", "CXCONSUMER"
         }
 
         It "excludes specified wait types" {
@@ -81,8 +81,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "IncludeWaitType parameter includes wait types from ignorable list" {
         BeforeAll {
-            $resultsWithout = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
-            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeWaitType "BROKER_RECEIVE_WAITFOR"
+            $resultsWithout = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100
+            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeWaitType "BROKER_RECEIVE_WAITFOR"
         }
 
         It "includes specified wait type that would normally be ignored" {
