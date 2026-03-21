@@ -563,7 +563,7 @@ function Export-DbaUser {
                     }
 
                     #Schema Ownership
-                    foreach ($schema in $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys") -notcontains $_.Name }) {
+                    foreach ($schema in $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }) {
                         if ($Template) {
                             $ownerName = "{templateUser}"
                         } else {
