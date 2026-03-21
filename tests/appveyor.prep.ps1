@@ -58,7 +58,7 @@ $null = New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Dire
 Write-Host -Object "appveyor.prep: Creating temp directory" -ForegroundColor DarkGreen
 $null = New-Item -Path C:\Temp -ItemType Directory
 
-Write-Host -Object "appveyor.prep: Configuring WSMan (see #9782)" -ForegroundColor DarkGreen
+Write-Host -Object "appveyor.prep: Configuring WSMan" -ForegroundColor DarkGreen
 $null = Set-WSManQuickConfig -Force
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
