@@ -31,19 +31,19 @@ Describe $CommandName -Tag IntegrationTests {
         $jobName = "dbatoolsci_job_$(Get-Random)"
         $scheduleName = "dbatoolsci_schedule_$(Get-Random)"
 
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
 
         $splatSchedule = @{
-            SqlInstance             = $TestConfig.instance2
-            Schedule                = $scheduleName
-            FrequencyType           = "Daily"
-            FrequencyInterval       = 1
-            StartTime               = "010000"
+            SqlInstance       = $TestConfig.InstanceSingle
+            Schedule          = $scheduleName
+            FrequencyType     = "Daily"
+            FrequencyInterval = 1
+            StartTime         = "010000"
         }
         $null = New-DbaAgentSchedule @splatSchedule
 
         $splatAttach = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Job         = $jobName
             Schedule    = $scheduleName
         }
@@ -57,8 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule $scheduleName -Confirm:$false -Force -ErrorAction SilentlyContinue
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+        $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $scheduleName -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -66,7 +66,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When detaching a schedule from a job" {
         It "Should detach the schedule and return the expected output" {
             $splatDetach = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Job         = $jobName
                 Schedule    = $scheduleName
             }
@@ -78,19 +78,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not remove the schedule itself after detaching" {
-            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.instance2 -Schedule $scheduleName
+            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $scheduleName
             $schedule | Should -Not -BeNullOrEmpty
         }
 
         It "Should warn when the schedule is not attached to the job" {
             $splatDetach = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Job           = $jobName
                 Schedule      = $scheduleName
                 WarningAction = "SilentlyContinue"
             }
             $result = Remove-DbaAgentJobSchedule @splatDetach
             $result | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike "Schedule '$scheduleName' is not attached to job '$jobName'*"
         }
     }
 
@@ -100,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             # Reattach the schedule so we can test pipeline detachment
             $splatAttach = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Job         = $jobName
                 Schedule    = $scheduleName
             }
@@ -110,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should detach the schedule when job is piped in" {
-            $result = Get-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName | Remove-DbaAgentJobSchedule -Schedule $scheduleName
+            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName | Remove-DbaAgentJobSchedule -Schedule $scheduleName
             $result.IsDetached | Should -Be $true
             $result.Job | Should -Be $jobName
         }
