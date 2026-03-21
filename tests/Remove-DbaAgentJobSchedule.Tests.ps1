@@ -39,6 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
             FrequencyType     = "Daily"
             FrequencyInterval = 1
             StartTime         = "010000"
+            Force             = $true
         }
         $null = New-DbaAgentSchedule @splatSchedule
 
