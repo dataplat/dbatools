@@ -61,6 +61,7 @@ function Get-DbaDbMailAccount {
         - ReplyToAddress: The reply-to email address for emails sent from this account
         - IsBusyAccount: Boolean indicating if the account is currently busy sending messages
         - MailServers: Collection of SMTP servers configured for this account
+        - MailProfile: Collection of Database Mail profile names associated with this account
 
         Additional properties available (from SMO SqlMailAccount object):
         - Account: The account owner or associated account information
@@ -128,10 +129,13 @@ function Get-DbaDbMailAccount {
                     $accounts = $accounts | Where-Object Name -notin $ExcludeAccount
                 }
 
-                $accounts | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
-                $accounts | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
-                $accounts | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                $accounts | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
+                foreach ($acct in $accounts) {
+                    $acct | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
+                    $acct | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
+                    $acct | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
+                    $acct | Add-Member -Force -MemberType NoteProperty -Name MailProfile -value $acct.GetAccountProfileNames()
+                    $acct | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers, MailProfile
+                }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
