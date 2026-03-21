@@ -36,6 +36,11 @@ function Save-DbaKbUpdate {
         Use this workflow to preview available downloads with Get-DbaKbUpdate, then pipe selected results for download.
         Particularly useful when working with KBs that have multiple file options.
 
+    .PARAMETER UseWebRequest
+        Forces the use of Invoke-WebRequest instead of Start-BitsTransfer for downloading files.
+        Use this when running in a non-interactive context such as a scheduled task or SQL Agent job,
+        where Start-BitsTransfer may fail because it requires a logged-in user session.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -104,6 +109,7 @@ function Save-DbaKbUpdate {
         [string]$Language,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$UseWebRequest,
         [switch]$EnableException
     )
     process {
@@ -141,8 +147,15 @@ function Save-DbaKbUpdate {
                 $file = "$Path$([IO.Path]::DirectorySeparatorChar)$fileName"
             }
 
-            if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
-                Start-BitsTransfer -Source $link -Destination $file
+            if (-not $UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
+                try {
+                    Start-BitsTransfer -Source $link -Destination $file
+                } catch {
+                    Write-Message -Level Verbose -Message "Start-BitsTransfer failed, falling back to Invoke-WebRequest: $PSItem"
+                    Write-Progress -Activity "Downloading $fileName" -Id 1
+                    Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
+                    Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                }
             } else {
                 Write-Progress -Activity "Downloading $fileName" -Id 1
                 Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
