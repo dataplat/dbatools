@@ -62,6 +62,11 @@ function Watch-DbaDbLogin {
     .LINK
         https://dbatools.io/Watch-DbaDbLogin
 
+    .OUTPUTS
+        None
+
+        This command does not return pipeline objects. It writes connection activity data directly to a database table specified by the -Database and -Table parameters. The function records login information from monitored instances and inserts the captured session details into the central tracking table for ongoing monitoring and audit purposes.
+
     .EXAMPLE
         PS C:\> Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
 

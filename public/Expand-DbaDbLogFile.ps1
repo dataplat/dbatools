@@ -110,6 +110,29 @@ function Expand-DbaDbLogFile {
         Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
         This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database processed containing the results of the log file expansion operation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The name of the database whose log file was expanded
+        - DatabaseID: The unique identifier of the database
+        - ID: The file ID of the transaction log file
+        - Name: The logical name of the transaction log file
+        - InitialSize: The size of the log file at the start of the operation (displayed as formatted size)
+        - CurrentSize: The size of the log file after expansion to target size (displayed as formatted size)
+        - InitialVLFCount: The number of Virtual Log Files (VLFs) before the expansion operation
+        - CurrentVLFCount: The number of Virtual Log Files (VLFs) after the expansion operation
+
+        Additional properties available:
+        - LogFileCount: The total number of log files for the database (available with Select-Object *)
+
+        All properties are accessible via Select-Object * or by accessing individual properties on the returned object.
+
     .LINK
         https://dbatools.io/Expand-DbaDbLogFile
 
@@ -290,7 +313,7 @@ function Expand-DbaDbLogFile {
                                 }
 
                             }
-                            while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
+                            while (!$match -and (-not [string]::IsNullOrEmpty($DrivePath)) -and ($DrivePath -ne "\"))
 
                             Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
 
@@ -300,17 +323,12 @@ function Expand-DbaDbLogFile {
                         }
 
                         if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB))) {
-                            $title = "Choose increment value for database '$dbName':"
-                            $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
-                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                            $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                            #no
-                            if ($result -eq 1) {
-                                Write-Message -Level Warning -Message "You have cancelled the execution"
+                            $message = "Cannot validate freespace on drive where the log file resides for database '$dbName'. Continuing without disk space validation."
+                            if (-not $PSCmdlet.ShouldProcess($server.name, $message)) {
+                                Write-Message -Level Warning -Message "Operation cancelled by user"
                                 return
                             }
+                            Write-Message -Level Warning -Message $message
                         } elseif ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
                             Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
                                 "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `

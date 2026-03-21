@@ -59,6 +59,39 @@ function Test-DbaBuild {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Boolean (when -Quiet parameter is specified)
+
+        Returns only the compliance result: $true if the build is compliant, $false if non-compliant. Designed for automated scripts and monitoring system integration.
+
+        PSCustomObject (default)
+
+        Returns one build compliance object per build version tested. The object includes build information and compliance status with the following properties:
+
+        Always included:
+        - Build: The SQL Server build version being tested
+        - MatchType: How the build was matched - "Exact" for recognized builds or "Approximate" for unrecognized versions
+        - Compliant: Boolean indicating if the build meets the specified compliance requirement ($true or $false)
+
+        When -MinimumBuild is specified:
+        - MinimumBuild: The baseline build version that was used for comparison
+        - SPTarget, CUTarget, BuildTarget: Hidden (not shown by default)
+
+        When -MaxBehind or -Latest is specified:
+        - MaxBehind: The maximum allowed gap specification (e.g., "1SP", "2CU", "1SP 1CU") or empty for -Latest
+        - SPTarget: Target Service Pack level required for compliance (null when -Latest or -MaxBehind uses only CU specification)
+        - CUTarget: Target Cumulative Update level required for compliance (null when -Latest or -MaxBehind uses only SP specification)
+        - BuildTarget: The target build version that represents the compliance threshold
+        - MinimumBuild: Hidden (not shown by default)
+
+        When -SqlInstance is specified (instead of -Build):
+        - SqlInstance: The source SQL Server instance where the build was discovered
+
+        When -SqlInstance is not specified (using -Build):
+        - SqlInstance: Hidden (not shown by default)
+
+        All properties can be accessed using Select-Object * regardless of the default display.
+
     .LINK
         https://dbatools.io/Test-DbaBuild
 

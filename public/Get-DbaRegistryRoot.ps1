@@ -26,6 +26,19 @@ function Get-DbaRegistryRoot {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance found on the specified computer.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server host
+        - InstanceName: The SQL Server instance name (e.g., "MSSQLSERVER" for default instance, or instance name for named instances)
+        - SqlInstance: The full SQL Server instance name (computer\instance format, or just computer name for default instance)
+        - Hive: The Windows registry hive where the instance configuration is stored (always "HKLM" for SQL Server)
+        - Path: The registry path within the hive where the instance stores its configuration (e.g., "Software\Microsoft\Microsoft SQL Server\MSSQL15.MSSQLSERVER\Setup")
+        - RegistryRoot: The full registry path ready for use with PowerShell registry cmdlets (e.g., "HKLM:\Software\Microsoft\Microsoft SQL Server\...")
+
     .LINK
         https://dbatools.io/Get-DbaRegistryRoot
 

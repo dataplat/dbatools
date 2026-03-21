@@ -38,10 +38,10 @@ Describe $CommandName -Tag IntegrationTests {
         $multifgdb = "dbatoolsci_multifgdb$random"
 
         # Remove any existing database before creating
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $multifgdb
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb
 
         # Create the test database with multiple filegroups
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $multifgdb -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Returns values for Instance" {
         BeforeAll {
-            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2
+            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Results are not empty" {
@@ -77,8 +77,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Accepts database and filegroup input" {
         BeforeAll {
-            $allFileGroupResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $multifgdb
-            $singleFileGroupResult = Get-DbaDbFileGroup -SqlInstance $TestConfig.instance2 -Database $multifgdb -FileGroup Test1
+            $allFileGroupResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb
+            $singleFileGroupResult = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb -FileGroup Test1
         }
 
         It "Reports the right number of filegroups for database" {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Accepts piped input" {
         BeforeAll {
-            $pipedResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -ExcludeUser | Get-DbaDbFileGroup
+            $pipedResults = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser | Get-DbaDbFileGroup
         }
 
         It "Reports the right number of filegroups" {

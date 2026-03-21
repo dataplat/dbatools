@@ -68,6 +68,28 @@ function Stop-DbaService {
     .LINK
         https://dbatools.io/Stop-DbaService
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Wmi.Service
+
+        Returns one service object per service that was stopped, with the following default display properties:
+        - ComputerName: The name of the computer hosting the SQL Server service
+        - ServiceName: The Windows service name (e.g., MSSQLSERVER, SQLSERVERAGENT, SSRS)
+        - InstanceName: The SQL Server instance name associated with the service
+        - ServiceType: The type of SQL Server service (Engine, Agent, SSRS, SSAS, SSIS, PolyBase, Launchpad, Browser, FullText)
+        - State: The current state of the service (Running, Stopped, etc.)
+        - Status: The result of the stop operation (Successful, Failed)
+        - Message: Detailed status message describing the operation result (success or failure reason)
+
+        Additional properties available via Select-Object *:
+        - ServiceAccount: The Windows account running the service
+        - StartMode: The startup type (Automatic, Manual, Disabled)
+        - Properties: Collection of additional service properties
+        - Parent: Reference to the parent computer object
+
+        When -Force is used with Engine type services, dependent services (Agent, PolyBase) are automatically stopped first to prevent service dependency conflicts. All dependent services appear in the output with their own status information.
+
+        If no services match the specified parameters, no output is generated.
+
     .EXAMPLE
         PS C:\> Stop-DbaService -ComputerName sqlserver2014a
 

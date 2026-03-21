@@ -36,6 +36,34 @@ function Get-DbaOleDbProvider {
     .LINK
         https://dbatools.io/Get-DbaOleDbProvider
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.OleDbProviderSettings
+
+        Returns one OleDbProviderSettings object per OLE DB provider configured on the SQL Server instance.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: Computer name of the SQL Server instance
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (computer\instance format)
+        - Name: OLE DB provider name (e.g., SQLNCLI11, MSDASQL, SSISOLEDB)
+        - Description: Human-readable description of the provider
+        - AllowInProcess: Boolean indicating if the provider is allowed to run in-process with SQL Server
+        - DisallowAdHocAccess: Boolean indicating if ad hoc access (OPENROWSET, OPENDATASOURCE) is disallowed
+        - DynamicParameters: Boolean indicating if the provider supports dynamic parameters
+        - IndexAsAccessPath: Boolean indicating if the provider supports indexes as access paths
+        - LevelZeroOnly: Boolean indicating if only level zero (table-level) operations are allowed
+        - NestedQueries: Boolean indicating if the provider supports nested queries
+        - NonTransactedUpdates: Boolean indicating if the provider supports non-transacted updates
+
+        Additional properties available (from SMO OleDbProviderSettings object):
+        - Parent: Reference to the parent Server object
+        - Urn: The Uniform Resource Name of the provider object
+        - Properties: Collection of property objects
+        - State: Current state of the SMO object (Existing, Creating, Deleting, etc.)
+        - Uid: Unique identifier for the provider setting
+
+        All properties from the base SMO OleDbProviderSettings object are accessible using Select-Object * even though only the default properties are displayed without it.
+
     .EXAMPLE
         PS C:\> Get-DbaOleDbProvider -SqlInstance SqlBox1\Instance2
 

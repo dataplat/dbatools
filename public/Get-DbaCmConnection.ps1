@@ -19,6 +19,32 @@ function Get-DbaCmConnection {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Dataplat.Dbatools.Connection.ManagementConnection
+
+        Returns one ManagementConnection object per cached connection matching the filter criteria. Each object represents a cached remote computer management connection that dbatools uses for Windows Management and CIM operations.
+
+        Default display properties (displayed in table format):
+        - ComputerName: The name of the remote computer that this connection is cached for
+        - Available: Whether any connection protocol (CIM, WMI, or PowerShell Remoting) is available to this computer
+        - User: The username being used for this connection (either from stored credentials or the current Windows user)
+        - OverrideExplicitCredential: Boolean indicating if this connection ignores explicitly provided credentials and uses cached ones instead
+        - DisabledConnectionTypes: Which connection protocols are disabled for this computer (CimRM, CimDCOM, Wmi, PowerShellRemoting, or combinations)
+
+        Additional properties available on the object (use Select-Object * to view all):
+        - Credentials: The stored PSCredential object used for this connection (if any). Contains UserName property.
+        - UseWindowsCredentials: Boolean indicating if Windows authentication should be used
+        - DisableBadCredentialCache: Boolean indicating if failed credentials are not cached for this computer
+        - DisableCimPersistence: Boolean indicating if CIM sessions are not reused for this computer
+        - DisableCredentialAutoRegister: Boolean indicating if successful credentials are not automatically cached
+        - WindowsCredentialsAreBad: Boolean indicating if Windows authentication has been marked as non-functional
+        - CimRM: Connection test result for CIM over WinRM protocol (Success or Error)
+        - CimDCOM: Connection test result for CIM over DCOM protocol (Success or Error)
+        - Wmi: Connection test result for WMI protocol (Success or Error)
+        - PowerShellRemoting: Connection test result for PowerShell Remoting protocol (Success or Error)
+        - CimWinRMOptions: Advanced WinRM session options configured for this connection
+        - CimDCOMOptions: Advanced DCOM session options configured for this connection
+
     .NOTES
         Tags: ComputerManagement, CIM
         Author: Friedrich Weinmann (@FredWeinmann)

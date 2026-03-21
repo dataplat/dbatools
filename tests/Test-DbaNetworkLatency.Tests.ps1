@@ -25,8 +25,8 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command returns proper info" {
         BeforeAll {
-            $pipelineResults = $TestConfig.instances | Test-DbaNetworkLatency
-            $parameterResults = Test-DbaNetworkLatency -SqlInstance $TestConfig.instances
+            $pipelineResults = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Test-DbaNetworkLatency -EnableException
+            $parameterResults = Test-DbaNetworkLatency -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -EnableException
         }
 
         It "returns two objects when using pipeline" {

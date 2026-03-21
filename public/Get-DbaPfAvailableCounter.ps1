@@ -35,6 +35,18 @@ function Get-DbaPfAvailableCounter {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per available Windows performance counter found on the specified computers.
+
+        Default display properties:
+        - ComputerName: The name of the computer where the counter is available
+        - Name: The performance counter name
+
+        Additional properties available (via Select-Object *):
+        - Credential: The PSCredential object used for connecting to the computer; useful for piping to other dbatools commands like Add-DbaPfDataCollectorCounter
+
     .LINK
         https://dbatools.io/Get-DbaPfAvailableCounter
 

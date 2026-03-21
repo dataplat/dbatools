@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validate standard output" {
         BeforeAll {
-            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2
+            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should return property: ComputerName" {
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Accepts an Option Value" {
         BeforeAll {
-            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.instance2 -Option ansi_nulls
+            $result = Get-DbaDbccUserOption -SqlInstance $TestConfig.InstanceSingle -Option ansi_nulls
         }
 
         It "Gets results" {

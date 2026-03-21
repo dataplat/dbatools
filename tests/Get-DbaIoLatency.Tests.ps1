@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         It "Returns results" {
-            $results = Get-DbaIoLatency -SqlInstance $TestConfig.instance2
+            $results = Get-DbaIoLatency -SqlInstance $TestConfig.InstanceSingle
             $results.Count -gt 0 | Should -Be $true
         }
     }

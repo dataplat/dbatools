@@ -63,6 +63,20 @@ function Copy-DbaInstanceAuditSpecification {
     .LINK
         https://dbatools.io/Copy-DbaInstanceAuditSpecification
 
+    .OUTPUTS
+        MigrationObject
+
+        Returns one object per audit specification processed, with the results of the copy operation for each specification.
+
+        Properties:
+        - DateTime: Timestamp when the copy operation was executed (DbaDateTime)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the audit specification that was copied or processed
+        - Type: Always returns "Server Audit Specification"
+        - Status: Result of the operation - "Successful", "Skipped", or "Failed"
+        - Notes: Additional details about the operation result (e.g., why it was skipped or failure reason)
+
     .EXAMPLE
         PS C:\> Copy-DbaInstanceAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 

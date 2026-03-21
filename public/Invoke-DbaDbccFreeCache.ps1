@@ -64,6 +64,19 @@ function Invoke-DbaDbccFreeCache {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance processed, containing the DBCC command that was executed and the resulting output from the SQL Server cache clearing operation.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance where the cache was cleared
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Operation: The cache clearing operation executed (FreeProcCache, FreeSessionCache, or FreeSystemCache)
+        - Cmd: The complete DBCC command that was executed (e.g., "DBCC FREEPROCCACHE WITH NO_INFOMSGS")
+        - Output: The informational messages or output returned by the DBCC command; $null if -NoInformationalMessages was specified
+
     .LINK
         https://dbatools.io/Invoke-DbaDbccFreeCache
 

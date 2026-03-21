@@ -106,6 +106,31 @@ function Get-DbaDbStoredProcedure {
 
         Gets the Stored Procedures in schema1 for the db1 database
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.StoredProcedure
+
+        Returns one StoredProcedure object per stored procedure found in the specified databases. Each object represents a single stored procedure, including system and user-defined procedures unless filtered.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database name containing the stored procedure
+        - Schema: The schema in which the stored procedure is defined
+        - ObjectId: The unique identifier for the stored procedure object (displayed as ID)
+        - CreateDate: The date and time when the stored procedure was created
+        - DateLastModified: The date and time when the stored procedure was last modified
+        - Name: The name of the stored procedure
+        - ImplementationType: The implementation type (T-SQL or CLR)
+        - Startup: Boolean indicating if the procedure is marked as a startup procedure
+
+        Additional properties available (from SMO StoredProcedure object):
+        - DatabaseId: The unique identifier of the database containing the procedure
+        - IsSystemObject: Boolean indicating if this is a system-defined stored procedure
+        - And all other standard SMO StoredProcedure properties (use Select-Object * to see all)
+
+        When -ExcludeSystemSp is specified, system stored procedures are filtered out and only user-defined procedures are returned.
+
     #>
     [CmdletBinding()]
     param (
@@ -160,7 +185,11 @@ function Get-DbaDbStoredProcedure {
 
             # Let the SMO read all properties referenced in this command for all stored procedures in the database in one query.
             # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
-            $db.StoredProcedures.ClearAndInitialize('', [string[]]('Schema', 'Name', 'ID', 'CreateDate', 'DateLastModified', 'ImplementationType', 'Startup', 'IsSystemObject'))
+            try {
+                $db.StoredProcedures.ClearAndInitialize('', [string[]]('Schema', 'Name', 'ID', 'CreateDate', 'DateLastModified', 'ImplementationType', 'Startup', 'IsSystemObject'))
+            } catch {
+                Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+            }
 
             if ($db.StoredProcedures.Count -eq 0) {
                 Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Output

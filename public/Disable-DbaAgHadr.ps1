@@ -28,6 +28,16 @@ function Disable-DbaAgHadr {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successfully processed instance, containing the following properties:
+
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance (e.g., MSSQLSERVER or named instance)
+        - SqlInstance: The full SQL Server instance identifier in the format ComputerName\InstanceName
+        - IsHadrEnabled: Boolean value indicating the HADR status (always $false for successful disable operations)
+
     .NOTES
         Tags: AG, HA
         Author: Shawn Melton (@wsmelton), wsmelton.github.io

@@ -44,6 +44,22 @@ function Get-DbaWindowsLog {
     .LINK
         https://dbatools.io/Get-DbaWindowsLog
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per parsed error log entry found in SQL Server error log files within the specified time range. Each object contains details about a single error log record including timestamp, SPID, severity, error number, and the log message.
+
+        Properties:
+        - InstanceName: The SQL Server instance name where the log entry originated (format: ComputerName\InstanceName or ComputerName for default instance)
+        - Timestamp: The date and time when the error log entry was recorded (DateTime)
+        - Spid: The SQL Server process ID (SPID) associated with the log entry; typically a string value like "s", "sa", "sr" for system processes (string)
+        - Severity: The severity level of the error (0-25 numeric scale; 10+ indicates user errors, lower values indicate informational messages, string representation)
+        - ErrorNumber: The SQL Server error number; 0 for informational messages, >0 for actual errors (int)
+        - State: The error state number providing additional diagnostic context for the error (int)
+        - Message: The full text of the error log message (string)
+
+        Note: The function parses raw SQL Server error log files using regular expressions. Only entries matching the error log format pattern are returned. Non-matching log entries are silently skipped. Results are always output as log entries are parsed during the remote execution, not held in memory.
+
     .EXAMPLE
         PS C:\> $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
         PS C:\> $ErrorLogs | Where-Object ErrorNumber -eq 18456

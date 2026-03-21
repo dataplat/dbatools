@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $random = Get-Random
         $tableName = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
@@ -47,36 +47,36 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname | Remove-DbaDatabase
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command actually works" {
         It "returns no foreign keys from excluded DB with -ExcludeDatabase" {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
             ($results | Where-Object Database -eq "master").Count | Should -BeExactly 0
         }
 
         It "returns only foreign keys from selected DB with -Database" {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             ($results | Where-Object Database -ne "master").Count | Should -BeExactly 1
         }
 
         It "Should include test foreign keys: $fkName" {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemTable
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ExcludeSystemTable
             ($results | Where-Object Name -eq $fkName).Name | Should -Be $fkName
         }
 
         It "Should exclude system tables" {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemTable
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -Database master -ExcludeSystemTable
             ($results | Where-Object Name -eq "spt_fallback_db") | Should -BeNullOrEmpty
         }
     }
 
     Context "Parameters are returned correctly" {
         BeforeAll {
-            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
+            $results = Get-DbaDbForeignKey -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master
         }
 
         It "Has the correct default properties" {

@@ -61,6 +61,11 @@ function Copy-DbaSsisCatalog {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command performs migration operations and does not return any output objects. Check the Verbose stream for operation details, or use -WhatIf to preview what would be executed.
+
     .NOTES
         Tags: Migration, SSIS
         Author: Phil Schwartz (philschwartz.me, @pschwartzzz)

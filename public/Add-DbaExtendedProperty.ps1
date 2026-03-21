@@ -85,6 +85,27 @@ function Add-DbaExtendedProperty {
     .LINK
         https://dbatools.io/Add-DbaExtendedProperty
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ExtendedProperty
+
+        Returns one ExtendedProperty object for each extended property successfully created on the target object(s).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ParentName: The name of the SQL Server object to which the extended property was added (database, table, procedure, etc.)
+        - Type: The SMO object type name of the parent object (Database, Table, StoredProcedure, View, etc.)
+        - Name: The name identifier of the extended property being created
+        - Value: The string value assigned to the extended property
+
+        Additional properties available (from SMO ExtendedProperty object):
+        - ID: Numeric identifier of the extended property
+        - Urn: Unique Resource Name identifying the extended property in the object hierarchy
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO object are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Add-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Name version -Value "1.0.0"
 

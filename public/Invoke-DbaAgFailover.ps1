@@ -46,6 +46,32 @@ function Invoke-DbaAgFailover {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroup
+
+        Returns one AvailabilityGroup object per availability group that was failed over. The object reflects the new state after the failover operation completes.
+
+        Default properties visible when displayed:
+        - Name: The name of the availability group
+        - PrimaryReplicaServerName: The server hosting the primary replica after failover
+        - LocalReplicaRole: The role of the local replica (Primary or Secondary)
+        - AutomatedBackupPreference: Preference for which replicas perform backups (Primary, Secondary, etc.)
+        - FailureConditionLevel: The condition level that triggers automatic failover
+        - HealthCheckTimeout: The health check interval in milliseconds
+        - BasicAvailabilityGroup: Boolean indicating if this is a basic (Enterprise-only) availability group
+        - ClusterType: The cluster type used (WSFC, External, or None)
+
+        Additional properties available from the SMO AvailabilityGroup object:
+        - ID: Unique identifier for the availability group
+        - UniqueId: The globally unique identifier for the availability group
+        - AvailabilityReplicas: Collection of all replica objects in the availability group
+        - AvailabilityDatabases: Collection of databases participating in the availability group
+        - AvailabilityGroupListeners: Collection of listener endpoints configured for the availability group
+        - DatabaseReplicaStates: Collection of database states across all replicas
+        - RequiredSynchronizedSecondariesToCommit: Number of secondaries that must be synchronized before commit
+
+        Use Select-Object * to access all SMO properties available on the AvailabilityGroup object.
+
     .NOTES
         Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net

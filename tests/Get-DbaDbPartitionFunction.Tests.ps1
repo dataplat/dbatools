@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         $tempguid = [guid]::newguid()
         $PFName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestPartitionFunction = "CREATE PARTITION FUNCTION [$PFName] (int) AS RANGE LEFT FOR VALUES (1, 100, 1000, 10000, 100000);"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $CreateTestPartitionFunction -Database master
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $CreateTestPartitionFunction -Database master
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -39,15 +39,15 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $DropTestPartitionFunction = "DROP PARTITION FUNCTION [$PFName];"
-        Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query $DropTestPartitionFunction -Database master -ErrorAction SilentlyContinue
+        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $DropTestPartitionFunction -Database master -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Partition Functions are correctly located" {
         BeforeAll {
-            $results1 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.instance2 -Database master | Select-Object *
-            $results2 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.instance2
+            $results1 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object *
+            $results2 = Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Should execute and return results" {
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should not Throw an Error" {
-            { Get-DbaDbPartitionFunction -SqlInstance $TestConfig.instance2 -ExcludeDatabase master } | Should -Not -Throw
+            { Get-DbaDbPartitionFunction -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master } | Should -Not -Throw
         }
     }
 }

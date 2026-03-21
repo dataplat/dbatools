@@ -41,6 +41,11 @@ Function Uninstall-DbaSqlWatch {
 
         https://sqlwatch.io
 
+    .OUTPUTS
+        None
+
+        This command does not return any output objects. It performs a complete uninstallation of the SqlWatch monitoring solution by removing all associated database objects, SQL Agent jobs, Extended Events sessions, Service Broker components, and other related resources from the specified SQL Server instance.
+
     .LINK
         https://dbatools.io/Uninstall-DbaSqlWatch
 

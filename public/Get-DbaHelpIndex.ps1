@@ -83,6 +83,43 @@ function Get-DbaHelpIndex {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per index and optionally per statistics object. Each object represents an index or statistics on a table, providing comprehensive information about its structure, usage, and maintenance characteristics.
+
+        Default properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the index
+        - Object: The table containing the index (schema.table format)
+        - Index: The name of the index; empty string for statistics-only rows
+        - Statistics: The name of the statistics object; null for index rows
+        - IndexType: Type of index structure (Clustered Index, Nonclustered Index, Heap) with optional qualifiers (PRIMARY KEY, UNIQUE, UNIQUE CONSTRAINT)
+        - KeyColumns: Comma-separated list of key columns with optional DESC markers and data types (if -IncludeDataTypes)
+        - IncludeColumns: Comma-separated list of included columns with optional data types (if -IncludeDataTypes); empty string if none
+        - FilterDefinition: Filter predicate for filtered indexes; empty string if no filter
+        - FillFactor: Fill factor value (0-100) for the index; empty string for statistics rows
+        - DataCompression: Compression type (Row, Page, or ColumnStore); empty string for No Compression
+        - IndexReads: Numeric count of index seeks, scans, and lookups (formatted with thousands separators unless -Raw)
+        - IndexUpdates: Numeric count of index write operations (formatted with thousands separators unless -Raw)
+        - Size: Index size in kilobytes; formatted as N0 unless -Raw (then dbasize object) (formatted with thousands separators unless -Raw); empty string for statistics rows
+        - IndexRows: Numeric row count in the index or statistics; formatted with thousands separators unless -Raw
+        - IndexLookups: Numeric count of lookup operations (only for heap or clustered index); empty string for statistics rows
+        - MostRecentlyUsed: DateTime of most recent index usage; null if never used (1900 year) or no usage data
+        - StatsSampleRows: Number of rows sampled when statistics were built/updated; empty for index rows; null on SQL 2005 unless -ObjectName specified
+        - StatsRowMods: Number of modifications to underlying data since last statistics update; empty for index rows; null on SQL 2005 unless -ObjectName specified
+        - HistogramSteps: Number of steps in the statistics histogram; empty for index rows; null on SQL 2005 unless -ObjectName specified
+        - StatsLastUpdated: DateTime when statistics were last updated; empty for index rows; null on SQL 2005 unless -ObjectName specified
+        - IndexFragInPercent: Fragmentation percentage (0-100 formatted as F2 decimal) of the index; only present when -IncludeFragmentation specified; empty string otherwise
+
+        When -IncludeStats is specified, statistics-only objects are also returned with index-specific properties set to empty strings and statistics properties populated.
+
+        When -Raw is specified, numeric values return as dbasize objects rather than formatted strings, enabling calculations and comparisons without string parsing.
+
+        All properties are returned as strings in default mode for display formatting. Use -Raw for numeric calculations.
+
     .LINK
         https://dbatools.io/Get-DbaHelpIndex
 
@@ -1037,76 +1074,65 @@ function Get-DbaHelpIndex {
             try {
                 $IndexDetails = $db.Query($indexesQuery)
 
-                if (!$Raw) {
-                    foreach ($detail in $IndexDetails) {
-                        $recentlyused = [datetime]$detail.MostRecentlyUsed
+                foreach ($detail in $IndexDetails) {
+                    $recentlyused = [datetime]$detail.MostRecentlyUsed
 
-                        if ($recentlyused.year -eq 1900) {
-                            $recentlyused = $null
-                        }
-
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $db.Name
-                            Object             = $detail.FullObjectName
-                            Index              = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            Statistics         = $detail.StatisticsName
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
-                            Size               = "{0:N0}" -f $detail.SizeKB
-                            IndexRows          = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups       = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods       = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
-                        }
+                    if ($recentlyused.year -eq 1900) {
+                        $recentlyused = $null
                     }
-                }
 
-                else {
-                    foreach ($detail in $IndexDetails) {
-                        $recentlyused = [datetime]$detail.MostRecentlyUsed
-
-                        if ($recentlyused.year -eq 1900) {
-                            $recentlyused = $null
-                        }
-
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $db.Name
-                            Object             = $detail.FullObjectName
-                            Index              = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            Statistics         = $detail.StatisticsName
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = $detail.IndexReads
-                            IndexUpdates       = $detail.IndexUpdates
-                            Size               = [dbasize]($detail.SizeKB * 1024)
-                            IndexRows          = $detail.IndexRows
-                            IndexLookups       = $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = $detail.StatsSampleRows
-                            StatsRowMods       = $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = $detail.IndexFragInPercent
-                        }
+                    # Map query column names to output property names
+                    $propertyMapping = @{
+                        FullObjectName   = "Object"
+                        IndexName        = "Index"
+                        StatisticsName   = "Statistics"
+                        SizeKB           = "Size"
+                        MostRecentlyUsed = "MostRecentlyUsed"
                     }
+
+                    # Properties that need numeric formatting when not in Raw mode
+                    $numericProperties = @("IndexReads", "IndexUpdates", "SizeKB", "IndexRows", "IndexLookups", "StatsSampleRows", "StatsRowMods")
+                    $decimalProperties = @("IndexFragInPercent")
+
+                    # Build hashtable with all properties
+                    $properties = @{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.Name
+                    }
+
+                    # Dynamically add all properties from the query result
+                    foreach ($property in $detail.PSObject.Properties) {
+                        $propertyName = $property.Name
+                        $propertyValue = $property.Value
+
+                        # Use mapped name if one exists
+                        $outputPropertyName = if ($propertyMapping.ContainsKey($propertyName)) {
+                            $propertyMapping[$propertyName]
+                        } else {
+                            $propertyName
+                        }
+
+                        # Apply special handling for specific properties
+                        if ($propertyName -eq "MostRecentlyUsed") {
+                            $propertyValue = $recentlyused
+                        } elseif ($propertyName -eq "SizeKB") {
+                            if ($Raw) {
+                                $propertyValue = [dbasize]($propertyValue * 1024)
+                            } else {
+                                $propertyValue = "{0:N0}" -f $propertyValue
+                            }
+                        } elseif (!$Raw -and $numericProperties -contains $propertyName) {
+                            $propertyValue = "{0:N0}" -f $propertyValue
+                        } elseif (!$Raw -and $decimalProperties -contains $propertyName) {
+                            $propertyValue = "{0:F2}" -f $propertyValue
+                        }
+
+                        $properties[$outputPropertyName] = $propertyValue
+                    }
+
+                    [pscustomobject]$properties
                 }
             } catch {
                 Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"

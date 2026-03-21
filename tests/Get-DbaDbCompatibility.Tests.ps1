@@ -24,13 +24,13 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $compatibilityLevel = $server.Databases["master"].CompatibilityLevel
     }
 
     Context "Gets compatibility for multiple databases" {
         BeforeAll {
-            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1
+            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Gets results" {
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
                 if ($row.DatabaseId -le 4) {
                     $row.Compatibility | Should -Be $compatibilityLevel
                 }
-                $dbId = (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $row.Database).Id
+                $dbId = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $row.Database).Id
                 $row.DatabaseId | Should -Be $dbId
             }
         }
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets compatibility for one database" {
         BeforeAll {
-            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1 -Database master
+            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.InstanceSingle -Database master
         }
 
         It "Gets results" {
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should return correct compatibility level for master database" {
             $results.Compatibility | Should -Be $compatibilityLevel
-            $masterDbId = (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).Id
+            $masterDbId = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).Id
             $results.DatabaseId | Should -Be $masterDbId
         }
     }

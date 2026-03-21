@@ -50,6 +50,17 @@ function Remove-DbaAgentJobCategory {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per category removed, with the following properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The job category name that was removed
+        - Status: The status of the removal operation ("Dropped" on success, or an error message on failure)
+        - IsRemoved: Boolean indicating whether the category was successfully removed (true) or failed (false)
+
     .LINK
         https://dbatools.io/Remove-DbaAgentJobCategory
 

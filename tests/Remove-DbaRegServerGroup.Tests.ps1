@@ -32,10 +32,10 @@ Describe $CommandName -Tag IntegrationTests {
         $groupName2 = "dbatoolsci-group1a"
 
         # Create the objects.
-        $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $groupName1
-        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $groupName2
+        $newGroup = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $groupName1
+        $newGroup2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $groupName2
 
-        $hellagroup = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Id 1 | Add-DbaRegServerGroup -Name dbatoolsci-first | Add-DbaRegServerGroup -Name dbatoolsci-second | Add-DbaRegServerGroup -Name dbatoolsci-third | Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
+        $hellagroup = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Id 1 | Add-DbaRegServerGroup -Name dbatoolsci-first | Add-DbaRegServerGroup -Name dbatoolsci-second | Add-DbaRegServerGroup -Name dbatoolsci-third | Add-DbaRegServer -ServerName dbatoolsci-test -Description ridiculous
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,7 +46,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
+        Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -59,13 +59,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Name $groupName2
+            $results = Remove-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $groupName2
             $results.Name | Should -Be $groupName2
             $results.Status | Should -Be "Dropped"
         }
 
         It "supports hella long group name" {
-            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.instance1 -Group $hellagroup.Group
+            $results = Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $hellagroup.Group
             $results.Name | Should -Be "dbatoolsci-third"
         }
     }

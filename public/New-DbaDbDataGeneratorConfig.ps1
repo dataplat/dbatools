@@ -74,6 +74,21 @@ function New-DbaDbDataGeneratorConfig {
     .LINK
         https://dbatools.io/New-DbaDbDataGeneratorConfig
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns file information for each JSON configuration file that was successfully written to disk.
+
+        Properties:
+        - Name: The filename of the generated configuration file (format: servername.databasename.DataGeneratorConfig.json)
+        - FullName: The complete file path where the configuration was saved
+        - Length: The size of the JSON file in bytes
+        - CreationTime: The datetime when the file was created
+        - LastWriteTime: The datetime when the file was last written
+        - DirectoryName: The directory path containing the configuration file
+
+        The output object allows you to verify which configuration files were created and their locations for use with Invoke-DbaDbDataGenerator.
+
     .EXAMPLE
         New-DbaDbDataGeneratorConfig -SqlInstance SQLDB1 -Database DB1 -Path C:\Temp\clone
 

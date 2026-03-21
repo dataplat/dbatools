@@ -49,6 +49,29 @@ function Get-DbaDependency {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Dataplat.Dbatools.Database.Dependency
+
+        Returns one object per dependent object (or prerequisite if using -Parents switch). Objects are sorted by deployment tier, with tier 1 being the lowest-level dependencies that must be created first.
+
+        Properties:
+        - ComputerName: The name of the SQL Server computer
+        - ServiceName: The SQL Server service name
+        - SqlInstance: The full SQL Server instance name
+        - Dependent: The name of the dependent database object
+        - Type: The SMO object type (Table, View, StoredProcedure, UserDefinedFunction, etc.)
+        - Owner: The schema/owner of the object
+        - IsSchemaBound: Boolean indicating if the object is schema-bound (relevant for views and functions)
+        - Parent: The name of the parent object (the object being depended upon or depending on this object)
+        - ParentType: The SMO type of the parent object
+        - Tier: Integer indicating the deployment tier (1 = base dependencies, higher numbers = dependent on lower-numbered tiers)
+        - Object: The SMO object instance for the dependent object (allows access to all SMO properties)
+        - Urn: The URN (Uniform Resource Name) of the dependent object
+        - OriginalResource: The original input object being analyzed for dependencies
+        - Script: The T-SQL creation script for the dependent object, ready for deployment
+
+        When -Parents switch is used, Tier values are negative (e.g., -1, -2) to indicate prerequisite dependencies rather than dependent objects. When -IncludeSelf is used, the original input object is included in the results with Tier 0.
+
     .LINK
         https://dbatools.io/Get-DbaDependency
 

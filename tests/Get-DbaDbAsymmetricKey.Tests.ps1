@@ -38,20 +38,20 @@ Describe $CommandName -Tag IntegrationTests {
             $databaseName = "GetAsKey"
 
             # Create the objects.
-            $newDatabase = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $databaseName
+            $newDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $databaseName
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
 
             $splatMasterKey = @{
-                SqlInstance    = $TestConfig.instance2
+                SqlInstance    = $TestConfig.InstanceSingle
                 Database       = $databaseName
                 SecurePassword = $tPassword
             }
             $null = New-DbaDbMasterKey @splatMasterKey
 
-            $null = New-DbaDbUser -SqlInstance $TestConfig.instance2 -Database $databaseName -UserName $dbUser
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $databaseName -UserName $dbUser
 
             $splatFirstKey = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $databaseName
                 Name            = $keyName
                 Owner           = "keyowner"
@@ -69,13 +69,13 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects.
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databaseName
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should Create new key in GetAsKey called test4" {
-            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.instance2 -Name $keyName -Database $databaseName
+            $results = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Name $keyName -Database $databaseName
             $results.Database | Should -Be $databaseName
             $results.DatabaseId | Should -Be $newDatabase.ID
             $results.Name | Should -Be $keyName
@@ -84,7 +84,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should work with a piped database" {
-            $pipeResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Get-DbaDbAsymmetricKey
+            $pipeResults = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databaseName | Get-DbaDbAsymmetricKey
             $pipeResults.Database | Should -Be $databaseName
             $pipeResults.Name | Should -Be $keyName
             $pipeResults.Owner | Should -Be $dbUser
@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return 2 keys" {
             # Create second key for this test
             $splatSecondKey = @{
-                SqlInstance     = $TestConfig.instance2
+                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $databaseName
                 Name            = $keyName2
                 Owner           = "keyowner"
@@ -103,7 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = New-DbaDbAsymmetricKey @splatSecondKey
 
-            $multiResults = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databaseName | Get-DbaDbAsymmetricKey
+            $multiResults = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databaseName | Get-DbaDbAsymmetricKey
             $multiResults | Should -HaveCount 2
             $multiResults.Name | Should -Contain $keyName
             $multiResults.Name | Should -Contain $keyName2

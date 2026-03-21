@@ -39,7 +39,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create the registered servers.
         $splatServer1 = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             ServerName  = $srvName
             Name        = $regSrvName
             Description = $regSrvDesc
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         $newServer = Add-DbaRegServer @splatServer1
 
         $splatServer2 = @{
-            SqlInstance = $TestConfig.instance1
+            SqlInstance = $TestConfig.InstanceSingle
             ServerName  = $srvName2
             Name        = $regSrvName2
             Description = $regSrvDesc2
@@ -63,7 +63,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created registered servers.
-        Get-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName, $regSrvName2 | Remove-DbaRegServer -ErrorAction SilentlyContinue
+        Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $regSrvName, $regSrvName2 | Remove-DbaRegServer -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -76,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "supports dropping manually" {
-            $results = Remove-DbaRegServer -SqlInstance $TestConfig.instance1 -Name $regSrvName2
+            $results = Remove-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $regSrvName2
             $results.Name | Should -Be $regSrvName2
             $results.Status | Should -Be "Dropped"
         }

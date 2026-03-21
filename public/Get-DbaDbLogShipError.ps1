@@ -52,6 +52,23 @@ function Get-DbaDbLogShipError {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per log shipping error found. If no errors exist, nothing is returned.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Database: Name of the database involved in the log shipping error
+        - Instance: The role where the error occurred - either "Primary" (backup operation) or "Secondary" (copy or restore operation)
+        - Action: The type of log shipping operation that failed - "Backup" (primary server), "Copy" (between servers), or "Restore" (secondary server)
+        - SessionID: Unique identifier for the log shipping session in which the error occurred
+        - SequenceNumber: Sequential number of this error within the session for ordering multiple errors
+        - LogTime: DateTime when the error was recorded in the log shipping monitor tables
+        - Message: The detailed error message describing what went wrong (e.g., file not found, insufficient disk space, network timeout)
+
     .NOTES
         Tags: LogShipping
         Author: Sander Stad (@sqlstad), sqlstad.nl

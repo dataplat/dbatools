@@ -52,6 +52,40 @@ function Test-DbaWindowsLogin {
     .LINK
         https://dbatools.io/Test-DbaWindowsLogin
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Windows login or Active Directory group validated. Each object represents the validation results for a single Windows login or group on the SQL Server instance.
+
+        Windows User and Computer Account Properties:
+        - Server: Full SQL Server instance name (computer\instance)
+        - Domain: Active Directory domain name
+        - Login: Windows login username
+        - Type: Account type - either "User" or "Computer"
+        - Found: Boolean indicating whether the account exists in Active Directory
+        - SamAccountNameMismatch: Boolean indicating whether the SAM account name differs between SQL Server and AD
+        - DisabledInSQLServer: Boolean indicating whether the login is disabled in SQL Server
+        - Enabled: Boolean indicating whether the account is enabled in Active Directory (null for groups)
+        - AccountNotDelegated: Boolean indicating whether the account is marked as non-delegated
+        - LockedOut: Boolean indicating whether the account is currently locked out
+        - PasswordExpired: Boolean indicating whether the password has expired
+        - PasswordNeverExpires: Boolean indicating whether the password is set to never expire
+        - PasswordNotRequired: Boolean indicating whether a password is required for the account
+        - CannotChangePassword: Boolean indicating whether the user account is password-change protected
+        - AllowReversiblePasswordEncryption: Boolean indicating whether reversible password encryption is allowed
+        - SmartcardLogonRequired: Boolean indicating whether smartcard logon is required
+        - TrustedForDelegation: Boolean indicating whether the account is trusted for delegation
+        - UserAccountControl: Raw integer UserAccountControl value from Active Directory
+
+        Windows Group Account Properties:
+        - Server, Domain, Login, Type, Found, SamAccountNameMismatch, DisabledInSQLServer: Same as above
+        - All security properties (Enabled, AccountNotDelegated, LockedOut, etc.): null for group accounts
+
+        Default display properties (via Select-DefaultView):
+        - Server, Domain, Login, Type, Found, SamAccountNameMismatch, DisabledInSQLServer
+
+        All properties are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Test-DbaWindowsLogin -SqlInstance Dev01
 

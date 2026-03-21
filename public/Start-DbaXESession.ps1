@@ -59,6 +59,34 @@ function Start-DbaXESession {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.XEvent.Session
+
+        Returns one Session object for each Extended Events session that was started or would be started (if -WhatIf is specified).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the Extended Events session
+        - Status: Current session status - either "Running" or "Stopped"
+        - StartTime: DateTime when the session was started (null if stopped)
+        - AutoStart: Boolean indicating if the session starts automatically when SQL Server starts
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+        - Targets: Collection of target objects configured for this session
+        - TargetFile: Array of resolved file paths for all event_file targets (includes UNC paths for network access)
+        - Events: Collection of Extended Events configured in this session
+        - MaxMemory: Maximum memory allocation for the session in KB
+        - MaxEventSize: Maximum event size the session will capture in KB
+
+        Additional properties added as NoteProperties:
+        - Session: The session name (alias for Name property)
+        - RemoteTargetFile: Array of UNC paths for all target files (for remote file access)
+        - Parent: Reference to the parent Microsoft.SqlServer.Management.Smo.Server object
+        - Store: Reference to the Microsoft.SqlServer.Management.XEvent.XEStore object
+
+        When -StartAt is specified, jobs are created but the session objects are returned immediately without waiting for scheduled execution.
+
     .LINK
         https://dbatools.io/Start-DbaXESession
 

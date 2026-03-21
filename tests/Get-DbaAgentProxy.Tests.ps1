@@ -27,31 +27,39 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
-        $tUserName = "dbatoolsci_proxytest"
-        $proxyName1 = "STIG"
-        $proxyName2 = "STIGX"
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
+        $userName = "user_$(Get-Random)"
+        $password = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
+        $identity = "$computerName\$userName"
+        $proxyName1 = "proxy_$(Get-Random)"
+        $proxyName2 = "proxy_$(Get-Random)"
 
-        $null = New-LocalUser -Name $tUserName -Password $tPassword -Disabled:$false
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { New-LocalUser -Name $args[0] -Password $args[1] -Disabled:$false }
+            ArgumentList = $userName, $password
+        }
+        Invoke-Command2 @splatInvoke
+
         $splatCredential = @{
-            SqlInstance = $TestConfig.instance2
-            Name        = $tUserName
-            Identity    = "$env:COMPUTERNAME\$tUserName"
-            Password    = $tPassword
+            SqlInstance = $TestConfig.InstanceSingle
+            Name        = $userName
+            Identity    = $identity
+            Password    = $password
         }
         $null = New-DbaCredential @splatCredential
 
         $splatProxy1 = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Name            = $proxyName1
-            ProxyCredential = $tUserName
+            ProxyCredential = $userName
         }
         $null = New-DbaAgentProxy @splatProxy1
 
         $splatProxy2 = @{
-            SqlInstance     = $TestConfig.instance2
+            SqlInstance     = $TestConfig.InstanceSingle
             Name            = $proxyName2
-            ProxyCredential = $tUserName
+            ProxyCredential = $userName
         }
         $null = New-DbaAgentProxy @splatProxy2
 
@@ -63,27 +71,22 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $tUserName = "dbatoolsci_proxytest"
-        $proxyName1 = "STIG"
-        $proxyName2 = "STIGX"
+        $splatInvoke = @{
+            ComputerName = $computerName
+            ScriptBlock  = { Remove-LocalUser -Name $args[0] -ErrorAction SilentlyContinue }
+            ArgumentList = $userName
+        }
+        Invoke-Command2 @splatInvoke
 
-        Remove-LocalUser -Name $tUserName -ErrorAction SilentlyContinue
-        $credential = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name $tUserName
-        if ($credential) {
-            $credential.DROP()
-        }
-        $proxy = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Proxy $proxyName1, $proxyName2
-        if ($proxy) {
-            $proxy.DROP()
-        }
+        $null = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Name $userName | Remove-DbaCredential
+        $null = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle -Proxy $proxyName1, $proxyName2 | Remove-DbaAgentProxy
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Gets the list of Proxy" {
         BeforeAll {
-            $proxyName1 = "STIG"
-            $results = @(Get-DbaAgentProxy -SqlInstance $TestConfig.instance2)
+            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "Results are not empty" {
@@ -101,8 +104,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets a single Proxy" {
         BeforeAll {
-            $proxyName1 = "STIG"
-            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -Proxy $proxyName1
+            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle -Proxy $proxyName1
         }
 
         It "Results are not empty" {
@@ -120,8 +122,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets the list of Proxy without excluded" {
         BeforeAll {
-            $proxyName1 = "STIG"
-            $results = @(Get-DbaAgentProxy -SqlInstance $TestConfig.instance2 -ExcludeProxy $proxyName1)
+            $results = Get-DbaAgentProxy -SqlInstance $TestConfig.InstanceSingle -ExcludeProxy $proxyName1
         }
 
         It "Results are not empty" {

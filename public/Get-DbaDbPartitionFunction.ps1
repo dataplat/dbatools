@@ -33,6 +33,27 @@ function Get-DbaDbPartitionFunction {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.PartitionFunction
+
+        Returns one PartitionFunction object for each partition function found in the target databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database containing the partition function
+        - CreateDate: DateTime when the partition function was created
+        - Name: Name of the partition function
+        - NumberOfPartitions: The number of partitions defined by this function
+
+        Additional properties available (from SMO PartitionFunction object):
+        - ParameterType: The data type used as the partitioning column data type
+        - Urn: Uniform Resource Name identifying the object within the SQL Server hierarchy
+        - Parent: Reference to the parent Database object
+
+        All properties from the base SMO object are accessible via Select-Object * even though only default properties are displayed without it.
+
     .NOTES
         Tags: Database, Partition
         Author: Klaas Vandenberghe (@PowerDbaKlaas)

@@ -29,11 +29,11 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         BeforeAll {
-            $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.instance2).ServiceName
+            $instanceName = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart).ServiceName
         }
 
         It "restarts some services" {
-            $services = Restart-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent
+            $services = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be "Running"
@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "restarts some services through pipeline" {
-            $services = Get-DbaService -ComputerName $TestConfig.instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
+            $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be "Running"

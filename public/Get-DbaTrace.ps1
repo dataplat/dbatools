@@ -40,6 +40,37 @@ function Get-DbaTrace {
     .LINK
         https://dbatools.io/Get-DbaTrace
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per trace found on the SQL Server instance. When -Id is specified, only traces matching those IDs are returned. When -Default is specified, only the default trace is returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Id: The trace ID number
+        - Status: Numeric trace status value (0=stopped, 1=running, 2=closed)
+        - IsRunning: Boolean indicating if the trace is currently running
+        - Path: The file path where the trace output is stored
+        - MaxSize: Maximum size of the trace file in megabytes (0=unlimited)
+        - StopTime: DateTime when the trace is scheduled to stop, or null if running indefinitely
+        - MaxFiles: Maximum number of rollover files (0=unlimited)
+        - IsRowset: Boolean indicating if trace output is written as rowset
+        - IsRollover: Boolean indicating if rollover file creation is enabled
+        - IsShutdown: Boolean indicating if trace will stop on server shutdown
+        - IsDefault: Boolean indicating if this is the default system trace
+        - BufferCount: Number of in-memory buffers allocated for the trace
+        - BufferSize: Size of each buffer in kilobytes
+        - FilePosition: Current file position for trace output
+        - ReaderSpid: Server process ID reading the trace (SPID)
+        - StartTime: DateTime when the trace was started
+        - LastEventTime: DateTime of the most recent trace event
+        - EventCount: Number of events captured by the trace
+        - DroppedEventCount: Number of events dropped due to buffer limitations
+
+        The properties RemotePath, Parent, and SqlCredential are also available but excluded from default view. Use Select-Object * to access all properties.
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2016
 

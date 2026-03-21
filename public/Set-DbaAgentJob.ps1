@@ -118,6 +118,49 @@ function Set-DbaAgentJob {
     .LINK
         https://dbatools.io/Set-DbaAgentJob
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Job
+
+        Returns one modified SQL Server Agent job object per job that was successfully updated. The returned object reflects all changes applied during the modification operation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL Server Agent job
+        - Enabled: Boolean indicating if the job is enabled for execution
+        - Description: Description of the job's purpose
+        - Owner: SQL Server login that owns the job
+        - Category: The job category name for organizational grouping
+        - CurrentRunStatus: Current execution status of the job (Idle, Running, Succeeded, Failed, etc.)
+        - LastRunDate: DateTime of the most recent job execution attempt
+        - LastRunOutcome: Outcome of the last execution (Succeeded, Failed, Retry, Cancelled)
+        - NextRunDate: DateTime when the job is scheduled to run next
+        - EventLogLevel: Setting for Windows event log notifications (Never, OnSuccess, OnFailure, Always)
+
+        Additional properties available (from SMO Job object):
+        - ID: Unique identifier for the job
+        - JobID: The globally unique identifier (GUID) for the job
+        - StartStepID: The ID of the step that executes first
+        - OwnerLoginName: Login name of the job owner
+        - OperatorToEmail: Email operator for notifications
+        - OperatorToNetSend: Net send operator for notifications
+        - OperatorToPage: Pager operator for notifications
+        - EmailLevel: Email notification setting (0-3 or string equivalent)
+        - NetSendLevel: Net send notification setting (0-3 or string equivalent)
+        - PageLevel: Pager notification setting (0-3 or string equivalent)
+        - DeleteLevel: Auto-delete setting after execution (0-3 or string equivalent)
+        - DatabaseName: Default database for job steps
+        - IsSystemObject: Boolean indicating if this is a system-created job
+        - CreatedDate: DateTime when the job was created
+        - CreateByLogin: Login that created the job
+        - DateLastModified: DateTime of the most recent modification
+        - ModifiedByLogin: Login that made the last modification
+        - JobSteps: Collection of job steps in this job
+        - Schedules: Collection of schedules assigned to this job
+
+        All properties from the base SMO Job object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Set-DbaAgentJob sql1 -Job Job1 -Disabled
 

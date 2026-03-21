@@ -62,6 +62,24 @@ function Get-DbaSsisExecutionHistory {
     .LINK
         https://dbatools.io/Get-DbaSsisExecutionHistory
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SSIS package execution found in the SSISDB catalog matching the specified filters. Each execution record includes timing information, status, and project metadata from the catalog.executions view.
+
+        Properties:
+        - ExecutionID: Unique identifier for the SSIS package execution instance
+        - FolderName: The SSISDB catalog folder name containing the project
+        - ProjectName: The name of the SSIS project that contains the executed package
+        - PackageName: The name of the SSIS package that was executed
+        - ProjectLsn: The project's Log Sequence Number indicating deployment version
+        - Environment: The environment used during execution (folder\environment format, empty string if no environment)
+        - StatusCode: String representation of the execution status (Created, Running, Cancelled, Failed, Pending, Halted, Succeeded, Stopping, or Completed)
+        - StartTime: dbadatetime object representing when the package execution started
+        - EndTime: dbadatetime object representing when the package execution ended (NULL for running executions)
+        - ElapsedMinutes: Integer number of minutes elapsed between start and end time
+        - LoggingLevel: Integer value representing the logging level (0-5) used during execution
+
     .EXAMPLE
         PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC
 

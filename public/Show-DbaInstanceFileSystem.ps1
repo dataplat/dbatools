@@ -34,6 +34,14 @@ function Show-DbaInstanceFileSystem {
     .LINK
         https://dbatools.io/Show-DbaInstanceFileSystem
 
+    .OUTPUTS
+        System.String
+
+        Returns the full directory path with trailing backslash when the user selects a folder and clicks OK.
+        For example: "C:\", "D:\Backup\", or "C:\Program Files\Microsoft SQL Server\".
+
+        Returns $null if the user cancels the dialog or closes the window without selecting a path.
+
     .EXAMPLE
         PS C:\> Show-DbaInstanceFileSystem -SqlInstance sql2017
 

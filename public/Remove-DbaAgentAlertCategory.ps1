@@ -38,6 +38,19 @@ function Remove-DbaAgentAlertCategory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per alert category removal attempt. Each object represents the status of removing a single alert category from a SQL Server instance.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance (service name)
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Name: The name of the alert category that was removed
+        - Status: Status message indicating the outcome of the removal ("Dropped" on success, or an error message on failure)
+        - IsRemoved: Boolean indicating whether the alert category was successfully removed ($true) or failed ($false)
+
     .NOTES
         Tags: Agent, Alert, AlertCategory
         Author: Patrick Flynn (@sqllensman)

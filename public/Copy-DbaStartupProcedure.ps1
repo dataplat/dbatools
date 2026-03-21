@@ -60,6 +60,23 @@ function Copy-DbaStartupProcedure {
     .LINK
         https://dbatools.io/Copy-DbaStartupProcedure
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per startup procedure copy operation. The object represents the outcome of copying a single startup procedure from source to destination.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: Timestamp when the copy operation occurred
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the startup procedure
+        - Type: Type of object being copied (always "Startup Stored Procedure")
+        - Status: Result of the copy operation (Successful, Skipped, or Failed)
+        - Notes: Additional information or error message if applicable
+
+        Additional properties available:
+        - Schema: Schema that the stored procedure belongs to in the master database
+
     .EXAMPLE
         PS C:\> Copy-DbaStartupProcedure -Source sqlserver2014a -Destination sqlcluster
 

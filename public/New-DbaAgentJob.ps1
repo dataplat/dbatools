@@ -102,6 +102,31 @@ function New-DbaAgentJob {
     .LINK
         https://dbatools.io/New-DbaAgentJob
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Job
+
+        Returns one Job object for each job created on the target instance(s). The returned objects represent the newly created SQL Server Agent jobs with all configuration options applied, including notification settings, schedules, and job category assignments.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the SQL Server Agent job
+        - Enabled: Boolean indicating if the job is enabled
+        - Description: The description of the job
+        - Owner: The owner login name of the job
+        - CreateDate: DateTime when the job was created
+        - LastModifiedDate: DateTime when the job was last modified
+        - Category: The category assigned to the job
+        - EventLogLevel: Notification level for Windows Application event log (Never, OnSuccess, OnFailure, Always)
+        - EmailLevel: Notification level for e-mail notifications (Never, OnSuccess, OnFailure, Always)
+        - NetSendLevel: Notification level for network message notifications (Never, OnSuccess, OnFailure, Always)
+        - PageLevel: Notification level for pager notifications (Never, OnSuccess, OnFailure, Always)
+        - DeleteLevel: Automatic deletion level (Never, OnSuccess, OnFailure, Always)
+        - IsScheduled: Boolean indicating if the job has schedules attached
+
+        All properties from the base SMO Job object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job'
 

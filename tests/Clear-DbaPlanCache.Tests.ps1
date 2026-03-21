@@ -30,13 +30,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns correct datatypes" {
-            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.instance1 -Threshold $threshold
+            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle -Threshold $threshold
             $results.Size | Should -BeOfType [dbasize]
             $results.Status | Should -Match "below"
         }
 
         It "Supports piping" {
-            $results = Get-DbaPlanCache -SqlInstance $TestConfig.instance1 | Clear-DbaPlanCache -Threshold $threshold
+            $results = Get-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle | Clear-DbaPlanCache -Threshold $threshold
             $results.Size | Should -BeOfType [dbasize]
             $results.Status | Should -Match "below"
         }

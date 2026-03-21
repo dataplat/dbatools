@@ -64,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Check if output file was created" {
         BeforeAll {
-            $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile
+            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {
@@ -80,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Remove previous output file if exists
             Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
-            $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile -Session system_health
+            $null = Export-DbaXESession -SqlInstance $TestConfig.InstanceSingle -FilePath $outputFile -Session system_health
         }
 
         It "Exports results to one sql file" {
@@ -96,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # Remove previous output file if exists
             Remove-Item -Path $outputFile -ErrorAction SilentlyContinue
-            $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
+            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health | Export-DbaXESession -FilePath $outputFile
         }
 
         It "Exports results to one sql file" {

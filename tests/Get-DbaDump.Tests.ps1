@@ -28,7 +28,7 @@ if (-not $env:appveyor) {
                 $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
                 $splatConnect = @{
-                    SqlInstance = $TestConfig.instance1
+                    SqlInstance = $TestConfig.InstanceSingle
                 }
                 $server = Connect-DbaInstance @splatConnect
                 $server.Query("DBCC STACKDUMP")
@@ -36,7 +36,7 @@ if (-not $env:appveyor) {
 
                 $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-                $results = Get-DbaDump -SqlInstance $TestConfig.instance1
+                $results = Get-DbaDump -SqlInstance $TestConfig.InstanceSingle
                 $results.Count | Should -BeGreaterOrEqual 1
             }
         }

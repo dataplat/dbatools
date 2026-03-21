@@ -103,6 +103,47 @@ function Get-DbaAgBackupHistory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Dataplat.Dbatools.Database.BackupHistory
+
+        Returns one backup history object per physical backup file or per logical backup set (when backups are striped across multiple files). Each object represents backup metadata from MSDB including timing, size, location, and LSN sequence information.
+
+        When using -Last, -LastFull, -LastDiff, or -LastLog switches, returns only the most recent backup(s) of the specified type across all replicas. When using -Raw, returns individual backup file details instead of grouping striped files into single logical sets.
+
+        Default display properties (via Format-Table):
+        - SqlInstance: The SQL Server instance name (computer\instance)
+        - Database: The database name
+        - Type: Backup type (Full, Differential, Log, etc.)
+        - TotalSize: Total backup size in bytes
+        - DeviceType: Storage device type (Disk, Tape, URL, Virtual Device)
+        - Start: Backup start time
+        - Duration: Time span of the backup operation
+        - End: Backup completion time
+
+        Additional properties available (can be accessed via Select-Object *):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - DatabaseId: System database identifier
+        - UserName: User account that performed the backup
+        - CompressedBackupSize: Compressed size in bytes (null for SQL Server 2005)
+        - CompressionRatio: Ratio of TotalSize to CompressedBackupSize
+        - BackupSetId: Unique identifier for the backup set
+        - Software: Backup software name and version
+        - FullName: Full path to backup files (array of paths for striped backups)
+        - FileList: Details of database and log files in the backup
+        - Position: Position of the backup within a media set
+        - FirstLsn: Starting log sequence number
+        - DatabaseBackupLsn: LSN of the last database backup (for log/differential backups)
+        - CheckpointLsn: LSN of the checkpoint during backup
+        - LastLsn: Ending log sequence number
+        - SoftwareVersionMajor: Major version of SQL Server that created the backup
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+        - LastRecoveryForkGuid: GUID of the recovery fork (for point-in-time restore scenarios)
+        - RecoveryModel: Database recovery model at time of backup (Simple, Full, BulkLogged)
+        - EncryptorThumbprint: Thumbprint of backup encryption certificate (SQL Server 2014+)
+        - EncryptorType: Type of encryption used (SQL Server 2014+)
+        - KeyAlgorithm: Encryption algorithm used (SQL Server 2014+)
+        - AvailabilityGroupName: Name of the availability group being queried (added by Get-DbaAgBackupHistory)
 
     .NOTES
         Tags: AG, HA

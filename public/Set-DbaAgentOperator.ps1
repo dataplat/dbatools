@@ -85,6 +85,26 @@ function Set-DbaAgentOperator {
     .LINK
         https://dbatools.io/Set-DbaAgentOperator
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.Operator
+
+        Returns one modified Operator object for each operator updated. The object is returned after all changes have been committed to the SQL Server instance.
+
+        All SMO Operator object properties are accessible and reflect the modifications made by this function, including:
+        - EmailAddress: Email address for notifications
+        - NetSendAddress: Network computer name for net send notifications
+        - PagerAddress: Pager email address for urgent notifications
+        - PagerDays: Bitmask value indicating days pager is active
+        - SaturdayPagerStartTime: Time when Saturday pager notifications begin (HH:MM:SS format)
+        - SaturdayPagerEndTime: Time when Saturday pager notifications end (HH:MM:SS format)
+        - SundayPagerStartTime: Time when Sunday pager notifications begin (HH:MM:SS format)
+        - SundayPagerEndTime: Time when Sunday pager notifications end (HH:MM:SS format)
+        - WeekdayPagerStartTime: Time when weekday pager notifications begin (HH:MM:SS format)
+        - WeekdayPagerEndTime: Time when weekday pager notifications end (HH:MM:SS format)
+        - Name: Operator name
+        - LastNotificationTime: DateTime of last operator notification
+        - ID: Unique operator identifier
+
     .EXAMPLE
         PS C:\> Set-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday
 

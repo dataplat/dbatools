@@ -74,6 +74,26 @@ function Move-DbaDbFile {
     .LINK
         https://dbatools.io/Move-DbaDbFile
 
+    .OUTPUTS
+        System.String (when -FileStructureOnly is specified)
+
+        Returns the current file structure as a formatted PowerShell hashtable template showing logical file names and their current directory paths. This can be used as input for the FileToMove parameter.
+        Example: $fileToMove=@{'MyDB_Data'='D:\Data'; 'MyDB_Log'='D:\Logs'}
+
+        PSCustomObject (default)
+
+        Returns one object per database file processed during the move operation. Each object represents the result of moving a single logical database file.
+
+        Properties:
+        - Instance: The target SQL Server instance name
+        - Database: The name of the database containing the file
+        - LogicalName: The logical name of the database file within SQL Server
+        - Source: The original physical file path before the move
+        - Destination: The new physical file path after the move
+        - Result: Status of the operation (Success, Failed, or Already exists. Skipping)
+        - DatabaseFileMetadata: Status of SQL Server metadata update (Updated, N/A if file copy failed, or N/A if file already exists)
+        - SourceFileDeleted: Boolean indicating if source file was deleted (True, False) or N/A if not deleted or copy failed
+
     .EXAMPLE
         PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileType Data -FileDestination D:\DATA2
 

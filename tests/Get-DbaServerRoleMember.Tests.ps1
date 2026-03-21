@@ -29,14 +29,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
         $password1 = ConvertTo-SecureString "password1" -AsPlainText -Force
         $testLogin = "getDbaInstanceRoleMemberLogin"
         $null = New-DbaLogin -SqlInstance $server2 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server2 -Login $testLogin -AddRole "dbcreator"
 
-        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $null = New-DbaLogin -SqlInstance $server1 -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $server1 -Login $testLogin -AddRole "dbcreator"
 

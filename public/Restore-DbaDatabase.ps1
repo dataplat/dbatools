@@ -27,9 +27,11 @@ function Restore-DbaDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Path
-        Specifies the location of backup files to restore from, supporting local drives, UNC paths, or Azure blob storage URLs.
+        Specifies the location of backup files to restore from, supporting local drives, UNC paths, Azure blob storage URLs, or S3 URLs.
         Use this when you need to restore from a specific backup location or when piping backup files from Get-ChildItem.
         Accepts multiple comma-separated paths for complex restore scenarios spanning multiple locations.
+
+        For S3 storage (SQL Server 2022+): S3 bucket contents cannot be enumerated using T-SQL. You must provide explicit file paths or use PowerShell's Get-S3Object cmdlet (from AWS.Tools.S3 module) to retrieve the list of backup files first, then pass them to this command. See examples for S3 usage patterns.
 
     .PARAMETER DatabaseName
         Defines the target database name for the restored database when different from the original name.
@@ -164,10 +166,11 @@ function Restore-DbaDatabase {
         Use this for log shipping secondary servers or when you need read-only access during restore operations.
         The directory must exist and be writable by the SQL Server service account for undo file creation.
 
-    .PARAMETER AzureCredential
-        Specifies the SQL Server credential name for authenticating to Azure blob storage during restore operations.
-        Use this when restoring from Azure blob storage backups that require authentication beyond SAS tokens.
-        The credential must be created on the SQL Server instance with the appropriate storage account access keys.
+.PARAMETER StorageCredential
+        Specifies the SQL Server credential name for authenticating to Azure blob storage or S3-compatible object storage during restore operations.
+        Use this when restoring from Azure blob storage or S3 backups that require authentication.
+        For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
+        For S3: The credential must use Identity = 'S3 Access Key' and Secret = 'AccessKeyID:SecretKeyID'. Requires SQL Server 2022 or higher.
 
     .PARAMETER ReplaceDbNameInFile
         Substitutes the original database name with the new DatabaseName in physical file names during restore.
@@ -213,6 +216,11 @@ function Restore-DbaDatabase {
         Use this when restoring databases with CDC enabled and you need to maintain change tracking functionality.
         Cannot be combined with NoRecovery or Standby modes as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER KeepReplication
         Maintains replication settings and objects when restoring databases involved in replication topologies.
         Use this when restoring publisher or subscriber databases where you need to preserve replication configuration.
@@ -242,6 +250,11 @@ function Restore-DbaDatabase {
         Use this to ensure backup files contain checksums and validate them during restore, following backup best practices.
         Without this parameter, SQL Server verifies checksums if present but doesn't fail if checksums are missing. With this parameter, the operation fails if checksums are not present in the backup.
 
+    .PARAMETER Restart
+        Instructs the restore operation to restart an interrupted restore sequence.
+        Use this when a previous restore operation was interrupted due to a reboot, service failure, or other system event.
+        Allows resuming large transaction log restores that were partially completed before interruption.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -263,6 +276,29 @@ function Restore-DbaDatabase {
 
     .LINK
         https://dbatools.io/Restore-DbaDatabase
+
+    .OUTPUTS
+        System.String (when -OutputScriptOnly is specified)
+
+        Returns the T-SQL RESTORE statements as strings without executing them. This allows the scripts to be reviewed, modified, or executed later.
+
+        PSCustomObject (for -Recover parameter set only)
+
+        When using the -Recover parameter to bring databases online, returns one object per database recovered with the following properties:
+        - SqlInstance: The target SQL Server instance
+        - DatabaseName: The name of the database that was recovered
+        - RestoreComplete: Boolean indicating if recovery succeeded
+        - Scripts: The T-SQL RESTORE statement that was executed
+
+        No direct output (for standard restore operations)
+
+        When performing standard restore operations (without OutputScriptOnly or Recover), the function delegates to Invoke-DbaAdvancedRestore which handles database restoration. The function may also create global variables if any of the following parameters are specified:
+        - GetBackupInformation: Creates global variable containing backup information
+        - SelectBackupInformation: Creates global variable containing selected backup history
+        - FormatBackupInformation: Creates global variable containing formatted backup information
+        - TestBackupInformation: Creates global variable containing tested backup information
+
+        Use these variables to inspect the backup chain analysis, file mappings, and restore validation results without executing the restore operation.
 
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups
@@ -311,6 +347,11 @@ function Restore-DbaDatabase {
         Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
 
     .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance sql2022 -Path s3://s3.us-west-2.amazonaws.com/mybucket/backups/dbbackup.bak -StorageCredential MyS3Credential
+
+        Will restore the backup from S3-compatible storage to sql2022. Requires SQL Server 2022 or higher. The credential must be configured with Identity = 'S3 Access Key' and Secret containing the access key and secret key.
+
+        .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
@@ -395,9 +436,39 @@ function Restore-DbaDatabase {
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
         Note that Date time needs to be specified in your local SQL Server culture
+
+    .EXAMPLE
+        PS C:\> # Restore from S3 storage folder (SQL Server 2022+)
+        PS C:\> # First, enumerate S3 bucket contents using AWS PowerShell module - You need to be authenticated!
+        PS C:\> $s3Files = Get-S3Object -BucketName "mybucket" -KeyPrefix "backups/AdventureWorks/" -Region "us-west-2"
+        PS C:\> $backupPaths = $s3Files | Where-Object { $_.Key -match '\.(bak|trn|dif)$' } | ForEach-Object { "s3://mybucket.s3.us-west-2.amazonaws.com/$($_.Key)" }
+        PS C:\>
+        PS C:\> # Then restore using the enumerated file paths
+        PS C:\> Restore-DbaDatabase -SqlInstance sql2022 -Path $backupPaths -StorageCredential MyS3Credential
+
+        Demonstrates the recommended workflow for restoring from S3 storage. Since SQL Server cannot enumerate S3 bucket contents via T-SQL, you must first use PowerShell's Get-S3Object cmdlet to list backup files, then pass the full S3 URLs to Restore-DbaDatabase.
+        The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem \\server\backups | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Scans the \\server\backups share and restores only files with a .bak extension, excluding any incomplete or in-progress files
+        such as those with extensions like .bak.part that may be created by SFTP clients or other upload tools during file transfer.
+
+        When backup files are uploaded to a share while a restore job is running, incomplete files with non-standard extensions
+        can cause Restore-DbaDatabase to hang while trying to read the backup header of a locked or partial file. Always filter
+        your file list to include only complete backup files before passing them to this command.
+
+    .EXAMPLE
+        PS C:\> $backupFiles = Get-ChildItem \\server\backups -Recurse | Where-Object { $_.Name -match '\.(bak|trn|dif)$' }
+        PS C:\> $backupFiles | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Recursively scans \\server\backups and filters files to only those ending in .bak, .trn, or .dif using a regex match,
+        then restores them to server1\instance1. This pattern is recommended when your backup directory may contain non-backup
+        files or files from in-progress uploads, ensuring only complete backup files are processed.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "AzureCredential", Justification = "For Parameter AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
     param (
         [parameter(Mandatory)][DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -431,11 +502,13 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
         [parameter(ParameterSetName = "Restore")][switch]$Continue,
         [parameter(ParameterSetName = "Restore")][string]$ExecuteAs,
-        [string]$AzureCredential,
+        [Alias("AzureCredential", "S3Credential")]
+        [string]$StorageCredential,
         [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
+        [parameter(ParameterSetName = "Restore")][switch]$ErrorBrokerConversations,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -450,7 +523,8 @@ function Restore-DbaDatabase {
         [string]$StopMark,
         [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
         [int]$StatementTimeout = 0,
-        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Restart
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
@@ -617,18 +691,18 @@ function Restore-DbaDatabase {
                     if ("BackupSetGUID" -notin $f.PSObject.Properties.Name) {
                         $f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetID } }
                     }
-                    if ($f.BackupPath -like 'http*') {
-                        if ('' -ne $AzureCredential) {
-                            Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
+                    if ($f.BackupPath -like 'http*' -or $f.BackupPath -like 's3*') {
+                        if ('' -ne $StorageCredential) {
+                            Write-Message -Message "At least one cloud storage backup passed in with a credential, assume correct" -Level Verbose
                             Write-Message -Message "Storage Account Identity access means striped backups cannot be restore"
                         } else {
                             if ($f.BackupPath.count -gt 1) {
-                                $null = $f.BackupPath[0] -match '(http|https)://[^/]*/[^/]*'
+                                $null = $f.BackupPath[0] -match '(http|https|s3)://[^/]*/[^/]*'
                             } else {
-                                $null = $f.BackupPath -match '(http|https)://[^/]*/[^/]*'
+                                $null = $f.BackupPath -match '(http|https|s3)://[^/]*/[^/]*'
                             }
                             if (Get-DbaCredential -SqlInstance $RestoreInstance -Name $matches[0].trim('/') ) {
-                                Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
+                                Write-Message -Message "We have a credential to use with $($f.BackupPath)" -Level Verbose
                             } else {
                                 Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
                                 return
@@ -660,7 +734,7 @@ function Restore-DbaDatabase {
                     MaintenanceSolution = $MaintenanceSolutionBackup
                     IgnoreDiffBackup    = $IgnoreDiffBackup
                     IgnoreLogBackup     = $IgnoreLogBackup
-                    AzureCredential     = $AzureCredential
+                    StorageCredential   = $StorageCredential
                     NoXpDirRecurse      = $NoXpDirRecurse
                 }
                 $BackupHistory += Get-DbaBackupInformation @parms
@@ -823,27 +897,29 @@ function Restore-DbaDatabase {
             }
             try {
                 $parms = @{
-                    SqlInstance      = $RestoreInstance
-                    WithReplace      = $WithReplace
-                    RestoreTime      = $RestoreTime
-                    StandbyDirectory = $StandbyDirectory
-                    NoRecovery       = $NoRecovery
-                    Continue         = $Continue
-                    OutputScriptOnly = $OutputScriptOnly
-                    BlockSize        = $BlockSize
-                    MaxTransferSize  = $MaxTransferSize
-                    BufferCount      = $Buffercount
-                    KeepCDC          = $KeepCDC
-                    VerifyOnly       = $VerifyOnly
-                    PageRestore      = $PageRestore
-                    AzureCredential  = $AzureCredential
-                    KeepReplication  = $KeepReplication
-                    StopMark         = $StopMark
-                    StopAfterDate    = $StopAfterDate
-                    StopBefore       = $StopBefore
-                    ExecuteAs        = $ExecuteAs
-                    Checksum         = $Checksum
-                    EnableException  = $true
+                    SqlInstance              = $RestoreInstance
+                    WithReplace              = $WithReplace
+                    RestoreTime              = $RestoreTime
+                    StandbyDirectory         = $StandbyDirectory
+                    NoRecovery               = $NoRecovery
+                    Continue                 = $Continue
+                    OutputScriptOnly         = $OutputScriptOnly
+                    BlockSize                = $BlockSize
+                    MaxTransferSize          = $MaxTransferSize
+                    BufferCount              = $Buffercount
+                    KeepCDC                  = $KeepCDC
+                    ErrorBrokerConversations = $ErrorBrokerConversations
+                    VerifyOnly               = $VerifyOnly
+                    PageRestore              = $PageRestore
+                    StorageCredential        = $StorageCredential
+                    KeepReplication          = $KeepReplication
+                    StopMark                 = $StopMark
+                    StopAfterDate            = $StopAfterDate
+                    StopBefore               = $StopBefore
+                    ExecuteAs                = $ExecuteAs
+                    Checksum                 = $Checksum
+                    Restart                  = $Restart
+                    EnableException          = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {

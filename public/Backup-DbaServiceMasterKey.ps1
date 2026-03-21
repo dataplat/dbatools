@@ -43,6 +43,22 @@ function Backup-DbaServiceMasterKey {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.ServiceMasterKey
+
+        Returns one ServiceMasterKey object per instance provided as input. The object includes added properties tracking the backup operation results.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Path: The full file path where the Service Master Key backup was exported
+        - Status: Result of the backup operation (Success or Failure)
+
+        Additional properties available from the base SMO ServiceMasterKey object and added NoteProperties:
+        - Filename: Alias for Path - the full file path where the Service Master Key backup was exported
+        All other properties from the SMO ServiceMasterKey object are accessible via Select-Object *
+
     .NOTES
         Tags: CertBackup, Certificate, Backup
         Author: Chrissy LeMaire (@cl), netnerds.net

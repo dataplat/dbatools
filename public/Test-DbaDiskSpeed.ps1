@@ -44,6 +44,41 @@ function Test-DbaDiskSpeed {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns I/O performance statistics aggregated at the file, database, or disk level based on the -AggregateBy parameter. Properties vary by aggregation level.
+
+        Default properties (all aggregation levels):
+        - ComputerName: The computer name
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL instance name (computer\instance)
+        - Reads: Number of read operations (summed across files at database/disk level)
+        - AverageReadStall: Average read latency in milliseconds
+        - ReadPerformance: Performance rating based on read latency - "Very Good" (< 10ms), "OK" (< 20ms), "Slow, Needs Attention" (< 50ms), or "Serious I/O Bottleneck" (>= 50ms)
+        - Writes: Number of write operations (summed across files at database/disk level)
+        - AverageWriteStall: Average write latency in milliseconds
+        - WritePerformance: Performance rating based on write latency - "Very Good", "OK", "Slow, Needs Attention", or "Serious I/O Bottleneck"
+        - Avg Overall Latency: Average combined read/write latency in milliseconds
+        - Avg Bytes/Read: Average bytes per read operation
+        - Avg Bytes/Write: Average bytes per write operation
+        - Avg Bytes/Transfer: Average bytes per I/O transfer operation
+
+        Additional properties by aggregation level:
+
+        When -AggregateBy 'File' (default):
+        - Database: Database name
+        - SizeGB: File size in gigabytes
+        - FileName: File name (Windows: letter+name like "C:\...\file.mdf", Linux: full path)
+        - FileID: File ID within the database
+        - FileType: Type of file - "Log" for transaction log, "Data" for data files
+
+        When -AggregateBy 'Database':
+        - Database: Database name (aggregated across all files in the database)
+
+        When -AggregateBy 'Disk':
+        - DiskLocation: Disk identifier - Windows letter like "C", "D"; Linux path prefix like "/var/opt/mssql"
+
     .LINK
         https://dbatools.io/Test-DbaDiskSpeed
 

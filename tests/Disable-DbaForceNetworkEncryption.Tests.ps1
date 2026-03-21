@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When disabling force network encryption" {
         It "Returns results with ForceEncryption set to false" {
-            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.instance1 -EnableException
+            $results = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle -EnableException
             $results.ForceEncryption | Should -BeFalse
         }
     }

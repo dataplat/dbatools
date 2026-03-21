@@ -59,6 +59,30 @@ function New-DbaCredential {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Credential
+
+        Returns one Credential object for each credential successfully created on the target instance. The credential object contains both SMO-level properties and dbatools-specific NoteProperties for connection context.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the credential
+        - Identity: The authentication identity for the credential (account name, URI, or special value)
+        - CreateDate: DateTime when the credential was created on the instance
+        - MappedClassType: The mapped class type - 0 for None (standard credentials), 1 for CryptographicProvider (EKM scenarios)
+        - ProviderName: The name of the cryptographic provider (if MappedClassType is CryptographicProvider)
+
+        Additional properties available from the SMO Credential object:
+        - Owner: The owner/principal that owns the credential
+        - ID: The unique identifier for the credential within the instance
+        - DateLastModified: DateTime when the credential was last modified
+        - Urn: The Uniform Resource Name for the credential object
+        - State: The current state of the SMO object (Existing, Creating, Deleting, etc.)
+
+        All properties from the base SMO Credential object are accessible even though only default properties are displayed without using Select-Object *.
+
     .LINK
         https://dbatools.io/New-DbaCredential
 
@@ -105,6 +129,17 @@ function New-DbaCredential {
 
         Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
         As no password is needed in this case, we just don't pass the -SecurePassword parameter.
+
+    .EXAMPLE
+        PS C:\> $s3Params = @{
+        >>SqlInstance = "server1"
+        >>Name = "s3://mybucket.s3.us-west-2.amazonaws.com/backups"
+        >>Identity = "S3 Access Key"
+        >>SecurePassword = (ConvertTo-SecureString -String "AKIAIOSFODNN7EXAMPLE:wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @s3Params
+
+        Creates a credential on Server1 for SQL Server 2022+ Backup to URL with S3-compatible object storage. The Name must be the S3 URL path matching your backup destination. The Identity must be exactly 'S3 Access Key'. The SecurePassword contains your Access Key ID and Secret Key ID separated by a colon (AccessKeyID:SecretKeyID).
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (

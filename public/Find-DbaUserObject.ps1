@@ -39,6 +39,31 @@ function Find-DbaUserObject {
     .LINK
         https://dbatools.io/Find-DbaUserObject
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per user-owned SQL Server object found. The function scans multiple object types across the instance and all accessible databases, so you may receive many objects from a single instance.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name (ServiceName from SMO)
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Type: The category of object found. Possible values include:
+          * Database
+          * Agent Job
+          * Credential
+          * Proxy
+          * Agent Step
+          * Endpoint
+          * Server Role
+          * Schema
+          * Database Role
+          * Database Assembly
+          * Database Synonyms
+        - Owner: The login or user account that owns the object (string format for logins, domain\username for Windows accounts)
+        - Name: The name of the object
+        - Parent: The name of the parent container for the object (e.g., server name for databases, job name for job steps, database name for schemas)
+
     .EXAMPLE
         PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
 

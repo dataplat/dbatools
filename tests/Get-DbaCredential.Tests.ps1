@@ -35,11 +35,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Add user
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args[0] $args[1] /add *>&1 } -ArgumentList $login, $plaintext -ComputerName $TestConfig.InstanceSingle
         }
 
         $splatThorCred = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Name        = "thorcred"
             Identity    = "thor"
             Password    = $password
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaCredential @splatThorCred
 
         $splatThorsmormmaCred = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.InstanceSingle
             Identity    = "thorsmomma"
             Password    = $password
         }
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         try {
             $splatGetCred = @{
-                SqlInstance   = $TestConfig.instance2
+                SqlInstance   = $TestConfig.InstanceSingle
                 Identity      = "thor", "thorsmomma"
                 ErrorAction   = "Stop"
                 WarningAction = "SilentlyContinue"
@@ -71,7 +71,7 @@ Describe $CommandName -Tag IntegrationTests {
         } catch { }
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.instance2
+            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $TestConfig.InstanceSingle
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -79,18 +79,18 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Get credentials" {
         It "Should get just one credential with the proper properties when using Identity" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity "thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Identity "thorsmomma"
             $results.Name | Should -Be "thorsmomma"
             $results.Identity | Should -Be "thorsmomma"
         }
         It "Should get just one credential with the proper properties when using Name" {
-            $results = Get-DbaCredential -SqlInstance $TestConfig.instance2 -Name "thorsmomma"
+            $results = Get-DbaCredential -SqlInstance $TestConfig.InstanceSingle -Name "thorsmomma"
             $results.Name | Should -Be "thorsmomma"
             $results.Identity | Should -Be "thorsmomma"
         }
         It "gets more than one credential" {
             $splatMultipleCreds = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Identity    = "thor", "thorsmomma"
             }
             $results = Get-DbaCredential @splatMultipleCreds

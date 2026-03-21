@@ -67,7 +67,13 @@ function Export-DbaXESession {
         A DbaInstanceParameter representing an array of SQL Server instances or output from Get-DbaSession
 
     .OUTPUTS
-        Creates a new file for each SQL Server Instance
+        System.String (when -Passthru is specified or no output path is specified)
+
+        Returns the generated T-SQL CREATE EVENT SESSION script as a string. The script contains the complete definition of the Extended Events session including all events, actions, targets, and configuration settings.
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns file information objects for each generated script file. One file is created per SQL Server instance processed. When exporting multiple sessions from the same instance using -Append, only the first session returns file information for that instance.
 
     .EXAMPLE
         PS C:\> Export-DbaXESession -SqlInstance sourceserver -Passthru

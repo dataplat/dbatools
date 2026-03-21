@@ -51,6 +51,31 @@ function Get-DbaDbMirror {
         PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016 -Database mymirror
 
         Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances for databases named mymirror
+
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one Database object for each mirrored database found on the instance. For databases with witness servers, the witness information is added as additional properties.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: Database name
+        - MirroringSafetyLevel: Safety level of the mirroring partnership (OFF, FULL, HIGH)
+        - MirroringStatus: Current mirroring status (CONNECTED, DISCONNECTED, SUSPENDED, PENDING_FAILOVER)
+        - MirroringPartner: Server name of the mirroring partner
+        - MirroringPartnerInstance: Instance name of the mirroring partner
+        - MirroringFailoverLogSequenceNumber: Log sequence number for failover
+        - MirroringID: Unique identifier for the mirroring partnership
+        - MirroringRedoQueueMaxSize: Maximum redo queue size in KB
+        - MirroringRoleSequence: Current role sequence number
+        - MirroringSafetySequence: Current safety level sequence number
+        - MirroringTimeout: Mirroring timeout in seconds
+        - MirroringWitness: Server name of the witness server (if configured)
+        - MirroringWitnessStatus: Status of the witness server connection (CONNECTED, DISCONNECTED, UNKNOWN, SUSPENDED)
+
+        For databases with witness servers, MirroringPartner, MirroringSafetyLevel, and MirroringWitnessStatus may be updated with values from the sys.database_mirroring_witnesses system view.
     #>
     [CmdletBinding()]
     param (

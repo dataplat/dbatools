@@ -60,6 +60,22 @@ function Copy-DbaEndpoint {
     .LINK
         https://dbatools.io/Copy-DbaEndpoint
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per endpoint copy operation with migration status information.
+
+        Default display properties (via Select-DefaultView):
+        - DateTime: The date and time when the endpoint operation was performed
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the endpoint being copied
+        - Type: The type of object (always "Endpoint" for this command)
+        - Status: The result of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation result (e.g., reason for skipping or error message)
+
+        All properties are accessible using Select-Object * for advanced scripting scenarios.
+
     .EXAMPLE
         PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
 

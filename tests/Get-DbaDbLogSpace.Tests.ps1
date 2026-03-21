@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         $dbCreate = "CREATE DATABASE [$db1]
         GO
         ALTER DATABASE [$db1] MODIFY FILE ( NAME = N'$($db1)_log', SIZE = 10MB )"
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database master -Query $dbCreate
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $dbCreate
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db1
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command actually works" {
         BeforeAll {
-            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.instance2 -Database $db1
+            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.InstanceSingle -Database $db1
         }
 
         It "Should have correct properties" {
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object Database -eq $db1).LogSize.Kilobyte | Should -BeExactly 10232
         }
 
-        It "Calculation for space used should work for servers < 2012" -Skip:$((Connect-DbaInstance -SqlInstance $TestConfig.instance2).versionMajor -ge 11) {
+        It "Calculation for space used should work for servers < 2012" -Skip:$((Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).versionMajor -ge 11) {
             # Skip It on newer versions (so maybe remove test because it only targets unsupported versions)
 
             $db1Result = $results | Where-Object Database -eq $db1
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "System databases exclusions work" {
         BeforeAll {
-            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.instance2 -ExcludeSystemDatabase
+            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeSystemDatabase
         }
 
         It "Should exclude system databases" {
@@ -101,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "User databases exclusions work" {
         BeforeAll {
-            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.instance2 -ExcludeDatabase $db1
+            $results = Get-DbaDbLogSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $db1
         }
 
         It "Should include system databases" {
@@ -115,7 +115,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Piping servers works" {
         It "Should have database name of $db1" {
-            $results = $TestConfig.instance2 | Get-DbaDbLogSpace
+            $results = $TestConfig.InstanceSingle | Get-DbaDbLogSpace
             $results.Database | Should -Contain $db1
         }
     }

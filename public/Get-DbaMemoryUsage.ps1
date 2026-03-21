@@ -63,6 +63,26 @@ function Get-DbaMemoryUsage {
 
         SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per Windows performance counter collected from the target computer. Multiple objects are returned for each SQL Server instance based on the number of memory counters available that match the specified filter patterns. Results include counters from Memory Manager, Plan Cache, Buffer Manager, SSAS, and SSIS depending on which services are installed and accessible on the target system.
+
+        Properties:
+        - ComputerName: The name of the computer where counters were collected
+        - SqlInstance: The SQL Server instance name (mssqlserver for default instance, or the instance name for named instances)
+        - CounterInstance: The performance counter instance identifier extracted from the counter path
+        - Counter: The name of the Windows performance counter (e.g., Total Server Memory, Free pages, cache pages)
+        - Pages: Number of pages for buffer pool and plan cache counters; **null for Memory Manager, SSAS, and SSIS counters**. Represents 8 KB pages in the buffer pool or plan cache.
+        - Memory: Memory usage as dbasize object in bytes. Conversion varies by counter type:
+          - Memory Manager counters: KB converted to bytes (automatic dbasize formatting)
+          - Plan Cache counters: Pages * 8192 converted to bytes (automatic dbasize formatting)
+          - Buffer Manager counters: Pages * 8192 converted to bytes (automatic dbasize formatting)
+          - SSAS counters: KB converted to bytes (automatic dbasize formatting)
+          - SSIS counters: MB converted to bytes (automatic dbasize formatting)
+
+        Memory property returns dbasize objects that automatically format as human-readable units (Bytes, KB, MB, GB, TB) when displayed or accessed via properties like .Kilobytes, .Megabytes, .Gigabytes, .Terabytes.
+
     .LINK
         https://dbatools.io/Get-DbaMemoryUsage
 

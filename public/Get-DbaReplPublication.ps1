@@ -46,6 +46,35 @@ function Get-DbaReplPublication {
     .LINK
         https://dbatools.io/Get-DbaReplPublication
 
+    .OUTPUTS
+        Microsoft.SqlServer.Replication.Publication
+
+        Returns one Publication object for each publication found matching the filter criteria. Publications can be of type Transactional, Merge, or Snapshot, and each carries associated articles and subscriptions.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The SQL Server replication server object
+        - DatabaseName: The name of the database containing the publication
+        - Name: The name of the publication
+        - Type: The publication type (Transactional, Merge, or Snapshot)
+        - Articles: Collection of published articles for this publication
+        - Subscriptions: Collection of subscriptions to this publication
+
+        Additional properties available (from SMO Publication object):
+        - Description: Textual description of the publication
+        - PubId: Unique identifier for the publication
+        - Status: Current publication status
+        - CompatibilityLevel: Earliest SQL Server version supported by this publication
+        - RetentionPeriod: Number of days before subscription expires
+        - SnapshotMethod: Data file format of the initial snapshot
+        - ReplicateDdl: Whether DDL (schema changes) are replicated to subscribers
+        - HasSubscription: Boolean indicating if the publication has subscriptions
+        - FtpAddress, FtpPort, FtpSubdirectory: FTP settings for snapshot distribution
+        - PreSnapshotScript, PostSnapshotScript: Custom scripts executed before/after snapshot application
+
+        All properties from the base SMO Publication object are accessible using Select-Object * even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Get-DbaReplPublication -SqlInstance sql2008, sqlserver2012
 

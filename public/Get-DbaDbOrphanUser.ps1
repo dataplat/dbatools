@@ -43,6 +43,21 @@ function Get-DbaDbOrphanUser {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per orphaned user found across the specified databases.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - DatabaseName: Name of the database containing the orphaned user
+        - User: Name of the orphaned user
+
+        Additional properties available:
+        - SmoUser: The underlying Microsoft.SqlServer.Management.Smo.User object with all SMO properties
+
     .LINK
         https://dbatools.io/Get-DbaDbOrphanUser
 

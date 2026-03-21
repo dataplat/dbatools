@@ -58,6 +58,20 @@ function Sync-DbaLoginPermission {
     .LINK
         https://dbatools.io/Sync-DbaLoginPermission
 
+    .OUTPUTS
+        PSCustomObject with TypeName MigrationObject
+
+        Returns one object per login per destination server showing the result of the permission sync operation. Objects are output immediately as each login's permissions are synced, not collected at the end.
+
+        Properties:
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The login name that was synced
+        - Type: The operation type (always "Login Permissions")
+        - Status: Result of the sync operation (Successful or Failed)
+        - Notes: Error message details if Status is Failed, null if Successful
+        - DateTime: DbaDateTime object representing when the sync was attempted
+
     .EXAMPLE
         PS C:\> Sync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster
 

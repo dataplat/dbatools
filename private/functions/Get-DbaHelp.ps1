@@ -93,6 +93,11 @@ function Get-DbaHelp {
                 $null = $rtn.Add($doc_to_render.Description.Replace("`n", "  `n"))
             }
             $null = $rtn.Add('')
+            if ($doc_to_render.Outputs) {
+                $null = $rtn.Add('## Outputs')
+                $null = $rtn.Add($doc_to_render.Outputs.Replace("`n", "  `n"))
+                $null = $rtn.Add('')
+            }
             if ($doc_to_render.Syntax) {
                 $null = $rtn.Add('## Syntax')
                 $null = $rtn.Add('```')
@@ -254,6 +259,9 @@ function Get-DbaHelp {
 
         ## fetch the syntax
         $thebase.Syntax = Get-DbaTrimmedString -Text ($thishelp.Syntax | Out-String -Width 600)
+
+        ## fetch outputs
+        $thebase.Outputs = Get-DbaTrimmedString -Text ($thishelp.returnValues | Out-String -Width 200)
 
         ## store notes
         $as = $thishelp.AlertSet | Out-String -Width 600

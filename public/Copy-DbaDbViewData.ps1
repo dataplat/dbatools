@@ -102,6 +102,25 @@ function Copy-DbaDbViewData {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per successful bulk copy operation, with details about the source and destination of the copied data.
+
+        Properties:
+        - SourceInstance: The name of the source SQL Server instance where the view data was read from
+        - SourceDatabase: The name of the source database containing the view
+        - SourceDatabaseID: The unique identifier of the source database
+        - SourceSchema: The schema name of the source view (e.g., dbo)
+        - SourceTable: The name of the source view being copied
+        - DestinationInstance: The name of the destination SQL Server instance where data was written
+        - DestinationDatabase: The name of the destination database where data was inserted
+        - DestinationDatabaseID: The unique identifier of the destination database
+        - DestinationSchema: The schema name of the destination table (e.g., dbo)
+        - DestinationTable: The name of the destination table receiving the copied data
+        - RowsCopied: The total number of rows successfully copied from the view to the destination table
+        - Elapsed: The total elapsed time for the bulk copy operation (displayed as a formatted timespan, e.g., 00:01:23.456)
+
     .NOTES
         Tags: Table, Data
         Author: Stephen Swan (@jaxnoth)

@@ -88,6 +88,11 @@ function Export-DbaLogin {
         Includes detailed object-level permissions for each database user associated with the exported logins.
         Use this for complete permission migration when you need granular security settings preserved in the target environment.
 
+    .PARAMETER IncludeRolePermissions
+        Includes permissions granted to database roles that the login's database users are members of.
+        By default, Export-DbaLogin scripts role membership (ALTER ROLE ... ADD MEMBER) but not the permissions granted to those roles.
+        Use this switch to also export GRANT/DENY statements for each non-fixed role, ensuring the roles have the correct permissions on the target server.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -109,6 +114,27 @@ function Export-DbaLogin {
 
     .LINK
         https://dbatools.io/Export-DbaLogin
+
+    .OUTPUTS
+        System.String (when -Passthru is specified or neither -Path nor -FilePath is specified)
+
+        Returns the generated T-SQL script as a string. When -Passthru is specified, the script is sent to the pipeline. If -Path or -FilePath are not specified, the script is returned directly without being saved to a file.
+
+        System.IO.FileInfo (when -Path or -FilePath is specified)
+
+        Returns file information objects for the created export files. Each file contains the generated T-SQL script for login recreation including:
+        - CREATE LOGIN statements with password hashes (or placeholder text if -ExcludePassword is used)
+        - DEFAULT_DATABASE setting (or the -DefaultDatabase override if specified)
+        - Login enabled/disabled status
+        - DENY CONNECT SQL restrictions if applicable
+        - Server role memberships
+        - SQL Agent job ownership assignments (unless -ExcludeJobs is specified)
+        - Server-level permissions and securables (for SQL Server 2005+)
+        - Credential associations
+        - Database user mappings and database roles (unless -ExcludeDatabase is specified)
+        - Object-level permissions (if -ObjectLevel is specified)
+
+        The script is formatted with the specified -BatchSeparator (default 'GO') between statements and includes a dbatools header comment unless -NoPrefix is specified.
 
     .EXAMPLE
         PS C:\> Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
@@ -186,6 +212,7 @@ function Export-DbaLogin {
         [switch]$NoPrefix,
         [switch]$Passthru,
         [switch]$ObjectLevel,
+        [switch]$IncludeRolePermissions,
         [switch]$EnableException
     )
 
@@ -508,6 +535,29 @@ function Export-DbaLogin {
                             } catch {
                                 Stop-Function -Message "Failed to extract permissions for user $dbUserName in database $dbName" -Continue -ErrorRecord $_
                             }
+
+                            if ($IncludeRolePermissions) {
+                                foreach ($role in $sourceDb.Roles) {
+                                    if ($role.IsFixedRole -eq $false -and $role.EnumMembers() -contains $dbUserName) {
+                                        $splatExportRole = @{
+                                            SqlInstance    = $server
+                                            Database       = $dbName
+                                            Role           = $role.Name
+                                            Passthru       = $true
+                                            NoPrefix       = $true
+                                            BatchSeparator = ""
+                                        }
+                                        try {
+                                            $roleScript = Export-DbaDbRole @splatExportRole
+                                            if ($roleScript) {
+                                                $outsql += $roleScript
+                                            }
+                                        } catch {
+                                            Write-Message -Level Warning -Message "Failed to export permissions for role $($role.Name) in database $dbName : $($_.Exception.Message)"
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             try {
                                 $sql = $server.Databases[$dbName].Users[$dbUserName].Script($scriptOptions)
@@ -526,6 +576,29 @@ function Export-DbaLogin {
                                         $outsql += "EXEC sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
                                     } else {
                                         $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
+                                    }
+                                }
+                            }
+
+                            if ($IncludeRolePermissions) {
+                                foreach ($role in $sourceDb.Roles) {
+                                    if ($role.IsFixedRole -eq $false -and $role.EnumMembers() -contains $dbUserName) {
+                                        $splatExportRole = @{
+                                            SqlInstance    = $server
+                                            Database       = $dbName
+                                            Role           = $role.Name
+                                            Passthru       = $true
+                                            NoPrefix       = $true
+                                            BatchSeparator = ""
+                                        }
+                                        try {
+                                            $roleScript = Export-DbaDbRole @splatExportRole
+                                            if ($roleScript) {
+                                                $outsql += $roleScript
+                                            }
+                                        } catch {
+                                            Write-Message -Level Warning -Message "Failed to export permissions for role $($role.Name) in database $dbName : $($_.Exception.Message)"
+                                        }
                                     }
                                 }
                             }

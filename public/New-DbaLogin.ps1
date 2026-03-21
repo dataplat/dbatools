@@ -114,6 +114,38 @@ function New-DbaLogin {
     .LINK
         https://dbatools.io/New-DbaLogin
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Login
+
+        Returns one Login object for each login successfully created on the specified SQL Server instance(s). The Login object contains all configuration and security properties for the newly created login.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The login account name
+        - LoginType: The type of login (SqlLogin, WindowsUser, WindowsGroup, Certificate, AsymmetricKey, or ExternalUser)
+        - CreateDate: DateTime when the login was created
+        - LastLogin: DateTime of the most recent connection (null if never connected or SQL Server 2000)
+        - HasAccess: Boolean indicating if the login has permission to connect
+        - IsLocked: Boolean indicating if the login is currently locked due to failed authentication attempts
+        - IsDisabled: Boolean indicating if the login is disabled
+        - MustChangePassword: Boolean indicating if the login must change password on next connection
+
+        Additional properties always available (from SMO Login object):
+        - SidString: Hexadecimal string representation of the login's Security Identifier (SID)
+        - Sid: Binary Security Identifier of the login
+        - DefaultDatabase: The default database for the login when connecting
+        - Language: The default language for the login's SQL Server session
+        - LoginMode: The authentication mode for the login
+        - PasswordExpirationEnabled: Boolean indicating if password expiration policy is enforced
+        - PasswordPolicyEnforced: Boolean indicating if Windows password complexity requirements are enforced
+        - DenyWindowsLogin: Boolean indicating if Windows Authentication is denied for this login
+        - IsSystemObject: Boolean indicating if the login is a system object
+        - IsExpired: Boolean indicating if the SQL Server login password has expired (SQL Server 2008+)
+
+        All properties from the base SMO Login object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
 
@@ -411,7 +443,7 @@ function New-DbaLogin {
                             $newLogin.Set_Sid($currentSid)
                         }
 
-                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser")) {
+                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser", "ExternalGroup")) {
                             if ($currentDefaultDatabase) {
                                 Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
                                 $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
@@ -469,7 +501,7 @@ function New-DbaLogin {
 
                         # Attempt to add login using SMO, then T-SQL
                         try {
-                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser")) {
+                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser", "ExternalGroup")) {
                                 if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
                                 $newLogin.Create()
                             } elseif ($loginType -eq "SqlLogin") {
@@ -495,8 +527,8 @@ function New-DbaLogin {
                                 elseif ($loginType -eq 'SqlLogin' -and $server.DatabaseEngineType -eq 'SqlAzureDatabase') {
                                     # Azure SQL doesn't support HASHED so we have to dump out the plain text password :(
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$($SecurePassword | ConvertFrom-SecurePass)'"
-                                } elseif ($loginType -eq 'ExternalUser' -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance')) {
-                                    # Azure SQL DB and Azure SQL Managed Instance are the only ones that currently support FROM EXTERNAL PROVIDER syntax
+                                } elseif ($loginType -in ('ExternalUser', 'ExternalGroup') -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance' -or $server.VersionMajor -ge 16)) {
+                                    # Azure SQL DB, Azure SQL Managed Instance, and SQL Server 2022+ support FROM EXTERNAL PROVIDER syntax
                                     $sql = "CREATE LOGIN [$loginName] FROM EXTERNAL PROVIDER" + $withParams
                                 } elseif ($loginType -eq 'SqlLogin' ) {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams

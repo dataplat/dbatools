@@ -23,6 +23,11 @@ function Remove-DbaCmConnection {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This command does not return any output to the pipeline. It only modifies the internal dbatools connection cache by removing the specified cached connections.
+
     .NOTES
         Tags: ComputerManagement, CIM
         Author: Friedrich Weinmann (@FredWeinmann)

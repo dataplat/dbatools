@@ -38,6 +38,11 @@ function Register-DbatoolsConfig {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        None
+
+        This function does not return output to the pipeline. Configuration settings are persisted to registry (Windows) or JSON files (cross-platform) based on the specified Scope parameter. Use Get-DbatoolsConfig to verify that settings have been registered.
+
     .NOTES
         Tags: Module
         Author: Chrissy LeMaire (@cl), netnerds.net

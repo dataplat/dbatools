@@ -56,6 +56,14 @@ function Copy-DbaDbTableData {
         Custom SQL SELECT query to use as the data source instead of copying the entire table or view. Supports 3 or 4-part object names.
         Use this when you need to filter rows, join multiple tables, or transform data during the copy operation. Still requires specifying a Table or View parameter for metadata purposes.
 
+        Note: Columns are mapped by ordinal position. If the destination table has an identity column, include a placeholder value (e.g., 0) in your SELECT list at that position.
+        The placeholder will be ignored and the identity value auto-generated unless -KeepIdentity is specified.
+
+    .PARAMETER ForceExplicitMapping
+        When used together with Query parameter, force the use of explicit column mapping (name-based) instead of switching over to ordinal position mapping. Use with care if query contains aliases.
+        Default behaviour when using Query parameter is to use ordinal position mapping, due to the possibility of the query including aliases (SELECT x AS y) which could lead to column mismatching and data not copying.
+        The downside of it automatically switching over to ordinal mapping is that it also tries to copy over computed columns, which will cause it to fail.
+
     .PARAMETER AutoCreateTable
         Automatically creates the destination table if it doesn't exist, using the same structure as the source table.
         Essential for initial data migrations or when copying to new environments where destination tables haven't been created yet.
@@ -119,6 +127,25 @@ function Copy-DbaDbTableData {
         Creates new tables using the destination database's default filegroup instead of matching the source table's filegroup name.
         Use this when the destination database has different filegroup configurations or when you want all copied tables in the PRIMARY filegroup.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per destination instance per source table copied. If copying one table to two destination instances, returns two objects. If piping multiple tables to one destination, returns one object per table.
+
+        Properties:
+        - SourceInstance: The name of the source SQL Server instance
+        - SourceDatabase: The name of the source database
+        - SourceDatabaseID: The unique identifier (ID) of the source database
+        - SourceSchema: The schema name of the source table or view
+        - SourceTable: The name of the source table or view
+        - DestinationInstance: The name of the destination SQL Server instance
+        - DestinationDatabase: The name of the destination database
+        - DestinationDatabaseID: The unique identifier (ID) of the destination database
+        - DestinationSchema: The schema name of the destination table
+        - DestinationTable: The name of the destination table
+        - RowsCopied: The total number of rows that were successfully copied (Int64). Supports values greater than 2.1 billion rows.
+        - Elapsed: The elapsed time as a TimeSpan object representing the duration of the copy operation
+
     .NOTES
         Tags: Table, Data
         Author: Simone Bizzotto (@niphlod)
@@ -126,6 +153,12 @@ function Copy-DbaDbTableData {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        Column Mapping Behavior:
+        When using the -Query parameter, columns are mapped by ordinal position (first column to first column, second to second, etc.), not by name.
+        If your destination table has an identity column, you must include a placeholder value in your SELECT query at that column's position.
+        The placeholder value (e.g., 0 or NULL) will be ignored and SQL Server will generate the identity value automatically.
+        Use -KeepIdentity if you want to preserve the actual source identity values instead of generating new ones.
 
     .LINK
         https://dbatools.io/Copy-DbaDbTableData
@@ -196,6 +229,24 @@ function Copy-DbaDbTableData {
        Copy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable
 
        Copies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
+
+    .EXAMPLE
+        PS C:\> $params = @{
+        >>     SqlInstance         = "SERVER001"
+        >>     Database            = "MyDatabaseName"
+        >>     View                = "sys.schemas"
+        >>     Query               = "SELECT 0, DB_NAME(), [name] FROM sys.schemas"
+        >>     Destination         = "SERVER002"
+        >>     DestinationDatabase = "MyOtherDatabaseName"
+        >>     DestinationTable    = "syscollect.stage_map_schema_id"
+        >> }
+        >>
+        PS C:\> Copy-DbaDbTableData @params
+
+        Copies schema data from sys.schemas to a table with an identity column.
+        The first SELECT column (0) is a placeholder for the destination's identity column.
+        Since -KeepIdentity is not specified, the destination auto-generates identity values and ignores the placeholder.
+        Columns are mapped by position: 0 → ID (ignored), DB_NAME() → database_name, [name] → schema_name.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
@@ -208,6 +259,7 @@ function Copy-DbaDbTableData {
         [string[]]$Table,
         [string[]]$View, # Copy-DbaDbTableData and Copy-DbaDbViewData are consolidated to reduce maintenance cost, so this param is specific to calls of Copy-DbaDbViewData
         [string]$Query,
+        [switch]$ForceExplicitMapping,
         [switch]$AutoCreateTable,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 5000,
@@ -522,7 +574,8 @@ function Copy-DbaDbTableData {
 
                         # Only apply explicit column mapping for straight table copies (not custom queries)
                         # Custom queries may have different column names/aliases, so let SqlBulkCopy use ordinal mapping
-                        if (Test-Bound -ParameterName Query -Not) {
+                        # Appending -ForceExplicitMapping will override this behaviour and keep explicit column mapping
+                        if (-not (Test-Bound -ParameterName Query) -or $ForceExplicitMapping) {
                             # Map only columns that exist in both source and destination (excluding computed columns)
                             for ($i = 0; $i -lt $reader.FieldCount; $i++) {
                                 $sourceColumn = $reader.GetName($i)

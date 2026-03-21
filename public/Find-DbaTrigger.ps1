@@ -61,6 +61,28 @@ function Find-DbaTrigger {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per trigger found that matches the Pattern. Objects are returned for matches at any of the three trigger levels (Server, Database, or Object).
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - SqlInstance: The SQL Server instance name
+        - TriggerLevel: The type of trigger (Server, Database, or Object)
+        - Database: The name of the database containing the trigger (null for server-level triggers)
+        - DatabaseId: The ID of the database (null for server-level triggers)
+        - Object: The name of the parent object (table/view) for object-level triggers, null for server and database-level
+        - Name: The name of the trigger
+        - IsSystemObject: Boolean indicating if this is a system-created trigger
+        - CreateDate: DateTime when the trigger was created
+        - LastModified: DateTime when the trigger was last modified
+        - TriggerTextFound: String containing matching lines with line numbers in format "(LineNumber: #) matched_text"
+
+        Additional properties available (not displayed by default):
+        - Trigger: The SMO Trigger object
+        - TriggerFullText: The complete T-SQL definition of the trigger
+
     .LINK
         https://dbatools.io/Find-DbaTrigger
 

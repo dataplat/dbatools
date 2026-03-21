@@ -63,6 +63,21 @@ function New-DbaCustomError {
     .LINK
         https://dbatools.io/New-DbaCustomError
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedMessage
+
+        Returns the newly created UserDefinedMessage object from the target SQL Server instance. One object is returned per custom error message created.
+
+        Properties:
+        - ID (int) - The unique message identifier (50001-2147483647)
+        - Language (string) - The language of the message (English, French, etc.)
+        - Severity (int) - The severity level of the message (1-25)
+        - Text (string) - The error message text (up to 255 characters)
+        - IsLogged (bool) - Boolean indicating if the message is logged to Windows Application Log and SQL Server Error Log
+        - CreateDate (datetime) - DateTime when the message was created
+
+        All properties from the base SMO UserDefinedMessage object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> New-DbaCustomError -SqlInstance sqldev01, sqldev02 -MessageID 70001 -Severity 16 -MessageText "test"
 

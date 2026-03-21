@@ -33,6 +33,24 @@ function Find-DbaLoginInGroup {
     .LINK
         https://dbatools.io/Find-DbaLoginInGroup
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per individual Active Directory user found within Windows group logins on the SQL Server instance(s). When -Login is specified, only groups containing that user are returned.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The SQL Server instance name (in the format COMPUTER\INSTANCE or just COMPUTER for default instance)
+        - Login: The individual user account in DOMAIN\username format
+        - DisplayName: The user's display name from Active Directory
+        - MemberOf: The Windows AD group login on SQL Server that contains this user
+        - ParentADGroupLogin: The original parent group login (same as MemberOf unless accessed through nested groups)
+
+        Additional properties available:
+        - InstanceName: The SQL Server instance name only (without computer name)
+        - ComputerName: The name of the computer hosting the SQL Server instance
+
+        All properties are accessible using Select-Object * or by directly referencing property names even though only default properties are displayed by default.
+
     .EXAMPLE
         PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
 

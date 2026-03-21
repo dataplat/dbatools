@@ -44,6 +44,27 @@ function Get-DbaDbCompression {
     .LINK
         https://dbatools.io/Get-DbaDbCompression
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per partition for each table and index analyzed, providing compression details for heaps, clustered indexes, and non-clustered indexes.
+
+        Properties:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database containing the table
+        - DatabaseId: Unique identifier (ID) of the database
+        - Schema: Name of the schema containing the table
+        - TableName: Name of the table
+        - IndexName: Name of the index (null for heap partitions)
+        - Partition: The partition number within the partition scheme
+        - IndexID: Index ID number (0 for heaps, >0 for indexes)
+        - IndexType: Type of index structure (Heap, ClusteredIndex, NonClusteredIndex, or other types)
+        - DataCompression: Current compression type (None, Row, Page, or ColumnStore)
+        - SizeCurrent: Current size of the partition in bytes (dbasize object supporting multiple units: B, KB, MB, GB)
+        - RowCount: Number of rows in the partition
+
     .EXAMPLE
         PS C:\> Get-DbaDbCompression -SqlInstance localhost
 

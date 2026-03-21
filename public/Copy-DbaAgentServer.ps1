@@ -79,6 +79,22 @@ function Copy-DbaAgentServer {
 
         Shows what would happen if the command were executed.
 
+    .OUTPUTS
+        PSCustomObject (MigrationObject type)
+
+        Returns one object per destination instance. The object contains details about the Agent server properties migration status.
+
+        Default display properties:
+        - DateTime: The timestamp when the copy operation was executed (DbaDateTime)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: Description of what was copied ("Server level properties")
+        - Type: Category of objects copied ("Agent Properties")
+        - Status: Result of the copy operation (Skipped, Successful, or Failed)
+        - Notes: Error message if the operation failed; null if successful or skipped
+
+        When -ExcludeServerProperties is specified, Status will be "Skipped". Otherwise, Status will be "Successful" unless an error occurred during the copy operation.
+
     #>
     [cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -102,7 +118,6 @@ function Copy-DbaAgentServer {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
 
         if ($Force) { $ConfirmPreference = 'none' }
@@ -115,7 +130,6 @@ function Copy-DbaAgentServer {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
             Copy-DbaAgentJobCategory -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
 
@@ -133,9 +147,6 @@ function Copy-DbaAgentServer {
             # extra reconnect to force refresh
             $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
 
-            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
-            $destServer.JobServer.Alerts.Refresh()
-
             Copy-DbaAgentProxy -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
 
@@ -144,7 +155,11 @@ function Copy-DbaAgentServer {
 
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
+            # Copy jobs BEFORE alerts to ensure jobs exist when alerts with job associations are created
             Copy-DbaAgentJob -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+
+            Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
+            $destServer.JobServer.Alerts.Refresh()
 
             # To do
             <#

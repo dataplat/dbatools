@@ -40,14 +40,14 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.instance2, $TestConfig.instance3 -EndPoint $endpointName
+        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -EndPoint $endpointName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When creating database mirroring endpoints" {
         BeforeAll {
-            $results = New-DbaEndpoint -SqlInstance $TestConfig.instance2 -Type DatabaseMirroring -Role Partner -Name $endpointName | Start-DbaEndpoint
+            $results = New-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1 -Type DatabaseMirroring -Role Partner -Name $endpointName | Start-DbaEndpoint
         }
 
         It "creates an endpoint of the db mirroring type" {
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "creates it with the right owner" {
-            $sa = Get-SaLoginName -SqlInstance $TestConfig.instance2
+            $sa = Get-SaLoginName -SqlInstance $TestConfig.InstanceMulti1
             $results.Owner | Should -Be $sa
         }
     }

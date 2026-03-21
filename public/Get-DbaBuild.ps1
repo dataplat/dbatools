@@ -56,6 +56,26 @@ function Get-DbaBuild {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per build queried, containing SQL Server version and patch level information.
+
+        Default properties when querying by -SqlInstance (all 9 properties displayed):
+        - SqlInstance: The SQL Server instance name (computer\instance format)
+        - Build: The full build version number (e.g., 12.00.4502)
+        - NameLevel: SQL Server product name (e.g., "SQL Server 2014", "SQL Server 2019")
+        - SPLevel: Service pack level (e.g., "SP1", "SP2", or "RTM" for initial release)
+        - CULevel: Cumulative update level (e.g., "CU11", "CU15", or empty string if none applied)
+        - KBLevel: Array of Knowledge Base (KB) article numbers associated with this build
+        - BuildLevel: The normalized build version object
+        - SupportedUntil: DateTime indicating when this build version reaches end of support from Microsoft
+        - MatchType: Match precision ("Exact" for precise match or "Approximate" if closest available match)
+        - Warning: Alert message if the build is retired or other issues detected (null if no warnings)
+
+        Properties when querying by -Build, -Kb, or -MajorVersion (SqlInstance excluded from display):
+        When using these parameters, the SqlInstance property is excluded from the default display but all 9 properties remain accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaBuild
 

@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests -Skip {
 
     Context "Command returns proper info" {
         It "returns results" {
-            $results = Get-DbaWindowsLog -SqlInstance $TestConfig.instance2
+            $results = Get-DbaWindowsLog -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
     }

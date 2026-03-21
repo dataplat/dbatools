@@ -25,7 +25,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Command returns proper info" {
         BeforeAll {
-            $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100
+            $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100
         }
 
         It "returns results" {
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "SLEEP_TASK",
                 "LAZYWRITER_SLEEP"
             )
-            $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.instance2 -Threshold 100 -IncludeIgnorable | Where-Object WaitType -in $ignoredWaits
+            $results = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable | Where-Object WaitType -in $ignoredWaits
         }
 
         It "returns results" {

@@ -25,7 +25,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Connect to instance for testing
-        $null = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

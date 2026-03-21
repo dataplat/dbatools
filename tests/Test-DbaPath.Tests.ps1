@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $trueTest = (Get-DbaDbFile -SqlInstance $TestConfig.instance2 -Database master)[0].PhysicalName
+        $trueTest = (Get-DbaDbFile -SqlInstance $TestConfig.InstanceMulti1 -Database master)[0].PhysicalName
         if ($trueTest.Length -eq 0) {
             $setupFailed = $true
         } else {
@@ -34,28 +34,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Command actually works" {
-        It "has failed setup" -Skip:(-not $setupFailed) {
-            Set-TestInconclusive -message "Setup failed"
-        }
-
         It "Should only return true if the path IS accessible to the instance" {
-            $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest
             $result | Should -Be $true
         }
 
         It "Should only return false if the path IS NOT accessible to the instance" {
-            $result = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $falseTest
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $falseTest
             $result | Should -Be $false
         }
 
         It "Should return multiple results when passed multiple paths" {
-            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path $trueTest, $falseTest
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $trueTest, $falseTest
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
             ($results | Where-Object FilePath -eq $falseTest).FileExists | Should -Be $false
         }
 
         It "Should return multiple results when passed multiple instances" {
-            $results = Test-DbaPath -SqlInstance $TestConfig.instance2, $TestConfig.instance1 -Path $falseTest
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Path $falseTest
             foreach ($result in $results) {
                 $result.FileExists | Should -Be $false
             }
@@ -63,12 +59,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return PSCustomObject results when passed an array (even with one path)" {
-            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest)
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path @($trueTest)
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
         }
 
         It "Should return PSCustomObject results indicating if the path is a file or a directory" {
-            $results = Test-DbaPath -SqlInstance $TestConfig.instance2 -Path @($trueTest, $trueTestPath)
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path @($trueTest, $trueTestPath)
             ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
             ($results | Where-Object FilePath -eq $trueTestPath).FileExists | Should -Be $true
             ($results | Where-Object FilePath -eq $trueTest).IsContainer | Should -Be $false

@@ -100,6 +100,62 @@ function Get-DbaDbBackupHistory {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        System.Data.DataRow (when -Raw is specified)
+
+        Returns one DataRow per backup file from the MSDB backup tables, preserving the raw SQL Server structure. This is useful when you need to analyze individual backup files in a striped backup set or require access to all MSDB backup columns without object wrapping.
+
+        Additional property added to raw output:
+        - FullName: Copy of the Path property for consistency with grouped output
+
+        Dataplat.Dbatools.Database.BackupHistory (default)
+
+        Returns one BackupHistory object per backup set, with striped backups automatically grouped into a single object. The standard output is more practical for restore planning and backup analysis.
+
+        Default display properties (via table format):
+        - SqlInstance: The SQL Server instance name
+        - Database: Database name
+        - Type: Backup type (Full, Log, Differential, File, Differential File, Partial Full, or Partial Differential)
+        - TotalSize: Total uncompressed backup size in bytes
+        - DeviceType: Storage device type (Disk, Tape, URL, Virtual Device, etc.)
+        - Start: Backup start date and time
+        - Duration: Duration of the backup operation
+        - End: Backup completion date and time
+
+        All available properties on BackupHistory objects:
+        - ComputerName: Computer name where SQL Server instance resides
+        - InstanceName: SQL Server instance name
+        - SqlInstance: Full SQL Server instance name (ComputerName\InstanceName)
+        - AvailabilityGroupName: Availability group name (if applicable)
+        - Database: Database name
+        - DatabaseId: SQL Server database ID
+        - UserName: Windows or SQL login that performed the backup
+        - Start: Backup start DateTime
+        - End: Backup completion DateTime
+        - Duration: TimeSpan duration of the backup
+        - Path: Array of file paths for the backup files
+        - TotalSize: Total uncompressed backup size in bytes
+        - CompressedBackupSize: Compressed backup size in bytes (NULL for SQL 2005)
+        - CompressionRatio: Ratio of total size to compressed size (1.0 for uncompressed)
+        - Type: Backup type string
+        - BackupSetId: Unique backup set identifier from MSDB
+        - DeviceType: Backup device type (Disk, Tape, Pipe, Virtual Device, URL, etc.)
+        - Software: Software that created the backup (e.g., "Microsoft SQL Server")
+        - FullName: Array of backup file paths (same as Path)
+        - FileList: Array of file objects with FileType, LogicalName, and PhysicalName properties
+        - Position: Position of this backup in the media set
+        - FirstLsn: First Log Sequence Number in the backup (string representation of binary(10))
+        - DatabaseBackupLsn: LSN of the last database backup referenced by this backup
+        - CheckpointLsn: LSN of the checkpoint at the time the backup was created
+        - LastLsn: Last Log Sequence Number in the backup
+        - SoftwareVersionMajor: Major version number of SQL Server that created the backup
+        - IsCopyOnly: Boolean indicating if this is a copy-only backup
+        - LastRecoveryForkGUID: Unique identifier of the last recovery fork
+        - RecoveryModel: Database recovery model (Simple, Full, or Bulk-logged)
+        - EncryptorThumbprint: Thumbprint of the certificate used for backup encryption (SQL 2014+)
+        - EncryptorType: Encryption algorithm used (SQL 2014+)
+        - KeyAlgorithm: Key algorithm used for encryption (SQL 2014+)
+
     .LINK
         https://dbatools.io/Get-DbaDbBackupHistory
 

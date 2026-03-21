@@ -366,9 +366,26 @@ function Invoke-DbaDbLogShipping {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER IgnoreFileChecks
+        Skips path validation checks before backup operations. Use this when SQL Server cannot verify that the backup path exists,
+        for example when the network share is created just before the backup and there is latency in the path becoming visible to SQL Server.
+
     .PARAMETER Force
         Bypasses confirmations and applies default values for missing parameters like copy destination folder.
         Also removes existing schedules with the same name and sets automatic database suffix when source and destination instances are identical.
+
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database that was configured for log shipping, containing setup results and status information.
+
+        Properties:
+        - PrimaryInstance: The full SQL Server instance name (computer\instance) of the primary/source server
+        - SecondaryInstance: The full SQL Server instance name (computer\instance) of the secondary/destination server
+        - PrimaryDatabase: Name of the database on the primary instance that was configured for log shipping
+        - SecondaryDatabase: Name of the database on the secondary instance (may have prefix/suffix applied)
+        - Result: Setup status for this database configuration - "Success" if all log shipping components were created successfully, "Failed" if any step failed
+        - Comment: Additional information about the setup result, typically populated with error details when Result is "Failed"
 
     .NOTES
         Tags: LogShipping
@@ -562,6 +579,7 @@ function Invoke-DbaDbLogShipping {
         [string]$StandbyDirectory,
         [switch]$UseExistingFullBackup,
         [string]$UseBackupFolder,
+        [switch]$IgnoreFileChecks,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -1435,10 +1453,26 @@ function Invoke-DbaDbLogShipping {
                     if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
                             try {
-                                Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                # If the destination server is remote and the credential is set
+                                if (-not $IsDestinationLocal -and $DestinationCredential) {
+                                    Invoke-Command2 -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+                                        $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
+                                    }
+                                }
+                                # If the server is local and the credential is set
+                                elseif ($DestinationCredential) {
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+                                        Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+                                        $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
+                                    }
+                                }
+                                # If the server is local and the credential is not set
+                                else {
                                     Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
                                     $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
                                 }
+                                Write-Message -Message "Database copy destination folder $DatabaseCopyDestinationFolder created." -Level Verbose
                             } catch {
                                 $setupResult = "Failed"
                                 $comment = "Something went wrong creating the database copy destination folder"
@@ -1498,12 +1532,13 @@ function Invoke-DbaDbLogShipping {
                                 } else {
                                     # Backup to file share
                                     $splatBackup = @{
-                                        SqlInstance     = $SourceSqlInstance
-                                        SqlCredential   = $SourceSqlCredential
-                                        BackupDirectory = $DatabaseSharedPath
-                                        BackupFileName  = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
-                                        Database        = $($db.Name)
-                                        Type            = "Full"
+                                        SqlInstance      = $SourceSqlInstance
+                                        SqlCredential    = $SourceSqlCredential
+                                        BackupDirectory  = $DatabaseSharedPath
+                                        BackupFileName   = "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak"
+                                        Database         = $($db.Name)
+                                        Type             = "Full"
+                                        IgnoreFileChecks = $IgnoreFileChecks
                                     }
 
                                     $LastBackup = Backup-DbaDatabase @splatBackup

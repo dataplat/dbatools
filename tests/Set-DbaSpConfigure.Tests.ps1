@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Set configuration" {
         BeforeAll {
-            $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout).ConfiguredValue
+            $remotequerytimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout).ConfiguredValue
             $newtimeout = $remotequerytimeout + 1
         }
 
@@ -35,7 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "Remote query timeout value is null"
                 return
             }
-            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $newtimeout
+            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $newtimeout
             $results.PreviousValue | Should -Be $remotequerytimeout
             $results.NewValue | Should -Be $newtimeout
         }
@@ -45,7 +45,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "Remote query timeout value is null"
                 return
             }
-            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
+            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $remotequerytimeout
             $results.PreviousValue | Should -Be $newtimeout
             $results.NewValue | Should -Be $remotequerytimeout
         }
@@ -55,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "Remote query timeout value is null"
                 return
             }
-            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.instance1 -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
+            $results = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName RemoteQueryTimeout -Value $remotequerytimeout -WarningVariable warning -WarningAction SilentlyContinue
             $warning -match "existing" | Should -Be $true
         }
     }

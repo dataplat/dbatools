@@ -172,6 +172,12 @@ function New-DbaAvailabilityGroup {
         Manual (default) uses backup/restore through shared storage, Automatic uses direct network streaming.
         Use Automatic for SQL Server 2016+ to simplify setup when network bandwidth is sufficient and shared storage is limited.
 
+    .PARAMETER MasterKeySecurePassword
+        Password for creating the database master key on secondary replicas when adding TDE-encrypted databases.
+        When databases protected by Transparent Data Encryption (TDE) are added to the availability group, the TDE certificate
+        in the primary's master database must be copied to each secondary. Providing this parameter alongside SharedPath enables
+        automatic certificate copying. If a secondary replica is missing a master key, this password is used to create one.
+
     .PARAMETER Certificate
         Specifies the certificate name for endpoint authentication instead of Windows authentication.
         Both endpoints must have matching certificates with corresponding public/private key pairs.
@@ -202,6 +208,25 @@ function New-DbaAvailabilityGroup {
         The cluster will request an IP address from DHCP servers on each replica's subnet.
         Use this when static IP management is not desired and DHCP reservations can provide consistent addressing.
 
+    .PARAMETER ClusterConnectionOption
+        Specifies connection options for TDS 8.0 support in SQL Server 2025 and above.
+        This allows the Windows Server Failover Cluster (WSFC) to connect to SQL Server instances using ODBC with TLS 1.3 encryption.
+        The value is a string containing semicolon-delimited key-value pairs.
+
+        Available keys:
+        - Encrypt: Controls connection encryption
+        - TrustServerCertificate: Whether to trust the server certificate
+        - HostNameInCertificate: Expected hostname in the certificate
+        - ServerCertificate: Path to server certificate
+
+        This setting is persisted by WSFC in the registry and used continuously for cluster-to-instance communication.
+        Note: PowerShell does not validate these values - invalid combinations will be rejected by SMO or the ODBC driver.
+
+        Example: "Encrypt=Strict;TrustServerCertificate=False"
+
+        For detailed documentation, see:
+        https://learn.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -223,6 +248,46 @@ function New-DbaAvailabilityGroup {
 
     .LINK
         https://dbatools.io/New-DbaAvailabilityGroup
+
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityGroup (when -Passthru is not specified)
+
+        Returns the newly created SQL Server availability group object after full setup is complete. The returned object includes all configured replicas, databases, and listeners.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the availability group
+        - PrimaryReplica: The server name of the primary replica
+        - LocalReplicaRole: The role of the local replica (Primary or Secondary)
+        - AvailabilityReplicas: Collection of replica objects in the availability group
+        - AvailabilityDatabases: Collection of databases in the availability group
+        - AvailabilityGroupListeners: Collection of listeners configured for the AG
+
+        Additional properties available from the SMO AvailabilityGroup object include:
+        - AutomatedBackupPreference: Which replicas are preferred for backups (Primary, Secondary, SecondaryOnly, None)
+        - FailureConditionLevel: The level that triggers automatic failover
+        - HealthCheckTimeout: Timeout in milliseconds for health checks (default 30000)
+        - BasicAvailabilityGroup: Boolean indicating if this is a Basic AG
+        - DatabaseHealthTrigger: Boolean indicating if database health triggers failover
+        - DtcSupportEnabled: Boolean indicating if DTC is enabled (SQL Server 2016+)
+        - ClusterType: The cluster type (Wsfc, External, or None)
+        - IsContained: Boolean indicating if this is a contained AG (SQL Server 2022+)
+        - ClusterConnectionOptions: Connection options for cluster communication (SQL Server 2025+)
+        - DateCreated: DateTime when the availability group was created
+
+        Passthru behavior (when -Passthru is specified):
+        Returns the AvailabilityGroup object immediately after configuration but before creation, with these properties displayed:
+        - LocalReplicaRole: The role of the local replica
+        - AvailabilityGroup: The name of the AG
+        - PrimaryReplica: The primary replica server name
+        - AutomatedBackupPreference: Backup preference setting
+        - AvailabilityReplicas: Configured replicas
+        - AvailabilityDatabases: Databases to be added
+        - AvailabilityGroupListeners: Listeners to be created
+
+        All properties from the base SMO AvailabilityGroup object are accessible using Select-Object *.
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint
@@ -335,6 +400,8 @@ function New-DbaAvailabilityGroup {
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,
         [switch]$Dhcp,
+        [string]$ClusterConnectionOption,
+        [Security.SecureString]$MasterKeySecurePassword,
         [switch]$EnableException
     )
     begin {
@@ -563,6 +630,10 @@ function New-DbaAvailabilityGroup {
                     $ag.ReuseSystemDatabases = $ReuseSystemDatabases
                 }
 
+                if ($server.VersionMajor -ge 17 -and $ClusterConnectionOption) {
+                    $ag.ClusterConnectionOptions = $ClusterConnectionOption
+                }
+
                 if ($PassThru) {
                     $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
                     Write-Progress -Activity "Adding new availability group" -Completed
@@ -727,6 +798,7 @@ function New-DbaAvailabilityGroup {
                 }
                 if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
                 if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
+                if ($MasterKeySecurePassword) { $addDatabaseParams['MasterKeySecurePassword'] = $MasterKeySecurePassword }
                 try {
                     $null = Add-DbaAgDatabase @addDatabaseParams
                 } catch {

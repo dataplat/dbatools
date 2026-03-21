@@ -64,6 +64,19 @@ function New-DbaDiagnosticAdsNotebook {
         PS C:\> New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path c:\temp\myNotebook.ipynb -IncludeDatabaseSpecific
 
         Creates a new Jupyter Notebook named "myNotebook" based on the version "2017" of diagnostic queries, including database-specific queries
+
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns the file information object for the created Jupyter Notebook (.ipynb) file. The file contains Glenn Berry's SQL Server diagnostic queries formatted as executable cells in a Jupyter Notebook that can be opened and run in Azure Data Studio.
+
+        Properties:
+        - FullName: The complete file path where the notebook was created
+        - Name: The filename of the notebook (.ipynb file)
+        - DirectoryName: The directory path where the notebook is located
+        - Length: The file size in bytes
+        - CreationTime: DateTime when the notebook file was created
+        - LastWriteTime: DateTime when the notebook file was last modified
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param(

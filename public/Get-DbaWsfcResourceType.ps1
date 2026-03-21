@@ -31,6 +31,35 @@ function Get-DbaWsfcResourceType {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.Management.Infrastructure.CimInstance#root/MSCluster/MSCluster_ResourceType
+
+        Returns one resource type object per resource type available in the Windows Server Failover Cluster. Resource types represent the available building blocks for creating cluster resources such as SQL Server instances, network names, and shared storage.
+
+        Default display properties (via Select-DefaultView):
+        - ClusterName: Name of the cluster containing this resource type
+        - ClusterFqdn: Fully qualified domain name of the cluster
+        - Name: Name of the resource type (key property)
+        - DisplayName: Displayed name for the resource type shown in user interfaces
+        - DllName: File name of the dynamic-link library that implements the resource type
+        - RequiredDependencyTypes: Array of resource type names that resources of this type must depend on (Windows Server 2012+)
+
+        Additional properties available (from WMI MSCluster_ResourceType object):
+        - Caption: Short textual description of the resource type
+        - Description: Detailed description of the resource type
+        - Characteristics: Bit flags defining resource type characteristics
+        - Flags: Resource type flags
+        - ResourceClass: Classification of resource type (Storage, Network, User, Unknown)
+        - QuorumCapable: Boolean indicating if resource can be selected as quorum resource
+        - IsAlivePollInterval: Recommended poll interval in milliseconds for liveness checks
+        - LooksAlivePollInterval: Recommended poll interval in milliseconds for operational status checks
+        - DeadlockTimeout: Milliseconds before declaring a deadlock in resource calls
+        - PendingTimeout: Milliseconds before forcibly terminating unresponsive resources
+        - AdminExtensions: Class identifiers for Cluster Administrator extension DLLs
+        - Status: Current operational status of the resource type
+
+        All properties from the WMI MSCluster_ResourceType object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaWsfcResourceType
 

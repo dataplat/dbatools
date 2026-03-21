@@ -40,6 +40,30 @@ function Get-DbaDbMailLog {
     .LINK
         https://dbatools.io/Get-DbaDbMailLog
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per log entry in the Database Mail event log.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - LogDate: DateTime when the event was logged
+        - EventType: The type of event (Error, Warning, Success, Information, or Internal)
+        - Description: Detailed description of the event or error message
+        - Login: The user who last modified this log entry
+
+        Additional properties available (accessible via Select-Object *):
+        - LogId: Unique identifier for the log entry (integer)
+        - ProcessId: Process ID associated with the event (integer)
+        - MailItemId: Identifier of the mail item, if applicable (integer)
+        - AccountId: Identifier of the Database Mail account (integer)
+        - LastModDate: DateTime when the log entry was last modified
+        - LastModUser: The user who last modified the log entry
+
+        All properties are accessible even though only default properties are displayed without using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint
 

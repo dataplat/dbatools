@@ -25,13 +25,13 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         # Create a valid session and start it
         $server.Query("CREATE EVENT SESSION [dbatoolsci_session_valid] ON SERVER ADD EVENT sqlserver.lock_acquired;")
-        $dbatoolsciValid = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session dbatoolsci_session_valid
+        $dbatoolsciValid = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session dbatoolsci_session_valid
         $dbatoolsciValid.Start()
         # Record the Status of all sessions
-        $allSessions = Get-DbaXESession -SqlInstance $TestConfig.instance2
+        $allSessions = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle
     }
     BeforeEach {
         $dbatoolsciValid.Refresh()
@@ -55,13 +55,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Drop created objects
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
     }
 
     Context "Command execution and functionality" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         }
 
         It "stops the system_health session" {

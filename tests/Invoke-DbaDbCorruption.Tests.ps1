@@ -35,11 +35,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbNameCorruption = "dbatoolsci_InvokeDbaDatabaseCorruptionTest"
-        $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $serverConnection = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $tableNameExample = "Example"
         # Need a clean empty database
         $null = $serverConnection.Query("Create Database [$dbNameCorruption]")
-        $databaseCorruption = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption
+        $databaseCorruption = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             # The command does not respect -WarningAction SilentlyContinue inside of this pester test - still don't know why, retest with pester 5
             $systemWarnVar = $null
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database "master" -WarningVariable systemWarnVar 3> $null
+            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database "master" -WarningVariable systemWarnVar 3> $null
         }
 
         It "Should not allow you to corrupt system databases." {
@@ -67,17 +67,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should fail if more than one database is specified" {
-            { Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database "Database1", "Database2" -EnableException } | Should -Throw
+            { Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database "Database1", "Database2" -EnableException } | Should -Throw
         }
     }
 
     It "Require at least a single table in the database specified" {
-        { Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption -EnableException } | Should -Throw
+        { Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption -EnableException } | Should -Throw
     }
 
     # Creating a table to make sure these are failing for different reasons
     It "Fail if the specified table does not exist" {
-        { Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption -Table "DoesntExist$(New-Guid)" -EnableException } | Should -Throw
+        { Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption -Table "DoesntExist$(New-Guid)" -EnableException } | Should -Throw
     }
 
     Context "When table is created" {
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Corrupt a single database" {
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.instance2 -Database $dbNameCorruption | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
+            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbNameCorruption | Select-Object -ExpandProperty Status | Should -Be "Corrupted"
         }
 
         It "Causes DBCC CHECKDB to fail" {

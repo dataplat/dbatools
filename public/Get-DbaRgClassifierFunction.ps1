@@ -36,6 +36,36 @@ function Get-DbaRgClassifierFunction {
     .LINK
         https://dbatools.io/Get-DbaRgClassifierFunction
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.UserDefinedFunction
+
+        Returns one UserDefinedFunction object representing the Resource Governor classifier function. The classifier function is always stored in the master database and is used by Resource Governor to assign incoming connections to appropriate workload groups.
+
+        If no classifier function is configured on the instance, nothing is returned.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database containing the function (always 'master' for classifier functions)
+        - Schema: The schema name containing the classifier function
+        - CreateDate: DateTime when the classifier function was created
+        - DateLastModified: DateTime when the classifier function was last modified
+        - Name: The name of the classifier function
+        - DataType: The return data type of the function (should be nvarchar for classifier functions)
+
+        Additional properties available (from SMO UserDefinedFunction object):
+        - AssemblyName: Name of the CLR assembly if this is a CLR function
+        - FunctionType: Type of function (Scalar, Table, or Inline)
+        - ImplementationType: Implementation type (TransactSql or SqlClr)
+        - IsBuiltIn: Boolean indicating if this is a system function
+        - IsEditing: Boolean indicating if the function is being edited
+        - IsSystemObject: Boolean indicating if the function is a system object
+        - Urn: The unified resource name for the function object
+        - State: Current state of the SMO object (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO UserDefinedFunction object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Get-DbaRgClassifierFunction -SqlInstance sql2016
 

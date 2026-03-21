@@ -39,6 +39,20 @@ function Compare-DbaAgReplicaCredential {
     .LINK
         https://dbatools.io/Compare-DbaAgReplicaCredential
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per credential that has configuration differences across replicas in the Availability Group.
+
+        Properties:
+        - AvailabilityGroup: The name of the Availability Group being compared
+        - Replica: The name of the replica instance where the credential status was checked
+        - CredentialName: The name of the SQL Server credential
+        - Status: The credential state on this replica ("Present" if the credential exists, "Missing" if it doesn't)
+        - Identity: The credential's identity/principal on replicas where the credential is Present; $null where Status is "Missing"
+
+        Only credentials with differences (missing on at least one replica or having different identities across replicas) are returned.
+
     .EXAMPLE
         PS C:\> Compare-DbaAgReplicaCredential -SqlInstance sql2016 -AvailabilityGroup AG1
 

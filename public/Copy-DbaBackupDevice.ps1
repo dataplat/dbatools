@@ -58,6 +58,22 @@ function Copy-DbaBackupDevice {
     .LINK
         https://dbatools.io/Copy-DbaBackupDevice
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per backup device processed, containing the status and details of the copy operation.
+
+        Properties:
+        - DateTime: Timestamp when the operation was processed (DbaDateTime object)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the backup device
+        - Type: Always returns "Backup Device"
+        - Status: Result of the operation (Successful, Skipped, or Failed)
+        - Notes: Additional information about the operation (e.g., "Already exists on destination" or error details)
+
+        The output uses Select-DefaultView to display the properties in the order: DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes. All properties are available via Select-Object * if additional fields are needed.
+
     .EXAMPLE
         PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
 

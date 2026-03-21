@@ -92,6 +92,39 @@ function Invoke-DbaDbPiiScan {
     .LINK
         https://dbatools.io/Invoke-DbaDbPiiScan
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per detected PII finding across all scanned databases, tables, and columns. The result set includes classification information, masking recommendations, and detection method details.
+
+        Default properties returned (all findings):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The name of the database scanned
+        - Schema: The schema name containing the table
+        - Table: The table name containing the potential PII column
+        - Column: The column name that was flagged as containing potential PII
+        - PII-Category: Classification category for the PII data (e.g., Identity, Location, Contact)
+        - PII-Name: Specific name of the PII type detected (e.g., SSN, Geography, Phone)
+        - FoundWith: Detection method used - DataType, KnownName, or Pattern
+        - MaskingType: Recommended type of data masking for this PII (e.g., Random, Shuffle, Partial)
+        - MaskingSubType: Sub-type of the masking method (e.g., Decimal, String, Date)
+
+        Additional properties based on detection method:
+
+        When FoundWith = "Pattern" (pattern-matched data):
+        - Country: Country filter applied to the pattern matching rule
+        - CountryCode: ISO country code for the matched pattern
+        - Pattern: The regex pattern that matched the data
+        - Description: Human-readable description of the pattern
+
+        When FoundWith = "KnownName" (column name match):
+        - Pattern: The column name pattern that matched
+
+        When FoundWith = "DataType" (geography type):
+        - No additional properties beyond the default set
+
     .EXAMPLE
         Invoke-DbaDbPiiScan -SqlInstance sql1 -Database db1
 

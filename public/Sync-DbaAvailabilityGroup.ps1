@@ -50,6 +50,11 @@ function Sync-DbaAvailabilityGroup {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
+
+        Only used when passwords are being exported, as it requires access to the Windows OS via PowerShell remoting to decrypt the passwords.
+
     .PARAMETER AvailabilityGroup
         The name of the specific availability group to synchronize server objects for.
         When specified, the function will identify all replicas in this AG and sync objects from primary to all secondaries.
@@ -85,6 +90,10 @@ function Sync-DbaAvailabilityGroup {
         Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline processing.
         Use this to sync multiple availability groups at once or to process specific AGs returned by filtering commands.
 
+    .PARAMETER ExcludePassword
+        Copies credentials, linked servers, and other objects without the actual password values.
+        Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+
     .PARAMETER Force
         Drops and recreates existing objects on secondary replicas instead of skipping them.
         Use this when you need to update objects that already exist on secondaries or when objects have configuration differences that need to be synchronized.
@@ -110,6 +119,13 @@ function Sync-DbaAvailabilityGroup {
 
     .LINK
         https://dbatools.io/Sync-DbaAvailabilityGroup
+
+    .OUTPUTS
+        None
+
+        This function does not return output objects to the user. It performs synchronization operations by calling underlying Copy-Dba* and Sync-Dba* commands to synchronize server-level objects from the primary to secondary replicas.
+
+        The underlying sync commands (Copy-DbaSpConfigure, Copy-DbaLogin, Copy-DbaCustomError, Copy-DbaCredential, Copy-DbaDbMail, Copy-DbaLinkedServer, Copy-DbaInstanceTrigger, Copy-DbaAgentJobCategory, Copy-DbaAgentOperator, Copy-DbaAgentAlert, Copy-DbaAgentProxy, Copy-DbaAgentSchedule, Copy-DbaAgentJob, and Sync-DbaLoginPermission) may produce output when called directly with the underlying Copy-Dba* and Sync-Dba* commands.
 
     .EXAMPLE
         PS C:\> Sync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3
@@ -140,6 +156,7 @@ function Sync-DbaAvailabilityGroup {
         [PSCredential]$PrimarySqlCredential,
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
+        [PSCredential]$Credential,
         [string]$AvailabilityGroup,
         [Alias("ExcludeType")]
         [ValidateSet('AgentCategory', 'AgentOperator', 'AgentAlert', 'AgentProxy', 'AgentSchedule', 'AgentJob', 'Credentials', 'CustomErrors', 'DatabaseMail', 'DatabaseOwner', 'LinkedServers', 'Logins', 'LoginPermissions', 'SpConfigure', 'SystemTriggers')]
@@ -151,6 +168,7 @@ function Sync-DbaAvailabilityGroup {
         [switch]$DisableJobOnDestination,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -171,10 +189,31 @@ function Sync-DbaAvailabilityGroup {
         }
 
         if ($InputObject) {
+            # Do we need a dedicated admin connection for password retrieval?
+            # If passwords are excluded, we don't need a DAC
+            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+            # Do we have a dedicated admin connection already?
+            $dacConnected = $InputObject.Parent.Name -match '^ADMIN:'
+
+            if ($dacNeeded -and -not $dacConnected) {
+                Stop-Function -Message "Pipeline source must use a dedicated admin connection to retrieve passwords. Use -ExcludePassword to bypass this requirement if you don't need passwords."
+                return
+            }
+
+            Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
             $server = $InputObject.Parent
         } else {
             try {
-                $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
+                $dacOpened = $false
+                if ($ExcludePassword) {
+                    Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
+                    $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
+                } else {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    $dacOpened = $true
+                }
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
@@ -266,17 +305,17 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "Credentials") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
-                Copy-DbaCredential -Source $server -Destination $secondaries -Force:$Force
+                Copy-DbaCredential -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
             }
 
             if ($Exclude -notcontains "DatabaseMail") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
-                Copy-DbaDbMail -Source $server -Destination $secondaries -Force:$Force
+                Copy-DbaDbMail -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
             }
 
             if ($Exclude -notcontains "LinkedServers") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
-                Copy-DbaLinkedServer -Source $server -Destination $secondaries -Force:$Force
+                Copy-DbaLinkedServer -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
             }
 
             if ($Exclude -notcontains "SystemTriggers") {
@@ -335,17 +374,25 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "AgentJob") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                $splatCopyJob = @{
-                    Source                 = $server
-                    Destination            = $secondaries
-                    Force                  = $force
-                    DisableOnDestination   = $DisableJobOnDestination
+                $splatGetJob = @{
+                    SqlInstance = $server
                 }
                 if (Test-Bound 'Job') {
-                    $splatCopyJob['Job'] = $Job
+                    $splatGetJob['Job'] = $Job
                 }
                 if (Test-Bound 'ExcludeJob') {
-                    $splatCopyJob['ExcludeJob'] = $ExcludeJob
+                    $splatGetJob['ExcludeJob'] = $ExcludeJob
+                }
+                $jobsToSync = Get-DbaAgentJob @splatGetJob
+
+                # Always exclude MSX jobs (CategoryID = 1) - they cannot be synced to secondary replicas
+                $jobsToSync = $jobsToSync | Where-Object CategoryID -ne 1
+
+                $splatCopyJob = @{
+                    Destination          = $secondaries
+                    Force                = $force
+                    DisableOnDestination = $DisableJobOnDestination
+                    InputObject          = $jobsToSync
                 }
                 Copy-DbaAgentJob @splatCopyJob
             }
@@ -354,6 +401,10 @@ function Sync-DbaAvailabilityGroup {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
                 Sync-DbaLoginPermission -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin
             }
+        }
+
+        if ($dacOpened) {
+            $null = $server | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

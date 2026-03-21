@@ -50,6 +50,36 @@ function Resume-DbaAgDbDataMovement {
     .LINK
         https://dbatools.io/Resume-DbaAgDbDataMovement
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityDatabase
+
+        Returns one AvailabilityDatabase object per database that had data movement successfully resumed. The object is modified in-place by the ResumeDataMovement() method call, which reconnects the secondary replica to the primary's transaction log stream.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - AvailabilityGroup: Name of the availability group
+        - LocalReplicaRole: Role of this replica (Primary or Secondary)
+        - Name: Database name
+        - SynchronizationState: Current synchronization state (NotSynchronizing, Synchronizing, Synchronized, Reverting, Initializing)
+        - IsFailoverReady: Boolean indicating if the database is ready for failover
+        - IsJoined: Boolean indicating if the database has joined the availability group
+        - IsSuspended: Boolean indicating if data movement is suspended (should be False after ResumeDataMovement succeeds)
+
+        Additional properties available (from SMO AvailabilityDatabase object):
+        - DatabaseGuid: Unique identifier for the database
+        - EstimatedDataLoss: Estimated data loss in seconds
+        - EstimatedRecoveryTime: Estimated recovery time in seconds
+        - FileStreamSendRate: Rate of FILESTREAM data being sent (bytes/sec)
+        - GroupDatabaseId: Unique identifier for the database within the AG
+        - LastCommitTime: Timestamp of last committed transaction
+        - LogSendQueue: Size of log send queue in KB
+        - RedoRate: Rate of redo operations (bytes/sec)
+        - State: SMO object state (Existing, Creating, Pending, etc.)
+
+        All properties from the base SMO object are accessible using Select-Object *.
+
     .EXAMPLE
         PS C:\> Resume-DbaAgDbDataMovement -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2
 

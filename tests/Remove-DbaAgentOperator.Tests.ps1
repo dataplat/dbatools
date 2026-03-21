@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
         $operatorsToCleanup = @()
-        $instanceConnection = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $instanceConnection = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $operatorEmail1 = "test1$($random)@test.com"
         $operatorEmail2 = "test2$($random)@test.com"
 

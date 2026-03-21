@@ -33,6 +33,17 @@ function Remove-DbaClientAlias {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per alias that was successfully removed from the registry.
+
+        Properties:
+        - ComputerName: The name of the computer where the alias was removed
+        - Architecture: Registry architecture where the alias was removed ("32-bit" or "64-bit")
+        - Alias: The name of the SQL Server client alias that was removed
+        - Status: The result status, typically "Removed" when successful
+
     .NOTES
         Tags: SqlClient, Alias
         Author: Chrissy LeMaire (@cl), netnerds.net

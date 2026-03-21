@@ -29,7 +29,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $profilename = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2, $TestConfig.instance3
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
         $server.Query($mailProfile)
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMail Profile" {
         BeforeAll {
-            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 | Where-Object Name -eq $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 | Where-Object Name -eq $profilename
             $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object Name -eq $profilename
         }
 
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailProfile when using -Profile" {
         BeforeAll {
-            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -Profile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 -Profile $profilename
         }
 
         It "Gets results" {
@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
         It "Gets no results" {
-            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.instance2 -ExcludeProfile $profilename
+            $results = Get-DbaDbMailProfile -SqlInstance $TestConfig.InstanceMulti1 -ExcludeProfile $profilename
             $results.Name | Should -Not -Contain $profilename
         }
     }

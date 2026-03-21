@@ -43,6 +43,24 @@ function Test-DbaPowerPlan {
     .LINK
         https://dbatools.io/Test-DbaPowerPlan
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per computer tested with power plan compliance information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The target computer name
+        - ActivePowerPlan: Name of the currently active Windows Power Plan
+        - RecommendedPowerPlan: Name of the recommended power plan (High Performance by default, or custom if -PowerPlan specified)
+        - IsBestPractice: Boolean indicating if the active power plan matches the recommended plan
+
+        Additional properties available:
+        - ActiveInstanceId: UUID of the currently active power plan
+        - RecommendedInstanceId: UUID of the recommended power plan
+        - Credential: The PSCredential object used for authentication
+
+        If the recommended power plan is not found on the system, RecommendedPowerPlan will contain an error message like "You do not have the high performance plan installed on this machine."
+
     .EXAMPLE
         PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a
 

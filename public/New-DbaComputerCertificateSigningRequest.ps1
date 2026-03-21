@@ -61,6 +61,24 @@ function New-DbaComputerCertificateSigningRequest {
     .LINK
         https://dbatools.io/New-DbaComputerCertificateSigningRequest
 
+    .OUTPUTS
+        System.IO.FileInfo
+
+        Returns file information objects for each certificate file created. Two files are returned per computer:
+        - request.inf - Certificate configuration file containing certificate settings and Subject Alternative Names
+        - <fqdn>.csr - Certificate signing request file that is submitted to the Certificate Authority
+
+        Properties:
+        - Name: The file name (request.inf or <fqdn>.csr)
+        - FullName: The complete file path
+        - DirectoryName: The directory containing the file
+        - Length: The file size in bytes
+        - LastWriteTime: DateTime when the file was created
+        - CreationTime: DateTime of file creation
+        - Extension: The file extension (.inf or .csr)
+
+        All standard System.IO.FileInfo properties are available for use with Select-Object.
+
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest
 

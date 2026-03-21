@@ -37,6 +37,27 @@ function Get-DbaAgentJobCategory {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Agent.JobCategory
+
+        Returns one JobCategory object per job category on the SQL Server instance. Custom properties are added to provide connection context and job count information.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the job category
+        - ID: The unique identifier of the job category
+        - CategoryType: The type of category (LocalJob, MultiServerJob, or None)
+        - JobCount: The number of jobs currently assigned to this category (integer)
+
+        Additional properties available (from SMO JobCategory object):
+        - Parent: Reference to the parent JobServer object
+        - Urn: The Unified Resource Name that uniquely identifies the job category
+        - State: The state of the object (Existing, Creating, Dropping, Pending)
+
+        All properties from the base SMO JobCategory object are accessible by using Select-Object *.
+
     .LINK
         https://dbatools.io/Get-DbaAgentJobCategory
 

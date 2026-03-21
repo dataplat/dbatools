@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "Validate output" {
         BeforeAll {
-            $results = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.instance1 -Type instance
+            $results = Invoke-DbaCycleErrorLog -SqlInstance $TestConfig.InstanceSingle -Type instance
         }
 
         It "Should have correct properties" {

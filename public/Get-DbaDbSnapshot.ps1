@@ -48,6 +48,30 @@ function Get-DbaDbSnapshot {
     .LINK
         https://dbatools.io/Get-DbaDbSnapshot
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Database
+
+        Returns one SMO Database object for each database snapshot on the specified instances. Database snapshots are read-only views of a database at a specific point in time.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Name: The name of the database snapshot
+        - SnapshotOf: The name of the base database from which this snapshot was created (alias for DatabaseSnapshotBaseName)
+        - CreateDate: DateTime when the snapshot was created
+        - DiskUsage: The amount of disk space consumed by the snapshot (formatted as appropriate unit: KB, MB, GB, etc.)
+
+        Additional properties available (from SMO Database object):
+        - DatabaseSnapshotBaseName: The name of the source database
+        - IsDatabaseSnapshot: Boolean indicating if the database is a snapshot
+        - SnapshotIsolationState: Snapshot isolation setting
+        - DatabaseGuid: Unique identifier for the database
+        - Owner: Database owner login name
+        - Compatibility: Database compatibility level
+
+        All properties from the base SMO Database object are accessible via Select-Object * even though only default properties are displayed without using the -Property parameter.
+
     .EXAMPLE
         PS C:\> Get-DbaDbSnapshot -SqlInstance sqlserver2014a
 

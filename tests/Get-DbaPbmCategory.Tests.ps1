@@ -28,21 +28,21 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
 
     Context "Command actually works" {
         It "Gets Results" {
-            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.instance2
+            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Command actually works using -Category" {
         It "Gets Results" {
-            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.instance2 -Category "Availability database errors"
+            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.InstanceSingle -Category "Availability database errors"
             $results | Should -Not -BeNullOrEmpty
         }
     }
 
     Context "Command actually works using -ExcludeSystemObject" {
         It "Gets Results" {
-            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.instance2 -ExcludeSystemObject
+            $results = Get-DbaPbmCategory -SqlInstance $TestConfig.InstanceSingle -ExcludeSystemObject
             $results | Should -Not -BeNullOrEmpty
         }
     }

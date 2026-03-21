@@ -49,6 +49,25 @@ function Disable-DbaFilestream {
     .LINK
         https://dbatools.io/Disable-DbaFilestream
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL instance showing the FileStream configuration status after the disabling operation completes.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - InstanceAccess: Description of FileStream access level at the instance (should be "Disabled" after successful execution)
+        - ServiceAccess: Description of FileStream access level at the service level (should be "Disabled" after successful execution)
+        - ServiceShareName: The Windows share name used for FileStream data access (if configured)
+
+        Additional properties available (use Select-Object *):
+        - InstanceAccessLevel: Numeric instance-level FileStream access level (0 = Disabled, 1 = T-SQL access, 2 = Full access)
+        - ServiceAccessLevel: Numeric service-level FileStream access level (0 = Disabled, 1 = T-SQL access, 2 = T-SQL and IO streaming, 3 = T-SQL, IO streaming, and remote clients)
+        - Credential: The Windows credential used to access the server
+        - SqlCredential: The SQL Server credential used for the connection
+
     .EXAMPLE
         PS C:\> Disable-DbaFilestream -SqlInstance server1\instance2
 

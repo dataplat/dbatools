@@ -66,6 +66,25 @@ function Get-DbaDbSynonym {
     .LINK
         https://dbatools.io/Get-DbaDbSynonym
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.Synonym
+
+        Returns one Synonym object per database synonym found. The output includes details about each synonym and its target object mapping.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The computer name of the SQL Server instance hosting the synonym
+        - InstanceName: The SQL Server instance name where the synonym is located
+        - SqlInstance: The full SQL Server instance name (ComputerName\InstanceName)
+        - Database: The database containing the synonym
+        - Schema: The schema that contains the synonym
+        - Name: The name of the synonym object
+        - BaseServer: The linked server name if the synonym references a remote object, or the server name for local references
+        - BaseDatabase: The database containing the target object that the synonym references
+        - BaseSchema: The schema containing the target object that the synonym references
+        - BaseObject: The name of the target object that the synonym references (table, view, function, etc.)
+
+        All properties from the base SMO Synonym object are accessible through Select-Object * even though only the default properties are displayed without using Select-Object.
+
     .EXAMPLE
         PS C:\> Get-DbaDbSynonym -SqlInstance localhost
 

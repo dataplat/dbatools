@@ -44,6 +44,19 @@ function Remove-DbaAgentAlert {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per alert removal attempt. Each object represents the status of removing a single SQL Agent alert from a SQL Server instance.
+
+        Properties:
+        - ComputerName: The name of the computer where the SQL Server instance is running
+        - InstanceName: The name of the SQL Server instance (service name)
+        - SqlInstance: The full SQL Server instance name in the format ComputerName\InstanceName
+        - Name: The name of the SQL Agent alert that was removed
+        - Status: Status message indicating the outcome of the removal ("Dropped" on success, or an error message on failure)
+        - IsRemoved: Boolean indicating whether the SQL Agent alert was successfully removed ($true) or failed ($false)
+
     .NOTES
         Tags: Agent, Alert
         Author: Mikey Bronowski (@MikeyBronowski), bronowski.it

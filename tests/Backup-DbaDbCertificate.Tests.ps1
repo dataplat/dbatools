@@ -45,15 +45,15 @@ Describe $CommandName -Tag IntegrationTests {
         $db2Name = "dbatoolscli_db2_$random"
         $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
-        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
-        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw
+        $db1 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db1Name
+        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -Password $pw
 
-        $db2 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db2Name
-        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw
+        $db2 = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db2Name
+        $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $db2Name -Password $pw
 
-        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name "dbatoolscli_cert1_$random"
-        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db1Name -Password $pw -Name "dbatoolscli_cert2_$random"
-        $cert3 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database $db2Name -Password $pw -Name "dbatoolscli_cert3_$random"
+        $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -Password $pw -Name "dbatoolscli_cert1_$random"
+        $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $db1Name -Password $pw -Name "dbatoolscli_cert2_$random"
+        $cert3 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $db2Name -Password $pw -Name "dbatoolscli_cert3_$random"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -62,7 +62,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $db1Name, $db2Name
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1Name, $db2Name
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -73,7 +73,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can backup a database certificate" {
         It "Returns results with proper data" {
             $splatBackupCert = @{
-                SqlInstance        = $TestConfig.instance1
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = $db1Name
                 Certificate        = $cert1.Name
                 EncryptionPassword = $pw
@@ -90,7 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Can backup a database certificate with a filename (see #9485)" {
         It "Returns results with proper data" {
             $splatBackupCertWithName = @{
-                SqlInstance        = $TestConfig.instance1
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = $db1Name
                 Certificate        = $cert1.Name
                 EncryptionPassword = $pw
@@ -112,7 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
             $invalidDBCertName = "dbatoolscli_invalidCertName"
             $invalidDBCertName2 = "dbatoolscli_invalidCertName2"
             $splatBackupInvalidCert = @{
-                SqlInstance        = $TestConfig.instance1
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = $db1Name
                 Certificate        = @($invalidDBCertName, $invalidDBCertName2, $cert2.Name)
                 EncryptionPassword = $pw
@@ -128,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Backs up all db certs for a database" {
         It "Returns results with proper data" {
             $splatBackupDbCerts = @{
-                SqlInstance        = $TestConfig.instance1
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = $db1Name
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
@@ -143,7 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Backs up all db certs for an instance" {
         It "Returns results with proper data" {
             $splatBackupAllCerts = @{
-                SqlInstance        = $TestConfig.instance1
+                SqlInstance        = $TestConfig.InstanceSingle
                 EncryptionPassword = $pw
                 DecryptionPassword = $pw
             }

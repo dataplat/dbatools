@@ -137,6 +137,23 @@ function New-DbaConnectionString {
     .LINK
         https://dbatools.io/New-DbaConnectionString
 
+    .OUTPUTS
+        System.String
+
+        Returns one or more SQL Server connection strings as plain text strings. Each connection string contains all the connection parameters in standard SQL Server connection string format.
+
+        The output format varies by usage path:
+        - When an SMO Server object is passed via pipeline, the existing connection string is extracted and optionally modified with new parameters
+        - When SQL instance names are specified, new connection strings are built with the specified parameters
+        - When using the legacy code path, connection strings are constructed using SMO ServerConnection objects
+
+        Connection string examples:
+        - Windows Authentication: "Data Source=sql2016;Connection Timeout=15;Integrated Security=true;Application Name="custom connection""
+        - SQL Authentication: "Data Source=sql2016;User ID=sqladmin;Password=P@ssw0rd;Connection Timeout=15;Application Name="custom connection""
+        - Azure SQL with AD: "Data Source=tcp:mydb.database.windows.net,1433;Initial Catalog=db;User ID=user@domain.onmicrosoft.com;Password=pwd;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=Mandatory;TrustServerCertificate=False;Authentication=Active Directory Password;Application Name="custom connection""
+
+        The returned string can be used directly with SqlClient, ADO.NET applications, or any tool that accepts SQL Server connection strings. Use `Write-Host` to display in a terminal or pipe to other commands that accept connection strings.
+
     .EXAMPLE
         PS C:\> New-DbaConnectionString -SqlInstance sql2014
 

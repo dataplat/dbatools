@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $random = Get-Random
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $newDbName = "dbatoolsci_newdb_$random"
         $newDbName2 = "dbatoolsci_newdb2_$random"
         $newDb, $newDb2 = New-DbaDatabase -SqlInstance $server -Name $newDbName, $newDbName2

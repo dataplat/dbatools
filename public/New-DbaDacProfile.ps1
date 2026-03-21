@@ -61,6 +61,33 @@ function New-DbaDacProfile {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+        .OUTPUTS
+        PSCustomObject
+
+        Returns one result object per database specified when generating a publish profile. Objects combine connection context and profile metadata.
+
+        Properties:
+        - ComputerName: Computer name extracted from the DbaInstance object (derived from connection string)
+        - InstanceName: Instance name extracted from the DbaInstance object (derived from connection string)
+        - SqlInstance: Full SQL Server instance name in format "ComputerName\InstanceName" (from DbaInstance.FullName)
+        - Database: Target database name for which the profile was generated
+        - FileName: Full file path to the generated XML publish profile (e.g., "C:\temp\sql2017-WorldWideImporters-publish.xml")
+        - ConnectionString: The connection string embedded in the profile (e.g., "Server=sql2017;Integrated Security=True;Encrypt=False")
+        - ProfileTemplate: Complete XML content of the publish profile (excluded from default display via Select-DefaultView)
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: SQL Server instance name
+        - Database: Target database
+        - FileName: Profile file path
+        - ConnectionString: Connection string
+
+        Output Quantity:
+        Returns one object per database specified in the -Database parameter for each connection string. For example:
+        - Specifying one database with one connection string returns 1 object
+        - Specifying multiple databases (DB1, DB2) with one connection string returns 2 objects
+        - Specifying multiple databases with multiple connection strings returns (databases count × connection strings count) objects
+
+        The ProfileTemplate property contains the XML used for SqlPackage.exe deployments. This property is excluded from default display but accessible via Select-Object or property access.
     .LINK
         https://dbatools.io/New-DbaDacProfile
 

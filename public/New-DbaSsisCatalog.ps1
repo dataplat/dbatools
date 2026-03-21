@@ -50,6 +50,18 @@ function New-DbaSsisCatalog {
     .LINK
         https://dbatools.io/New-DbaSsisCatalog
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SSIS Catalog successfully created, containing connection context and creation status.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - SsisCatalog: The name of the SSIS Catalog database that was created
+        - Created: Boolean indicating the catalog was successfully created (always $true when object is returned)
+
     .EXAMPLE
         PS C:\> $SecurePassword = Read-Host -AsSecureString -Prompt "Enter password"
         PS C:\> New-DbaSsisCatalog -SqlInstance DEV01 -SecurePassword $SecurePassword

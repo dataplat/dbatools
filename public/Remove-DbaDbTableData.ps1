@@ -80,6 +80,27 @@ function Remove-DbaDbTableData {
     .PARAMETER Confirm
         Prompts for confirmation before executing any data modification operations.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per database where table data removal was performed, providing detailed metrics about the batch deletion operation.
+
+        Default display properties (via Select-DefaultView):
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The name of the SQL Server instance
+        - Database: The name of the database where table data was removed
+        - Sql: The T-SQL DELETE statement that was executed
+        - TotalRowsDeleted: The total number of rows deleted from the table across all batches (integer)
+        - TotalTimeMillis: The total execution time for all delete operations in milliseconds (double)
+        - AvgTimeMillis: The average execution time per batch iteration in milliseconds (double)
+        - TotalIterations: The number of batch iterations performed (integer)
+
+        Additional properties available (all properties accessible via Select-Object *):
+        - Timings: Array of TimeSpan objects representing the execution time of each individual batch deletion iteration
+        - LogBackups: Array of backup objects returned from Backup-DbaDatabase operations performed during the deletion (empty for Simple recovery model or Azure SQL Database)
+
+        When using Select-DefaultView without parameters, only the default properties listed above are displayed. Use Select-Object * to access the Timings and LogBackups array properties if needed for advanced analysis of the deletion performance metrics.
+
     .NOTES
         Tags: Table, Data
         Author: Adam Lancaster, github.com/lancasteradam

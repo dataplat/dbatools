@@ -51,6 +51,20 @@ function Remove-DbaDbPartitionFunction {
     .LINK
         https://dbatools.io/Remove-DbaDbPartitionFunction
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per partition function removal attempt. The object contains information about the operation outcome regardless of success or failure.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: The database containing the partition function
+        - PartitionFunctionName: The name of the partition function that was removed
+        - Status: The outcome of the drop operation - either "Dropped" on success or the error message on failure
+        - IsRemoved: Boolean indicating whether the partition function was successfully removed ($true) or not ($false)
+
     .EXAMPLE
         PS C:\> Remove-DbaDbPartitionFunction -SqlInstance localhost, sql2016 -Database db1, db2
 

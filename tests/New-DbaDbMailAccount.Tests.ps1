@@ -19,6 +19,11 @@ Describe $CommandName -Tag UnitTests {
                 "EmailAddress",
                 "ReplyToAddress",
                 "MailServer",
+                "Port",
+                "EnableSSL",
+                "UseDefaultCredentials",
+                "UserName",
+                "Password",
                 "Force",
                 "EnableException"
             )
@@ -30,7 +35,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $accountName = "dbatoolsci_test_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $description = "Mail account for email alerts"
         $email_address = "dbatoolssci@dbatools.net"
         $display_name = "dbatoolsci mail alerts"
@@ -42,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         $server.query($mailAccountSettings)
     }
@@ -50,7 +55,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Gets DbMail Account" {
         BeforeAll {
             $splatMailAccount = @{
-                SqlInstance    = $TestConfig.instance2
+                SqlInstance    = $TestConfig.InstanceSingle
                 Account        = $accountName
                 Description    = $description
                 EmailAddress   = $email_address

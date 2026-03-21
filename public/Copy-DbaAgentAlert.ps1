@@ -66,6 +66,22 @@ function Copy-DbaAgentAlert {
     .LINK
         https://dbatools.io/Copy-DbaAgentAlert
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per migration action performed. Multiple objects may be returned when processing multiple destination servers or when an alert has job associations and notifications.
+
+        Properties:
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance where the alert was copied
+        - Name: Name of the alert or configuration item being copied
+        - Type: Type of object being processed (Agent Alert, Agent Alert Job Association, Agent Alert Notification, or Alert Defaults)
+        - Status: Result of the operation (Successful, Failed, or Skipped)
+        - Notes: Additional details about the operation, such as why it was skipped or error message
+        - DateTime: Timestamp when the operation was performed (Dataplat.Dbatools.Utility.DbaDateTime)
+
+        When an alert is skipped due to missing operators, conflicts, or missing job dependencies, Status will be "Skipped" with explanatory Notes. When -Force is used to drop and recreate an existing alert, the operation is shown as a separate action in the output.
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
 

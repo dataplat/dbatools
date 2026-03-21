@@ -21,6 +21,19 @@ function Get-DbaErrorLogConfig {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance with error log configuration details.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - LogCount: The number of error log files retained by SQL Server (integer)
+        - LogSize: The maximum size of each error log file in bytes (only available on SQL Server 2012+, $null on SQL Server 2008 R2 and earlier). Uses dbasize object for human-readable display
+        - LogPath: The file system directory path where error log files are stored (string)
+
     .NOTES
         Tags: Instance, ErrorLog, Logging
         Author: Shawn Melton (@wsmelton), wsmelton.github.io

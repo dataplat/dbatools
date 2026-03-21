@@ -47,6 +47,22 @@ function New-DbaAzAccessToken {
     .LINK
         https://dbatools.io/New-DbaAzAccessToken
 
+    .OUTPUTS
+        System.String (when -Type is ManagedIdentity or ServicePrincipal)
+
+        Returns a plain-text OAuth2 access token that can be used with Connect-DbaInstance and other Azure-aware dbatools commands.
+
+        PSObjectIRenewableToken (when -Type is RenewableServicePrincipal)
+
+        Returns a custom IRenewableToken object that automatically refreshes tokens for long-running connections. This object implements Microsoft.SqlServer.Management.Common.IRenewableToken.
+
+        Properties:
+        - ClientSecret: The application secret/password used for token renewal
+        - Resource: The Azure resource URI (e.g., "https://database.windows.net/")
+        - Tenant: The Azure AD tenant ID or domain name
+        - UserID: The service principal application ID
+        - TokenExpiry: DateTime when the token expires; automatically updated when GetAccessToken() is called
+
     .EXAMPLE
         PS C:\> New-DbaAzAccessToken -Type ManagedIdentity
 

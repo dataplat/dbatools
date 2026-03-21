@@ -59,8 +59,17 @@ function Set-DbaAgReplica {
         Required when setting up read-only routing to distribute read workloads across secondary replicas for load balancing.
 
     .PARAMETER ReadOnlyRoutingList
-        Defines the ordered list of secondary replicas that should receive read-only connections when this replica is primary. Accepts arrays for load-balanced routing or simple arrays for priority-based routing.
-        Use this to establish read-only routing policies that distribute read workloads across available secondary replicas.
+        Defines the ordered list of secondary replicas that should receive read-only connections when this replica is primary.
+        Accepts arrays for priority-based routing or nested arrays for load-balanced routing.
+
+        IMPORTANT: Read-only routing requires proper setup:
+        1. The availability group must have at least two replicas (primary + secondary)
+        2. Target replicas must exist in the availability group
+        3. Secondary replicas must have ConnectionModeInSecondaryRole set to AllowReadIntentConnectionsOnly or AllowAllConnections
+        4. Each replica in the routing list must have ReadonlyRoutingConnectionUrl configured
+        5. An availability group listener is required for read-only routing to function
+
+        For more information, see: https://learn.microsoft.com/sql/database-engine/availability-groups/windows/configure-read-only-routing-for-an-availability-group-sql-server
 
     .PARAMETER SeedingMode
         Controls the database initialization method for new databases added to the availability group. Automatic performs direct seeding over the network without manual backup/restore steps, while Manual requires traditional backup and restore operations.
@@ -89,6 +98,27 @@ function Set-DbaAgReplica {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .OUTPUTS
+        Microsoft.SqlServer.Management.Smo.AvailabilityReplica
+
+        Returns the modified availability replica object for each replica that was successfully updated. This is the same object type as returned by Get-DbaAgReplica, but with the modified properties applied.
+
+        Properties available on the returned object include:
+        - Name: The name of the availability replica (server instance name)
+        - AvailabilityGroup: The name of the parent availability group
+        - AvailabilityMode: Current availability mode (SynchronousCommit or AsynchronousCommit)
+        - FailoverMode: Current failover mode (Automatic, Manual, or External)
+        - BackupPriority: Backup priority value (0-100)
+        - ConnectionModeInPrimaryRole: Connection mode when this replica is primary
+        - ConnectionModeInSecondaryRole: Connection mode when this replica is secondary
+        - EndpointUrl: The endpoint URL for availability group communication
+        - ReadonlyRoutingConnectionUrl: The URL used for read-only routing
+        - SeedingMode: Database seeding mode (Automatic or Manual)
+        - SessionTimeout: Session timeout value in seconds
+        - Parent: Reference to the parent AvailabilityGroup object
+
+        All properties from the base SMO AvailabilityReplica object are accessible using Select-Object *.
+
     .LINK
         https://dbatools.io/Set-DbaAgReplica
 
@@ -113,6 +143,22 @@ function Set-DbaAgReplica {
         >> Set-DbaAgReplica -ReadOnlyRoutingList @(,('Replica2','Replica3'));
 
         Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (('Replica2', 'Replica3')));" setting a load balanced routing list for when Replica1 is the primary replica.
+
+    .EXAMPLE
+        PS C:\> # Complete read-only routing setup for a two-replica AG
+        PS C:\> # Step 1: Configure secondary replica to accept read-only connections
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Secondary1 -ConnectionModeInSecondaryRole AllowReadIntentConnectionsOnly
+        PS C:\>
+        PS C:\> # Step 2: Set the routing URL for each replica
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Primary1 -ReadonlyRoutingConnectionUrl "TCP://Primary1:1433"
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Secondary1 -ReadonlyRoutingConnectionUrl "TCP://Secondary1:1433"
+        PS C:\>
+        PS C:\> # Step 3: Set the routing list (which replicas receive read-only traffic when this replica is primary)
+        PS C:\> Set-DbaAgReplica -SqlInstance $primary -AvailabilityGroup MyAG -Replica Primary1 -ReadOnlyRoutingList Secondary1, Primary1
+
+        Complete example showing the prerequisites for read-only routing. The routing list specifies where to route
+        read-intent connections when Primary1 is the primary replica. Note that all replicas in the routing list
+        must have their ReadonlyRoutingConnectionUrl configured first.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]

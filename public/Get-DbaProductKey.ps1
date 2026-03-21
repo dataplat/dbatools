@@ -34,6 +34,19 @@ function Get-DbaProductKey {
     .LINK
         https://dbatools.io/Get-DbaProductKey
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per SQL Server instance found on the target computer(s) with license key information.
+
+        Properties:
+        - ComputerName: The name of the computer hosting the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - SqlInstance: The full SQL Server instance name (computer\instance format)
+        - Version: The SQL Server version name (e.g., "SQL Server 2019", "SQL Server 2016")
+        - Edition: The SQL Server edition (Enterprise, Standard, Express, Developer, etc.)
+        - Key: The decoded product key in format XXXXX-XXXXX-XXXXX-XXXXX-XXXXX; returns "SQL Server Express Edition" for Express editions, or an error message if the key cannot be read or decoded from the registry
+
     .EXAMPLE
         PS C:\> Get-DbaProductKey -ComputerName winxp, sqlservera, sqlserver2014a, win2k8
 
