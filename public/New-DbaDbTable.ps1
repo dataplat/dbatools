@@ -468,6 +468,20 @@ function New-DbaDbTable {
             }
         }
 
+        # Parse the Name parameter to handle bracket-quoted names and two-part names like [schema].[table]
+        if (Test-Bound -ParameterName Name) {
+            $parsedName = Get-ObjectNameParts -ObjectName $Name
+            if ($parsedName.Parsed) {
+                if ($parsedName.Schema -and -not (Test-Bound -ParameterName Schema)) {
+                    $Schema = $parsedName.Schema
+                }
+                $Name = $parsedName.Name
+            } else {
+                Stop-Function -Message "Could not parse -Name '$Name' as a valid object name."
+                return
+            }
+        }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
