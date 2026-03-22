@@ -35,6 +35,10 @@ function Get-DbaAgRingBuffer {
         - RING_BUFFER_HADRDBMGR_COMMIT    : Commit-level activity records
         - RING_BUFFER_HADR_TRANSPORT_STATE: Connection and transport state transitions
 
+    .PARAMETER CollectionMinutes
+        Specifies how many minutes of historical data to retrieve from the ring buffer. Defaults to 60 minutes.
+        Use this to extend the analysis window when investigating longer-term AG issues or to focus on recent activity with shorter periods.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,12 +72,17 @@ function Get-DbaAgRingBuffer {
     .EXAMPLE
         PS C:\> Get-DbaAgRingBuffer -SqlInstance sql2019
 
-        Returns all HADR ring buffer records from the sql2019 instance.
+        Returns HADR ring buffer records from the last 60 minutes from the sql2019 instance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgRingBuffer -SqlInstance sql2019 -CollectionMinutes 240
+
+        Returns HADR ring buffer records from the last 240 minutes from the sql2019 instance.
 
     .EXAMPLE
         PS C:\> Get-DbaAgRingBuffer -SqlInstance sql2019 -RingBufferType RING_BUFFER_HADRDBMGR_API
 
-        Returns only RING_BUFFER_HADRDBMGR_API records from the sql2019 instance.
+        Returns only RING_BUFFER_HADRDBMGR_API records from the last 60 minutes from the sql2019 instance.
 
     .EXAMPLE
         PS C:\> Get-DbaAgRingBuffer -SqlInstance sql2019 -RingBufferType RING_BUFFER_HADRDBMGR_API, RING_BUFFER_HADR_TRANSPORT_STATE
@@ -92,6 +101,7 @@ function Get-DbaAgRingBuffer {
         [PSCredential]$SqlCredential,
         [ValidateSet("RING_BUFFER_HADRDBMGR_API", "RING_BUFFER_HADRDBMGR_STATE", "RING_BUFFER_HADRDBMGR_COMMIT", "RING_BUFFER_HADR_TRANSPORT_STATE")]
         [string[]]$RingBufferType,
+        [int]$CollectionMinutes = 60,
         [switch]$EnableException
     )
 
@@ -129,6 +139,7 @@ function Get-DbaAgRingBuffer {
                     DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) AS EventTime,
                     record
                 FROM HadrRingBuffer
+                WHERE DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) > DATEADD(MINUTE, -$CollectionMinutes, GETDATE())
                 ORDER BY EventTime DESC;"
 
             Write-Message -Level Verbose -Message "Executing SQL Statement: $sql"

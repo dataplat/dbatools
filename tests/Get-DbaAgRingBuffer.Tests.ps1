@@ -14,6 +14,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlInstance",
                 "SqlCredential",
                 "RingBufferType",
+                "CollectionMinutes",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
