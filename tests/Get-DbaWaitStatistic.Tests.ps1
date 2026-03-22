@@ -15,6 +15,8 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Threshold",
                 "IncludeIgnorable",
+                "ExcludeWaitType",
+                "IncludeWaitType",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -62,6 +64,27 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.URL -match "sqlskills.com" | Should -Be $true
             }
+        }
+    }
+
+    Context "ExcludeWaitType parameter filters out additional wait types" {
+        BeforeAll {
+            $filteredResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable -ExcludeWaitType "CXPACKET", "CXCONSUMER"
+        }
+
+        It "excludes specified wait types" {
+            $filteredResults.WaitType | Should -Not -Contain "CXPACKET"
+            $filteredResults.WaitType | Should -Not -Contain "CXCONSUMER"
+        }
+    }
+
+    Context "IncludeWaitType parameter includes wait types from ignorable list" {
+        BeforeAll {
+            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeWaitType "CHKPT"
+        }
+
+        It "includes specified wait type that would normally be ignored" {
+            $resultsWith.WaitType | Should -Contain "CHKPT"
         }
     }
 }
