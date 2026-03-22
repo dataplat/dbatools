@@ -1265,4 +1265,147 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep.Command | Should -Match "@CheckSum = 'Y'"
         }
     }
+
+    Context "Defaults for unspecified parameters are as documentation says" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Clean up any leftover test databases from previous runs
+            $oldTestDbs = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Name -like "dbatoolsci_maintenancesolution_*"
+            if ($oldTestDbs) {
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $oldTestDbs.Name -Confirm:$false
+            }
+
+            # Clean up any leftover Hallengren jobs
+            $oldJobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Description -match "hallengren"
+            if ($oldJobs) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job $oldJobs.Name -Confirm:$false
+            }
+
+            # Clean up any leftover Hallengren procedures in tempdb from the first Context
+            $cleanupTempdb = "
+                IF OBJECT_ID('dbo.CommandExecute', 'P') IS NOT NULL DROP PROCEDURE dbo.CommandExecute;
+                IF OBJECT_ID('dbo.DatabaseBackup', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseBackup;
+                IF OBJECT_ID('dbo.DatabaseIntegrityCheck', 'P') IS NOT NULL DROP PROCEDURE dbo.DatabaseIntegrityCheck;
+                IF OBJECT_ID('dbo.IndexOptimize', 'P') IS NOT NULL DROP PROCEDURE dbo.IndexOptimize;
+                IF OBJECT_ID('dbo.CommandLog', 'U') IS NOT NULL DROP TABLE dbo.CommandLog;
+                IF OBJECT_ID('dbo.Queue', 'U') IS NOT NULL DROP TABLE dbo.Queue;
+                IF OBJECT_ID('dbo.QueueDatabase', 'U') IS NOT NULL DROP TABLE dbo.QueueDatabase;
+            "
+            $splatCleanupTempdb = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Database    = "tempdb"
+                Query       = $cleanupTempdb
+            }
+            Invoke-DbaQuery @splatCleanupTempdb
+
+            $testDbName = "dbatoolsci_maintenancesolution_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Name $testDbName
+
+            $splatInstall = @{
+                SqlInstance      = $TestConfig.InstanceMulti2
+                # We could test that the default database is master,
+                # but that is currently enforced at the PowerShell level
+                # so it could just be a unit test.
+                Database         = $testDbName
+                InstallJobs      = $true
+                ReplaceExisting  = $true
+                AutoScheduleJobs = "WeeklyFull"
+            }
+            $installResult = Install-DbaMaintenanceSolution @splatInstall
+
+            # Verify installation succeeded before running tests
+            # Skip tests if installation failed (eg. due to event log limitations on AppVeyor or SQL Agent not running)
+            $script:installationSucceeded = $false
+            if ($installResult) {
+                $splatJobCheck = @{
+                    SqlInstance = $TestConfig.InstanceMulti2
+                }
+                $fullBackupJob = Get-DbaAgentJob @splatJobCheck | Where-Object Name -eq "DatabaseBackup - USER_DATABASES - FULL"
+                if ($fullBackupJob) {
+                    $script:installationSucceeded = $true
+                }
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $testDbName -Confirm:$false
+            $jobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 | Where-Object Description -match "hallengren"
+            if ($jobs) {
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti2 -Job $jobs.Name -Confirm:$false
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should NOT have Compress parameter in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Not -Match "@Compress"
+        }
+
+        It "Should have Verify parameter set to Y in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@Verify = 'Y'"
+        }
+
+        It "Should have CheckSum parameter set to Y in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $jobStep.Command | Should -Match "@CheckSum = 'Y'"
+        }
+
+        It "Should have StartTime set to 011500 in backup schedule" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
+            $schedule = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceMulti2
+            # We do not make any promises about job names,
+            # so checking for times is all we can do.
+            $schedule.ActiveStartTimeOfDay |
+                Where-Object { $_.Hours -eq 1 -and $_.Minutes -eq 15 } |
+                Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have BackupLocation parameter set to instance default in backup jobs" {
+            if (-not $script:installationSucceeded) {
+                Set-ItResult -Skipped -Because "Installation failed"
+                return
+            }
+            $splatJobStep = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Job         = "DatabaseBackup - USER_DATABASES - FULL"
+            }
+            $jobStep = Get-DbaAgentJobStep @splatJobStep
+            $backupLocationSetting = (Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceMulti2).Backup
+            $jobStep.Command | Should -BeLike "*@Directory = *$backupLocationSetting*"
+        }
+    }
 }
