@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "AvailabilityGroup",
                 "Database",
+                "ExcludeDatabase",
                 "InputObject",
                 "EnableException"
             )
