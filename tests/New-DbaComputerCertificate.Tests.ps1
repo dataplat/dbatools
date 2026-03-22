@@ -25,6 +25,7 @@ Describe $CommandName -Tag UnitTests {
                 "Flag",
                 "Dns",
                 "SelfSigned",
+                "DocumentEncryptionCert",
                 "EnableException",
                 "HashAlgorithm",
                 "MonthsValid"
@@ -78,6 +79,28 @@ if (-not $env:appveyor) {
 
             It "Returns the right five year (60 month) expiry date" {
                 $customCert.NotAfter -match ((Get-Date).Date).AddMonths(60) | Should -BeTrue
+            }
+        }
+
+        Context "Can generate a document encryption certificate for Always Encrypted" {
+            BeforeAll {
+                $documentCert = New-DbaComputerCertificate -SelfSigned -DocumentEncryptionCert -EnableException
+            }
+
+            AfterAll {
+                Remove-DbaComputerCertificate -Thumbprint $documentCert.Thumbprint
+            }
+
+            It "Returns the Document Encryption EKU OID" {
+                "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.4\.1\.311\.10\.3\.11" | Should -BeTrue
+            }
+
+            It "Returns the IKE Intermediate EKU OID" {
+                "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.8\.2\.2" | Should -BeTrue
+            }
+
+            It "Does not include the Server Authentication EKU OID" {
+                "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -BeFalse
             }
         }
     }
