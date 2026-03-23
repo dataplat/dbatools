@@ -274,6 +274,10 @@ function Update-DbaInstance {
                 }
             }
         }
+        if (-not $Path) {
+            Stop-Function -Category InvalidArgument -Message "Path is required. Please provide a -Path to a folder containing (or to store) SQL Server updates, or configure a default with Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value 'C:\patches'."
+            return
+        }
         $actions = @()
         $actionTemplate = @{ }
         if ($InstanceName) { $actionTemplate.InstanceName = $InstanceName }
