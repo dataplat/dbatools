@@ -194,7 +194,7 @@ function Sync-DbaAvailabilityGroup {
             if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $InputObject.Parent.Name -match '^ADMIN:'
+            $dacConnected = $InputObject.Parent.ConnectionContext.ServerInstance -match '^ADMIN:'
 
             if ($dacNeeded -and -not $dacConnected) {
                 Stop-Function -Message "Pipeline source must use a dedicated admin connection to retrieve passwords. Use -ExcludePassword to bypass this requirement if you don't need passwords."
@@ -399,7 +399,18 @@ function Sync-DbaAvailabilityGroup {
 
             if ($Exclude -notcontains "LoginPermissions") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
-                Sync-DbaLoginPermission -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin
+                # Use DomainInstanceName (string) instead of the server object to ensure Sync-DbaLoginPermission
+                # opens a normal (non-DAC) connection. Update-SqlPermission calls SqlConnectionObject.Close()
+                # in loops, which on a DAC connection causes repeated DAC slot acquire/release cycles
+                # that generate "max 1 DAC connections" errors in the SQL Error Log.
+                $splatLoginPermission = @{
+                    Source              = $server.DomainInstanceName
+                    SourceSqlCredential = $PrimarySqlCredential
+                    Destination         = $secondaries
+                    Login               = $Login
+                    ExcludeLogin        = $ExcludeLogin
+                }
+                Sync-DbaLoginPermission @splatLoginPermission
             }
         }
 

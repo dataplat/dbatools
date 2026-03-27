@@ -129,7 +129,7 @@ function Export-DbaLinkedServer {
                 if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
                 # Do we have a dedicated admin connection already?
-                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.ConnectionContext.ServerInstance -match '^ADMIN:'
 
                 $dacOpened = $false
                 if ($dacNeeded) {

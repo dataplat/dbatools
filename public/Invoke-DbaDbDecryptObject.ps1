@@ -198,7 +198,7 @@ function Invoke-DbaDbDecryptObject {
             # Try to connect to instance
             try {
                 # Do we have a dedicated admin connection already?
-                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.ConnectionContext.ServerInstance -match '^ADMIN:'
                 $dacOpened = $false
                 if ($dacConnected) {
                     Write-Message -Level Verbose -Message "Reusing dedicated admin connection."

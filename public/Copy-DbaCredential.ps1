@@ -156,7 +156,7 @@ function Copy-DbaCredential {
             if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.ConnectionContext.ServerInstance -match '^ADMIN:'
 
             $dacOpened = $false
             if ($dacNeeded) {
