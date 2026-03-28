@@ -57,17 +57,17 @@ function Invoke-DbaCycleErrorLog {
         https://dbatools.io/Invoke-DbaCycleErrorLog
 
     .EXAMPLE
-        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016 -Type agent
+        PS C:\> Invoke-DbaCycleErrorLog -SqlInstance sql2016 -Type agent
 
         Cycles the current error log for the SQL Server Agent on SQL Server instance sql2016
 
     .EXAMPLE
-        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016 -Type instance
+        PS C:\> Invoke-DbaCycleErrorLog -SqlInstance sql2016 -Type instance
 
         Cycles the current error log for the SQL Server instance on SQL Server instance sql2016
 
     .EXAMPLE
-        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016
+        PS C:\> Invoke-DbaCycleErrorLog -SqlInstance sql2016
 
         Cycles the current error log for both SQL Server instance and SQL Server Agent on SQL Server instance sql2016
 
