@@ -196,6 +196,7 @@
         'Get-DbaAgHadr',
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
+        'Get-DbaAgRingBuffer',
         'Get-DbaAvailabilityGroup',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',

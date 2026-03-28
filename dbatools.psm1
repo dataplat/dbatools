@@ -607,6 +607,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Mount-DbaDatabase',
         'Dismount-DbaDatabase',
         'Get-DbaAgReplica',
+        'Get-DbaAgRingBuffer',
         'Get-DbaAgDatabase',
         'Get-DbaAgDatabaseReplicaState',
         'Get-DbaModule',
