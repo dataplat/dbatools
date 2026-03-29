@@ -889,29 +889,30 @@ function Restore-DbaDatabase {
             }
             try {
                 $parms = @{
-                    SqlInstance       = $RestoreInstance
-                    WithReplace       = $WithReplace
-                    RestoreTime       = $RestoreTime
-                    StandbyDirectory  = $StandbyDirectory
-                    NoRecovery        = $NoRecovery
-                    Continue          = $Continue
-                    OutputScriptOnly  = $OutputScriptOnly
-                    BlockSize         = $BlockSize
-                    MaxTransferSize   = $MaxTransferSize
-                    BufferCount       = $Buffercount
-                    KeepCDC           = $KeepCDC
-                    VerifyOnly        = $VerifyOnly
-                    PageRestore       = $PageRestore
-                    StorageCredential = $StorageCredential
-                    KeepReplication   = $KeepReplication
-                    StopMark          = $StopMark
-                    StopAfterDate     = $StopAfterDate
-                    StopBefore        = $StopBefore
-                    StopAtLsn         = $StopAtLsn
-                    ExecuteAs         = $ExecuteAs
-                    Checksum          = $Checksum
-                    Restart           = $Restart
-                    EnableException   = $true
+                    SqlInstance              = $RestoreInstance
+                    WithReplace              = $WithReplace
+                    RestoreTime              = $RestoreTime
+                    StandbyDirectory         = $StandbyDirectory
+                    NoRecovery               = $NoRecovery
+                    Continue                 = $Continue
+                    OutputScriptOnly         = $OutputScriptOnly
+                    BlockSize                = $BlockSize
+                    MaxTransferSize          = $MaxTransferSize
+                    BufferCount              = $Buffercount
+                    KeepCDC                  = $KeepCDC
+                    ErrorBrokerConversations = $ErrorBrokerConversations
+                    VerifyOnly               = $VerifyOnly
+                    PageRestore              = $PageRestore
+                    StorageCredential        = $StorageCredential
+                    KeepReplication          = $KeepReplication
+                    StopMark                 = $StopMark
+                    StopAfterDate            = $StopAfterDate
+                    StopBefore               = $StopBefore
+                    StopAtLsn                = $StopAtLsn
+                    ExecuteAs                = $ExecuteAs
+                    Checksum                 = $Checksum
+                    Restart                  = $Restart
+                    EnableException          = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
