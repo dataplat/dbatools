@@ -166,7 +166,7 @@ function Restore-DbaDatabase {
         Use this for log shipping secondary servers or when you need read-only access during restore operations.
         The directory must exist and be writable by the SQL Server service account for undo file creation.
 
-.PARAMETER StorageCredential
+    .PARAMETER StorageCredential
         Specifies the SQL Server credential name for authenticating to Azure blob storage or S3-compatible object storage during restore operations.
         Use this when restoring from Azure blob storage or S3 backups that require authentication.
         For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
