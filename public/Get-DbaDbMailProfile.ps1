@@ -47,6 +47,7 @@ function Get-DbaDbMailProfile {
         - Description: Text description of the profile's purpose or intended use
         - ForceDeleteForActiveProfiles: Boolean indicating if the profile will be forcefully deleted even if actively used
         - IsBusyProfile: Boolean indicating if the profile is currently busy processing mail messages
+        - MailAccount: Collection of Database Mail account names associated with this profile
 
         Additional properties available (from SMO MailProfile object):
         - Parent: Reference to the parent SqlMail object
@@ -131,11 +132,13 @@ function Get-DbaDbMailProfile {
 
                 }
 
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $mailserver.ComputerName
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $mailserver.InstanceName
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $mailserver.SqlInstance
-
-                $profiles | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile
+                foreach ($prof in $profiles) {
+                    $prof | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $mailserver.ComputerName
+                    $prof | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $mailserver.InstanceName
+                    $prof | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $mailserver.SqlInstance
+                    $prof | Add-Member -Force -MemberType NoteProperty -Name MailAccount -Value $prof.EnumAccounts().AccountName
+                    $prof | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile, MailAccount
+                }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
