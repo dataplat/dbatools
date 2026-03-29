@@ -85,6 +85,7 @@ function Set-DbaNetworkCertificate {
         - ComputerName: The name of the computer where the SQL Server instance is hosted
         - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQL2008R2SP2)
         - SqlInstance: The full SQL Server instance name (computer\instance)
+        - ServiceAccount: The service account running the SQL Server instance
         - CertificateThumbprint: The SHA-1 thumbprint of the newly configured certificate in lowercase
         - Notes: Summary of actions performed, including whether an old certificate was replaced
 
@@ -204,8 +205,9 @@ function Set-DbaNetworkCertificate {
             }
 
             [PSCustomObject]@{
-                Verbose   = $verbose
-                Exception = $exception
+                Verbose        = $verbose
+                Exception      = $exception
+                ServiceAccount = $wmiService.ServiceAccount
             }
         }
     }
@@ -230,6 +232,9 @@ function Set-DbaNetworkCertificate {
         }
 
         foreach ($instance in $SqlInstance) {
+            $newThumbprint = $null
+            $stepCounter = 0
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing certificate configuration for $instance"
             Write-Message -Level Verbose -Message "Processing $instance" -Target $instance
             # Using Test-DbaNetworkCertificate without certificate will use Get-DbaNetworkConfiguration to get all the information we need.
             # The commands also tests for elevation requirements and connectivity so we don't have to here.
@@ -252,6 +257,7 @@ function Set-DbaNetworkCertificate {
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
+                        ServiceAccount        = $null
                         CertificateThumbprint = $null
                         Notes                 = 'No changes needed'
                     }
@@ -267,6 +273,7 @@ function Set-DbaNetworkCertificate {
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
+                        ServiceAccount        = $null
                         CertificateThumbprint = $oldThumbprint
                         Notes                 = 'No changes needed'
                     }
@@ -306,6 +313,7 @@ function Set-DbaNetworkCertificate {
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
+                        ServiceAccount        = $null
                         CertificateThumbprint = $oldThumbprint
                         Notes                 = 'No changes needed'
                     }
@@ -326,6 +334,7 @@ function Set-DbaNetworkCertificate {
                 $message = "Configuring certificate $newThumbprint"
             }
             if ($PScmdlet.ShouldProcess($instance, $message)) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "$message for $instance"
                 $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $newThumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
                 foreach ($verbose in $result.Verbose) {
                     Write-Message -Level Verbose -Message $verbose
@@ -343,6 +352,7 @@ function Set-DbaNetworkCertificate {
 
                 $notes = $null
                 if ($RestartService) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Restarting SQL Server service for $instance"
                     try {
                         $null = Restart-DbaService -SqlInstance $instance -Type Engine -Force -EnableException
                     } catch {
@@ -362,6 +372,7 @@ function Set-DbaNetworkCertificate {
                     ComputerName          = $certTest.ComputerName
                     InstanceName          = $certTest.InstanceName
                     SqlInstance           = $certTest.SqlInstance
+                    ServiceAccount        = $result.ServiceAccount
                     CertificateThumbprint = $newThumbprint
                     Notes                 = $notes
                 }
