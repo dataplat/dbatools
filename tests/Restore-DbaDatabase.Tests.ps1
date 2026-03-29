@@ -45,6 +45,7 @@ Describe $CommandName -Tag UnitTests {
                 "DestinationFileSuffix",
                 "Recover",
                 "KeepCDC",
+                "ErrorBrokerConversations",
                 "GetBackupInformation",
                 "StopAfterGetBackupInformation",
                 "SelectBackupInformation",

@@ -842,7 +842,7 @@ function Invoke-DbaDbDataMasking {
                                 $newValue = $null
 
                                 # Handle static values
-                                if ($columnobject.StaticValue) {
+                                if ($null -ne $columnobject.StaticValue) {
                                     $newValue = $columnobject.StaticValue
 
                                     if ($null -eq $newValue -and -not $columnobject.Nullable) {
@@ -904,7 +904,7 @@ function Invoke-DbaDbDataMasking {
                                 }
 
                                 # If we haven't determined a value yet, generate one
-                                if ($null -eq $newValue -and -not $columnobject.StaticValue) {
+                                if ($null -eq $newValue -and $null -eq $columnobject.StaticValue) {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
                                         $min = $columnobject.MinValue
@@ -1149,6 +1149,15 @@ function Invoke-DbaDbDataMasking {
                                         }
                                     }
                                 }
+                                # Add FilterQuery WHERE clause to restrict which rows are updated
+                                if ($validAction -and $tableobject.FilterQuery) {
+                                    $filterParts = ($tableobject.FilterQuery) -split "WHERE", 2, "ignorecase"
+                                    if ($filterParts.Count -gt 1) {
+                                        $filterWhereClause = $filterParts[1].Trim().TrimEnd(";")
+                                        $query = $query.TrimEnd(";") + " WHERE $filterWhereClause;"
+                                    }
+                                }
+
                                 # Add the query to the rest
                                 if ($validAction) {
                                     $null = $stringBuilder.AppendLine($query)

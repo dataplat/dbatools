@@ -24,6 +24,7 @@ Describe $CommandName -Tag UnitTests {
                 "AdvancedBackupParams",
                 "NoWait",
                 "SkipReuseSourceFolderStructure",
+                "MasterKeySecurePassword",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.26'
+    ModuleVersion      = '2.7.27'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -196,6 +196,7 @@
         'Get-DbaAgHadr',
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
+        'Get-DbaAgRingBuffer',
         'Get-DbaAvailabilityGroup',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
@@ -539,6 +540,7 @@
         'Remove-DbaAgentAlert',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobCategory',
+        'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
         'Remove-DbaAgentOperator',
         'Remove-DbaAgentSchedule',
@@ -621,6 +623,7 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbFileGrowth',
         'Set-DbaDbIdentity',
+        'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
         'Set-DbaDbOwner',
         'Set-DbaDbQueryStoreOption',
@@ -668,6 +671,7 @@
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaAgentJobOwner',
+        'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaBackupInformation',
         'Test-DbaBuild',
@@ -703,6 +707,7 @@
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaPath',
         'Test-DbaPowerPlan',
+        'Test-DbaInstantFileInitialization',
         'Test-DbaReplLatency',
         'Test-DbaSpn',
         'Test-DbaTempDbConfig',

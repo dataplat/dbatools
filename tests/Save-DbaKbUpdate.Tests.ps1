@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "Architecture",
                 "Language",
                 "InputObject",
+                "UseWebRequest",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

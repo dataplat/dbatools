@@ -42,6 +42,7 @@ Describe $CommandName -Tag UnitTests {
                 "AzureDomain",
                 "Tenant",
                 "AccessToken",
+                "AuthenticationType",
                 "DedicatedAdminConnection",
                 "DisableException"
             )

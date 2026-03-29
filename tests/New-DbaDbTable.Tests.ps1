@@ -224,6 +224,37 @@ Describe $CommandName -Tag IntegrationTests {
             $tableWithSchema[2] | Should -Match "$tableName"
         }
     }
+    Context "Should handle bracket-quoted names and two-part names" {
+        BeforeAll {
+            $map = @{
+                Name = "testId"
+                Type = "int"
+            }
+        }
+        It "Strips brackets from a bracket-quoted table name" {
+            $random = Get-Random
+            $tableName = "table_bracket_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "[$tableName]" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be "dbo"
+        }
+        It "Parses schema and table from a two-part bracket-quoted name" {
+            $random = Get-Random
+            $tableName = "table_twopart_$random"
+            $schemaName = "schema_twopart_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "[$schemaName].[$tableName]" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be $schemaName
+        }
+        It "Parses schema and table from a two-part unquoted name" {
+            $random = Get-Random
+            $tableName = "table_unquoted_$random"
+            $schemaName = "schema_unquoted_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "$schemaName.$tableName" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be $schemaName
+        }
+    }
     Context "Should create graph tables with IsNode and IsEdge switches" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2

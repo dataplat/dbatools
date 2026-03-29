@@ -135,6 +135,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Where-Object ServerName -match "server1$" | Should -Not -BeNullOrEmpty
         }
 
+        It "Should include CMS instance itself with IncludeSelf and have piping-compatible properties" {
+            $results = Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -IncludeSelf
+            $self = $results | Where-Object Name -eq "CMS Instance"
+            $self | Should -Not -BeNullOrEmpty
+            $self.ServerName | Should -Not -BeNullOrEmpty
+            $self.ComputerName | Should -Not -BeNullOrEmpty
+            $self.InstanceName | Should -Not -BeNullOrEmpty
+            $self.SqlInstance | Should -Not -BeNullOrEmpty
+            $self.ToString() | Should -Be $self.ServerName
+        }
+
         # Property Comparisons will come later when we have the commands
     }
 }

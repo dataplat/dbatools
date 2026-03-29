@@ -32,6 +32,8 @@ function Export-DbaInstance {
         All Availability Groups.
         All OLEDB Providers.
 
+        When -IncludeDbMasterKey is specified: all database certificates (exported as .cer files; private keys exported as .pvk files when -EncryptionPassword is provided) and all database master keys encrypted with the -EncryptionPassword.
+
         The exported files are written to a folder using the naming convention "machinename$instance-yyyyMMddHHmmss", making it easy to identify the source instance and export timestamp.
 
         This command is particularly valuable for:
@@ -77,13 +79,25 @@ function Export-DbaInstance {
         Required when generating restore scripts for databases backed up to Azure storage containers.
 
     .PARAMETER IncludeDbMasterKey
-        Exports database master keys from system databases and copies them to the export directory.
-        Critical for environments using Transparent Data Encryption (TDE) or encrypted backups where master keys are required for restoration.
+        When specified, exports database certificates (.cer files) and database master keys (.key files) to the export directory.
+        Certificate private keys (.pvk files) are also exported when -EncryptionPassword is provided.
+        Database master keys require -EncryptionPassword to be specified; if omitted, only certificates are exported.
+        Use -Exclude DbCertificates to suppress certificate export while still exporting master keys.
+
+    .PARAMETER EncryptionPassword
+        Secure password used to encrypt exported certificate private key files (.pvk) and database master key backups (.key).
+        When specified with -IncludeDbMasterKey, enables export of private keys alongside certificates and also backs up database master keys.
+        Required for database master key export; optional for certificate export (without it only .cer files are generated).
+
+    .PARAMETER DecryptionPassword
+        Password required to decrypt the certificate's existing private key before it can be re-encrypted for backup.
+        Use this when certificates were originally created with a password or imported from a password-protected source.
+        Only applies when -IncludeDbMasterKey is specified and DbCertificates is not in -Exclude.
 
     .PARAMETER Exclude
         Skips specific object types from the export to reduce scope or avoid problematic areas.
         Useful when you only need certain components or when specific features cause export issues in your environment.
-        Valid values: Databases, Logins, AgentServer, Credentials, LinkedServers, SpConfigure, CentralManagementServer, DatabaseMail, SysDbUserObjects, SystemTriggers, BackupDevices, Audits, Endpoints, ExtendedEvents, PolicyManagement, ResourceGovernor, ServerAuditSpecifications, CustomErrors, ServerRoles, AvailabilityGroups, ReplicationSettings, OleDbProvider.
+        Valid values: Databases, Logins, AgentServer, Credentials, LinkedServers, SpConfigure, CentralManagementServer, DatabaseMail, SysDbUserObjects, SystemTriggers, BackupDevices, Audits, Endpoints, ExtendedEvents, PolicyManagement, ResourceGovernor, ServerAuditSpecifications, CustomErrors, ServerRoles, AvailabilityGroups, ReplicationSettings, OleDbProvider, DbCertificates.
 
     .PARAMETER BatchSeparator
         Defines the T-SQL batch separator used in generated scripts, defaults to "GO".
@@ -191,7 +205,9 @@ function Export-DbaInstance {
         [switch]$NoRecovery,
         [string]$AzureCredential,
         [switch]$IncludeDbMasterKey,
-        [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider')]
+        [Security.SecureString]$EncryptionPassword,
+        [Security.SecureString]$DecryptionPassword,
+        [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'DbCertificates', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider')]
         [string[]]$Exclude,
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator'),
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
@@ -468,6 +484,37 @@ function Export-DbaInstance {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting OLEDB Providers"
                     $null = Get-DbaOleDbProvider -SqlInstance $server -WarningAction SilentlyContinue -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\OleDbProvider.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -EnableException:$EnableException
                     Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
+                }
+
+                if ($IncludeDbMasterKey -and $Exclude -notcontains 'DbCertificates') {
+                    Write-Message -Level Verbose -Message "Exporting database certificates"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database certificates"
+                    $splatDbCert = @{
+                        SqlInstance     = $server
+                        Path            = $exportPath
+                        EnableException = $EnableException
+                    }
+                    if ($EncryptionPassword) {
+                        $splatDbCert["EncryptionPassword"] = $EncryptionPassword
+                    }
+                    if ($DecryptionPassword) {
+                        $splatDbCert["DecryptionPassword"] = $DecryptionPassword
+                    }
+                    Backup-DbaDbCertificate @splatDbCert
+                }
+
+                if ($IncludeDbMasterKey -and $EncryptionPassword) {
+                    Write-Message -Level Verbose -Message "Exporting database master keys"
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database master keys"
+                    $splatMasterKey = @{
+                        SqlInstance     = $server
+                        Path            = $exportPath
+                        SecurePassword  = $EncryptionPassword
+                        EnableException = $EnableException
+                    }
+                    Backup-DbaDbMasterKey @splatMasterKey
+                } elseif ($IncludeDbMasterKey -and -not $EncryptionPassword) {
+                    Write-Message -Level Warning -Message "IncludeDbMasterKey was specified but no EncryptionPassword was provided. Skipping database master key export."
                 }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

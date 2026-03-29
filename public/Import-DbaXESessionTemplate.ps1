@@ -177,28 +177,48 @@ function Import-DbaXESessionTemplate {
                     }
                 } else {
                     Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
-                    Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
 
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\").TrimEnd("/")
-                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                        Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
+                        $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    }
                     if ((Test-HostOSLinux -SqlInstance $server)) {
-                        $TargetFilePath = "$TargetFilePath/".$file.TrimEnd("\").TrimEnd("/")
-                        $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                        $TargetFilePath = "$TargetFilePath/"
+                        if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                            $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                        }
                     } else {
                         $TargetFilePath = "$TargetFilePath\"
-                        $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                        if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                            $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                        }
                     }
-
-                    # Perform replace
-                    $xelphrase = 'name="filename" value="'
-                    $xemphrase = 'name="metadatafile" value="'
 
                     try {
                         $basename = (Get-ChildItem $file).Basename
-                        $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
-                        $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
+                        $contents = Get-Content $file -Raw -ErrorAction Stop
+
+                        if ($contents -notmatch 'name="event_file"') {
+                            # No event_file target found in template - add one so TargetFilePath is honored
+                            Write-Message -Level Verbose -Message "No event_file target found in template, adding one with TargetFilePath."
+                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /><parameter name=""metadatafile"" value=""$TargetFileMetadataPath$basename"" /></target>"
+                            } else {
+                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /></target>"
+                            }
+                            $contents = $contents.Replace("</event_session>", "$newTarget</event_session>")
+                        } else {
+                            # Perform replace on existing event_file target parameters
+                            $xelphrase = 'name="filename" value="'
+                            $xemphrase = 'name="metadatafile" value="'
+                            $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
+                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                                $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
+                            }
+                        }
+
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\").TrimEnd("/")
                         $tempfile = Join-DbaPath $temp $basename
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8

@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "MaxRunTime",
                 "PercentCompression",
                 "ForceOfflineRebuilds",
+                "SortInTempDB",
                 "InputObject",
                 "EnableException"
             )

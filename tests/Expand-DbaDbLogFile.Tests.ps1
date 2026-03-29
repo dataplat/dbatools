@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeDatabase",
                 "TargetLogSize",
                 "IncrementSize",
+                "TargetVlfCount",
                 "LogFileId",
                 "ShrinkLogFile",
                 "ShrinkSize",

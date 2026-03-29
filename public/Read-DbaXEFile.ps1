@@ -8,11 +8,14 @@ function Read-DbaXEFile {
 
         Perfect for post-incident analysis of deadlocks, performance issues, or security events that were captured by your Extended Events sessions. You can pipe the results to other PowerShell cmdlets for filtering, sorting, exporting to CSV, or building reports.
 
-        When using pipeline input from Get-DbaXESession, the function automatically skips the file currently being written to avoid access conflicts, and can read files from remote servers via admin shares.
+        When using pipeline input from Get-DbaXESession, the function automatically skips the file currently being written to avoid access conflicts, and reads files from remote servers via Windows admin shares (e.g. \\server\C$\...). This means the PowerShell session must be running as a Windows account with administrative access to the SQL Server host — SqlCredential alone is not sufficient. This approach is Windows-only; it does not work for Linux-hosted SQL Server or Docker containers.
+
+        If you only know the session name and not the file path, use the full pipeline:
+        Get-DbaXESession | Get-DbaXESessionTarget | Get-DbaXESessionTargetFile | Read-DbaXEFile
 
     .PARAMETER Path
-        Specifies the Extended Events file path (.xel or .xem), file objects, or XEvent session objects to read from. Supports local paths, UNC paths for remote files, and pipeline input from Get-ChildItem or Get-DbaXESession.
-        When using session objects from Get-DbaXESession, automatically accesses files via admin shares and skips the current file being written to prevent access conflicts.
+        Specifies the Extended Events file path (.xel or .xem), file objects, or XEvent session objects to read from. Supports local paths, UNC paths for remote files, and pipeline input from Get-ChildItem, Get-DbaXESession, or Get-DbaXESessionTargetFile.
+        When using session objects from Get-DbaXESession, automatically accesses files via Windows admin shares and skips the current file being written to prevent access conflicts. Requires the PowerShell session to be running as a Windows account with administrative access to the SQL Server host.
 
     .PARAMETER Raw
         Returns the native Microsoft.SqlServer.XEvent.XELite.XEvent objects instead of structured PowerShell objects. Use this when you need direct access to the XEvent object properties and methods for advanced programmatic processing.
@@ -68,7 +71,12 @@ function Read-DbaXEFile {
     .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance sql2019 -Session deadlocks | Read-DbaXEFile
 
-        Reads remote XEvents by accessing the file over the admin UNC share.
+        Reads remote XEvents by accessing the file over the Windows admin share (e.g. \\sql2019\C$\...). Requires the PowerShell session to be running as a Windows account with administrative access to the sql2019 host. Does not work with Linux-hosted SQL Server or Docker containers.
+
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2019 -Session deadlocks | Get-DbaXESessionTarget | Get-DbaXESessionTargetFile | Read-DbaXEFile
+
+        Reads XEvents from a session by name without needing to know the file path in advance. Uses Get-DbaXESessionTarget and Get-DbaXESessionTargetFile to resolve the physical .xel files via Windows admin shares, then reads them. Requires the PowerShell session to be running as a Windows account with read access to the target files on the SQL Server host. If the session is still running, stop it first to force a rollover so the latest events are flushed to disk.
 
     #>
     [CmdletBinding()]

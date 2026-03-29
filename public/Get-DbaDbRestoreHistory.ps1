@@ -78,12 +78,15 @@ function Get-DbaDbRestoreHistory {
         - From: Comma-separated list of physical device names where the backup source(s) are located
         - To: Comma-separated list of physical file paths where the database files were restored
 
-        Additional properties available (from MSDB backupset table):
+        Additional properties available (from MSDB backupset/restorehistory tables):
         - first_lsn: First log sequence number in the backup
         - last_lsn: Last log sequence number in the backup
         - checkpoint_lsn: Checkpoint log sequence number
         - database_backup_lsn: Log sequence number of database backup
+        - BackupStartDate: Timestamp when the backup operation started
         - BackupFinishDate: Timestamp when the backup operation completed
+        - StopAt: The point-in-time stop value specified during the restore operation (NULL if not specified)
+        - LastRestorePoint: The effective point in time the database was restored to (StopAt if specified and earlier than BackupStartDate, otherwise BackupStartDate)
 
         All properties from the underlying DataRow object are accessible using Select-Object *.
 
@@ -180,8 +183,15 @@ function Get-DbaDbRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
+                    bs.backup_start_date,
+                    bs.backup_start_date AS BackupStartDate,
                     bs.backup_finish_date,
-                    bs.backup_finish_date AS BackupFinishDate
+                    bs.backup_finish_date AS BackupFinishDate,
+                    rsh.stop_at AS StopAt,
+                    CASE
+                        WHEN COALESCE(rsh.stop_at, '9999-12-31') < bs.backup_start_date THEN rsh.stop_at
+                        ELSE bs.backup_start_date
+                    END AS LastRestorePoint
                     "
                 }
 
@@ -247,7 +257,7 @@ function Get-DbaDbRestoreHistory {
                     }
                     $results = $tmpres
                 }
-                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_start_date, backup_finish_date
             } catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
             }

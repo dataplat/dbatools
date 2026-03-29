@@ -172,6 +172,12 @@ function New-DbaAvailabilityGroup {
         Manual (default) uses backup/restore through shared storage, Automatic uses direct network streaming.
         Use Automatic for SQL Server 2016+ to simplify setup when network bandwidth is sufficient and shared storage is limited.
 
+    .PARAMETER MasterKeySecurePassword
+        Password for creating the database master key on secondary replicas when adding TDE-encrypted databases.
+        When databases protected by Transparent Data Encryption (TDE) are added to the availability group, the TDE certificate
+        in the primary's master database must be copied to each secondary. Providing this parameter alongside SharedPath enables
+        automatic certificate copying. If a secondary replica is missing a master key, this password is used to create one.
+
     .PARAMETER Certificate
         Specifies the certificate name for endpoint authentication instead of Windows authentication.
         Both endpoints must have matching certificates with corresponding public/private key pairs.
@@ -395,6 +401,7 @@ function New-DbaAvailabilityGroup {
         [int]$Port = 1433,
         [switch]$Dhcp,
         [string]$ClusterConnectionOption,
+        [Security.SecureString]$MasterKeySecurePassword,
         [switch]$EnableException
     )
     begin {
@@ -791,6 +798,7 @@ function New-DbaAvailabilityGroup {
                 }
                 if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
                 if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
+                if ($MasterKeySecurePassword) { $addDatabaseParams['MasterKeySecurePassword'] = $MasterKeySecurePassword }
                 try {
                     $null = Add-DbaAgDatabase @addDatabaseParams
                 } catch {

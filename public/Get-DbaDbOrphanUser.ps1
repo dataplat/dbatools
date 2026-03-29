@@ -6,6 +6,10 @@ function Get-DbaDbOrphanUser {
     .DESCRIPTION
         An orphan user is defined by a user that does not have their matching login. (Login property = "").
 
+        Note: Users in contained databases (Partial or Full containment type) are not considered orphaned for SQL logins,
+        as these users authenticate directly to the database without requiring a server-level login.
+        Windows users are still checked for orphaned status regardless of containment type.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -107,7 +111,13 @@ function Get-DbaDbOrphanUser {
                     try {
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
                         $UsersToWork = @()
-                        $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in 'SqlLogin', 'Certificate') }
+                        # In contained databases (Partial or Full), SQL users authenticate directly to the database
+                        # without requiring a server-level login, so they are not considered orphaned
+                        if ($db.ContainmentType.ToString() -eq "None") {
+                            $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in 'SqlLogin', 'Certificate') }
+                        } else {
+                            Write-Message -Level Verbose -Message "Skipping SQL login orphan check on contained database '$db' (ContainmentType: $($db.ContainmentType))."
+                        }
                         $UsersToWork += $db.Users | Where-Object { ($_.Login -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in 'WindowsUser', 'WindowsGroup') }
                         if ($UsersToWork.Count -gt 0) {
                             Write-Message -Level Verbose -Message "Orphan users found"

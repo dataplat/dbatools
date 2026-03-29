@@ -45,6 +45,7 @@ Describe $CommandName -Tag UnitTests {
                 "Port",
                 "Dhcp",
                 "ClusterConnectionOption",
+                "MasterKeySecurePassword",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty

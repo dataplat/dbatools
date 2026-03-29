@@ -71,6 +71,29 @@ function Update-ServiceStatus {
         $svcControlBlock = {
             $group = $_.Group
             $computerName = $_.Name
+            # Create a CIM session preferring DCOM to avoid requiring WinRM on the target machine.
+            # CIM instances become deserialized when crossing runspace boundaries and lose their
+            # session context, causing Invoke-CimMethod to attempt a new WinRM connection by default.
+            # Using DCOM avoids this WinRM dependency for machines where WinRM is not configured.
+            $splatCimDcomOption = @{
+                Protocol = "Dcom"
+            }
+            $cimDcomOption = New-CimSessionOption @splatCimDcomOption
+            $splatCimSessionDcom = @{
+                ComputerName  = $computerName
+                SessionOption = $cimDcomOption
+                ErrorAction   = "Stop"
+            }
+            try {
+                $cimSession = New-CimSession @splatCimSessionDcom
+            } catch {
+                # Fall back to default protocol (WinRM) if DCOM is unavailable
+                try {
+                    $cimSession = New-CimSession -ComputerName $computerName -ErrorAction "Stop"
+                } catch {
+                    $cimSession = $null
+                }
+            }
             $servicePriorityCollection = $group.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
             foreach ($priority in $servicePriorityCollection) {
                 $services = $group | Where-Object { $_.ServicePriority -eq $priority }
@@ -104,6 +127,23 @@ function Update-ServiceStatus {
         $invokeResults = @()
         foreach ($service in $servicesToRestart) {
             if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
+                # Get a fresh CIM instance via the DCOM session to avoid issues with deserialized
+                # CIM objects crossing runspace boundaries without their session context.
+                if ($cimSession) {
+                    try {
+                        $splatGetFreshCim = @{
+                            CimSession = $cimSession
+                            Namespace  = "root\cimv2"
+                            Query      = "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'"
+                        }
+                        $freshCimObj = Get-CimInstance @splatGetFreshCim
+                        if ($freshCimObj) {
+                            $service._CimObject = $freshCimObj
+                        }
+                    } catch {
+                        # Fall back to using the existing deserialized CIM object if session refresh fails
+                    }
+                }
                 #Invoke corresponding CIM method
                 $invokeResult = Invoke-CimMethod -InputObject $service._CimObject -MethodName $methodName
                 $invokeResults += [psobject]@{
@@ -123,7 +163,19 @@ function Update-ServiceStatus {
                 foreach ($result in ($invokeResults | Where-Object CheckPending -eq $true)) {
                     try {
                         #Refresh Cim instance - not using Get-DbaCmObject because module is not loaded here, but it only refreshes existing object
-                        $result.Service._CimObject = $result.Service._CimObject | Get-CimInstance
+                        if ($cimSession) {
+                            $splatRefreshCim = @{
+                                CimSession = $cimSession
+                                Namespace  = "root\cimv2"
+                                Query      = "SELECT State FROM Win32_Service WHERE Name = '$($result.Service.ServiceName)'"
+                            }
+                            $refreshedCimObj = Get-CimInstance @splatRefreshCim
+                            if ($refreshedCimObj) {
+                                $result.Service._CimObject = $refreshedCimObj
+                            }
+                        } else {
+                            $result.Service._CimObject = $result.Service._CimObject | Get-CimInstance
+                        }
                     } catch {
                         $result.ServiceExitCode = -3
                         $result.ServiceState = 'Unknown'
@@ -176,6 +228,11 @@ function Update-ServiceStatus {
             if ($result.ServiceState) { $result.Service.State = $result.ServiceState }
             $result
         }
+    }
+    # Clean up the CIM session created for DCOM connections
+    if ($cimSession) {
+        Remove-CimSession -CimSession $cimSession -ErrorAction "SilentlyContinue"
+        $cimSession = $null
     }
 }
 
