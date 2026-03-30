@@ -92,15 +92,48 @@ function Get-DbaNetworkEncryption {
 
     process {
         foreach ($instance in $SqlInstance) {
-
             try {
+                $computerName = $instance.ComputerName
+                $instanceName = $instance.InstanceName
+                $tlsInstanceName = if ($instanceName -eq "MSSQLSERVER") { "" } else { $instanceName }
 
+                $resolvedPort = if ($instance.Port -gt 0) {
+                    $instance.Port
+                } elseif ($instanceName -eq "MSSQLSERVER") {
+                    1433
+                } else {
+                    $null
+                }
+
+                $sqlInstanceName = if ($instanceName -and $instanceName -ne "MSSQLSERVER") {
+                    "$computerName\$instanceName"
+                } else {
+                    $computerName
+                }
+
+                $splatTls = @{
+                    ComputerName = $computerName
+                    InstanceName = $tlsInstanceName
+                }
+
+                if ($instance.Port -gt 0) {
+                    $splatTls.ConnectionType = "TCP"
+                    $splatTls.Port           = $instance.Port
+                }
+
+                $cert = Get-SqlServerTlsCertificate @splatTls
+
+                if (-not $cert) {
+                    continue
+                }
+
+                $dnsNames = $cert.DnsNameList
 
                 [PSCustomObject]@{
                     ComputerName = $computerName
                     InstanceName = $instanceName
                     SqlInstance  = $sqlInstanceName
-                    Port         = $port
+                    Port         = $resolvedPort
                     Subject      = $cert.Subject
                     Issuer       = $cert.Issuer
                     Thumbprint   = $cert.Thumbprint
