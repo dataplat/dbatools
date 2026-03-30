@@ -105,7 +105,7 @@ function Get-DbaNetworkEncryption {
                     $null
                 }
 
-                $sqlInstanceName = if ($instanceName -and $instanceName -ne "MSSQLSERVER") {
+                $sqlInstanceName = if ($instanceName -ne "MSSQLSERVER") {
                     "$computerName\$instanceName"
                 } else {
                     $computerName
@@ -127,8 +127,6 @@ function Get-DbaNetworkEncryption {
                     continue
                 }
 
-                $dnsNames = $cert.DnsNameList
-
                 [PSCustomObject]@{
                     ComputerName = $computerName
                     InstanceName = $instanceName
@@ -139,7 +137,7 @@ function Get-DbaNetworkEncryption {
                     Thumbprint   = $cert.Thumbprint
                     NotBefore    = $cert.NotBefore
                     Expires      = $cert.NotAfter
-                    DnsNameList  = $dnsNames
+                    DnsNameList  = $cert.DnsNameList
                     SerialNumber = $cert.SerialNumber
                     Certificate  = $cert
                 }
