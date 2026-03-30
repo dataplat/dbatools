@@ -21,11 +21,6 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
     Context "Certificate retrieval" {
         BeforeAll {
             # Attempt to retrieve the certificate - not all environments have TLS configured
