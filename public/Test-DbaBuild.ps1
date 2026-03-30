@@ -21,6 +21,12 @@ function Test-DbaBuild {
         Use format like "1SP", "2CU", or "1SP 1CU" to specify maximum allowed gaps from current releases.
         This approach automatically adjusts compliance targets as new patches are released, unlike fixed MinimumBuild values.
 
+    .PARAMETER MaxTimeBehind
+        Defines compliance based on how much time has elapsed since the current build was released.
+        Use format like "6Mo" for months or "180D" for days to specify the maximum acceptable build age.
+        Requires ReleaseDate data in the build reference index. Builds without release date information will be reported as non-compliant with a warning.
+        This approach aligns with organizational patch policies measured in time (e.g., "all instances must run a build released within the last 6 months").
+
     .PARAMETER Latest
         Requires SQL Server instances to be running the most current build available for their version.
         Use this for environments with strict currency requirements where any outdated build is considered non-compliant.
@@ -84,6 +90,14 @@ function Test-DbaBuild {
         - BuildTarget: The target build version that represents the compliance threshold
         - MinimumBuild: Hidden (not shown by default)
 
+        When -MaxTimeBehind is specified:
+        - MaxTimeBehind: The maximum time window specification (e.g., "6Mo", "180D")
+        - BuildTarget: The oldest build version released within the time window (represents minimum acceptable version)
+        - MinimumBuild: Hidden (not shown by default)
+        - MaxBehind: Hidden (not shown by default)
+        - SPTarget: Hidden (not shown by default)
+        - CUTarget: Hidden (not shown by default)
+
         When -SqlInstance is specified (instead of -Build):
         - SqlInstance: The source SQL Server instance where the build was discovered
 
@@ -145,6 +159,18 @@ function Test-DbaBuild {
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a.
 
+    .EXAMPLE
+        PS C:\> Test-DbaBuild -Build "16.0.4095" -MaxTimeBehind "6Mo"
+
+        Returns information about SQL Server 2022 CU10 (16.0.4095), checking whether it was released within the last 6 months.
+        Requires ReleaseDate data in the build reference index.
+
+    .EXAMPLE
+        PS C:\> Test-DbaBuild -SqlInstance $servers -MaxTimeBehind "180D" -Update
+
+        Checks all instances in $servers to ensure they are running a build released within the last 180 days.
+        Updates the build reference index before performing the check.
+
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
@@ -152,6 +178,7 @@ function Test-DbaBuild {
         [version[]]$Build,
         [version]$MinimumBuild,
         [string]$MaxBehind,
+        [string]$MaxTimeBehind,
         [switch] $Latest,
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -173,16 +200,16 @@ function Test-DbaBuild {
         }
 
         $ComplianceSpec = @()
-        $ComplianceSpecExclusiveParams = @('MinimumBuild', 'MaxBehind', 'Latest')
+        $ComplianceSpecExclusiveParams = @('MinimumBuild', 'MaxBehind', 'MaxTimeBehind', 'Latest')
         foreach ($exclParam in $ComplianceSpecExclusiveParams) {
             if (Test-Bound -Parameter $exclParam) { $ComplianceSpec += $exclParam }
         }
         if ($ComplianceSpec.Length -gt 1) {
-            Stop-Function -Category InvalidArgument -Message "-MinimumBuild, -MaxBehind and -Latest are mutually exclusive. Please choose only one. Quitting."
+            Stop-Function -Category InvalidArgument -Message "-MinimumBuild, -MaxBehind, -MaxTimeBehind and -Latest are mutually exclusive. Please choose only one. Quitting."
             return
         }
         if ($ComplianceSpec.Length -eq 0) {
-            Stop-Function -Category InvalidArgument -Message "You need to choose one from -MinimumBuild, -MaxBehind and -Latest. Quitting."
+            Stop-Function -Category InvalidArgument -Message "You need to choose one from -MinimumBuild, -MaxBehind, -MaxTimeBehind and -Latest. Quitting."
             return
         }
         if ($MaxBehind) {
@@ -214,6 +241,18 @@ function Test-DbaBuild {
                 return
             }
         }
+        if ($MaxTimeBehind) {
+            $MaxTimeBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>Mo|D)$'
+            $timePieceMatch = $MaxTimeBehindValidator.Match($MaxTimeBehind)
+            if (-not $timePieceMatch.Success) {
+                Stop-Function -Category InvalidArgument -Message "MaxTimeBehind has an invalid syntax ('$MaxTimeBehind' could not be parsed). Use formats like '6Mo' for months or '180D' for days."
+                return
+            }
+            $ParsedMaxTimeBehind = @{
+                HowMany = [int]$timePieceMatch.Groups['howmany'].Value
+                What    = $timePieceMatch.Groups['what'].Value
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -222,9 +261,11 @@ function Test-DbaBuild {
             $hiddenProps += 'SqlInstance'
         }
         if ($MinimumBuild) {
-            $hiddenProps += 'MaxBehind', 'SPTarget', 'CUTarget', 'BuildTarget'
+            $hiddenProps += 'MaxBehind', 'MaxTimeBehind', 'SPTarget', 'CUTarget', 'BuildTarget'
         } elseif ($MaxBehind -or $Latest) {
-            $hiddenProps += 'MinimumBuild'
+            $hiddenProps += 'MinimumBuild', 'MaxTimeBehind'
+        } elseif ($MaxTimeBehind) {
+            $hiddenProps += 'MinimumBuild', 'MaxBehind', 'SPTarget', 'CUTarget'
         }
         if ($Build) {
             $BuildVersions = Get-DbaBuild -Build $Build -Update:$Update -EnableException:$EnableException
@@ -310,10 +351,32 @@ function Test-DbaBuild {
                 if ($inputbuild -ge $targetedBuild.VersionObject) {
                     $compliant = $true
                 }
+            } elseif ($MaxTimeBehind) {
+                $buildAnchor = "$($inputbuild.Major).$($inputbuild.Minor).*"
+                if ($inputbuild.Minor -notin (0, 50)) {
+                    $buildAnchor = "$($inputbuild.Major).$($inputbuild.Minor - $inputbuild.Minor % 10).*"
+                    Write-Message -Level Debug -Message "Normalized Minor Version to account version aliases"
+                }
+                $IdxVersion = $IdxRef | Where-Object Version -Like $buildAnchor
+                $today = (Get-Date).Date
+                if ($ParsedMaxTimeBehind.What -eq "Mo") {
+                    $cutoffDate = $today.AddMonths(-$ParsedMaxTimeBehind.HowMany)
+                } else {
+                    $cutoffDate = $today.AddDays(-$ParsedMaxTimeBehind.HowMany)
+                }
+                $targetedBuild = $IdxVersion | Where-Object { $_.ReleaseDate -and [datetime]$_.ReleaseDate -ge $cutoffDate } | Select-Object -First 1
+                $currentBuildEntry = $IdxVersion | Where-Object VersionObject -eq $inputbuild
+                if (-not $currentBuildEntry -or -not $currentBuildEntry.ReleaseDate) {
+                    Write-Message -Level Warning -Message "No ReleaseDate found for build $inputbuild - cannot determine time-based compliance"
+                    $compliant = $false
+                } else {
+                    $compliant = ([datetime]$currentBuildEntry.ReleaseDate -ge $cutoffDate)
+                }
             }
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name Compliant -Value $compliant
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name MinimumBuild -Value $MinimumBuild
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name MaxBehind -Value $MaxBehind
+            Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name MaxTimeBehind -Value $MaxTimeBehind
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name SPTarget -Value $targetSPName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name CUTarget -Value $targetCUName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name BuildTarget -Value $targetedBuild.VersionObject
