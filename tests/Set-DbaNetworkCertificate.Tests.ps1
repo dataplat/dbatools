@@ -52,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     It "Warns that no suitable certificate was found" {
-        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService -WarningVariable WarnVar
+        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService -WarningAction SilentlyContinue
         $result | Should -BeNullOrEmpty
         $WarnVar | Should -Match "No suitable certificate found"
     }
