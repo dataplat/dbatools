@@ -111,71 +111,80 @@ Function Get-SqlServerTlsCertificate {
         $StrictEncrypt
     )
 
-    class TdsTlsStream : System.IO.Stream {
-        [System.IO.Stream]$InnerStream
-        [int]$PayloadLength = 0
+    if (-not ([System.Management.Automation.PSTypeName]"TdsTlsStream").Type) {
+        Add-Type -TypeDefinition @"
+using System;
+using System.IO;
 
-        TdsTlsStream([System.IO.Stream]$InnerStream) {
-            $this.InnerStream = $InnerStream
-        }
+public class TdsTlsStream : Stream {
+    private Stream _innerStream;
+    private int _payloadLength = 0;
 
-        [bool] get_CanRead() { return $this.InnerStream.CanRead }
-        [bool] get_CanWrite() { return $this.InnerStream.CanWrite }
-        [bool] get_CanSeek() { return $this.InnerStream.CanSeek }
-        [Int64] get_Length() { return $this.InnerStream.Length }
-        [Int64] get_Position() { return $this.InnerStream.Position }
-        [void] set_Position([Int64]$Value) { $this.InnerStream.Position = $Value }
-        [int] get_ReadTimeout() { return $this.InnerStream.ReadTimeout }
-        [int] get_WriteTimeout() { return $this.InnerStream.WriteTimeout }
+    public TdsTlsStream(Stream innerStream) {
+        _innerStream = innerStream;
+    }
 
-        [void] Flush() { $this.InnerStream.Flush() }
-        [Int64] Seek([Int64]$Offset, [System.IO.SeekOrigin]$Origin) { return $this.InnerStream.Seek($Offset, $Origin) }
-        [void] SetLength([Int64]$Value) { $this.InnerStream.SetLength($Value) }
+    public override bool CanRead { get { return _innerStream.CanRead; } }
+    public override bool CanWrite { get { return _innerStream.CanWrite; } }
+    public override bool CanSeek { get { return _innerStream.CanSeek; } }
+    public override long Length { get { return _innerStream.Length; } }
+    public override long Position {
+        get { return _innerStream.Position; }
+        set { _innerStream.Position = value; }
+    }
+    public override int ReadTimeout { get { return _innerStream.ReadTimeout; } }
+    public override int WriteTimeout { get { return _innerStream.WriteTimeout; } }
 
-        [int] Read([byte[]]$Buffer, [int]$Offset, [int]$Count) {
-            # We need to strip off the TDS header before setting the Buffer
-            if ($this.PayloadLength -eq 0) {
-                $header = [byte[]]::new(8)
-                $read = 0
-                while ($read -lt 8) {
-                    $read += $this.InnerStream.Read($header, 0, 8)
-                }
+    public override void Flush() { _innerStream.Flush(); }
+    public override long Seek(long offset, SeekOrigin origin) { return _innerStream.Seek(offset, origin); }
+    public override void SetLength(long value) { _innerStream.SetLength(value); }
 
-                $lengthBeforeHeader = [System.BitConverter]::ToUInt16([byte[]]@($header[3], $header[2]), 0)
-                $lengthBeforeHeader -= 8
-                $this.PayloadLength = $lengthBeforeHeader
+    public override int Read(byte[] buffer, int offset, int count) {
+        // We need to strip off the TDS header before setting the Buffer
+        if (_payloadLength == 0) {
+            byte[] header = new byte[8];
+            int read = 0;
+            while (read < 8) {
+                read += _innerStream.Read(header, 0, 8);
             }
 
-            if ($Count -gt $this.PayloadLength) {
-                $Count = $this.PayloadLength
-            }
-            $read = $this.InnerStream.Read($Buffer, $Offset, $Count)
-            $this.PayloadLength -= $read
-            return $read
+            int lengthBeforeHeader = (int)BitConverter.ToUInt16(new byte[] { header[3], header[2] }, 0);
+            lengthBeforeHeader -= 8;
+            _payloadLength = lengthBeforeHeader;
         }
 
-        [void] Write([byte[]]$Buffer, [int]$Offset, [int]$Count) {
-            $newPayload = $this.GenerateTdsHeader($Buffer, $Offset, $Count)
-            $this.InnerStream.Write($newPayload, 0, $newPayload.Length)
+        if (count > _payloadLength) {
+            count = _payloadLength;
         }
+        int bytesRead = _innerStream.Read(buffer, offset, count);
+        _payloadLength -= bytesRead;
+        return bytesRead;
+    }
 
-        [byte[]] GenerateTdsHeader([byte[]]$Payload, [int]$Offset, [int]$Count) {
-            # The length is big endian encoded so it is inserted in reverse order
-            $lengthBytes = [System.BitConverter]::GetBytes([uint16]($Count + 8))
+    public override void Write(byte[] buffer, int offset, int count) {
+        byte[] newPayload = GenerateTdsHeader(buffer, offset, count);
+        _innerStream.Write(newPayload, 0, newPayload.Length);
+    }
 
-            $newPayload = [byte[]]::new(8 + $Count)
-            $newPayload[0] = 0x12  # Type - Pre-Login
-            $newPayload[1] = 0x01  # Status - End of message (EOM)
-            $newPayload[2] = $lengthBytes[1]
-            $newPayload[3] = $lengthBytes[0]
-            $newPayload[4] = 0  # SPID
-            $newPayload[5] = 0  # SPID
-            $newPayload[6] = 0  # PacketID
-            $newPayload[7] = 0  # Window
-            [System.Array]::Copy($Payload, $Offset, $newPayload, 8, $Count)
+    private byte[] GenerateTdsHeader(byte[] payload, int offset, int count) {
+        // The length is big endian encoded so it is inserted in reverse order
+        byte[] lengthBytes = BitConverter.GetBytes((ushort)(count + 8));
 
-            return $newPayload
-        }
+        byte[] newPayload = new byte[8 + count];
+        newPayload[0] = 0x12;  // Type - Pre-Login
+        newPayload[1] = 0x01;  // Status - End of message (EOM)
+        newPayload[2] = lengthBytes[1];
+        newPayload[3] = lengthBytes[0];
+        newPayload[4] = 0;  // SPID
+        newPayload[5] = 0;  // SPID
+        newPayload[6] = 0;  // PacketID
+        newPayload[7] = 0;  // Window
+        Array.Copy(payload, offset, newPayload, 8, count);
+
+        return newPayload;
+    }
+}
+"@
     }
 
     $udpClient = $socket = $targetStream = $sslStream = $null
@@ -190,7 +199,7 @@ Function Get-SqlServerTlsCertificate {
         if ($ConnectionType -eq "SQLBrowser") {
             # Use the SQLBrowser
             # https://learn.microsoft.com/en-us/openspecs/windows_protocols/mc-sqlr/2e1560c9-5097-4023-9f5e-72b9ff1ec3b1
-            $udpClient = [System.Net.Sockets.UdpClient]::new($ComputerName, 1434)
+            $udpClient = New-Object -TypeName System.Net.Sockets.UdpClient -ArgumentList @($ComputerName, 1434)
             $udpClient.Client.SendTimeout = $ConnectTimeout
             $udpClient.Client.ReceiveTimeout = $ConnectTimeout
             $null = $udpClient.Send([byte[]]@(0x03), 1)  # CLNT_UCAST_EX
@@ -239,18 +248,17 @@ Function Get-SqlServerTlsCertificate {
         if ($ConnectionType -eq "TCP") {
             Write-Verbose -Message "Connecting to TCP/IP endpoint $($ComputerName):$Port"
 
-            $socket = [System.Net.Sockets.TcpClient]::new()
+            $socket = New-Object -TypeName System.Net.Sockets.TcpClient
             $connectTask = $socket.ConnectAsync($ComputerName, $Port)
             if (-not $connectTask.Wait($ConnectTimeout)) {
                 throw "Timed out connecting to TCP/IP endpoint $($ComputerName):$Port"
             }
 
-            $null = $connectTask.GetAwaiter().GetResult()
             $targetStream = $socket.GetStream()
         }
         else {
             Write-Verbose -Message "Connecting to Named Pipe endpoint \\$($ComputerName)\pipe\$pipeName"
-            $targetStream = [System.IO.Pipes.NamedPipeClientStream]::new(
+            $targetStream = New-Object -TypeName System.IO.Pipes.NamedPipeClientStream -ArgumentList @(
                 $ComputerName,
                 $pipeName,
                 [System.IO.Pipes.PipeDirection]::InOut)
@@ -281,7 +289,7 @@ Function Get-SqlServerTlsCertificate {
             )
             $targetStream.Write($tdsPreLogin, 0, $tdsPreLogin.Count)
 
-            $headerBytes = [byte[]]::new(8)
+            $headerBytes = New-Object byte[] 8
             $read = 0
             while ($read -ne $headerBytes.Length) {
                 $read += $targetStream.Read($headerBytes, $read, $headerBytes.Length - $read)
@@ -292,7 +300,7 @@ Function Get-SqlServerTlsCertificate {
             $payloadLength = [System.BitConverter]::ToUInt16([byte[]]@($headerBytes[3], $headerBytes[2]), 0)
             $payloadLength -= 8
 
-            $tdsPreLoginResp = [byte[]]::new($payloadLength)
+            $tdsPreLoginResp = New-Object byte[] $payloadLength
             $read = 0
             while ($read -ne $tdsPreLoginResp.Length) {
                 $read += $targetStream.Read($tdsPreLoginResp, $read, $tdsPreLoginResp.Length - $read)
@@ -337,7 +345,7 @@ Function Get-SqlServerTlsCertificate {
             # there is a note that TDS 7.1 or earlier (SQL Server 2000 or earlier)
             # should use the table response type (0x04) instead. As this is so old
             # I'm not going to implement that.
-            $streamToWrap = [TdsTlsStream]::new($targetStream)
+            $streamToWrap = New-Object -TypeName TdsTlsStream -ArgumentList $targetStream
         }
 
         # Create the SslStream with a disable certificate verification callback.
@@ -345,13 +353,14 @@ Function Get-SqlServerTlsCertificate {
         # hostname. The callback will also capture more information about the peer
         # Allows us to emit warnings if it was going to fail.
         $certState = @{}
-        $sslStream = [System.Net.Security.SslStream]::new($streamToWrap, $false, {
-                param($Sender, $Certificate, $Chain, $SslPolicyErrors)
+        $sslValidationCallback = [System.Net.Security.RemoteCertificateValidationCallback] {
+            param($Sender, $Certificate, $Chain, $SslPolicyErrors)
 
-                $certState.Chain = $chain
-                $certState.SslPolicyErrors = $SslPolicyErrors
-                $true
-            })
+            $certState.Chain = $Chain
+            $certState.SslPolicyErrors = $SslPolicyErrors
+            $true
+        }
+        $sslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($streamToWrap, $false, $sslValidationCallback)
         Write-Verbose -Message "Starting TLS Handshake"
         $sslStream.AuthenticateAsClient($ComputerName)
         Write-Verbose -Message "TLS result: $($certState.SslPolicyErrors)"
@@ -364,7 +373,7 @@ Function Get-SqlServerTlsCertificate {
             Write-Warning -Message $msg.TrimEnd()
         }
 
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($sslStream.RemoteCertificate)
+        $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $sslStream.RemoteCertificate
         Write-Verbose -Message "Found cert for $($cert.Subject), Expires: $($cert.NotAfter), SANs: $($cert.DnsNameList -join ", ")"
 
         $cert
