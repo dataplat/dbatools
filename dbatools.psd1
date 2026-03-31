@@ -80,6 +80,7 @@
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
         'Clear-DbaWaitStatistics',
+        'Compare-DbaDbSchema',
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',

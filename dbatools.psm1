@@ -456,6 +456,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaBackup',
         'Get-DbaPermission',
         'Get-DbaLastBackup',
+        'Compare-DbaDbSchema',
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
