@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "SqlCredential",
                 "Database",
                 "Table",
+                "TargetFileGroup",
                 "RebuildOffline",
                 "Force",
                 "EnableException"
