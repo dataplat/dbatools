@@ -58,6 +58,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         $sourceDacpac = "$testFolder\$dbSourceName.dacpac"
 
+        # Export the empty target DB to a DACPAC now, before any tests modify it.
+        $splatExportTarget = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $dbTargetName
+            FilePath    = "$testFolder\$dbTargetName.dacpac"
+        }
+        $null = Export-DbaDacPackage @splatExportTarget
+
+        $emptyTargetDacpac = "$testFolder\$dbTargetName.dacpac"
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -109,17 +119,6 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Compare two DACPAC files" {
         It "Returns schema differences between two DACPAC files" {
-            # Export the empty target as a second DACPAC.
-            $splatExportTarget = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $dbTargetName
-                FilePath    = "$testFolder\$dbTargetName.dacpac"
-            }
-            $null = Export-DbaDacPackage @splatExportTarget
-
-            # Create an empty-DB DACPAC to compare against the source DACPAC.
-            $emptyTargetDacpac = "$testFolder\$dbTargetName.dacpac"
-
             $splatCompare = @{
                 SourcePath = $sourceDacpac
                 TargetPath = $emptyTargetDacpac
@@ -132,8 +131,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Keeps the report file when -KeepReport is specified" {
-            $emptyTargetDacpac = "$testFolder\$dbTargetName.dacpac"
-
             $splatCompare = @{
                 SourcePath = $sourceDacpac
                 TargetPath = $emptyTargetDacpac
