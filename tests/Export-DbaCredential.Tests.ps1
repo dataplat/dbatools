@@ -108,6 +108,10 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have the password" {
             $exportResults | Should -Match "ReallyT3rrible!"
         }
+
+        It "Should include IF NOT EXISTS guard" {
+            $exportResults | Should -Match "IF NOT EXISTS"
+        }
     }
 
     Context "Should export a specific credential" {
