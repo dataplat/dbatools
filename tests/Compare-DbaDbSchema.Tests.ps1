@@ -48,25 +48,25 @@ Describe $CommandName -Tag IntegrationTests {
         # Create target DB (empty - no tables, so source will show Create differences).
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbTargetName
 
+        # Define file paths for the DACPACs.
+        $sourceDacpac = "$testFolder\$dbSourceName.dacpac"
+        $emptyTargetDacpac = "$testFolder\$dbTargetName.dacpac"
+
         # Export source DB to a DACPAC.
         $splatExport = @{
             SqlInstance = $TestConfig.InstanceSingle
             Database    = $dbSourceName
-            FilePath    = "$testFolder\$dbSourceName.dacpac"
+            FilePath    = $sourceDacpac
         }
         $null = Export-DbaDacPackage @splatExport
-
-        $sourceDacpac = "$testFolder\$dbSourceName.dacpac"
 
         # Export the empty target DB to a DACPAC now, before any tests modify it.
         $splatExportTarget = @{
             SqlInstance = $TestConfig.InstanceSingle
             Database    = $dbTargetName
-            FilePath    = "$testFolder\$dbTargetName.dacpac"
+            FilePath    = $emptyTargetDacpac
         }
         $null = Export-DbaDacPackage @splatExportTarget
-
-        $emptyTargetDacpac = "$testFolder\$dbTargetName.dacpac"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -86,10 +86,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Compare DACPAC against a live database" {
         It "Returns schema differences when source has objects not in target" {
             $splatCompare = @{
-                SourcePath          = $sourceDacpac
-                TargetSqlInstance   = $TestConfig.InstanceSingle
-                TargetDatabase      = $dbTargetName
-                OutputPath          = $testFolder
+                SourcePath        = $sourceDacpac
+                TargetSqlInstance = $TestConfig.InstanceSingle
+                TargetDatabase    = $dbTargetName
+                OutputPath        = $testFolder
             }
             $result = Compare-DbaDbSchema @splatCompare
             $result | Should -Not -BeNullOrEmpty
