@@ -116,7 +116,8 @@ function Get-DbaReportingService {
                     if ($serviceArray -notcontains $($service.ServiceName)) {
                         if (!$InstanceName -or $service.InstanceName -in $InstanceName) {
                             #Add other properties and methods
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value 'SSRS'
+                            $reportServiceType = if ($namespace.Name -eq "RS_PBIRS") { "PowerBI" } else { "SSRS" }
+                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value $reportServiceType
                             Add-Member -Force -InputObject $service -MemberType AliasProperty -Name StartName -Value WindowsServiceIdentityActual
 
                             try {
