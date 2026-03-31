@@ -161,7 +161,8 @@ function Compare-DbaDbSchema {
             $sqlPackageArgs += " /tcs:""$connStringEscaped"""
             $targetDescription = "$($targetServer.DomainInstanceName)\$TargetDatabase"
         } else {
-            $sqlPackageArgs += " /tf:""$TargetPath"""
+            $targetDbName = [System.IO.Path]::GetFileNameWithoutExtension($TargetPath)
+            $sqlPackageArgs += " /tf:""$TargetPath"" /tdn:""$targetDbName"""
             $targetDescription = $TargetPath
         }
 
@@ -212,12 +213,13 @@ function Compare-DbaDbSchema {
         foreach ($operation in $report.DeploymentReport.Operations.Operation) {
             $operationName = $operation.Name
             foreach ($item in $operation.Item) {
+                $objectType = $item.Type -replace "^Sql", ""
                 $outputObject = [PSCustomObject]@{
                     SourcePath = $sourcePathFull
                     Target     = $targetDescription
                     Operation  = $operationName
                     Value      = $item.Value
-                    Type       = $item.Type
+                    Type       = $objectType
                 }
 
                 if ($KeepReport) {
