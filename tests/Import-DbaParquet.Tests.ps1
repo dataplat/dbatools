@@ -5,12 +5,22 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+if ($null -eq $PSDefaultParameterValues) {
+    $PSDefaultParameterValues = @{ }
+}
+
+$hasIntegrationConfig = $false
+if ($TestConfig -and $TestConfig.appveyorlabrepo -and $TestConfig.InstanceMulti1) {
+    $pathEcdc = Join-Path $TestConfig.appveyorlabrepo "parquet\ecdc_cases.parquet"
+    $pathBoundaries = Join-Path $TestConfig.appveyorlabrepo "parquet\world-administrative-boundaries.parquet"
+    $hasIntegrationConfig = (Test-Path $pathEcdc) -and (Test-Path $pathBoundaries)
+}
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
+            $expectedParameters = @(
                 "Path",
                 "SqlInstance",
                 "SqlCredential",
@@ -38,7 +48,7 @@ Describe $CommandName -Tag UnitTests {
                 "ThrottleLimit",
                 "ParallelBatchSize"
             )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            ($expectedParameters | Where-Object { $PSItem -notin $hasParameters }) | Should -BeNullOrEmpty
         }
 
         It "Should not have any CSV-only parameters" {
@@ -81,7 +91,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 

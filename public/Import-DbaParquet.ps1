@@ -268,6 +268,22 @@ function Import-DbaParquet {
             if (-not $moduleRoot) {
                 $moduleRoot = Split-Path -Path (Split-Path -Path $MyInvocation.MyCommand.ScriptBlock.File -Parent) -Parent
             }
+
+            $dependencyDllRelativePaths = @(
+                "bin\parquet\CommunityToolkit.HighPerformance.dll",
+                "bin\parquet\Microsoft.IO.RecyclableMemoryStream.dll",
+                "bin\parquet\Snappier.dll"
+            )
+            foreach ($dependencyDllRelativePath in $dependencyDllRelativePaths) {
+                $dependencyDllPath = Join-Path -Path $moduleRoot -ChildPath $dependencyDllRelativePath
+                if (Test-Path $dependencyDllPath) {
+                    try {
+                        Add-Type -Path $dependencyDllPath
+                    } catch {
+                    }
+                }
+            }
+
             $parquetDllPath = Join-Path -Path $moduleRoot -ChildPath "bin\parquet\Parquet.Net.dll"
             if (Test-Path $parquetDllPath) {
                 Add-Type -Path $parquetDllPath
