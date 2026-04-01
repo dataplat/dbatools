@@ -111,6 +111,25 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Table | Should -Be "ecdc_cases"
         }
 
+        It "creates SQL column types from Parquet schema in AutoCreateTable mode" {
+            $null = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -NoColumnOptimize -Truncate
+
+            $sql = @"
+SELECT
+    c.name AS ColumnName,
+    t.name AS TypeName
+FROM sys.columns c
+INNER JOIN sys.types t
+    ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
+  AND c.name IN ('date_rep', 'day', 'pop_data_2018')
+"@
+            $types = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $sql
+            ($types | Where-Object ColumnName -eq "date_rep").TypeName | Should -Be "datetime2"
+            ($types | Where-Object ColumnName -eq "day").TypeName | Should -Be "smallint"
+            ($types | Where-Object ColumnName -eq "pop_data_2018").TypeName | Should -Be "int"
+        }
+
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue

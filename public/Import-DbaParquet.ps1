@@ -52,13 +52,13 @@ function Import-DbaParquet {
         Use this when column names don't match but the order is correct, or when dealing with files that have inconsistent naming.
 
     .PARAMETER AutoCreateTable
-        Creates the destination table automatically if it doesn't exist, using varchar(MAX) for all columns.
-        After import, column sizes are automatically optimized based on actual data lengths (varchar(MAX) -> varchar(16/32/64/etc.)).
+        Creates the destination table automatically if it doesn't exist, using Parquet schema types for SQL column definitions.
+        String columns are created as varchar(MAX), then automatically optimized based on actual data lengths (varchar(MAX) -> varchar(16/32/64/etc.)).
         For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
     .PARAMETER NoColumnOptimize
         Skips the automatic column size optimization that runs after AutoCreateTable imports.
-        By default, AutoCreateTable creates varchar(MAX) columns and then shrinks them to fit the imported data.
+        By default, AutoCreateTable creates string columns as varchar(MAX) and then shrinks them to fit the imported data.
         Use this switch when importing multiple Parquet files into the same auto-created table, so that later files
         with longer values are not rejected due to columns being shrunk to fit only the first file's data.
 
@@ -385,8 +385,8 @@ function Import-DbaParquet {
                 .SYNOPSIS
                     Creates new Table using existing SqlCommand.
 
-                    SQL datatypes based on Parquet schema data fields.
-                    All columns use varchar(MAX).
+                    SQL datatypes are inferred from Parquet schema data fields.
+                    String columns use varchar(MAX) and can be post-optimized.
 
                 .EXAMPLE
                     New-SqlTable -DataFields $dataFields -SqlConn $sqlconn -Transaction $transaction
@@ -402,18 +402,13 @@ function Import-DbaParquet {
                 [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $columns = @()
-            foreach ($df in $DataFields) {
-                $columns += $df.Name
-            }
-
             $sqldatatypes = @();
-
-            foreach ($column in $columns) {
-                $sqldatatypes += "[$column] varchar(MAX)"
+            foreach ($df in $DataFields) {
+                $sqlType = Convert-ParquetTypeToSqlType -ClrType $df.ClrType
+                $sqldatatypes += "[$($df.Name)] $sqlType NULL"
             }
 
-            $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
+            $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ", ")) END"
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
             try {
