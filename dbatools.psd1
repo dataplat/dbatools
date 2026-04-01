@@ -423,6 +423,7 @@
         'Grant-DbaAgPermission',
         'Export-DbaCsv',
         'Import-DbaCsv',
+        'Import-DbaParquet',
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
         'Import-DbaSpConfigure',

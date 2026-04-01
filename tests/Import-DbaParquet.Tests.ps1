@@ -1,0 +1,244 @@
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName  = "dbatools",
+    $CommandName = "Import-DbaParquet",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
+
+Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "Path",
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "Table",
+                "Schema",
+                "Truncate",
+                "BatchSize",
+                "NotifyAfter",
+                "TableLock",
+                "CheckConstraints",
+                "FireTriggers",
+                "KeepIdentity",
+                "Column",
+                "ColumnMap",
+                "KeepOrdinalOrder",
+                "AutoCreateTable",
+                "NoColumnOptimize",
+                "NoProgress",
+                "UseFileNameForSchema",
+                "NoTransaction",
+                "StaticColumns",
+                "EnableException",
+                "Parallel",
+                "ThrottleLimit",
+                "ParallelBatchSize"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "Should not have any CSV-only parameters" {
+            $csvOnlyParams = @(
+                "NoHeaderRow",
+                "Delimiter",
+                "SingleColumn",
+                "KeepNulls",
+                "Quote",
+                "Escape",
+                "Comment",
+                "TrimmingOption",
+                "BufferSize",
+                "ParseErrorAction",
+                "Encoding",
+                "NullValue",
+                "MaxQuotedFieldLength",
+                "SkipEmptyLine",
+                "SupportsMultiline",
+                "UseColumnDefault",
+                "MaxDecompressedSize",
+                "SkipRows",
+                "QuoteMode",
+                "DuplicateHeaderBehavior",
+                "MismatchedFieldAction",
+                "DistinguishEmptyFromNull",
+                "NormalizeQuotes",
+                "CollectParseErrors",
+                "MaxParseErrors",
+                "DateTimeFormats",
+                "Culture",
+                "SampleRows",
+                "DetectColumnTypes"
+            )
+            $commandParams = (Get-Command $CommandName).Parameters.Keys
+            foreach ($csvParam in $csvOnlyParams) {
+                $commandParams | Should -Not -Contain $csvParam
+            }
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Set up Parquet file paths for testing
+        $pathEcdc = "$($TestConfig.appveyorlabrepo)\parquet\ecdc_cases.parquet"
+        $pathBoundaries = "$($TestConfig.appveyorlabrepo)\parquet\world-administrative-boundaries.parquet"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup test tables
+        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases, "world-administrative-boundaries", ecdc_cases_static, ecdc_cases_ordinal, ecdc_cases_notxn -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Auto-create table path" {
+        It "imports a Parquet file with AutoCreateTable" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "ecdc_cases"
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Import into existing table" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # First create table via auto-create, then truncate
+            $null = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "TRUNCATE TABLE ecdc_cases"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "imports into a pre-existing table" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "ecdc_cases"
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Truncate path" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "truncates and re-imports correctly" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -Truncate
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+
+            # Verify row count equals single import, not doubled
+            $count = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT COUNT(*) AS cnt FROM ecdc_cases").cnt
+            $count | Should -Be $result.RowsCopied
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Static columns" {
+        It "adds static columns to imported data" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table ecdc_cases_static -StaticColumns @{ ImportSource = 'test' }
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+
+            $data = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT TOP 1 ImportSource FROM ecdc_cases_static"
+            $data.ImportSource | Should -Be "test"
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases_static -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Ordinal mapping" {
+        It "imports with KeepOrdinalOrder" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table ecdc_cases_ordinal -KeepOrdinalOrder
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases_ordinal -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Non-transaction path" {
+        It "imports with NoTransaction" {
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table ecdc_cases_notxn -NoTransaction
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases_notxn -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "UseFileNameForSchema" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $schemaTestFile = Join-Path $TestDrive "staging.ecdc_parquet_test.parquet"
+            Copy-Item $pathEcdc $schemaTestFile
+            # Create the staging schema if it doesn't exist
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'staging') EXEC('CREATE SCHEMA staging')"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "derives schema from filename" {
+            $result = Import-DbaParquet -Path $schemaTestFile -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -UseFileNameForSchema
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.Schema | Should -Be "staging"
+            $result.Table | Should -Be "ecdc_parquet_test"
+            $result.RowsCopied | Should -BeGreaterThan 0
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "IF OBJECT_ID('staging.ecdc_parquet_test') IS NOT NULL DROP TABLE staging.ecdc_parquet_test" -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+}

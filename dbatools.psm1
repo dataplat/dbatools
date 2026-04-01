@@ -782,6 +782,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Resolve-DbaPath',
         'Export-DbaCsv',
         'Import-DbaCsv',
+        'Import-DbaParquet',
         'Invoke-DbaDbDataMasking',
         'New-DbaDbMaskingConfig',
         'Get-DbaDbccSessionBuffer',
