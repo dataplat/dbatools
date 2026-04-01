@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Import-DbaParquet",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -109,6 +109,15 @@ Describe $CommandName -Tag IntegrationTests {
             $result.RowsCopied | Should -BeGreaterThan 0
             $result.Database | Should -Be "tempdb"
             $result.Table | Should -Be "ecdc_cases"
+        }
+
+        It "imports binary parquet columns with AutoCreateTable" {
+            $result = Import-DbaParquet -Path $pathBoundaries -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+            $result.Database | Should -Be "tempdb"
+            $result.Table | Should -Be "world-administrative-boundaries"
         }
 
         It "creates SQL column types from Parquet schema in AutoCreateTable mode" {

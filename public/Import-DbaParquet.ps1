@@ -311,6 +311,51 @@ function Import-DbaParquet {
                 [int]$RowGroupIndex
             )
 
+            function Convert-ParquetValueForColumn {
+                param(
+                    [object]$Value,
+                    [System.Type]$TargetType,
+                    [string]$ColumnName
+                )
+
+                if ($null -eq $Value) {
+                    return [DBNull]::Value
+                }
+
+                if ($TargetType -eq [byte[]]) {
+                    if ($Value -is [byte[]]) {
+                        return , $Value
+                    }
+
+                    if ($Value -is [System.Array]) {
+                        $converted = New-Object byte[] ($Value.Length)
+                        for ($index = 0; $index -lt $Value.Length; $index++) {
+                            $item = $Value[$index]
+
+                            if ($item -is [byte]) {
+                                $converted[$index] = $item
+                                continue
+                            }
+
+                            if ($item -is [int] -and $item -ge [byte]::MinValue -and $item -le [byte]::MaxValue) {
+                                $converted[$index] = [byte]$item
+                                continue
+                            }
+
+                            Stop-Function -Message "Could not convert value in column $ColumnName to byte array. Element type: $($item.GetType().FullName)." -EnableException $true
+                            return
+                        }
+
+                        return , $converted
+                    }
+
+                    Stop-Function -Message "Could not convert value in column $ColumnName from type $($Value.GetType().FullName) to byte array." -EnableException $true
+                    return
+                }
+
+                return $Value
+            }
+
             $dataFields = $Reader.Schema.GetDataFields()
             $dataTable = New-Object System.Data.DataTable
 
@@ -328,7 +373,7 @@ function Import-DbaParquet {
             }
 
             $rowGroupReader = $Reader.OpenRowGroupReader($RowGroupIndex)
-            $columns = @{}
+            $columns = @{ }
             $rowCount = 0
             foreach ($df in $dataFields) {
                 if ($Column -and $Column -notcontains $df.Name) { continue }
@@ -341,7 +386,8 @@ function Import-DbaParquet {
                 $dataRow = $dataTable.NewRow()
                 foreach ($name in $columns.Keys) {
                     $val = $columns[$name][$row]
-                    $dataRow[$name] = if ($null -eq $val) { [DBNull]::Value } else { $val }
+                    $targetType = $dataTable.Columns[$name].DataType
+                    $dataRow[$name] = Convert-ParquetValueForColumn -Value $val -TargetType $targetType -ColumnName $name
                 }
                 if ($StaticColumns) {
                     foreach ($key in $StaticColumns.Keys) {
@@ -353,7 +399,7 @@ function Import-DbaParquet {
 
             if ($rowGroupReader -is [System.IDisposable]) { $rowGroupReader.Dispose() }
 
-            return ,$dataTable
+            return , $dataTable
         }
 
         function Convert-ParquetTypeToSqlType {
@@ -457,7 +503,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($getColumnsSql, $SqlConn)
             $null = $sqlcmd.Parameters.AddWithValue('tableName', "[$Schema].[$Table]")
 
-            $columns = @{}
+            $columns = @{ }
             $reader = $sqlcmd.ExecuteReader()
             while ($reader.Read()) {
                 $columns[$reader["ColumnName"]] = $reader["TypeName"]
@@ -477,7 +523,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($maxLenSql, $SqlConn)
             $reader = $sqlcmd.ExecuteReader()
 
-            $maxLengths = @{}
+            $maxLengths = @{ }
             if ($reader.Read()) {
                 foreach ($col in $columnNames) {
                     $val = $reader[$col]
