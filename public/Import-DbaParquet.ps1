@@ -429,10 +429,21 @@ function Import-DbaParquet {
             $clrType = $DataField.ClrType
             switch ($ClrType.FullName) {
                 'System.String' {
-                    if ($StoreStringAsUtf8) {
-                        return "varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8"
+                    $stringLength = "MAX"
+                    if ($DataField.SchemaElement -and
+                        $DataField.SchemaElement.Type -eq "FIXED_LEN_BYTE_ARRAY" -and
+                        $DataField.SchemaElement.TypeLength -gt 0) {
+                        $maxAllowed = if ($StoreStringAsUtf8) { 8000 } else { 4000 }
+                        $typeLength = [int]$DataField.SchemaElement.TypeLength
+                        if ($typeLength -le $maxAllowed) {
+                            $stringLength = $typeLength
+                        }
                     }
-                    return "nvarchar(MAX)"
+
+                    if ($StoreStringAsUtf8) {
+                        return "varchar($stringLength) COLLATE Latin1_General_100_BIN2_UTF8"
+                    }
+                    return "nvarchar($stringLength)"
                 }
                 'System.Int32' { return 'int' }
                 'System.Int64' { return 'bigint' }
@@ -463,7 +474,14 @@ function Import-DbaParquet {
                 'System.DateTime' { return 'datetime2(6)' }
                 'System.DateTimeOffset' { return 'datetimeoffset' }
                 'System.TimeSpan' { return 'time' }
-                'System.Byte[]' { return 'varbinary(MAX)' }
+                'System.Byte[]' {
+                    if ($DataField.SchemaElement -and
+                        $DataField.SchemaElement.Type -eq "FIXED_LEN_BYTE_ARRAY" -and
+                        $DataField.SchemaElement.TypeLength -gt 0) {
+                        return "varbinary($($DataField.SchemaElement.TypeLength))"
+                    }
+                    return "varbinary(MAX)"
+                }
                 'System.Guid' { return 'uniqueidentifier' }
                 default {
                     Stop-Function -Message "Unsupported Parquet type: $($clrType.FullName)" -EnableException $true
