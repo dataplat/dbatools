@@ -38,6 +38,7 @@ Describe $CommandName -Tag UnitTests {
                 "ColumnMap",
                 "KeepOrdinalOrder",
                 "AutoCreateTable",
+                "StoreStringAsUtf8",
                 "NoColumnOptimize",
                 "NoProgress",
                 "UseFileNameForSchema",

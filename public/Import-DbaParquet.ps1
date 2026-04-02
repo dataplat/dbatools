@@ -8,7 +8,7 @@ function Import-DbaParquet {
 
         Parquet files are read using Parquet.NET, which provides high-performance columnar data access. Unlike CSV, Parquet files contain schema information including column names and data types, which are used automatically during import.
 
-        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with varchar(MAX) columns. For production use, create your table first with proper data types and constraints. The function intelligently maps Parquet columns to table columns by name, with fallback to ordinal position when needed.
+        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with string columns using UTF-8 varchar(MAX) by default (or nvarchar(MAX) with -StoreStringAsUtf8:$false). For production use, create your table first with proper data types and constraints. The function intelligently maps Parquet columns to table columns by name, with fallback to ordinal position when needed.
 
         Column mapping lets you import specific columns or rename them during import, while schema detection can automatically place data in the correct schema based on filename patterns.
 
@@ -37,7 +37,7 @@ function Import-DbaParquet {
 
     .PARAMETER Table
         Specifies the destination table name. If omitted, uses the Parquet filename as the table name.
-        The table will be created automatically with -AutoCreateTable using varchar(MAX) columns, but for production use, create the table first with proper data types and constraints.
+        The table will be created automatically with -AutoCreateTable using UTF-8 varchar(MAX) columns for strings by default, but for production use, create the table first with proper data types and constraints.
 
     .PARAMETER Column
         Imports only the specified columns from the Parquet file, ignoring all others. Column names must match exactly.
@@ -53,12 +53,17 @@ function Import-DbaParquet {
 
     .PARAMETER AutoCreateTable
         Creates the destination table automatically if it doesn't exist, using Parquet schema types for SQL column definitions.
-        String columns are created as varchar(MAX), then automatically optimized based on actual data lengths (varchar(MAX) -> varchar(16/32/64/etc.)).
+        String columns are created as UTF-8 varchar(MAX) by default (or nvarchar(MAX) if -StoreStringAsUtf8:$false), then automatically optimized based on actual data lengths.
         For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
+
+    .PARAMETER StoreStringAsUtf8
+        Controls string column type used by -AutoCreateTable.
+        By default ($true), string columns are created as varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8.
+        Set to $false to create string columns as nvarchar(MAX) instead.
 
     .PARAMETER NoColumnOptimize
         Skips the automatic column size optimization that runs after AutoCreateTable imports.
-        By default, AutoCreateTable creates string columns as varchar(MAX) and then shrinks them to fit the imported data.
+        By default, AutoCreateTable creates string columns as UTF-8 varchar(MAX) (or nvarchar(MAX) with -StoreStringAsUtf8:$false) and then shrinks them to fit the imported data.
         Use this switch when importing multiple Parquet files into the same auto-created table, so that later files
         with longer values are not rejected due to columns being shrunk to fit only the first file's data.
 
@@ -244,6 +249,7 @@ function Import-DbaParquet {
         [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
+        [bool]$StoreStringAsUtf8 = $true,
         [switch]$NoColumnOptimize,
         [switch]$NoProgress,
         [switch]$UseFileNameForSchema,
@@ -422,7 +428,12 @@ function Import-DbaParquet {
             param([object]$DataField)
             $clrType = $DataField.ClrType
             switch ($ClrType.FullName) {
-                'System.String' { return 'varchar(MAX)' }
+                'System.String' {
+                    if ($StoreStringAsUtf8) {
+                        return "varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8"
+                    }
+                    return "nvarchar(MAX)"
+                }
                 'System.Int32' { return 'int' }
                 'System.Int64' { return 'bigint' }
                 'System.Int16' { return 'smallint' }
@@ -467,7 +478,7 @@ function Import-DbaParquet {
                     Creates new Table using existing SqlCommand.
 
                     SQL datatypes are inferred from Parquet schema data fields.
-                    String columns use varchar(MAX) and can be post-optimized.
+                    String columns use UTF-8 varchar(MAX) by default (or nvarchar(MAX) when requested) and can be post-optimized.
 
                 .EXAMPLE
                     New-SqlTable -DataFields $dataFields -SqlConn $sqlconn -Transaction $transaction
@@ -528,7 +539,7 @@ function Import-DbaParquet {
 
             # Get column names and their current types from the table
             $getColumnsSql = @"
-SELECT c.name AS ColumnName, t.name AS TypeName
+SELECT c.name AS ColumnName, t.name AS TypeName, c.collation_name AS CollationName
 FROM sys.columns c
 INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
 WHERE c.object_id = OBJECT_ID(@tableName)
@@ -541,7 +552,10 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             $columns = @{ }
             $reader = $sqlcmd.ExecuteReader()
             while ($reader.Read()) {
-                $columns[$reader["ColumnName"]] = $reader["TypeName"]
+                $columns[$reader["ColumnName"]] = [PSCustomObject]@{
+                    TypeName      = $reader["TypeName"]
+                    CollationName = if ($reader["CollationName"] -is [DBNull]) { $null } else { [string]$reader["CollationName"] }
+                }
             }
             $reader.Close()
 
@@ -578,7 +592,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                 # Preserve the original column type (nvarchar stays nvarchar, varchar stays varchar)
                 # This is safer than trying to detect Unicode - no risk of data loss
-                $baseType = $columns[$col]
+                $baseType = $columns[$col].TypeName
                 $maxAllowed = if ($baseType -eq "nvarchar") { 4000 } else { 8000 }
 
                 if ($maxLen -gt $maxAllowed) {
@@ -605,11 +619,15 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 if ($paddedLen -gt $maxAllowed) { $paddedLen = $maxAllowed }
 
                 $newType = "${baseType}($paddedLen)"
+                $collateClause = ""
+                if ($columns[$col].CollationName) {
+                    $collateClause = " COLLATE $($columns[$col].CollationName)"
+                }
                 # SQL Server 2008 R2 and earlier require NULL/NOT NULL in ALTER COLUMN
                 # Original columns were varchar(MAX) NULL, so we preserve NULL
-                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType NULL"
+                $alterSql = "ALTER TABLE [$Schema].[$Table] ALTER COLUMN [$col] $newType$collateClause NULL"
 
-                Write-Message -Level Verbose -Message "Optimizing [$col]: varchar(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
+                Write-Message -Level Verbose -Message "Optimizing [$col]: $baseType(MAX) -> $newType (max data length: $maxLen, padded to: $paddedLen)"
 
                 try {
                     $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($alterSql, $SqlConn)
