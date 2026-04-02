@@ -419,7 +419,8 @@ function Import-DbaParquet {
         }
 
         function Convert-ParquetTypeToSqlType {
-            param([System.Type]$ClrType)
+            param([object]$DataField)
+            $clrType = $DataField.ClrType
             switch ($ClrType.FullName) {
                 'System.String' { return 'varchar(MAX)' }
                 'System.Int32' { return 'int' }
@@ -429,14 +430,32 @@ function Import-DbaParquet {
                 'System.Boolean' { return 'bit' }
                 'System.Single' { return 'real' }
                 'System.Double' { return 'float' }
-                'System.Decimal' { return 'decimal(38,18)' }
+                'System.Decimal' {
+                    $precision = 38
+                    $scale = 18
+
+                    if ($DataField.GetType().Name -eq "DecimalDataField") {
+                        $precision = $DataField.Precision
+                        $scale = $DataField.Scale
+                    }
+
+                    if ($precision -gt 38) {
+                        $precision = 38
+                    }
+
+                    if ($scale -gt $precision) {
+                        $scale = $precision
+                    }
+
+                    return "decimal($precision,$scale)"
+                }
                 'System.DateTime' { return 'datetime2(6)' }
                 'System.DateTimeOffset' { return 'datetimeoffset' }
                 'System.TimeSpan' { return 'time' }
                 'System.Byte[]' { return 'varbinary(MAX)' }
                 'System.Guid' { return 'uniqueidentifier' }
                 default {
-                    Stop-Function -Message "Unsupported Parquet type: $($ClrType.FullName)" -EnableException $true
+                    Stop-Function -Message "Unsupported Parquet type: $($clrType.FullName)" -EnableException $true
                     return
                 }
             }
@@ -466,7 +485,7 @@ function Import-DbaParquet {
 
             $sqldatatypes = @();
             foreach ($df in $DataFields) {
-                $sqlType = Convert-ParquetTypeToSqlType -ClrType $df.ClrType
+                $sqlType = Convert-ParquetTypeToSqlType -DataField $df
                 $sqldatatypes += "[$($df.Name)] $sqlType NULL"
             }
 
