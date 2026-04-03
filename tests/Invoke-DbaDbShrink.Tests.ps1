@@ -21,6 +21,8 @@ Describe $CommandName -Tag UnitTests {
                 "FileType",
                 "StepSize",
                 "StatementTimeout",
+                "WaitAtLowPriority",
+                "AbortAfterWait",
                 "ExcludeIndexStats",
                 "ExcludeUpdateUsage",
                 "EnableException",
@@ -154,6 +156,22 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Refresh()
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
             $db.LogFiles[0].Size | Should -Be $oldLogSize
+        }
+
+        It "Shrinks with WaitAtLowPriority on SQL Server 2022+" -Skip:($server.VersionMajor -lt 16) {
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -AbortAfterWait Self
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -Be $true
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+            $db.FileGroups[0].Files[0].Refresh()
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+        }
+
+        It "Returns an error when WaitAtLowPriority is used on SQL Server older than 2022" -Skip:($server.VersionMajor -ge 16) {
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -WarningVariable warnings 3>&1
+            $warnings | Should -Match "SQL Server 2022"
         }
     }
 }
