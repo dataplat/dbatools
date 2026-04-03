@@ -759,7 +759,10 @@
         'New-DbaReplSubscription',
         'Remove-DbaReplSubscription',
         'New-DbaReplCreationScriptOptions',
-        'Get-DbaReplSubscription'
+        'Get-DbaReplSubscription',
+        'Add-DbaInstanceList',
+        'Get-DbaInstanceList',
+        'Remove-DbaInstanceList'
     )
 
     # Cmdlets to export from this module

@@ -2,6 +2,23 @@
 if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]) {
     [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @()
 }
+
+# Load user-defined instances from config (set via Add-DbaInstanceList)
+foreach ($instance in (Get-DbatoolsConfigValue -FullName "TabExpansion.KnownInstances" -Fallback @())) {
+    if ($instance -and [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance) {
+        [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance
+    }
+}
+
+# Load from environment variable (comma-separated list, e.g. set in PowerShell profile)
+if ($env:DBATOOLS_KNOWN_INSTANCES) {
+    foreach ($instance in ($env:DBATOOLS_KNOWN_INSTANCES -split ",")) {
+        $lower = $instance.Trim().ToLowerInvariant()
+        if ($lower -and [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $lower) {
+            [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $lower
+        }
+    }
+}
 #endregion Initialize Cache
 
 #region Tepp Data return

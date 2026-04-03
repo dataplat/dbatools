@@ -939,7 +939,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Invoke-DbaDbAzSqlTip',
         'New-DbaAgentAlert',
         'Set-DbatoolsInsecureConnection',
-        'Test-DbaAgSpn'
+        'Test-DbaAgSpn',
+        'Add-DbaInstanceList',
+        'Get-DbaInstanceList',
+        'Remove-DbaInstanceList'
     )
     $script:noncoresmo = @(
         # SMO issues
