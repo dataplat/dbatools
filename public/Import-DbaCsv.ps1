@@ -1022,6 +1022,25 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 }
             }
 
+            # Normalize table and schema names using Get-ObjectNameParts.
+            # This handles bracketed names (e.g. [My.Table]) and two-part names (e.g. schema.[My.Table]).
+            # sys.tables/sys.schemas store bare names without brackets, so we must strip them
+            # before using the values in parameterized metadata queries.
+            $parsedTable = Get-ObjectNameParts -ObjectName $table
+            if ($parsedTable.Parsed) {
+                if ($parsedTable.Schema -and -not $PSBoundParameters.Schema) {
+                    $schema = $parsedTable.Schema
+                    Write-Message -Level Verbose -Message "Schema extracted from table name, using $schema"
+                }
+                if ($parsedTable.Name) {
+                    $table = $parsedTable.Name
+                }
+            }
+            # Strip surrounding brackets from schema in case the user passed -Schema "[dbo]"
+            if ($schema -like "[[]*[]]") {
+                $schema = $schema.Substring(1, $schema.Length - 2)
+            }
+
             foreach ($instance in $SqlInstance) {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
