@@ -202,6 +202,7 @@ function Test-DbaLastBackup {
         - DbccStart (datetime) - Date and time when the DBCC CHECKDB operation started
         - DbccEnd (datetime) - Date and time when the DBCC CHECKDB operation ended
         - DbccElapsed (timespan as string) - Formatted duration of the DBCC CHECKDB operation (HH:mm:ss format)
+        - DbccOutput (string array) - Detailed informational messages returned by DBCC CHECKDB (row counts, Service Broker analysis, etc.); $null when skipped
         - BackupDates (datetime array) - Array of backup start times for all backup files in the restore chain
         - BackupFiles (string array) - Array of backup file paths used for the restore operation
 
@@ -422,6 +423,7 @@ function Test-DbaLastBackup {
                         DbccStart      = $null
                         DbccEnd        = $null
                         DbccElapsed    = $null
+                        DbccOutput     = $null
                         BackupDates    = $null
                         BackupFiles    = $null
                     }
@@ -445,6 +447,7 @@ function Test-DbaLastBackup {
                         DbccStart      = $null
                         DbccEnd        = $null
                         DbccElapsed    = $null
+                        DbccOutput     = $null
                         BackupDates    = [dbadatetime[]]($lastbackup.Start)
                         BackupFiles    = $lastbackup.FullName
                     }
@@ -491,7 +494,7 @@ function Test-DbaLastBackup {
                 [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
-                    Database       = $db.name
+                    Database       = $dbName
                     FileExists     = $false
                     Size           = $null
                     RestoreResult  = "Skipped"
@@ -503,6 +506,7 @@ function Test-DbaLastBackup {
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
+                    DbccOutput     = $null
                     BackupDates    = $null
                     BackupFiles    = $null
                 }
@@ -537,9 +541,9 @@ function Test-DbaLastBackup {
                 $sourcerealname = $sourceserver.ComputerNetBiosName
                 $destrealname   = $destserver.ComputerNetBiosName
 
-                if ($BackupFolder) {
-                    if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
-                        Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Continue
+                if ($CopyPath) {
+                    if ($CopyPath.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
+                        Stop-Function -Message "CopyFolder must be a network share if the source and destination servers are not the same." -Continue
                     }
                 }
             }
@@ -565,11 +569,10 @@ function Test-DbaLastBackup {
             }
 
             if ((Test-Bound -ParameterName StorageCredential) -and (Test-Bound -ParameterName CopyFile)) {
-                Stop-Function -Message "Cannot use CopyFile with cloud storage backups (Azure/S3), set to false." -Continue
-                $CopyFile = $false
+                Stop-Function -Message "Cannot use CopyFile with cloud storage backups (Azure/S3)." -Continue
             }
 
-            Write-Message -Level Verbose -Message "Getting recent backup history for $($db.Name) on $instance."
+            Write-Message -Level Verbose -Message "Getting recent backup history for $dbName on $instance."
 
             if (Test-Bound "IgnoreLogBackup") {
                 Write-Message -Level Verbose -Message "Skipping Log backups as requested."
@@ -596,7 +599,7 @@ function Test-DbaLastBackup {
                 [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
-                    Database       = $db.name
+                    Database       = $dbName
                     FileExists     = $null
                     Size           = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
                     RestoreResult  = "The backup size for $dbName ($totalSizeMB MB) exceeds the specified maximum size ($MaxSize MB)."
@@ -608,6 +611,7 @@ function Test-DbaLastBackup {
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
+                    DbccOutput     = $null
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
@@ -652,7 +656,7 @@ function Test-DbaLastBackup {
                     }
                     $copysuccess = $true
                 } catch {
-                    Write-Message -Level Warning -Message "Failed to copy backups for $dbName on $instance to $destdirectory - $_."
+                    Write-Message -Level Warning -Message "Failed to copy backups for $dbName on $instance - $_."
                     $copysuccess = $false
                 }
             }
@@ -727,7 +731,7 @@ function Test-DbaLastBackup {
             $dbccresult      = $null
             $success         = $null
             $errormsg        = $null
-            $dbccElapsed     = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
+            $dbccElapsed     = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $dbccOutput = $null
 
             if ($workItem.SkipRestoreResult) {
                 $success    = $workItem.SkipRestoreResult
@@ -820,7 +824,9 @@ function Test-DbaLastBackup {
                             Write-Message -Level Verbose -Message "Starting DBCC."
 
                             $startDbcc  = Get-Date
-                            $dbccresult = Start-DbccCheck -Server $destserver -DbName $prefixedDbName -MaxDop $MaxDop 3>$null
+                            $dbccCheckResult = Start-DbccCheck -Server $destserver -DbName $prefixedDbName -MaxDop $MaxDop 3>$null
+                            $dbccresult = $dbccCheckResult.Status
+                            $dbccOutput = $dbccCheckResult.Output
                             $endDbcc    = Get-Date
 
                             $dbccts      = New-TimeSpan -Start $startDbcc -End $endDbcc
@@ -887,6 +893,7 @@ function Test-DbaLastBackup {
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed
+                    DbccOutput     = $dbccOutput
                     BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }

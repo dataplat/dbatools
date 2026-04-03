@@ -82,8 +82,11 @@ function Install-DbaMaintenanceSolution {
         This ensures backup chains remain valid even if scheduled full backups fail or are missed.
 
     .PARAMETER Compress
-        Controls backup compression for all backup operations. When not specified, uses the SQL Server instance's default compression setting.
-        Set to enable compression (recommended for reducing backup size and network transfer time) or disable for compatibility with older restore targets.
+        Controls backup compression in job commands. Valid values: Default, ForceOn, ForceOff, Remove.
+        Default: does not include @Compress in job text, so the SQL Server instance's compression setting applies.
+        ForceOn: explicitly sets @Compress = 'Y' in job commands.
+        ForceOff: explicitly sets @Compress = 'N' in job commands.
+        Remove: removes @Compress from job commands if present.
         Only applies when InstallJobs is specified.
 
     .PARAMETER CopyOnly
@@ -92,13 +95,19 @@ function Install-DbaMaintenanceSolution {
         Only applies when InstallJobs is specified.
 
     .PARAMETER Verify
-        Verifies backup integrity immediately after creation by performing a RESTORE VERIFYONLY operation.
-        Defaults to enabled (Y) if not specified. Verification adds time to backup operations but ensures backups are restorable.
+        Controls backup verification in job commands. Valid values: Default, ForceOn, ForceOff, Remove.
+        Default: uses Ola's default, which includes @Verify = 'Y' in job commands.
+        ForceOn: explicitly sets @Verify = 'Y' in job commands.
+        ForceOff: explicitly sets @Verify = 'N' in job commands.
+        Remove: removes @Verify from job commands, letting the stored procedure's built-in default apply.
         Only applies when InstallJobs is specified.
 
     .PARAMETER CheckSum
-        Enables checksum validation during backup operations to detect data corruption.
-        Defaults to enabled (Y) if not specified. Checksums provide additional data integrity verification with minimal performance impact.
+        Controls checksum validation in job commands. Valid values: Default, ForceOn, ForceOff, Remove.
+        Default: uses Ola's default, which includes @Checksum = 'Y' in job commands.
+        ForceOn: explicitly sets @CheckSum = 'Y' in job commands.
+        ForceOff: explicitly sets @CheckSum = 'N' in job commands.
+        Remove: removes @CheckSum from job commands, letting the stored procedure's built-in default apply.
         Only applies when InstallJobs is specified.
 
     .PARAMETER ModificationLevel
@@ -257,9 +266,9 @@ function Install-DbaMaintenanceSolution {
         >> BackupLocation = "D:\SQLBackups"
         >> CleanupTime = 168
         >> ChangeBackupType = $true
-        >> Compress = $true
-        >> Verify = $true
-        >> CheckSum = $true
+        >> Compress = "ForceOn"
+        >> Verify = "ForceOn"
+        >> CheckSum = "ForceOn"
         >> }
 
         PS C:\> Install-DbaMaintenanceSolution @params
@@ -291,10 +300,13 @@ function Install-DbaMaintenanceSolution {
         [switch]$Force,
         [switch]$InstallParallel,
         [switch]$ChangeBackupType,
-        [switch]$Compress,
+        [ValidateSet('Default', 'ForceOn', 'ForceOff', 'Remove')]
+        [string]$Compress = "Default",
         [switch]$CopyOnly,
-        [switch]$Verify,
-        [switch]$CheckSum,
+        [ValidateSet('Default', 'ForceOn', 'ForceOff', 'Remove')]
+        [string]$Verify = "Default",
+        [ValidateSet('Default', 'ForceOn', 'ForceOff', 'Remove')]
+        [string]$CheckSum = "Default",
         [ValidateRange(0, 100)]
         [int]$ModificationLevel,
         [switch]$EnableException
@@ -312,8 +324,8 @@ function Install-DbaMaintenanceSolution {
             return
         }
 
-        if ($BackupLocation -eq "NUL" -and $Verify) {
-            Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or turn off Verify."
+        if ($BackupLocation -eq "NUL" -and $Verify -notin "ForceOff", "Remove") {
+            Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or set -Verify to 'ForceOff' or 'Remove'."
             return
         }
 
@@ -767,17 +779,21 @@ function Install-DbaMaintenanceSolution {
                             }
                         }
 
-                        # Add Compress parameter for all backup jobs
-                        if ($Compress) {
+                        # Compress parameter for all backup jobs
+                        # Default: do not include @Compress (instance-level setting applies)
+                        if ($Compress -eq "ForceOn") {
                             $modifiedCommand = $modifiedCommand -replace "@Compress = 'N'", "@Compress = 'Y'"
                             if ($modifiedCommand -notmatch "@Compress") {
                                 $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'Y'"
                             }
-                        } else {
+                        } elseif ($Compress -eq "ForceOff") {
                             $modifiedCommand = $modifiedCommand -replace "@Compress = 'Y'", "@Compress = 'N'"
                             if ($modifiedCommand -notmatch "@Compress") {
                                 $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'N'"
-                            }                        
+                            }
+                        } elseif ($Compress -eq "Remove") {
+                            $modifiedCommand = $modifiedCommand -replace "@Compress = '[YN]',\r?\n", ""
+                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Compress = '[YN]'", ""
                         }
 
                         # Add CopyOnly parameter for all backup jobs
@@ -787,20 +803,38 @@ function Install-DbaMaintenanceSolution {
                             }
                         }
 
-                        # Add Verify parameter for all backup jobs
-                        # Ola turns this on by default, so all we have to do is turn it off if asked.
-                        if (-not $Verify) {
-                            if ($modifiedCommand -notmatch "@Verify = 'N'") {
-                                $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
+                        # Verify parameter for all backup jobs
+                        # Ola includes @Verify = 'Y' by default. Default: leave unchanged.
+                        if ($Verify -eq "ForceOn") {
+                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'N'", "@Verify = 'Y'"
+                            if ($modifiedCommand -notmatch "@Verify") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'Y'"
                             }
+                        } elseif ($Verify -eq "ForceOff") {
+                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
+                            if ($modifiedCommand -notmatch "@Verify") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'N'"
+                            }
+                        } elseif ($Verify -eq "Remove") {
+                            $modifiedCommand = $modifiedCommand -replace "@Verify = '[YN]',\r?\n", ""
+                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Verify = '[YN]'", ""
                         }
 
-                        # Add CheckSum parameter for all backup jobs
-                        # Ola turns this on by default, so all we have to do is turn it off if asked.
-                        if (-not $CheckSum) {
-                            if ($modifiedCommand -notmatch "@CheckSum = 'N'") {
-                                $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
+                        # CheckSum parameter for all backup jobs
+                        # Ola includes @Checksum = 'Y' by default. Default: leave unchanged.
+                        if ($CheckSum -eq "ForceOn") {
+                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'N'", "@CheckSum = 'Y'"
+                            if ($modifiedCommand -notmatch "@CheckSum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'Y'"
                             }
+                        } elseif ($CheckSum -eq "ForceOff") {
+                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
+                            if ($modifiedCommand -notmatch "@CheckSum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'N'"
+                            }
+                        } elseif ($CheckSum -eq "Remove") {
+                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = '[YN]',\r?\n", ""
+                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@CheckSum = '[YN]'", ""
                         }
 
                         # Update job step if command was modified

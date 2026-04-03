@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2026-03-13T00:00:00",
+    "LastUpdated": "2026-03-30T00:00:00",
     "Data": [
         {
             "Version": "8.0.47",
@@ -4156,7 +4156,6 @@
             "Version": "13.0.6480",
             "KBList": "5077474"
         },
-        
         {
             "Version": "13.0.7000",
             "KBList": "5014242"
@@ -4240,303 +4239,369 @@
         {
             "SP": "RTM",
             "Version": "14.0.1000",
-            "SupportedUntil": "2027-10-12T00:00:00"
+            "SupportedUntil": "2027-10-12T00:00:00",
+            "ReleaseDate": "2017-09-29"
         },
         {
             "Version": "14.0.2000",
-            "KBList": "4057122"
+            "KBList": "4057122",
+            "ReleaseDate": "2018-01-03"
         },
         {
             "Version": "14.0.2002",
-            "KBList": "4293803"
+            "KBList": "4293803",
+            "ReleaseDate": "2018-08-14"
         },
         {
             "Version": "14.0.2027",
-            "KBList": "4505224"
+            "KBList": "4505224",
+            "ReleaseDate": "2019-07-09"
         },
         {
             "Version": "14.0.2037",
-            "KBList": "4583456"
+            "KBList": "4583456",
+            "ReleaseDate": "2021-01-21"
         },
         {
             "Version": "14.0.2042",
-            "KBList": "5014354"
+            "KBList": "5014354",
+            "ReleaseDate": "2022-06-14"
         },
         {
             "Version": "14.0.2047",
-            "KBList": "5021127"
+            "KBList": "5021127",
+            "ReleaseDate": "2023-02-14"
         },
         {
             "Version": "14.0.2052",
-            "KBList": "5029375"
+            "KBList": "5029375",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "Version": "14.0.2056",
-            "KBList": "5040942"
+            "KBList": "5040942",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "Version": "14.0.2060",
-            "KBList": "5042217"
+            "KBList": "5042217",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "Version": "14.0.2065",
-            "KBList": "5046058"
+            "KBList": "5046058",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "Version": "14.0.2070",
-            "KBList": "5046857"
+            "KBList": "5046857",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "Version": "14.0.2075",
-            "KBList": "5058716"
+            "KBList": "5058716",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "Version": "14.0.2080",
-            "KBList": "5063760"
+            "KBList": "5063760",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "14.0.2085",
-            "KBList": "5065224"
+            "KBList": "5065224",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "Version": "14.0.2095",
-            "KBList": "5068403"
+            "KBList": "5068403",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "Version": "14.0.2100",
-            "KBList": "5077472"
+            "KBList": "5077472",
+            "ReleaseDate": "2026-03-10"
         },
-        
         {
             "CU": "CU1",
             "Version": "14.0.3006",
-            "KBList": "4038634"
+            "KBList": "4038634",
+            "ReleaseDate": "2017-10-24"
         },
         {
             "CU": "CU2",
             "Version": "14.0.3008",
-            "KBList": "4052574"
+            "KBList": "4052574",
+            "ReleaseDate": "2017-11-28"
         },
         {
             "CU": "CU3",
             "Version": "14.0.3015",
-            "KBList": "4052987"
+            "KBList": "4052987",
+            "ReleaseDate": "2018-01-04"
         },
         {
             "CU": "CU4",
             "Version": "14.0.3022",
-            "KBList": "4056498"
+            "KBList": "4056498",
+            "ReleaseDate": "2018-02-20"
         },
         {
             "CU": "CU5",
             "Version": "14.0.3023",
-            "KBList": "4092643"
+            "KBList": "4092643",
+            "ReleaseDate": "2018-03-20"
         },
         {
             "CU": "CU6",
             "Version": "14.0.3025",
-            "KBList": "4101464"
+            "KBList": "4101464",
+            "ReleaseDate": "2018-04-17"
         },
         {
             "CU": "CU7",
             "Version": "14.0.3026",
-            "KBList": "4229789"
+            "KBList": "4229789",
+            "ReleaseDate": "2018-05-23"
         },
         {
             "CU": "CU8",
             "Version": "14.0.3029",
-            "KBList": "4338363"
+            "KBList": "4338363",
+            "ReleaseDate": "2018-06-21"
         },
         {
             "CU": "CU9",
             "Version": "14.0.3030",
-            "KBList": "4341265"
+            "KBList": "4341265",
+            "ReleaseDate": "2018-07-18"
         },
         {
             "Version": "14.0.3035",
-            "KBList": "4293805"
+            "KBList": "4293805",
+            "ReleaseDate": "2018-08-14"
         },
         {
             "CU": "CU10",
             "Version": "14.0.3037",
-            "KBList": "4342123"
+            "KBList": "4342123",
+            "ReleaseDate": "2018-08-27"
         },
         {
             "CU": "CU11",
             "Version": "14.0.3038",
-            "KBList": "4462262"
+            "KBList": "4462262",
+            "ReleaseDate": "2018-09-20"
         },
         {
             "CU": "CU12",
             "Version": "14.0.3045",
-            "KBList": "4464082"
+            "KBList": "4464082",
+            "ReleaseDate": "2018-10-24"
         },
         {
             "CU": "CU13",
             "Version": "14.0.3048",
-            "KBList": "4466404"
+            "KBList": "4466404",
+            "ReleaseDate": "2018-12-18"
         },
         {
             "CU": "CU14",
             "Version": "14.0.3076",
-            "KBList": "4484710"
+            "KBList": "4484710",
+            "ReleaseDate": "2019-03-25"
         },
         {
             "Version": "14.0.3103",
-            "KBList": "4494352"
+            "KBList": "4494352",
+            "ReleaseDate": "2019-05-14"
         },
         {
             "CU": "CU15",
             "Version": "14.0.3162",
-            "KBList": "4498951"
+            "KBList": "4498951",
+            "ReleaseDate": "2019-05-23"
         },
         {
             "Version": "14.0.3164",
-            "KBList": "4506633"
+            "KBList": "4506633",
+            "ReleaseDate": "2019-06-20"
         },
         {
             "Version": "14.0.3192",
-            "KBList": "4505225"
+            "KBList": "4505225",
+            "ReleaseDate": "2019-07-09"
         },
         {
             "Version": "14.0.3208",
-            "KBList": "4510083"
+            "KBList": "4510083",
+            "ReleaseDate": "2019-07-09"
         },
         {
             "CU": "CU16",
             "Version": "14.0.3223",
-            "KBList": "4508218"
+            "KBList": "4508218",
+            "ReleaseDate": "2019-08-01"
         },
         {
             "CU": "CU17",
             "Version": "14.0.3238",
-            "KBList": "4515579"
+            "KBList": "4515579",
+            "ReleaseDate": "2019-10-08"
         },
         {
             "CU": "CU18",
             "Version": "14.0.3257",
-            "KBList": "4527377"
+            "KBList": "4527377",
+            "ReleaseDate": "2019-12-09"
         },
         {
             "CU": "CU19",
             "Version": "14.0.3281",
-            "KBList": "4535007"
+            "KBList": "4535007",
+            "ReleaseDate": "2020-02-05"
         },
         {
             "CU": "CU20",
             "Version": "14.0.3294",
-            "KBList": "4541283"
+            "KBList": "4541283",
+            "ReleaseDate": "2020-04-07"
         },
         {
             "CU": "CU21",
             "Version": "14.0.3335",
-            "KBList": "4557397"
+            "KBList": "4557397",
+            "ReleaseDate": "2020-07-01"
         },
         {
             "CU": "CU22",
             "Version": "14.0.3356",
-            "KBList": "4577467"
+            "KBList": "4577467",
+            "ReleaseDate": "2020-09-10"
         },
         {
             "Version": "14.0.3370",
-            "KBList": "4583457"
+            "KBList": "4583457",
+            "ReleaseDate": "2021-01-21"
         },
         {
             "CU": "CU23",
             "Version": "14.0.3381",
-            "KBList": "5000685"
+            "KBList": "5000685",
+            "ReleaseDate": "2021-02-24"
         },
         {
             "CU": "CU24",
             "Version": "14.0.3391",
-            "KBList": "5001228"
+            "KBList": "5001228",
+            "ReleaseDate": "2021-05-10"
         },
         {
             "CU": "CU25",
             "Version": "14.0.3401",
-            "KBList": "5003830"
+            "KBList": "5003830",
+            "ReleaseDate": "2021-07-12"
         },
         {
             "CU": "CU26",
             "Version": "14.0.3411",
-            "KBList": "5005226"
+            "KBList": "5005226",
+            "ReleaseDate": "2021-09-14"
         },
         {
             "CU": "CU27",
             "Version": "14.0.3421",
-            "KBList": "5006944"
+            "KBList": "5006944",
+            "ReleaseDate": "2021-10-27"
         },
         {
             "CU": "CU28",
             "Version": "14.0.3430",
-            "KBList": "5008084"
+            "KBList": "5008084",
+            "ReleaseDate": "2022-01-13"
         },
         {
             "CU": "CU29",
             "Version": "14.0.3436",
-            "KBList": "5010786"
+            "KBList": "5010786",
+            "ReleaseDate": "2022-03-30"
         },
         {
             "Version": "14.0.3445",
-            "KBList": "5014553"
+            "KBList": "5014553",
+            "ReleaseDate": "2022-06-14"
         },
         {
             "CU": "CU30",
             "Version": "14.0.3451",
-            "KBList": "5013756"
+            "KBList": "5013756",
+            "ReleaseDate": "2022-07-13"
         },
         {
             "CU": "CU31",
             "Version": "14.0.3456",
-            "KBList": "5016884"
+            "KBList": "5016884",
+            "ReleaseDate": "2022-09-20"
         },
         {
             "Version": "14.0.3460",
-            "KBList": "5021126"
+            "KBList": "5021126",
+            "ReleaseDate": "2023-02-14"
         },
         {
             "Version": "14.0.3465",
-            "KBList": "5029376"
+            "KBList": "5029376",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "Version": "14.0.3471",
-            "KBList": "5040940"
+            "KBList": "5040940",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "Version": "14.0.3475",
-            "KBList": "5042215"
+            "KBList": "5042215",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "Version": "14.0.3480",
-            "KBList": "5046061"
+            "KBList": "5046061",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "Version": "14.0.3485",
-            "KBList": "5046858"
+            "KBList": "5046858",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "Version": "14.0.3490",
-            "KBList": "5050533"
+            "KBList": "5050533",
+            "ReleaseDate": "2025-03-06"
         },
         {
             "Version": "14.0.3495",
-            "KBList": "5058714"
+            "KBList": "5058714",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "Version": "14.0.3500",
-            "KBList": "5063759"
+            "KBList": "5063759",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "14.0.3505",
-            "KBList": "5065225"
+            "KBList": "5065225",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "Version": "14.0.3515",
-            "KBList": "5068402"
+            "KBList": "5068402",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "Version": "14.0.3520",
-            "KBList": "5077471"
+            "KBList": "5077471",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "Version": "15.0.1000",
@@ -4553,289 +4618,352 @@
         {
             "Version": "15.0.2000",
             "SP": "RTM",
-            "SupportedUntil": "2030-01-08"
+            "SupportedUntil": "2030-01-08",
+            "ReleaseDate": "2019-11-04"
         },
         {
             "Version": "15.0.2070",
-            "KBList": "4517790"
+            "KBList": "4517790",
+            "ReleaseDate": "2019-11-04"
         },
         {
             "Version": "15.0.2080",
-            "KBList": "4583458"
+            "KBList": "4583458",
+            "ReleaseDate": "2021-01-12"
         },
         {
             "Version": "15.0.2090",
-            "KBList": "5010657"
+            "KBList": "5010657",
+            "ReleaseDate": "2022-02-08"
         },
         {
             "Version": "15.0.2095",
-            "KBList": "5014356"
+            "KBList": "5014356",
+            "ReleaseDate": "2022-06-14"
         },
         {
             "Version": "15.0.2101",
-            "KBList": "5021125"
+            "KBList": "5021125",
+            "ReleaseDate": "2023-02-14"
         },
         {
             "Version": "15.0.2104",
-            "KBList": "5029377"
+            "KBList": "5029377",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "Version": "15.0.2110",
-            "KBList": "5035434"
+            "KBList": "5035434",
+            "ReleaseDate": "2024-04-09"
         },
         {
             "Version": "15.0.2116",
-            "KBList": "5040986"
+            "KBList": "5040986",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "Version": "15.0.2120",
-            "KBList": "5042214"
+            "KBList": "5042214",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "Version": "15.0.2125",
-            "KBList": "5046056"
+            "KBList": "5046056",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "Version": "15.0.2130",
-            "KBList": "5046859"
+            "KBList": "5046859",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "Version": "15.0.2135",
-            "KBList": "5058713"
+            "KBList": "5058713",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "Version": "15.0.2140",
-            "KBList": "5063758"
+            "KBList": "5063758",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "15.0.2145",
-            "KBList": "5065223"
+            "KBList": "5065223",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "Version": "15.0.2155",
-            "KBList": "5068405"
+            "KBList": "5068405",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "Version": "15.0.2160",
-            "KBList": "5077470"
+            "KBList": "5077470",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "CU": "CU1",
             "Version": "15.0.4003",
-            "KBList": "4527376"
+            "KBList": "4527376",
+            "ReleaseDate": "2020-01-07"
         },
         {
             "CU": "CU2",
             "Version": "15.0.4013",
             "KBList": "4536075",
-            "Retired": true
+            "Retired": true,
+            "ReleaseDate": "2020-02-13"
         },
         {
             "CU": "CU3",
             "Version": "15.0.4023",
-            "KBList": "4538853"
+            "KBList": "4538853",
+            "ReleaseDate": "2020-03-12"
         },
         {
             "CU": "CU4",
             "Version": "15.0.4033",
-            "KBList": "4548597"
+            "KBList": "4548597",
+            "ReleaseDate": "2020-03-31"
         },
         {
             "CU": "CU5",
             "Version": "15.0.4043",
-            "KBList": "4552255"
+            "KBList": "4552255",
+            "ReleaseDate": "2020-06-22"
         },
         {
             "CU": "CU6",
             "Version": "15.0.4053",
-            "KBList": "4563110"
+            "KBList": "4563110",
+            "ReleaseDate": "2020-08-04"
         },
         {
             "CU": "CU7",
             "Version": "15.0.4063",
             "KBList": "4570012",
-            "Retired": true
+            "Retired": true,
+            "ReleaseDate": "2020-09-02"
         },
         {
             "CU": "CU8",
             "Version": "15.0.4073",
-            "KBList": "4577194"
+            "KBList": "4577194",
+            "ReleaseDate": "2020-10-01"
         },
         {
             "Version": "15.0.4083",
-            "KBList": "4583459"
+            "KBList": "4583459",
+            "ReleaseDate": "2021-01-12"
         },
         {
             "CU": "CU9",
             "Version": "15.0.4102",
-            "KBList": "5000642"
+            "KBList": "5000642",
+            "ReleaseDate": "2021-02-11"
         },
         {
             "CU": "CU10",
             "Version": "15.0.4123",
-            "KBList": "5001090"
+            "KBList": "5001090",
+            "ReleaseDate": "2021-04-06"
         },
         {
             "CU": "CU11",
             "Version": "15.0.4138",
-            "KBList": "5003249"
+            "KBList": "5003249",
+            "ReleaseDate": "2021-06-10"
         },
         {
             "CU": "CU12",
             "Version": "15.0.4153",
-            "KBList": "5004524"
+            "KBList": "5004524",
+            "ReleaseDate": "2021-08-04"
         },
         {
             "CU": "CU13",
             "Version": "15.0.4178",
-            "KBList": "5005679"
+            "KBList": "5005679",
+            "ReleaseDate": "2021-10-05"
         },
         {
             "CU": "CU14",
             "Version": "15.0.4188",
-            "KBList": "5007182"
+            "KBList": "5007182",
+            "ReleaseDate": "2021-11-22"
         },
         {
             "CU": "CU15",
             "Version": "15.0.4198",
-            "KBList": "5008996"
+            "KBList": "5008996",
+            "ReleaseDate": "2022-01-27"
         },
         {
             "CU": "CU16",
             "Version": "15.0.4223",
-            "KBList": "5011644"
+            "KBList": "5011644",
+            "ReleaseDate": "2022-04-18"
         },
         {
             "Version": "15.0.4236",
-            "KBList": "5014353"
+            "KBList": "5014353",
+            "ReleaseDate": "2022-06-14"
         },
         {
             "CU": "CU17",
             "Version": "15.0.4249",
-            "KBList": "5016394"
+            "KBList": "5016394",
+            "ReleaseDate": "2022-08-11"
         },
         {
             "CU": "CU18",
             "Version": "15.0.4261",
-            "KBList": "5017593"
+            "KBList": "5017593",
+            "ReleaseDate": "2022-09-28"
         },
         {
             "Version": "15.0.4280",
-            "KBList": "5021124"
+            "KBList": "5021124",
+            "ReleaseDate": "2023-02-14"
         },
         {
             "CU": "CU19",
             "Version": "15.0.4298",
-            "KBList": "5023049"
+            "KBList": "5023049",
+            "ReleaseDate": "2023-02-16"
         },
         {
             "CU": "CU20",
             "Version": "15.0.4312",
-            "KBList": "5024276"
+            "KBList": "5024276",
+            "ReleaseDate": "2023-04-13"
         },
         {
             "CU": "CU21",
             "Version": "15.0.4316",
-            "KBList": "5025808"
+            "KBList": "5025808",
+            "ReleaseDate": "2023-06-15"
         },
         {
             "CU": "CU22",
             "Version": "15.0.4322",
-            "KBList": "5027702"
+            "KBList": "5027702",
+            "ReleaseDate": "2023-08-14"
         },
         {
             "Version": "15.0.4326",
-            "KBList": "5029378"
+            "KBList": "5029378",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "CU": "CU23",
             "Version": "15.0.4335",
-            "KBList": "5030333"
+            "KBList": "5030333",
+            "ReleaseDate": "2023-10-12"
         },
         {
             "CU": "CU24",
             "Version": "15.0.4345",
-            "KBList": "5031908"
+            "KBList": "5031908",
+            "ReleaseDate": "2023-12-14"
         },
         {
             "CU": "CU25",
             "Version": "15.0.4355",
-            "KBList": "5033688"
+            "KBList": "5033688",
+            "ReleaseDate": "2024-02-15"
         },
         {
             "Version": "15.0.4360",
-            "KBList": "5036335"
+            "KBList": "5036335",
+            "ReleaseDate": "2024-04-09"
         },
         {
             "CU": "CU26",
             "Version": "15.0.4365",
-            "KBList": "5035123"
+            "KBList": "5035123",
+            "ReleaseDate": "2024-04-11"
         },
         {
             "CU": "CU27",
             "Version": "15.0.4375",
-            "KBList": "5037331"
+            "KBList": "5037331",
+            "ReleaseDate": "2024-06-13"
         },
         {
             "Version": "15.0.4382",
-            "KBList": "5040948"
+            "KBList": "5040948",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "CU": "CU28",
             "Version": "15.0.4385",
-            "KBList": "5039747"
+            "KBList": "5039747",
+            "ReleaseDate": "2024-08-01"
         },
         {
             "Version": "15.0.4390",
-            "KBList": "5042749"
+            "KBList": "5042749",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "Version": "15.0.4395",
-            "KBList": "5046060"
+            "KBList": "5046060",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "CU": "CU29",
             "Version": "15.0.4405",
-            "KBList": "5046365"
+            "KBList": "5046365",
+            "ReleaseDate": "2024-10-31"
         },
         {
             "Version": "15.0.4410",
-            "KBList": "5046860"
+            "KBList": "5046860",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "CU": "CU30",
             "Version": "15.0.4415",
-            "KBList": "5049235"
+            "KBList": "5049235",
+            "ReleaseDate": "2024-12-12"
         },
         {
             "CU": "CU31",
             "Version": "15.0.4420",
-            "KBList": "5049296"
+            "KBList": "5049296",
+            "ReleaseDate": "2025-02-13"
         },
         {
             "CU": "CU32",
             "Version": "15.0.4430",
-            "KBList": "5054833"
+            "KBList": "5054833",
+            "ReleaseDate": "2025-02-27"
         },
         {
             "Version": "15.0.4435",
-            "KBList": "5058722"
+            "KBList": "5058722",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "Version": "15.0.4440",
-            "KBList": "5063757"
+            "KBList": "5063757",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "15.0.4445",
-            "KBList": "5065222"
+            "KBList": "5065222",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "Version": "15.0.4455",
-            "KBList": "5068404"
+            "KBList": "5068404",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "Version": "15.0.4460",
-            "KBList": "5077469"
+            "KBList": "5077469",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "Version": "16.0.100",
@@ -4852,221 +4980,270 @@
         {
             "Version": "16.0.1000",
             "SP": "RTM",
-            "SupportedUntil": "2033-01-11"
+            "SupportedUntil": "2033-01-11",
+            "ReleaseDate": "2022-11-16"
         },
         {
             "Version": "16.0.1050",
-            "KBList": "5021522"
+            "KBList": "5021522",
+            "ReleaseDate": "2023-02-14"
         },
         {
             "Version": "16.0.1105",
-            "KBList": "5029379"
+            "KBList": "5029379",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "Version": "16.0.1110",
-            "KBList": "5032968"
+            "KBList": "5032968",
+            "ReleaseDate": "2024-01-09"
         },
         {
             "Version": "16.0.1115",
-            "KBList": "5035432"
+            "KBList": "5035432",
+            "ReleaseDate": "2024-04-09"
         },
         {
             "Version": "16.0.1121",
-            "KBList": "5040936"
+            "KBList": "5040936",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "Version": "16.0.1125",
-            "KBList": "5042211"
+            "KBList": "5042211",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "Version": "16.0.1130",
-            "KBList": "5046057"
+            "KBList": "5046057",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "Version": "16.0.1135",
-            "KBList": "5046861"
+            "KBList": "5046861",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "Version": "16.0.1140",
-            "KBList": "5058712"
+            "KBList": "5058712",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "Version": "16.0.1145",
-            "KBList": "5063756"
+            "KBList": "5063756",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "16.0.1150",
-            "KBList": "5065221"
+            "KBList": "5065221",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "Version": "16.0.1160",
-            "KBList": "5068407"
+            "KBList": "5068407",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "Version": "16.0.1165",
-            "KBList": "5073031"
+            "KBList": "5073031",
+            "ReleaseDate": "2026-01-13"
         },
         {
             "Version": "16.0.1170",
-            "KBList": "5077465"
+            "KBList": "5077465",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "CU": "CU1",
             "Version": "16.0.4003",
-            "KBList": "5022375"
+            "KBList": "5022375",
+            "ReleaseDate": "2023-02-16"
         },
         {
             "CU": "CU2",
             "Version": "16.0.4015",
-            "KBList": "5023127"
+            "KBList": "5023127",
+            "ReleaseDate": "2023-03-15"
         },
         {
             "CU": "CU3",
             "Version": "16.0.4025",
-            "KBList": "5024396"
+            "KBList": "5024396",
+            "ReleaseDate": "2023-04-13"
         },
         {
             "CU": "CU4",
             "Version": "16.0.4035",
-            "KBList": "5026717"
+            "KBList": "5026717",
+            "ReleaseDate": "2023-05-11"
         },
         {
             "CU": "CU5",
             "Version": "16.0.4045",
-            "KBList": "5026806"
+            "KBList": "5026806",
+            "ReleaseDate": "2023-06-15"
         },
         {
             "CU": "CU6",
             "Version": "16.0.4055",
-            "KBList": "5027505"
+            "KBList": "5027505",
+            "ReleaseDate": "2023-07-13"
         },
         {
             "CU": "CU7",
             "Version": "16.0.4065",
-            "KBList": "5028743"
+            "KBList": "5028743",
+            "ReleaseDate": "2023-08-10"
         },
         {
             "CU": "CU8",
             "Version": "16.0.4075",
-            "KBList": "5029666"
+            "KBList": "5029666",
+            "ReleaseDate": "2023-09-14"
         },
         {
             "Version": "16.0.4080",
-            "KBList": "5029503"
+            "KBList": "5029503",
+            "ReleaseDate": "2023-10-10"
         },
         {
             "CU": "CU9",
             "Version": "16.0.4085",
-            "KBList": "5030731"
+            "KBList": "5030731",
+            "ReleaseDate": "2023-10-12"
         },
         {
             "CU": "CU10",
             "Version": "16.0.4095",
-            "KBList": "5031778"
+            "KBList": "5031778",
+            "ReleaseDate": "2023-11-16"
         },
         {
             "Version": "16.0.4100",
-            "KBList": "5033592"
+            "KBList": "5033592",
+            "ReleaseDate": "2024-01-09"
         },
         {
             "CU": "CU11",
             "Version": "16.0.4105",
-            "KBList": "5032679"
+            "KBList": "5032679",
+            "ReleaseDate": "2024-01-11"
         },
         {
             "CU": "CU12",
             "Version": "16.0.4115",
-            "KBList": "5033663"
+            "KBList": "5033663",
+            "ReleaseDate": "2024-03-14"
         },
         {
             "Version": "16.0.4120",
-            "KBList": "5036343"
+            "KBList": "5036343",
+            "ReleaseDate": "2024-04-09"
         },
         {
             "CU": "CU13",
             "Version": "16.0.4125",
-            "KBList": "5036432"
+            "KBList": "5036432",
+            "ReleaseDate": "2024-05-16"
         },
         {
             "Version": "16.0.4131",
-            "KBList": "5040939"
+            "KBList": "5040939",
+            "ReleaseDate": "2024-07-09"
         },
         {
             "CU": "CU14",
             "Version": "16.0.4135",
-            "KBList": "5038325"
+            "KBList": "5038325",
+            "ReleaseDate": "2024-07-23"
         },
         {
             "Version": "16.0.4140",
-            "KBList": "5042578"
+            "KBList": "5042578",
+            "ReleaseDate": "2024-09-10"
         },
         {
             "CU": "CU15",
             "Version": "16.0.4145",
-            "KBList": "5041321"
+            "KBList": "5041321",
+            "ReleaseDate": "2024-09-25"
         },
         {
             "Version": "16.0.4150",
-            "KBList": "5046059"
+            "KBList": "5046059",
+            "ReleaseDate": "2024-10-08"
         },
         {
             "Version": "16.0.4155",
-            "KBList": "5046862"
+            "KBList": "5046862",
+            "ReleaseDate": "2024-11-12"
         },
         {
             "CU": "CU16",
             "Version": "16.0.4165",
-            "KBList": "5048033"
+            "KBList": "5048033",
+            "ReleaseDate": "2024-11-14"
         },
         {
             "CU": "CU17",
             "Version": "16.0.4175",
-            "KBList": "5048038"
+            "KBList": "5048038",
+            "ReleaseDate": "2025-01-16"
         },
         {
             "CU": "CU18",
             "Version": "16.0.4185",
-            "KBList": "5050771"
+            "KBList": "5050771",
+            "ReleaseDate": "2025-03-13"
         },
         {
             "CU": "CU19",
             "Version": "16.0.4195",
-            "KBList": "5054531"
+            "KBList": "5054531",
+            "ReleaseDate": "2025-05-15"
         },
         {
             "Version": "16.0.4200",
-            "KBList": "5058721"
+            "KBList": "5058721",
+            "ReleaseDate": "2025-07-08"
         },
         {
             "CU": "CU20",
             "Version": "16.0.4205",
-            "KBList": "5059390"
+            "KBList": "5059390",
+            "ReleaseDate": "2025-07-10"
         },
         {
             "Version": "16.0.4210",
-            "KBList": "5063814"
+            "KBList": "5063814",
+            "ReleaseDate": "2025-08-12"
         },
         {
             "Version": "16.0.4212",
-            "KBList": "5065220"
+            "KBList": "5065220",
+            "ReleaseDate": "2025-09-09"
         },
         {
             "CU": "CU21",
             "Version": "16.0.4215",
-            "KBList": "5065865"
+            "KBList": "5065865",
+            "ReleaseDate": "2025-09-11"
         },
         {
             "Version": "16.0.4222",
-            "KBList": "5068406"
+            "KBList": "5068406",
+            "ReleaseDate": "2025-11-11"
         },
         {
             "CU": "CU22",
             "Version": "16.0.4225",
-            "KBList": "5068450"
+            "KBList": "5068450",
+            "ReleaseDate": "2025-11-13"
         },
         {
             "Version": "16.0.4230",
-            "KBList": "5072936"
+            "KBList": "5072936",
+            "ReleaseDate": "2026-01-13"
         },
         {
             "Version": "16.0.4235",
@@ -5076,16 +5253,19 @@
         {
             "CU": "CU23",
             "Version": "16.0.4236",
-            "KBList": "5078297"
+            "KBList": "5078297",
+            "ReleaseDate": "2026-01-29"
         },
         {
             "Version": "16.0.4240",
-            "KBList": "5077464"
+            "KBList": "5077464",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "CU": "CU24",
             "Version": "16.0.4245",
-            "KBList": "5080999"
+            "KBList": "5080999",
+            "ReleaseDate": "2026-03-12"
         },
         {
             "Version": "17.0.100",
@@ -5102,15 +5282,18 @@
         {
             "Version": "17.0.1000",
             "SP": "RTM",
-            "SupportedUntil": "2036-01-06T00:00:00"
+            "SupportedUntil": "2036-01-06T00:00:00",
+            "ReleaseDate": "2025-11-18"
         },
         {
             "Version": "17.0.1050",
-            "KBList": "5073177"
+            "KBList": "5073177",
+            "ReleaseDate": "2026-01-13"
         },
         {
             "Version": "17.0.1105",
-            "KBList": "5077468"
+            "KBList": "5077468",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "Version": "17.0.4005",
@@ -5120,21 +5303,25 @@
         {
             "CU": "CU1",
             "Version": "17.0.4006",
-            "KBList": "5078298"
+            "KBList": "5078298",
+            "ReleaseDate": "2026-01-29"
         },
         {
             "CU": "CU2",
             "Version": "17.0.4015",
-            "KBList": "5075211"
+            "KBList": "5075211",
+            "ReleaseDate": "2026-02-12"
         },
         {
             "Version": "17.0.4020",
-            "KBList": "5077466"
+            "KBList": "5077466",
+            "ReleaseDate": "2026-03-10"
         },
         {
             "CU": "CU3",
             "Version": "17.0.4025",
-            "KBList": "5077896"
+            "KBList": "5077896",
+            "ReleaseDate": "2026-03-12"
         }
     ]
 }

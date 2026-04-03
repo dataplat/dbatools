@@ -95,7 +95,26 @@ function Test-DbaPath {
                     $query += "EXEC master.dbo.xp_fileexist '$p'"
                 }
                 $sql = $query -join ';'
-                $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
+                try {
+                    $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
+                } catch {
+                    Write-Message -Level Verbose -Message "xp_fileexist execution failed for path(s) on $instance. The SQL Server service account may not have access to the specified path(s). Error: $_"
+                    if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
+                        return $false
+                    } else {
+                        foreach ($p in $PathsBatch) {
+                            [PSCustomObject]@{
+                                SqlInstance  = $server.Name
+                                InstanceName = $server.ServiceName
+                                ComputerName = $server.ComputerName
+                                FilePath     = $p
+                                FileExists   = $false
+                                IsContainer  = $false
+                            }
+                        }
+                    }
+                    continue
+                }
                 if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                     if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
                         return $true
