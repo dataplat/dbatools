@@ -107,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test tables
-        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases, "world-administrative-boundaries", ecdc_cases_static, ecdc_cases_ordinal, ecdc_cases_notxn -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases, "world-administrative-boundaries", ecdc_cases_static, ecdc_cases_ordinal, ecdc_cases_notxn, ecdc_cases_utf8, ecdc_cases_utf16 -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -278,6 +278,100 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "IF OBJECT_ID('staging.ecdc_parquet_test') IS NOT NULL DROP TABLE staging.ecdc_parquet_test" -ErrorAction SilentlyContinue
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "StoreStringAsUtf8 behavior" {
+        It "creates UTF-8 varchar columns by default" {
+            $splatImport = @{
+                Path              = $pathEcdc
+                SqlInstance       = $TestConfig.InstanceMulti1
+                Database          = "tempdb"
+                AutoCreateTable   = $true
+                Table             = "ecdc_cases_utf8"
+                NoColumnOptimize  = $true
+                StoreStringAsUtf8 = $true
+            }
+            $result = Import-DbaParquet @splatImport
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+
+            $utf8ColumnSql = @"
+SELECT TOP 1
+    t.name AS TypeName,
+    c.collation_name AS CollationName
+FROM sys.columns c
+INNER JOIN sys.types t
+    ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases_utf8')
+  AND t.name IN ('varchar', 'nvarchar')
+ORDER BY c.column_id
+"@
+            $utf8Column = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $utf8ColumnSql
+            $utf8Column.TypeName | Should -Be "varchar"
+            $utf8Column.CollationName | Should -Match "UTF8"
+        }
+
+        It "creates nvarchar columns when StoreStringAsUtf8 is false" {
+            $splatImport = @{
+                Path              = $pathEcdc
+                SqlInstance       = $TestConfig.InstanceMulti1
+                Database          = "tempdb"
+                AutoCreateTable   = $true
+                Table             = "ecdc_cases_utf16"
+                NoColumnOptimize  = $true
+                StoreStringAsUtf8 = $false
+            }
+            $result = Import-DbaParquet @splatImport
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -BeGreaterThan 0
+
+            $utf16ColumnSql = @"
+SELECT TOP 1
+    t.name AS TypeName,
+    c.collation_name AS CollationName
+FROM sys.columns c
+INNER JOIN sys.types t
+    ON c.user_type_id = t.user_type_id
+WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases_utf16')
+  AND t.name IN ('varchar', 'nvarchar')
+ORDER BY c.column_id
+"@
+            $utf16Column = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query $utf16ColumnSql
+            $utf16Column.TypeName | Should -Be "nvarchar"
+            $utf16Column.CollationName | Should -Not -Match "UTF8"
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases_utf8, ecdc_cases_utf16 -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Parallel flags guardrail" {
+        It "throws when parallel-related parameters are supplied" {
+            $splatImport = @{
+                Path              = $pathEcdc
+                SqlInstance       = $TestConfig.InstanceMulti1
+                Database          = "tempdb"
+                Table             = "ecdc_cases"
+                Parallel          = $true
+                ThrottleLimit     = 2
+                ParallelBatchSize = 10
+                EnableException   = $true
+            }
+            $errorRecord = $null
+            try {
+                $null = Import-DbaParquet @splatImport
+            } catch {
+                $errorRecord = $PSItem
+            }
+
+            $errorRecord | Should -Not -BeNullOrEmpty
+            $errorRecord.Exception.Message | Should -Match "Parallel import is not implemented"
         }
     }
 }
