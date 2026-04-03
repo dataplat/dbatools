@@ -32,6 +32,7 @@ function Update-SqlPermission {
         [ValidateNotNullOrEmpty()]
         [object]$DestLogin,
         [switch]$ObjectLevel,
+        [switch]$ExcludeDatabaseMapping,
         [switch]$EnableException
     )
 
@@ -192,6 +193,10 @@ function Update-SqlPermission {
                 }
             }
         }
+    }
+
+    if ($ExcludeDatabaseMapping) {
+        return
     }
 
     if ($DestServer.VersionMajor -lt 9) {
