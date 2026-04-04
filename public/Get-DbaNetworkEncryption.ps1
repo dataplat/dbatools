@@ -18,10 +18,6 @@ function Get-DbaNetworkEncryption {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Accepts pipeline input.
 
-    .PARAMETER SqlCredential
-        Not used by this command - included for pipeline compatibility. Authentication is not
-        required since this command connects at the TLS layer before SQL Server authentication.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -47,7 +43,6 @@ function Get-DbaNetworkEncryption {
         - ComputerName: The hostname of the SQL Server
         - InstanceName: The SQL Server instance name (MSSQLSERVER for default)
         - SqlInstance: The full SQL Server instance identifier
-        - Port: The TCP port used to connect
         - Subject: The certificate subject (Common Name)
         - Issuer: The certificate issuer
         - Thumbprint: SHA-1 hash thumbprint of the certificate
@@ -82,13 +77,8 @@ function Get-DbaNetworkEncryption {
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-
-    begin {
-
-    }
 
     process {
         foreach ($instance in $SqlInstance) {
@@ -96,20 +86,7 @@ function Get-DbaNetworkEncryption {
                 $computerName = $instance.ComputerName
                 $instanceName = $instance.InstanceName
                 $tlsInstanceName = if ($instanceName -eq "MSSQLSERVER") { "" } else { $instanceName }
-
-                $resolvedPort = if ($instance.Port -gt 0) {
-                    $instance.Port
-                } elseif ($instanceName -eq "MSSQLSERVER") {
-                    1433
-                } else {
-                    $null
-                }
-
-                $sqlInstanceName = if ($instanceName -ne "MSSQLSERVER") {
-                    "$computerName\$instanceName"
-                } else {
-                    $computerName
-                }
+                $sqlInstanceName = if ($instanceName -eq "MSSQLSERVER") { $computerName } else { "$computerName\$instanceName" }
 
                 $splatTls = @{
                     ComputerName = $computerName
@@ -131,7 +108,6 @@ function Get-DbaNetworkEncryption {
                     ComputerName = $computerName
                     InstanceName = $instanceName
                     SqlInstance  = $sqlInstanceName
-                    Port         = $resolvedPort
                     Subject      = $cert.Subject
                     Issuer       = $cert.Issuer
                     Thumbprint   = $cert.Thumbprint
