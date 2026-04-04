@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbName = "dbatoolsci_removedataclass_$random"
         $tableName = "dbatoolsci_table_$random"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+        $db = New-DbaDatabase -SqlInstance $TestConfig.SingleInstance -Name $dbName
 
         # Create a test table
         $db.Query("CREATE TABLE dbo.$tableName (Id INT, Email NVARCHAR(255), Phone NVARCHAR(20))")
@@ -49,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.SingleInstance -Database $dbName -Confirm:$false
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -57,23 +57,23 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
 
         It "removes a classification from a column" {
-            $classification = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName -Column "Email"
+            $classification = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName -Column "Email"
             $classification | Should -Not -BeNullOrEmpty
 
             $result = $classification | Remove-DbaDbDataClassification -Confirm:$false
             $result.Status | Should -Be "Removed"
 
-            $afterRemove = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName -Column "Email"
+            $afterRemove = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName -Column "Email"
             $afterRemove | Should -BeNullOrEmpty
         }
 
         It "removes all classifications when piping all results" {
-            $before = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName
+            $before = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName
             $before | Should -Not -BeNullOrEmpty
 
             $before | Remove-DbaDbDataClassification -Confirm:$false
 
-            $after = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName
+            $after = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName
             $after | Should -BeNullOrEmpty
         }
     }

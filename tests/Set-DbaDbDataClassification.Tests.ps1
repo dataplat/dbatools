@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbName = "dbatoolsci_setdataclass_$random"
         $tableName = "dbatoolsci_table_$random"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+        $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
 
         # Create a test table with columns
         $db.Query("CREATE TABLE dbo.$tableName (Id INT, Email NVARCHAR(255), SSN NVARCHAR(20))")
@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Confirm:$false
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -60,7 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets a classification with known information type and sensitivity label" {
             $splatSet = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 Database         = $dbName
                 Table            = $tableName
                 Column           = "Email"
@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "updates an existing classification" {
             $splatUpdate = @{
-                SqlInstance      = $TestConfig.instance2
+                SqlInstance      = $TestConfig.InstanceSingle
                 Database         = $dbName
                 Table            = $tableName
                 Column           = "Email"
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "supports piping from Get-DbaDbDataClassification" {
             $splatGet = @{
-                SqlInstance = $TestConfig.instance2
+                SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbName
                 Column      = "Email"
             }
@@ -102,7 +102,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets classification with custom information type and explicit GUID" {
             $splatCustom = @{
-                SqlInstance        = $TestConfig.instance2
+                SqlInstance        = $TestConfig.InstanceSingle
                 Database           = $dbName
                 Table              = $tableName
                 Column             = "SSN"

@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbName = "dbatoolsci_dataclass_$random"
         $tableName = "dbatoolsci_table_$random"
-        $db = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+        $db = New-DbaDatabase -SqlInstance $TestConfig.SingleInstance -Name $dbName
 
         # Create a test table with columns to classify
         $db.Query("CREATE TABLE dbo.$tableName (Id INT, EmailAddress NVARCHAR(255), CreditCardNumber NVARCHAR(20))")
@@ -53,7 +53,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.SingleInstance -Database $dbName -Confirm:$false
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -61,13 +61,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "commands work as expected" {
 
         It "finds classifications in a database" {
-            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName
+            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName
             $result | Should -Not -BeNullOrEmpty
             $result.Count | Should -Be 1
         }
 
         It "returns correct classification details" {
-            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName
+            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName
             $result.Table | Should -Be $tableName
             $result.Column | Should -Be "EmailAddress"
             $result.InformationType | Should -Be "Contact Info"
@@ -75,18 +75,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "filters by table" {
-            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName -Table $tableName
+            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName -Table $tableName
             $result | Should -Not -BeNullOrEmpty
         }
 
         It "filters by column" {
-            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName -Column "EmailAddress"
+            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName -Column "EmailAddress"
             $result | Should -Not -BeNullOrEmpty
             $result.Column | Should -Be "EmailAddress"
         }
 
         It "returns nothing for unclassified column filter" {
-            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.instance2 -Database $dbName -Column "CreditCardNumber"
+            $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.SingleInstance -Database $dbName -Column "CreditCardNumber"
             $result | Should -BeNullOrEmpty
         }
 
