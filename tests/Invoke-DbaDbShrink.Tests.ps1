@@ -21,6 +21,8 @@ Describe $CommandName -Tag UnitTests {
                 "FileType",
                 "StepSize",
                 "StatementTimeout",
+                "WaitAtLowPriority",
+                "AbortAfterWait",
                 "ExcludeIndexStats",
                 "ExcludeUpdateUsage",
                 "EnableException",
@@ -154,6 +156,79 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Refresh()
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
             $db.LogFiles[0].Size | Should -Be $oldLogSize
+        }
+
+        It "Shrinks with WaitAtLowPriority on SQL Server 2022+" {
+            if ($server.VersionMajor -lt 16) {
+                Set-ItResult -Skipped -Because "Test is only for SQL Server 2022 and later"
+                return
+            }
+
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -AbortAfterWait Self
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -Be $true
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+            $db.FileGroups[0].Files[0].Refresh()
+            $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
+        }
+
+        It "Verifies WAIT_AT_LOW_PRIORITY SQL syntax appears in running requests when blocked" {
+            if ($server.VersionMajor -lt 16) {
+                Set-ItResult -Skipped -Because "Test is only for SQL Server 2022 and later"
+                return
+            }
+
+            # Create a table with data so DBCC SHRINKFILE will need to acquire locks when moving pages
+            $null = $server.Query("USE [$($db.Name)]; CREATE TABLE dbo.dbatoolsci_shrink_blocker (c1 INT); INSERT INTO dbo.dbatoolsci_shrink_blocker SELECT TOP 1000 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) FROM sys.all_columns a1 CROSS JOIN sys.all_columns a2")
+
+            # Start a job that holds an exclusive table lock to force the shrink to wait at low priority
+            $blockConnStr = $server.ConnectionContext.ConnectionString
+            $blockDbName = $db.Name
+            $blockJob = Start-Job -ScriptBlock {
+                param($connStr, $dbName)
+                $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+                $conn.Open()
+                $cmd = $conn.CreateCommand()
+                $cmd.CommandTimeout = 60
+                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '00:00:20'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
+                try { $cmd.ExecuteNonQuery() } catch { }
+                $conn.Close()
+            } -ArgumentList $blockConnStr, $blockDbName
+
+            Start-Sleep -Seconds 2
+
+            # Start the shrink with WAIT_AT_LOW_PRIORITY in a background job
+            $shrinkServerName = $server.DomainInstanceName
+            $shrinkDbName = $db.Name
+            $shrinkModulePath = (Get-Module dbatools | Select-Object -First 1).Path
+            $shrinkJob = Start-Job -ScriptBlock {
+                param($modulePath, $serverName, $dbName)
+                Import-Module $modulePath
+                Invoke-DbaDbShrink -SqlInstance $serverName -Database $dbName -FileType Data -WaitAtLowPriority
+            } -ArgumentList $shrinkModulePath, $shrinkServerName, $shrinkDbName
+
+            Start-Sleep -Seconds 3
+
+            # Verify the SQL text of the running shrink request contains WAIT_AT_LOW_PRIORITY
+            $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
+
+            $null = $blockJob | Wait-Job -Timeout 30
+            $blockJob | Remove-Job -Force
+            $null = $shrinkJob | Wait-Job -Timeout 60
+            $shrinkJob | Remove-Job -Force
+
+            $sqlTextCount | Should -BeGreaterThan 0
+        }
+
+        It "Returns an error when WaitAtLowPriority is used on SQL Server older than 2022" {
+            if ($server.VersionMajor -ge 16) {
+                Set-ItResult -Skipped -Because "Test is only for SQL Server 2019 and older"
+                return
+            }
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "SQL Server 2022"
         }
     }
 }
