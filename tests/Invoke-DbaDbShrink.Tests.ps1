@@ -158,7 +158,18 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Size | Should -Be $oldLogSize
         }
 
-        It "Shrinks with WaitAtLowPriority on SQL Server 2022+" -Skip:($server.VersionMajor -lt 16) {
+        It "Shrinks with WaitAtLowPriority on SQL Server 2022+" {
+            if ($server.VersionMajor -lt 16) {
+                Set-ItResult -Skipped -Because "Test is only for SQL Server 2022 and later"
+                return
+            }
+            # grow the files
+            $server.Query("
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)', SIZE = 16384KB )
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)_log', SIZE = 16384KB )")
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+
             $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -AbortAfterWait Self
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
@@ -169,9 +180,13 @@ Describe $CommandName -Tag IntegrationTests {
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
         }
 
-        It "Returns an error when WaitAtLowPriority is used on SQL Server older than 2022" -Skip:($server.VersionMajor -ge 16) {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -WarningVariable warnings 3>&1
-            $warnings | Should -Match "SQL Server 2022"
+        It "Returns an error when WaitAtLowPriority is used on SQL Server older than 2022" {
+            if ($server.VersionMajor -ge 16) {
+                Set-ItResult -Skipped -Because "Test is only for SQL Server 2019 and older"
+                return
+            }
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "SQL Server 2022"
         }
     }
 }
