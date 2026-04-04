@@ -174,14 +174,17 @@ Describe $CommandName -Tag IntegrationTests {
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
         }
 
-        It "Verifies WAIT_AT_LOW_PRIORITY shows LCK_M_SCH_M_LOW_PRIORITY in DMV when blocked" {
+        It "Verifies WAIT_AT_LOW_PRIORITY SQL syntax appears in running requests when blocked" {
             if ($server.VersionMajor -lt 16) {
                 Set-ItResult -Skipped -Because "Test is only for SQL Server 2022 and later"
                 return
             }
 
-            # Start a job that holds a DDL lock in the database to force the shrink to wait at low priority
-            $blockConnectionString = $server.ConnectionContext.ConnectionString
+            # Create a table with data so DBCC SHRINKFILE will need to acquire locks when moving pages
+            $null = $server.Query("USE [$($db.Name)]; CREATE TABLE dbo.dbatoolsci_shrink_blocker (c1 INT); INSERT INTO dbo.dbatoolsci_shrink_blocker SELECT TOP 1000 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) FROM sys.all_columns a1 CROSS JOIN sys.all_columns a2")
+
+            # Start a job that holds an exclusive table lock to force the shrink to wait at low priority
+            $blockConnStr = $server.ConnectionContext.ConnectionString
             $blockDbName = $db.Name
             $blockJob = Start-Job -ScriptBlock {
                 param($connStr, $dbName)
@@ -189,10 +192,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $conn.Open()
                 $cmd = $conn.CreateCommand()
                 $cmd.CommandTimeout = 60
-                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; EXEC sp_addextendedproperty @name = N'dbatoolsci_shrink_lock', @value = N'1'; WAITFOR DELAY '00:00:20'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
+                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '00:00:20'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
                 try { $cmd.ExecuteNonQuery() } catch { }
                 $conn.Close()
-            } -ArgumentList $blockConnectionString, $blockDbName
+            } -ArgumentList $blockConnStr, $blockDbName
 
             Start-Sleep -Seconds 2
 
@@ -208,15 +211,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             Start-Sleep -Seconds 3
 
-            # Verify the shrink session shows low priority lock wait in the DMV
-            $lockCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests WHERE wait_type = 'LCK_M_SCH_M_LOW_PRIORITY'")).C
+            # Verify the SQL text of the running shrink request contains WAIT_AT_LOW_PRIORITY
+            $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
 
             $null = $blockJob | Wait-Job -Timeout 30
             $blockJob | Remove-Job -Force
             $null = $shrinkJob | Wait-Job -Timeout 60
             $shrinkJob | Remove-Job -Force
 
-            $lockCount | Should -BeGreaterThan 0
+            $sqlTextCount | Should -BeGreaterThan 0
         }
 
         It "Returns an error when WaitAtLowPriority is used on SQL Server older than 2022" {
