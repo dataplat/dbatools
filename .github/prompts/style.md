@@ -264,6 +264,29 @@ Describe $CommandName -Tag IntegrationTests {
 }
 ```
 
+### Testing for warnings
+This is the basic structure of the PSCustomObject returned by `Get-TestConfig.ps1`:
+
+```powershell
+$config = [ordered]@{
+    CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        # We want the tests as readable as possible so we want to set Confirm globally to $false.
+        '*-Dba*:Confirm'         = $false
+        # We use a global warning variable so that we can always test
+        # that the command does not write a warning
+        # or that the command does write the expected warning.
+        '*-Dba*:WarningVariable' = 'WarnVar'
+    }
+    # We want all the tests to only write to this location.
+    # When testing a remote SQL Server instance this must be a network share
+    # where both the SQL Server instance and the test script can write to.
+    Temp             = 'C:\Temp'
+}
+```
+
+So `$WarnVar` can be used with `$WarnVar | Should -Be` to test for warnings.
+
 ### Formatting Rules
 - Apply OTBS (One True Brace Style) formatting to all code blocks
 - No trailing spaces anywhere
