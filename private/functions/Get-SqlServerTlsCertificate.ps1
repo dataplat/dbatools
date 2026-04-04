@@ -370,7 +370,7 @@ public class TdsTlsStream : Stream {
                 "Client does not trust remote certificate: $($certState.SslPolicyErrors)"
                 $certState.ChainStatus | ForEach-Object { $_.Status; $_.StatusInformation }
             ) -join ([System.Environment]::NewLine)
-            Write-Warning -Message $msg.TrimEnd()
+            Write-Message -Level Warning -Message $msg.TrimEnd()
         }
 
         $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $sslStream.RemoteCertificate
