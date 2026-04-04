@@ -51,7 +51,7 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -66,7 +66,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Column           = "Email"
                 InformationType  = "Contact Info"
                 SensitivityLabel = "Confidential"
-                Confirm          = $false
             }
             $result = Set-DbaDbDataClassification @splatSet
             $result | Should -Not -BeNullOrEmpty
@@ -83,7 +82,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Table            = $tableName
                 Column           = "Email"
                 SensitivityLabel = "Highly Confidential"
-                Confirm          = $false
             }
             $result = Set-DbaDbDataClassification @splatUpdate
             $result.SensitivityLabel | Should -Be "Highly Confidential"
@@ -96,20 +94,19 @@ Describe $CommandName -Tag IntegrationTests {
                 Database    = $dbName
                 Column      = "Email"
             }
-            $result = Get-DbaDbDataClassification @splatGet | Set-DbaDbDataClassification -SensitivityLabel "General" -Confirm:$false
+            $result = Get-DbaDbDataClassification @splatGet | Set-DbaDbDataClassification -SensitivityLabel "General"
             $result.SensitivityLabel | Should -Be "General"
         }
 
         It "sets classification with custom information type and explicit GUID" {
             $splatCustom = @{
-                SqlInstance        = $TestConfig.InstanceSingle
-                Database           = $dbName
-                Table              = $tableName
-                Column             = "SSN"
-                InformationType    = "SSN"
-                InformationTypeId  = "D936EC2C-04A4-9CF7-44C2-378A96456C61"
-                SensitivityLabel   = "Highly Confidential - GDPR"
-                Confirm            = $false
+                SqlInstance       = $TestConfig.InstanceSingle
+                Database          = $dbName
+                Table             = $tableName
+                Column            = "SSN"
+                InformationType   = "SSN"
+                InformationTypeId = "D936EC2C-04A4-9CF7-44C2-378A96456C61"
+                SensitivityLabel  = "Highly Confidential - GDPR"
             }
             $result = Set-DbaDbDataClassification @splatCustom
             $result.InformationType | Should -Be "SSN"
