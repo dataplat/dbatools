@@ -207,7 +207,7 @@ public class TdsTlsStream : Stream {
 
             $respSize = [System.BitConverter]::ToUInt16($resp, 1)
             $rawResponse = [System.Text.Encoding]::UTF8.GetString($resp, 3, $respSize)
-            Write-Verbose -Message "Recieved SQL Browser response: '$rawResponse'"
+            Write-Message -Level Verbose -Message "Recieved SQL Browser response: '$rawResponse'"
             $response = $rawResponse -split ';'
 
             $instanceInfo = [Ordered]@{}
@@ -221,7 +221,7 @@ public class TdsTlsStream : Stream {
                     }
                     else {
                         $info = [PSCustomObject]$instanceInfo
-                        Write-Verbose -Message "Processed SQL Browser Response:`n$($info | Out-String)"
+                        Write-Message -Level Verbose -Message "Processed SQL Browser Response:`n$($info | Out-String)"
 
                         $info
                         $instanceInfo = [Ordered]@{}
@@ -246,7 +246,7 @@ public class TdsTlsStream : Stream {
         }
 
         if ($ConnectionType -eq "TCP") {
-            Write-Verbose -Message "Connecting to TCP/IP endpoint $($ComputerName):$Port"
+            Write-Message -Level Verbose -Message "Connecting to TCP/IP endpoint $($ComputerName):$Port"
 
             $socket = New-Object -TypeName System.Net.Sockets.TcpClient
             $connectTask = $socket.ConnectAsync($ComputerName, $Port)
@@ -257,7 +257,7 @@ public class TdsTlsStream : Stream {
             $targetStream = $socket.GetStream()
         }
         else {
-            Write-Verbose -Message "Connecting to Named Pipe endpoint \\$($ComputerName)\pipe\$pipeName"
+            Write-Message -Level Verbose -Message "Connecting to Named Pipe endpoint \\$($ComputerName)\pipe\$pipeName"
             $targetStream = New-Object -TypeName System.IO.Pipes.NamedPipeClientStream -ArgumentList @(
                 $ComputerName,
                 $pipeName,
@@ -270,11 +270,11 @@ public class TdsTlsStream : Stream {
         # payload making it more difficult. TDS 8.0 (Encrypt=strict) is a lot
         # simpler as the TLS handshake is done before anything.
         if ($StrictEncrypt) {
-            Write-Verbose -Message "Using TDS 8 TLS Handshake"
+            Write-Message -Level Verbose -Message "Using TDS 8 TLS Handshake"
             $streamToWrap = $targetStream
         }
         else {
-            Write-Verbose -Message "Using TDS 7.x Pre-Login method for the TLS handshake"
+            Write-Message -Level Verbose -Message "Using TDS 7.x Pre-Login method for the TLS handshake"
 
             # This is a pre-calculated TDS Pre-Login payload with the ENCRYPTION
             # value of ENCRYPT_REQ (0x03).
@@ -361,9 +361,9 @@ public class TdsTlsStream : Stream {
             $true
         }
         $sslStream = New-Object -TypeName System.Net.Security.SslStream -ArgumentList @($streamToWrap, $false, $sslValidationCallback)
-        Write-Verbose -Message "Starting TLS Handshake"
+        Write-Message -Level Verbose -Message "Starting TLS Handshake"
         $sslStream.AuthenticateAsClient($ComputerName)
-        Write-Verbose -Message "TLS result: $($certState.SslPolicyErrors)"
+        Write-Message -Level Verbose -Message "TLS result: $($certState.SslPolicyErrors)"
 
         if ($certState.SslPolicyErrors -ne 'None') {
             $msg = @(
@@ -374,7 +374,7 @@ public class TdsTlsStream : Stream {
         }
 
         $cert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $sslStream.RemoteCertificate
-        Write-Verbose -Message "Found cert for $($cert.Subject), Expires: $($cert.NotAfter), SANs: $($cert.DnsNameList -join ", ")"
+        Write-Message -Level Verbose -Message "Found cert for $($cert.Subject), Expires: $($cert.NotAfter), SANs: $($cert.DnsNameList -join ", ")"
 
         $cert
     }

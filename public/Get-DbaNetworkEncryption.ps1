@@ -84,21 +84,31 @@ function Get-DbaNetworkEncryption {
         foreach ($instance in $SqlInstance) {
             try {
                 $computerName = $instance.ComputerName
+                Write-Message -Level Verbose -Message "Using computerName '$computerName'"
                 $instanceName = $instance.InstanceName
+                Write-Message -Level Verbose -Message "Using instanceName '$instanceName'"
                 $tlsInstanceName = if ($instanceName -eq "MSSQLSERVER") { "" } else { $instanceName }
+                Write-Message -Level Verbose -Message "Using tlsInstanceName '$tlsInstanceName'"
                 $sqlInstanceName = if ($instanceName -eq "MSSQLSERVER") { $computerName } else { "$computerName\$instanceName" }
+                Write-Message -Level Verbose -Message "Using sqlInstanceName '$sqlInstanceName'"
 
                 $splatTls = @{
                     ComputerName = $computerName
                     InstanceName = $tlsInstanceName
+                    ErrorAction  = "Stop"
                 }
 
                 if ($instance.Port -gt 0) {
                     $splatTls.ConnectionType = "TCP"
                     $splatTls.Port           = $instance.Port
+                    Write-Message -Level Verbose -Message "Using explicit port $($instance.Port) for TLS connection"
                 }
 
-                $cert = Get-SqlServerTlsCertificate @splatTls
+                try {
+                    $cert = Get-SqlServerTlsCertificate @splatTls
+                } catch {
+                    Stop-Function -Message "Failed to retrieve TLS certificate from $instance" -Target $instance -ErrorRecord $_ -Continue
+                }
 
                 if (-not $cert) {
                     continue
