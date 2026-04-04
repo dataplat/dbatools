@@ -419,7 +419,9 @@ function Get-DbaBackupInformation {
                 $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
                 $historyObject.RecoveryModel = $group.Group.RecoveryModel
                 $historyObject.IsCopyOnly = $group.Group[0].IsCopyOnly
-                $historyObject.LastRecoveryForkGuid = $group.Group[0].LastRecoveryForkGUID
+                if ($null -ne $group.Group[0].LastRecoveryForkGUID) {
+                    $historyObject.LastRecoveryForkGuid = $group.Group[0].LastRecoveryForkGUID
+                }
                 $groupResults += $historyObject
             }
         }
