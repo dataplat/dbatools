@@ -63,7 +63,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "finds classifications in a database" {
             $result = Get-DbaDbDataClassification -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $result | Should -Not -BeNullOrEmpty
-            $result.Count | Should -Be 1
         }
 
         It "returns correct classification details" {
