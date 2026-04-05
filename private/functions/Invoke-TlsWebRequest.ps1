@@ -14,8 +14,8 @@ function Invoke-TlsWebRequest {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
     }
 
-    # Auto-detect system proxy if not already configured
-    if (-not [System.Net.WebRequest]::DefaultWebProxy.Address) {
+    # Auto-detect system proxy if not already configured and not opted out
+    if (-not (Get-DbatoolsConfigValue -FullName "commands.invoke-tlswebrequest.disableautoproxy") -and -not [System.Net.WebRequest]::DefaultWebProxy.Address) {
         $systemProxy = [System.Net.WebRequest]::GetSystemWebProxy()
         if ($systemProxy) {
             [System.Net.WebRequest]::DefaultWebProxy = $systemProxy
