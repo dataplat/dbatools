@@ -273,7 +273,8 @@ function Invoke-DbaBalanceDataFiles {
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+                        $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
+                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $tableNames }
                     } else {
                         $tableCollection = $db.Tables
                     }

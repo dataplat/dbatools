@@ -276,13 +276,15 @@ function Invoke-DbaDbPiiScan {
 
                 # Filter the tables if needed
                 if ($Table) {
-                    $tables = $db.Tables | Where-Object Name -In $Table
+                    $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
+                    $tables = $db.Tables | Where-Object Name -In $tableNames
                 } else {
                     $tables = $db.Tables
                 }
 
                 if ($ExcludeTable) {
-                    $tables = $tables | Where-Object Name -NotIn $ExcludeTable
+                    $excludeTableNames = $ExcludeTable | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
+                    $tables = $tables | Where-Object Name -NotIn $excludeTableNames
                 }
 
                 # Filter the tables based on the column
