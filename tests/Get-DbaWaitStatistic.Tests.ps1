@@ -80,11 +80,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "IncludeWaitType parameter includes wait types from ignorable list" {
         BeforeAll {
-            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeWaitType "CHKPT"
+            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeWaitType "SOS_WORK_DISPATCHER"
         }
 
         It "includes specified wait type that would normally be ignored" {
-            $resultsWith.WaitType | Should -Contain "CHKPT"
+            $resultsWith.WaitType | Should -Contain "SOS_WORK_DISPATCHER"
         }
     }
 }
