@@ -217,7 +217,15 @@ function Remove-DbaDbTableData {
             "
 
         if (Test-Bound Table) {
-            $sql += "    DELETE TOP ($BatchSize) FROM $Table;"
+            $nameParts = Get-ObjectNameParts -ObjectName $Table
+            if ($nameParts.Database) {
+                $bracketedTable = "[$($nameParts.Database)].[$($nameParts.Schema)].[$($nameParts.Name)]"
+            } elseif ($nameParts.Schema) {
+                $bracketedTable = "[$($nameParts.Schema)].[$($nameParts.Name)]"
+            } else {
+                $bracketedTable = "[$($nameParts.Name)]"
+            }
+            $sql += "    DELETE TOP ($BatchSize) FROM $bracketedTable;"
         } elseif (Test-Bound DeleteSql) {
             $sql += "    $DeleteSql;"
         }
