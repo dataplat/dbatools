@@ -120,10 +120,11 @@ function Get-DbaDbPageInfo {
         }
 
         if ($Table) {
+            $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
             if ($schema) {
-                $sql = "$sql AND st.name IN ('$($Table -join "','")')"
+                $sql = "$sql AND st.name IN ('$($tableNames -join "','")')"
             } else {
-                $sql = "$sql WHERE st.name IN ('$($Table -join "','")')"
+                $sql = "$sql WHERE st.name IN ('$($tableNames -join "','")')"
             }
         }
     }
