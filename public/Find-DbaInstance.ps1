@@ -518,6 +518,7 @@ function Find-DbaInstance {
                             try {
                                 $server = Connect-DbaInstance -SqlInstance $dataSet.SqlInstance -SqlCredential $SqlCredential
                                 $dataSet.SqlConnected = $true
+                                $dataSet.TcpConnected = $true
                                 $dataSet.Confidence = 'High'
 
                                 # Remove duplicates
@@ -542,6 +543,7 @@ function Find-DbaInstance {
                                 if ($_.Exception.InnerException.Errors.Class -lt 25) {
                                     # There IS an SQL Instance and it listened to network traffic
                                     $dataSet.SqlConnected = $true
+                                    $dataSet.TcpConnected = $true
                                     $dataSet.Confidence = 'High'
                                 }
                                 #endregion Processing error (Access denied, server error, ...)
