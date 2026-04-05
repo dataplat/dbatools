@@ -355,6 +355,12 @@ function Find-DbaInstance {
                             # here to avoid an empty catch
                             $null = 1
                         }
+                        # Fall back to default port testing if Browser returned no port info
+                        # (e.g. SQL Server 2022+ where Browser is deprecated, or default instances
+                        # which don't report a TCP port via Browser UDP)
+                        if (-not $ports) {
+                            $ports = $TCPPort | Test-TcpPort -ComputerName $computer
+                        }
                     } else {
                         $ports = $TCPPort | Test-TcpPort -ComputerName $computer
                     }
@@ -452,6 +458,13 @@ function Find-DbaInstance {
 
                                 $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
                                     $object.TcpConnected = $_.IsOpen
+                                }
+                            } else {
+                                # Default instance - Browser doesn't report a specific TCP port,
+                                # check if any of the fallback ports we tested is open
+                                $object.PortsScanned | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
+                                    $object.Port = $_.Port
+                                    $object.TcpConnected = $true
                                 }
                             }
                         }
