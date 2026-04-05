@@ -184,15 +184,14 @@ function Export-DbaDacPackage {
         if ($Table) {
             $tblList = New-Object 'System.Collections.Generic.List[Tuple[String, String]]'
             foreach ($tableItem in $Table) {
-                $tableSplit = $tableItem.Split('.')
-                if ($tableSplit.Count -gt 1) {
-                    $tblName = $tableSplit[-1]
-                    $schemaName = $tableSplit[-2]
+                # Use Get-ObjectNameParts to correctly handle bracketed names like [Gross.Table.Name]
+                $nameParts = Get-ObjectNameParts -ObjectName $tableItem
+                if ($nameParts.Schema) {
+                    $schemaName = $nameParts.Schema
                 } else {
-                    $tblName = [string]$tableSplit
-                    $schemaName = 'dbo'
+                    $schemaName = "dbo"
                 }
-                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $tblName))
+                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $nameParts.Name))
             }
         } else {
             $tblList = $null
