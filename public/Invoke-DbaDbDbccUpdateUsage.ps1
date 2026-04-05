@@ -163,6 +163,14 @@ function Invoke-DbaDbDbccUpdateUsage {
                 try {
                     $query = $StringBuilder.ToString()
                     if (Test-Bound -ParameterName Table) {
+                        if ($Table -notmatch '^\d+$') {
+                            $tableNameParts = Get-ObjectNameParts -ObjectName $Table
+                            if ($tableNameParts.Schema) {
+                                $tableIdentifier = "[$($tableNameParts.Schema)].[$($tableNameParts.Name)]"
+                            } else {
+                                $tableIdentifier = "[$($tableNameParts.Name)]"
+                            }
+                        }
                         if (Test-Bound -ParameterName Index) {
                             if ($Table -match '^\d+$') {
                                 if ($Index -match '^\d+$') {
@@ -172,16 +180,16 @@ function Invoke-DbaDbDbccUpdateUsage {
                                 }
                             } else {
                                 if ($Index -match '^\d+$') {
-                                    $query = $query.Replace('#options#', "'$($db.name)', '$Table', $Index")
+                                    $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier', $Index")
                                 } else {
-                                    $query = $query.Replace('#options#', "'$($db.name)', '$Table', '$Index'")
+                                    $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier', '$Index'")
                                 }
                             }
                         } else {
                             if ($Table -match '^\d+$') {
                                 $query = $query.Replace('#options#', "'$($db.name)', $Table")
                             } else {
-                                $query = $query.Replace('#options#', "'$($db.name)', '$Table'")
+                                $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier'")
                             }
                         }
                     } else {
