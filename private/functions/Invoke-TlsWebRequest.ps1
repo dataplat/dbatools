@@ -14,9 +14,18 @@ function Invoke-TlsWebRequest {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
     }
 
+    # Auto-detect system proxy if not already configured and not opted out
+    if (-not (Get-DbatoolsConfigValue -FullName "commands.invoke-tlswebrequest.disableautoproxy") -and -not [System.Net.WebRequest]::DefaultWebProxy.Address) {
+        $systemProxy = [System.Net.WebRequest]::GetSystemWebProxy()
+        if ($systemProxy) {
+            [System.Net.WebRequest]::DefaultWebProxy = $systemProxy
+            [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+        }
+    }
+
     # IWR is crazy slow for large downloads
     $currentProgressPref = $ProgressPreference
-    $ProgressPreference = 'SilentlyContinue'
+    $ProgressPreference = "SilentlyContinue"
     Invoke-WebRequest @Args
     $ProgressPreference = $currentProgressPref
 
