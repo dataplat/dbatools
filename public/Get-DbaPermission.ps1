@@ -332,8 +332,18 @@ function Get-DbaPermission {
             }
 
             if ($IncludeServerLevel) {
-                Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
-                $server.Query($ServPermsql)
+                if ($server.IsAzure) {
+                    Write-Message -Level Warning -Message "Server-level permissions are not supported on Azure SQL Database. Skipping -IncludeServerLevel."
+                } else {
+                    Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
+                    $server.Query($ServPermsql)
+                }
+            }
+
+            $currentDBPermsql = if ($server.IsAzure) {
+                $DBPermsql.Replace("SUSER_SNAME(owner_sid)", "(SELECT TOP 1 name FROM sys.database_principals WHERE sid = owner_sid)")
+            } else {
+                $DBPermsql
             }
 
             $dbs = $server.Databases
@@ -354,9 +364,9 @@ function Get-DbaPermission {
                     Continue
                 }
 
-                Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
+                Write-Message -Level Debug -Message "T-SQL: $currentDBPermsql"
                 try {
-                    $db.ExecuteWithResults($DBPermsql).Tables.Rows
+                    $db.ExecuteWithResults($currentDBPermsql).Tables.Rows
                 } catch {
                     Stop-Function -Message "Failure executing against $($db.Name) on $instance" -ErrorRecord $_ -Continue
                 }
