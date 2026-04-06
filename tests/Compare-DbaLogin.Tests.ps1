@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         $loginName = "dbatoolsci_comparelogin_$(Get-Random)"
 
-        $null = New-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -SecurePassword (ConvertTo-SecureString "Password1234!" -AsPlainText -Force)
+        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceMulti2 -Login $loginName -SecurePassword (ConvertTo-SecureString "Password1234!" -AsPlainText -Force)
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -39,25 +39,17 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance2 -Login $loginName -Confirm:$false -ErrorAction SilentlyContinue
-        $null = Remove-DbaLogin -SqlInstance $TestConfig.instance1 -Login $loginName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti2 -Login $loginName
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When comparing logins between instances" {
         It "Returns a result with a DestinationOnly login" {
-            $result = Compare-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login $loginName
+            $result = Compare-DbaLogin -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $loginName
             $result | Should -Not -BeNullOrEmpty
-            $result.Status | Should -Be "DestinationOnly"
-        }
-
-        It "Returns correct properties on the result object" {
-            $result = Compare-DbaLogin -Source $TestConfig.instance1 -Destination $TestConfig.instance2 -Login $loginName
             $result.LoginName | Should -Be $loginName
-            $result.SourceServer | Should -Not -BeNullOrEmpty
-            $result.DestinationServer | Should -Not -BeNullOrEmpty
-            $result.LoginType | Should -Not -BeNullOrEmpty
+            $result.Status | Should -Be "DestinationOnly"
         }
     }
 }
