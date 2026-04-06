@@ -19,7 +19,7 @@ $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManageme
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
 $null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Force -EnableException -Confirm:$false
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
-Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate', ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
+Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CERTIFICATE dbatoolsci_AGCert ENCRYPTION BY PASSWORD = '<StrongPassword>' WITH SUBJECT = 'AG Certificate'" -EnableException
 
 $loginName = "$env:COMPUTERNAME\$env:USERNAME"
 $login = Get-DbaLogin -SqlInstance $sqlinstance -Login $loginName
