@@ -69,7 +69,17 @@ Describe $CommandName -Tag IntegrationTests {
         GO"
 
         # remove sql file
-        Remove-Item -Path $sqlFile
+        foreach ($run in 1..20) {
+            try {
+                Remove-Item -Path $sqlFile -ErrorAction Stop
+                break
+            } catch {
+                Start-Sleep -Seconds 1
+            }
+        }
+        if (Test-Path -Path $sqlFile) {
+            Write-Warning -Message "File $sqlFile could not be removed."
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -78,7 +88,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "returns a process" {
             Start-Sleep -Seconds 1
             $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
-            Start-Sleep -Seconds 5
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
