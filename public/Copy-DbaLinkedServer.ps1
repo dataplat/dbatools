@@ -164,6 +164,13 @@ function Copy-DbaLinkedServer {
                 $serverList = $serverlist | Where-Object Name -NotIn $ExcludeLinkedServer
             }
 
+            # Provider compatibility mappings for SQL Server version migrations
+            # SQL Server 2022+ uses MSOLEDBSQL19 (OLE DB Driver 19) while older versions use MSOLEDBSQL (OLE DB Driver 18)
+            $providerCompatMap = @{
+                "MSOLEDBSQL"   = "MSOLEDBSQL19"
+                "MSOLEDBSQL19" = "MSOLEDBSQL"
+            }
+
             foreach ($currentLinkedServer in $serverlist) {
                 $provider = $currentLinkedServer.ProviderName
                 try {
@@ -192,14 +199,19 @@ function Copy-DbaLinkedServer {
 
                 # This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
                 if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
-                    if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName.")) {
-                            $copyLinkedServer.Status = "Skipped"
-                            $copyLinkedServer.Notes = "Missing provider"
-                            $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+                    if (-not ($destServer.Settings.OleDbProviderSettings.Name -contains $provider) -and -not $provider.StartsWith("SQLN")) {
+                        # Check if a compatible alternative provider is available before skipping
+                        $hasCompatible = $providerCompatMap.ContainsKey($provider) -and
+                            ($destServer.Settings.OleDbProviderSettings.Name -contains $providerCompatMap[$provider])
+                        if (-not $hasCompatible) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName.")) {
+                                $copyLinkedServer.Status = "Skipped"
+                                $copyLinkedServer.Notes = "Missing provider"
+                                $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+                            }
+                            continue
                         }
-                        continue
                     }
                 }
 
@@ -237,6 +249,17 @@ function Copy-DbaLinkedServer {
                     try {
                         $sql = $currentLinkedServer.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
+
+                        # Automatically map providers for compatibility between SQL Server versions
+                        # e.g., SQL Server 2022+ uses MSOLEDBSQL19 while SQL Server 2019 and older use MSOLEDBSQL
+                        $destProviderNames = @($destServer.Settings.OleDbProviderSettings.Name)
+                        if ($destProviderNames.Count -gt 0 -and -not ($destProviderNames -contains $provider) -and $providerCompatMap.ContainsKey($provider)) {
+                            $mappedProvider = $providerCompatMap[$provider]
+                            if ($destProviderNames -contains $mappedProvider) {
+                                Write-Message -Level Verbose -Message "Provider '$provider' not available on $($destServer.Name). Using compatible provider '$mappedProvider'."
+                                $sql = $sql -replace "N'$([regex]::Escape($provider))'", "N'$mappedProvider'"
+                            }
+                        }
 
                         if ($UpgradeSqlClient -and $sql -match "sqlncli") {
                             $destProviders = $destServer.Settings.OleDbProviderSettings | Where-Object { $_.Name -like 'SQLNCLI*' }
