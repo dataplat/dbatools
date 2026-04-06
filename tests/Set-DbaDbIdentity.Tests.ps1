@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Reseed option returns correct results" {
         It "Returns correct results" {
             $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName2 -ReSeedValue 400
-            $result.cmd | Should -Be "DBCC CHECKIDENT('$tableName2', RESEED, 400)"
+            $result.cmd | Should -Be "DBCC CHECKIDENT('[$tableName2]', RESEED, 400)"
             $result.IdentityValue | Should -Be "5."
         }
     }
