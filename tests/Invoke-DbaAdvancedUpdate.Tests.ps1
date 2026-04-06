@@ -133,7 +133,6 @@ Describe $CommandName -Tag IntegrationTests {
                 if ($ArgumentList[0] -like "/x:*" -and $ArgumentList[1] -eq "/quiet") { return $true }
             }
             Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                Write-Host $ArgumentList
                 if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/quiet") { return $true }
             }
 
