@@ -51,15 +51,18 @@ CREATE TABLE dbo.CustomerAccount (
     AccountName       NVARCHAR(100),
     ServiceCode       NVARCHAR(50)
 );
+GO
 
 CREATE VIEW dbo.v_ServiceSummary
 AS
     SELECT ServiceOrderId, ServiceName
     FROM dbo.ServiceOrder;
+GO
 
 CREATE PROCEDURE dbo.usp_GetServiceOrders
 AS
     SELECT * FROM dbo.ServiceOrder;
+GO
 "@
         $splatCreateObjects = @{
             SqlInstance = $TestConfig.InstanceSingle
