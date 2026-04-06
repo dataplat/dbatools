@@ -230,6 +230,7 @@ GO
                 Pattern                = "syslogins"
                 ObjectType             = "View"
                 IncludeSystemDatabases = $true
+                IncludeSystemObjects   = $true
             }
             $results = Find-DbaObject @splatFind
             $results | Should -Not -BeNullOrEmpty
