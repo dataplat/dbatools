@@ -4,7 +4,6 @@ param(
     $CommandName = "Stop-Function",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\flowcontrol\Stop-Function.ps1"
 
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
@@ -42,37 +41,37 @@ Describe $CommandName -Tag UnitTests {
     Context "Testing non-EnableException: Explicit call" {
         BeforeAll {
             try {
-                $global:warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-                $global:record = $Error[0]
-                $global:failed = $false
+                $result = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                $record = $Error[0]
+                $failed = $false
             } catch {
-                $global:record = $null
-                $global:failed = $true
+                $record = $null
+                $failed = $true
             }
         }
 
         It "Should not have failed to execute without an exception." {
-            $global:failed | Should -Be $false
+            $failed | Should -Be $false
         }
 
         It "Should have written the test warning 'Nonsilent Foo'" {
-            $global:warning[0] | Should -BeLike "*Nonsilent Foo"
+            $result[0] | Should -BeLike "*Nonsilent Foo"
         }
 
         It "Should have created an error record with the correct exception" {
-            $global:record.Exception.Message | Should -Be "Nonsilent Foo"
+            $record.Exception.Message | Should -Be "Nonsilent Foo"
         }
 
         It "Should have created an error record with the caegory 'InvalidResult'" {
-            $global:record.CategoryInfo.Category | Should -BeLike "InvalidResult"
+            $record.CategoryInfo.Category | Should -BeLike "InvalidResult"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $global:record.TargetObject | Should -Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $global:record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
         }
     }
 
@@ -82,43 +81,43 @@ Describe $CommandName -Tag UnitTests {
                 try {
                     $null.GetType()
                 } catch {
-                    $global:warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $PSItem -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-                    $global:record = $Error[0]
-                    $global:failed = $false
+                    $result = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $PSItem -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                    $record = $Error[0]
+                    $failed = $false
                 }
             } catch {
-                $global:record = $null
-                $global:failed = $true
+                $record = $null
+                $failed = $true
             }
         }
 
         It "Should not have failed to execute without an exception." {
-            $global:failed | Should -Be $false
+            $failed | Should -Be $false
         }
 
         It "Should have written the test warning 'Nonsilent Foo | '" {
-            $global:warning[0] | Should -BeLike "*Nonsilent Foo | *"
+            $result[0] | Should -BeLike "*Nonsilent Foo | *"
         }
 
         It "Should have created an error record with the correct exception" {
-            $global:record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
+            $record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
         }
 
         It "Should have created an error record with the category 'InvalidOperation'" {
-            $global:record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
+            $record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $global:record.TargetObject | Should -Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $global:record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester,Stop-Function"
         }
 
         It "Should have created an error record with the an inner NULL-invocation exception" {
             try {
-                $ExceptionName = $global:record.Exception.InnerException.GetType().FullName
+                $ExceptionName = $record.Exception.InnerException.GetType().FullName
             } catch {
                 $ExceptionName = "Meeep."
             }
@@ -133,59 +132,59 @@ Describe $CommandName -Tag UnitTests {
 
             #region Run Tests
             try {
-                $global:failed = $false
-                $global:a = 0
-                $global:b = 0
+                $failed = $false
+                $a = 0
+                $b = 0
                 foreach ($number in (1 .. 3)) {
-                    $global:a++
+                    $a++
                     Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
-                    $global:b++
+                    $b++
                 }
             } catch {
-                $global:failed = $true
+                $failed = $true
             }
 
             try {
-                $global:failed2 = $false
-                $global:c = 0
-                $global:d = 0
-                $global:e = 0
-                $global:f = 0
+                $failed2 = $false
+                $c = 0
+                $d = 0
+                $e = 0
+                $f = 0
 
                 :main foreach ($number in (1 .. 3)) {
-                    $global:c++
+                    $c++
                     foreach ($Counter in (1 .. 3)) {
-                        $global:d++
+                        $d++
                         Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
-                        $global:e++
+                        $e++
                     }
-                    $global:f++
+                    $f++
                 }
             } catch {
-                $global:failed2 = $true
+                $failed2 = $true
             }
             #endregion Run Tests
         }
 
         #region Evaluate Results
         It "Should not have failed to execute without an exception when testing Continue without a label." {
-            $global:failed | Should -Be $false
+            $failed | Should -Be $false
         }
 
         It "Should not have failed to execute without an exception when testing Continue with a label." {
-            $global:failed2 | Should -Be $false
+            $failed2 | Should -Be $false
         }
 
         It "Should have incremented the first counter when calling continue without a label" {
-            $global:a | Should -Be 3
+            $a | Should -Be 3
         }
 
         It "Should not have incremented the second counter when calling continue without a label" {
-            $global:b | Should -Be 0
+            $b | Should -Be 0
         }
 
         It "Should have incremented the first two counters thrice, but skipped the other two when calling continue with a label" {
-            [int[]]$result = @($global:c, $global:d, $global:e, $global:f)
+            [int[]]$result = @($c, $d, $e, $f)
             [int[]]$reference = @(3, 3, 0, 0)
             $result | Should -Be $reference
         }
@@ -196,32 +195,32 @@ Describe $CommandName -Tag UnitTests {
         BeforeAll {
             try {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
-                $global:record = $null
-                $global:failed = $false
+                $record = $null
+                $failed = $false
             } catch {
-                $global:record = $PSItem
-                $global:failed = $true
+                $record = $PSItem
+                $failed = $true
             }
         }
 
         It "Should not have failed to terminate with an exception." {
-            $global:failed | Should -Be $true
+            $failed | Should -Be $true
         }
 
         It "Should have created an error record with the correct exception" {
-            $global:record.Exception.Message | Should -Be "Nonsilent Foo"
+            $record.Exception.Message | Should -Be "Nonsilent Foo"
         }
 
         It "Should have created an error record with the caegory 'InvalidResult'" {
-            $global:record.CategoryInfo.Category | Should -BeLike "InvalidResult"
+            $record.CategoryInfo.Category | Should -BeLike "InvalidResult"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $global:record.TargetObject | Should -Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester,Stop-Function'" {
-            $global:record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
         }
     }
 
@@ -232,33 +231,33 @@ Describe $CommandName -Tag UnitTests {
                     $null.GetType()
                 } catch {
                     Stop-Function -Message "Nonsilent Foo" -EnableException $true -ErrorRecord $PSItem -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
-                    $global:record = $null
-                    $global:failed = $false
+                    $record = $null
+                    $failed = $false
                 }
             } catch {
-                $global:record = $PSItem
-                $global:failed = $true
+                $record = $PSItem
+                $failed = $true
             }
         }
 
         It "Should not have failed to terminate with an exception." {
-            $global:failed | Should -Be $true
+            $failed | Should -Be $true
         }
 
         It "Should have created an error record with the correct exception" {
-            $global:record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
+            $record.Exception.InnerException.GetType().FullName | Should -Be "System.Management.Automation.RuntimeException"
         }
 
         It "Should have created an error record with the caegory 'InvalidOperation'" {
-            $global:record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
+            $record.CategoryInfo.Category | Should -BeLike "InvalidOperation"
         }
 
         It "Should have created an error record with the targetobject 'Bar'" {
-            $global:record.TargetObject | Should -Be "Bar"
+            $record.TargetObject | Should -Be "Bar"
         }
 
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
-            $global:record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
+            $record.FullyQualifiedErrorId | Should -Be "dbatools_Invoke-Pester"
         }
     }
 
@@ -268,59 +267,59 @@ Describe $CommandName -Tag UnitTests {
 
             #region Run Tests
             try {
-                $global:failed = $false
-                $global:a = 0
-                $global:b = 0
+                $failed = $false
+                $a = 0
+                $b = 0
                 foreach ($number in (1 .. 3)) {
-                    $global:a++
-                    Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
-                    $global:b++
+                    $a++
+                    Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop 2>&1
+                    $b++
                 }
             } catch {
-                $global:failed = $true
+                $failed = $true
             }
 
             try {
-                $global:failed2 = $false
-                $global:c = 0
-                $global:d = 0
-                $global:e = 0
-                $global:f = 0
+                $failed2 = $false
+                $c = 0
+                $d = 0
+                $e = 0
+                $f = 0
 
                 :main foreach ($number in (1 .. 3)) {
-                    $global:c++
+                    $c++
                     foreach ($Counter in (1 .. 3)) {
-                        $global:d++
-                        Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop
-                        $global:e++
+                        $d++
+                        Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop 2>&1
+                        $e++
                     }
-                    $global:f++
+                    $f++
                 }
             } catch {
-                $global:failed2 = $true
+                $failed2 = $true
             }
             #endregion Run Tests
         }
 
         #region Evaluate Results
         It "Should not have failed to execute without an exception when testing Continue without a label." {
-            $global:failed | Should -Be $false
+            $failed | Should -Be $false
         }
 
         It "Should not have failed to execute without an exception when testing Continue with a label." {
-            $global:failed2 | Should -Be $false
+            $failed2 | Should -Be $false
         }
 
         It "Should have incremented the first counter when calling continue without a label" {
-            $global:a | Should -Be 3
+            $a | Should -Be 3
         }
 
         It "Should not have incremented the second counter when calling continue without a label" {
-            $global:b | Should -Be 0
+            $b | Should -Be 0
         }
 
         It "Should have incremented the first two counters thrice, but skipped the other two when calling continue with a label" {
-            [int[]]$result = @($global:c, $global:d, $global:e, $global:f)
+            [int[]]$result = @($c, $d, $e, $f)
             [int[]]$reference = @(3, 3, 0, 0)
             $result | Should -Be $reference
         }
