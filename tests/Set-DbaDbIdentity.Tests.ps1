@@ -66,19 +66,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns results for each table" {
-            $result.Count -eq 2 | Should -Be $true
+            $result.Count | Should -Be 2
         }
 
         It "Returns correct results" {
-            $result[1].IdentityValue -eq 5 | Should -Be $true
+            $result[1].IdentityValue | Should -Be 5
         }
     }
 
     Context "Reseed option returns correct results" {
         It "Returns correct results" {
             $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName2 -ReSeedValue 400
-            $result.cmd -eq "DBCC CHECKIDENT('$tableName2', RESEED, 400)" | Should -Be $true
-            $result.IdentityValue -eq "5." | Should -Be $true
+            $result.cmd | Should -Be "DBCC CHECKIDENT('[$tableName2]', RESEED, 400)"
+            $result.IdentityValue | Should -Be "5."
         }
     }
 }
