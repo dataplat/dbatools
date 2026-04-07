@@ -127,6 +127,11 @@ function Copy-DbaDbTableData {
         Creates new tables using the destination database's default filegroup instead of matching the source table's filegroup name.
         Use this when the destination database has different filegroup configurations or when you want all copied tables in the PRIMARY filegroup.
 
+    .PARAMETER ScriptingOptionsObject
+        A scripting options object created by New-DbaScriptingOption that controls how the destination table is scripted when -AutoCreateTable is used.
+        Use this to control which table properties are included in the CREATE TABLE script, such as indexes, constraints, triggers, and extended properties.
+        When specified, this takes precedence over -UseDefaultFileGroup. Use New-DbaScriptingOption to create the object and set the desired properties.
+
     .OUTPUTS
         PSCustomObject
 
@@ -231,6 +236,15 @@ function Copy-DbaDbTableData {
        Copies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
 
     .EXAMPLE
+        PS C:\> $so = New-DbaScriptingOption
+        PS C:\> $so.DriAll = $true
+        PS C:\> $so.Indexes = $true
+        PS C:\> $so.NoFileGroup = $true
+        PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database db1 -Table dbo.MyTable -AutoCreateTable -ScriptingOptionsObject $so
+
+        Copies all data from dbo.MyTable in db1 on sql1 to an auto-created table on sql2, scripting the destination table with all constraints, indexes, and using the default filegroup.
+
+    .EXAMPLE
         PS C:\> $params = @{
         >>     SqlInstance         = "SERVER001"
         >>     Database            = "MyDatabaseName"
@@ -273,6 +287,7 @@ function Copy-DbaDbTableData {
         [int]$BulkCopyTimeout = 5000,
         [int]$CommandTimeout = 0,
         [switch]$UseDefaultFileGroup,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
@@ -293,12 +308,18 @@ function Copy-DbaDbTableData {
             }
         }
 
-        $defaultFGScriptingOption = @{
-            ScriptingOptionsObject = $(
-                $so = New-DbaScriptingOption
-                $so.NoFileGroup = $UseDefaultFileGroup
-                $so
-            )
+        if (Test-Bound -ParameterName ScriptingOptionsObject) {
+            $defaultFGScriptingOption = @{
+                ScriptingOptionsObject = $ScriptingOptionsObject
+            }
+        } else {
+            $defaultFGScriptingOption = @{
+                ScriptingOptionsObject = $(
+                    $so = New-DbaScriptingOption
+                    $so.NoFileGroup = $UseDefaultFileGroup
+                    $so
+                )
+            }
         }
     }
 
