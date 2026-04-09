@@ -167,7 +167,7 @@ function Export-DbaLinkedServer {
                 $sql += $InputObject.Script()
             } else {
                 try {
-                    $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException
+                    $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException:$EnableException
                 } catch {
                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
