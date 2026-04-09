@@ -6,7 +6,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | Hash | Subject | Status | Notes |
 |------|---------|--------|-------|
 | 899ea759c | Copy-DbaDbMail: Enhance handling of dedicated admin connections (#10155) | DONE | Fixed forced Get-DecryptedObject -EnableException regression. |
-| add550fd2 | Copy-DbaLinkedServer: Enhance handling of dedicated admin connections (#10156) | PENDING | |
+| add550fd2 | Copy-DbaLinkedServer: Enhance handling of dedicated admin connections (#10156) | DONE | Fixed forced Get-DecryptedObject -EnableException regression. |
 | f43a61348 | Added SQL Server 2025 CU2 to dbatools-buildref-index.json (#10168) | PENDING | |
 | 54e65cf5c | Updated LastUpdated of dbatools-buildref-index.json followup to SQL Server 2025 CU2 (#10169) | PENDING | |
 | 4ef488757 | Get-DbaDbTable: Optimize usage of ClearAndInitialize (#10157) | PENDING | |

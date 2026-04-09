@@ -152,7 +152,7 @@ function Copy-DbaLinkedServer {
                     }
                 }
             } else {
-                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type LinkedServer -EnableException
+                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type LinkedServer -EnableException:$EnableException
             }
 
             $serverlist = $sourceServer.LinkedServers
