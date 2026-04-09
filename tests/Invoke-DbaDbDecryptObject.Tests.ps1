@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbDecryptObject",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -20,6 +20,38 @@ Describe $CommandName -Tag UnitTests {
                 "SqlInstance"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "DAC reuse behavior" {
+        It "Should reuse an existing DAC server object without reconnecting or disconnecting it" {
+            InModuleScope dbatools {
+                function Test-FunctionInterrupt { $false }
+                function Get-DbaSpConfigure {
+                    [PSCustomObject]@{
+                        ConfiguredValue = 1
+                    }
+                }
+                function Connect-DbaInstance { throw "Connect-DbaInstance should not be called for an existing DAC connection." }
+                function Disconnect-DbaInstance { throw "Disconnect-DbaInstance should not be called for a reused DAC connection." }
+                function Stop-Function {
+                    param($Message, $ErrorRecord)
+                    throw "$Message | inner: $($ErrorRecord.Exception.Message)"
+                }
+                function Write-Message { }
+
+                $mockServer = New-Object Microsoft.SqlServer.Management.Smo.Server "sql1"
+                $mockServer.ConnectionContext.ServerInstance = "ADMIN:sql1"
+                $mockServer | Add-Member -NotePropertyName Databases -NotePropertyValue @() -Force
+                $mockInstance = [DbaInstanceParameter]"sql1"
+                $field = [DbaInstanceParameter].GetField("InputObject", [System.Reflection.BindingFlags]"NonPublic,Public,Instance,FlattenHierarchy")
+                $field.SetValue($mockInstance, $mockServer)
+
+                $mockInstance.Type | Should -Be "Server"
+                $mockInstance.InputObject.ConnectionContext.ServerInstance | Should -Match "^ADMIN:"
+
+                $null = Invoke-DbaDbDecryptObject -SqlInstance $mockInstance -Database "master"
+            }
         }
     }
 }
@@ -308,6 +340,25 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             @($result | Where-Object { $_.Type -eq 'Trigger' }).Count | Should -Be 1
             @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count | Should -Be 3
             @($result | Where-Object { $_.Type -eq 'View' }).Count | Should -Be 4
+        }
+    }
+
+    Context "Decrypt object with an existing DAC connection" {
+        It "Should leave the caller DAC connection open" {
+            $dacServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -DedicatedAdminConnection -WarningAction SilentlyContinue
+
+            try {
+                $null = $dacServer.Query("SELECT 1 AS TestConnection")
+                $dacServer.ConnectionContext.SqlConnectionObject.State | Should -Be "Open"
+
+                $result = Invoke-DbaDbDecryptObject -SqlInstance $dacServer -Database $dbname -ObjectName dbatoolsci_test_vw
+
+                $result.Script | Should -Be $setupView
+                $dacServer.ConnectionContext.ServerInstance | Should -Match "^ADMIN:"
+                $dacServer.ConnectionContext.SqlConnectionObject.State | Should -Be "Open"
+            } finally {
+                $null = $dacServer | Disconnect-DbaInstance
+            }
         }
     }
 
