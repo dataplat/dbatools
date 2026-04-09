@@ -80,6 +80,7 @@
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
         'Clear-DbaWaitStatistics',
+        'Compare-DbaDbSchema',
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
@@ -333,6 +334,7 @@
         'Get-DbaMsdtc',
         'Get-DbaNetworkActivity',
         'Get-DbaNetworkCertificate',
+        'Get-DbaNetworkEncryption',
         'Get-DbaNetworkConfiguration',
         'Get-DbaOpenTransaction',
         'Get-DbaOperatingSystem',
@@ -759,7 +761,10 @@
         'New-DbaReplSubscription',
         'Remove-DbaReplSubscription',
         'New-DbaReplCreationScriptOptions',
-        'Get-DbaReplSubscription'
+        'Get-DbaReplSubscription',
+        'Add-DbaInstanceList',
+        'Get-DbaInstanceList',
+        'Remove-DbaInstanceList'
     )
 
     # Cmdlets to export from this module

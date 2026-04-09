@@ -145,10 +145,16 @@ function Set-DbaDbIdentity {
                 foreach ($tbl in $Table) {
                     try {
                         $query = $StringBuilder.ToString()
-                        if (Test-Bound -Not -ParameterName ReSeedValue) {
-                            $query = $query.Replace('#options#', "'$($tbl)'")
+                        $nameParts = Get-ObjectNameParts -ObjectName $tbl
+                        if ($nameParts.Schema) {
+                            $tblIdentifier = "[$($nameParts.Schema)].[$($nameParts.Name)]"
                         } else {
-                            $query = $query.Replace('#options#', "'$($tbl)', RESEED, $($ReSeedValue)")
+                            $tblIdentifier = "[$($nameParts.Name)]"
+                        }
+                        if (Test-Bound -Not -ParameterName ReSeedValue) {
+                            $query = $query.Replace('#options#', "'$($tblIdentifier)'")
+                        } else {
+                            $query = $query.Replace('#options#', "'$($tblIdentifier)', RESEED, $($ReSeedValue)")
                         }
 
                         if ($Pscmdlet.ShouldProcess($server.Name, "Execute the command $query against $instance")) {

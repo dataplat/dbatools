@@ -24,6 +24,7 @@ Describe $CommandName -Tag UnitTests {
                 "LoginRenameHashtable",
                 "KillActiveConnection",
                 "ExcludePermissionSync",
+                "ExcludeDatabaseMapping",
                 "NewSid",
                 "ObjectLevel",
                 "Force",

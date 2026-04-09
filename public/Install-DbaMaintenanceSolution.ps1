@@ -636,7 +636,9 @@ function Install-DbaMaintenanceSolution {
                     }
                 }
 
-                $fullschedule = New-DbaAgentSchedule @fullparams
+                if ("WeeklyFull" -in $AutoScheduleJobs -or "DailyFull" -in $AutoScheduleJobs) {
+                    $fullschedule = New-DbaAgentSchedule @fullparams
+                }
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
                     $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-|1\.", ""
@@ -708,13 +710,15 @@ function Install-DbaMaintenanceSolution {
 
                 if ("HourlyLog" -in $AutoScheduleJobs) {
                     $logparams = @{
-                        SqlInstance       = $server
-                        Job               = "DatabaseBackup - USER_DATABASES - LOG"
-                        Schedule          = "Hourly Log Backup"
-                        FrequencyType     = "Daily"
-                        FrequencyInterval = 1
-                        StartTime         = "003000"
-                        Force             = $true
+                        SqlInstance              = $server
+                        Job                      = "DatabaseBackup - USER_DATABASES - LOG"
+                        Schedule                 = "Hourly Log Backup"
+                        FrequencyType            = "Daily"
+                        FrequencyInterval        = 1
+                        FrequencySubDayType      = "Hours"
+                        FrequencySubDayInterval  = 1
+                        StartTime                = "000000"
+                        Force                    = $true
                     }
                 } else {
                     $logparams = @{

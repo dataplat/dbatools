@@ -34,6 +34,7 @@ Describe $CommandName -Tag UnitTests {
                 "BulkCopyTimeout",
                 "CommandTimeout",
                 "UseDefaultFileGroup",
+                "ScriptingOptionsObject",
                 "InputObject",
                 "EnableException"
             )

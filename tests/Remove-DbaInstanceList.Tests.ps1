@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Test-DbaSpn",
+    $CommandName = "Remove-DbaInstanceList",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
@@ -11,9 +11,9 @@ Describe $CommandName -Tag UnitTests {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
-                "ComputerName",
-                "Credential",
-                "EnableException"
+                "SqlInstance",
+                "Register",
+                "Scope"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -21,21 +21,19 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "When getting SPN information" {
-        BeforeAll {
-            $results = Test-DbaSpn -ComputerName $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+    BeforeAll {
+        $instanceName = "dbatoolsci_testinstance_$(Get-Random)"
+        Add-DbaInstanceList -SqlInstance $instanceName
+    }
+
+    Context "removes instances from the list" {
+        It "removes an instance without error" {
+            { Remove-DbaInstanceList -SqlInstance $instanceName -Confirm:$false } | Should -Not -Throw
         }
 
-        It "Returns some results" {
-            $results.RequiredSPN | Should -Not -BeNullOrEmpty
-        }
-
-        It "Has the required properties for all results" {
-            foreach ($result in $results) {
-                $result.RequiredSPN | Should -Match "MSSQLSvc"
-                $result.TcpEnabled | Should -Be $true
-                $result.IsSet | Should -BeOfType [bool]
-            }
+        It "instance no longer appears in Get-DbaInstanceList after removal" {
+            $result = Get-DbaInstanceList
+            $result | Should -Not -Contain $instanceName.ToLowerInvariant()
         }
     }
 }

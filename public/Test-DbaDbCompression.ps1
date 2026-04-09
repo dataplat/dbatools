@@ -197,7 +197,8 @@ function Test-DbaDbCompression {
         }
 
         if ($Table) {
-            $sqlTableWhere = "AND t.name IN ('$($Table -join "','")')"
+            $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
+            $sqlTableWhere = "AND t.name IN ('$($tableNames -join "','")')"
         }
 
         if ($ResultSize) {

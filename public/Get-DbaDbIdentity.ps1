@@ -129,7 +129,13 @@ function Get-DbaDbIdentity {
                 foreach ($tbl in $Table) {
                     try {
                         $query = $StringBuilder.ToString()
-                        $query = $query.Replace('#options#', "'$($tbl)'")
+                        $nameParts = Get-ObjectNameParts -ObjectName $tbl
+                        if ($nameParts.Schema) {
+                            $tblIdentifier = "[$($nameParts.Schema)].[$($nameParts.Name)]"
+                        } else {
+                            $tblIdentifier = "[$($nameParts.Name)]"
+                        }
+                        $query = $query.Replace('#options#', "'$($tblIdentifier)'")
 
                         if ($Pscmdlet.ShouldProcess($server.Name, "Execute the command $query against $instance")) {
                             Write-Message -Message "Query to run: $query" -Level Verbose

@@ -456,6 +456,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaBackup',
         'Get-DbaPermission',
         'Get-DbaLastBackup',
+        'Compare-DbaDbSchema',
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
@@ -939,7 +940,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Invoke-DbaDbAzSqlTip',
         'New-DbaAgentAlert',
         'Set-DbatoolsInsecureConnection',
-        'Test-DbaAgSpn'
+        'Test-DbaAgSpn',
+        'Add-DbaInstanceList',
+        'Get-DbaInstanceList',
+        'Remove-DbaInstanceList'
     )
     $script:noncoresmo = @(
         # SMO issues
@@ -1068,6 +1072,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaComputerCertificateExpiration',
         'Test-DbaNetworkCertificate',
         'Get-DbaNetworkCertificate',
+        'Get-DbaNetworkEncryption',
         'Set-DbaNetworkCertificate',
         'Remove-DbaDbLogShipping',
         'Invoke-DbaDbLogShipping',

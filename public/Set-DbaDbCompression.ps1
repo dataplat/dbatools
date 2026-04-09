@@ -264,7 +264,8 @@ function Set-DbaDbCompression {
                     if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
                         $tables = $server.Databases[$($db.name)].Tables
                         if ($Table) {
-                            $tables = $tables | Where-Object Name -in $Table
+                            $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
+                            $tables = $tables | Where-Object Name -in $tableNames
                         }
 
                         foreach ($obj in $tables | Where-Object { !$_.IsMemoryOptimized -and !$_.HasSparseColumn }) {

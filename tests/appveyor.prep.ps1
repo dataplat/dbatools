@@ -28,7 +28,9 @@ Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion
 #Get dbatools.library
 Write-Host -Object "appveyor.prep: Install dbatools.library" -ForegroundColor DarkGreen
 # Use centralized version management for dbatools.library installation
-& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1"
+# Use AllUsers scope so the module is installed to C:\Program Files\WindowsPowerShell\Modules
+# which matches the AppVeyor cache path configured in appveyor.yml
+& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1" -Scope AllUsers
 # Validate that the correct version was installed
 $expectedVersion = (Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json).version
 $installedModule = Get-Module dbatools.library -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1

@@ -165,6 +165,7 @@ function Export-DbaCredential {
 
             foreach ($cred in $credentials) {
                 $quotename = $cred.Quotename
+                $credName = $cred.Name.Replace("'", "''")
                 $identity = $cred.Identity.Replace("'", "''")
                 $password = $cred.Password.Replace("'", "''")
                 $cryptoSql = ""
@@ -172,7 +173,7 @@ function Export-DbaCredential {
                     $providerName = $cred.ProviderName
                     $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
                 }
-                $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
+                $sql += "IF NOT EXISTS (SELECT 1 FROM sys.credentials WHERE name = N'$credName') CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
             }
 
             if ($Passthru) {
