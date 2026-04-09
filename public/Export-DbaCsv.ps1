@@ -302,7 +302,6 @@ function Export-DbaCsv {
                     $schemaName = "dbo"
                     $tableName  = $Table
                 }
-                $tableName = $nameParts.Name
                 $sqlToExecute = "SELECT * FROM [$schemaName].[$tableName]"
             }
 
