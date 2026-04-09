@@ -224,16 +224,43 @@ GO
     }
 
     Context "System databases" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $systemDbTableName = "t_dbatoolsci_systemdb_$(Get-Random)"
+            $splatCreateTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "master"
+                Query       = "CREATE TABLE dbo.$systemDbTableName (Id INT IDENTITY PRIMARY KEY)"
+            }
+            $null = Invoke-DbaQuery @splatCreateTable
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatDropTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "master"
+                Query       = "DROP TABLE dbo.$systemDbTableName"
+            }
+            $null = Invoke-DbaQuery @splatDropTable
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "Should include system databases when IncludeSystemDatabases is specified" {
             $splatFind = @{
                 SqlInstance            = $TestConfig.InstanceSingle
-                Pattern                = "syslogins"
-                ObjectType             = "View"
+                Pattern                = $systemDbTableName
+                ObjectType             = "Table"
                 IncludeSystemDatabases = $true
-                IncludeSystemObjects   = $true
             }
             $results = Find-DbaObject @splatFind
             $results | Should -Not -BeNullOrEmpty
+            $results.Database | Should -Contain "master"
         }
     }
 }
