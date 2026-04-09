@@ -219,7 +219,7 @@ function Get-DbaDbTable {
             # and the ClearAndInitialize optimization is enabled via config.
             # This avoids loading ALL tables when only specific ones are requested
             $urnFilter = ''
-            if (($fqTns -or $Schema) -and (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize')) {
+            if (($fqTns -or $Schema) -and (Get-DbatoolsConfigValue -FullName "commands.get-dbadbtable.clearandinitialize")) {
                 $filterConditions = [System.Collections.ArrayList]@()
 
                 # Add schema filter conditions from -Schema parameter
@@ -284,10 +284,12 @@ function Get-DbaDbTable {
                 }
             }
 
-            try {
-                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
-            } catch {
-                Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+            if (Get-DbatoolsConfigValue -FullName "commands.get-dbadbtable.clearandinitialize") {
+                try {
+                    $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+                } catch {
+                    Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+                }
             }
 
             if ($fqTns) {

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaDbTable",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -22,6 +22,29 @@ Describe $CommandName -Tag UnitTests {
                 "Schema"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Configuration handling" {
+        It "Only calls ClearAndInitialize when the config is enabled" {
+            $commandAst = (Get-Command $CommandName).ScriptBlock.Ast
+            $clearAndInitializeCalls = $commandAst.FindAll( {
+                    param($Ast)
+
+                    $Ast -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and
+                    $Ast.Member.Extent.Text -eq "ClearAndInitialize"
+                }, $true)
+
+            $clearAndInitializeCalls.Count | Should -Be 1
+
+            $parentAst = $clearAndInitializeCalls[0].Parent
+            while ($parentAst -and $parentAst -isnot [System.Management.Automation.Language.IfStatementAst]) {
+                $parentAst = $parentAst.Parent
+            }
+
+            $parentAst | Should -Not -BeNullOrEmpty
+            $parentAst.Clauses[0].Item1.Extent.Text | Should -Match "Get-DbatoolsConfigValue"
+            $parentAst.Clauses[0].Item1.Extent.Text | Should -Match "commands.get-dbadbtable.clearandinitialize"
         }
     }
 }
