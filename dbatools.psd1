@@ -172,6 +172,7 @@
         'Find-DbaDbUnusedIndex',
         'Find-DbaInstance',
         'Find-DbaLoginInGroup',
+        'Find-DbaObject',
         'Find-DbaOrphanedFile',
         'Find-DbaSimilarTable',
         'Find-DbaStoredProcedure',

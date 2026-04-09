@@ -500,6 +500,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Export-DbaXESession',
         'Test-DbaOptimizeForAdHoc',
         'Find-DbaStoredProcedure',
+        'Find-DbaObject',
         'Measure-DbaBackupThroughput',
         'Get-DbaDatabase',
         'Find-DbaUserObject',
