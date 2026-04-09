@@ -65,3 +65,6 @@ PR_BODY.md
 
 PR_DESCRIPTION.md
 nul
+docs/trackers/features/commit-bug-review-TRACKER.md
+scripts/commit-bug-review-prompt.md
+scripts/commit-bug-review.ps1
