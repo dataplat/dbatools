@@ -15,7 +15,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 9e15aa3e3 | Invoke-DbaDbDecryptObject: Enhance handling of dedicated admin connections (#10160) | DONE | Fixed DAC detection so reused DAC connections are not disconnected; added regression tests. |
 | a06ff44dc | [Start|Stop]-DbaDbEncryption: Fix usage of Disconnect-DbaInstance (#10161) | DONE | Fixed parallel cleanup to disconnect thread connections during WhatIf; added unit regressions. |
 | d7d327f25 | Sync-DbaAvailabilityGroup: Enhance handling of dedicated admin connections (#10163) | DONE | Stopped forcing DAC at top level so password-aware Copy-Dba* commands manage it; added unit regression tests. |
-| be1c99333 | Get-DbaNetworkConfiguration: Fix bug and really add SuitableCertificate property to output (#10165) | PENDING | |
+| be1c99333 | Get-DbaNetworkConfiguration: Fix bug and really add SuitableCertificate property to output (#10165) | DONE | Fixed new test cleanup to remove the certificate from the target SQL host instead of defaulting to localhost. |
 | 72ba70110 | New-DbaComputerCertificate: Update security defaults to industry standards (#10167) | PENDING | |
 | ffb91a13e | Correct help text to correctly reflect Duration units (#10171) | PENDING | |
 | dd58a4edb | Export-DbaInstance: Enhance handling of dedicated admin connections (#10173) | PENDING | |
