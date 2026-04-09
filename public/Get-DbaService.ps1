@@ -30,7 +30,7 @@ function Get-DbaService {
 
     .PARAMETER Type
         Filters results to specific SQL Server service types such as Database Engine, SQL Agent, or Reporting Services.
-        Use this when troubleshooting specific service types or performing targeted service management operations. Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
+        Use this when troubleshooting specific service types or performing targeted service management operations. Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad", "PowerBI"
 
     .PARAMETER ServiceName
         Specifies exact Windows service names to retrieve, bypassing automatic service discovery.
@@ -66,7 +66,7 @@ function Get-DbaService {
         Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer hosting the service
         - ServiceName: The Windows service name (e.g., MSSQLSERVER, SQLSERVERAGENT)
-        - ServiceType: The type of SQL Server service (Engine, Agent, FullText, SSIS, SSAS, SSRS, Browser, PolyBase, Launchpad, Unknown)
+        - ServiceType: The type of SQL Server service (Engine, Agent, FullText, SSIS, SSAS, SSRS, Browser, PolyBase, Launchpad, PowerBI, Unknown)
         - InstanceName: The SQL Server instance name associated with the service
         - DisplayName: The friendly display name of the service
         - StartName: The user account under which the service runs
@@ -150,7 +150,7 @@ function Get-DbaService {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Search")]
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad", "PowerBI")]
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
@@ -219,10 +219,14 @@ function Get-DbaService {
             $services = @()
             $outputServices = @()
 
-            if (!$Type -or 'SSRS' -in $Type) {
+            if (!$Type -or 'SSRS' -in $Type -or 'PowerBI' -in $Type) {
                 Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $computer" -Target $computer
                 $reportingServices = Get-DbaReportingService -ComputerName $resolvedComputerName -InstanceName $InstanceName -Credential $Credential -ServiceName $ServiceName
-                $outputServices += $reportingServices
+                if ($Type) {
+                    $outputServices += $reportingServices | Where-Object ServiceType -in $Type
+                } else {
+                    $outputServices += $reportingServices
+                }
             }
 
             Write-Message -Level Verbose -Message "Getting SQL Server namespaces on $computer" -Target $computer
