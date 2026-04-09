@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -23,6 +23,44 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Decryption behavior" {
+        BeforeAll {
+            Mock Test-ExportDirectory { } -ModuleName dbatools
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+            Mock Connect-DbaInstance {
+                New-Object Microsoft.SqlServer.Management.Smo.Server "sql1"
+            } -ModuleName dbatools
+            Mock Disconnect-DbaInstance { } -ModuleName dbatools
+            Mock Get-ExportFilePath { "C:\temp\credentials.sql" } -ModuleName dbatools
+            Mock Get-DecryptedObject {
+                [PSCustomObject]@{
+                    Name            = "cred1"
+                    Quotename       = "[cred1]"
+                    Identity        = "cred1identity"
+                    Password        = "Password1!"
+                    MappedClassType = $null
+                    ProviderName    = $null
+                }
+            } -ModuleName dbatools
+        }
+
+        It "Should not force decryption errors to throw by default" {
+            $null = Export-DbaCredential -SqlInstance "sql1" -Passthru
+
+            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                -not $EnableException
+            }
+        }
+
+        It "Should request terminating decryption errors when EnableException is specified" {
+            $null = Export-DbaCredential -SqlInstance "sql1" -Passthru -EnableException
+
+            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                $EnableException
+            }
         }
     }
 }

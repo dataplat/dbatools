@@ -10,7 +10,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | f43a61348 | Added SQL Server 2025 CU2 to dbatools-buildref-index.json (#10168) | DONE | Missed LastUpdated metadata; corrected by follow-up commit 54e65cf5c. |
 | 54e65cf5c | Updated LastUpdated of dbatools-buildref-index.json followup to SQL Server 2025 CU2 (#10169) | DONE | Reviewed metadata-only LastUpdated fix; no bugs found. |
 | 4ef488757 | Get-DbaDbTable: Optimize usage of ClearAndInitialize (#10157) | DONE | Fixed config bypass so ClearAndInitialize stays opt-in; added regression test. |
-| f8e673145 | Export-DbaCredential: Enhance handling of dedicated admin connections (#10158) | PENDING | |
+| f8e673145 | Export-DbaCredential: Enhance handling of dedicated admin connections (#10158) | DONE | Fixed forced Get-DecryptedObject -EnableException regression; added unit regression test. |
 | ed1c8b0bb | Export-DbaLinkedServer: Enhance handling of dedicated admin connections (#10159) | PENDING | |
 | 9e15aa3e3 | Invoke-DbaDbDecryptObject: Enhance handling of dedicated admin connections (#10160) | PENDING | |
 | a06ff44dc | [Start|Stop]-DbaDbEncryption: Fix usage of Disconnect-DbaInstance (#10161) | PENDING | |
