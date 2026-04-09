@@ -84,6 +84,7 @@
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
+        'Compare-DbaLogin',
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
