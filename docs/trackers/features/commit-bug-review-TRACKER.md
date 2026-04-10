@@ -65,7 +65,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 9c81f3d3d | Latest CUs for 2022 and 2025 (#10231) | DONE | Reviewed buildref metadata update; no bugs found. |
 | 3e26310f2 | Add Test-DbaInstantFileInitialization command (#10236) | DONE | Fixed IsBestPractice when StartName already uses the virtual service account; added unit regression test. |
 | a26e6195b | Add-DbaAgDatabase, New-DbaAvailabilityGroup - auto-copy TDE certificate to replicas (#10237) | DONE | Validated replica TDE certificates by thumbprint/private key, fail fast when SharedPath is missing, and added unit regression tests. |
-| 8099963d1 | Get-DbaRegServer - Fix IncludeSelf to return pipeline-compatible object (#10238) | PENDING | |
+| 8099963d1 | Get-DbaRegServer - Fix IncludeSelf to return pipeline-compatible object (#10238) | DONE | Fixed IncludeSelf to emit one CMS instance per requested SqlInstance; added unit regression test. |
 | 6084ecbe5 | Get-DbaLastBackup - Add -ExcludeReplica switch for AlwaysOn preferred backup replica filtering (#10240) | PENDING | |
 | fe26c8764 | Export-DbaInstance - Wire up IncludeDbMasterKey to export certs and master keys (#10251) | PENDING | |
 | 0ee03fc32 | New-DbaAgentJobStep - Fix OnFailAction ValidateSet order to match actual default (#10244) | PENDING | |
