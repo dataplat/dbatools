@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaDbRestoreHistory",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -25,6 +25,47 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope "dbatools" {
+        BeforeAll {
+            $script:capturedQuery = $null
+            $script:mockServer = [PSCustomObject]@{
+                ComputerName       = "sql01"
+                ServiceName        = "MSSQLSERVER"
+                DomainInstanceName = "sql01"
+                ConnectionContext  = [PSCustomObject]@{ }
+            }
+            Add-Member -InputObject $script:mockServer.ConnectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                param($Query)
+                $script:capturedQuery = $Query
+                [PSCustomObject]@{
+                    Tables = [PSCustomObject]@{
+                        Rows = @()
+                    }
+                }
+            } -Force
+
+            Mock Connect-DbaInstance {
+                $script:mockServer
+            }
+        }
+
+        Context "LastRestorePoint query generation" {
+            BeforeEach {
+                $script:capturedQuery = $null
+            }
+
+            It "uses StopAt whenever it is present" {
+                $null = Get-DbaDbRestoreHistory -SqlInstance "sql01" -Database "db1"
+                $normalizedQuery = $script:capturedQuery -replace "\s+", " "
+
+                $normalizedQuery | Should -Match "COALESCE\(rsh\.stop_at,\s*bs\.backup_start_date\)\s+AS\s+LastRestorePoint"
+                $normalizedQuery | Should -Not -Match "COALESCE\(rsh\.stop_at,\s*'9999-12-31'\)\s*<\s*bs\.backup_start_date"
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

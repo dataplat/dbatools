@@ -72,7 +72,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 63c906f9d | Set-DbaDbCompression - Add SortInTempDB parameter and fix views T-SQL bug (#10248) | DONE | Fixed indexed-view output/error metadata to use the view name instead of a stale table reference; added integration regression test. |
 | 4d1a9d80c | v2.7.27 | DONE | version bump - skip |
 | 232395207 | Set-DbaPrivilege, Get-DbaPrivilege - Add CreateGlobalObjects privilege support (#10235) | DONE | Fixed empty privilege-entry updates so Set-DbaPrivilege still grants rights when secedit exports a blank line; added unit regression test. |
-| 099624061 | Get-DbaDbRestoreHistory - Add BackupStartDate, StopAt, and LastRestorePoint columns (#10249) | PENDING | |
+| 099624061 | Get-DbaDbRestoreHistory - Add BackupStartDate, StopAt, and LastRestorePoint columns (#10249) | DONE | Fixed LastRestorePoint so StopAt is used whenever specified; added unit regression test. |
 | 4f1e56ce4 | New-DbaDbMailAccount, Set-DbaDbMailAccount - Add Port, SSL, and authentication parameters (#10257) | PENDING | |
 | 8218d327e | Restore-DbaDatabase, Invoke-DbaAdvancedRestore - Add ErrorBrokerConversations parameter (#10253) | PENDING | |
 | 9a4e4bacb | Connect-DbaInstance - Set NonPooledConnection on ServerConnection (#10260) | PENDING | |
