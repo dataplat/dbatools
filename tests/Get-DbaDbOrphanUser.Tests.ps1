@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaDbOrphanUser",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -18,6 +18,80 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Contained database handling" {
+            BeforeAll {
+                $script:sqlOrphanUser = [PSCustomObject]@{
+                    Login     = ""
+                    ID        = 5
+                    Sid       = [byte[]](1..16)
+                    LoginType = "SqlLogin"
+                    Name      = "sql_orphan"
+                }
+                $script:windowsOrphanUser = [PSCustomObject]@{
+                    Login     = "CONTOSO\win_orphan"
+                    ID        = 6
+                    Sid       = [byte[]](1..20)
+                    LoginType = "WindowsUser"
+                    Name      = "CONTOSO\win_orphan"
+                }
+                $script:baseServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    Logins             = @()
+                }
+            }
+
+            It "skips SQL login orphan detection for contained databases on SQL Server 2012 and newer" {
+                $containedDatabase = [PSCustomObject]@{
+                    Name            = "containeddb"
+                    IsAccessible    = $true
+                    ContainmentType = [Microsoft.SqlServer.Management.Smo.ContainmentType]::Partial
+                    Users           = @($script:sqlOrphanUser, $script:windowsOrphanUser)
+                }
+                $server = $script:baseServer | Select-Object *
+                $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 11 -Force
+                $server | Add-Member -NotePropertyName Databases -NotePropertyValue @($containedDatabase) -Force
+
+                Mock Connect-DbaInstance {
+                    $server
+                }
+                Mock Stop-Function {
+                    throw "Stop-Function called"
+                }
+
+                $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2012")
+
+                $results.Count | Should -Be 1
+                $results[0].User | Should -Be "CONTOSO\win_orphan"
+            }
+
+            It "does not require ContainmentType on pre-SQL 2012 servers" {
+                $legacyDatabase = [PSCustomObject]@{
+                    Name         = "legacydb"
+                    IsAccessible = $true
+                    Users        = @($script:sqlOrphanUser)
+                }
+                $server = $script:baseServer | Select-Object *
+                $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 10 -Force
+                $server | Add-Member -NotePropertyName Databases -NotePropertyValue @($legacyDatabase) -Force
+
+                Mock Connect-DbaInstance {
+                    $server
+                }
+                Mock Stop-Function {
+                    throw "Stop-Function called"
+                }
+
+                $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2008")
+
+                $results.Count | Should -Be 1
+                $results[0].User | Should -Be "sql_orphan"
+            }
         }
     }
 }

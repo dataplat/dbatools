@@ -111,14 +111,18 @@ function Get-DbaDbOrphanUser {
                     try {
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
                         $UsersToWork = @()
-                        # In contained databases (Partial or Full), SQL users authenticate directly to the database
-                        # without requiring a server-level login, so they are not considered orphaned
-                        if ($db.ContainmentType.ToString() -eq "None") {
-                            $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in 'SqlLogin', 'Certificate') }
+                        # ContainmentType is SQL Server 2012+ only, so keep the legacy path for older versions.
+                        $isContainedDatabase = (
+                            $server.versionMajor -gt 10 -and
+                            $null -ne $db.ContainmentType -and
+                            $db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None
+                        )
+                        if (-not $isContainedDatabase) {
+                            $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in "SqlLogin", "Certificate") }
                         } else {
                             Write-Message -Level Verbose -Message "Skipping SQL login orphan check on contained database '$db' (ContainmentType: $($db.ContainmentType))."
                         }
-                        $UsersToWork += $db.Users | Where-Object { ($_.Login -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in 'WindowsUser', 'WindowsGroup') }
+                        $UsersToWork += $db.Users | Where-Object { ($_.Login -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in "WindowsUser", "WindowsGroup") }
                         if ($UsersToWork.Count -gt 0) {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             foreach ($user in $UsersToWork) {
