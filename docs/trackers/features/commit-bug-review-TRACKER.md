@@ -130,7 +130,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 6aafd24ed | Fix test for Test-DbaSpn by suppressing the warning on AppVeyor (#10331) | DONE | Reviewed test-only warning suppression; no bugs found. |
 | 7ad9acf9f | Refactor test for Stop-Function (#10332) | DONE | Reviewed test-only Stop-Function refactor with Invoke-ManualPester; no bugs found. |
 | 13807a2b3 | Test-DbaBuild: Fix bug introduced in last change (#10328) | DONE | Reviewed duplicate ReleaseDate follow-up; no bugs found. |
-| 4382a8118 | Test-DbaLinkedServerConnection - Fix test failure when Named Pipes is disabled (#10326) | PENDING | |
+| 4382a8118 | Test-DbaLinkedServerConnection - Fix test failure when Named Pipes is disabled (#10326) | DONE | Reviewed test-only TCP datasrc change; no bugs found. |
 | b09063aa0 | Get-DbaWaitStatistic - Fix bug from recent refactoring (#10323) | PENDING | |
 | eddfeeeca | Find-DbaInstance - Fix TcpConnected false for default instances (#10327) | PENDING | |
 | 5f483d42c | Get-DbaPermission - Fix Azure SQL DB compatibility (#10320) | PENDING | |
