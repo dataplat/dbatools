@@ -95,6 +95,9 @@ function New-DbaComputerCertificate {
         Document Encryption (1.3.6.1.4.1.311.10.3.11) and IKE Intermediate (1.3.6.1.5.5.8.2.2)
         Extended Key Usage OIDs required by Always Encrypted, instead of the default Server
         Authentication OID (1.3.6.1.5.5.7.3.1).
+        For CA-signed certificates, specify -CertificateTemplate with a template configured
+        for Always Encrypted column master keys. The default WebServer template is intended
+        for TLS server certificates and is not suitable for this switch.
 
     .PARAMETER HashAlgorithm
         Specifies the cryptographic hash algorithm used for certificate signing.
@@ -236,6 +239,11 @@ function New-DbaComputerCertificate {
             }
         } else {
             $flags = $Flag -join ","
+        }
+
+        if ($DocumentEncryptionCert -and -not $SelfSigned -and -not $PSBoundParameters.ContainsKey("CertificateTemplate")) {
+            Stop-Function -Message "DocumentEncryptionCert requires -SelfSigned or an explicit -CertificateTemplate configured for Always Encrypted column master keys. The default WebServer template is intended for TLS server certificates."
+            return
         }
 
         $englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225

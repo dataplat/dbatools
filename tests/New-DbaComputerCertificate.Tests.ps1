@@ -34,6 +34,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
+    InModuleScope dbatools {
+        Context "DocumentEncryptionCert validation" {
+            BeforeAll {
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "requires SelfSigned or an explicit certificate template" {
+                {
+                    New-DbaComputerCertificate -DocumentEncryptionCert
+                } | Should -Throw "*requires -SelfSigned or an explicit -CertificateTemplate*"
+            }
+        }
+    }
+
     Context "NonExportable handling" {
         BeforeAll {
             $script:remoteFqdn = "dbatools-review-remote.example"

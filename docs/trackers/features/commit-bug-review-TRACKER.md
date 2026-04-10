@@ -82,7 +82,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 0c0629d25 | Restore-DbaDatabase - Add examples for filtering partial backup files (#10242) | DONE | Fixed the new backup-filtering examples to enumerate files only so matching directories are not piped into restore processing, and updated the new regex example to use double quotes. |
 | bb56c43d3 | Read-DbaXEFile, Get-DbaXESessionTargetFile - Document Windows-only admin share requirement (#10243) | DONE | Reviewed doc-only help update; no bugs found. |
 | 152fec170 | Test-DbaLastBackup - Add -Path parameter to test backups from folder paths (#10241) | DONE | Fixed -Path wildcard Database/ExcludeDatabase filtering, separated same-name backups by source, and added unit regression tests. |
-| 5590bc30d | New-DbaComputerCertificate - Add DocumentEncryptionCert switch for Always Encrypted (#10264) | PENDING | |
+| 5590bc30d | New-DbaComputerCertificate - Add DocumentEncryptionCert switch for Always Encrypted (#10264) | DONE | Rejected the default WebServer CA template for DocumentEncryptionCert unless -SelfSigned or an explicit Always Encrypted template is provided; added unit regression coverage. |
 | f73e4413c | Get-DbaAgDatabase - Add -ExcludeDatabase parameter (#10269) | PENDING | |
 | 118aed54e | New-DbaDbTable - Handle bracket-quoted names and two-part names (#10279) | PENDING | |
 | 27f3fef01 | Save-DbaKbUpdate - Add UseWebRequest switch and BitsTransfer fallback (#10278) | PENDING | |
