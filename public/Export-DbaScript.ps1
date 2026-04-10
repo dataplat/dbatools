@@ -231,12 +231,15 @@ function Export-DbaScript {
             if ($shorttype -eq "AvailabilityGroup") {
                 if ((Get-Member -InputObject $object -Name IsDistributedAvailabilityGroup -ErrorAction SilentlyContinue) -and $object.IsDistributedAvailabilityGroup) {
                     Write-Message -Level Verbose -Message "Detected Distributed Availability Group '$($object.Name)'. Generating T-SQL script manually as SMO scripting does not support Distributed AGs."
+                    $escapedDagName = ([string]$object.Name).Replace("]", "]]")
                     $dagReplicaScripts = foreach ($replica in $object.AvailabilityReplicas) {
                         $availMode = if ($replica.AvailabilityMode -eq "SynchronousCommit") { "SYNCHRONOUS_COMMIT" } else { "ASYNCHRONOUS_COMMIT" }
                         $seedMode = if ($replica.SeedingMode -eq "Automatic") { "AUTOMATIC" } else { "MANUAL" }
-                        "   N'$($replica.Name)' WITH$eol   ($eol      LISTENER_URL = N'$($replica.EndpointUrl)',$eol      AVAILABILITY_MODE = $availMode,$eol      FAILOVER_MODE = MANUAL,$eol      SEEDING_MODE = $seedMode$eol   )"
+                        $escapedReplicaName = ([string]$replica.Name).Replace("'", "''")
+                        $escapedEndpointUrl = ([string]$replica.EndpointUrl).Replace("'", "''")
+                        "   N'$escapedReplicaName' WITH$eol   ($eol      LISTENER_URL = N'$escapedEndpointUrl',$eol      AVAILABILITY_MODE = $availMode,$eol      FAILOVER_MODE = MANUAL,$eol      SEEDING_MODE = $seedMode$eol   )"
                     }
-                    $dagScript = "CREATE AVAILABILITY GROUP [$($object.Name)]$eol   WITH (DISTRIBUTED)$eol   AVAILABILITY GROUP ON$eol$($dagReplicaScripts -join ",$eol");"
+                    $dagScript = "CREATE AVAILABILITY GROUP [$escapedDagName]$eol   WITH (DISTRIBUTED)$eol   AVAILABILITY GROUP ON$eol$($dagReplicaScripts -join ",$eol");"
                 } else {
                     Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/dataplat/dbatools/issues/5913."
                     try {

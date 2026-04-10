@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaScript",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -24,6 +24,36 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Distributed Availability Group scripting" {
+        BeforeAll {
+            Mock Test-ExportDirectory { } -ModuleName dbatools
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+
+            $mockServer = New-Object Microsoft.SqlServer.Management.Smo.Server "sql1"
+            $mockServer | Add-Member -MemberType NoteProperty -Name Urn -Value ([PSCustomObject]@{ Type = "Server" }) -Force
+
+            $mockReplica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica
+            $mockReplica | Add-Member -MemberType NoteProperty -Name Name -Value "AG'1" -Force
+            $mockReplica | Add-Member -MemberType NoteProperty -Name EndpointUrl -Value "TCP://listen'er:5022" -Force
+            $mockReplica | Add-Member -MemberType NoteProperty -Name AvailabilityMode -Value "AsynchronousCommit" -Force
+            $mockReplica | Add-Member -MemberType NoteProperty -Name SeedingMode -Value "Automatic" -Force
+
+            $mockDag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup
+            $mockDag | Add-Member -MemberType NoteProperty -Name Name -Value "DAG]One" -Force
+            $mockDag | Add-Member -MemberType NoteProperty -Name Parent -Value $mockServer -Force
+            $mockDag | Add-Member -MemberType NoteProperty -Name IsDistributedAvailabilityGroup -Value $true -Force
+            $mockDag | Add-Member -MemberType NoteProperty -Name AvailabilityReplicas -Value @($mockReplica) -Force
+        }
+
+        It "Should escape names and endpoint URLs when scripting distributed availability groups" {
+            $results = Export-DbaScript -InputObject $mockDag -Passthru -NoPrefix
+
+            $results | Should -Match "CREATE AVAILABILITY GROUP \[DAG\]\]One\]"
+            $results | Should -Match "N'AG''1' WITH"
+            $results | Should -Match "LISTENER_URL = N'TCP://listen''er:5022'"
         }
     }
 }
