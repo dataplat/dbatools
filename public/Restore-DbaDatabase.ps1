@@ -634,8 +634,12 @@ function Restore-DbaDatabase {
                     return
                 }
             }
-            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))) {
+            if ($KeepCDC -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
                 Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
+                return
+            }
+            if ($ErrorBrokerConversations -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
+                Stop-Function -Category InvalidArgument -Message "ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
                 return
             }
             if ($Continue) {
