@@ -47,6 +47,55 @@ Describe $CommandName -Tag UnitTests {
             $parentAst.Clauses[0].Item1.Extent.Text | Should -Match "commands.get-dbadbtable.clearandinitialize"
         }
     }
+
+    Context "Azure SQL handling" {
+        It "Only adds space usage properties to the default view for non-Azure instances" {
+            $commandAst = (Get-Command $CommandName).ScriptBlock.Ast
+            $defaultPropsAssignments = $commandAst.FindAll( {
+                    param($Ast)
+
+                    $Ast -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $Ast.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                    $Ast.Left.VariablePath.UserPath -eq "defaultProps"
+                }, $true)
+
+            $defaultPropsAssignments.Count | Should -Be 1
+
+            $expectedDefaultProps = @"
+[System.Collections.ArrayList]@("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name")
+"@.Trim()
+            $defaultPropsAssignments[0].Right.Expression.Extent.Text | Should -Be $expectedDefaultProps
+
+            $spacePropertyAdds = $commandAst.FindAll( {
+                    param($Ast)
+
+                    $Ast -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and
+                    $Ast.Expression -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                    $Ast.Expression.VariablePath.UserPath -eq "defaultProps" -and
+                    $Ast.Member.Extent.Text -eq "Add" -and
+                    $Ast.Arguments.Count -eq 1 -and
+                    $Ast.Arguments[0] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                    $Ast.Arguments[0].Value -in ("IndexSpaceUsed", "DataSpaceUsed")
+                }, $true)
+
+            $spacePropertyAdds.Count | Should -Be 2
+
+            foreach ($spacePropertyAdd in $spacePropertyAdds) {
+                $parentAst = $spacePropertyAdd.Parent
+                while ($parentAst -and $parentAst -isnot [System.Management.Automation.Language.IfStatementAst]) {
+                    $parentAst = $parentAst.Parent
+                }
+
+                $parentAst | Should -Not -BeNullOrEmpty
+                $conditionAst = $parentAst.Clauses[0].Item1.PipelineElements[0].Expression
+
+                $conditionAst.Left.Expression.VariablePath.UserPath | Should -Be "server"
+                $conditionAst.Left.Member.Extent.Text | Should -Be "DatabaseEngineType"
+                $conditionAst.Operator | Should -Be "Ine"
+                $conditionAst.Right.Value | Should -Be "SqlAzureDatabase"
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

@@ -28,7 +28,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | cb7a5d77a | Comment out 2008R2SP2Express AppVeyor jobs | DONE | Reviewed CI-only AppVeyor matrix change; no bugs found. |
 | 9799c1877 | Minor test fixes for Connect-DbaInstance (#10175) | DONE | Reviewed test-only cleanup-output suppression change; no bugs found. |
 | 1616a6d04 | Add command Test-DbaNetworkCertificate (#10178) | DONE | Fixed ConfiguredCertificateValid so future or missing NotBefore values do not report false positives; added unit regression tests. |
-| dbe2f29ca | Get-DbaDbTable: Fix for Azure SQL Database (#10182) | PENDING | |
+| dbe2f29ca | Get-DbaDbTable: Fix for Azure SQL Database (#10182) | DONE | Fixed Azure default view to skip unsupported IndexSpaceUsed/DataSpaceUsed properties; added unit regression test. |
 | eb40ff802 | Test-DbaLsnChain: Fix bug in case log backup is taken during full backup (#10185) | PENDING | |
 | 71d1310b4 | Backup-DbaDatabase: Respect explicit FileCount when using StorageBaseUrl (S3/Azure) (#10186) | PENDING | |
 | 8f7039699 | Copy-DbaDatabase: Fix renaming for database names with special characters (#10187) | PENDING | |
