@@ -138,7 +138,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 9899bd274 | Copy-DbaDbTableData - Add -ScriptingOptionsObject parameter (#10317) | DONE | Propagated ScriptingOptionsObject to Copy-DbaDbViewData and added unit coverage. |
 | 0c486b964 | Backup-DbaDbCertificate: Don't use decryption password if cert encrypted by master key (#10329) | DONE | Reviewed SMO export overload selection for master-key-encrypted certs; no bugs found. |
 | db77a3476 | Find-DbaObject - Add unified command to search database objects by name (#10321) | DONE | Added database DDL trigger name search via sys.triggers and covered it with an integration regression test. |
-| 6416b4e91 | Add Compare-DbaLogin command (#10319) | PENDING | |
+| 6416b4e91 | Add Compare-DbaLogin command (#10319) | DONE | Skipped failed destination connections instead of reusing the previous server; added unit regression coverage. |
 | bee08f8e7 | Copy-DbaSsisCatalog - Add standard MigrationObject output, integrate with Start-DbaMigration (#10311) | PENDING | |
 | 21e4795ee | Get-DbaService - Add PowerBI Report Server detection (#10298) | PENDING | |
 | 828ebc3b3 | Get-DbaBackupInformation - Fix inconsistencies with Get-DbaDbBackupHistory (#10308) | PENDING | |
