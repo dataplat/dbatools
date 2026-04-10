@@ -521,8 +521,8 @@ function Export-DbaInstance {
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
-                Write-Progress -Activity "Performing Instance Export for $instance" -Completed
             } finally {
+                Write-Progress -Activity "Performing Instance Export for $instance" -Completed
                 if ($dacOpened -and $null -ne $server) {
                     $null = $server | Disconnect-DbaInstance -WhatIf:$false
                 }

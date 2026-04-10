@@ -116,6 +116,106 @@ Describe $CommandName -Tag UnitTests {
                 }
             }
         }
+
+        It "Should complete progress when credential export failure continues" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Disconnect-DbaInstance",
+                    "Export-DbaCredential",
+                    "Stop-Function",
+                    "Test-ExportDirectory",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-Progress",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-ExportDirectory { }
+                    function Test-FunctionInterrupt { $false }
+                    function Write-Message { }
+                    function Write-ProgressHelper { }
+                    function Write-Progress {
+                        param(
+                            $Activity,
+                            [switch]$Completed
+                        )
+                        if ($Completed) {
+                            $script:progressCompleted = $true
+                        }
+                    }
+                    function Test-Path { $true }
+                    function Stop-Function {
+                        param(
+                            $Message,
+                            $ErrorRecord,
+                            [switch]$Continue
+                        )
+                        if ($Continue) {
+                            continue
+                        }
+                        throw "$Message | inner: $($ErrorRecord.Exception.Message)"
+                    }
+                    function Connect-DbaInstance {
+                        $server = [PSCustomObject]@{
+                            DomainInstanceName = "sql1"
+                        }
+                        $server.PSObject.TypeNames.Clear()
+                        $server.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                        $server
+                    }
+                    function Export-DbaCredential { throw "credential export failed" }
+                    function Disconnect-DbaInstance { $script:dacDisconnected = $true }
+
+                    $script:dacDisconnected = $false
+                    $script:progressCompleted = $false
+                    $excludedObjects = @(
+                        "AgentServer",
+                        "Audits",
+                        "AvailabilityGroups",
+                        "BackupDevices",
+                        "CentralManagementServer",
+                        "CustomErrors",
+                        "DatabaseMail",
+                        "Databases",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "LinkedServers",
+                        "Logins",
+                        "PolicyManagement",
+                        "ReplicationSettings",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "ServerRoles",
+                        "SpConfigure",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "OleDbProvider"
+                    )
+
+                    $null = Export-DbaInstance -SqlInstance "sql1" -Path "C:\temp" -Exclude $excludedObjects -Force
+
+                    $script:dacDisconnected | Should -BeTrue
+                    $script:progressCompleted | Should -BeTrue
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                    Remove-Item -Path Function:\Test-Path -ErrorAction Ignore
+                }
+            }
+        }
     }
 }
 
