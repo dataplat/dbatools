@@ -781,6 +781,14 @@ function Connect-DbaInstance {
                 $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo
 
                 # Set properties of SqlConnectionInfo based on the used properties of the connection string.
+                $connectionString = $connectionString -replace "(?i)\bFailoverPartner\s*=", "Failover Partner="
+                if ($connectionString -match "(?i)\bFailover Partner\s*=" -and $connectionString -notmatch "(?i)\b(?:Initial Catalog|Database)\s*=") {
+                    if ($connectionString -match ";$") {
+                        $connectionString += "Initial Catalog=master;"
+                    } else {
+                        $connectionString += ";Initial Catalog=master;"
+                    }
+                }
                 $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
                 if ($csb.ShouldSerialize('Data Source')) {
                     Write-Message -Level Debug -Message "ServerName will be set to '$($csb.DataSource)'"
@@ -1172,8 +1180,9 @@ function Connect-DbaInstance {
                         $connectionSucceeded = $true
                     } catch {
                         Write-Message -Level Debug -Message "Retry with TrustServerCertificate also failed: $($_.Exception.Message)"
-                        # Use the original error for reporting since the retry also failed
+                        # Keep the latest error details available for any follow-up retry and final reporting
                         $connectionError = $_
+                        $errorMessage = $_.Exception.Message
                     }
                 }
 
@@ -1182,19 +1191,21 @@ function Connect-DbaInstance {
                 # The .NET SqlClient sends Failover Partner info from the server's TDS handshake to the
                 # connection pool, and the pool then requires Initial Catalog to be set in the connection string.
                 $isFailoverPartnerError = $errorMessage -match "Failover Partner" -and $errorMessage -match "Initial Catalog"
-                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -eq 'String') {
+                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -in "String", "ConnectionString", "RegisteredServer") {
                     Write-Message -Level Verbose -Message "Connection failed because the server is configured for database mirroring (Failover Partner requires Initial Catalog). Retrying with Initial Catalog=master."
                     Write-Message -Level Debug -Message "Original error: $errorMessage"
 
                     try {
                         # Add Initial Catalog=master to satisfy the Failover Partner connection string requirement
-                        if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Initial Catalog" -and $server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Database=") {
-                            if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -match ";$") {
-                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += "Initial Catalog=master;"
+                        $retryConnectionString = $server.ConnectionContext.SqlConnectionObject.ConnectionString -replace "(?i)\bFailoverPartner\s*=", "Failover Partner="
+                        if ($retryConnectionString -notmatch "(?i)\b(?:Initial Catalog|Database)\s*=") {
+                            if ($retryConnectionString -match ";$") {
+                                $retryConnectionString += "Initial Catalog=master;"
                             } else {
-                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += ";Initial Catalog=master;"
+                                $retryConnectionString += ";Initial Catalog=master;"
                             }
                         }
+                        $server.ConnectionContext.SqlConnectionObject.ConnectionString = $retryConnectionString
 
                         # Retry the connection
                         Write-Message -Level Debug -Message "Retrying connection with Initial Catalog=master for server with database mirroring"

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Connect-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -53,6 +53,88 @@ Describe $CommandName -Tag UnitTests {
     Context "Validate alias" {
         It "Should contain the alias: cdi" {
             (Get-Alias cdi) | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Failover partner retry behavior" {
+        BeforeAll {
+            function New-MockConnectionContext {
+                param(
+                    [string]$ConnectionString,
+                    [string[]]$AttemptErrors
+                )
+
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $ConnectionString
+                }
+
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    AttemptErrors       = $AttemptErrors
+                    AttemptCount        = 0
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                    $this.AttemptCount++
+                    $this.ConnectionString = $this.SqlConnectionObject.ConnectionString
+                    $attemptIndex = $this.AttemptCount - 1
+                    if ($attemptIndex -lt $this.AttemptErrors.Count -and $this.AttemptErrors[$attemptIndex]) {
+                        throw (New-Object -TypeName System.Exception -ArgumentList $this.AttemptErrors[$attemptIndex])
+                    }
+                } -Force
+
+                $connectionContext
+            }
+
+            function New-MockServer {
+                param(
+                    [string]$ConnectionString,
+                    [string[]]$AttemptErrors
+                )
+
+                [PSCustomObject]@{
+                    ConnectionContext = New-MockConnectionContext -ConnectionString $ConnectionString -AttemptErrors $AttemptErrors
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                [PSCustomObject]@{ }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockServer -ConnectionString $script:mockConnectionString -AttemptErrors $script:attemptErrors
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "retries connection string inputs when failover partner requires Initial Catalog" {
+            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;Failover Partner=mirrorpartner"
+            $script:attemptErrors = @(
+                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
+            )
+
+            $result = Connect-DbaInstance -SqlInstance $script:mockConnectionString -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Initial Catalog=master"
+        }
+
+        It "retries with Initial Catalog after a trust certificate retry exposes the failover partner requirement" {
+            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;FailoverPartner=mirrorpartner;Trust Server Certificate=False"
+            $script:attemptErrors = @(
+                "The certificate chain was issued by an authority that is not trusted.",
+                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
+            )
+
+            $result = Connect-DbaInstance -SqlInstance "sqlmirror" -FailoverPartner "mirrorpartner" -AllowTrustServerCertificate -TrustServerCertificate:$false -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Trust Server Certificate=True"
+            $result.ConnectionString | Should -Match "Initial Catalog=master"
         }
     }
 }
