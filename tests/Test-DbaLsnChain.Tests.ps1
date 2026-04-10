@@ -1,21 +1,37 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaLsnChain",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "FilteredRestoreFiles",
-                "Continue",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    InModuleScope dbatools {
+        Context "Parameter validation" {
+            It "Should have the expected parameters" {
+                $hasParameters = (Get-Command "Test-DbaLsnChain").Parameters.Values.Name | Where-Object {
+                    $PSItem -notin @(
+                        "Verbose",
+                        "Debug",
+                        "ErrorAction",
+                        "WarningAction",
+                        "InformationAction",
+                        "ProgressAction",
+                        "ErrorVariable",
+                        "WarningVariable",
+                        "InformationVariable",
+                        "OutVariable",
+                        "OutBuffer",
+                        "PipelineVariable"
+                    )
+                }
+                $expectedParameters = @(
+                    "FilteredRestoreFiles",
+                    "Continue",
+                    "EnableException"
+                )
+                Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            }
         }
     }
 }
