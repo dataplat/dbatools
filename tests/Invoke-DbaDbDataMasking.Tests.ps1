@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbDataMasking",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -32,6 +32,114 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "WhatIf behavior" {
+        BeforeAll {
+            Mock Stop-Function { throw "Stop-Function should not be called during WhatIf unit tests" } -ModuleName dbatools
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+            Mock Get-DbaRandomizedType {
+                [PSCustomObject]@{
+                    Type    = "Name"
+                    Subtype = "FirstName"
+                }
+            } -ModuleName dbatools
+        }
+
+        BeforeEach {
+            $script:lastWhatIfQuery = $null
+
+            $script:mockTables = [PSCustomObject]@{
+                Name   = "db1"
+                Tables = @(
+                    [PSCustomObject]@{
+                        Name           = "people"
+                        Schema         = "dbo"
+                        HasUniqueIndex = $true
+                        FilterQuery    = $null
+                        Columns        = @(
+                            [PSCustomObject]@{
+                                Name       = "fname"
+                                ColumnType = "varchar"
+                                Action     = $null
+                                Composite  = $null
+                            }
+                        )
+                    }
+                )
+            }
+
+            $script:mockTempDbTables = [PSCustomObject]@{
+                Name = @()
+            }
+            $script:mockTempDbTables | Add-Member -MemberType ScriptMethod -Name Refresh -Value { $null } -Force
+
+            $script:mockTempDb = [PSCustomObject]@{
+                Tables = $script:mockTempDbTables
+            }
+            $script:mockTempDb | Add-Member -MemberType ScriptMethod -Name Query -Value {
+                param($query)
+                $null
+            } -Force
+
+            $script:mockIndexes = [PSCustomObject]@{
+                Name = @()
+            }
+            $script:mockIndexes | Add-Member -MemberType ScriptMethod -Name Refresh -Value { $null } -Force
+
+            $script:mockDbTable = [PSCustomObject]@{
+                Name    = "people"
+                Schema  = "dbo"
+                Columns = @(
+                    [PSCustomObject]@{
+                        Name     = "fname"
+                        Identity = $false
+                        DataType = "varchar"
+                    }
+                )
+                Indexes = $script:mockIndexes
+            }
+
+            $script:mockDatabase = [PSCustomObject]@{
+                Name   = "db1"
+                Tables = @($script:mockDbTable)
+            }
+            $script:mockDatabase | Add-Member -MemberType ScriptMethod -Name Query -Value {
+                param($query)
+                $script:lastWhatIfQuery = $query
+
+                [PSCustomObject]@{
+                    RowCount = 2
+                }
+            } -Force
+
+            $script:mockServer = [PSCustomObject]@{
+                VersionMajor = 16
+                Databases    = @{
+                    tempdb = $script:mockTempDb
+                    db1    = $script:mockDatabase
+                }
+            }
+
+            Mock Invoke-RestMethod { $script:mockTables } -ModuleName dbatools
+            Mock Connect-DbaInstance { $script:mockServer } -ModuleName dbatools
+            Mock Convert-DbaIndexToTable { [PSCustomObject]@{ } } -ModuleName dbatools
+        }
+
+        It "does not prepare unique helper tables when WhatIf is used" {
+            $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config" -WhatIf
+
+            Assert-MockCalled -CommandName Convert-DbaIndexToTable -Exactly 0 -Scope It -ModuleName dbatools
+        }
+
+        It "uses FilterQuery when counting rows for WhatIf" {
+            $script:mockTables.Tables[0].HasUniqueIndex = $false
+            $script:mockTables.Tables[0].FilterQuery = "SELECT [fname] FROM [dbo].[people] WHERE [fname] LIKE 'J%'"
+
+            $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config" -WhatIf
+
+            $script:lastWhatIfQuery | Should -Be "SELECT COUNT(*) AS RowCount FROM (SELECT [fname] FROM [dbo].[people] WHERE [fname] LIKE 'J%') AS [dbatools_masking_source]"
         }
     }
 }

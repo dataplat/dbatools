@@ -351,6 +351,7 @@ function Invoke-DbaDbDataMasking {
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
                     [bool]$cleanupIdentityColumn = $false
+                    [bool]$cleanupMaskingIndex = $false
 
                     # The masking index name used for cleanup checks
                     $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
@@ -402,6 +403,7 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             Invoke-DbaQuery @queryParams
+                            $cleanupMaskingIndex = $true
                         } catch {
                             Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
@@ -410,7 +412,18 @@ function Invoke-DbaDbDataMasking {
                     try {
                         if ($WhatIfPreference) {
                             # In WhatIf mode, only get the row count without modifying the table structure
-                            $query = "SELECT COUNT(*) AS RowCount FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            if ($tableobject.FilterQuery) {
+                                $trimmedFilterQuery = ($tableobject.FilterQuery).Trim()
+
+                                if ($trimmedFilterQuery.EndsWith(";")) {
+                                    $trimmedFilterQuery = $trimmedFilterQuery.Substring(0, $trimmedFilterQuery.Length - 1)
+                                }
+
+                                $query = "SELECT COUNT(*) AS RowCount FROM ($trimmedFilterQuery) AS [dbatools_masking_source]"
+                            } else {
+                                $query = "SELECT COUNT(*) AS RowCount FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            }
+
                             $rowCount = ($db.Query($query)).RowCount
                             $data = New-Object object[] $rowCount
                         } elseif (-not $tableobject.FilterQuery) {
@@ -447,7 +460,9 @@ function Invoke-DbaDbDataMasking {
 
                     #region unique indexes
                     # Check if the table contains unique indexes
-                    if ($tableobject.HasUniqueIndex) {
+                    if ($WhatIfPreference -and $tableobject.HasUniqueIndex) {
+                        Write-Message -Level Verbose -Message "Skipping unique value preparation for [$($tableobject.Schema)].[$($tableobject.Name)] because -WhatIf is active"
+                    } elseif ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for [$($tableobject.Schema)].[$($tableobject.Name)]"
@@ -1277,18 +1292,20 @@ function Invoke-DbaDbDataMasking {
                         $null = $elapsed.Reset()
                     }
 
-                    # Clean up the masking index (always runs, regardless of -WhatIf or errors during masking)
-                    try {
-                        # Refresh the indexes to make sure to have the latest list
-                        $dbTable.Indexes.Refresh()
+                    # Clean up the masking index created for this masking run
+                    if ($cleanupMaskingIndex) {
+                        try {
+                            # Refresh the indexes to make sure to have the latest list
+                            $dbTable.Indexes.Refresh()
 
-                        # Check if the index is there
-                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
-                            Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
-                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            # Check if the index is there
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
+                        } catch {
+                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
-                    } catch {
-                        Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
 
                     # Clean up the identity column (always runs, regardless of -WhatIf or errors during masking)

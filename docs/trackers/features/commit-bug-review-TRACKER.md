@@ -55,7 +55,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | f2fb47857 | Copy-DbaPolicyManagement: Add ObjectSets migration (#10220) | DONE | Filtered ObjectSets to selected policies so -Policy/-ExcludePolicy no longer copies unrelated sets; added unit regression test. |
 | 902f23b98 | Get-DbaDb[StoredProcedure|Table|Udf|View]: Wrap all ClearAndInitialize in try-catch-block (#10226) | DONE | Reviewed ClearAndInitialize fallback workaround; no bugs found. |
 | 23b429bfc | Backup-DbaDatabase: Prevent duplicate dbname when using CreateFolder with ReplaceInName (#10224) | DONE | Limited dbname auto-skip to directory paths so filename tokens still create the database folder; added regression test. |
-| e79bef926 | Invoke-DbaDbDataMasking: Fix MaskingID column and index left behind after masking (#10223) | PENDING | |
+| e79bef926 | Invoke-DbaDbDataMasking: Fix MaskingID column and index left behind after masking (#10223) | DONE | Fixed WhatIf unique-index side effects and made WhatIf row counts honor FilterQuery; added unit regressions. |
 | 7240105e0 | Invoke-DbaDbDataMasking: Fix Deterministic masking not applied with multiple columns (#10222) | PENDING | |
 | 156fc62e1 | Read-DbaXEFile: Fix database_name and other action columns being empty (#10221) | PENDING | |
 | d5b122bf5 | March 2026 CVEs (#10230) | PENDING | |
