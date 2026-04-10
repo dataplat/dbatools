@@ -266,15 +266,32 @@ function Invoke-DbaBalanceDataFiles {
 
                     # Check the tables parameter
                     if ($Table) {
-                        if ($Table -notin $db.Table) {
+                        $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                        $missingTables = foreach ($tablePart in $tableParts) {
+                            $matchingTable = $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                            if (-not $matchingTable) {
+                                $tablePart.InputValue
+                            }
+                        }
+
+                        if ($missingTables) {
                             # Set the success flag
                             $success = $false
 
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
-                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $tableNames }
+                        $tableCollection = foreach ($tablePart in $tableParts) {
+                            $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                        }
                     } else {
                         $tableCollection = $db.Tables
                     }

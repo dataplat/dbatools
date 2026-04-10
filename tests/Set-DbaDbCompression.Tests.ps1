@@ -27,6 +27,121 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                if (-not ("SetDbaDbCompressionTest.MockCollection[System.Object]" -as [type])) {
+                    Add-Type -TypeDefinition @"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace SetDbaDbCompressionTest {
+    public class MockCollection<T> : IEnumerable {
+        private Dictionary<string, T> items = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+
+        public void Add(string name, T item) {
+            items[name] = item;
+        }
+
+        public T this[string name] {
+            get {
+                T value;
+                items.TryGetValue(name, out value);
+                return value;
+            }
+        }
+
+        public IEnumerator GetEnumerator() {
+            return items.Values.GetEnumerator();
+        }
+    }
+
+    public class MockDatabase {
+        public string Name { get; set; }
+        public bool IsAccessible { get; set; }
+        public int IsSystemObject { get; set; }
+        public string Status { get; set; }
+        public string CompatibilityLevel { get; set; }
+        public object[] Tables { get; set; }
+
+        public override string ToString() {
+            return Name;
+        }
+    }
+}
+"@
+                }
+
+                function Write-Message { }
+
+                function New-MockCompressionTable {
+                    param(
+                        [string]$Schema,
+                        [string]$Name
+                    )
+
+                    $table = [PSCustomObject]@{
+                        Name                = $Name
+                        Schema              = $Schema
+                        IsMemoryOptimized   = $false
+                        HasSparseColumn     = $false
+                        Indexes             = @()
+                        PhysicalPartitions  = @(
+                            [PSCustomObject]@{
+                                PartitionNumber = 1
+                                DataCompression = "NONE"
+                            }
+                        )
+                        OnlineHeapOperation = $false
+                        HasHeapIndex        = $true
+                    }
+                    $table | Add-Member -Force -MemberType ScriptMethod -Name Rebuild -Value {
+                        $script:rebuiltSchemas += $this.Schema
+                    }
+
+                    $table
+                }
+            }
+
+            It "honors schema-qualified -Table input" {
+                $script:rebuiltSchemas = @()
+                $mockDatabase = New-Object "SetDbaDbCompressionTest.MockDatabase"
+                $mockDatabase.Name = "db1"
+                $mockDatabase.IsAccessible = $true
+                $mockDatabase.IsSystemObject = 0
+                $mockDatabase.Status = "Normal"
+                $mockDatabase.CompatibilityLevel = "Version160"
+                $mockDatabase.Tables = @(
+                    (New-MockCompressionTable -Schema "dbo" -Name "Customer"),
+                    (New-MockCompressionTable -Schema "sales" -Name "Customer")
+                )
+
+                $mockDatabases = New-Object "SetDbaDbCompressionTest.MockCollection[System.Object]"
+                $mockDatabases.Add("db1", $mockDatabase)
+
+                $mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    EngineEdition      = "Enterprise"
+                    VersionMajor       = 16
+                    isAzure            = $false
+                    Databases          = $mockDatabases
+                }
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Stop-Function { throw $Message }
+
+                $results = @(Set-DbaDbCompression -SqlInstance "sql1" -Database "db1" -Table "sales.Customer" -CompressionType Row)
+
+                $results.Count | Should -Be 1
+                $results[0].Schema | Should -Be "sales"
+                $script:rebuiltSchemas | Should -Be @("sales")
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
