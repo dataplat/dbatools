@@ -800,7 +800,7 @@ Describe -skip $CommandName -Tag UnitTests {
         It "fails when a reboot is pending" {
             #override default mock
             Mock -CommandName Test-PendingReboot -MockWith { $true } -ModuleName dbatools
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Reboot the computer before proceeding'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw "Reboot the computer before proceeding"
             #revert default mock
             Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         }
@@ -817,11 +817,11 @@ Describe -skip $CommandName -Tag UnitTests {
             { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw 'Could not find installer for the SQL2008 update KB'
         }
         It "fails when SP level is lower than required" {
-            { Update-DbaInstance -Type CumulativeUpdate -EnableException } | Should -Throw 'Current SP version SQL2008SP2 is not the latest available'
+            { Update-DbaInstance -Type CumulativeUpdate -Path $exeDir -EnableException } | Should -Throw "Current SP version SQL2008SP2 is not the latest available"
         }
         It "fails when repository is not available" {
-            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw 'Cannot find path'
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Path to SQL Server updates folder is not set'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw "Cannot find path"
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw "Path is required"
         }
         It "fails when update execution has failed" {
             #Mock Get-Item and Get-ChildItem with a dummy file
@@ -939,6 +939,16 @@ Describe "Update-DbaInstance authentication regression" -Tag UnitTests {
 
         Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
         Assert-MockCalled -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+    }
+}
+
+Describe "Update-DbaInstance path validation regression" -Tag UnitTests {
+    It "fails early when Path contains only whitespace" {
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith { throw "Get-SQLInstanceComponent should not be called" }
+
+        { Update-DbaInstance -Version "2012SP3" -Path "   " -EnableException } | Should -Throw "*Path is required*"
+
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 0 -Scope It -ModuleName dbatools
     }
 }
 

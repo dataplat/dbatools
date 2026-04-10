@@ -274,6 +274,12 @@ function Update-DbaInstance {
                 }
             }
         }
+        if ($Path) {
+            $Path = $Path |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($PSItem) } |
+                ForEach-Object { $PSItem.TrimEnd("/\") } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($PSItem) }
+        }
         if (-not $Path) {
             Stop-Function -Category InvalidArgument -Message "Path is required. Please provide a -Path to a folder containing (or to store) SQL Server updates, or configure a default with Set-DbatoolsConfig -Name Path.SQLServerUpdates -Value 'C:\patches'."
             return
@@ -437,9 +443,6 @@ function Update-DbaInstance {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($Path) {
-            $Path = $Path.TrimEnd("/\")
-        }
         #Resolve all the provided names
         $resolvedComputers = @()
         $pathIsNetwork = $Path | Test-NetworkPath
