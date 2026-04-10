@@ -140,6 +140,6 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | db77a3476 | Find-DbaObject - Add unified command to search database objects by name (#10321) | DONE | Added database DDL trigger name search via sys.triggers and covered it with an integration regression test. |
 | 6416b4e91 | Add Compare-DbaLogin command (#10319) | DONE | Skipped failed destination connections instead of reusing the previous server; added unit regression coverage. |
 | bee08f8e7 | Copy-DbaSsisCatalog - Add standard MigrationObject output, integrate with Start-DbaMigration (#10311) | DONE | Skipped SSIS catalog migration when the source lacks SSISDB and added Start-DbaMigration unit coverage. |
-| 21e4795ee | Get-DbaService - Add PowerBI Report Server detection (#10298) | PENDING | |
+| 21e4795ee | Get-DbaService - Add PowerBI Report Server detection (#10298) | DONE | Skipped generic SqlService lookups for reporting-only types and added unit regression coverage. |
 | 828ebc3b3 | Get-DbaBackupInformation - Fix inconsistencies with Get-DbaDbBackupHistory (#10308) | PENDING | |
 | 74a2d1ae1 | Import-DbaCsv, Export-DbaCsv - Normalize table/schema names via Get-ObjectNameParts (#10306) | PENDING | |
