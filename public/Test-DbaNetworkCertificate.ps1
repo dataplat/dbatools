@@ -212,7 +212,7 @@ function Test-DbaNetworkCertificate {
                 $privateKeyType = if ($null -ne $cert.PrivateKey) { $cert.PrivateKey.GetType().FullName } else { $null }
                 $privateKeyNumber = if ($cert.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider]) { $cert.PrivateKey.CspKeyContainerInfo.KeyNumber } else { $null }
                 $privateKeyValid = $cert.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
-                    $cert.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
+                $cert.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
             } catch {
                 $privateKeyType = $null
                 $privateKeyNumber = $null
@@ -314,19 +314,25 @@ function Test-DbaNetworkCertificate {
                     } else {
                         # Check configured certificate validity
                         $configuredThumbprint = $netConf.Certificate.Thumbprint
+                        $configuredGenerated = $netConf.Certificate.Generated
                         $configuredExpires = $netConf.Certificate.Expires
-                        if ($configuredThumbprint) {
-                            $configuredDaysValid = [int]($configuredExpires - (Get-Date)).TotalDays
-                            $configuredCertificateValid = $configuredExpires -gt (Get-Date).AddDays($MinimumValidDays)
+                        $currentDate = Get-Date
+                        if ($configuredThumbprint -and $configuredExpires) {
+                            $configuredDaysValid = [int]($configuredExpires - $currentDate).TotalDays
                         } else {
                             $configuredDaysValid = $null
+                        }
+
+                        if ($configuredThumbprint -and $configuredGenerated -and $configuredExpires) {
+                            $configuredCertificateValid = $configuredGenerated -lt $currentDate -and $configuredExpires -gt $currentDate.AddDays($MinimumValidDays)
+                        } else {
                             $configuredCertificateValid = $false
                         }
 
                         # Filter suitable certificates by MinimumValidDays.
                         # Get-DbaNetworkConfiguration already filters for current validity (NotAfter > now),
                         # but we additionally filter for MinimumValidDays.
-                        $suitableCerts = $netConf.SuitableCertificate | Where-Object { $_.NotAfter -gt (Get-Date).AddDays($MinimumValidDays) }
+                        $suitableCerts = $netConf.SuitableCertificate | Where-Object { $_.NotAfter -gt $currentDate.AddDays($MinimumValidDays) }
                         $suitableCertCount = ($suitableCerts | Measure-Object).Count
                         $suitableCertObjects = foreach ($cert in $suitableCerts) {
                             [PSCustomObject]@{
