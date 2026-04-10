@@ -468,7 +468,12 @@ function Update-DbaInstance {
             ## Find the current version on the computer
             Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
             try {
-                $components = Get-SQLInstanceComponent -ComputerName $resolvedName -Credential $Credential
+                $splatSqlInstanceComponent = @{
+                    ComputerName   = $resolvedName
+                    Credential     = $Credential
+                    Authentication = $Authentication
+                }
+                $components = Get-SQLInstanceComponent @splatSqlInstanceComponent
             } catch {
                 Stop-Function -Message "Error while looking for SQL Server installations on $resolvedName" -Continue -ErrorRecord $_
             }
@@ -484,6 +489,7 @@ function Update-DbaInstance {
                 $splatPendingReboot = @{
                     ComputerName    = $resolvedName
                     Credential      = $Credential
+                    Authentication  = $Authentication
                     NoPendingRename = $NoPendingRenameCheck
                 }
                 $restartNeeded = Test-PendingReboot @splatPendingReboot
