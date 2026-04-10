@@ -97,7 +97,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 50c0bfdaf | Connect-DbaInstance - Add -AuthenticationType parameter for Entra ID support (#10271) | DONE | Fixed password-based AuthenticationType handling so explicit Entra auth uses SqlConnectionInfo credentials, added missing SqlCredential validation, and added unit regression tests. |
 | 27e4da9d1 | Get-DbaDbOrphanUser - Skip SQL login orphan check for contained databases (#10270) | DONE | Guarded ContainmentType for pre-SQL 2012 servers and added unit regression tests. |
 | 21a522047 | Test-DbaAgPolicyState - Add new command for Always On policy state checks (#10246) | DONE | Added missing replica sync policy, corrected Microsoft category/name mismatches, and added regression tests. |
-| 1f43cbbf0 | Install-DbaMaintenanceSolution: change Compress/Verify/CheckSum to ValidateSet string params (#10247) | PENDING | |
+| 1f43cbbf0 | Install-DbaMaintenanceSolution: change Compress/Verify/CheckSum to ValidateSet string params (#10247) | DONE | Scoped NUL/Verify validation to InstallJobs, added a unit regression test, and corrected the AutoScheduleJobs example. |
 | 444659b0a | Get-DbaDbMailAccount, Get-DbaDbMailProfile - Add Account-Profile link details (#10280) | PENDING | |
 | 57fa89a0e | Invoke-DbaDbShrink - Add error message output for failed shrink operations (#10258) | PENDING | |
 | df60d986f | Export-DbaUser - Add schema ownership to exported scripts (#10275) | PENDING | |

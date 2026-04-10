@@ -223,7 +223,7 @@ function Install-DbaMaintenanceSolution {
         >> SqlInstance = "localhost"
         >> InstallJobs = $true
         >> CleanupTime = 720
-        >> AutoSchedule = "WeeklyFull"
+        >> AutoScheduleJobs = "WeeklyFull"
         >> }
         >> Install-DbaMaintenanceSolution @params
 
@@ -324,7 +324,7 @@ function Install-DbaMaintenanceSolution {
             return
         }
 
-        if ($BackupLocation -eq "NUL" -and $Verify -notin "ForceOff", "Remove") {
+        if ($InstallJobs -and $BackupLocation -eq "NUL" -and $Verify -notin "ForceOff", "Remove") {
             Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or set -Verify to 'ForceOff' or 'Remove'."
             return
         }
