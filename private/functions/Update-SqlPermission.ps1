@@ -61,7 +61,7 @@ function Update-SqlPermission {
     }
 
     # Server Roles: sysadmin, bulklogin, etc
-    foreach ($role in $SourceServer.Roles) {
+    foreach ($role in @($SourceServer.Roles)) {
         $roleName = $role.Name
         $destRole = $DestServer.Roles[$roleName]
 
@@ -107,7 +107,7 @@ function Update-SqlPermission {
         }
     }
 
-    $ownedJobs = $SourceServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $loginName
+    $ownedJobs = @($SourceServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $loginName)
     foreach ($ownedJob in $ownedJobs) {
         if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
             if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $newLoginName for $($ownedJob.Name).")) {
@@ -205,7 +205,7 @@ function Update-SqlPermission {
     }
 
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
-    foreach ($db in $DestLogin.EnumDatabaseMappings()) {
+    foreach ($db in @($DestLogin.EnumDatabaseMappings())) {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
         $sourceDb = $SourceServer.Databases[$dbName]
@@ -288,7 +288,7 @@ function Update-SqlPermission {
     }
 
     # Adding database mappings and securables
-    foreach ($db in $SourceLogin.EnumDatabaseMappings()) {
+    foreach ($db in @($SourceLogin.EnumDatabaseMappings())) {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
         $sourceDb = $SourceServer.Databases[$dbName]
@@ -347,7 +347,7 @@ function Update-SqlPermission {
                 }
             } else {
                 # Database Roles: db_owner, db_datareader, etc
-                foreach ($role in $sourceDb.Roles) {
+                foreach ($role in @($sourceDb.Roles)) {
                     if ($role.EnumMembers() -contains $loginName) {
                         $roleName = $role.Name
                         $destDbRole = $destDb.Roles[$roleName]
