@@ -871,17 +871,18 @@ function Backup-DbaDatabase {
                 $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
             }
 
-            # Auto-detect dbname token to prevent duplication when using CreateFolder + ReplaceInName
+            # Auto-detect dbname token in the directory path to prevent duplication when using CreateFolder + ReplaceInName
             if ($CreateFolder -and $ReplaceInName -and -not $NoAppendDbNameInPath) {
                 $containsDbNameToken = $false
                 foreach ($pathToCheck in $FinalBackupPath) {
-                    if ($pathToCheck -match "\bdbname\b") {
+                    $directoryPathToCheck = Split-Path -Path $pathToCheck -Parent
+                    if ($directoryPathToCheck -and $directoryPathToCheck -match "(^|[\\/])dbname([\\/]|$)") {
                         $containsDbNameToken = $true
                         break
                     }
                 }
                 if ($containsDbNameToken) {
-                    Write-Message -Level Verbose -Message "Path contains 'dbname' token with ReplaceInName. Automatically skipping database folder creation to prevent duplication."
+                    Write-Message -Level Verbose -Message "Directory path contains 'dbname' token with ReplaceInName. Automatically skipping database folder creation to prevent duplication."
                     $NoAppendDbNameInPath = $true
                 }
             }

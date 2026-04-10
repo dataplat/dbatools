@@ -54,7 +54,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | eb0aa1d3d | Invoke-DbaDbLogShipping: Add -IgnoreFileChecks parameter (#10219) | DONE | Fixed root shared-path validation so IgnoreFileChecks is honored before the generated full backup; added unit regression test. |
 | f2fb47857 | Copy-DbaPolicyManagement: Add ObjectSets migration (#10220) | DONE | Filtered ObjectSets to selected policies so -Policy/-ExcludePolicy no longer copies unrelated sets; added unit regression test. |
 | 902f23b98 | Get-DbaDb[StoredProcedure|Table|Udf|View]: Wrap all ClearAndInitialize in try-catch-block (#10226) | DONE | Reviewed ClearAndInitialize fallback workaround; no bugs found. |
-| 23b429bfc | Backup-DbaDatabase: Prevent duplicate dbname when using CreateFolder with ReplaceInName (#10224) | PENDING | |
+| 23b429bfc | Backup-DbaDatabase: Prevent duplicate dbname when using CreateFolder with ReplaceInName (#10224) | DONE | Limited dbname auto-skip to directory paths so filename tokens still create the database folder; added regression test. |
 | e79bef926 | Invoke-DbaDbDataMasking: Fix MaskingID column and index left behind after masking (#10223) | PENDING | |
 | 7240105e0 | Invoke-DbaDbDataMasking: Fix Deterministic masking not applied with multiple columns (#10222) | PENDING | |
 | 156fc62e1 | Read-DbaXEFile: Fix database_name and other action columns being empty (#10221) | PENDING | |

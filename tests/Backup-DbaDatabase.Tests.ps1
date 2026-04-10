@@ -524,6 +524,15 @@ go
         }
     }
 
+    Context "Test CreateFolder with ReplaceInName keeps db folder when only filename contains dbname" {
+        It "Should still append the database folder when only the file name contains dbname token" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path "$DestBackupDir\servername\instancename\backuptype" -BackupFileName "dbname-backuptype-timestamp.bak" -ReplaceInName -CreateFolder -BuildPath
+            $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).InstanceName
+            $serverName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).ComputerName
+            $results.BackupPath | Should -BeLike "$DestBackupDir\$serverName\$instanceName\Full\master\master-Full-*.bak"
+        }
+    }
+
     Context "Test Backup Encryption with Certificate" {
         # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {
