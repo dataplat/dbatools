@@ -115,7 +115,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 092a092bb | Copy-DbaLogin - Add -ExcludeDatabaseMapping to sync only server permissions (#10305) | DONE | Fixed Copy-DbaLogin so -ExcludeDatabaseMapping also excludes database mappings in -OutFile exports; added a unit regression test. |
 | 1ab8d1fba | Get-DbaHelpIndex - Fix SQL injection and remove SQL 2005 code path (#10302) | DONE | Reviewed SQL injection fix and SQL 2005 path removal; no bugs found. |
 | fb94490d9 | Install-DbaMaintenanceSolution - Fix AutoScheduleJobs schedule bugs (#10303) | DONE | Added AutoScheduleJobs validation for -InstallJobs and exactly one full schedule; added unit regression tests. |
-| 45e46e6ae | Copy-DbaAgentJob - Add AD group membership check for job owner login validation (#10297) | PENDING | |
+| 45e46e6ae | Copy-DbaAgentJob - Add AD group membership check for job owner login validation (#10297) | DONE | Reviewed AD group membership owner validation; no bugs found. |
 | daa4e306e | Invoke-DbaBalanceDataFiles - Add -TargetFileGroup parameter (#10296) | PENDING | |
 | 02ad1f092 | ConvertTo-DbaTimeline - Add support for Find-DbaDbGrowthEvent input (#10304) | PENDING | |
 | 8987045a9 | Refactor Set-DbaNetworkCertificate (#10232) | PENDING | |
