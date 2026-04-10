@@ -987,7 +987,7 @@ use master
             $lsn = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX([Current LSN]) FROM sys.fn_dblog(NULL, NULL)" -As SingleValue
             1..5 | ForEach-Object -Process { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "INSERT INTO Test DEFAULT VALUES" }
             $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Path $backupPath -Type Log
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $fullBackup.Path, $logBackup.Path -DatabaseName $dbName -StopAtLsn "0x$lsn" -WithReplace
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $fullBackup.Path, $logBackup.Path -DatabaseName $dbName -StopAtLsn $lsn -WithReplace
             $id = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX(id) FROM Test" -As SingleValue
             $id | Should -Be 5
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName

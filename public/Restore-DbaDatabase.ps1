@@ -248,7 +248,8 @@ function Restore-DbaDatabase {
     .PARAMETER StopAtLsn
         Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
         Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
-        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
+        Accepts either the numeric restore format used by SQL Server or the colon-delimited format returned by sys.fn_dblog.
+        Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -441,12 +442,12 @@ function Restore-DbaDatabase {
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001'
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn "00000030:00000f28:0001"
 
         Restores the backups from \\ServerName\ShareName\File as database, stopping when the specified LSN is reached.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001' -StopBefore
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn "00000030:00000f28:0001" -StopBefore
 
         Restores the backups from \\ServerName\ShareName\File as database, stopping just before the specified LSN is reached.
 

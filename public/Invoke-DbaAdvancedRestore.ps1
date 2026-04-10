@@ -134,7 +134,8 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER StopAtLsn
         Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
         Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
-        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
+        Accepts either the numeric restore format used by SQL Server or the colon-delimited format returned by sys.fn_dblog.
+        Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -269,6 +270,34 @@ function Invoke-DbaAdvancedRestore {
         if ($ErrorBrokerConversations -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
             Stop-Function -Category InvalidArgument -Message "ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
             return
+        }
+        if (-not [string]::IsNullOrWhiteSpace($StopAtLsn)) {
+            $stopAtLsnValue = $StopAtLsn.Trim()
+            if ($stopAtLsnValue -like "lsn:*") {
+                $stopAtLsnValue = $stopAtLsnValue.Substring(4)
+            }
+            if ($stopAtLsnValue -like "0x*") {
+                $stopAtLsnValue = $stopAtLsnValue.Substring(2)
+            }
+            if ($stopAtLsnValue -notmatch "^[0-9]+$") {
+                $splatLsnConversion = @{
+                    LSN             = $stopAtLsnValue
+                    EnableException = $true
+                }
+                $message = "StopAtLsn must be a numeric restore LSN or a colon-delimited value such as 00000030:00000f28:0001."
+                try {
+                    $convertedLsn = Convert-DbaLSN @splatLsnConversion
+                } catch {
+                    Stop-Function -Category InvalidArgument -Message $message -ErrorRecord $_
+                    return
+                }
+                if ($null -eq $convertedLsn -or [string]::IsNullOrWhiteSpace($convertedLsn.Numeric)) {
+                    Stop-Function -Category InvalidArgument -Message $message
+                    return
+                }
+                $stopAtLsnValue = $convertedLsn.Numeric
+            }
+            $StopAtLsn = $stopAtLsnValue
         }
 
         if ($null -ne $PageRestore) {

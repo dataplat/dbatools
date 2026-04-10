@@ -112,7 +112,8 @@ Describe $CommandName -Tag UnitTests {
             BeforeEach {
                 Mock Connect-DbaInstance { $script:mockServer }
                 Mock New-Object {
-                    New-MockRestore
+                    $script:lastRestore = New-MockRestore
+                    $script:lastRestore
                 } -ParameterFilter {
                     $TypeName -eq "Microsoft.SqlServer.Management.Smo.Restore"
                 }
@@ -149,6 +150,32 @@ Describe $CommandName -Tag UnitTests {
 
                 $scriptOutput | Should -BeLike "EXECUTE AS LOGIN='RestoreAs'*ERROR_BROKER_CONVERSATIONS*"
                 Should -Invoke Stop-Function -Times 0
+            }
+
+            It "Should convert fn_dblog-style StopAtLsn values before scripting the restore" {
+                Mock Stop-Function { }
+                $null = Invoke-DbaAdvancedRestore -BackupHistory $script:backupHistory -SqlInstance "sql1" -OutputScriptOnly -StopAtLsn "00000014:000000f3:0001"
+
+                $script:lastRestore.StopAtMarkName | Should -Be "lsn:20000000024300001"
+                $script:lastRestore.StopBeforeMarkName | Should -BeNullOrEmpty
+                Should -Invoke Stop-Function -Times 0
+            }
+
+            It "Should respect StopBefore when StopAtLsn already includes the SQL lsn prefix" {
+                Mock Stop-Function { }
+                $null = Invoke-DbaAdvancedRestore -BackupHistory $script:backupHistory -SqlInstance "sql1" -OutputScriptOnly -StopAtLsn "lsn:20000000024300001" -StopBefore
+
+                $script:lastRestore.StopBeforeMarkName | Should -Be "lsn:20000000024300001"
+                $script:lastRestore.StopAtMarkName | Should -BeNullOrEmpty
+                Should -Invoke Stop-Function -Times 0
+            }
+
+            It "Should reject invalid StopAtLsn values" {
+                Mock Stop-Function {
+                    throw $Message
+                }
+
+                { Invoke-DbaAdvancedRestore -BackupHistory $script:backupHistory -SqlInstance "sql1" -OutputScriptOnly -StopAtLsn "bad-lsn" } | Should -Throw "*StopAtLsn must be a numeric restore LSN or a colon-delimited value*"
             }
         }
     }
