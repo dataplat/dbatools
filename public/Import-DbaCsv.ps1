@@ -603,6 +603,25 @@ function Import-DbaCsv {
             Write-Message -Level Warning -Message "Both SampleRows and DetectColumnTypes specified. DetectColumnTypes (full scan) takes precedence for zero-risk type detection."
         }
 
+        # When Culture is specified but DateTimeFormats is not, derive unambiguous datetime format
+        # strings from the culture's DateTimeFormat patterns. This forces ParseExact (which respects
+        # field order) instead of Parse (which can swap day/month when both values are <= 12).
+        # See: https://github.com/dataplat/dbatools/issues/10338
+        if ($PSBoundParameters.Culture -and -not $PSBoundParameters.DateTimeFormats) {
+            $cultureObj = New-Object System.Globalization.CultureInfo($Culture)
+            $dtf = $cultureObj.DateTimeFormat
+            $effectiveDateTimeFormats = @(
+                "$($dtf.ShortDatePattern) $($dtf.LongTimePattern)",
+                "$($dtf.ShortDatePattern) $($dtf.ShortTimePattern)",
+                $dtf.ShortDatePattern,
+                "$($dtf.LongDatePattern) $($dtf.LongTimePattern)",
+                $dtf.LongDatePattern
+            )
+            Write-Message -Level Verbose -Message "Derived DateTimeFormats from Culture '$Culture': $($effectiveDateTimeFormats -join ', ')"
+        } elseif ($PSBoundParameters.DateTimeFormats) {
+            $effectiveDateTimeFormats = $DateTimeFormats
+        }
+
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -1142,8 +1161,8 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         } else {
                             $inferOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
                         }
-                        if ($PSBoundParameters.DateTimeFormats) {
-                            $inferOptions.DateTimeFormats = $DateTimeFormats
+                        if ($effectiveDateTimeFormats) {
+                            $inferOptions.DateTimeFormats = $effectiveDateTimeFormats
                         }
                         if ($PSBoundParameters.Culture) {
                             $inferOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
@@ -1348,8 +1367,8 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
                         }
                         $csvOptions.ParseErrorAction = [Dataplat.Dbatools.Csv.CsvParseErrorAction]::$ParseErrorAction
-                        if ($PSBoundParameters.DateTimeFormats) {
-                            $csvOptions.DateTimeFormats = $DateTimeFormats
+                        if ($effectiveDateTimeFormats) {
+                            $csvOptions.DateTimeFormats = $effectiveDateTimeFormats
                         }
                         if ($PSBoundParameters.Culture) {
                             $csvOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)

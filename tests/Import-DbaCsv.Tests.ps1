@@ -616,6 +616,44 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
+
+        It "correctly parses ambiguous dates (day and month both <= 12) using Culture datetime format (issue #10338)" {
+            $filePath = "$($TestConfig.Temp)\culture-datetime-$(Get-Random).csv"
+            $server = Connect-DbaInstance $TestConfig.InstanceMulti1 -Database tempdb
+            $tableName = "CultureDateTimeTest$(Get-Random)"
+
+            # Create CSV with de-CH style dates (dd.MM.yyyy HH:mm:ss, semicolon delimiter)
+            # Row 1: day=2, month=4 (both <= 12, ambiguous - previously parsed as Feb 4th)
+            # Row 2: day=11, month=6 (both <= 12, ambiguous - previously parsed as Nov 6th)
+            "Date1;Date2" | Out-File -FilePath $filePath -Encoding UTF8
+            "02.04.2026 17:09:41;14.04.2026 17:09:41" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+            "11.06.2026 17:10:08;13.06.2026 06:22:23" | Out-File -FilePath $filePath -Encoding UTF8 -Append
+
+            # Create table with smalldatetime columns
+            Invoke-DbaQuery -SqlInstance $server -Query "CREATE TABLE $tableName (Date1 smalldatetime NULL, Date2 smalldatetime NULL)"
+
+            $result = Import-DbaCsv -Path $filePath -SqlInstance $server -Database tempdb -Table $tableName -Delimiter ";" -Culture "de-CH"
+
+            $result.RowsCopied | Should -Be 2
+
+            $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT * FROM $tableName ORDER BY Date1" -As PSObject
+
+            # Row 1: 02.04.2026 = April 2nd (not February 4th)
+            $data[0].Date1.Month | Should -Be 4
+            $data[0].Date1.Day | Should -Be 2
+            # Row 1 Date2: 14.04.2026 = April 14th (day > 12, was never ambiguous)
+            $data[0].Date2.Month | Should -Be 4
+            $data[0].Date2.Day | Should -Be 14
+            # Row 2: 11.06.2026 = June 11th (not November 6th)
+            $data[1].Date1.Month | Should -Be 6
+            $data[1].Date1.Day | Should -Be 11
+            # Row 2 Date2: 13.06.2026 = June 13th (day > 12, was never ambiguous)
+            $data[1].Date2.Month | Should -Be 6
+            $data[1].Date2.Day | Should -Be 13
+
+            Invoke-DbaQuery -SqlInstance $server -Query "DROP TABLE $tableName" -ErrorAction SilentlyContinue
+            Remove-Item $filePath -ErrorAction SilentlyContinue
+        }
     }
 
     Context "AutoCreateTable post-import optimization" {
