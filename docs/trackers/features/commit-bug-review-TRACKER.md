@@ -60,7 +60,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 156fc62e1 | Read-DbaXEFile: Fix database_name and other action columns being empty (#10221) | DONE | Reviewed action-key normalization fix; no bugs found. |
 | d5b122bf5 | March 2026 CVEs (#10230) | DONE | Reviewed buildref/test-only update; no bugs found. |
 | 2472ea8fd | Remove Invoke-SmoCheck - no longer needed (#10229) | DONE | Reviewed helper removal; no bugs found. |
-| 5e0b70d66 | Set-DbaPrivilege: Use per-service SID (NT SERVICE\ServiceName) for IFI, LPIM, SecAudit (#10228) | PENDING | |
+| 5e0b70d66 | Set-DbaPrivilege: Use per-service SID (NT SERVICE\ServiceName) for IFI, LPIM, SecAudit (#10228) | DONE | Reviewed per-service SID change; no bugs found. |
 | aa4e253cb | v2.7.26 | DONE | version bump - skip |
 | 9c81f3d3d | Latest CUs for 2022 and 2025 (#10231) | PENDING | |
 | 3e26310f2 | Add Test-DbaInstantFileInitialization command (#10236) | PENDING | |
