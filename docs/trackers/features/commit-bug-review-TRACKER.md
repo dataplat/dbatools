@@ -26,7 +26,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 920fe547b | v2.7.25 | DONE | version bump - skip |
 | 58f64c580 | speedup dependency detection for integration tests (#10179) | DONE | Fixed debug helper name parsing, corrected dependency return bookkeeping, removed backtick recursion, and added a regression test. |
 | cb7a5d77a | Comment out 2008R2SP2Express AppVeyor jobs | DONE | Reviewed CI-only AppVeyor matrix change; no bugs found. |
-| 9799c1877 | Minor test fixes for Connect-DbaInstance (#10175) | PENDING | |
+| 9799c1877 | Minor test fixes for Connect-DbaInstance (#10175) | DONE | Reviewed test-only cleanup-output suppression change; no bugs found. |
 | 1616a6d04 | Add command Test-DbaNetworkCertificate (#10178) | PENDING | |
 | dbe2f29ca | Get-DbaDbTable: Fix for Azure SQL Database (#10182) | PENDING | |
 | eb40ff802 | Test-DbaLsnChain: Fix bug in case log backup is taken during full backup (#10185) | PENDING | |
