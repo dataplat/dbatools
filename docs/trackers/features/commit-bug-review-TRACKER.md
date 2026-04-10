@@ -77,7 +77,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 8218d327e | Restore-DbaDatabase, Invoke-DbaAdvancedRestore - Add ErrorBrokerConversations parameter (#10253) | DONE | Fixed missing ExecuteAs script prefix and added NoRecovery/Standby validation; added regression tests. |
 | 9a4e4bacb | Connect-DbaInstance - Set NonPooledConnection on ServerConnection (#10260) | DONE | Fixed AccessToken regression by skipping a redundant NonPooledConnection assignment on SqlConnection-backed contexts; added unit regression test. |
 | a0ab78a66 | Get-DbaCmObject - Apply CimOperationTimeout to all CIM connections (#10252) | DONE | Fixed missing timeout initialization in Test-DbaCmConnection and added a unit regression test. |
-| fbdb47053 | Import-DbaXESessionTemplate - Add event_file target when TargetFilePath specified (#10250) | PENDING | |
+| fbdb47053 | Import-DbaXESessionTemplate - Add event_file target when TargetFilePath specified (#10250) | DONE | Fixed comment-sensitive event_file detection, scoped filename updates to the event_file target, and added a unit regression test. |
 | 3d6fa113f | Connect-DbaInstance - Trust server certificate for localhost DAC connections (#10263) | PENDING | |
 | 0c0629d25 | Restore-DbaDatabase - Add examples for filtering partial backup files (#10242) | PENDING | |
 | bb56c43d3 | Read-DbaXEFile, Get-DbaXESessionTargetFile - Document Windows-only admin share requirement (#10243) | PENDING | |
