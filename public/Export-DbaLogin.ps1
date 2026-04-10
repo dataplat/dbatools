@@ -513,6 +513,43 @@ function Export-DbaLogin {
                         $scriptOptions.IncludeDatabaseContext = $false
                         $scriptOptions.IncludeIfNotExists = $true
 
+                        $userRoles = foreach ($role in $sourceDb.Roles) {
+                            if ($role.EnumMembers() -contains $dbUserName) {
+                                $role
+                            }
+                        }
+
+                        $roleDefinitionScripts = @()
+                        $rolePermissionScripts = @()
+                        if ($IncludeRolePermissions) {
+                            $roleScriptingOptions = New-DbaScriptingOption
+                            $roleScriptingOptions.ContinueScriptingOnError = $false
+                            $roleScriptingOptions.IncludeDatabaseContext = $false
+                            $roleScriptingOptions.IncludeIfNotExists = $true
+
+                            foreach ($role in ($userRoles | Where-Object { $_.IsFixedRole -eq $false })) {
+                                $roleDefinitionScript = @($role.Script($roleScriptingOptions))
+                                $splatExportRole = @{
+                                    SqlInstance            = $server
+                                    Database               = $dbName
+                                    Role                   = $role.Name
+                                    ScriptingOptionsObject = $roleScriptingOptions
+                                    Passthru               = $true
+                                    NoPrefix               = $true
+                                    BatchSeparator         = ""
+                                }
+                                try {
+                                    $roleScript = @(Export-DbaDbRole @splatExportRole)
+                                    if ($roleScript) {
+                                        $roleDefinitionScripts += $roleDefinitionScript
+                                        $rolePermissionScripts += $roleScript | Select-Object -Skip $roleDefinitionScript.Count
+                                    }
+                                } catch {
+                                    Write-Message -Level Warning -Message "Failed to export permissions for role $($role.Name) in database $dbName : $($_.Exception.Message)"
+                                }
+                            }
+                        }
+
                         if ($ObjectLevel) {
                             # Exporting all permissions
                             $scriptOptions.AllowSystemObjects = $true
@@ -529,34 +566,14 @@ function Export-DbaLogin {
                                 $scriptOptions.NoCommandTerminator = $true
                                 $exportSplat.ExcludeGoBatchSeparator = $true
                             }
+                            if ($rolePermissionScripts) {
+                                $outsql += $rolePermissionScripts
+                            }
                             try {
                                 $userScript = Export-DbaUser @exportSplat -Passthru -EnableException
                                 $outsql += $userScript
                             } catch {
                                 Stop-Function -Message "Failed to extract permissions for user $dbUserName in database $dbName" -Continue -ErrorRecord $_
-                            }
-
-                            if ($IncludeRolePermissions) {
-                                foreach ($role in $sourceDb.Roles) {
-                                    if ($role.IsFixedRole -eq $false -and $role.EnumMembers() -contains $dbUserName) {
-                                        $splatExportRole = @{
-                                            SqlInstance    = $server
-                                            Database       = $dbName
-                                            Role           = $role.Name
-                                            Passthru       = $true
-                                            NoPrefix       = $true
-                                            BatchSeparator = ""
-                                        }
-                                        try {
-                                            $roleScript = Export-DbaDbRole @splatExportRole
-                                            if ($roleScript) {
-                                                $outsql += $roleScript
-                                            }
-                                        } catch {
-                                            Write-Message -Level Warning -Message "Failed to export permissions for role $($role.Name) in database $dbName : $($_.Exception.Message)"
-                                        }
-                                    }
-                                }
                             }
                         } else {
                             try {
@@ -566,40 +583,22 @@ function Export-DbaLogin {
                                 Write-Message -Level Warning -Message "User cannot be found in selected database"
                             }
 
+                            if ($roleDefinitionScripts) {
+                                $outsql += $roleDefinitionScripts
+                            }
+                            if ($rolePermissionScripts) {
+                                $outsql += $rolePermissionScripts
+                            }
+
                             # Skipping updating dbowner
 
                             # Database Roles: db_owner, db_datareader, etc
-                            foreach ($role in $sourceDb.Roles) {
-                                if ($role.EnumMembers() -contains $dbUserName) {
-                                    $roleName = $role.Name
-                                    if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                        $outsql += "EXEC sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
-                                    } else {
-                                        $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
-                                    }
-                                }
-                            }
-
-                            if ($IncludeRolePermissions) {
-                                foreach ($role in $sourceDb.Roles) {
-                                    if ($role.IsFixedRole -eq $false -and $role.EnumMembers() -contains $dbUserName) {
-                                        $splatExportRole = @{
-                                            SqlInstance    = $server
-                                            Database       = $dbName
-                                            Role           = $role.Name
-                                            Passthru       = $true
-                                            NoPrefix       = $true
-                                            BatchSeparator = ""
-                                        }
-                                        try {
-                                            $roleScript = Export-DbaDbRole @splatExportRole
-                                            if ($roleScript) {
-                                                $outsql += $roleScript
-                                            }
-                                        } catch {
-                                            Write-Message -Level Warning -Message "Failed to export permissions for role $($role.Name) in database $dbName : $($_.Exception.Message)"
-                                        }
-                                    }
+                            foreach ($role in $userRoles) {
+                                $roleName = $role.Name
+                                if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                    $outsql += "EXEC sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
+                                } else {
+                                    $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
                                 }
                             }
 

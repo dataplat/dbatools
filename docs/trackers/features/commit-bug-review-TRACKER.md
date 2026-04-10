@@ -39,7 +39,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 0332cfbae | Get-DbaAgentJob and Sync-DbaAvailabilityGroup: Move filter for MSX jobs (#10198) | DONE | Fixed AG job sync to request Local jobs instead of filtering by CategoryID; added unit regression test. |
 | a0833cc2b | Test-DbaBackupInformation: Add member IsVerified to output if not already present (#10200) | DONE | Added missing IsVerified initialization for failed inputs and a regression test. |
 | 14a287e37 | Connect-DbaInstance: Use localhost for dedicated admin connections (#10199) | DONE | Introduced localhost DAC certificate validation regression; already corrected by follow-up commit 3d6fa113f (#10263). |
-| 7777c1401 | Export-DbaLogin: Add -IncludeRolePermissions switch (#10196) | PENDING | |
+| 7777c1401 | Export-DbaLogin: Add -IncludeRolePermissions switch (#10196) | DONE | Fixed role script ordering and duplicate CREATE ROLE output; added regression coverage. |
 | fd7402b94 | Get-DbaUserPermission: Fix incorrect schema name shown as 'STIG' (#10210) | PENDING | |
 | da0941593 | Export-DbaInstance: Propagate -EnableException to sub-commands and wrap exports in try-catch (#10211) | PENDING | |
 | 85e129c4d | Get-DbaReportingService: Use Credential in every call to Get-DbaCmObject (#10207) | PENDING | |
