@@ -367,7 +367,7 @@ function Start-DbaMigration {
             if ($ExcludePassword) { $dacNeeded = $false }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+            $dacConnected = $Source.Type -eq "Server" -and $Source.InputObject.ConnectionContext.ServerInstance -match "^ADMIN:"
 
             $dacOpened = $false
             if ($dacNeeded) {
@@ -380,6 +380,10 @@ function Start-DbaMigration {
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                     $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    if (-not $sourceServerDac) {
+                        Stop-Function -Message "Could not establish dedicated admin connection to $Source. Use -ExcludePassword to skip password migration." -Category ConnectionError -Target $Source
+                        return
+                    }
                     $dacOpened = $true
                     Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -393,6 +397,10 @@ function Start-DbaMigration {
                     Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
                 }
+            }
+            if (-not $sourceServer) {
+                Stop-Function -Message "Could not connect to source instance $Source." -Category ConnectionError -Target $Source
+                return
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source

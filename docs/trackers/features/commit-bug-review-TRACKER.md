@@ -22,7 +22,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 276b0f6d3 | Add-DbaComputerCertificate - handle multiple flags for NonExportable keys (#10176) | DONE | Fixed combined UserProtected/NonExportable detection so remote imports are skipped; added unit regression test. |
 | 1a510a12d | Part 2 of refactoring of Get-DecryptedObject (#10174) | DONE | Restored Stop-Function handling for password query failures; added unit regression test. |
 | b82f01eeb | Install-DbaMaintenanceSolution: make off switches work and increase test coverage (#10172) | DONE | Default-false switches forced Compress/Verify/CheckSum off when omitted; corrected by follow-up commit 1f43cbbf0. |
-| b0403f5f5 | Start-DbaMigration: Enhance handling of dedicated admin connections (#10162) | PENDING | |
+| b0403f5f5 | Start-DbaMigration: Enhance handling of dedicated admin connections (#10162) | DONE | Guarded null DAC/source connections and added unit regression tests. |
 | 920fe547b | v2.7.25 | DONE | version bump - skip |
 | 58f64c580 | speedup dependency detection for integration tests (#10179) | PENDING | |
 | cb7a5d77a | Comment out 2008R2SP2Express AppVeyor jobs | PENDING | |

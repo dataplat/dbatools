@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Start-DbaMigration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -41,6 +41,194 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Dedicated admin connection handling" {
+        It "Stops before copying credentials when the dedicated admin connection cannot be opened" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Copy-DbaCredential",
+                    "Disconnect-DbaInstance",
+                    "Stop-Function",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-FunctionInterrupt { $false }
+                    function Write-Message { }
+                    function Write-ProgressHelper { }
+                    function Disconnect-DbaInstance { }
+                    function Stop-Function {
+                        param(
+                            $Message
+                        )
+                        $script:stopMessages += $Message
+                    }
+                    function Copy-DbaCredential { $script:credentialCopied = $true }
+                    function Connect-DbaInstance {
+                        param(
+                            $SqlInstance,
+                            $SqlCredential,
+                            [switch]$DedicatedAdminConnection
+                        )
+
+                        if ($DedicatedAdminConnection) {
+                            $script:connectCalls += "Dac"
+                            return $null
+                        }
+
+                        $script:connectCalls += "Normal"
+                        [PSCustomObject]@{
+                            DomainInstanceName = "sql1"
+                        }
+                    }
+
+                    $script:connectCalls = @()
+                    $script:stopMessages = @()
+                    $script:credentialCopied = $false
+                    $excludeForCredentialOnly = @(
+                        "Databases",
+                        "Logins",
+                        "AgentServer",
+                        "LinkedServers",
+                        "SpConfigure",
+                        "CentralManagementServer",
+                        "DatabaseMail",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "BackupDevices",
+                        "Audits",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "PolicyManagement",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "CustomErrors",
+                        "ServerRoles",
+                        "DataCollector",
+                        "StartupProcedures",
+                        "ExtendedStoredProcedures",
+                        "AgentServerProperties",
+                        "MasterCertificates",
+                        "SsisCatalog"
+                    )
+
+                    $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForCredentialOnly
+                    ($script:stopMessages -join ",") | Should -Be "Could not establish dedicated admin connection to sql1. Use -ExcludePassword to skip password migration."
+                    ($script:connectCalls -join ",") | Should -Be "Dac"
+                    $script:credentialCopied | Should -BeFalse
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                }
+            }
+        }
+
+        It "Stops before copying credentials when the normal source connection cannot be opened" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Copy-DbaCredential",
+                    "Disconnect-DbaInstance",
+                    "Stop-Function",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-FunctionInterrupt { $false }
+                    function Write-Message { }
+                    function Write-ProgressHelper { }
+                    function Disconnect-DbaInstance { }
+                    function Stop-Function {
+                        param(
+                            $Message
+                        )
+                        $script:stopMessages += $Message
+                    }
+                    function Copy-DbaCredential { $script:credentialCopied = $true }
+                    function Connect-DbaInstance {
+                        param(
+                            $SqlInstance,
+                            $SqlCredential,
+                            [switch]$DedicatedAdminConnection
+                        )
+
+                        if ($DedicatedAdminConnection) {
+                            $script:connectCalls += "Dac"
+                        } else {
+                            $script:connectCalls += "Normal"
+                        }
+
+                        return $null
+                    }
+
+                    $script:connectCalls = @()
+                    $script:stopMessages = @()
+                    $script:credentialCopied = $false
+                    $excludeForCredentialOnly = @(
+                        "Databases",
+                        "Logins",
+                        "AgentServer",
+                        "LinkedServers",
+                        "SpConfigure",
+                        "CentralManagementServer",
+                        "DatabaseMail",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "BackupDevices",
+                        "Audits",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "PolicyManagement",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "CustomErrors",
+                        "ServerRoles",
+                        "DataCollector",
+                        "StartupProcedures",
+                        "ExtendedStoredProcedures",
+                        "AgentServerProperties",
+                        "MasterCertificates",
+                        "SsisCatalog"
+                    )
+
+                    $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForCredentialOnly -ExcludePassword
+                    ($script:stopMessages -join ",") | Should -Be "Could not connect to source instance sql1."
+                    ($script:connectCalls -join ",") | Should -Be "Normal"
+                    $script:credentialCopied | Should -BeFalse
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                }
+            }
         }
     }
 }
