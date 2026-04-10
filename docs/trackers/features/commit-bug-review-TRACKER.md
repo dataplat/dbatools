@@ -121,7 +121,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 8987045a9 | Refactor Set-DbaNetworkCertificate (#10232) | DONE | Passed Credential to Restart-DbaService when -RestartService is used; added unit regression coverage. |
 | 392fc9dea | Set-DbaDbCompression, Invoke-DbaBalanceDataFiles, Invoke-DbaDbPiiScan - Normalize table names via Get-ObjectNameParts (#10312) | DONE | Preserved schema-qualified table matching across all three commands and added unit regression coverage. |
 | b2f217f47 | Invoke-TlsWebRequest - Auto-detect system proxy (#10310) | DONE | Preserved configured proxies without Address members, skipped explicit -Proxy overrides, and added regression coverage. |
-| 1662d73a6 | New-DbaDatabase - Support Azure Blob Storage paths for data and log files (#10315) | PENDING | |
+| 1662d73a6 | New-DbaDatabase - Support Azure Blob Storage paths for data and log files (#10315) | DONE | Preserved rooted Data/Log paths for validation while still trimming file names; added unit regression tests. |
 | 241a118ce | Test-DbaDbCompression, Get-DbaDbPageInfo - Normalize table names via Get-ObjectNameParts (#10313) | PENDING | |
 | 14a47a26c | Export-DbaCsv, Export-DbaDacPackage - Normalize table/schema names via Get-ObjectNameParts (#10314) | PENDING | |
 | fe639f6e6 | Remove-DbaDbTableData - Normalize table name via Get-ObjectNameParts (#10316) | PENDING | |

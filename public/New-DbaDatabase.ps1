@@ -254,35 +254,38 @@ function New-DbaDatabase {
 
             # Detect Azure Blob Storage URLs to skip filesystem directory operations
             $dataPathIsAzure = $DataFilePath -like "https://*"
-            $logPathIsAzure  = $LogFilePath  -like "https://*"
+            $logPathIsAzure = $LogFilePath -like "https://*"
+
+            $dataFileDirectoryPath = $DataFilePath
+            $logFileDirectoryPath = $LogFilePath
 
             # Trim trailing separators to avoid double-separators when concatenating file names
-            $DataFilePath = $DataFilePath.TrimEnd('\', '/')
-            $LogFilePath  = $LogFilePath.TrimEnd('\', '/')
+            $dataFileNamePath = $DataFilePath.TrimEnd("\", "/")
+            $logFileNamePath = $LogFilePath.TrimEnd("\", "/")
 
             # Choose the path separator based on whether the path is an Azure Blob Storage URL
             $dataPathSeparator = if ($dataPathIsAzure) { "/" } else { "\" }
-            $logPathSeparator  = if ($logPathIsAzure) { "/" } else { "\" }
+            $logPathSeparator = if ($logPathIsAzure) { "/" } else { "\" }
 
-            if (-not $logPathIsAzure -and -not (Test-DbaPath -SqlInstance $server -Path $LogFilePath)) {
+            if (-not $logPathIsAzure -and -not (Test-DbaPath -SqlInstance $server -Path $logFileDirectoryPath)) {
                 try {
-                    Write-Message -Message "Creating directory $LogFilePath" -Level Verbose
-                    $null = New-DbaDirectory -SqlInstance $server -Path $LogFilePath -EnableException
+                    Write-Message -Message "Creating directory $logFileDirectoryPath" -Level Verbose
+                    $null = New-DbaDirectory -SqlInstance $server -Path $logFileDirectoryPath -EnableException
                 } catch {
-                    Stop-Function -Message "Error creating log file directory $LogFilePath" -Target $instance -Continue
+                    Stop-Function -Message "Error creating log file directory $logFileDirectoryPath" -Target $instance -Continue
                 }
             }
 
-            if (-not $dataPathIsAzure -and -not (Test-DbaPath -SqlInstance $server -Path $DataFilePath)) {
+            if (-not $dataPathIsAzure -and -not (Test-DbaPath -SqlInstance $server -Path $dataFileDirectoryPath)) {
                 try {
-                    Write-Message -Message "Creating directory $DataFilePath" -Level Verbose
-                    $null = New-DbaDirectory -SqlInstance $server -Path $DataFilePath -EnableException
+                    Write-Message -Message "Creating directory $dataFileDirectoryPath" -Level Verbose
+                    $null = New-DbaDirectory -SqlInstance $server -Path $dataFileDirectoryPath -EnableException
                 } catch {
-                    Stop-Function -Message "Error creating secondary file directory $DataFilePath on $instance" -Target $instance -Continue
+                    Stop-Function -Message "Error creating secondary file directory $dataFileDirectoryPath on $instance" -Target $instance -Continue
                 }
             }
 
-            Write-Message -Message "Set local data path to $DataFilePath and local log path to $LogFilePath" -Level Verbose
+            Write-Message -Message "Set local data path to $dataFileDirectoryPath and local log path to $logFileDirectoryPath" -Level Verbose
 
             foreach ($dbName in $Name) {
                 if ($server.Databases[$dbName].Name) {
@@ -332,7 +335,7 @@ function New-DbaDatabase {
 
                         #create the primary file
                         $primaryfile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryfg, $primaryfilename)
-                        $primaryfile.FileName = $DataFilePath + $dataPathSeparator + $primaryfilename + ".mdf"
+                        $primaryfile.FileName = $dataFileNamePath + $dataPathSeparator + $primaryfilename + ".mdf"
                         $primaryfile.IsPrimaryFile = $true
 
                         if (Test-Bound -ParameterName PrimaryFilesize) {
@@ -374,7 +377,7 @@ function New-DbaDatabase {
                         }
 
                         $tlog = New-Object Microsoft.SqlServer.Management.Smo.LogFile($newdb, $logname)
-                        $tlog.FileName = $LogFilePath + $logPathSeparator + $logname + ".ldf"
+                        $tlog.FileName = $logFileNamePath + $logPathSeparator + $logname + ".ldf"
 
                         if (Test-Bound -ParameterName LogSize) {
                             $tlog.Size = ($LogSize * 1024)
@@ -432,7 +435,7 @@ function New-DbaDatabase {
                                 $secondaryfilename = "$($secondaryfilegroupname)_$($secondaryfgcount)"
                                 Write-Message -Message "Creating file name $secondaryfilename in filegroup $secondaryfilegroupname" -Level Verbose
                                 $secondaryfile = New-Object Microsoft.SQLServer.Management.Smo.Datafile($secondaryfg, $secondaryfilename)
-                                $secondaryfile.FileName = $DataFilePath + $dataPathSeparator + $secondaryfilename + ".ndf"
+                                $secondaryfile.FileName = $dataFileNamePath + $dataPathSeparator + $secondaryfilename + ".ndf"
 
                                 if (Test-Bound -ParameterName SecondaryFilesize) {
                                     $secondaryfile.Size = ($SecondaryFilesize * 1024)
