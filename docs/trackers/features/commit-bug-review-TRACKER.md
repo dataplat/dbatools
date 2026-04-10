@@ -37,7 +37,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 861b0dbce | Import-DbaCsv: Add -NoColumnOptimize switch (#10195) | DONE | Reviewed NoColumnOptimize switch; no bugs found. |
 | 91972b420 | Test-DbaLsnChain: Fix bug when reading history from file (#10201) | DONE | Fixed numeric sorting for deserialized LSN values from file-backed history; added regression test. |
 | 0332cfbae | Get-DbaAgentJob and Sync-DbaAvailabilityGroup: Move filter for MSX jobs (#10198) | DONE | Fixed AG job sync to request Local jobs instead of filtering by CategoryID; added unit regression test. |
-| a0833cc2b | Test-DbaBackupInformation: Add member IsVerified to output if not already present (#10200) | PENDING | |
+| a0833cc2b | Test-DbaBackupInformation: Add member IsVerified to output if not already present (#10200) | DONE | Added missing IsVerified initialization for failed inputs and a regression test. |
 | 14a287e37 | Connect-DbaInstance: Use localhost for dedicated admin connections (#10199) | PENDING | |
 | 7777c1401 | Export-DbaLogin: Add -IncludeRolePermissions switch (#10196) | PENDING | |
 | fd7402b94 | Get-DbaUserPermission: Fix incorrect schema name shown as 'STIG' (#10210) | PENDING | |
