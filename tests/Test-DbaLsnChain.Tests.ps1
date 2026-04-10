@@ -131,5 +131,27 @@ Describe $CommandName -Tag IntegrationTests {
                 $output | Should -BeExactly $true
             }
         }
+
+        Context "History imported from file with deserialized LSN values" {
+            BeforeAll {
+                $historyFromFile = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml |
+                    Format-DbaBackupInformation
+                $fullBackup = $historyFromFile | Where-Object Type -eq "Database" | Select-Object -First 1
+                $transactionLogs = $historyFromFile | Where-Object Type -eq "Transaction Log"
+                $scrambledHistory = @(
+                    $fullBackup
+                    $transactionLogs[2]
+                    $transactionLogs[0]
+                    $transactionLogs[1]
+                    $transactionLogs[4]
+                    $transactionLogs[3]
+                )
+            }
+
+            It "Should sort deserialized LSN values numerically" {
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $scrambledHistory -WarningAction SilentlyContinue
+                $output | Should -BeExactly $true
+            }
+        }
     }
 }
