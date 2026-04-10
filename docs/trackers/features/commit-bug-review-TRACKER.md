@@ -31,7 +31,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | dbe2f29ca | Get-DbaDbTable: Fix for Azure SQL Database (#10182) | DONE | Fixed Azure default view to skip unsupported IndexSpaceUsed/DataSpaceUsed properties; added unit regression test. |
 | eb40ff802 | Test-DbaLsnChain: Fix bug in case log backup is taken during full backup (#10185) | DONE | Introduced deserialized BigInt comparison regression; already corrected by follow-up commit 91972b420 (#10201). |
 | 71d1310b4 | Backup-DbaDatabase: Respect explicit FileCount when using StorageBaseUrl (S3/Azure) (#10186) | DONE | Fixed multi-URL StorageBaseUrl striping so explicit FileCount only applies to single URLs; added OutputScriptOnly regression coverage. |
-| 8f7039699 | Copy-DbaDatabase: Fix renaming for database names with special characters (#10187) | PENDING | |
+| 8f7039699 | Copy-DbaDatabase: Fix renaming for database names with special characters (#10187) | DONE | Fixed literal replacement so new database names with regex tokens stay intact; added regression test. |
 | e798ca45e | Start-DbaDbEncryption: Add missing parameter and fix documentation (#10191) | PENDING | |
 | 218a98a4a | Import-DbaCsv - Fix RFC 4180 multiline quoted field handling (#10190) | PENDING | |
 | 861b0dbce | Import-DbaCsv: Add -NoColumnOptimize switch (#10195) | PENDING | |

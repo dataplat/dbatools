@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Format-DbaBackupInformation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -78,6 +78,20 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Log file physical name should contain new database name" {
             ($output | Select-Object -ExpandProperty filelist | Where-Object { $_.Type -eq 'L' } | Where-Object { $_.PhysicalName -like '*Pester*' }).count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Rename a Database using ReplaceDbNameInFile with special chars in the new name" {
+        BeforeAll {
+            $databaseName = "Pester$" + "&"
+            $history = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+            $output = Format-DbaBackupInformation -BackupHistory $history -ReplaceDatabaseName $databaseName -ReplaceDbNameInFile
+            $logFiles = $output | Select-Object -ExpandProperty FileList | Where-Object { $_.Type -eq "L" }
+        }
+
+        It "Should rename log file names literally" {
+            ($logFiles | Where-Object { $_.PhysicalName.Contains($databaseName) }).Count | Should -BeGreaterThan 0
+            ($logFiles | Where-Object { $_.PhysicalName -like "*RestoreTimeClean*" }).Count | Should -Be 0
         }
     }
 
