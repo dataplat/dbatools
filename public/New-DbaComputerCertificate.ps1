@@ -76,6 +76,7 @@ function New-DbaComputerCertificate {
         Specifies how the certificate's private key should be handled during import operations.
         Defaults to "Exportable, PersistKeySet" allowing the key to be backed up and persisted on disk.
         Use "NonExportable" for high-security environments where private keys should never leave the machine.
+        When copying certificates to remote computers, the temporary source certificate remains exportable so the destination import can honor the requested flags.
         "UserProtected" requires interactive confirmation and only works on localhost installations.
 
     .PARAMETER Dns
@@ -393,8 +394,8 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "Subject = ""CN=$fqdn"""
                 Add-Content $certCfg "KeySpec = 1"
                 Add-Content $certCfg "KeyLength = $KeyLength"
-                # Set Exportable based on Flag parameter - if NonExportable is specified, set to FALSE
-                if ("NonExportable" -in $Flag) {
+                # Keep the source cert exportable whenever it must be copied to another host.
+                if ("NonExportable" -in $Flag -and -not $ClusterInstanceName -and $computer.IsLocalHost) {
                     Add-Content $certCfg "Exportable = FALSE"
                 } else {
                     Add-Content $certCfg "Exportable = TRUE"

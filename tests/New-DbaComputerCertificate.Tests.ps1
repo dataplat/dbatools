@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaComputerCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -31,6 +31,47 @@ Describe $CommandName -Tag UnitTests {
                 "MonthsValid"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "NonExportable handling" {
+        BeforeAll {
+            $script:remoteFqdn = "dbatools-review-remote.example"
+            $script:requestConfig = @()
+
+            Mock Get-DbaCmObject -ModuleName "dbatools" {
+                [pscustomobject]@{
+                    OSLanguage = 1033
+                }
+            }
+            Mock Resolve-DbaNetworkName -ModuleName "dbatools" {
+                [pscustomobject]@{
+                    Fqdn = $script:remoteFqdn
+                }
+            }
+            Mock Test-ElevationRequirement -ModuleName "dbatools" { $true }
+            Mock Set-Content -ModuleName "dbatools" {
+                param($Path, $Value)
+                $script:requestConfig = @($Value)
+            }
+            Mock Add-Content -ModuleName "dbatools" {
+                param($Path, $Value)
+                $script:requestConfig += $Value
+            }
+        }
+
+        It "Keeps the source certificate exportable for remote installs when NonExportable is requested" {
+            $splatRemoteCertificate = @{
+                ComputerName = "dbatools-review-remote"
+                CaServer     = "dbatools-ca"
+                CaName       = "dbatools-ca"
+                Flag         = "NonExportable"
+                WhatIf       = $true
+            }
+            $null = New-DbaComputerCertificate @splatRemoteCertificate
+
+            $script:requestConfig | Should -Contain "Exportable = TRUE"
+            $script:requestConfig | Should -Not -Contain "Exportable = FALSE"
         }
     }
 }
