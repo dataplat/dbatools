@@ -134,7 +134,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | b09063aa0 | Get-DbaWaitStatistic - Fix bug from recent refactoring (#10323) | DONE | Reviewed commit; later commit 9a9236a13 fixed unsafe wait-type SQL filtering and missing normalization. |
 | eddfeeeca | Find-DbaInstance - Fix TcpConnected false for default instances (#10327) | DONE | Added fallback port scanning for Browser default instances without reusing named-instance ports; added unit regression test. |
 | 5f483d42c | Get-DbaPermission - Fix Azure SQL DB compatibility (#10320) | DONE | Reviewed Azure SQL DB compatibility fix; no bugs found. |
-| a38bc6b35 | Get-DbaDbIdentity, Set-DbaDbIdentity, Invoke-DbaDbDbccUpdateUsage - Normalize table names (#10318) | PENDING | |
+| a38bc6b35 | Get-DbaDbIdentity, Set-DbaDbIdentity, Invoke-DbaDbDbccUpdateUsage - Normalize table names (#10318) | DONE | Fixed escaped-bracket table name regression and added unit regression tests. |
 | 9899bd274 | Copy-DbaDbTableData - Add -ScriptingOptionsObject parameter (#10317) | PENDING | |
 | 0c486b964 | Backup-DbaDbCertificate: Don't use decryption password if cert encrypted by master key (#10329) | PENDING | |
 | db77a3476 | Find-DbaObject - Add unified command to search database objects by name (#10321) | PENDING | |

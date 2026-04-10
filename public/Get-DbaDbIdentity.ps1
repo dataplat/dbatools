@@ -130,10 +130,16 @@ function Get-DbaDbIdentity {
                     try {
                         $query = $StringBuilder.ToString()
                         $nameParts = Get-ObjectNameParts -ObjectName $tbl
-                        if ($nameParts.Schema) {
-                            $tblIdentifier = "[$($nameParts.Schema)].[$($nameParts.Name)]"
+                        if ($nameParts.Name) {
+                            $escapedTableName = $nameParts.Name.Replace("]", "]]")
+                            if ($nameParts.Schema) {
+                                $escapedTableSchema = $nameParts.Schema.Replace("]", "]]")
+                                $tblIdentifier = "[$escapedTableSchema].[$escapedTableName]"
+                            } else {
+                                $tblIdentifier = "[$escapedTableName]"
+                            }
                         } else {
-                            $tblIdentifier = "[$($nameParts.Name)]"
+                            $tblIdentifier = $tbl
                         }
                         $query = $query.Replace('#options#', "'$($tblIdentifier)'")
 
