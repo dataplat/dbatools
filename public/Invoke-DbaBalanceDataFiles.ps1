@@ -314,6 +314,10 @@ function Invoke-DbaBalanceDataFiles {
                             Stop-Function -Message "FileGroup '$TargetFileGroup' is read-only in database $db on instance $instance" -Target $instance -Continue
                             continue
                         }
+                        if ($targetFG.Files.Count -lt 1) {
+                            Stop-Function -Message "FileGroup '$TargetFileGroup' does not contain any data files in database $db on instance $instance" -Target $instance -Continue
+                            continue
+                        }
 
                         # When a target filegroup is specified, all tables are eligible
                         Write-Message -Message "Target filegroup '$TargetFileGroup' specified - all tables with clustered indexes are eligible" -Level Verbose

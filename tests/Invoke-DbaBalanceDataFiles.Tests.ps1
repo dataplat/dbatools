@@ -165,6 +165,65 @@ namespace InvokeDbaBalanceDataFilesTest {
                 $script:rebuiltSchemas | Should -Be @("sales")
             }
         }
+
+        Context "Target filegroup validation" {
+            It "fails when the target filegroup does not contain any data files" {
+                $fileGroups = New-Object "InvokeDbaBalanceDataFilesTest.MockCollection[System.Object]"
+                $fileGroups.Add("EMPTYFG", [PSCustomObject]@{
+                        Name     = "EMPTYFG"
+                        Readonly = $false
+                        Files    = @()
+                    })
+
+                $mockDatabase = [PSCustomObject]@{
+                    Name       = "db1"
+                    FileGroups = $fileGroups
+                    Tables     = @()
+                }
+                $mockDatabase | Add-Member -Force -MemberType ScriptMethod -Name ToString -Value {
+                    $this.Name
+                }
+
+                $mockDatabases = New-Object "InvokeDbaBalanceDataFilesTest.MockCollection[System.Object]"
+                $mockDatabases.Add("db1", $mockDatabase)
+
+                $mockServer = [DbaInstanceParameter]"sql1"
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value $mockDatabases
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Version -Value ([PSCustomObject]@{
+                        Major = 16
+                    })
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Edition -Value "Enterprise"
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name HostPlatform -Value "Linux"
+                $mockDataFiles = @(
+                    [PSCustomObject]@{
+                        ID              = 1
+                        LogicalName     = "db1"
+                        PhysicalName    = "C:\db1.mdf"
+                        Size            = 10
+                        UsedSpace       = 5
+                        AvailableSpace  = 5
+                        TypeDescription = "ROWS"
+                    },
+                    [PSCustomObject]@{
+                        ID              = 2
+                        LogicalName     = "db1_2"
+                        PhysicalName    = "C:\db1_2.ndf"
+                        Size            = 10
+                        UsedSpace       = 5
+                        AvailableSpace  = 5
+                        TypeDescription = "ROWS"
+                    }
+                )
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Get-DbaDbFile { $mockDataFiles }
+                Mock Stop-Function { throw $Message }
+
+                {
+                    Invoke-DbaBalanceDataFiles -SqlInstance "sql1" -Database "db1" -TargetFileGroup "EMPTYFG" -RebuildOffline -Force
+                } | Should -Throw "*does not contain any data files*"
+            }
+        }
     }
 }
 
@@ -207,6 +266,7 @@ Describe $CommandName -Tag IntegrationTests {
         $db.Query("insert into table2 (Name2) Values $($sqlvalues -join ',')")
         $db.Query("insert into table2 (Name2) Values $($sqlvalues -join ',')")
 
+        $db.Query("ALTER DATABASE [$dbname] ADD FILEGROUP [EMPTYFG]")
         $db.Query("ALTER DATABASE $dbname ADD FILE (NAME = secondfile, FILENAME = '$defaultdata\$dbname-secondaryfg.ndf') TO FILEGROUP [PRIMARY]")
 
     }
@@ -228,6 +288,16 @@ Describe $CommandName -Tag IntegrationTests {
             $sizeUsedAfter = $results.DataFilesEnd[0].UsedSpace.Kilobyte
 
             $sizeUsedAfter | Should -BeLessThan $sizeUsedBefore
+        }
+    }
+
+    Context "Target filegroup validation" {
+        It "warns when the target filegroup does not contain any data files" {
+            $warningMessages = $null
+            $results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -TargetFileGroup "EMPTYFG" -RebuildOffline -Force -WarningAction SilentlyContinue -WarningVariable warningMessages
+
+            $results | Should -BeNullOrEmpty
+            ($warningMessages | Out-String) | Should -Match "does not contain any data files"
         }
     }
 }
