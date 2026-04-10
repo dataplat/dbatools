@@ -152,7 +152,7 @@ function Get-DbaReplSubscription {
             }
 
             # Track subscriptions already emitted to avoid duplicates from the distribution DB check
-            $foundSubscriptionKeys = @{}
+            $foundSubscriptionKeys = @{ }
 
             try {
                 foreach ($subs in $publications.Subscriptions) {
@@ -209,7 +209,8 @@ function Get-DbaReplSubscription {
                                     a.subscriber_name AS SubscriberName,
                                     a.subscriber_db   AS SubscriptionDBName,
                                     p.publisher_db    AS DatabaseName,
-                                    p.publication     AS PublicationName
+                                    p.publication     AS PublicationName,
+                                    p.publication_id  AS PublicationId
                                 FROM MSdistribution_agents a
                                 INNER JOIN MSsubscriptions s ON s.agent_id = a.id AND s.subscription_type = 1
                                 INNER JOIN MSpublications p ON p.publication_id = s.publication_id
@@ -222,12 +223,20 @@ function Get-DbaReplSubscription {
                             }
                             $distPullSubs = Invoke-DbaQuery @splatDistQuery
 
-                            # Build a lookup of the publications we queried so we only include relevant subscriptions
-                            $publicationKeys = @{}
+                            # Prefer publication IDs when available so publications with the same name on other publishers
+                            # sharing the same distributor are not returned for this publisher.
+                            $publicationIds = @{ }
+                            $publicationKeys = @{ }
                             foreach ($pub in $publications) {
+                                if ($null -ne $pub.PubId) {
+                                    $publicationIds["$($pub.PubId)"] = $true
+                                }
+
                                 $pubKey = "$($pub.DatabaseName)|$($pub.Name)"
                                 $publicationKeys[$pubKey] = $true
                             }
+
+                            $usePublicationIdLookup = $publicationIds.Count -eq @($publications).Count -and $publicationIds.Count -gt 0
 
                             # Convert SubscriberName filter to strings for comparison
                             $subscriberNameStrings = @()
@@ -237,8 +246,12 @@ function Get-DbaReplSubscription {
 
                             foreach ($distSub in $distPullSubs) {
                                 # Only process subscriptions for publications we already queried
-                                $pubKey = "$($distSub.DatabaseName)|$($distSub.PublicationName)"
-                                if (-not $publicationKeys.ContainsKey($pubKey)) { continue }
+                                if ($usePublicationIdLookup) {
+                                    if (-not $publicationIds.ContainsKey("$($distSub.PublicationId)")) { continue }
+                                } else {
+                                    $pubKey = "$($distSub.DatabaseName)|$($distSub.PublicationName)"
+                                    if (-not $publicationKeys.ContainsKey($pubKey)) { continue }
+                                }
 
                                 # Apply subscriber name filter
                                 if ($subscriberNameStrings -and $distSub.SubscriberName -notin $subscriberNameStrings) { continue }
