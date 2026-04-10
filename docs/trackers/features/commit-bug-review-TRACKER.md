@@ -51,7 +51,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | b94e33eaa | Connect-DbaInstance: Auto-retry with Initial Catalog=master for mirrored SQL Server instances (#10215) | DONE | Fixed connection-string/registered-server retry handling and chained certificate->Initial Catalog retry; added unit regression tests. |
 | dc581344d | Export-DbaScript: Handle Distributed Availability Groups gracefully (#10216) | DONE | Fixed manual DAG scripting to escape AG names, replica names, and listener URLs; added unit regression test. |
 | 8dacfa20a | Get-DbaReplSubscription: Also check distribution DB for pull subscriptions (#10218) | DONE | Scoped distribution fallback to publication_id to avoid cross-publisher false positives; added unit regression test. |
-| eb0aa1d3d | Invoke-DbaDbLogShipping: Add -IgnoreFileChecks parameter (#10219) | PENDING | |
+| eb0aa1d3d | Invoke-DbaDbLogShipping: Add -IgnoreFileChecks parameter (#10219) | DONE | Fixed root shared-path validation so IgnoreFileChecks is honored before the generated full backup; added unit regression test. |
 | f2fb47857 | Copy-DbaPolicyManagement: Add ObjectSets migration (#10220) | PENDING | |
 | 902f23b98 | Get-DbaDb[StoredProcedure|Table|Udf|View]: Wrap all ClearAndInitialize in try-catch-block (#10226) | PENDING | |
 | 23b429bfc | Backup-DbaDatabase: Prevent duplicate dbname when using CreateFolder with ReplaceInName (#10224) | PENDING | |

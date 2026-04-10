@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbLogShipping",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -97,6 +97,106 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "IgnoreFileChecks" {
+            BeforeAll {
+                $script:mockSourceServer = [PSCustomObject]@{
+                    ConnectionContext  = [PSCustomObject]@{
+                        StatementTimeout = 30
+                    }
+                    Databases          = @(
+                        [PSCustomObject]@{
+                            Name          = "db1"
+                            RecoveryModel = "Full"
+                        }
+                    )
+                    DomainInstanceName = "source"
+                    InstanceName       = "MSSQLSERVER"
+                    Name               = "source"
+                    Version            = [PSCustomObject]@{
+                        Major = 15
+                    }
+                }
+                $script:mockDestinationServer = [PSCustomObject]@{
+                    ConnectionContext  = [PSCustomObject]@{
+                        StatementTimeout = 30
+                    }
+                    Databases          = @(
+                        [PSCustomObject]@{
+                            Name   = "db1"
+                            Status = "Restoring"
+                        }
+                    )
+                    DomainInstanceName = "dest"
+                    InstanceName       = "MSSQLSERVER"
+                    IsAzure            = $false
+                    Name               = "dest"
+                }
+
+                Mock Connect-DbaInstance -ModuleName dbatools -MockWith {
+                    param($SqlInstance)
+
+                    switch ($SqlInstance.FullName) {
+                        "source" { return $script:mockSourceServer }
+                        "dest" { return $script:mockDestinationServer }
+                        default { throw "Unexpected instance $($SqlInstance.FullName)" }
+                    }
+                }
+                Mock Get-DbaSpConfigure -ModuleName dbatools {
+                    [PSCustomObject]@{
+                        ConfiguredValue = 0
+                    }
+                }
+                Mock Stop-Function -ModuleName dbatools {
+                    param($Message)
+                    throw $Message
+                }
+                Mock Test-DbaPath -ModuleName dbatools {
+                    param($Path)
+
+                    if ($Path -eq "C:\copy") {
+                        return $true
+                    }
+
+                    if ($Path -eq "\\source\ls\db1") {
+                        return $true
+                    }
+
+                    if ($Path -eq "C:\copy\db1") {
+                        return $true
+                    }
+
+                    return $false
+                }
+                Mock Test-FunctionInterrupt -ModuleName dbatools { $false }
+            }
+
+            It "Should skip the root backup share validation when IgnoreFileChecks is used" {
+                $splatLogShipping = @{
+                    SourceSqlInstance      = "source"
+                    DestinationSqlInstance = "dest"
+                    Database               = "db1"
+                    SharedPath             = "\\source\ls"
+                    CopyDestinationFolder  = "C:\copy"
+                    NoInitialization       = $true
+                    IgnoreFileChecks       = $true
+                    Force                  = $true
+                    WhatIf                 = $true
+                }
+
+                $results = Invoke-DbaDbLogShipping @splatLogShipping
+
+                $results.Result | Should -Be "Success"
+                Should -Invoke Test-DbaPath -ModuleName dbatools -Times 0 -Exactly -ParameterFilter {
+                    $Path -eq "\\source\ls"
+                }
+                Should -Invoke Test-DbaPath -ModuleName dbatools -Times 1 -Exactly -ParameterFilter {
+                    $Path -eq "\\source\ls\db1"
+                }
+            }
         }
     }
 }
