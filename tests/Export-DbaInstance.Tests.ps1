@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -29,6 +29,92 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "DAC cleanup behavior" {
+        It "Should disconnect an opened DAC connection when credential export fails" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Disconnect-DbaInstance",
+                    "Export-DbaCredential",
+                    "Stop-Function",
+                    "Test-ExportDirectory",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-ExportDirectory { }
+                    function Test-FunctionInterrupt { $false }
+                    function Write-Message { }
+                    function Write-ProgressHelper { }
+                    function Test-Path { $true }
+                    function Stop-Function {
+                        param(
+                            $Message,
+                            $ErrorRecord
+                        )
+                        throw "$Message | inner: $($ErrorRecord.Exception.Message)"
+                    }
+                    function Connect-DbaInstance {
+                        $server = [PSCustomObject]@{
+                            DomainInstanceName = "sql1"
+                        }
+                        $server.PSObject.TypeNames.Clear()
+                        $server.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                        $server
+                    }
+                    function Export-DbaCredential { throw "credential export failed" }
+                    function Disconnect-DbaInstance { $script:dacDisconnected = $true }
+
+                    $script:dacDisconnected = $false
+                    $excludedObjects = @(
+                        "AgentServer",
+                        "Audits",
+                        "AvailabilityGroups",
+                        "BackupDevices",
+                        "CentralManagementServer",
+                        "CustomErrors",
+                        "DatabaseMail",
+                        "Databases",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "LinkedServers",
+                        "Logins",
+                        "PolicyManagement",
+                        "ReplicationSettings",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "ServerRoles",
+                        "SpConfigure",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "OleDbProvider"
+                    )
+
+                    { Export-DbaInstance -SqlInstance "sql1" -Path "C:\temp" -Exclude $excludedObjects -Force } | Should -Throw "*credential export failed*"
+
+                    $script:dacDisconnected | Should -BeTrue
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                    Remove-Item -Path Function:\Test-Path -ErrorAction Ignore
+                }
+            }
         }
     }
 }

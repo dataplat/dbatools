@@ -18,7 +18,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | be1c99333 | Get-DbaNetworkConfiguration: Fix bug and really add SuitableCertificate property to output (#10165) | DONE | Fixed new test cleanup to remove the certificate from the target SQL host instead of defaulting to localhost. |
 | 72ba70110 | New-DbaComputerCertificate: Update security defaults to industry standards (#10167) | DONE | Fixed NonExportable regression so remote installs keep the source cert exportable; added unit regression test. |
 | ffb91a13e | Correct help text to correctly reflect Duration units (#10171) | DONE | Reviewed help-text-only change; no bugs found. |
-| dd58a4edb | Export-DbaInstance: Enhance handling of dedicated admin connections (#10173) | PENDING | |
+| dd58a4edb | Export-DbaInstance: Enhance handling of dedicated admin connections (#10173) | DONE | Fixed leaked DAC cleanup on export failure paths; added unit regression test. |
 | 276b0f6d3 | Add-DbaComputerCertificate - handle multiple flags for NonExportable keys (#10176) | PENDING | |
 | 1a510a12d | Part 2 of refactoring of Get-DecryptedObject (#10174) | PENDING | |
 | b82f01eeb | Install-DbaMaintenanceSolution: make off switches work and increase test coverage (#10172) | PENDING | |
