@@ -157,8 +157,8 @@ function Import-DbaCsv {
         Use this when your source files contain blank lines for formatting that should not create empty rows in your table.
 
     .PARAMETER SupportsMultiline
-        Allows field values to span multiple lines when properly quoted, such as addresses or comments with embedded line breaks.
-        Enable this when your CSV contains multi-line text data that should be preserved as single field values.
+        Controls whether properly quoted field values may span multiple lines, such as addresses or comments with embedded line breaks.
+        In Strict QuoteMode, RFC 4180 multiline handling is enabled by default. Specify -SupportsMultiline:$false to force single-line parsing, or -SupportsMultiline to enable it explicitly in Lenient mode.
 
     .PARAMETER UseColumnDefault
         Applies table column default values when CSV fields are missing or empty.
@@ -603,6 +603,13 @@ function Import-DbaCsv {
             Write-Message -Level Warning -Message "Both SampleRows and DetectColumnTypes specified. DetectColumnTypes (full scan) takes precedence for zero-risk type detection."
         }
 
+        $supportsMultilineSpecified = $PSBoundParameters.ContainsKey("SupportsMultiline")
+        if ($QuoteMode -eq "Strict" -and -not $supportsMultilineSpecified) {
+            $allowMultilineFields = $true
+        } else {
+            $allowMultilineFields = $SupportsMultiline.IsPresent
+        }
+
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -642,12 +649,7 @@ function Import-DbaCsv {
             $options.MaxDecompressedSize = $MaxDecompressedSize
             $options.SkipRows = $SkipRows
             $options.DuplicateHeaderBehavior = [Dataplat.Dbatools.Csv.Reader.DuplicateHeaderBehavior]::$DuplicateHeaderBehavior
-            # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
-            if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
-                $options.AllowMultilineFields = $true
-            } else {
-                $options.AllowMultilineFields = $SupportsMultiline.IsPresent
-            }
+            $options.AllowMultilineFields = $allowMultilineFields
 
             try {
                 $reader = [Dataplat.Dbatools.Csv.Reader.CsvDataReader]::new($Path, $options)
@@ -1136,12 +1138,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $inferOptions.Escape = $Escape
                         $inferOptions.Comment = $Comment
                         $inferOptions.Encoding = [System.Text.Encoding]::$Encoding
-                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
-                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
-                            $inferOptions.AllowMultilineFields = $true
-                        } else {
-                            $inferOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
-                        }
+                        $inferOptions.AllowMultilineFields = $allowMultilineFields
                         if ($PSBoundParameters.DateTimeFormats) {
                             $inferOptions.DateTimeFormats = $DateTimeFormats
                         }
@@ -1337,12 +1334,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         $csvOptions.CollectParseErrors = $CollectParseErrors.IsPresent
                         $csvOptions.MaxParseErrors = $MaxParseErrors
                         $csvOptions.SkipEmptyLines = $SkipEmptyLine.IsPresent
-                        # RFC 4180 allows CR/LF inside quoted fields, so enable multiline by default in Strict mode
-                        if ($QuoteMode -eq "Strict" -and -not $PSBoundParameters.ContainsKey("SupportsMultiline")) {
-                            $csvOptions.AllowMultilineFields = $true
-                        } else {
-                            $csvOptions.AllowMultilineFields = $SupportsMultiline.IsPresent
-                        }
+                        $csvOptions.AllowMultilineFields = $allowMultilineFields
                         $csvOptions.UseColumnDefaults = $UseColumnDefault.IsPresent
                         if ($PSBoundParameters.MaxQuotedFieldLength) {
                             $csvOptions.MaxQuotedFieldLength = $MaxQuotedFieldLength
