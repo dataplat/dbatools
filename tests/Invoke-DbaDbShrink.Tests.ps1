@@ -293,15 +293,15 @@ Describe $CommandName -Tag IntegrationTests {
             $blockConnStr = $server.ConnectionContext.ConnectionString
             $blockDbName = $db.Name
             $blockJob = Start-Job -ScriptBlock {
-                param($connStr, $dbName)
+                param($connStr, $dbName, $blockDuration)
                 $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
                 $conn.Open()
                 $cmd = $conn.CreateCommand()
                 $cmd.CommandTimeout = 60
-                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '00:00:20'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
+                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '$blockDuration'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
                 try { $cmd.ExecuteNonQuery() } catch { }
                 $conn.Close()
-            } -ArgumentList $blockConnStr, $blockDbName
+            } -ArgumentList $blockConnStr, $blockDbName, "00:00:45"
 
             Start-Sleep -Seconds 2
 
@@ -315,14 +315,19 @@ Describe $CommandName -Tag IntegrationTests {
                 Invoke-DbaDbShrink -SqlInstance $serverName -Database $dbName -FileType Data -WaitAtLowPriority
             } -ArgumentList $shrinkModulePath, $shrinkServerName, $shrinkDbName
 
-            Start-Sleep -Seconds 3
-
             # Verify the SQL text of the running shrink request contains WAIT_AT_LOW_PRIORITY
-            $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
+            $sqlTextCount = 0
+            for ($i = 1; $i -le 45; $i++) {
+                Start-Sleep -Seconds 1
+                $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
+                if ($sqlTextCount -gt 0) {
+                    break
+                }
+            }
 
-            $null = $blockJob | Wait-Job -Timeout 30
+            $null = $blockJob | Wait-Job -Timeout 60
             $blockJob | Remove-Job -Force
-            $null = $shrinkJob | Wait-Job -Timeout 60
+            $null = $shrinkJob | Wait-Job -Timeout 90
             $shrinkJob | Remove-Job -Force
 
             $sqlTextCount | Should -BeGreaterThan 0
