@@ -34,7 +34,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 8f7039699 | Copy-DbaDatabase: Fix renaming for database names with special characters (#10187) | DONE | Fixed literal replacement so new database names with regex tokens stay intact; added regression test. |
 | e798ca45e | Start-DbaDbEncryption: Add missing parameter and fix documentation (#10191) | DONE | Fixed parallel pre-key creation to honor ExcludeDatabase filtering; corrected help text and added a unit regression test. |
 | 218a98a4a | Import-DbaCsv - Fix RFC 4180 multiline quoted field handling (#10190) | DONE | Fixed SupportsMultiline scope bug so AutoCreateTable honors explicit opt-out; added unit regression test. |
-| 861b0dbce | Import-DbaCsv: Add -NoColumnOptimize switch (#10195) | PENDING | |
+| 861b0dbce | Import-DbaCsv: Add -NoColumnOptimize switch (#10195) | DONE | Reviewed NoColumnOptimize switch; no bugs found. |
 | 91972b420 | Test-DbaLsnChain: Fix bug when reading history from file (#10201) | PENDING | |
 | 0332cfbae | Get-DbaAgentJob and Sync-DbaAvailabilityGroup: Move filter for MSX jobs (#10198) | PENDING | |
 | a0833cc2b | Test-DbaBackupInformation: Add member IsVerified to output if not already present (#10200) | PENDING | |
