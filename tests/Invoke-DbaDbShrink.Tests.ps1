@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbShrink",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -29,6 +29,112 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Failure output handling" {
+            BeforeEach {
+                $script:warningMessages = @()
+
+                function New-MockShrinkDatabase {
+                    $dataFile = [PSCustomObject]@{
+                        Name      = "testdb"
+                        Size      = 1024
+                        UsedSpace = 512
+                    }
+                    $dataFile | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
+
+                    $server = [PSCustomObject]@{
+                        ComputerName       = "sql1"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "sql1"
+                        VersionMajor       = 16
+                        ConnectionContext  = [PSCustomObject]@{
+                            StatementTimeout = 0
+                        }
+                    }
+
+                    $server | Add-Member -MemberType ScriptMethod -Name Query -Value {
+                        param($Sql, $DatabaseName)
+
+                        if ($Sql -like "DBCC SHRINKFILE*") {
+                            throw "simulated shrink failure"
+                        }
+
+                        @()
+                    }
+
+                    $database = New-Object Microsoft.SqlServer.Management.Smo.Database
+                    $database.Name = "testdb"
+                    $database | Add-Member -Force -NotePropertyName IsAccessible -NotePropertyValue $true
+                    $database | Add-Member -Force -NotePropertyName IsDatabaseSnapshot -NotePropertyValue $false
+                    $database | Add-Member -Force -NotePropertyName Parent -NotePropertyValue $server
+                    $database | Add-Member -Force -NotePropertyName FileGroups -NotePropertyValue ([PSCustomObject]@{
+                            Files = @($dataFile)
+                        })
+                    $database | Add-Member -Force -NotePropertyName LogFiles -NotePropertyValue @()
+
+                    $database
+                }
+
+                function Test-FunctionInterrupt {
+                    $false
+                }
+
+                function Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        $ExcludeProperty
+                    )
+
+                    process {
+                        $InputObject
+                    }
+                }
+
+                function Write-Message {
+                    param(
+                        $Level,
+                        $Message,
+                        $ErrorRecord,
+                        $EnableException
+                    )
+
+                    if ($Level -eq "Warning") {
+                        $script:warningMessages += $Message
+                    }
+                }
+
+                Mock Stop-Function -ModuleName dbatools { }
+            }
+
+            It "returns a failed result and warning without calling Stop-Function in friendly mode" {
+                $mockDatabase = New-MockShrinkDatabase
+
+                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats)
+
+                $results | Should -HaveCount 1
+                $results[0].Success | Should -Be $false
+                $results[0].Notes | Should -Match "simulated shrink failure"
+                ($script:warningMessages -join " ") | Should -Match "Shrink operation failed for file testdb: .*simulated shrink failure"
+                Assert-MockCalled -CommandName Stop-Function -Exactly 0 -Scope It
+            }
+
+            It "still uses Stop-Function when EnableException is requested" {
+                $mockDatabase = New-MockShrinkDatabase
+
+                Mock Stop-Function -ModuleName dbatools {
+                    throw $Message
+                }
+
+                {
+                    Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats -EnableException
+                } | Should -Throw "*Shrink operation failed for file testdb:*simulated shrink failure*"
+
+                Assert-MockCalled -CommandName Stop-Function -Exactly 1 -Scope It
+            }
         }
     }
 }
