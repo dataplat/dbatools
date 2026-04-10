@@ -86,7 +86,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | f73e4413c | Get-DbaAgDatabase - Add -ExcludeDatabase parameter (#10269) | DONE | Reviewed commit and tests; no bugs found. |
 | 118aed54e | New-DbaDbTable - Handle bracket-quoted names and two-part names (#10279) | DONE | Rejected unsupported three-part -Name values that silently ignored the database component; added a unit regression test. |
 | 27f3fef01 | Save-DbaKbUpdate - Add UseWebRequest switch and BitsTransfer fallback (#10278) | DONE | Added missing -ErrorAction Stop so BITS failures reliably trigger the Invoke-TlsWebRequest fallback; added unit regression tests. |
-| 7c7b8ed9c | Get-DbaWaitStatistic - Add ExcludeWaitType and IncludeWaitType parameters (#10276) | PENDING | |
+| 7c7b8ed9c | Get-DbaWaitStatistic - Add ExcludeWaitType and IncludeWaitType parameters (#10276) | DONE | Original -IncludeIgnorable regression was corrected by follow-up b09063aa0 (#10323); this review added wait-type input validation and deterministic unit coverage. |
 | 562e3ac31 | Expand-DbaDbLogFile - Add -TargetVlfCount parameter (#10272) | PENDING | |
 | 3bda32716 | Test-DbaLastBackup - Add DbccOutput property with detailed DBCC messages (#10239) | PENDING | |
 | d6552592e | Update-DbaInstance - Add early validation for empty -Path parameter (#10283) | PENDING | |
