@@ -92,7 +92,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | d6552592e | Update-DbaInstance - Add early validation for empty -Path parameter (#10283) | DONE | Fixed whitespace-only Path validation gap and added regression coverage. |
 | c82ae190c | Get-DbaAgRingBuffer - Add command for HADR ring buffer diagnostics (#10282) | DONE | Fixed timestamp DataTable expansion and routed query failures through Stop-Function; added unit regression tests. |
 | 552b77af4 | Invoke-DbaDbDataMasking - Fix StaticValue empty string fallback and FilterQuery in Actions (#10281) | DONE | Fixed action FilterQuery updates to honor the selected row set and added a unit regression test. |
-| 99a4a9067 | Update-ServiceStatus - Fix WinRM error on machines without WinRM configured (#10274) | PENDING | |
+| 99a4a9067 | Update-ServiceStatus - Fix WinRM error on machines without WinRM configured (#10274) | DONE | Fixed worker CIM session credential propagation and cleanup; added unit regression test. |
 | 1f70b62bd | Add Remove-DbaAgentJobSchedule cmdlet (#10273) | PENDING | |
 | 50c0bfdaf | Connect-DbaInstance - Add -AuthenticationType parameter for Entra ID support (#10271) | PENDING | |
 | 27e4da9d1 | Get-DbaDbOrphanUser - Skip SQL login orphan check for contained databases (#10270) | PENDING | |
