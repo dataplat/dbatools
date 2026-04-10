@@ -120,7 +120,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 02ad1f092 | ConvertTo-DbaTimeline - Add support for Find-DbaDbGrowthEvent input (#10304) | DONE | Escaped growth-event database names before emitting JavaScript timeline rows; added unit regression coverage. |
 | 8987045a9 | Refactor Set-DbaNetworkCertificate (#10232) | DONE | Passed Credential to Restart-DbaService when -RestartService is used; added unit regression coverage. |
 | 392fc9dea | Set-DbaDbCompression, Invoke-DbaBalanceDataFiles, Invoke-DbaDbPiiScan - Normalize table names via Get-ObjectNameParts (#10312) | DONE | Preserved schema-qualified table matching across all three commands and added unit regression coverage. |
-| b2f217f47 | Invoke-TlsWebRequest - Auto-detect system proxy (#10310) | PENDING | |
+| b2f217f47 | Invoke-TlsWebRequest - Auto-detect system proxy (#10310) | DONE | Preserved configured proxies without Address members, skipped explicit -Proxy overrides, and added regression coverage. |
 | 1662d73a6 | New-DbaDatabase - Support Azure Blob Storage paths for data and log files (#10315) | PENDING | |
 | 241a118ce | Test-DbaDbCompression, Get-DbaDbPageInfo - Normalize table names via Get-ObjectNameParts (#10313) | PENDING | |
 | 14a47a26c | Export-DbaCsv, Export-DbaDacPackage - Normalize table/schema names via Get-ObjectNameParts (#10314) | PENDING | |
