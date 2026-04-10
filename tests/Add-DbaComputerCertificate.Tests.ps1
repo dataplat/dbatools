@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Add-DbaComputerCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -22,6 +22,66 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Flag handling" {
+        It "Should not remote import when UserProtected is combined with NonExportable" {
+            if (-not (Get-Command New-SelfSignedCertificate -ErrorAction SilentlyContinue)) {
+                Set-ItResult -Skipped -Because "New-SelfSignedCertificate cmdlet not available on this system"
+                return
+            }
+
+            if (-not (Get-Command Export-PfxCertificate -ErrorAction SilentlyContinue)) {
+                Set-ItResult -Skipped -Because "Export-PfxCertificate cmdlet not available on this system"
+                return
+            }
+
+            $tempPath = "$($TestConfig.Temp)\$CommandName-Unit-$(Get-Random)"
+            $null = New-Item -Path $tempPath -ItemType Directory -Force
+            $pfxPath = "$tempPath\testcert.pfx"
+            $pfxPassword = ConvertTo-SecureString -String "Test123!@#" -AsPlainText -Force
+            $certSubject = "CN=DbaToolsTest-$(Get-Random)"
+            $selfSignedCert = $null
+
+            try {
+                $splatNewCert = @{
+                    Subject           = $certSubject
+                    CertStoreLocation = "Cert:\CurrentUser\My"
+                    KeyExportPolicy   = "Exportable"
+                    KeySpec           = "Signature"
+                    KeyLength         = 2048
+                    KeyAlgorithm      = "RSA"
+                    HashAlgorithm     = "SHA256"
+                    NotAfter          = (Get-Date).AddDays(1)
+                }
+                $selfSignedCert = New-SelfSignedCertificate @splatNewCert
+                $null = Export-PfxCertificate -Cert $selfSignedCert -FilePath $pfxPath -Password $pfxPassword
+
+                Mock Invoke-Command2 {
+                    throw "Invoke-Command2 should not be called when UserProtected is used for a remote computer."
+                } -ModuleName dbatools
+
+                $splatAddCertificate = @{
+                    ComputerName   = "dbatools-remote"
+                    Path           = $pfxPath
+                    SecurePassword = $pfxPassword
+                    Flag           = @("UserProtected", "NonExportable")
+                    Confirm        = $false
+                    ErrorAction    = "SilentlyContinue"
+                }
+                $null = Add-DbaComputerCertificate @splatAddCertificate
+
+                Should -Not -Invoke Invoke-Command2 -ModuleName dbatools
+            } finally {
+                if ($selfSignedCert) {
+                    Remove-Item -Path "Cert:\CurrentUser\My\$($selfSignedCert.Thumbprint)" -ErrorAction SilentlyContinue
+                }
+
+                if ($tempPath) {
+                    Remove-Item -Path $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
         }
     }
 }
