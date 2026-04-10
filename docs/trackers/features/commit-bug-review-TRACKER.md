@@ -128,7 +128,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 070d2ee7f | Fix AppVeyor dbatools.library cache miss by installing to AllUsers scope (#10335) | DONE | Reviewed CI-only AppVeyor scope change; no bugs found. |
 | e3f6cc121 | Fix test for Invoke-DbaAdvancedUpdate (#10334) | DONE | Reviewed test-only removal of stray Write-Host from the mock assertion; no bugs found. |
 | 6aafd24ed | Fix test for Test-DbaSpn by suppressing the warning on AppVeyor (#10331) | DONE | Reviewed test-only warning suppression; no bugs found. |
-| 7ad9acf9f | Refactor test for Stop-Function (#10332) | PENDING | |
+| 7ad9acf9f | Refactor test for Stop-Function (#10332) | DONE | Reviewed test-only Stop-Function refactor with Invoke-ManualPester; no bugs found. |
 | 13807a2b3 | Test-DbaBuild: Fix bug introduced in last change (#10328) | PENDING | |
 | 4382a8118 | Test-DbaLinkedServerConnection - Fix test failure when Named Pipes is disabled (#10326) | PENDING | |
 | b09063aa0 | Get-DbaWaitStatistic - Fix bug from recent refactoring (#10323) | PENDING | |
