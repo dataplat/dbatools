@@ -492,6 +492,11 @@ function Connect-DbaInstance {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        if ($AuthenticationType -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal" -and -not $SqlCredential) {
+            Stop-Function -Message "AuthenticationType $AuthenticationType requires SqlCredential."
+            return
+        }
+
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
 
@@ -864,6 +869,7 @@ function Connect-DbaInstance {
                     $authType += 'integrated'
                 }
                 Write-Message -Level Verbose -Message "authentication method is '$authType'"
+                $authenticationTypeUsesSqlCredential = $AuthenticationType -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal"
 
                 # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
                 $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
@@ -915,12 +921,8 @@ function Connect-DbaInstance {
                 if ($AuthenticationType) {
                     Write-Message -Level Debug -Message "Authentication will be set to '$AuthenticationType' (from AuthenticationType parameter)"
                     $sqlConnectionInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::$AuthenticationType
-                    # ActiveDirectoryInteractive and ActiveDirectoryIntegrated require UseIntegratedSecurity=False
-                    # to prevent the default Integrated Security=True from conflicting with Entra ID auth
-                    if ($AuthenticationType -in 'ActiveDirectoryInteractive', 'ActiveDirectoryIntegrated', 'ActiveDirectoryDeviceCodeFlow', 'ActiveDirectoryManagedIdentity') {
-                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false' for $AuthenticationType"
-                        $sqlConnectionInfo.UseIntegratedSecurity = $false
-                    }
+                    Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false' for $AuthenticationType"
+                    $sqlConnectionInfo.UseIntegratedSecurity = $false
                 } elseif ($authType -eq 'azure integrated') {
                     # Azure AD integrated security
                     # TODO: This is not tested / How can we test that?
@@ -1002,7 +1004,7 @@ function Connect-DbaInstance {
                 # We use ConnectionContext.StatementTimeout instead
 
                 #SecurePassword         Property   securestring SecurePassword {get;set;}
-                if ($authType -in 'azure ad', 'azure sql', 'local sql') {
+                if ($authenticationTypeUsesSqlCredential -or $authType -in 'azure ad', 'azure sql', 'local sql') {
                     Write-Message -Level Debug -Message "SecurePassword will be set"
                     $sqlConnectionInfo.SecurePassword = $SqlCredential.Password
                 }
@@ -1023,10 +1025,10 @@ function Connect-DbaInstance {
                 $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
 
                 #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
-                # $true is the default and it is automatically set to $false if we set a UserName, so we don't touch
+                # We rely on the default unless AuthenticationType already set it above or UserName changes it automatically.
 
                 #UserName               Property   string UserName {get;set;}
-                if ($authType -in 'azure ad', 'azure sql', 'local sql') {
+                if ($authenticationTypeUsesSqlCredential -or $authType -in 'azure ad', 'azure sql', 'local sql') {
                     Write-Message -Level Debug -Message "UserName will be set to '$username'"
                     $sqlConnectionInfo.UserName = $username
                 }
@@ -1088,7 +1090,7 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "ServerConnection was built"
                 }
 
-                if ($authType -eq 'local ad') {
+                if ($authType -eq 'local ad' -and -not $AuthenticationType) {
                     if ($IsLinux -or $IsMacOS) {
                         Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
                         return

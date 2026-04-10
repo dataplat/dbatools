@@ -94,7 +94,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 552b77af4 | Invoke-DbaDbDataMasking - Fix StaticValue empty string fallback and FilterQuery in Actions (#10281) | DONE | Fixed action FilterQuery updates to honor the selected row set and added a unit regression test. |
 | 99a4a9067 | Update-ServiceStatus - Fix WinRM error on machines without WinRM configured (#10274) | DONE | Fixed worker CIM session credential propagation and cleanup; added unit regression test. |
 | 1f70b62bd | Add Remove-DbaAgentJobSchedule cmdlet (#10273) | DONE | Fixed duplicate-name detach handling and preserved failure output on detach errors; added unit regression tests. |
-| 50c0bfdaf | Connect-DbaInstance - Add -AuthenticationType parameter for Entra ID support (#10271) | PENDING | |
+| 50c0bfdaf | Connect-DbaInstance - Add -AuthenticationType parameter for Entra ID support (#10271) | DONE | Fixed password-based AuthenticationType handling so explicit Entra auth uses SqlConnectionInfo credentials, added missing SqlCredential validation, and added unit regression tests. |
 | 27e4da9d1 | Get-DbaDbOrphanUser - Skip SQL login orphan check for contained databases (#10270) | PENDING | |
 | 21a522047 | Test-DbaAgPolicyState - Add new command for Always On policy state checks (#10246) | PENDING | |
 | 1f43cbbf0 | Install-DbaMaintenanceSolution: change Compress/Verify/CheckSum to ValidateSet string params (#10247) | PENDING | |

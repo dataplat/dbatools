@@ -197,6 +197,72 @@ Describe $CommandName -Tag UnitTests {
             $script:nonPooledConnectionSetterCalls | Should -Be 0
         }
     }
+
+    Context "AuthenticationType behavior" {
+        BeforeAll {
+            function New-MockAuthenticationServer {
+                param(
+                    $ServerConnection
+                )
+
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $ServerConnection.ConnectionString
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $sqlConnectionObject.ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                $script:lastServerConnection = [PSCustomObject]@{
+                    ConnectionString      = $ArgumentList[0].ConnectionString
+                    ConnectAsUser         = $false
+                    ConnectAsUserName     = $null
+                    ConnectAsUserPassword = $null
+                }
+                $script:lastServerConnection
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockAuthenticationServer -ServerConnection $ArgumentList[0]
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "requires SqlCredential when AuthenticationType uses password-based auth" {
+            Mock Stop-Function { } -ModuleName dbatools
+
+            Connect-DbaInstance -SqlInstance "sqlauth" -AuthenticationType ActiveDirectoryPassword | Should -BeNullOrEmpty
+
+            Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
+        }
+
+        It "uses SqlConnectionInfo credentials for ActiveDirectoryPassword on non-Azure servers" {
+            $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential ("user@contoso.com", $securePassword)
+
+            $result = Connect-DbaInstance -SqlInstance "sqlauth" -SqlCredential $credential -AuthenticationType ActiveDirectoryPassword -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Authentication=ActiveDirectoryPassword"
+            $result.ConnectionString | Should -Match "User ID=user@contoso.com"
+            $result.ConnectionString | Should -Not -Match "Integrated Security=True"
+            $script:lastServerConnection.ConnectAsUser | Should -Be $false
+            $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
