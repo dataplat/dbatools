@@ -42,7 +42,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 7777c1401 | Export-DbaLogin: Add -IncludeRolePermissions switch (#10196) | DONE | Fixed role script ordering and duplicate CREATE ROLE output; added regression coverage. |
 | fd7402b94 | Get-DbaUserPermission: Fix incorrect schema name shown as 'STIG' (#10210) | DONE | Reviewed SQL-only schema lookup fix; no bugs found. |
 | da0941593 | Export-DbaInstance: Propagate -EnableException to sub-commands and wrap exports in try-catch (#10211) | DONE | Fixed skipped Write-Progress completion on continued export failures; added unit regression test. |
-| 85e129c4d | Get-DbaReportingService: Use Credential in every call to Get-DbaCmObject (#10207) | PENDING | |
+| 85e129c4d | Get-DbaReportingService: Use Credential in every call to Get-DbaCmObject (#10207) | DONE | Reviewed credential propagation fix; no bugs found. |
 | f3e40229f | New-DbaLogin: add ExternalGroup support and SQL Server 2022 Entra login handling (#10225) | PENDING | |
 | d5d9fd3e2 | Get-DbaStartupParameter: Fix multiple issues (#10208) | PENDING | |
 | 2bc80a623 | Test-DbaKerberos: Remove CNAME test (#10209) | PENDING | |
