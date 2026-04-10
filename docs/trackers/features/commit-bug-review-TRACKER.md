@@ -69,7 +69,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 6084ecbe5 | Get-DbaLastBackup - Add -ExcludeReplica switch for AlwaysOn preferred backup replica filtering (#10240) | DONE | Fixed empty filtered-set fallback that queried all backup history; added unit regression test. |
 | fe26c8764 | Export-DbaInstance - Wire up IncludeDbMasterKey to export certs and master keys (#10251) | DONE | Fixed FileInfo output contract and staged remote cert/master-key exports back into the local export folder; added unit regression test. |
 | 0ee03fc32 | New-DbaAgentJobStep - Fix OnFailAction ValidateSet order to match actual default (#10244) | DONE | Reviewed parameter metadata-only ValidateSet reorder; no bugs found. |
-| 63c906f9d | Set-DbaDbCompression - Add SortInTempDB parameter and fix views T-SQL bug (#10248) | PENDING | |
+| 63c906f9d | Set-DbaDbCompression - Add SortInTempDB parameter and fix views T-SQL bug (#10248) | DONE | Fixed indexed-view output/error metadata to use the view name instead of a stale table reference; added integration regression test. |
 | 4d1a9d80c | v2.7.27 | DONE | version bump - skip |
 | 232395207 | Set-DbaPrivilege, Get-DbaPrivilege - Add CreateGlobalObjects privilege support (#10235) | PENDING | |
 | 099624061 | Get-DbaDbRestoreHistory - Add BackupStartDate, StopAt, and LastRestorePoint columns (#10249) | PENDING | |

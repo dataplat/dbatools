@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Set-DbaDbCompression",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,12 +35,29 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbName = "dbatoolsci_test_$(Get-Random)"
+        $indexedViewName = "dbatoolsci_syscolview"
+        $indexedViewIndexName = "CL_dbatoolsci_syscolview"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbName]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbName)
+        $null = $server.Query("SET ANSI_NULLS ON;
+                               SET QUOTED_IDENTIFIER ON;
+                               EXEC sys.sp_executesql N'CREATE VIEW dbo.[$indexedViewName]
+                               WITH SCHEMABINDING
+                               AS
+                               SELECT object_id, column_id
+                               FROM dbo.syscols'", $dbName)
+        $null = $server.Query("SET ANSI_NULLS ON;
+                               SET ANSI_PADDING ON;
+                               SET ANSI_WARNINGS ON;
+                               SET ARITHABORT ON;
+                               SET CONCAT_NULL_YIELDS_NULL ON;
+                               SET QUOTED_IDENTIFIER ON;
+                               SET NUMERIC_ROUNDABORT OFF;
+                               CREATE UNIQUE CLUSTERED INDEX [$indexedViewIndexName] ON dbo.[$indexedViewName] (object_id, column_id)", $dbName)
 
         # Get InputObject for testing
         $inputObject = Test-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName
@@ -158,6 +175,22 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should set all objects to no compression" {
             foreach ($row in $noneResults) {
                 $row.DataCompression | Should -Be "None"
+            }
+        }
+    }
+
+    Context "Command returns indexed view metadata when rebuilding to None" {
+        BeforeAll {
+            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Page
+            $indexedViewResults = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None |
+                Where-Object IndexName -eq $indexedViewIndexName
+        }
+
+        It "Should return the indexed view schema and name" {
+            $indexedViewResults | Should -Not -BeNullOrEmpty
+            foreach ($row in $indexedViewResults) {
+                $row.Schema | Should -Be "dbo"
+                $row.TableName | Should -Be $indexedViewName
             }
         }
     }
