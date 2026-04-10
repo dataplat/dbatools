@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaFirewallRule",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -20,6 +20,61 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        Context "Program path extraction" {
+            BeforeEach {
+                Mock Invoke-Command2 {
+                    [PSCustomObject]@{
+                        Successful  = $true
+                        CimInstance = [PSCustomObject]@{
+                            Status = "The rule was parsed successfully from the store"
+                        }
+                        Warning     = $null
+                        Error       = $null
+                        Exception   = $null
+                    }
+                }
+            }
+
+            It "falls back to a port rule when the engine BinaryPath contains sqlservr.exe in a folder name" {
+                Mock Get-DbaNetworkConfiguration {
+                    [PSCustomObject]@{
+                        TcpPort         = "1433"
+                        TcpDynamicPorts = ""
+                    }
+                }
+                Mock Get-DbaService {
+                    [PSCustomObject]@{
+                        BinaryPath = "{0}C:\Backups\sqlservr.exe\bin\realapp.exe{0} -sTEST" -f '"'
+                    }
+                }
+
+                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Engine -RuleType Program -Confirm:$false
+
+                $result.Type | Should -Be "Engine"
+                $result.Program | Should -BeNullOrEmpty
+                $result.LocalPort | Should -Be "1433"
+            }
+
+            It "falls back to the Browser port rule when BinaryPath contains sqlbrowser.exe in a folder name" {
+                Mock Get-DbaService {
+                    [PSCustomObject]@{
+                        BinaryPath = "{0}C:\Backups\sqlbrowser.exe\bin\realapp.exe{0}" -f '"'
+                    }
+                }
+
+                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Browser -RuleType Program -Confirm:$false
+
+                $result.Type | Should -Be "Browser"
+                $result.Program | Should -BeNullOrEmpty
+                $result.Protocol | Should -Be "UDP"
+                $result.LocalPort | Should -Be "1434"
+            }
         }
     }
 }
