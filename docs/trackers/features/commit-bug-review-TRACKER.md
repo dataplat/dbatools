@@ -58,7 +58,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | e79bef926 | Invoke-DbaDbDataMasking: Fix MaskingID column and index left behind after masking (#10223) | DONE | Fixed WhatIf unique-index side effects and made WhatIf row counts honor FilterQuery; added unit regressions. |
 | 7240105e0 | Invoke-DbaDbDataMasking: Fix Deterministic masking not applied with multiple columns (#10222) | DONE | Reviewed deterministic multi-column lookup flow; no bugs found. |
 | 156fc62e1 | Read-DbaXEFile: Fix database_name and other action columns being empty (#10221) | DONE | Reviewed action-key normalization fix; no bugs found. |
-| d5b122bf5 | March 2026 CVEs (#10230) | PENDING | |
+| d5b122bf5 | March 2026 CVEs (#10230) | DONE | Reviewed buildref/test-only update; no bugs found. |
 | 2472ea8fd | Remove Invoke-SmoCheck - no longer needed (#10229) | PENDING | |
 | 5e0b70d66 | Set-DbaPrivilege: Use per-service SID (NT SERVICE\ServiceName) for IFI, LPIM, SecAudit (#10228) | PENDING | |
 | aa4e253cb | v2.7.26 | DONE | version bump - skip |
