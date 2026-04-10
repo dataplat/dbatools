@@ -24,7 +24,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | b82f01eeb | Install-DbaMaintenanceSolution: make off switches work and increase test coverage (#10172) | DONE | Default-false switches forced Compress/Verify/CheckSum off when omitted; corrected by follow-up commit 1f43cbbf0. |
 | b0403f5f5 | Start-DbaMigration: Enhance handling of dedicated admin connections (#10162) | DONE | Guarded null DAC/source connections and added unit regression tests. |
 | 920fe547b | v2.7.25 | DONE | version bump - skip |
-| 58f64c580 | speedup dependency detection for integration tests (#10179) | PENDING | |
+| 58f64c580 | speedup dependency detection for integration tests (#10179) | DONE | Fixed debug helper name parsing, corrected dependency return bookkeeping, removed backtick recursion, and added a regression test. |
 | cb7a5d77a | Comment out 2008R2SP2Express AppVeyor jobs | PENDING | |
 | 9799c1877 | Minor test fixes for Connect-DbaInstance (#10175) | PENDING | |
 | 1616a6d04 | Add command Test-DbaNetworkCertificate (#10178) | PENDING | |
