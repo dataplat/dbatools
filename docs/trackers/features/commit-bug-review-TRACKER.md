@@ -79,7 +79,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | a0ab78a66 | Get-DbaCmObject - Apply CimOperationTimeout to all CIM connections (#10252) | DONE | Fixed missing timeout initialization in Test-DbaCmConnection and added a unit regression test. |
 | fbdb47053 | Import-DbaXESessionTemplate - Add event_file target when TargetFilePath specified (#10250) | DONE | Fixed comment-sensitive event_file detection, scoped filename updates to the event_file target, and added a unit regression test. |
 | 3d6fa113f | Connect-DbaInstance - Trust server certificate for localhost DAC connections (#10263) | DONE | Reviewed localhost DAC trust-certificate follow-up; no bugs found. |
-| 0c0629d25 | Restore-DbaDatabase - Add examples for filtering partial backup files (#10242) | PENDING | |
+| 0c0629d25 | Restore-DbaDatabase - Add examples for filtering partial backup files (#10242) | DONE | Fixed the new backup-filtering examples to enumerate files only so matching directories are not piped into restore processing, and updated the new regex example to use double quotes. |
 | bb56c43d3 | Read-DbaXEFile, Get-DbaXESessionTargetFile - Document Windows-only admin share requirement (#10243) | PENDING | |
 | 152fec170 | Test-DbaLastBackup - Add -Path parameter to test backups from folder paths (#10241) | PENDING | |
 | 5590bc30d | New-DbaComputerCertificate - Add DocumentEncryptionCert switch for Always Encrypted (#10264) | PENDING | |
