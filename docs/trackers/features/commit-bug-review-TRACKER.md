@@ -137,7 +137,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | a38bc6b35 | Get-DbaDbIdentity, Set-DbaDbIdentity, Invoke-DbaDbDbccUpdateUsage - Normalize table names (#10318) | DONE | Fixed escaped-bracket table name regression and added unit regression tests. |
 | 9899bd274 | Copy-DbaDbTableData - Add -ScriptingOptionsObject parameter (#10317) | DONE | Propagated ScriptingOptionsObject to Copy-DbaDbViewData and added unit coverage. |
 | 0c486b964 | Backup-DbaDbCertificate: Don't use decryption password if cert encrypted by master key (#10329) | DONE | Reviewed SMO export overload selection for master-key-encrypted certs; no bugs found. |
-| db77a3476 | Find-DbaObject - Add unified command to search database objects by name (#10321) | PENDING | |
+| db77a3476 | Find-DbaObject - Add unified command to search database objects by name (#10321) | DONE | Added database DDL trigger name search via sys.triggers and covered it with an integration regression test. |
 | 6416b4e91 | Add Compare-DbaLogin command (#10319) | PENDING | |
 | bee08f8e7 | Copy-DbaSsisCatalog - Add standard MigrationObject output, integrate with Start-DbaMigration (#10311) | PENDING | |
 | 21e4795ee | Get-DbaService - Add PowerBI Report Server detection (#10298) | PENDING | |

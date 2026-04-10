@@ -63,6 +63,15 @@ CREATE PROCEDURE dbo.usp_GetServiceOrders
 AS
     SELECT * FROM dbo.ServiceOrder;
 GO
+
+CREATE TRIGGER trg_ServiceAudit
+ON DATABASE
+FOR CREATE_TABLE
+AS
+BEGIN
+    SET NOCOUNT ON;
+END;
+GO
 "@
         $splatCreateObjects = @{
             SqlInstance = $TestConfig.InstanceSingle
@@ -122,6 +131,19 @@ GO
             $results = Find-DbaObject @splatFind
             $results | Should -Not -BeNullOrEmpty
             $results.Name | Should -Contain "usp_GetServiceOrders"
+        }
+
+        It "Should find database DDL triggers whose names match the pattern" {
+            $splatFind = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $testDbName
+                Pattern     = "ServiceAudit"
+                ObjectType  = "Trigger"
+            }
+            $results = Find-DbaObject @splatFind
+            $results | Should -Not -BeNullOrEmpty
+            $results.Name | Should -Contain "trg_ServiceAudit"
+            $results.Schema | Should -BeNullOrEmpty
         }
 
         It "Should return MatchType of ObjectName for object name matches" {
