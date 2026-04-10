@@ -51,6 +51,10 @@ function Copy-DbaDbViewData {
         Automatically creates the destination table if it doesn't exist, using the same structure as the source view.
         Essential for initial data migrations or when materializing view data into new tables where destination tables haven't been created yet.
 
+    .PARAMETER ScriptingOptionsObject
+        A scripting options object created by New-DbaScriptingOption that controls how the destination table is scripted when -AutoCreateTable is used.
+        Use this to control which table properties are included in the CREATE TABLE script, such as indexes, constraints, triggers, and extended properties.
+
     .PARAMETER BatchSize
         Number of rows to process in each bulk copy batch. Defaults to 50000 rows.
         Reduce this value for memory-constrained systems or increase it for faster transfers when copying large view result sets with sufficient memory.
@@ -216,6 +220,7 @@ function Copy-DbaDbViewData {
         [switch]$KeepNulls,
         [switch]$Truncate,
         [int]$BulkCopyTimeOut = 5000,
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
