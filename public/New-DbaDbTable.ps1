@@ -22,6 +22,7 @@ function New-DbaDbTable {
 
     .PARAMETER Name
         Specifies the name for the new table. Must be a valid SQL Server identifier.
+        You can also pass a bracket-quoted name or a two-part schema.table name. Specify the target database with -Database or by piping in a database object.
         Use standard naming conventions like avoiding spaces and reserved keywords for better maintainability.
 
     .PARAMETER Schema
@@ -472,6 +473,10 @@ function New-DbaDbTable {
         if (Test-Bound -ParameterName Name) {
             $parsedName = Get-ObjectNameParts -ObjectName $Name
             if ($parsedName.Parsed) {
+                if ($parsedName.Database) {
+                    Stop-Function -Message "The -Name parameter only accepts one- or two-part names. Specify the database separately with -Database or by piping in a database object."
+                    return
+                }
                 if ($parsedName.Schema -and -not (Test-Bound -ParameterName Schema)) {
                     $Schema = $parsedName.Schema
                 }
