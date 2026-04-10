@@ -300,6 +300,7 @@ function Find-DbaInstance {
                     $pingReply = $null
                     $sPNs = @()
                     $ports = @()
+                    $browserFallbackPorts = @()
                     $browseResult = $null
                     $services = @()
                     #Variable marked as unused by PSScriptAnalyzer
@@ -351,8 +352,19 @@ function Find-DbaInstance {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
                             Write-Message -Level Verbose -Message "Browser returned $($browseResult.Count) instance(s): $(($browseResult | ForEach-Object { "$($_.InstanceName):$($_.TCPPort)" }) -join ', ')"
-                            # Filter port 0 - Browser returns 0 for instances that don't report a TCP port (default instances)
-                            $ports = $browseResult.TCPPort | Where-Object { $_ -gt 0 } | Test-TcpPort -ComputerName $computer
+                            $portsToScan = @()
+                            $browserReportedPorts = $browseResult.TCPPort | Where-Object { $_ -gt 0 }
+                            if ($browserReportedPorts) {
+                                $portsToScan += $browserReportedPorts
+                            }
+                            if ($browseResult | Where-Object { -not $_.TCPPort }) {
+                                $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                                Write-Message -Level Verbose -Message "Browser has instance(s) without TCPPort, adding fallback ports: $($browserFallbackPorts -join ', ')"
+                                $portsToScan += $browserFallbackPorts
+                            }
+                            if ($portsToScan) {
+                                $ports = $portsToScan | Select-Object -Unique | Test-TcpPort -ComputerName $computer
+                            }
                             Write-Message -Level Verbose -Message "Port test results from Browser: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
                         } catch {
                             Write-Message -Level Verbose -Message "Browser scan failed: $_"
@@ -363,8 +375,9 @@ function Find-DbaInstance {
                         # (e.g. SQL Server 2022+ where Browser is deprecated, or default instances
                         # which don't report a TCP port via Browser UDP)
                         if (-not $ports) {
-                            Write-Message -Level Verbose -Message "No port info from Browser, falling back to default ports: $($TCPPort -join ', ')"
-                            $ports = $TCPPort | Test-TcpPort -ComputerName $computer
+                            $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                            Write-Message -Level Verbose -Message "No port info from Browser, falling back to default ports: $($browserFallbackPorts -join ', ')"
+                            $ports = $browserFallbackPorts | Test-TcpPort -ComputerName $computer
                             Write-Message -Level Verbose -Message "Fallback port test results: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
                         }
                     } else {
@@ -471,8 +484,9 @@ function Find-DbaInstance {
                             } else {
                                 # Default instance - Browser doesn't report a specific TCP port,
                                 # check if any of the fallback ports we tested is open
-                                Write-Message -Level Verbose -Message "Browser has no TCPPort (default instance), checking PortsScanned for any open port: $(($object.PortsScanned | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
-                                $object.PortsScanned | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
+                                $defaultPortResults = $object.PortsScanned | Where-Object { $_.Port -in $browserFallbackPorts }
+                                Write-Message -Level Verbose -Message "Browser has no TCPPort (default instance), checking fallback PortsScanned for any open port: $(($defaultPortResults | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+                                $defaultPortResults | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
                                     $object.Port = $_.Port
                                     $object.TcpConnected = $true
                                     Write-Message -Level Verbose -Message "Found open port $($_.Port), TcpConnected set to True"
