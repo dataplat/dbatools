@@ -75,7 +75,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 099624061 | Get-DbaDbRestoreHistory - Add BackupStartDate, StopAt, and LastRestorePoint columns (#10249) | DONE | Fixed LastRestorePoint so StopAt is used whenever specified; added unit regression test. |
 | 4f1e56ce4 | New-DbaDbMailAccount, Set-DbaDbMailAccount - Add Port, SSL, and authentication parameters (#10257) | DONE | Added validation to reject conflicting SMTP authentication modes and incomplete credential pairs; added unit regression tests. |
 | 8218d327e | Restore-DbaDatabase, Invoke-DbaAdvancedRestore - Add ErrorBrokerConversations parameter (#10253) | DONE | Fixed missing ExecuteAs script prefix and added NoRecovery/Standby validation; added regression tests. |
-| 9a4e4bacb | Connect-DbaInstance - Set NonPooledConnection on ServerConnection (#10260) | PENDING | |
+| 9a4e4bacb | Connect-DbaInstance - Set NonPooledConnection on ServerConnection (#10260) | DONE | Fixed AccessToken regression by skipping a redundant NonPooledConnection assignment on SqlConnection-backed contexts; added unit regression test. |
 | a0ab78a66 | Get-DbaCmObject - Apply CimOperationTimeout to all CIM connections (#10252) | PENDING | |
 | fbdb47053 | Import-DbaXESessionTemplate - Add event_file target when TargetFilePath specified (#10250) | PENDING | |
 | 3d6fa113f | Connect-DbaInstance - Trust server certificate for localhost DAC connections (#10263) | PENDING | |

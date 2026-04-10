@@ -1126,7 +1126,7 @@ function Connect-DbaInstance {
                 }
                 Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
                 $server.ConnectionContext.StatementTimeout = $StatementTimeout
-                if ($NonPooledConnection) {
+                if ($NonPooledConnection -and -not $server.ConnectionContext.NonPooledConnection) {
                     Write-Message -Level Debug -Message "Setting ConnectionContext.NonPooledConnection to 'True'"
                     $server.ConnectionContext.NonPooledConnection = $true
                 }

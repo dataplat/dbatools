@@ -137,6 +137,66 @@ Describe $CommandName -Tag UnitTests {
             $result.ConnectionString | Should -Match "Initial Catalog=master"
         }
     }
+
+    Context "Access token connection behavior" {
+        BeforeAll {
+            function New-MockAccessTokenServer {
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $sqlConnectionObject.ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name NonPooledConnection -MemberType ScriptProperty -Value {
+                    $true
+                } -SecondValue {
+                    param($value)
+                    $script:nonPooledConnectionSetterCalls++
+                    throw "Property NonPooledConnection cannot be changed or read after a connection string has been set."
+                } -Force
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                [PSCustomObject]@{
+                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
+                    AccessToken      = $null
+                }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.Data.SqlClient.SqlConnection"
+            }
+            Mock New-Object {
+                [PSCustomObject]@{ }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockAccessTokenServer
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "does not reapply NonPooledConnection when AccessToken already uses a SqlConnection" {
+            $script:nonPooledConnectionSetterCalls = 0
+
+            $result = Connect-DbaInstance -SqlInstance "sqltoken" -AccessToken "token" -NonPooledConnection -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Be "Data Source=sqltoken;Integrated Security=True"
+            $script:nonPooledConnectionSetterCalls | Should -Be 0
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
