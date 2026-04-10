@@ -47,7 +47,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | d5d9fd3e2 | Get-DbaStartupParameter: Fix multiple issues (#10208) | DONE | Fixed silent and ambiguous WMI service lookups; added unit regression tests. |
 | 2bc80a623 | Test-DbaKerberos: Remove CNAME test (#10209) | DONE | Fixed stale help/output check counts after removing the CNAME diagnostic. |
 | 95e3aa220 | Update-DbaInstance: Fall back to computer name if Resolve-DbaNetworkName fails (#10212) | DONE | Propagated Authentication into early remote helpers, removed pending reboot CIM dependency, and added regression tests. |
-| 480e72a46 | New-DbaDbMailProfile - Fix to allow multiple accounts per profile (#10214) | PENDING | |
+| 480e72a46 | New-DbaDbMailProfile - Fix to allow multiple accounts per profile (#10214) | DONE | Reviewed profile reuse/add-account change; no bugs found. |
 | b94e33eaa | Connect-DbaInstance: Auto-retry with Initial Catalog=master for mirrored SQL Server instances (#10215) | PENDING | |
 | dc581344d | Export-DbaScript: Handle Distributed Availability Groups gracefully (#10216) | PENDING | |
 | 8dacfa20a | Get-DbaReplSubscription: Also check distribution DB for pull subscriptions (#10218) | PENDING | |
