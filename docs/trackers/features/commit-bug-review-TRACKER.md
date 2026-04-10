@@ -67,7 +67,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | a26e6195b | Add-DbaAgDatabase, New-DbaAvailabilityGroup - auto-copy TDE certificate to replicas (#10237) | DONE | Validated replica TDE certificates by thumbprint/private key, fail fast when SharedPath is missing, and added unit regression tests. |
 | 8099963d1 | Get-DbaRegServer - Fix IncludeSelf to return pipeline-compatible object (#10238) | DONE | Fixed IncludeSelf to emit one CMS instance per requested SqlInstance; added unit regression test. |
 | 6084ecbe5 | Get-DbaLastBackup - Add -ExcludeReplica switch for AlwaysOn preferred backup replica filtering (#10240) | DONE | Fixed empty filtered-set fallback that queried all backup history; added unit regression test. |
-| fe26c8764 | Export-DbaInstance - Wire up IncludeDbMasterKey to export certs and master keys (#10251) | PENDING | |
+| fe26c8764 | Export-DbaInstance - Wire up IncludeDbMasterKey to export certs and master keys (#10251) | DONE | Fixed FileInfo output contract and staged remote cert/master-key exports back into the local export folder; added unit regression test. |
 | 0ee03fc32 | New-DbaAgentJobStep - Fix OnFailAction ValidateSet order to match actual default (#10244) | PENDING | |
 | 63c906f9d | Set-DbaDbCompression - Add SortInTempDB parameter and fix views T-SQL bug (#10248) | PENDING | |
 | 4d1a9d80c | v2.7.27 | DONE | version bump - skip |

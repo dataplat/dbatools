@@ -163,6 +163,9 @@ function Export-DbaInstance {
         - userobjectsinsysdbs.sql: User-created objects in system databases
         - AvailabilityGroups.sql: Availability Groups configuration
         - OleDbProvider.sql: OLEDB provider configuration
+        - *.cer: Database certificate backups when -IncludeDbMasterKey is specified
+        - *.pvk: Database certificate private key backups when -IncludeDbMasterKey and -EncryptionPassword are specified
+        - *.key: Database master key backups when -IncludeDbMasterKey and -EncryptionPassword are specified
 
         Files are returned only if they were successfully created and are not excluded via the -Exclude parameter.
         The -ErrorAction Ignore used in Get-ChildItem means that if a file is not created, no error object is returned for that file.
@@ -227,6 +230,43 @@ function Export-DbaInstance {
         $started = Get-Date
 
         $eol = [System.Environment]::NewLine
+
+        function Get-ExportedFileInfo {
+            param (
+                [Parameter(Mandatory)]
+                [object]$Server,
+                [Parameter(Mandatory)]
+                [string]$SourcePath,
+                [Parameter(Mandatory)]
+                [string]$DestinationDirectory,
+                [switch]$CopyFromServer
+            )
+
+            if ([string]::IsNullOrWhiteSpace($SourcePath) -or $SourcePath -eq "Password required to export key") {
+                return
+            }
+
+            $targetPath = $SourcePath
+            if ($CopyFromServer) {
+                $sourcePathUnc = Join-AdminUnc -Servername $Server.ComputerName -Filepath $SourcePath
+                $targetPath = Join-Path -Path $DestinationDirectory -ChildPath (Split-Path -Path $SourcePath -Leaf)
+
+                try {
+                    Copy-Item -Path $sourcePathUnc -Destination $targetPath -Force -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Failed to copy staged export artifact $SourcePath from $($Server.DomainInstanceName) to $DestinationDirectory." -ErrorRecord $_ -Target $SourcePath
+                    return
+                }
+
+                try {
+                    Remove-Item -Path $sourcePathUnc -Force -ErrorAction Stop
+                } catch {
+                    Write-Message -Level Verbose -Message "Failed to remove staged export artifact $sourcePathUnc."
+                }
+            }
+
+            Get-ChildItem -ErrorAction Ignore -Path $targetPath
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -281,6 +321,14 @@ function Export-DbaInstance {
                 }
 
                 try {
+                    $copyDbKeyExports = $false
+                    if ($IncludeDbMasterKey) {
+                        $copyDbKeyExports = -not (Test-DbaPath -SqlInstance $server -Path $exportPath)
+                        if ($copyDbKeyExports) {
+                            Write-Message -Level Verbose -Message "Export path $exportPath is not accessible from $($server.DomainInstanceName). Database certificates and keys will be staged on the SQL Server host and copied back to the export directory."
+                        }
+                    }
+
                     if ($Exclude -notcontains 'SpConfigure') {
                         Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL Server Configuration"
@@ -493,8 +541,10 @@ function Export-DbaInstance {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database certificates"
                         $splatDbCert = @{
                             SqlInstance     = $server
-                            Path            = $exportPath
                             EnableException = $EnableException
+                        }
+                        if (-not $copyDbKeyExports) {
+                            $splatDbCert["Path"] = $exportPath
                         }
                         if ($EncryptionPassword) {
                             $splatDbCert["EncryptionPassword"] = $EncryptionPassword
@@ -502,7 +552,11 @@ function Export-DbaInstance {
                         if ($DecryptionPassword) {
                             $splatDbCert["DecryptionPassword"] = $DecryptionPassword
                         }
-                        Backup-DbaDbCertificate @splatDbCert
+                        $databaseCertificates = Backup-DbaDbCertificate @splatDbCert
+                        foreach ($databaseCertificate in $databaseCertificates) {
+                            Get-ExportedFileInfo -Server $server -SourcePath $databaseCertificate.Path -DestinationDirectory $exportPath -CopyFromServer:$copyDbKeyExports
+                            Get-ExportedFileInfo -Server $server -SourcePath $databaseCertificate.Key -DestinationDirectory $exportPath -CopyFromServer:$copyDbKeyExports
+                        }
                     }
 
                     if ($IncludeDbMasterKey -and $EncryptionPassword) {
@@ -510,11 +564,16 @@ function Export-DbaInstance {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database master keys"
                         $splatMasterKey = @{
                             SqlInstance     = $server
-                            Path            = $exportPath
                             SecurePassword  = $EncryptionPassword
                             EnableException = $EnableException
                         }
-                        Backup-DbaDbMasterKey @splatMasterKey
+                        if (-not $copyDbKeyExports) {
+                            $splatMasterKey["Path"] = $exportPath
+                        }
+                        $databaseMasterKeys = Backup-DbaDbMasterKey @splatMasterKey
+                        foreach ($databaseMasterKey in $databaseMasterKeys) {
+                            Get-ExportedFileInfo -Server $server -SourcePath $databaseMasterKey.Filename -DestinationDirectory $exportPath -CopyFromServer:$copyDbKeyExports
+                        }
                     } elseif ($IncludeDbMasterKey -and -not $EncryptionPassword) {
                         Write-Message -Level Warning -Message "IncludeDbMasterKey was specified but no EncryptionPassword was provided. Skipping database master key export."
                     }

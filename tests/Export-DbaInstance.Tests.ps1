@@ -217,6 +217,179 @@ Describe $CommandName -Tag UnitTests {
             }
         }
     }
+
+    Context "Database key export behavior" {
+        It "Should stage certificate and master key exports and still return FileInfo objects" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Backup-DbaDbCertificate",
+                    "Backup-DbaDbMasterKey",
+                    "Connect-DbaInstance",
+                    "Copy-Item",
+                    "Get-ChildItem",
+                    "Join-AdminUnc",
+                    "Remove-Item",
+                    "Stop-Function",
+                    "Test-DbaPath",
+                    "Test-ExportDirectory",
+                    "Test-FunctionInterrupt",
+                    "Test-Path",
+                    "Write-Message",
+                    "Write-Progress",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-ExportDirectory { }
+                    function Test-FunctionInterrupt { $false }
+                    function Write-Message { }
+                    function Write-Progress { }
+                    function Write-ProgressHelper { }
+                    function Test-Path { $true }
+                    function Stop-Function {
+                        param(
+                            $Message,
+                            $ErrorRecord
+                        )
+                        if ($ErrorRecord) {
+                            throw "$Message | inner: $($ErrorRecord.Exception.Message)"
+                        }
+                        throw $Message
+                    }
+                    function Connect-DbaInstance {
+                        $server = [PSCustomObject]@{
+                            ComputerName       = "sql1"
+                            DomainInstanceName = "sql1"
+                        }
+                        $server.PSObject.TypeNames.Clear()
+                        $server.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                        $server
+                    }
+                    function Test-DbaPath {
+                        param(
+                            $SqlInstance,
+                            $Path
+                        )
+                        $Path -ne "C:\temp\sql1"
+                    }
+                    function Join-AdminUnc {
+                        param(
+                            $Servername,
+                            $Filepath
+                        )
+                        $adminSharePath = $Filepath.Substring(0, 1) + [char]36 + $Filepath.Substring(2)
+                        "\\$Servername\$adminSharePath"
+                    }
+                    function Copy-Item {
+                        param(
+                            $Path,
+                            $Destination,
+                            [switch]$Force,
+                            $ErrorAction
+                        )
+                        $script:copiedFiles += [PSCustomObject]@{
+                            Path        = $Path
+                            Destination = $Destination
+                        }
+                    }
+                    function Remove-Item {
+                        param(
+                            $Path,
+                            [switch]$Force,
+                            $ErrorAction
+                        )
+                        if ("$Path" -like "\\sql1\*") {
+                            $script:removedFiles += $Path
+                        }
+                    }
+                    function Get-ChildItem {
+                        param(
+                            $Path,
+                            $ErrorAction
+                        )
+                        New-Object -TypeName System.IO.FileInfo -ArgumentList $Path
+                    }
+                    function Backup-DbaDbCertificate {
+                        $script:certificateBackupParams = $PSBoundParameters
+                        [PSCustomObject]@{
+                            Path = "D:\sqlbackup\cert1.cer"
+                            Key  = "D:\sqlbackup\cert1.pvk"
+                        }
+                    }
+                    function Backup-DbaDbMasterKey {
+                        $script:masterKeyBackupParams = $PSBoundParameters
+                        [PSCustomObject]@{
+                            Filename = "D:\sqlbackup\db1-masterkey.key"
+                        }
+                    }
+
+                    $script:certificateBackupParams = $null
+                    $script:masterKeyBackupParams = $null
+                    $script:copiedFiles = @()
+                    $script:removedFiles = @()
+                    $excludedObjects = @(
+                        "AgentServer",
+                        "Audits",
+                        "AvailabilityGroups",
+                        "BackupDevices",
+                        "CentralManagementServer",
+                        "Credentials",
+                        "CustomErrors",
+                        "DatabaseMail",
+                        "Databases",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "LinkedServers",
+                        "Logins",
+                        "PolicyManagement",
+                        "ReplicationSettings",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "ServerRoles",
+                        "SpConfigure",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "OleDbProvider"
+                    )
+                    $encryptionPassword = ConvertTo-SecureString -String "P@ssw0rd!" -AsPlainText -Force
+
+                    $results = Export-DbaInstance -SqlInstance "sql1" -Path "C:\temp" -IncludeDbMasterKey -EncryptionPassword $encryptionPassword -Exclude $excludedObjects -Force
+
+                    $script:certificateBackupParams.ContainsKey("Path") | Should -BeFalse
+                    $script:masterKeyBackupParams.ContainsKey("Path") | Should -BeFalse
+                    @($results).Count | Should -Be 3
+                    $results.FullName | Should -Be @(
+                        "C:\temp\sql1\cert1.cer",
+                        "C:\temp\sql1\cert1.pvk",
+                        "C:\temp\sql1\db1-masterkey.key"
+                    )
+                    foreach ($result in $results) {
+                        $result.GetType().FullName | Should -Be "System.IO.FileInfo"
+                    }
+                    $script:copiedFiles.Destination | Should -Be $results.FullName
+                    $script:removedFiles | Should -Be @(
+                        "\\sql1\D$\sqlbackup\cert1.cer",
+                        "\\sql1\D$\sqlbackup\cert1.pvk",
+                        "\\sql1\D$\sqlbackup\db1-masterkey.key"
+                    )
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
