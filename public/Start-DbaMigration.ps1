@@ -191,7 +191,7 @@ function Start-DbaMigration {
         https://dbatools.io/Start-DbaMigration
 
     .OUTPUTS
-        Object (output from Copy-DbaDatabase command when -Exclude Databases is not specified)
+        Object
 
         When databases are migrated (default behavior unless -Exclude Databases is used), this function returns the output from Copy-DbaDatabase. The specific object type and properties depend on the migration method selected:
 
@@ -201,7 +201,7 @@ function Start-DbaMigration {
         When using -DetachAttach method:
         Returns database reattachment status objects showing which databases were successfully attached on destination servers.
 
-        No output is returned when -Exclude Databases is specified, as the function then only migrates server-level objects without providing pipeline output.
+        When -Exclude Databases is specified, most server-level migration operations do not return pipeline output. The exception is SSIS catalog migration, which returns MigrationObject status objects from Copy-DbaSsisCatalog when the source instance has an SSISDB catalog.
 
         All other migration operations (logins, SQL Agent jobs, configuration, etc.) perform their tasks without returning objects to the pipeline. Use -Verbose to see detailed progress messages for all migration steps.
 
@@ -611,10 +611,19 @@ function Start-DbaMigration {
             Copy-DbaExtendedStoredProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
         }
 
-        if ($Exclude -notcontains 'SsisCatalog') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
-            Write-Message -Level Verbose -Message "Migrating SSIS catalog"
-            Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        if ($Exclude -notcontains "SsisCatalog") {
+            $sourceHasSsisCatalog = $sourceServer.VersionMajor -ge 11
+            if ($sourceHasSsisCatalog) {
+                $sourceHasSsisCatalog = $null -ne $sourceServer.Databases["SSISDB"]
+            }
+
+            if ($sourceHasSsisCatalog) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
+                Write-Message -Level Verbose -Message "Migrating SSIS catalog"
+                Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            } else {
+                Write-Message -Level Verbose -Message "Skipping SSIS catalog migration because the source instance does not have an SSISDB catalog."
+            }
         }
     }
     end {

@@ -231,6 +231,224 @@ Describe $CommandName -Tag UnitTests {
             }
         }
     }
+
+    Context "SSIS catalog integration" {
+        It "Skips SSIS catalog migration when the source instance has no SSISDB catalog" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Copy-DbaSsisCatalog",
+                    "Stop-Function",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-FunctionInterrupt { $false }
+                    function Write-ProgressHelper { }
+                    function Stop-Function {
+                        param(
+                            $Message
+                        )
+                        $script:stopMessages += $Message
+                    }
+                    function Write-Message {
+                        param(
+                            $Level,
+                            $Message
+                        )
+                        $script:messages += "${Level}:$Message"
+                    }
+                    function Copy-DbaSsisCatalog { $script:ssisCopied = $true }
+                    function Connect-DbaInstance {
+                        param(
+                            $SqlInstance,
+                            $SqlCredential,
+                            [switch]$DedicatedAdminConnection
+                        )
+
+                        if ($DedicatedAdminConnection) {
+                            throw "Dedicated admin connection should not be requested."
+                        }
+
+                        [PSCustomObject]@{
+                            DomainInstanceName = "sql1"
+                            VersionMajor       = 10
+                            Databases          = @{ }
+                        }
+                    }
+
+                    $script:messages = @()
+                    $script:ssisCopied = $false
+                    $script:stopMessages = @()
+                    $excludeForSsisOnly = @(
+                        "Databases",
+                        "Logins",
+                        "AgentServer",
+                        "Credentials",
+                        "LinkedServers",
+                        "SpConfigure",
+                        "CentralManagementServer",
+                        "DatabaseMail",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "BackupDevices",
+                        "Audits",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "PolicyManagement",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "CustomErrors",
+                        "ServerRoles",
+                        "DataCollector",
+                        "StartupProcedures",
+                        "ExtendedStoredProcedures",
+                        "AgentServerProperties",
+                        "MasterCertificates"
+                    )
+
+                    $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForSsisOnly
+                    $script:ssisCopied | Should -BeFalse
+                    $script:stopMessages | Should -BeNullOrEmpty
+                    ($script:messages | Where-Object { $PSItem -like "*Skipping SSIS catalog migration*" }).Count | Should -Be 1
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                }
+            }
+        }
+
+        It "Calls Copy-DbaSsisCatalog when the source instance has an SSISDB catalog" {
+            InModuleScope dbatools {
+                $functionNames = @(
+                    "Connect-DbaInstance",
+                    "Copy-DbaSsisCatalog",
+                    "Stop-Function",
+                    "Test-FunctionInterrupt",
+                    "Write-Message",
+                    "Write-ProgressHelper"
+                )
+                $originalFunctions = @{ }
+                foreach ($functionName in $functionNames) {
+                    if (Test-Path "Function:\$functionName") {
+                        $originalFunctions[$functionName] = (Get-Item -Path "Function:\$functionName").ScriptBlock
+                    }
+                }
+
+                try {
+                    function Test-FunctionInterrupt { $false }
+                    function Write-ProgressHelper { }
+                    function Stop-Function {
+                        param(
+                            $Message
+                        )
+                        $script:stopMessages += $Message
+                    }
+                    function Write-Message {
+                        param(
+                            $Level,
+                            $Message
+                        )
+                        $script:messages += "${Level}:$Message"
+                    }
+                    function Copy-DbaSsisCatalog {
+                        param(
+                            $Source,
+                            $Destination,
+                            $DestinationSqlCredential,
+                            [switch]$Force
+                        )
+
+                        $script:ssisCalls += [PSCustomObject]@{
+                            Source                   = $Source
+                            Destination              = $Destination
+                            DestinationSqlCredential = $DestinationSqlCredential
+                            Force                    = $Force.IsPresent
+                        }
+                    }
+                    function Connect-DbaInstance {
+                        param(
+                            $SqlInstance,
+                            $SqlCredential,
+                            [switch]$DedicatedAdminConnection
+                        )
+
+                        if ($DedicatedAdminConnection) {
+                            throw "Dedicated admin connection should not be requested."
+                        }
+
+                        [PSCustomObject]@{
+                            DomainInstanceName = "sql1"
+                            VersionMajor       = 15
+                            Databases          = @{
+                                SSISDB = [PSCustomObject]@{
+                                    Name = "SSISDB"
+                                }
+                            }
+                        }
+                    }
+
+                    $script:messages = @()
+                    $script:ssisCalls = @()
+                    $script:stopMessages = @()
+                    $excludeForSsisOnly = @(
+                        "Databases",
+                        "Logins",
+                        "AgentServer",
+                        "Credentials",
+                        "LinkedServers",
+                        "SpConfigure",
+                        "CentralManagementServer",
+                        "DatabaseMail",
+                        "SysDbUserObjects",
+                        "SystemTriggers",
+                        "BackupDevices",
+                        "Audits",
+                        "Endpoints",
+                        "ExtendedEvents",
+                        "PolicyManagement",
+                        "ResourceGovernor",
+                        "ServerAuditSpecifications",
+                        "CustomErrors",
+                        "ServerRoles",
+                        "DataCollector",
+                        "StartupProcedures",
+                        "ExtendedStoredProcedures",
+                        "AgentServerProperties",
+                        "MasterCertificates"
+                    )
+
+                    $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForSsisOnly
+                    $script:stopMessages | Should -BeNullOrEmpty
+                    $script:ssisCalls.Count | Should -Be 1
+                    $script:ssisCalls[0].Source.VersionMajor | Should -Be 15
+                    $script:ssisCalls[0].Destination | Should -Be "sql2"
+                    ($script:messages | Where-Object { $PSItem -like "*Migrating SSIS catalog" }).Count | Should -Be 1
+                } finally {
+                    foreach ($functionName in $functionNames) {
+                        if ($originalFunctions.ContainsKey($functionName)) {
+                            Set-Item -Path "Function:\$functionName" -Value $originalFunctions[$functionName]
+                        } else {
+                            Remove-Item -Path "Function:\$functionName" -ErrorAction Ignore
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
