@@ -155,6 +155,11 @@ function Get-DbaLastBackup {
                 }
             }
 
+            if (-not $dbs) {
+                Write-Message -Level Verbose -Message "No databases remain to process for $instance after filtering"
+                continue
+            }
+
             # Get-DbaDbBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type regardless of the chain
             $FullHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
             $DiffHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
