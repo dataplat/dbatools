@@ -35,5 +35,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaInstanceList
             $result | Should -Not -Contain $instanceName.ToLowerInvariant()
         }
+
+        It "instance no longer appears in the TEPP cache after removal" {
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            $cache | Should -Not -Contain $instanceName.ToLowerInvariant()
+        }
     }
 }

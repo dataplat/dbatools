@@ -110,7 +110,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | c16f7f349 | Export-DbaCredential - Add IF NOT EXISTS guard to exported SQL scripts (#10295) | DONE | Reviewed IF NOT EXISTS credential export guard and existing unit coverage; no bugs found. |
 | e83ff4854 | Compare-DbaDbSchema - Add new command for schema comparison via sqlpackage (#10299) | DONE | Fixed pipeline-bound SourcePath validation, rejected dual target selectors, and removed verbose credential leakage; added unit regression tests. |
 | 67ce694ee | Get-DbaNetworkEncryption - Add command to retrieve TLS certificate from SQL Server network (#10293) | DONE | Preferred SQL Browser TCP endpoints over named pipes, guarded truncated pre-login reads, and added unit regression tests. |
-| ce6d7c159 | Add manual instance autocomplete list (Add/Get/Remove-DbaInstanceList) (#10300) | PENDING | |
+| ce6d7c159 | Add manual instance autocomplete list (Add/Get/Remove-DbaInstanceList) (#10300) | DONE | Fixed Remove-DbaInstanceList so removals also clear the live sqlinstance TEPP cache; added regression test. |
 | 0d4acaa0a | Invoke-DbaDbShrink - Add WAIT_AT_LOW_PRIORITY support (#10307) | PENDING | |
 | 092a092bb | Copy-DbaLogin - Add -ExcludeDatabaseMapping to sync only server permissions (#10305) | PENDING | |
 | 1ab8d1fba | Get-DbaHelpIndex - Fix SQL injection and remove SQL 2005 code path (#10302) | PENDING | |
