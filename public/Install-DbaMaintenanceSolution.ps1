@@ -50,7 +50,8 @@ function Install-DbaMaintenanceSolution {
         Without this switch, only the stored procedures are installed and must be scheduled manually or called from custom jobs.
 
     .PARAMETER AutoScheduleJobs
-        Automatically creates optimized job schedules for backup operations. Valid values: WeeklyFull, DailyFull, NoDiff, FifteenMinuteLog, HourlyLog.
+        Automatically creates optimized job schedules for backup operations when InstallJobs is specified. Valid values: WeeklyFull, DailyFull, NoDiff, FifteenMinuteLog, HourlyLog.
+        Specify exactly one full backup cadence, WeeklyFull or DailyFull, and optionally combine it with NoDiff, FifteenMinuteLog, or HourlyLog.
         WeeklyFull creates weekly full backups, daily differentials, and 15-minute log backups. DailyFull skips differentials. Use HourlyLog for less frequent transaction log backups.
         System databases are always backed up daily regardless of user database schedule. Automatically resolves schedule conflicts by adjusting start times.
 
@@ -332,6 +333,21 @@ function Install-DbaMaintenanceSolution {
         if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
             Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
             return
+        }
+
+        if (Test-Bound -ParameterName AutoScheduleJobs) {
+            if (-not $InstallJobs) {
+                Stop-Function -Message "AutoScheduleJobs is only useful when installing jobs. To create and schedule SQL Agent jobs, please use '-InstallJobs' in addition to AutoScheduleJobs."
+                return
+            }
+
+            $hasWeeklyFull = "WeeklyFull" -in $AutoScheduleJobs
+            $hasDailyFull = "DailyFull" -in $AutoScheduleJobs
+
+            if ($hasWeeklyFull -eq $hasDailyFull) {
+                Stop-Function -Message "AutoScheduleJobs requires exactly one full backup schedule. Specify either 'WeeklyFull' or 'DailyFull'."
+                return
+            }
         }
 
         if ($ReplaceExisting -eq $true) {
@@ -710,15 +726,15 @@ function Install-DbaMaintenanceSolution {
 
                 if ("HourlyLog" -in $AutoScheduleJobs) {
                     $logparams = @{
-                        SqlInstance              = $server
-                        Job                      = "DatabaseBackup - USER_DATABASES - LOG"
-                        Schedule                 = "Hourly Log Backup"
-                        FrequencyType            = "Daily"
-                        FrequencyInterval        = 1
-                        FrequencySubDayType      = "Hours"
-                        FrequencySubDayInterval  = 1
-                        StartTime                = "000000"
-                        Force                    = $true
+                        SqlInstance             = $server
+                        Job                     = "DatabaseBackup - USER_DATABASES - LOG"
+                        Schedule                = "Hourly Log Backup"
+                        FrequencyType           = "Daily"
+                        FrequencyInterval       = 1
+                        FrequencySubDayType     = "Hours"
+                        FrequencySubDayInterval = 1
+                        StartTime               = "000000"
+                        Force                   = $true
                     }
                 } else {
                     $logparams = @{

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Install-DbaMaintenanceSolution",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -70,6 +70,53 @@ Describe $CommandName -Tag UnitTests {
                 Should -Invoke Save-DbaCommunitySoftware -Times 0 -Exactly
                 Should -Invoke Stop-Function -Times 1 -Exactly -ParameterFilter {
                     $Message -like "Verify is not supported when backing up to NUL*"
+                }
+            }
+        }
+
+        Context "AutoScheduleJobs validation" {
+            BeforeEach {
+                Mock Stop-Function { throw $Message }
+                Mock Connect-DbaInstance { throw "connect failed" }
+                Mock Get-DbatoolsConfigValue { "C:\temp" }
+                Mock Join-DbaPath { "C:\temp" }
+                Mock Test-Path { $true }
+                Mock Save-DbaCommunitySoftware { throw "should not download" }
+            }
+
+            It "Requires InstallJobs when AutoScheduleJobs is specified" {
+                {
+                    Install-DbaMaintenanceSolution -SqlInstance "sql1" -AutoScheduleJobs "WeeklyFull"
+                } | Should -Throw "*AutoScheduleJobs is only useful when installing jobs*"
+
+                Should -Invoke Connect-DbaInstance -Times 0 -Exactly
+                Should -Invoke Save-DbaCommunitySoftware -Times 0 -Exactly
+                Should -Invoke Stop-Function -Times 1 -Exactly -ParameterFilter {
+                    $Message -like "AutoScheduleJobs is only useful when installing jobs*"
+                }
+            }
+
+            It "Requires exactly one full backup schedule option" {
+                {
+                    Install-DbaMaintenanceSolution -SqlInstance "sql1" -InstallJobs -AutoScheduleJobs "HourlyLog"
+                } | Should -Throw "*AutoScheduleJobs requires exactly one full backup schedule*"
+
+                Should -Invoke Connect-DbaInstance -Times 0 -Exactly
+                Should -Invoke Save-DbaCommunitySoftware -Times 0 -Exactly
+                Should -Invoke Stop-Function -Times 1 -Exactly -ParameterFilter {
+                    $Message -like "AutoScheduleJobs requires exactly one full backup schedule*"
+                }
+            }
+
+            It "Does not allow conflicting full backup schedule options" {
+                {
+                    Install-DbaMaintenanceSolution -SqlInstance "sql1" -InstallJobs -AutoScheduleJobs "WeeklyFull", "DailyFull"
+                } | Should -Throw "*AutoScheduleJobs requires exactly one full backup schedule*"
+
+                Should -Invoke Connect-DbaInstance -Times 0 -Exactly
+                Should -Invoke Save-DbaCommunitySoftware -Times 0 -Exactly
+                Should -Invoke Stop-Function -Times 1 -Exactly -ParameterFilter {
+                    $Message -like "AutoScheduleJobs requires exactly one full backup schedule*"
                 }
             }
         }
