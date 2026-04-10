@@ -109,7 +109,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | aaa8f9eaa | Add ReleaseDate for SQL Server releases to buildref-index / Get-DbaBuild / Test-DbaBuild / Add -MaxTimeBehind (#10277) | DONE | Added ReleaseDate twice in Test-DbaBuild output; already corrected by follow-up commit 13807a2b3 (#10328). |
 | c16f7f349 | Export-DbaCredential - Add IF NOT EXISTS guard to exported SQL scripts (#10295) | DONE | Reviewed IF NOT EXISTS credential export guard and existing unit coverage; no bugs found. |
 | e83ff4854 | Compare-DbaDbSchema - Add new command for schema comparison via sqlpackage (#10299) | DONE | Fixed pipeline-bound SourcePath validation, rejected dual target selectors, and removed verbose credential leakage; added unit regression tests. |
-| 67ce694ee | Get-DbaNetworkEncryption - Add command to retrieve TLS certificate from SQL Server network (#10293) | PENDING | |
+| 67ce694ee | Get-DbaNetworkEncryption - Add command to retrieve TLS certificate from SQL Server network (#10293) | DONE | Preferred SQL Browser TCP endpoints over named pipes, guarded truncated pre-login reads, and added unit regression tests. |
 | ce6d7c159 | Add manual instance autocomplete list (Add/Get/Remove-DbaInstanceList) (#10300) | PENDING | |
 | 0d4acaa0a | Invoke-DbaDbShrink - Add WAIT_AT_LOW_PRIORITY support (#10307) | PENDING | |
 | 092a092bb | Copy-DbaLogin - Add -ExcludeDatabaseMapping to sync only server permissions (#10305) | PENDING | |
