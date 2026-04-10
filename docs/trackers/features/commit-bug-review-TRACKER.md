@@ -125,7 +125,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 241a118ce | Test-DbaDbCompression, Get-DbaDbPageInfo - Normalize table names via Get-ObjectNameParts (#10313) | DONE | Preserved schema-/database-qualified table matching and escaped SQL literals; added unit regression tests. |
 | 14a47a26c | Export-DbaCsv, Export-DbaDacPackage - Normalize table/schema names via Get-ObjectNameParts (#10314) | DONE | Export-DbaCsv invalid-name handling was already fixed by follow-up 74a2d1ae1; this review added Export-DbaDacPackage table-name validation and a unit regression test.
 | fe639f6e6 | Remove-DbaDbTableData - Normalize table name via Get-ObjectNameParts (#10316) | DONE | Preserved database..table names, escaped ] in rebuilt identifiers, and added regression coverage. |
-| 070d2ee7f | Fix AppVeyor dbatools.library cache miss by installing to AllUsers scope (#10335) | PENDING | |
+| 070d2ee7f | Fix AppVeyor dbatools.library cache miss by installing to AllUsers scope (#10335) | DONE | Reviewed CI-only AppVeyor scope change; no bugs found. |
 | e3f6cc121 | Fix test for Invoke-DbaAdvancedUpdate (#10334) | PENDING | |
 | 6aafd24ed | Fix test for Test-DbaSpn by suppressing the warning on AppVeyor (#10331) | PENDING | |
 | 7ad9acf9f | Refactor test for Stop-Function (#10332) | PENDING | |
