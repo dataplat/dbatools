@@ -43,7 +43,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | fd7402b94 | Get-DbaUserPermission: Fix incorrect schema name shown as 'STIG' (#10210) | DONE | Reviewed SQL-only schema lookup fix; no bugs found. |
 | da0941593 | Export-DbaInstance: Propagate -EnableException to sub-commands and wrap exports in try-catch (#10211) | DONE | Fixed skipped Write-Progress completion on continued export failures; added unit regression test. |
 | 85e129c4d | Get-DbaReportingService: Use Credential in every call to Get-DbaCmObject (#10207) | DONE | Reviewed credential propagation fix; no bugs found. |
-| f3e40229f | New-DbaLogin: add ExternalGroup support and SQL Server 2022 Entra login handling (#10225) | PENDING | |
+| f3e40229f | New-DbaLogin: add ExternalGroup support and SQL Server 2022 Entra login handling (#10225) | DONE | Fixed invalid external-provider fallback WITH clause so defaults are applied with ALTER LOGIN; added unit regression test. |
 | d5d9fd3e2 | Get-DbaStartupParameter: Fix multiple issues (#10208) | PENDING | |
 | 2bc80a623 | Test-DbaKerberos: Remove CNAME test (#10209) | PENDING | |
 | 95e3aa220 | Update-DbaInstance: Fall back to computer name if Resolve-DbaNetworkName fails (#10212) | PENDING | |
