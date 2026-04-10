@@ -254,6 +254,44 @@ Describe $CommandName -Tag UnitTests {
                 $results[1].SourceServer | Should -Be "source2"
             }
         }
+
+        Context "Start-DbccCheck compatibility" {
+            BeforeEach {
+                $script:lastQuery = $null
+                $script:mockServer = [DbaInstanceParameter]"dest"
+                Add-Member -InputObject $script:mockServer -Name Name -MemberType NoteProperty -Value "dest" -Force
+                Add-Member -InputObject $script:mockServer -Name ConnectionContext -MemberType NoteProperty -Value ([PSCustomObject]@{
+                        StatementTimeout = 30
+                    }) -Force
+                Add-Member -InputObject $script:mockServer -Name Databases -MemberType NoteProperty -Value @{ } -Force
+                Add-Member -InputObject $script:mockServer -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    $script:lastQuery = $query
+                } -Force
+            }
+
+            It "Should keep returning a status string by default" {
+                $result = Start-DbccCheck -Server $script:mockServer -DbName "Db]Name" -MaxDop 4
+
+                $result | Should -Be "Success"
+                $script:lastQuery | Should -Be "DBCC CHECKDB ([Db]]Name]) WITH MAXDOP = 4"
+            }
+
+            It "Should return status and messages when detailed output is requested" {
+                Mock Invoke-DbaQuery {
+                    "message 1", "message 2"
+                }
+
+                $result = Start-DbccCheck -Server $script:mockServer -DbName "Db]Name" -DetailedOutput
+
+                $result.Status | Should -Be "Success"
+                $result.Output | Should -HaveCount 2
+                $result.Output[0] | Should -Be "message 1"
+                $result.Output[1] | Should -Be "message 2"
+                $script:lastQuery | Should -BeNullOrEmpty
+                Should -Invoke Invoke-DbaQuery -Times 1 -Exactly
+            }
+        }
     }
 }
 
