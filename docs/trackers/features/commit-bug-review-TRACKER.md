@@ -102,7 +102,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 57fa89a0e | Invoke-DbaDbShrink - Add error message output for failed shrink operations (#10258) | DONE | Avoided Stop-Function interrupt in per-file shrink failure output while preserving EnableException; added unit regression tests. |
 | df60d986f | Export-DbaUser - Add schema ownership to exported scripts (#10275) | DONE | Guarded SQL Server 2000 schema ownership scripting and added regression coverage. |
 | 7b349b546 | Test-DbaPath - Handle xp_fileexist execution failures gracefully (#10288) | DONE | Restored -EnableException behavior for xp_fileexist failures and added unit regression tests. |
-| 89c06e287 | Invoke-DbaCycleErrorLog - Fix example command names (#10290) | PENDING | |
+| 89c06e287 | Invoke-DbaCycleErrorLog - Fix example command names (#10290) | DONE | Reviewed help-text-only example-name fix; no bugs found. |
 | 899cdc30c | Update-SqlPermission - Remove unnecessary SqlConnectionObject.Close() calls (#10291) | PENDING | |
 | 97d03bee3 | Restore-DbaDatabase - Add -StopAtLsn parameter for LSN-based restore (#10245) | PENDING | |
 | 1fdfddee6 | New-DbaFirewallRule - Fix binary path extraction and remove dead code (#10294) | PENDING | |
