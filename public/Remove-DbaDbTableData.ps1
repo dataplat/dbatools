@@ -218,12 +218,26 @@ function Remove-DbaDbTableData {
 
         if (Test-Bound Table) {
             $nameParts = Get-ObjectNameParts -ObjectName $Table
+            if (-not $nameParts.Parsed) {
+                Stop-Function -Message "Please check you are using proper one-, two-, or three-part names. If your table name contains special characters you must use [ ] to wrap the name. The value $Table could not be parsed as a valid table name."
+                return
+            }
+
+            $quotedTableName = "[" + $nameParts.Name.Replace("]", "]]") + "]"
             if ($nameParts.Database) {
-                $bracketedTable = "[$($nameParts.Database)].[$($nameParts.Schema)].[$($nameParts.Name)]"
+                $quotedDatabaseName = "[" + $nameParts.Database.Replace("]", "]]") + "]"
+
+                if ($nameParts.Schema) {
+                    $quotedSchemaName = "[" + $nameParts.Schema.Replace("]", "]]") + "]"
+                    $bracketedTable = "$quotedDatabaseName.$quotedSchemaName.$quotedTableName"
+                } else {
+                    $bracketedTable = "$quotedDatabaseName..$quotedTableName"
+                }
             } elseif ($nameParts.Schema) {
-                $bracketedTable = "[$($nameParts.Schema)].[$($nameParts.Name)]"
+                $quotedSchemaName = "[" + $nameParts.Schema.Replace("]", "]]") + "]"
+                $bracketedTable = "$quotedSchemaName.$quotedTableName"
             } else {
-                $bracketedTable = "[$($nameParts.Name)]"
+                $bracketedTable = $quotedTableName
             }
             $sql += "    DELETE TOP ($BatchSize) FROM $bracketedTable;"
         } elseif (Test-Bound DeleteSql) {
