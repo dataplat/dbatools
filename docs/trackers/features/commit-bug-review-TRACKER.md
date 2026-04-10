@@ -113,7 +113,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | ce6d7c159 | Add manual instance autocomplete list (Add/Get/Remove-DbaInstanceList) (#10300) | DONE | Fixed Remove-DbaInstanceList so removals also clear the live sqlinstance TEPP cache; added regression test. |
 | 0d4acaa0a | Invoke-DbaDbShrink - Add WAIT_AT_LOW_PRIORITY support (#10307) | DONE | Fixed flaky WAIT_AT_LOW_PRIORITY integration-test timing by polling sys.dm_exec_requests and extending the blocker window. |
 | 092a092bb | Copy-DbaLogin - Add -ExcludeDatabaseMapping to sync only server permissions (#10305) | DONE | Fixed Copy-DbaLogin so -ExcludeDatabaseMapping also excludes database mappings in -OutFile exports; added a unit regression test. |
-| 1ab8d1fba | Get-DbaHelpIndex - Fix SQL injection and remove SQL 2005 code path (#10302) | PENDING | |
+| 1ab8d1fba | Get-DbaHelpIndex - Fix SQL injection and remove SQL 2005 code path (#10302) | DONE | Reviewed SQL injection fix and SQL 2005 path removal; no bugs found. |
 | fb94490d9 | Install-DbaMaintenanceSolution - Fix AutoScheduleJobs schedule bugs (#10303) | PENDING | |
 | 45e46e6ae | Copy-DbaAgentJob - Add AD group membership check for job owner login validation (#10297) | PENDING | |
 | daa4e306e | Invoke-DbaBalanceDataFiles - Add -TargetFileGroup parameter (#10296) | PENDING | |
