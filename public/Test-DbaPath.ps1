@@ -98,6 +98,11 @@ function Test-DbaPath {
                 try {
                     $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
                 } catch {
+                    if ($EnableException) {
+                        Stop-Function -Message "xp_fileexist execution failed for path(s) on $instance." -ErrorRecord $_ -Target $instance
+                        return
+                    }
+
                     Write-Message -Level Verbose -Message "xp_fileexist execution failed for path(s) on $instance. The SQL Server service account may not have access to the specified path(s). Error: $_"
                     if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                         return $false
