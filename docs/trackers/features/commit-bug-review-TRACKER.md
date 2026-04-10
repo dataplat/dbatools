@@ -100,7 +100,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 1f43cbbf0 | Install-DbaMaintenanceSolution: change Compress/Verify/CheckSum to ValidateSet string params (#10247) | DONE | Scoped NUL/Verify validation to InstallJobs, added a unit regression test, and corrected the AutoScheduleJobs example. |
 | 444659b0a | Get-DbaDbMailAccount, Get-DbaDbMailProfile - Add Account-Profile link details (#10280) | DONE | Reviewed account/profile link property additions; no bugs found. |
 | 57fa89a0e | Invoke-DbaDbShrink - Add error message output for failed shrink operations (#10258) | DONE | Avoided Stop-Function interrupt in per-file shrink failure output while preserving EnableException; added unit regression tests. |
-| df60d986f | Export-DbaUser - Add schema ownership to exported scripts (#10275) | PENDING | |
+| df60d986f | Export-DbaUser - Add schema ownership to exported scripts (#10275) | DONE | Guarded SQL Server 2000 schema ownership scripting and added regression coverage. |
 | 7b349b546 | Test-DbaPath - Handle xp_fileexist execution failures gracefully (#10288) | PENDING | |
 | 89c06e287 | Invoke-DbaCycleErrorLog - Fix example command names (#10290) | PENDING | |
 | 899cdc30c | Update-SqlPermission - Remove unnecessary SqlConnectionObject.Close() calls (#10291) | PENDING | |
