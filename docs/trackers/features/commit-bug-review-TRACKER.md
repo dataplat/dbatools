@@ -107,7 +107,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 97d03bee3 | Restore-DbaDatabase - Add -StopAtLsn parameter for LSN-based restore (#10245) | DONE | Normalized StopAtLsn input so sys.fn_dblog and lsn:-prefixed values restore correctly; added unit regression tests. |
 | 1fdfddee6 | New-DbaFirewallRule - Fix binary path extraction and remove dead code (#10294) | DONE | Bounded sqlservr.exe/sqlbrowser.exe extraction so folder names do not produce invalid Program rules; added unit regression tests. |
 | aaa8f9eaa | Add ReleaseDate for SQL Server releases to buildref-index / Get-DbaBuild / Test-DbaBuild / Add -MaxTimeBehind (#10277) | DONE | Added ReleaseDate twice in Test-DbaBuild output; already corrected by follow-up commit 13807a2b3 (#10328). |
-| c16f7f349 | Export-DbaCredential - Add IF NOT EXISTS guard to exported SQL scripts (#10295) | PENDING | |
+| c16f7f349 | Export-DbaCredential - Add IF NOT EXISTS guard to exported SQL scripts (#10295) | DONE | Reviewed IF NOT EXISTS credential export guard and existing unit coverage; no bugs found. |
 | e83ff4854 | Compare-DbaDbSchema - Add new command for schema comparison via sqlpackage (#10299) | PENDING | |
 | 67ce694ee | Get-DbaNetworkEncryption - Add command to retrieve TLS certificate from SQL Server network (#10293) | PENDING | |
 | ce6d7c159 | Add manual instance autocomplete list (Add/Get/Remove-DbaInstanceList) (#10300) | PENDING | |
