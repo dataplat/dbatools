@@ -36,7 +36,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | 218a98a4a | Import-DbaCsv - Fix RFC 4180 multiline quoted field handling (#10190) | DONE | Fixed SupportsMultiline scope bug so AutoCreateTable honors explicit opt-out; added unit regression test. |
 | 861b0dbce | Import-DbaCsv: Add -NoColumnOptimize switch (#10195) | DONE | Reviewed NoColumnOptimize switch; no bugs found. |
 | 91972b420 | Test-DbaLsnChain: Fix bug when reading history from file (#10201) | DONE | Fixed numeric sorting for deserialized LSN values from file-backed history; added regression test. |
-| 0332cfbae | Get-DbaAgentJob and Sync-DbaAvailabilityGroup: Move filter for MSX jobs (#10198) | PENDING | |
+| 0332cfbae | Get-DbaAgentJob and Sync-DbaAvailabilityGroup: Move filter for MSX jobs (#10198) | DONE | Fixed AG job sync to request Local jobs instead of filtering by CategoryID; added unit regression test. |
 | a0833cc2b | Test-DbaBackupInformation: Add member IsVerified to output if not already present (#10200) | PENDING | |
 | 14a287e37 | Connect-DbaInstance: Use localhost for dedicated admin connections (#10199) | PENDING | |
 | 7777c1401 | Export-DbaLogin: Add -IncludeRolePermissions switch (#10196) | PENDING | |

@@ -197,4 +197,84 @@ Describe $CommandName -Tag UnitTests {
             }
         }
     }
+
+    Context "Agent job sync behavior" {
+        It "Should request only local jobs and keep local jobs in category 1" {
+            InModuleScope "dbatools" {
+                function Test-FunctionInterrupt { $false }
+                function Write-ProgressHelper { }
+                function Connect-DbaInstance {
+                    param(
+                        $SqlInstance,
+                        $SqlCredential,
+                        [switch]$DedicatedAdminConnection
+                    )
+
+                    [PSCustomObject]@{
+                        Name               = $SqlInstance.ToString()
+                        DomainInstanceName = $SqlInstance.ToString()
+                    }
+                }
+                function Get-DbaAgentJob {
+                    param(
+                        $SqlInstance,
+                        $Job,
+                        $ExcludeJob,
+                        $Type
+                    )
+
+                    $script:getAgentJobCall = [PSCustomObject]@{
+                        SqlInstance = $SqlInstance
+                        Type        = $Type
+                    }
+
+                    [PSCustomObject]@{
+                        Name       = "dbatoolsci_localjob"
+                        JobType    = "Local"
+                        CategoryID = 1
+                    }
+                }
+                function Copy-DbaAgentJob {
+                    param(
+                        $Destination,
+                        [switch]$Force,
+                        [switch]$DisableOnDestination,
+                        $InputObject
+                    )
+
+                    $script:copyAgentJobCall = [PSCustomObject]@{
+                        Destination = $Destination
+                        InputObject = $InputObject
+                    }
+                }
+
+                $script:getAgentJobCall = $null
+                $script:copyAgentJobCall = $null
+
+                $exclude = @(
+                    "AgentAlert",
+                    "AgentCategory",
+                    "AgentOperator",
+                    "AgentProxy",
+                    "AgentSchedule",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "DatabaseOwner",
+                    "LinkedServers",
+                    "LoginPermissions",
+                    "Logins",
+                    "SpConfigure",
+                    "SystemTriggers"
+                )
+
+                $null = Sync-DbaAvailabilityGroup -Primary "sql1" -Secondary "sql2" -Exclude $exclude
+
+                $script:getAgentJobCall.SqlInstance.Name | Should -Be "sql1"
+                $script:getAgentJobCall.Type | Should -Be "Local"
+                $script:copyAgentJobCall.InputObject.Name | Should -Be "dbatoolsci_localjob"
+                $script:copyAgentJobCall.InputObject.JobType | Should -Be "Local"
+            }
+        }
+    }
 }
