@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaAgRingBuffer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -18,6 +18,75 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Query handling" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:throwRingBufferQuery = $false
+
+                $script:mockTimestampTable = New-Object System.Data.DataTable
+                $null = $script:mockTimestampTable.Columns.Add("TimeStamp", [double])
+                $timestampRow = $script:mockTimestampTable.NewRow()
+                $timestampRow.TimeStamp = 123456
+                $script:mockTimestampTable.Rows.Add($timestampRow)
+
+                $script:mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                }
+
+                $script:mockServer | Add-Member -Force -MemberType ScriptMethod -Name Query -Value {
+                    param($Sql)
+
+                    if ($Sql -like "*sys.dm_os_sys_info*") {
+                        $script:mockTimestampTable
+                    } elseif ($script:throwRingBufferQuery) {
+                        throw "ring buffer query failed"
+                    } else {
+                        $script:lastQuery = $Sql
+                        @()
+                    }
+                }
+            }
+
+            BeforeEach {
+                $script:lastQuery = $null
+                $script:throwRingBufferQuery = $false
+            }
+
+            It "uses the scalar timestamp value when building the HADR ring buffer query" {
+                Mock Connect-DbaInstance {
+                    $script:mockServer
+                }
+
+                $null = Get-DbaAgRingBuffer -SqlInstance "sql1"
+
+                $script:lastQuery | Should -Match "DATEADD\(ms, -1 \* \(123456 - \[timestamp\]\), GETDATE\(\)\)"
+                $script:lastQuery | Should -Not -Match "System\.Data\.DataRow"
+            }
+
+            It "routes HADR ring buffer query failures through Stop-Function" {
+                Mock Connect-DbaInstance {
+                    $script:mockServer
+                }
+                Mock Stop-Function {
+                    param(
+                        $Message,
+                        $Target,
+                        $ErrorRecord
+                    )
+
+                    throw "$Message | inner: $($ErrorRecord.Exception.Message) | target: $Target"
+                }
+
+                $script:throwRingBufferQuery = $true
+
+                { Get-DbaAgRingBuffer -SqlInstance "sql1" } | Should -Throw "*Failed to query HADR ring buffer data.*ring buffer query failed*target: sql1*"
+            }
         }
     }
 }
