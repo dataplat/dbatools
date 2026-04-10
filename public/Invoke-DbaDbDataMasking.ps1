@@ -409,6 +409,8 @@ function Invoke-DbaDbDataMasking {
                         }
                     }
 
+                    $actionIdentityValues = @()
+
                     try {
                         if ($WhatIfPreference) {
                             # In WhatIf mode, only get the row count without modifying the table structure
@@ -453,6 +455,8 @@ function Invoke-DbaDbDataMasking {
 
                             # Get the data
                             [array]$data = $db.Query($query)
+
+                            $actionIdentityValues = @($data | ForEach-Object { $PSItem.$identityColumn } | Where-Object { $null -ne $PSItem } | Select-Object -Unique)
                         }
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
@@ -1164,17 +1168,17 @@ function Invoke-DbaDbDataMasking {
                                         }
                                     }
                                 }
-                                # Add FilterQuery WHERE clause to restrict which rows are updated
-                                if ($validAction -and $tableobject.FilterQuery) {
-                                    $filterParts = ($tableobject.FilterQuery) -split "WHERE", 2, "ignorecase"
-                                    if ($filterParts.Count -gt 1) {
-                                        $filterWhereClause = $filterParts[1].Trim().TrimEnd(";")
-                                        $query = $query.TrimEnd(";") + " WHERE $filterWhereClause;"
+                                # Apply actions only to the rows returned by FilterQuery
+                                if ($validAction -and $tableobject.FilterQuery -and $actionIdentityValues.Count -ge 1) {
+                                    for ($batchStart = 0; $batchStart -lt $actionIdentityValues.Count; $batchStart += $BatchSize) {
+                                        $batchEnd = [System.Math]::Min($batchStart + $BatchSize - 1, $actionIdentityValues.Count - 1)
+                                        $identityBatch = $actionIdentityValues[$batchStart .. $batchEnd] -join ", "
+                                        $null = $stringBuilder.AppendLine($query.TrimEnd(";") + " WHERE [$identityColumn] IN ($identityBatch);")
                                     }
                                 }
 
                                 # Add the query to the rest
-                                if ($validAction) {
+                                if ($validAction -and -not $tableobject.FilterQuery) {
                                     $null = $stringBuilder.AppendLine($query)
                                 }
                             }
