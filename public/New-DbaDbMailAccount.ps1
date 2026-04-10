@@ -160,6 +160,7 @@ function New-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$MailServer,
+        [ValidateRange(1, 65535)]
         [int]$Port,
         [switch]$EnableSSL,
         [switch]$UseDefaultCredentials,
@@ -169,6 +170,16 @@ function New-DbaDbMailAccount {
         [switch]$EnableException
     )
     process {
+        if ($UseDefaultCredentials.IsPresent -and (Test-Bound -ParameterName UserName, Password)) {
+            Stop-Function -Category InvalidArgument -Message "You cannot specify -UseDefaultCredentials with -UserName or -Password."
+            return
+        }
+
+        if (Test-Bound -ParameterName UserName, Password -Min 1 -Max 1) {
+            Stop-Function -Category InvalidArgument -Message "You must specify both -UserName and -Password together."
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
