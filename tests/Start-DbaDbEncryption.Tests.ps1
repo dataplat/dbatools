@@ -50,6 +50,18 @@ Describe $CommandName -Tag UnitTests {
             $disconnectCommands[0].Extent.Text | Should -Match ([regex]::Escape($expectedArgument))
         }
     }
+
+    Context "Parallel exclusions" {
+        It "uses the filtered database list when pre-creating encryption keys" {
+            $commandText = (Get-Command $CommandName).ScriptBlock.Ast.Extent.Text
+            $parallelBlockStart = $commandText.IndexOf("# Step 3: Create a database encryption key in the target database if needed")
+            $parallelBlockLength = [Math]::Min(500, $commandText.Length - $parallelBlockStart)
+            $parallelBlockText = $commandText.Substring($parallelBlockStart, $parallelBlockLength)
+            $expectedText = "foreach (" + [char]36 + "db in " + [char]36 + "databases)"
+
+            $parallelBlockText | Should -Match ([regex]::Escape($expectedText))
+        }
+    }
 }
 
 
@@ -156,4 +168,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }
+
 }
