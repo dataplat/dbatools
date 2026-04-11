@@ -433,10 +433,10 @@ Describe $CommandName -Tag UnitTests {
 
                     $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForSsisOnly
                     $script:stopMessages | Should -BeNullOrEmpty
-                    $script:ssisCalls.Count | Should -Be 1
+                    @($script:ssisCalls).Count | Should -Be 1
                     $script:ssisCalls[0].Source.VersionMajor | Should -Be 15
                     $script:ssisCalls[0].Destination | Should -Be "sql2"
-                    ($script:messages | Where-Object { $PSItem -like "*Migrating SSIS catalog" }).Count | Should -Be 1
+                    @($script:messages | Where-Object { $PSItem -like "*Migrating SSIS catalog" }).Count | Should -Be 1
                 } finally {
                     foreach ($functionName in $functionNames) {
                         if ($originalFunctions.ContainsKey($functionName)) {
