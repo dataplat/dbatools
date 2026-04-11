@@ -103,7 +103,7 @@ Find real bugs (logic errors, null refs, incorrect behavior) and fix them. Skip 
 | df60d986f | Export-DbaUser - Add schema ownership to exported scripts (#10275) | DONE | Guarded SQL Server 2000 schema ownership scripting and added regression coverage. |
 | 7b349b546 | Test-DbaPath - Handle xp_fileexist execution failures gracefully (#10288) | DONE | Restored -EnableException behavior for xp_fileexist failures and added unit regression tests. |
 | 89c06e287 | Invoke-DbaCycleErrorLog - Fix example command names (#10290) | DONE | Reviewed help-text-only example-name fix; no bugs found. |
-| 899cdc30c | Update-SqlPermission - Remove unnecessary SqlConnectionObject.Close() calls (#10291) | DONE | Materialized SMO enumerations to avoid open DataReader conflicts and added a unit regression test. |
+| 899cdc30c | Update-SqlPermission - Remove unnecessary SqlConnectionObject.Close() calls (#10291) | DONE | Initial materialize-SMO-enumerations fix (0e954140a) broke Copy-DbaLogin and Sync-DbaLoginPermission and was reverted; needs a more complete patch. |
 | 97d03bee3 | Restore-DbaDatabase - Add -StopAtLsn parameter for LSN-based restore (#10245) | DONE | Normalized StopAtLsn input so sys.fn_dblog and lsn:-prefixed values restore correctly; added unit regression tests. |
 | 1fdfddee6 | New-DbaFirewallRule - Fix binary path extraction and remove dead code (#10294) | DONE | Bounded sqlservr.exe/sqlbrowser.exe extraction so folder names do not produce invalid Program rules; added unit regression tests. |
 | aaa8f9eaa | Add ReleaseDate for SQL Server releases to buildref-index / Get-DbaBuild / Test-DbaBuild / Add -MaxTimeBehind (#10277) | DONE | Added ReleaseDate twice in Test-DbaBuild output; already corrected by follow-up commit 13807a2b3 (#10328). |
