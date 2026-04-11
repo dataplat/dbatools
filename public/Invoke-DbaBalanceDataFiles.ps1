@@ -345,7 +345,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($tableCollection.Indexes.Count -lt 1) {
+                            if (@($tbl.Indexes).Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -353,7 +353,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = @($tbl.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' })
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag

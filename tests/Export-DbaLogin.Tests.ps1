@@ -116,7 +116,11 @@ namespace ExportDbaLoginRoleTest {
     }
 
     public class MockJobServer {
-        public List<MockJob> Jobs { get; set; } = new List<MockJob>();
+        public List<MockJob> Jobs { get; set; }
+
+        public MockJobServer() {
+            Jobs = new List<MockJob>();
+        }
     }
 
     public class MockLogin {
@@ -139,9 +143,14 @@ namespace ExportDbaLoginRoleTest {
         public string Name { get; set; }
         public bool IsAccessible { get; set; }
         public string CompatibilityLevel { get; set; }
-        public MockCollection<MockRole> Roles { get; set; } = new MockCollection<MockRole>();
-        public MockCollection<MockUser> Users { get; set; } = new MockCollection<MockUser>();
+        public MockCollection<MockRole> Roles { get; set; }
+        public MockCollection<MockUser> Users { get; set; }
         public MockMapping[] LoginMappings { get; set; }
+
+        public MockDatabase() {
+            Roles = new MockCollection<MockRole>();
+            Users = new MockCollection<MockUser>();
+        }
 
         public MockMapping[] EnumLoginMappings() {
             return LoginMappings ?? Array.Empty<MockMapping>();
@@ -155,11 +164,19 @@ namespace ExportDbaLoginRoleTest {
     public class MockServer {
         public string Name { get; set; }
         public int VersionMajor { get; set; }
-        public List<MockLogin> Logins { get; set; } = new List<MockLogin>();
-        public List<MockServerRole> Roles { get; set; } = new List<MockServerRole>();
-        public MockJobServer JobServer { get; set; } = new MockJobServer();
-        public List<MockCredential> Credentials { get; set; } = new List<MockCredential>();
-        public MockCollection<MockDatabase> Databases { get; set; } = new MockCollection<MockDatabase>();
+        public List<MockLogin> Logins { get; set; }
+        public List<MockServerRole> Roles { get; set; }
+        public MockJobServer JobServer { get; set; }
+        public List<MockCredential> Credentials { get; set; }
+        public MockCollection<MockDatabase> Databases { get; set; }
+
+        public MockServer() {
+            Logins = new List<MockLogin>();
+            Roles = new List<MockServerRole>();
+            JobServer = new MockJobServer();
+            Credentials = new List<MockCredential>();
+            Databases = new MockCollection<MockDatabase>();
+        }
 
         public object[] EnumServerPermissions(string userName) {
             return Array.Empty<object>();

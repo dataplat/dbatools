@@ -97,13 +97,13 @@ function Get-DbaDbOrphanUser {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $DatabaseCollection = $server.Databases | Where-Object IsAccessible
+            $DatabaseCollection = @($server.Databases | Where-Object IsAccessible)
 
             if ($Database) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
+                $DatabaseCollection = @($DatabaseCollection | Where-Object Name -In $Database)
             }
             if ($ExcludeDatabase) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
+                $DatabaseCollection = @($DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase)
             }
 
             if ($DatabaseCollection.Count -gt 0) {
