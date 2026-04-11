@@ -131,7 +131,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should export all credentials" {
         BeforeAll {
-            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle
+            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle -EnableException
             $exportResults = Get-Content -Path $exportFile -Raw
         }
 
@@ -156,9 +156,10 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $specificFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportSpecific = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Identity    = $captainCredIdentity
-                FilePath    = $specificFilePath
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                FilePath        = $specificFilePath
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportSpecific
             $specificResults = Get-Content -Path $specificFilePath
@@ -181,10 +182,11 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $appendFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportAppend = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Identity    = $hulkCredIdentity
-                FilePath    = $appendFilePath
-                Append      = $true
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $hulkCredIdentity
+                FilePath        = $appendFilePath
+                Append          = $true
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportAppend
             $appendResults = Get-Content -Path $appendFilePath
@@ -211,6 +213,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Identity        = $captainCredIdentity
                 FilePath        = $excludePasswordFilePath
                 ExcludePassword = $true
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportNoPassword
             $excludePasswordResults = Get-Content -Path $excludePasswordFilePath
