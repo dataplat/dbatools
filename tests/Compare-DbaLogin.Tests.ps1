@@ -78,7 +78,7 @@ Describe $CommandName -Tag UnitTests {
             It "skips failed destinations without reusing the previous connection" {
                 $result = Compare-DbaLogin -Source "source1" -Destination "dest1", "dest2"
 
-                $result.Count | Should -Be 1
+                @($result).Count | Should -Be 1
                 $result.SourceServer | Should -Be "source1"
                 $result.DestinationServer | Should -Be "dest1"
                 Should -Invoke Get-DbaLogin -Times 2 -Exactly

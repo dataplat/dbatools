@@ -318,7 +318,7 @@ Describe $CommandName -Tag UnitTests {
                     $null = Start-DbaMigration -Source "sql1" -Destination "sql2" -Exclude $excludeForSsisOnly
                     $script:ssisCopied | Should -BeFalse
                     $script:stopMessages | Should -BeNullOrEmpty
-                    ($script:messages | Where-Object { $PSItem -like "*Skipping SSIS catalog migration*" }).Count | Should -Be 1
+                    @($script:messages | Where-Object { $PSItem -like "*Skipping SSIS catalog migration*" }).Count | Should -Be 1
                 } finally {
                     foreach ($functionName in $functionNames) {
                         if ($originalFunctions.ContainsKey($functionName)) {
