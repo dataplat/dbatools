@@ -518,7 +518,7 @@ function Test-DbaLastBackup {
                         FileExists                = $true
                         SkipRestoreResult         = $null
                         SkipDbccResult            = $null
-                        TrustDbBackupHistory      = $false
+                        TrustDbBackupHistory      = $true
                         IgnoreDiffBackupInRestore = (Test-Bound "IgnoreDiffBackup")
                         RemoveArray               = $null
                         EffectiveDataDirectory    = $effectiveDataDirectory
