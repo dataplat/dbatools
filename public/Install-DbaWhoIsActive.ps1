@@ -146,8 +146,8 @@ function Install-DbaWhoIsActive {
             }
 
             # Select the appropriate SQL file based on the target server's version.
-            # sp_WhoIsActive ships version-specific SQL files in subfolders named with year ranges (e.g. 2005-2008, 2012-2019).
-            # The root sp_WhoIsActive.sql targets the latest SQL Server version.
+            # sp_WhoIsActive ships version-specific SQL files in subfolders named by the maximum supported year (e.g. 2008, 2019).
+            # The root sp_WhoIsActive.sql targets the latest SQL Server version (2022+).
             $allSqlFiles = @(Get-ChildItem -Path $localCachedCopy -Filter 'sp_WhoIsActive.sql' -Recurse)
             if ($allSqlFiles.Count -eq 0) {
                 Write-Message -Level Verbose -Message "New filename sp_WhoIsActive.sql not found, using old filename who_is_active.sql."
@@ -174,27 +174,24 @@ function Install-DbaWhoIsActive {
                 }
                 $serverYear = $versionToYear["$($server.VersionMajor)"]
 
-                # The root-level file targets the latest SQL Server version.
+                # The root-level file targets the latest SQL Server version (2022+).
                 $rootFile = $allSqlFiles | Where-Object { $_.DirectoryName -eq $localCachedCopy }
-                # Version-specific files live in subdirectories named with year ranges (e.g. 2005-2008, 2012-2019).
+                # Version-specific files live in subdirectories named by the maximum supported year (e.g. 2008, 2019).
                 $versionFiles = $allSqlFiles | Where-Object { $_.DirectoryName -ne $localCachedCopy }
 
                 $sqlfile = $null
                 if ($serverYear -and $versionFiles) {
-                    foreach ($versionFile in $versionFiles) {
-                        $dirName = Split-Path -Path $versionFile.DirectoryName -Leaf
-                        if ($dirName -match '(\d{4})-(\d{4})') {
-                            $rangeStart = [int]$Matches[1]
-                            $rangeEnd = [int]$Matches[2]
-                            if ($serverYear -ge $rangeStart -and $serverYear -le $rangeEnd) {
-                                $sqlfile = $versionFile.FullName
-                                break
-                            }
-                        } elseif ($dirName -match '(\d{4})') {
-                            if ($serverYear -eq [int]$Matches[1]) {
-                                $sqlfile = $versionFile.FullName
-                                break
-                            }
+                    # Sort subfolders ascending by year; pick the first folder where serverYear <= folderYear.
+                    # e.g. folder "2008" covers SQL Server 2005-2008, folder "2019" covers 2012-2019.
+                    $sortedVersionFiles = $versionFiles |
+                        Where-Object { (Split-Path -Path $_.DirectoryName -Leaf) -match '^\d{4}$' } |
+                        Sort-Object { [int](Split-Path -Path $_.DirectoryName -Leaf) }
+
+                    foreach ($versionFile in $sortedVersionFiles) {
+                        $folderYear = [int](Split-Path -Path $versionFile.DirectoryName -Leaf)
+                        if ($serverYear -le $folderYear) {
+                            $sqlfile = $versionFile.FullName
+                            break
                         }
                     }
                 }
