@@ -1370,7 +1370,14 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         if ($effectiveDateTimeFormats) {
                             $csvOptions.DateTimeFormats = $effectiveDateTimeFormats
                         }
-                        if ($PSBoundParameters.Culture) {
+                        # Only set Culture on csvOptions when the user explicitly provided DateTimeFormats
+                        # alongside Culture, OR when no DateTimeFormats derivation occurred.
+                        # When DateTimeFormats are auto-derived from Culture (issue #10338), do NOT set
+                        # Culture on csvOptions: the library bypasses DateTimeFormats when Culture is also
+                        # set, falling back to a broken DateTime.Parse path that ignores format order.
+                        # Omitting Culture here forces the library to use ParseExact with the derived
+                        # format strings, which correctly respects dd/MM vs MM/dd ordering.
+                        if ($PSBoundParameters.Culture -and $PSBoundParameters.DateTimeFormats) {
                             $csvOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
                         }
                         if ($PSBoundParameters.StaticColumns) {
