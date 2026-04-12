@@ -146,58 +146,26 @@ function Install-DbaWhoIsActive {
             }
 
             # Select the appropriate SQL file based on the target server's version.
-            # sp_WhoIsActive ships version-specific SQL files in subfolders named by the maximum supported year (e.g. 2008, 2019).
-            # The root sp_WhoIsActive.sql targets the latest SQL Server version (2022+).
-            $allSqlFiles = @(Get-ChildItem -Path $localCachedCopy -Filter 'sp_WhoIsActive.sql' -Recurse)
-            if ($allSqlFiles.Count -eq 0) {
-                Write-Message -Level Verbose -Message "New filename sp_WhoIsActive.sql not found, using old filename who_is_active.sql."
-                $allSqlFiles = @(Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql' -Recurse)
+            # sp_WhoIsActive ships version-specific SQL files in subfolders:
+            # - Folder "2008" for SQL Server 2005-2008 (VersionMajor <= 10)
+            # - Folder "2019" for SQL Server 2012-2019 (VersionMajor <= 15)
+            # - Base folder for SQL Server 2022+ (VersionMajor >= 16)
+            if ($server.VersionMajor -le 10) {
+                $sqlfile = Join-Path -Path (Join-Path -Path $localCachedCopy -ChildPath '2008') -ChildPath 'sp_WhoIsActive.sql'
+            } elseif ($server.VersionMajor -le 15) {
+                $sqlfile = Join-Path -Path (Join-Path -Path $localCachedCopy -ChildPath '2019') -ChildPath 'sp_WhoIsActive.sql'
+            } else {
+                $sqlfile = Join-Path -Path $localCachedCopy -ChildPath 'sp_WhoIsActive.sql'
             }
 
-            if ($allSqlFiles.Count -eq 0) {
-                Stop-Function -Message "No SQL file found in $localCachedCopy." -Target $instance -Continue
-            } elseif ($allSqlFiles.Count -eq 1) {
-                $sqlfile = $allSqlFiles[0].FullName
-            } else {
-                # Multiple SQL files found: pick the version-appropriate one.
-                # Map SQL Server major version numbers to release years for folder name matching.
-                $versionToYear = @{
-                    "9"  = 2005
-                    "10" = 2008
-                    "11" = 2012
-                    "12" = 2014
-                    "13" = 2016
-                    "14" = 2017
-                    "15" = 2019
-                    "16" = 2022
-                    "17" = 2025
-                }
-                $serverYear = $versionToYear["$($server.VersionMajor)"]
-
-                # The root-level file targets the latest SQL Server version (2022+).
-                $rootFile = $allSqlFiles | Where-Object { $_.DirectoryName -eq $localCachedCopy }
-                # Version-specific files live in subdirectories named by the maximum supported year (e.g. 2008, 2019).
-                $versionFiles = $allSqlFiles | Where-Object { $_.DirectoryName -ne $localCachedCopy }
-
-                $sqlfile = $null
-                if ($serverYear -and $versionFiles) {
-                    # Sort subfolders ascending by year; pick the first folder where serverYear <= folderYear.
-                    # e.g. folder "2008" covers SQL Server 2005-2008, folder "2019" covers 2012-2019.
-                    $sortedVersionFiles = $versionFiles |
-                        Where-Object { (Split-Path -Path $_.DirectoryName -Leaf) -match '^\d{4}$' } |
-                        Sort-Object { [int](Split-Path -Path $_.DirectoryName -Leaf) }
-
-                    foreach ($versionFile in $sortedVersionFiles) {
-                        $folderYear = [int](Split-Path -Path $versionFile.DirectoryName -Leaf)
-                        if ($serverYear -le $folderYear) {
-                            $sqlfile = $versionFile.FullName
-                            break
-                        }
-                    }
-                }
-
-                if (-not $sqlfile) {
-                    $sqlfile = $rootFile.FullName
+            if (-not (Test-Path -Path $sqlfile)) {
+                Write-Message -Level Verbose -Message "Version-appropriate file not found at $sqlfile, falling back to old filename who_is_active.sql."
+                $whoIsActiveOldFile = Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql' -Recurse | Select-Object -First 1
+                if ($whoIsActiveOldFile) {
+                    $sqlfile = $whoIsActiveOldFile.FullName
+                } else {
+                    Stop-Function -Message "No SQL file found in $localCachedCopy." -Target $instance -Continue
+                    continue
                 }
             }
 
