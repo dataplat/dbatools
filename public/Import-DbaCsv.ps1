@@ -604,8 +604,12 @@ function Import-DbaCsv {
         }
 
         # When Culture is specified but DateTimeFormats is not, derive unambiguous datetime format
-        # strings from the culture's DateTimeFormat patterns. This forces ParseExact (which respects
-        # field order) instead of Parse (which can swap day/month when both values are <= 12).
+        # strings from the culture's ShortDatePattern only (purely numeric patterns).
+        # This forces ParseExact (which respects field order) instead of Parse (which can swap
+        # day/month when both values are <= 12).
+        # NOTE: Only short patterns (no LongDatePattern with MMMM/dddd) are derived, because
+        # locale-specific month/day name tokens combined with InvariantCulture can cause the
+        # library's parser to throw and fall back to a broken Parse path.
         # See: https://github.com/dataplat/dbatools/issues/10338
         if ($PSBoundParameters.Culture -and -not $PSBoundParameters.DateTimeFormats) {
             $cultureObj = New-Object System.Globalization.CultureInfo($Culture)
@@ -613,9 +617,7 @@ function Import-DbaCsv {
             $effectiveDateTimeFormats = @(
                 "$($dtf.ShortDatePattern) $($dtf.LongTimePattern)",
                 "$($dtf.ShortDatePattern) $($dtf.ShortTimePattern)",
-                $dtf.ShortDatePattern,
-                "$($dtf.LongDatePattern) $($dtf.LongTimePattern)",
-                $dtf.LongDatePattern
+                $dtf.ShortDatePattern
             )
             Write-Message -Level Verbose -Message "Derived DateTimeFormats from Culture '$Culture': $($effectiveDateTimeFormats -join ', ')"
         } elseif ($PSBoundParameters.DateTimeFormats) {
@@ -1370,14 +1372,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         if ($effectiveDateTimeFormats) {
                             $csvOptions.DateTimeFormats = $effectiveDateTimeFormats
                         }
-                        # Only set Culture on csvOptions when the user explicitly provided DateTimeFormats
-                        # alongside Culture, OR when no DateTimeFormats derivation occurred.
-                        # When DateTimeFormats are auto-derived from Culture (issue #10338), do NOT set
-                        # Culture on csvOptions: the library bypasses DateTimeFormats when Culture is also
-                        # set, falling back to a broken DateTime.Parse path that ignores format order.
-                        # Omitting Culture here forces the library to use ParseExact with the derived
-                        # format strings, which correctly respects dd/MM vs MM/dd ordering.
-                        if ($PSBoundParameters.Culture -and $PSBoundParameters.DateTimeFormats) {
+                        if ($PSBoundParameters.Culture) {
                             $csvOptions.Culture = New-Object System.Globalization.CultureInfo($Culture)
                         }
                         if ($PSBoundParameters.StaticColumns) {
