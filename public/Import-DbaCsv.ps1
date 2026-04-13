@@ -604,20 +604,40 @@ function Import-DbaCsv {
         }
 
         # When Culture is specified but DateTimeFormats is not, derive unambiguous datetime format
-        # strings from the culture's ShortDatePattern only (purely numeric patterns).
-        # This forces ParseExact (which respects field order) instead of Parse (which can swap
-        # day/month when both values are <= 12).
-        # NOTE: Only short patterns (no LongDatePattern with MMMM/dddd) are derived, because
-        # locale-specific month/day name tokens combined with InvariantCulture can cause the
-        # library's parser to throw and fall back to a broken Parse path.
+        # strings that force ParseExact (which respects day/month field order) instead of
+        # DateTime.Parse (which can swap day/month when both values are <= 12).
         # See: https://github.com/dataplat/dbatools/issues/10338
+        #
+        # Design notes:
+        # 1. We do NOT use $dtf.ShortDatePattern or $dtf.LongTimePattern directly because these
+        #    properties differ between Windows (NLS) and Linux (ICU), causing platform-specific
+        #    format mismatches in CI. Instead we derive the format from stable culture primitives.
+        # 2. Time colons are escaped as HH':'mm':'ss rather than HH:mm:ss. In DateTime.ParseExact,
+        #    an unescaped ':' is a placeholder for the culture's TimeSeparator property. For de-CH
+        #    on Linux/ICU the TimeSeparator is '.' not ':', so HH:mm:ss would expect "17.09.41"
+        #    and fail to match CSV data that uses the common "17:09:41" format. Escaping forces
+        #    a literal ':' match regardless of the culture's TimeSeparator.
         if ($PSBoundParameters.Culture -and -not $PSBoundParameters.DateTimeFormats) {
             $cultureObj = New-Object System.Globalization.CultureInfo($Culture)
             $dtf = $cultureObj.DateTimeFormat
+            $dateSep = $dtf.DateSeparator
+
+            # Determine date field order from the first character of ShortDatePattern
+            if ($dtf.ShortDatePattern -match '^y') {
+                # Year-first cultures (e.g. yyyy-MM-dd)
+                $datePattern = "yyyy${dateSep}MM${dateSep}dd"
+            } elseif ($dtf.ShortDatePattern -match '^M') {
+                # Month-first cultures (e.g. MM/dd/yyyy for en-US)
+                $datePattern = "MM${dateSep}dd${dateSep}yyyy"
+            } else {
+                # Day-first cultures (e.g. dd.MM.yyyy for de-CH, de-DE, en-GB)
+                $datePattern = "dd${dateSep}MM${dateSep}yyyy"
+            }
+
             $effectiveDateTimeFormats = @(
-                "$($dtf.ShortDatePattern) $($dtf.LongTimePattern)",
-                "$($dtf.ShortDatePattern) $($dtf.ShortTimePattern)",
-                $dtf.ShortDatePattern
+                "$datePattern HH':'mm':'ss",
+                "$datePattern HH':'mm",
+                $datePattern
             )
             Write-Message -Level Verbose -Message "Derived DateTimeFormats from Culture '$Culture': $($effectiveDateTimeFormats -join ', ')"
         } elseif ($PSBoundParameters.DateTimeFormats) {
