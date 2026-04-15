@@ -216,6 +216,21 @@ function Export-DbaUser {
             'Version160' = 'SQLServer2022'
         }
 
+        # Maps SQL Server major version number to SMO scripting version string.
+        # Used to resolve the actual server version when no DestinationVersion is specified,
+        # since the database compatibility level may be lower than the server version.
+        $serverVersionMap = @{
+            8  = 'Version80'
+            9  = 'Version90'
+            10 = 'Version100'
+            11 = 'Version110'
+            12 = 'Version120'
+            13 = 'Version130'
+            14 = 'Version140'
+            15 = 'Version150'
+            16 = 'Version160'
+        }
+
         $eol = [System.Environment]::NewLine
 
     }
@@ -232,8 +247,17 @@ function Export-DbaUser {
         foreach ($db in $InputObject) {
 
             if ([string]::IsNullOrEmpty($destinationVersion)) {
-                #Get compatibility level for scripting the objects
-                $scriptVersion = $db.CompatibilityLevel
+                # Use the actual server version rather than the database compatibility level.
+                # The compatibility level may be lower than the server version (e.g., a SQL 2022
+                # instance hosting a database at compat level 120/SQL2014). Scripting against
+                # the lower compat level causes errors for features like External users that are
+                # supported by the server but not recognised by older scripting targets.
+                $serverMajorVersion = $db.Parent.VersionMajor
+                if ($serverVersionMap.ContainsKey($serverMajorVersion)) {
+                    $scriptVersion = $serverVersionMap[$serverMajorVersion]
+                } else {
+                    $scriptVersion = $db.CompatibilityLevel
+                }
             } else {
                 $scriptVersion = $versions[$destinationVersion]
             }
