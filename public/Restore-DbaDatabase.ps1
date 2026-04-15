@@ -248,8 +248,7 @@ function Restore-DbaDatabase {
     .PARAMETER StopAtLsn
         Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
         Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
-        Accepts either the numeric restore format used by SQL Server or the colon-delimited format returned by sys.fn_dblog.
-        Combine with -StopBefore to stop just before the specified LSN.
+        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -442,12 +441,12 @@ function Restore-DbaDatabase {
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn "00000030:00000f28:0001"
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001'
 
         Restores the backups from \\ServerName\ShareName\File as database, stopping when the specified LSN is reached.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn "00000030:00000f28:0001" -StopBefore
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001' -StopBefore
 
         Restores the backups from \\ServerName\ShareName\File as database, stopping just before the specified LSN is reached.
 
@@ -466,7 +465,7 @@ function Restore-DbaDatabase {
         The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
 
     .EXAMPLE
-        PS C:\> Get-ChildItem \\server\backups -File | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
+        PS C:\> Get-ChildItem \\server\backups | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
 
         Scans the \\server\backups share and restores only files with a .bak extension, excluding any incomplete or in-progress files
         such as those with extensions like .bak.part that may be created by SFTP clients or other upload tools during file transfer.
@@ -476,7 +475,7 @@ function Restore-DbaDatabase {
         your file list to include only complete backup files before passing them to this command.
 
     .EXAMPLE
-        PS C:\> $backupFiles = Get-ChildItem \\server\backups -File -Recurse | Where-Object { $_.Name -match "\.(bak|trn|dif)$" }
+        PS C:\> $backupFiles = Get-ChildItem \\server\backups -Recurse | Where-Object { $_.Name -match '\.(bak|trn|dif)$' }
         PS C:\> $backupFiles | Restore-DbaDatabase -SqlInstance server1\instance1
 
         Recursively scans \\server\backups and filters files to only those ending in .bak, .trn, or .dif using a regex match,
@@ -635,12 +634,8 @@ function Restore-DbaDatabase {
                     return
                 }
             }
-            if ($KeepCDC -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
+            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))) {
                 Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
-                return
-            }
-            if ($ErrorBrokerConversations -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
-                Stop-Function -Category InvalidArgument -Message "ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
                 return
             }
             if ($Continue) {

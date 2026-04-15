@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Restore-DbaDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -68,34 +68,6 @@ Describe $CommandName -Tag UnitTests {
                 "StopAtLsn"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-        }
-    }
-
-    InModuleScope dbatools {
-        Context "ErrorBrokerConversations validation" {
-            BeforeAll {
-                function Write-Message { }
-            }
-
-            BeforeEach {
-                Mock Connect-DbaInstance {
-                    [PSCustomObject]@{
-                        DatabaseEngineEdition = "SqlServer"
-                        VersionMajor          = 16
-                        ConnectionContext     = [PSCustomObject]@{
-                            StatementTimeout = 0
-                        }
-                    }
-                }
-            }
-
-            It "Should call Stop-Function when ErrorBrokerConversations is combined with NoRecovery" {
-                Mock Stop-Function {
-                    throw $Message
-                }
-
-                { Restore-DbaDatabase -SqlInstance "sql1" -Path "C:\backups\test.bak" -ErrorBrokerConversations -NoRecovery } | Should -Throw "*ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work*"
-            }
         }
     }
 }
@@ -751,41 +723,6 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
 
-    Context "Checking ErrorBrokerConversations parameter " {
-        BeforeAll {
-            $databaseName = "testErrorBrokerConversations"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $TestConfig.SqlCredential -EnableException
-            $executeAsLogin = $server.ConnectionContext.TrueLogin
-            $escapedExecuteAsLogin = $executeAsLogin.Replace("'", "''")
-            $server.ConnectionContext.Disconnect()
-        }
-
-        It "Should have ERROR_BROKER_CONVERSATIONS in the SQL" {
-            $output = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -ErrorBrokerConversations -WithReplace
-            $output | Should -BeLike "*ERROR_BROKER_CONVERSATIONS*"
-        }
-
-        It "Should prefix the script with the Execute As statement when ErrorBrokerConversations is specified" {
-            $output = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -ErrorBrokerConversations -WithReplace -ExecuteAs $executeAsLogin
-            $output | Should -BeLike "EXECUTE AS LOGIN='$escapedExecuteAsLogin'*ERROR_BROKER_CONVERSATIONS*"
-        }
-
-        It "Should not output, and warn if Norecovery and ErrorBrokerConversations specified" {
-            $WarnVar = $null
-            $output = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -ErrorBrokerConversations -WithReplace -NoRecovery -WarningAction SilentlyContinue
-            $WarnVar | Should -BeLike "*ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
-            $output | Should -Be $null
-        }
-
-        It "Should not output, and warn if StandbyDirectory and ErrorBrokerConversations specified" {
-            $WarnVar = $null
-            $output = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName $databaseName -OutputScriptOnly -ErrorBrokerConversations -WithReplace -StandbyDirectory $backupPath -WarningAction SilentlyContinue
-            $WarnVar | Should -BeLike "*ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
-            $output | Should -Be $null
-        }
-    }
-
-
     Context "Page level restores" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
@@ -987,7 +924,7 @@ use master
             $lsn = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX([Current LSN]) FROM sys.fn_dblog(NULL, NULL)" -As SingleValue
             1..5 | ForEach-Object -Process { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "INSERT INTO Test DEFAULT VALUES" }
             $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Path $backupPath -Type Log
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $fullBackup.Path, $logBackup.Path -DatabaseName $dbName -StopAtLsn $lsn -WithReplace
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $fullBackup.Path, $logBackup.Path -DatabaseName $dbName -StopAtLsn "0x$lsn" -WithReplace
             $id = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX(id) FROM Test" -As SingleValue
             $id | Should -Be 5
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
