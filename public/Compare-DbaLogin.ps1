@@ -135,6 +135,7 @@ function Compare-DbaLogin {
             } catch {
                 Stop-Function -Message "Failure connecting to $destInstance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
+            if ($null -eq $destServer) { continue }
 
             $splatGetDest = @{
                 SqlInstance        = $destServer
