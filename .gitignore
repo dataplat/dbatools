@@ -58,14 +58,11 @@ allcommands.ps1
 /.aitools
 .aider*
 /.shadowgit.git
-/.claude
 publish.ps1
 
 PR_BODY.md
 
 PR_DESCRIPTION.md
 nul
-docs/trackers/features/commit-bug-review-TRACKER.md
-scripts/commit-bug-review-prompt.md
-scripts/commit-bug-review.ps1
-docs/trackers/features/commit-bug-review-TRACKER.md
+.claude/settings.local.json
+/scripts
