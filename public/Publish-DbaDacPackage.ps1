@@ -54,6 +54,10 @@ function Publish-DbaDacPackage {
         Enables replacement of SqlCmd variables in the publish profile with their actual values during deployment.
         Use this when your deployment scripts or publish profile contain variables like $(Environment) or $(ServerName) that need to be substituted with environment-specific values.
 
+    .PARAMETER CommandTimeout
+        Specifies the execution timeout in seconds for SQL commands during deployment. Set to 0 for no timeout.
+        Defaults to 0. Use this for DACPAC packages with long-running pre/post-deployment scripts that may exceed the default 30-second SqlClient command timeout.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -149,7 +153,7 @@ function Publish-DbaDacPackage {
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,
-        [Parameter(ParameterSetName = 'Xml')]
+        [Parameter(ParameterSetName = "Xml")]
         [string]$PublishXml,
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string[]]$Database,
@@ -160,7 +164,8 @@ function Publish-DbaDacPackage {
         [string]$Type = 'Dacpac',
         [string]$OutputPath = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$IncludeSqlCmdVars,
-        [Parameter(ParameterSetName = 'Obj')]
+        [int]$CommandTimeout = 0,
+        [Parameter(ParameterSetName = "Obj")]
         [Alias("Option")]
         [object]$DacOption,
         [switch]$EnableException,
@@ -322,8 +327,11 @@ function Publish-DbaDacPackage {
                         $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
                     }
                 }
-                if ($connString -notmatch 'Database=') {
+                if ($connString -notmatch "Database=") {
                     $connString = "$connString;Database=$dbName"
+                }
+                if ($connString -notmatch "CommandTimeout=") {
+                    $connString = "$connString;CommandTimeout=$CommandTimeout"
                 }
 
                 #Create services object

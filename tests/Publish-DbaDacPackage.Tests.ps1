@@ -22,6 +22,7 @@ Describe $CommandName -Tag UnitTests {
                 "Type",
                 "OutputPath",
                 "IncludeSqlCmdVars",
+                "CommandTimeout",
                 "DacOption",
                 "EnableException",
                 "DacFxPath"
