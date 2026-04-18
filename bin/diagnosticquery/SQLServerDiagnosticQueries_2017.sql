@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 1, 2026
+-- Last Modified: April 15, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -61,15 +61,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- SQL Server 2017 Builds																		
 -- Build			Description							Release Date	URL to KB Article								
--- 14.0.1.246		CTP 1.0								11/30/2016
--- 14.0.100.187		CTP 1.1								12/16/2016
--- 14.0.200.24		CTP 1.2								1/19/2017
--- 14.0.304.138		CTP 1.3								2/17/2017
--- 14.0.405.198		CTP 1.4								3/20/2017
--- 14.0.500.272		CTP 2.0								4/19/2017
--- 14.0.600.250		CTP 2.1								5/17/2017
--- 14.0.800.90		RC1									7/17/2017
--- 14.0.900.75		RC2									8/2/2017
 -- 14.0.1000.169	RTM									10/2/2017
 -- 14.0.3006.16		CU1									10/24/2017		https://support.microsoft.com/en-us/help/4038634
 -- 14.0.3008.27		CU2									11/28/2017		https://support.microsoft.com/en-us/help/4052574
@@ -117,6 +108,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3500.1		CU31 + GDR							8/12/2025		https://support.microsoft.com/en-us/topic/kb5063759-description-of-the-security-update-for-sql-server-2017-cu31-august-12-2025-7f5dfab6-e32b-4af3-87fe-0e527b5729d3
 -- 14.0.3505.1		CU31 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065225-description-of-the-security-update-for-sql-server-2017-cu31-september-9-2025-b1addb22-3bfd-4870-b914-c020c2a3d2be	
 -- 14.0.3515.1		CU31 + GDR						   11/11/2025		https://support.microsoft.com/en-us/topic/kb5068402-description-of-the-security-update-for-sql-server-2017-cu31-november-11-2025-1be08efe-ad14-4b95-a0de-ecbbf2703114
+-- 14.0.3520.4		CU31 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077471-description-of-the-security-update-for-sql-server-2017-cu31-march-10-2026-f020d5eb-e356-42e8-a9ba-0ef061430b15
+-- 14.0.3525.1		CU31 + GDR							4/15/2026		https://support.microsoft.com/en-us/topic/kb5084818-description-of-the-security-update-for-sql-server-2017-cu31-april-14-2026-0ddfecfe-673e-4f3e-8ffd-8dfeb66f97e4
 
 
 -- SQL Server 2017 Azure Connect Pack builds
