@@ -587,7 +587,17 @@ function Export-DbaUser {
                     }
 
                     #Schema Ownership
-                    foreach ($schema in $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }) {
+                    $ownedSchemas = @()
+                    if ($db.Parent.VersionMajor -gt 8) {
+                        $ownedSchemas = $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }
+                    }
+
+                    if ($scriptVersion -eq "Version80" -and @($ownedSchemas).Count -gt 0) {
+                        Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -Target $db
+                        $ownedSchemas = @()
+                    }
+
+                    foreach ($schema in $ownedSchemas) {
                         if ($Template) {
                             $ownerName = "{templateUser}"
                         } else {

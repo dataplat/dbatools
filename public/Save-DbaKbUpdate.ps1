@@ -149,7 +149,7 @@ function Save-DbaKbUpdate {
 
             if (-not $UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
                 try {
-                    Start-BitsTransfer -Source $link -Destination $file
+                    Start-BitsTransfer -Source $link -Destination $file -ErrorAction Stop
                 } catch {
                     Write-Message -Level Verbose -Message "Start-BitsTransfer failed, falling back to Invoke-WebRequest: $PSItem"
                     Write-Progress -Activity "Downloading $fileName" -Id 1

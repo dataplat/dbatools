@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Set-DbaDbIdentity",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -19,6 +19,50 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:mockDatabase = [PSCustomObject]@{
+                    Name         = "db1"
+                    IsAccessible = $true
+                }
+                $script:mockServer = [PSCustomObject]@{
+                    Name               = "sql1"
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    Databases          = @($script:mockDatabase)
+                }
+
+                function Invoke-DbaQuery {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        $Query,
+                        $Database,
+                        [switch]$MessagesToOutput
+                    )
+
+                    process {
+                        $script:lastQuery = $Query
+                        "Checking identity information: current identity value '5'."
+                    }
+                }
+                Mock Connect-DbaInstance { $script:mockServer }
+            }
+
+            It "escapes closing brackets in normalized table names for reseed" {
+                $script:lastQuery = $null
+
+                $result = Set-DbaDbIdentity -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]" -ReSeedValue 400 -Confirm:$false
+
+                $script:lastQuery | Should -Be "DBCC CHECKIDENT('[dbo].[Bad]]Name]', RESEED, 400)"
+                $result.Cmd | Should -Be "DBCC CHECKIDENT('[dbo].[Bad]]Name]', RESEED, 400)"
+            }
         }
     }
 }

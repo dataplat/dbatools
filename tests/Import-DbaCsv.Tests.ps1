@@ -70,6 +70,21 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Implementation regression" {
+        It "caches SupportsMultiline binding before helper scopes" {
+            $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
+            $cachedBindingText = "supportsMultilineSpecified = " + [char]36 + "PSBoundParameters.ContainsKey(" + [char]34 + "SupportsMultiline" + [char]34 + ")"
+            $allowMultilineAssignmentText = "AllowMultilineFields = " + [char]36 + "allowMultilineFields"
+
+            $supportsMultilineBoundChecks = ([regex]::Matches($commandText, [regex]::Escape("ContainsKey(""SupportsMultiline"")"))).Count
+            $supportsMultilineAssignments = ([regex]::Matches($commandText, [regex]::Escape($allowMultilineAssignmentText))).Count
+
+            $supportsMultilineBoundChecks | Should -Be 1
+            $supportsMultilineAssignments | Should -Be 3
+            $commandText | Should -Match ([regex]::Escape($cachedBindingText))
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

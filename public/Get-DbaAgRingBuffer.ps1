@@ -114,45 +114,49 @@ function Get-DbaAgRingBuffer {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, (cpu_ticks / ms_ticks)) AS TimeStamp FROM sys.dm_os_sys_info"))[0]
-            Write-Message -Level Verbose -Message "Using current timestamp of $currentTimestamp"
+            try {
+                [long]$currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, (cpu_ticks / ms_ticks)) AS TimeStamp FROM sys.dm_os_sys_info")).TimeStamp
+                Write-Message -Level Verbose -Message "Using current timestamp of $currentTimestamp"
 
-            if ($RingBufferType) {
-                $typeList = ($RingBufferType | ForEach-Object { "N'$_'" }) -join ", "
-            } else {
-                $typeList = "N'RING_BUFFER_HADRDBMGR_API', N'RING_BUFFER_HADRDBMGR_STATE', N'RING_BUFFER_HADRDBMGR_COMMIT', N'RING_BUFFER_HADR_TRANSPORT_STATE'"
-            }
-
-            $sql = "WITH HadrRingBuffer AS
-                (
-                    SELECT
-                        ring_buffer_type,
-                        timestamp,
-                        CONVERT(XML, record) AS record
-                    FROM sys.dm_os_ring_buffers
-                    WHERE ring_buffer_type IN ($typeList)
-                )
-                SELECT
-                    SERVERPROPERTY('ServerName') AS ServerName,
-                    ring_buffer_type,
-                    record.value('(./Record/@id)[1]', 'int') AS record_id,
-                    DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) AS EventTime,
-                    record
-                FROM HadrRingBuffer
-                WHERE DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) > DATEADD(MINUTE, -$CollectionMinutes, GETDATE())
-                ORDER BY EventTime DESC;"
-
-            Write-Message -Level Verbose -Message "Executing SQL Statement: $sql"
-            foreach ($row in $server.Query($sql)) {
-                [PSCustomObject]@{
-                    ComputerName   = $server.ComputerName
-                    InstanceName   = $server.ServiceName
-                    SqlInstance    = $server.DomainInstanceName
-                    RingBufferType = $row.ring_buffer_type
-                    RecordId       = $row.record_id
-                    EventTime      = $row.EventTime
-                    Record         = $row.record
+                if ($RingBufferType) {
+                    $typeList = ($RingBufferType | ForEach-Object { "N'$_'" }) -join ", "
+                } else {
+                    $typeList = "N'RING_BUFFER_HADRDBMGR_API', N'RING_BUFFER_HADRDBMGR_STATE', N'RING_BUFFER_HADRDBMGR_COMMIT', N'RING_BUFFER_HADR_TRANSPORT_STATE'"
                 }
+
+                $sql = "WITH HadrRingBuffer AS
+                    (
+                        SELECT
+                            ring_buffer_type,
+                            timestamp,
+                            CONVERT(XML, record) AS record
+                        FROM sys.dm_os_ring_buffers
+                        WHERE ring_buffer_type IN ($typeList)
+                    )
+                    SELECT
+                        SERVERPROPERTY('ServerName') AS ServerName,
+                        ring_buffer_type,
+                        record.value('(./Record/@id)[1]', 'int') AS record_id,
+                        DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) AS EventTime,
+                        record
+                    FROM HadrRingBuffer
+                    WHERE DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) > DATEADD(MINUTE, -$CollectionMinutes, GETDATE())
+                    ORDER BY EventTime DESC;"
+
+                Write-Message -Level Verbose -Message "Executing SQL Statement: $sql"
+                foreach ($row in $server.Query($sql)) {
+                    [PSCustomObject]@{
+                        ComputerName   = $server.ComputerName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        RingBufferType = $row.ring_buffer_type
+                        RecordId       = $row.record_id
+                        EventTime      = $row.EventTime
+                        Record         = $row.record
+                    }
+                }
+            } catch {
+                Stop-Function -Message "Failed to query HADR ring buffer data." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }

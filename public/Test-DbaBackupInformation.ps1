@@ -116,6 +116,15 @@ function Test-DbaBackupInformation {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($bh in $BackupHistory) {
+            if ("IsVerified" -notin $bh.PSObject.Properties.Name) {
+                $splatVerifiedMember = @{
+                    InputObject = $bh
+                    MemberType  = "NoteProperty"
+                    Name        = "IsVerified"
+                    Value       = $false
+                }
+                Add-Member @splatVerifiedMember
+            }
             $InternalHistory += $bh
         }
     }
@@ -213,7 +222,7 @@ function Test-DbaBackupInformation {
 
             if ($VerificationErrors -eq 0) {
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
-                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { Add-Member -InputObject $_ -MemberType NoteProperty -Name IsVerified -Value $true -Force }
+                $InternalHistory | Where-Object { $_.Database -eq $Database } | ForEach-Object { $_.IsVerified = $true }
             } else {
                 Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }

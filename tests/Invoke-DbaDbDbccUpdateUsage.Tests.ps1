@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbDbccUpdateUsage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -21,6 +21,50 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:mockDatabase = [PSCustomObject]@{
+                    Name         = "db1"
+                    ID           = 5
+                    IsAccessible = $true
+                }
+                $script:mockServer = [PSCustomObject]@{
+                    Name               = "sql1"
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    Databases          = @($script:mockDatabase)
+                }
+
+                function Invoke-DbaQuery {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        $Query,
+                        [switch]$MessagesToOutput
+                    )
+
+                    process {
+                        $script:lastQuery = $Query
+                        @("DBCC execution completed. If DBCC printed error messages, contact your system administrator.")
+                    }
+                }
+                Mock Connect-DbaInstance { $script:mockServer }
+            }
+
+            It "escapes closing brackets in normalized table names" {
+                $script:lastQuery = $null
+
+                $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]" -Confirm:$false
+
+                $script:lastQuery | Should -Be "DBCC UPDATEUSAGE('db1', '[dbo].[Bad]]Name]')"
+                $result.Cmd | Should -Be "DBCC UPDATEUSAGE('db1', '[dbo].[Bad]]Name]')"
+            }
         }
     }
 }

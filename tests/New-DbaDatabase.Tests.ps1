@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -36,6 +36,144 @@ Describe $CommandName -Tag UnitTests {
                 "DataFileSuffix"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Path handling" {
+            BeforeAll {
+                function Write-Message { }
+
+                function New-MockCollection {
+                    $collection = [PSCustomObject]@{
+                        Items = @()
+                    }
+                    $collection | Add-Member -Force -MemberType ScriptMethod -Name Add -Value {
+                        param($item)
+                        $this.Items += $item
+                        $null
+                    }
+
+                    $collection
+                }
+            }
+
+            BeforeEach {
+                $script:createdDataFiles = @()
+                $script:createdLogFiles = @()
+                $script:executedPathQueries = @()
+
+                $script:modelPrimaryFile = [PSCustomObject]@{
+                    Size       = 8192
+                    Growth     = 1024
+                    GrowthType = "KB"
+                    MaxSize    = 1048576
+                }
+                $script:modelLogFile = [PSCustomObject]@{
+                    Size       = 1024
+                    Growth     = 256
+                    GrowthType = "KB"
+                    MaxSize    = 1048576
+                }
+                $script:mockServer = [DbaInstanceParameter]"sql1"
+                $script:mockConnectionContext = [PSCustomObject]@{ }
+                Add-Member -InputObject $script:mockConnectionContext -Force -MemberType ScriptMethod -Name ExecuteWithResults -Value {
+                    param($sql)
+                    $script:executedPathQueries += $sql
+                    [PSCustomObject]@{
+                        Tables = [PSCustomObject]@{
+                            rows = @($true, $false)
+                        }
+                    }
+                }
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name Databases -Value @{
+                    model = [PSCustomObject]@{
+                        FileGroups = @{
+                            PRIMARY = [PSCustomObject]@{
+                                Files = @{
+                                    modeldev = $script:modelPrimaryFile
+                                }
+                            }
+                        }
+                        LogFiles   = @{
+                            modellog = $script:modelLogFile
+                        }
+                    }
+                }
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name VersionMajor -Value 16
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name ConnectionContext -Value $script:mockConnectionContext
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name Name -Value "sql1"
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name ServiceName -Value "MSSQLSERVER"
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name ComputerName -Value "sql1"
+                Add-Member -InputObject $script:mockServer -Force -MemberType NoteProperty -Name DomainInstanceName -Value "sql1"
+
+                Mock Connect-DbaInstance { $script:mockServer } -ModuleName dbatools
+                Mock Stop-Function { throw $Message } -ModuleName dbatools
+                Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+                Mock New-Object {
+                    [PSCustomObject]@{
+                        Name       = $ArgumentList[1]
+                        Filegroups = New-MockCollection
+                        LogFiles   = New-MockCollection
+                    }
+                } -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.Smo.Database"
+                } -ModuleName dbatools
+                Mock New-Object {
+                    [PSCustomObject]@{
+                        Name  = $ArgumentList[1]
+                        Files = New-MockCollection
+                    }
+                } -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.Smo.Filegroup"
+                } -ModuleName dbatools
+                Mock New-Object {
+                    $dataFile = [PSCustomObject]@{
+                        Name          = $ArgumentList[1]
+                        FileName      = $null
+                        IsPrimaryFile = $false
+                        Size          = $null
+                        Growth        = $null
+                        GrowthType    = $null
+                        MaxSize       = $null
+                    }
+                    $script:createdDataFiles += $dataFile
+                    $dataFile
+                } -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.Smo.DataFile"
+                } -ModuleName dbatools
+                Mock New-Object {
+                    $logFile = [PSCustomObject]@{
+                        Name       = $ArgumentList[1]
+                        FileName   = $null
+                        Size       = $null
+                        Growth     = $null
+                        GrowthType = $null
+                        MaxSize    = $null
+                    }
+                    $script:createdLogFiles += $logFile
+                    $logFile
+                } -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.Smo.LogFile"
+                } -ModuleName dbatools
+            }
+
+            It "preserves rooted default paths for validation and creation" {
+                $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -DataFilePath "C:\" -LogFilePath "L:\" -WhatIf
+
+                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'L:\'"
+                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'C:\'"
+                $script:createdDataFiles[0].FileName | Should -Be "C:\db1.mdf"
+                $script:createdLogFiles[0].FileName | Should -Be "L:\db1_log.ldf"
+            }
+
+            It "skips directory checks for Azure Blob Storage default paths" {
+                $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -DataFilePath "https://storage.blob.core.windows.net/data/" -LogFilePath "https://storage.blob.core.windows.net/log/" -WhatIf
+
+                $script:executedPathQueries | Should -BeNullOrEmpty
+                $script:createdDataFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/data/db1.mdf"
+                $script:createdLogFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/log/db1_log.ldf"
+            }
         }
     }
 }

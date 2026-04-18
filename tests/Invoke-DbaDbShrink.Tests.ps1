@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbShrink",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -29,6 +29,112 @@ Describe $CommandName -Tag UnitTests {
                 "InputObject"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Failure output handling" {
+            BeforeEach {
+                $script:warningMessages = @()
+
+                function New-MockShrinkDatabase {
+                    $dataFile = [PSCustomObject]@{
+                        Name      = "testdb"
+                        Size      = 1024
+                        UsedSpace = 512
+                    }
+                    $dataFile | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
+
+                    $server = [PSCustomObject]@{
+                        ComputerName       = "sql1"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "sql1"
+                        VersionMajor       = 16
+                        ConnectionContext  = [PSCustomObject]@{
+                            StatementTimeout = 0
+                        }
+                    }
+
+                    $server | Add-Member -MemberType ScriptMethod -Name Query -Value {
+                        param($Sql, $DatabaseName)
+
+                        if ($Sql -like "DBCC SHRINKFILE*") {
+                            throw "simulated shrink failure"
+                        }
+
+                        @()
+                    }
+
+                    $database = New-Object Microsoft.SqlServer.Management.Smo.Database
+                    $database.Name = "testdb"
+                    $database | Add-Member -Force -NotePropertyName IsAccessible -NotePropertyValue $true
+                    $database | Add-Member -Force -NotePropertyName IsDatabaseSnapshot -NotePropertyValue $false
+                    $database | Add-Member -Force -NotePropertyName Parent -NotePropertyValue $server
+                    $database | Add-Member -Force -NotePropertyName FileGroups -NotePropertyValue ([PSCustomObject]@{
+                            Files = @($dataFile)
+                        })
+                    $database | Add-Member -Force -NotePropertyName LogFiles -NotePropertyValue @()
+
+                    $database
+                }
+
+                function Test-FunctionInterrupt {
+                    $false
+                }
+
+                function Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        $ExcludeProperty
+                    )
+
+                    process {
+                        $InputObject
+                    }
+                }
+
+                function Write-Message {
+                    param(
+                        $Level,
+                        $Message,
+                        $ErrorRecord,
+                        $EnableException
+                    )
+
+                    if ($Level -eq "Warning") {
+                        $script:warningMessages += $Message
+                    }
+                }
+
+                Mock Stop-Function -ModuleName dbatools { }
+            }
+
+            It "returns a failed result and warning without calling Stop-Function in friendly mode" {
+                $mockDatabase = New-MockShrinkDatabase
+
+                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats)
+
+                $results | Should -HaveCount 1
+                $results[0].Success | Should -Be $false
+                $results[0].Notes | Should -Match "simulated shrink failure"
+                ($script:warningMessages -join " ") | Should -Match "Shrink operation failed for file testdb: .*simulated shrink failure"
+                Assert-MockCalled -CommandName Stop-Function -Exactly 0 -Scope It
+            }
+
+            It "still uses Stop-Function when EnableException is requested" {
+                $mockDatabase = New-MockShrinkDatabase
+
+                Mock Stop-Function -ModuleName dbatools {
+                    throw $Message
+                }
+
+                {
+                    Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats -EnableException
+                } | Should -Throw "*Shrink operation failed for file testdb:*simulated shrink failure*"
+
+                Assert-MockCalled -CommandName Stop-Function -Exactly 1 -Scope It
+            }
         }
     }
 }
@@ -187,15 +293,15 @@ Describe $CommandName -Tag IntegrationTests {
             $blockConnStr = $server.ConnectionContext.ConnectionString
             $blockDbName = $db.Name
             $blockJob = Start-Job -ScriptBlock {
-                param($connStr, $dbName)
+                param($connStr, $dbName, $blockDuration)
                 $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
                 $conn.Open()
                 $cmd = $conn.CreateCommand()
                 $cmd.CommandTimeout = 60
-                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '00:00:20'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
+                $cmd.CommandText = "USE [$dbName]; BEGIN TRAN; SELECT TOP 1 c1 FROM dbo.dbatoolsci_shrink_blocker WITH (TABLOCKX, HOLDLOCK); WAITFOR DELAY '$blockDuration'; IF @@TRANCOUNT > 0 ROLLBACK TRAN"
                 try { $cmd.ExecuteNonQuery() } catch { }
                 $conn.Close()
-            } -ArgumentList $blockConnStr, $blockDbName
+            } -ArgumentList $blockConnStr, $blockDbName, "00:00:45"
 
             Start-Sleep -Seconds 2
 
@@ -209,14 +315,19 @@ Describe $CommandName -Tag IntegrationTests {
                 Invoke-DbaDbShrink -SqlInstance $serverName -Database $dbName -FileType Data -WaitAtLowPriority
             } -ArgumentList $shrinkModulePath, $shrinkServerName, $shrinkDbName
 
-            Start-Sleep -Seconds 3
-
             # Verify the SQL text of the running shrink request contains WAIT_AT_LOW_PRIORITY
-            $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
+            $sqlTextCount = 0
+            for ($i = 1; $i -le 45; $i++) {
+                Start-Sleep -Seconds 1
+                $sqlTextCount = ($server.Query("SELECT COUNT(*) AS C FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t WHERE t.text LIKE '%WAIT_AT_LOW_PRIORITY%'")).C
+                if ($sqlTextCount -gt 0) {
+                    break
+                }
+            }
 
-            $null = $blockJob | Wait-Job -Timeout 30
+            $null = $blockJob | Wait-Job -Timeout 60
             $blockJob | Remove-Job -Force
-            $null = $shrinkJob | Wait-Job -Timeout 60
+            $null = $shrinkJob | Wait-Job -Timeout 90
             $shrinkJob | Remove-Job -Force
 
             $sqlTextCount | Should -BeGreaterThan 0

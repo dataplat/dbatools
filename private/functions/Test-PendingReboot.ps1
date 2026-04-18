@@ -18,6 +18,7 @@ function Test-PendingReboot {
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
         [pscredential]$Credential,
+        [string]$Authentication = "Default",
         [switch]$NoPendingRename
     )
     process {
@@ -29,16 +30,14 @@ function Test-PendingReboot {
         if (Test-Bound -ParameterName Credential) {
             $icmParams.Credential = $Credential
         }
+        if (Test-Bound -ParameterName Authentication) {
+            $icmParams.Authentication = $Authentication
+        }
 
-        $operatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName  -Credential $Credential -ClassName Win32_OperatingSystem -EnableException
-
-        # If Vista/2008 & Above query the CBS Reg Key
-        If ($operatingSystem.BuildNumber -ge 6001) {
-            $pendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing' -Name 'RebootPending' -ErrorAction SilentlyContinue }
-            if ($pendingReboot) {
-                Write-Message -Level Verbose -Message 'Reboot pending detected in the Component Based Servicing registry key'
-                return $true
-            }
+        $pendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing' -Name 'RebootPending' -ErrorAction SilentlyContinue }
+        if ($pendingReboot) {
+            Write-Message -Level Verbose -Message 'Reboot pending detected in the Component Based Servicing registry key'
+            return $true
         }
 
         # Query WUAU from the registry

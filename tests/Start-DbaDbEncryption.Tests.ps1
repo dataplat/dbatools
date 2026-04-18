@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Start-DbaDbEncryption",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -31,6 +31,35 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Parallel cleanup" {
+        It "disconnects thread-local connections even during WhatIf execution" {
+            $commandAst = (Get-Command $CommandName).ScriptBlock.Ast
+            $disconnectCommands = $commandAst.FindAll( {
+                    param($Ast)
+
+                    $Ast -is [System.Management.Automation.Language.CommandAst] -and
+                    $Ast.GetCommandName() -eq "Disconnect-DbaInstance"
+                }, $true)
+
+            $disconnectCommands.Count | Should -Be 1
+
+            $expectedArgument = "-WhatIf:" + [char]36 + "false"
+            $disconnectCommands[0].Extent.Text | Should -Match ([regex]::Escape($expectedArgument))
+        }
+    }
+
+    Context "Parallel exclusions" {
+        It "uses the filtered database list when pre-creating encryption keys" {
+            $commandText = (Get-Command $CommandName).ScriptBlock.Ast.Extent.Text
+            $parallelBlockStart = $commandText.IndexOf("# Step 3: Create a database encryption key in the target database if needed")
+            $parallelBlockLength = [Math]::Min(500, $commandText.Length - $parallelBlockStart)
+            $parallelBlockText = $commandText.Substring($parallelBlockStart, $parallelBlockLength)
+            $expectedText = "foreach (" + [char]36 + "db in " + [char]36 + "databases)"
+
+            $parallelBlockText | Should -Match ([regex]::Escape($expectedText))
         }
     }
 }
@@ -139,4 +168,5 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DatabaseName | Should -Contain $parallelTestDatabases[0].Name
         }
     }
+
 }

@@ -146,10 +146,16 @@ function Set-DbaDbIdentity {
                     try {
                         $query = $StringBuilder.ToString()
                         $nameParts = Get-ObjectNameParts -ObjectName $tbl
-                        if ($nameParts.Schema) {
-                            $tblIdentifier = "[$($nameParts.Schema)].[$($nameParts.Name)]"
+                        if ($nameParts.Name) {
+                            $escapedTableName = $nameParts.Name.Replace("]", "]]")
+                            if ($nameParts.Schema) {
+                                $escapedTableSchema = $nameParts.Schema.Replace("]", "]]")
+                                $tblIdentifier = "[$escapedTableSchema].[$escapedTableName]"
+                            } else {
+                                $tblIdentifier = "[$escapedTableName]"
+                            }
                         } else {
-                            $tblIdentifier = "[$($nameParts.Name)]"
+                            $tblIdentifier = $tbl
                         }
                         if (Test-Bound -Not -ParameterName ReSeedValue) {
                             $query = $query.Replace('#options#', "'$($tblIdentifier)'")

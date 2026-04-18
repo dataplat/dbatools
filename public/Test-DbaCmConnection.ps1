@@ -254,6 +254,14 @@ function Test-DbaCmConnection {
 
             #region Setup connection object
             $con = $ConnectionObject.Connection
+
+            # Ensure CIM session options are initialized with the configured operation timeout
+            if ($null -eq $con.CimWinRMOptions) {
+                $con.CimWinRMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Default
+            }
+            if ($null -eq $con.CimDCOMOptions) {
+                $con.CimDCOMOptions = New-DbaCimSessionOptionWithTimeout -Protocol Dcom
+            }
             #endregion Setup connection object
 
             #region Handle credentials

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDbTable",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -71,6 +71,32 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Name parsing validation" {
+            BeforeEach {
+                Mock Get-DbaDatabase {
+                    [PSCustomObject]@{
+                        Parent = "dbatoolsci"
+                    }
+                }
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "Rejects three-part names so the database target stays explicit" {
+                $columnMap = @{
+                    Name = "testId"
+                    Type = "int"
+                }
+
+                {
+                    New-DbaDbTable -SqlInstance "sql1" -Database "tempdb" -Name "otherdb.dbo.testtable" -ColumnMap $columnMap -WhatIf
+                } | Should -Throw "*Specify the database separately with -Database*"
+
+                Should -Invoke Get-DbaDatabase -Times 0 -Exactly
+            }
         }
     }
 }

@@ -107,28 +107,32 @@ function Test-DbaLsnChain {
 
             Write-Message -Level Verbose -Message "Checking $($_.FullName) - isLogBackup $isLogBackup, isBasedOnAnchor $isBasedOnAnchor, hasGreaterLastLsn $hasGreaterLastLsn, FullDBAnchor.CheckPointLsn $($FullDBAnchor.CheckPointLsn), DatabaseBackupLsn $($_.DatabaseBackupLsn), FirstLsn $($_.FirstLsn) LastLsn $($_.LastLsn)"
             $isLogBackup -and ($isBasedOnAnchor -or $hasGreaterLastLsn)
-        } | Sort-Object -Property LastLsn, FirstLsn
-
-        for ($i = 0; $i -lt ($TranLogBackups.Count)) {
-            Write-Message -Level Debug -Message "looping t logs"
-            if ($i -eq 0) {
-                if ([BigInt]$TranLogBackups[$i].FirstLsn.ToString() -gt [BigInt]$TlogAnchor.LastLsn.ToString()) {
-                    Write-Message -Level Warning -Message "Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
-                    Write-Message -Level Verbose -Message "Anchor $($TlogAnchor.LastLsn) - FirstLSN $($TranLogBackups[$i].FirstLsn)"
-                    return $false
-                    break
-                }
-            } else {
-                if ([BigInt]$TranLogBackups[($i - 1)].LastLsn.ToString() -ne [BigInt]$TranLogBackups[($i)].FirstLsn.ToString() -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i - 1)])) {
-                    Write-Message -Level Warning -Message "Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
-                    return $false
-                    break
-                }
-            }
-            $i++
-
+        } | Sort-Object -Property @{
+            Expression = { [BigInt]$_.LastLsn.ToString() }
+        }, @{
+            Expression = { [BigInt]$_.FirstLsn.ToString() }
         }
-        Write-Message -Level VeryVerbose -Message "Passed LSN Chain checks"
-        return $true
+
+    for ($i = 0; $i -lt ($TranLogBackups.Count)) {
+        Write-Message -Level Debug -Message "looping t logs"
+        if ($i -eq 0) {
+            if ([BigInt]$TranLogBackups[$i].FirstLsn.ToString() -gt [BigInt]$TlogAnchor.LastLsn.ToString()) {
+                Write-Message -Level Warning -Message "Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
+                Write-Message -Level Verbose -Message "Anchor $($TlogAnchor.LastLsn) - FirstLSN $($TranLogBackups[$i].FirstLsn)"
+                return $false
+                break
+            }
+        } else {
+            if ([BigInt]$TranLogBackups[($i - 1)].LastLsn.ToString() -ne [BigInt]$TranLogBackups[($i)].FirstLsn.ToString() -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i - 1)])) {
+                Write-Message -Level Warning -Message "Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
+                return $false
+                break
+            }
+        }
+        $i++
+
     }
+    Write-Message -Level VeryVerbose -Message "Passed LSN Chain checks"
+    return $true
+}
 }

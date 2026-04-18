@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaRegServer",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -26,6 +26,50 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "IncludeSelf" {
+            BeforeAll {
+                function Write-Message { }
+                function Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        [Parameter(ValueFromRemainingArguments)]
+                        $RemainingArguments
+                    )
+
+                    process {
+                        $InputObject
+                    }
+                }
+                function Get-DbaRegServerGroup { $null }
+                function Get-DbaRegServerStore {
+                    param(
+                        $SqlInstance,
+                        $SqlCredential,
+                        [switch]$EnableException
+                    )
+
+                    [PSCustomObject]@{
+                        ComputerName = "$SqlInstance"
+                        InstanceName = "MSSQLSERVER"
+                        SqlInstance  = "$SqlInstance"
+                        ParentServer = "$SqlInstance"
+                    }
+                }
+            }
+
+            It "Should return a CMS instance object for each requested CMS" -Tag "IncludeSelf" {
+                $results = @(Get-DbaRegServer -SqlInstance @("cms1", "cms2") -Group "Production" -IncludeSelf)
+                $self = @($results | Where-Object Name -eq "CMS Instance")
+
+                $self.Count | Should -Be 2
+                $self.SqlInstance | Should -Be @("cms1", "cms2")
+                ($self | ForEach-Object { $_.ToString() }) | Should -Be @("cms1", "cms2")
+            }
         }
     }
 }
@@ -144,6 +188,11 @@ Describe $CommandName -Tag IntegrationTests {
             $self.InstanceName | Should -Not -BeNullOrEmpty
             $self.SqlInstance | Should -Not -BeNullOrEmpty
             $self.ToString() | Should -Be $self.ServerName
+        }
+
+        It "Should include CMS instance for each requested CMS when IncludeSelf is used" {
+            $results = Get-DbaRegServer -SqlInstance @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle) -IncludeSelf
+            @($results | Where-Object Name -eq "CMS Instance").Count | Should -Be 2
         }
 
         # Property Comparisons will come later when we have the commands

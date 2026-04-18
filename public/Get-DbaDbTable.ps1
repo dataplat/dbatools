@@ -69,8 +69,8 @@ function Get-DbaDbTable {
         - Database: The database name containing the table
         - Schema: The schema name that contains the table
         - Name: The table name
-        - IndexSpaceUsed: Total space used by indexes for the table (in KB)
-        - DataSpaceUsed: Space used by data for the table (in KB)
+        - IndexSpaceUsed: Total space used by indexes for the table (in KB, not available in Azure SQL Database)
+        - DataSpaceUsed: Space used by data for the table (in KB, not available in Azure SQL Database)
         - RowCount: Number of rows in the table
         - HasClusteredIndex: Boolean indicating if table has a clustered index
 
@@ -181,12 +181,12 @@ function Get-DbaDbTable {
             # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
             # Build property list based on SQL Server version
             # Note: FullTextIndex is a complex object (not a scalar property) and cannot be initialized via ClearAndInitialize
-            $properties = [System.Collections.ArrayList]@('Schema', 'Name', 'RowCount', 'HasClusteredIndex')
+            $properties = [System.Collections.ArrayList]@("Schema", "Name", "RowCount", "HasClusteredIndex")
 
             # Azure SQL does not support IndexSpaceUsed and DataSpaceUsed via the SMO enumerator
             if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
-                $null = $properties.Add('IndexSpaceUsed')
-                $null = $properties.Add('DataSpaceUsed')
+                $null = $properties.Add("IndexSpaceUsed")
+                $null = $properties.Add("DataSpaceUsed")
             }
 
             # IsPartitioned available in SQL Server 2005+ (VersionMajor 9+)
@@ -219,7 +219,7 @@ function Get-DbaDbTable {
             # and the ClearAndInitialize optimization is enabled via config.
             # This avoids loading ALL tables when only specific ones are requested
             $urnFilter = ''
-            if (($fqTns -or $Schema) -and (Get-DbatoolsConfigValue -FullName 'commands.get-dbadbtable.clearandinitialize')) {
+            if (($fqTns -or $Schema) -and (Get-DbatoolsConfigValue -FullName "commands.get-dbadbtable.clearandinitialize")) {
                 $filterConditions = [System.Collections.ArrayList]@()
 
                 # Add schema filter conditions from -Schema parameter
@@ -284,10 +284,12 @@ function Get-DbaDbTable {
                 }
             }
 
-            try {
-                $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
-            } catch {
-                Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+            if (Get-DbatoolsConfigValue -FullName "commands.get-dbadbtable.clearandinitialize") {
+                try {
+                    $db.Tables.ClearAndInitialize($urnFilter, [string[]]$properties)
+                } catch {
+                    Write-Message -Level Verbose -Message "ClearAndInitialize failed: $_"
+                }
             }
 
             if ($fqTns) {
@@ -323,7 +325,15 @@ function Get-DbaDbTable {
                 $sqlTable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
                 # Build default properties list based on SQL Server version
-                $defaultProps = [System.Collections.ArrayList]@("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex")
+                $defaultProps = [System.Collections.ArrayList]@("ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name")
+
+                if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                    $null = $defaultProps.Add("IndexSpaceUsed")
+                    $null = $defaultProps.Add("DataSpaceUsed")
+                }
+
+                $null = $defaultProps.Add("RowCount")
+                $null = $defaultProps.Add("HasClusteredIndex")
 
                 # Add version-specific properties in version order
                 if ($server.VersionMajor -ge 9) {

@@ -177,10 +177,12 @@ function Get-DbaService {
             @{ Name = "Launchpad"; Id = 12 },
             @{ Name = "Unknown"; Id = 8 }
         )
+        $reportingServiceTypes = @("SSRS", "PowerBI")
         if ($PsCmdlet.ParameterSetName -match 'Search') {
             if ($Type) {
                 $searchClause = ""
-                foreach ($itemType in $Type) {
+                $sqlServiceTypes = @($Type | Where-Object { $PSItem -notin $reportingServiceTypes })
+                foreach ($itemType in $sqlServiceTypes) {
                     foreach ($id in ($ServiceIdMap | Where-Object { $_.Name -eq $itemType }).Id) {
                         if ($searchClause) { $searchClause += ' OR ' }
                         $searchClause += "SQLServiceType = $id"
@@ -218,8 +220,10 @@ function Get-DbaService {
             $namespaces = @( )
             $services = @()
             $outputServices = @()
+            $reportingServices = @()
+            $includeReportingServices = !$Type -or @($Type | Where-Object { $PSItem -in $reportingServiceTypes }).Count -gt 0
 
-            if (!$Type -or 'SSRS' -in $Type -or 'PowerBI' -in $Type) {
+            if ($includeReportingServices) {
                 Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $computer" -Target $computer
                 $reportingServices = Get-DbaReportingService -ComputerName $resolvedComputerName -InstanceName $InstanceName -Credential $Credential -ServiceName $ServiceName
                 if ($Type) {
@@ -229,25 +233,27 @@ function Get-DbaService {
                 }
             }
 
-            Write-Message -Level Verbose -Message "Getting SQL Server namespaces on $computer" -Target $computer
-            try {
-                $namespaces = Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException | Sort-Object Name -Descending
-                Write-Message -Level Verbose -Message "The following namespaces have been found: $($namespaces.Name -join ', ')."
-            } catch {
-                Write-Message -Level Verbose -Message "No namespaces found in relevant namespace on $computer."
-            }
-
-            foreach ($namespace in $namespaces) {
+            if ($searchClause) {
+                Write-Message -Level Verbose -Message "Getting SQL Server namespaces on $computer" -Target $computer
                 try {
-                    Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $computer." -Target $computer
-                    foreach ($service in (Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -EnableException)) {
-                        Write-Message -Level Verbose -Message "Found service $($service.ServiceName) in namespace $($namespace.Name)."
-                        $services += $service
-                    }
-                    # Use highest namespace available, so break if services have been found
-                    break
+                    $namespaces = Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException | Sort-Object Name -Descending
+                    Write-Message -Level Verbose -Message "The following namespaces have been found: $($namespaces.Name -join ', ')."
                 } catch {
-                    Write-Message -Level Verbose -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
+                    Write-Message -Level Verbose -Message "No namespaces found in relevant namespace on $computer."
+                }
+
+                foreach ($namespace in $namespaces) {
+                    try {
+                        Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $computer." -Target $computer
+                        foreach ($service in (Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -EnableException)) {
+                            Write-Message -Level Verbose -Message "Found service $($service.ServiceName) in namespace $($namespace.Name)."
+                            $services += $service
+                        }
+                        # Use highest namespace available, so break if services have been found
+                        break
+                    } catch {
+                        Write-Message -Level Verbose -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
+                    }
                 }
             }
 

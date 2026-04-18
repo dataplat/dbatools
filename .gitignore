@@ -58,10 +58,11 @@ allcommands.ps1
 /.aitools
 .aider*
 /.shadowgit.git
-/.claude
 publish.ps1
 
 PR_BODY.md
 
 PR_DESCRIPTION.md
 nul
+.claude/settings.local.json
+/scripts

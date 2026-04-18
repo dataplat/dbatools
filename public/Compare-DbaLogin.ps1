@@ -86,7 +86,7 @@ function Compare-DbaLogin {
         Compares user-created logins between sql1 and sql2, excluding built-in system logins.
 
     .EXAMPLE
-        PS C:\> Compare-DbaLogin -Source sql1 -Destination sql2, sql3 -Login 'appuser', 'reportuser'
+        PS C:\> Compare-DbaLogin -Source sql1 -Destination sql2, sql3 -Login "appuser", "reportuser"
 
         Compares the specified logins between sql1 and both sql2 and sql3.
     #>
@@ -129,11 +129,13 @@ function Compare-DbaLogin {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($destInstance in $Destination) {
+            $destServer = $null
             try {
                 $destServer = Connect-DbaInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
                 Stop-Function -Message "Failure connecting to $destInstance" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
+            if ($null -eq $destServer) { continue }
 
             $splatGetDest = @{
                 SqlInstance        = $destServer

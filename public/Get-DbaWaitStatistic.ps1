@@ -134,12 +134,28 @@ function Get-DbaWaitStatistic {
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
         [switch]$IncludeIgnorable,
+        [ValidateScript( { -not [string]::IsNullOrWhiteSpace($_) -and $_.Trim() -match "^[A-Za-z0-9_]+$" })]
         [string[]]$ExcludeWaitType,
+        [ValidateScript( { -not [string]::IsNullOrWhiteSpace($_) -and $_.Trim() -match "^[A-Za-z0-9_]+$" })]
         [string[]]$IncludeWaitType,
         [switch]$EnableException
     )
 
     begin {
+        # Normalize user-supplied wait types before building the filter list.
+        $normalizedExcludeWaitType = @()
+        if ($ExcludeWaitType) {
+            $normalizedExcludeWaitType = foreach ($waitType in $ExcludeWaitType) {
+                $waitType.Trim().ToUpperInvariant()
+            }
+        }
+
+        $normalizedIncludeWaitType = @()
+        if ($IncludeWaitType) {
+            $normalizedIncludeWaitType = foreach ($waitType in $IncludeWaitType) {
+                $waitType.Trim().ToUpperInvariant()
+            }
+        }
 
         $details = [PSCustomObject]@{
             CXPACKET                         = "This indicates parallelism, not necessarily that there's a problem. The coordinator thread in a parallel query always accumulates these waits. If the parallel threads are not given equal amounts of work to do, or one thread blocks, the waiting threads will also accumulate CXPACKET waits, which will make them aggregate a lot faster - this is a problem. One thread may have a lot more to do than the others, and so the whole query is blocked while the long-running thread completes. If this is combined with a high number of PAGEIOLATCH_XX waits, it could be large parallel table scans going on because of incorrect non-clustered indexes, or a bad query plan. If neither of these are the issue, you might want to try setting MAXDOP to 4, 2, or 1 for the offending queries (or possibly the whole instance). Make sure that if you have a NUMA system that you try setting MAXDOP to the number of cores in a single NUMA node first to see if that helps the problem. You also need to consider the MAXDOP effect on a mixed-load system. Play with the cost threshold for parallelism setting (bump it up to, say, 25) before reducing the MAXDOP of the whole instance. And don't forget Resource Governor in Enterprise Edition of  SQL Server 2008 onward that allows DOP governing for a particular group of connections to the server."
@@ -871,8 +887,8 @@ function Get-DbaWaitStatistic {
         }
 
         # Add user-specified exclusions
-        if ($ExcludeWaitType) {
-            foreach ($waitType in $ExcludeWaitType) {
+        if ($normalizedExcludeWaitType) {
+            foreach ($waitType in $normalizedExcludeWaitType) {
                 if ($ignorable -notcontains $waitType) {
                     $null = $ignorable.Add($waitType)
                 }
@@ -880,8 +896,8 @@ function Get-DbaWaitStatistic {
         }
 
         # Remove user-specified inclusions from ignorable list
-        if ($IncludeWaitType) {
-            foreach ($waitType in $IncludeWaitType) {
+        if ($normalizedIncludeWaitType) {
+            foreach ($waitType in $normalizedIncludeWaitType) {
                 if ($ignorable -contains $waitType) {
                     $null = $ignorable.Remove($waitType)
                 }

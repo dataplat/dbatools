@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Add-DbaAgDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -28,6 +28,72 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "TDE certificate validation" {
+            BeforeEach {
+                $script:primaryServer = [DbaInstanceParameter]"primary"
+                $script:secondaryServer = [DbaInstanceParameter]"secondary"
+                $script:mockDatabase = [PSCustomObject]@{
+                    Name                     = "agdb"
+                    EncryptionEnabled        = $true
+                    HasDatabaseEncryptionKey = $true
+                    DatabaseEncryptionKey    = [PSCustomObject]@{
+                        EncryptorType = "ServerCertificate"
+                        EncryptorName = "TdeCert"
+                    }
+                }
+                $script:mockTestResult = [PSCustomObject]@{
+                    PrimaryServerSMO     = $script:primaryServer
+                    AvailabilityGroupSMO = [PSCustomObject]@{
+                        AvailabilityReplicas = @{ }
+                    }
+                    DatabaseSMO          = $script:mockDatabase
+                    ReplicaServerSMO     = @{
+                        "secondary" = $script:secondaryServer
+                    }
+                    RestoreNeeded        = @{ }
+                    Backups              = $null
+                }
+                $script:primaryCert = [PSCustomObject]@{
+                    Name             = "TdeCert"
+                    Thumbprint       = "AAA"
+                    PrivateKeyExists = $true
+                }
+                $script:secondaryCert = $null
+
+                Mock Test-DbaAvailabilityGroup { $script:mockTestResult }
+                Mock Get-DbaDbCertificate {
+                    param($SqlInstance, $Database, $Certificate, $EnableException)
+
+                    switch ($SqlInstance.FullName) {
+                        "primary" { $script:primaryCert }
+                        "secondary" { $script:secondaryCert }
+                    }
+                }
+                Mock Copy-DbaDbCertificate { }
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "stops when a replica has a same-name TDE certificate with a different thumbprint" {
+                $script:secondaryCert = [PSCustomObject]@{
+                    Name             = "TdeCert"
+                    Thumbprint       = "BBB"
+                    PrivateKeyExists = $true
+                }
+
+                {
+                    Add-DbaAgDatabase -SqlInstance "primary" -AvailabilityGroup "ag1" -Database "agdb" -SharedPath "\\share\ag"
+                } | Should -Throw "*does not match the primary certificate*"
+            }
+
+            It "stops when a replica is missing the TDE certificate and SharedPath was not provided" {
+                {
+                    Add-DbaAgDatabase -SqlInstance "primary" -AvailabilityGroup "ag1" -Database "agdb"
+                } | Should -Throw "*Provide -SharedPath*"
+            }
         }
     }
 }

@@ -139,37 +139,39 @@ function Remove-DbaAgentJobSchedule {
             $server = $jobObject.Parent.Parent
 
             foreach ($scheduleName in $Schedule) {
-                $jobSchedule = $jobObject.JobSchedules | Where-Object { $_.Name -eq $scheduleName }
+                $jobSchedules = @($jobObject.JobSchedules | Where-Object { $_.Name -eq $scheduleName })
 
-                if (-not $jobSchedule) {
+                if (-not $jobSchedules) {
                     Stop-Function -Message "Schedule '$scheduleName' is not attached to job '$($jobObject.Name)' on $($server.Name)" -Target $jobObject -Continue
                 }
 
-                $output = [PSCustomObject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    Job          = $jobObject.Name
-                    Schedule     = $scheduleName
-                    ScheduleId   = $jobSchedule.Id
-                    ScheduleUid  = $jobSchedule.ScheduleUid
-                    Status       = $null
-                    IsDetached   = $false
-                }
-
-                if ($PSCmdlet.ShouldProcess($server, "Detaching schedule '$scheduleName' from job '$($jobObject.Name)'")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Detaching schedule '$scheduleName' from job '$($jobObject.Name)' on $($server.Name)"
-                        $jobSchedule.Drop($true)
-                        $output.Status = "Detached"
-                        $output.IsDetached = $true
-                    } catch {
-                        Stop-Function -Message "Failed to detach schedule '$scheduleName' from job '$($jobObject.Name)' on $($server.Name)" -ErrorRecord $_ -Target $jobObject -Continue
-                        $output.Status = (Get-ErrorMessage -Record $_)
+                foreach ($jobSchedule in $jobSchedules) {
+                    $output = [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Job          = $jobObject.Name
+                        Schedule     = $scheduleName
+                        ScheduleId   = $jobSchedule.Id
+                        ScheduleUid  = $jobSchedule.ScheduleUid
+                        Status       = $null
+                        IsDetached   = $false
                     }
-                }
 
-                $output
+                    if ($PSCmdlet.ShouldProcess($server, "Detaching schedule '$scheduleName' from job '$($jobObject.Name)'")) {
+                        try {
+                            Write-Message -Level Verbose -Message "Detaching schedule '$scheduleName' from job '$($jobObject.Name)' on $($server.Name)"
+                            $jobSchedule.Drop($true)
+                            $output.Status = "Detached"
+                            $output.IsDetached = $true
+                        } catch {
+                            Stop-Function -Message "Failed to detach schedule '$scheduleName' from job '$($jobObject.Name)' on $($server.Name)" -ErrorRecord $_ -Target $jobObject
+                            $output.Status = (Get-ErrorMessage -Record $_)
+                        }
+                    }
+
+                    $output
+                }
             }
         }
     }

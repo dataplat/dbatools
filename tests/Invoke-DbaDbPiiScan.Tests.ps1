@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Invoke-DbaDbPiiScan",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -28,6 +28,89 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                function Write-Message { }
+
+                function New-MockPiiTable {
+                    param(
+                        [string]$Schema,
+                        [string]$Name,
+                        [string]$ColumnName
+                    )
+
+                    [PSCustomObject]@{
+                        Name    = $Name
+                        Schema  = $Schema
+                        Columns = @(
+                            [PSCustomObject]@{
+                                Name     = $ColumnName
+                                DataType = [PSCustomObject]@{
+                                    Name = "geography"
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            It "honors schema-qualified -Table input" {
+                $mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                }
+                $mockDatabase = [PSCustomObject]@{
+                    Name   = "db1"
+                    Parent = $mockServer
+                    Tables = @(
+                        (New-MockPiiTable -Schema "dbo" -Name "Customer" -ColumnName "GeoDbo"),
+                        (New-MockPiiTable -Schema "sales" -Name "Customer" -ColumnName "GeoSales")
+                    )
+                }
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value @{
+                    db1 = $mockDatabase
+                }
+
+                Mock Connect-DbaInstance { $mockServer }
+
+                $results = @(Invoke-DbaDbPiiScan -SqlInstance "sql1" -Database "db1" -Table "sales.Customer")
+
+                $results.Count | Should -Be 1
+                $results[0].Schema | Should -Be "sales"
+                $results[0].Column | Should -Be "GeoSales"
+            }
+
+            It "honors schema-qualified -ExcludeTable input" {
+                $mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                }
+                $mockDatabase = [PSCustomObject]@{
+                    Name   = "db1"
+                    Parent = $mockServer
+                    Tables = @(
+                        (New-MockPiiTable -Schema "dbo" -Name "Customer" -ColumnName "GeoDbo"),
+                        (New-MockPiiTable -Schema "sales" -Name "Customer" -ColumnName "GeoSales")
+                    )
+                }
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value @{
+                    db1 = $mockDatabase
+                }
+
+                Mock Connect-DbaInstance { $mockServer }
+
+                $results = @(Invoke-DbaDbPiiScan -SqlInstance "sql1" -Database "db1" -ExcludeTable "sales.Customer")
+
+                $results.Count | Should -Be 1
+                $results[0].Schema | Should -Be "dbo"
+                $results[0].Column | Should -Be "GeoDbo"
+            }
         }
     }
 }

@@ -133,7 +133,12 @@ function Get-DecryptedObject {
     }
 
     Write-Message -Level Verbose -Message "Query password information from the Db."
-    $results = $server.Query($sql)
+    try {
+        $results = $server.Query($sql)
+    } catch {
+        Stop-Function -Message "Can't execute password query on $sourceName." -Target $server -ErrorRecord $_
+        return
+    }
 
     Write-Message -Level Verbose -Message "Go through each row in results"
     foreach ($result in $results) {

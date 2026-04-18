@@ -266,15 +266,32 @@ function Invoke-DbaBalanceDataFiles {
 
                     # Check the tables parameter
                     if ($Table) {
-                        if ($Table -notin $db.Table) {
+                        $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                        $missingTables = foreach ($tablePart in $tableParts) {
+                            $matchingTable = $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                            if (-not $matchingTable) {
+                                $tablePart.InputValue
+                            }
+                        }
+
+                        if ($missingTables) {
                             # Set the success flag
                             $success = $false
 
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
-                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $tableNames }
+                        $tableCollection = foreach ($tablePart in $tableParts) {
+                            $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                        }
                     } else {
                         $tableCollection = $db.Tables
                     }
@@ -295,6 +312,10 @@ function Invoke-DbaBalanceDataFiles {
                         }
                         if ($targetFG.Readonly) {
                             Stop-Function -Message "FileGroup '$TargetFileGroup' is read-only in database $db on instance $instance" -Target $instance -Continue
+                            continue
+                        }
+                        if ($targetFG.Files.Count -lt 1) {
+                            Stop-Function -Message "FileGroup '$TargetFileGroup' does not contain any data files in database $db on instance $instance" -Target $instance -Continue
                             continue
                         }
 
@@ -324,7 +345,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($tableCollection.Indexes.Count -lt 1) {
+                            if (@($tbl.Indexes).Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -332,7 +353,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = @($tbl.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' })
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag

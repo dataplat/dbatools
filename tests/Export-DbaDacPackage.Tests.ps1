@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaDacPackage",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -26,6 +26,31 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        Context "Table validation" {
+            BeforeEach {
+                Mock Test-ExportDirectory { }
+                Mock Test-FunctionInterrupt { $false }
+                Mock Connect-DbaInstance {
+                    throw "Connect-DbaInstance should not be called for invalid table filters"
+                }
+                Mock Stop-Function {
+                    throw $Message
+                }
+            }
+
+            It "rejects invalid table names before connecting" {
+                {
+                    Export-DbaDacPackage -SqlInstance "sql1" -Database "db1" -Table "a.b.c.d" -Path "C:\temp"
+                } | Should -Throw "*not a valid one-, two-, or three-part name*"
+
+                Should -Invoke Connect-DbaInstance -Times 0 -Exactly
+            }
         }
     }
 }

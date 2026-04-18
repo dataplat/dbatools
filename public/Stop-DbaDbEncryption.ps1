@@ -184,7 +184,7 @@ function Stop-DbaDbEncryption {
                         Error             = $_.Exception.Message
                     }
                 } finally {
-                    $null = $server | Disconnect-DbaInstance
+                    $null = $server | Disconnect-DbaInstance -WhatIf:$false
                 }
             }
 

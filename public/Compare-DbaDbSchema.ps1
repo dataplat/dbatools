@@ -109,13 +109,13 @@ function Compare-DbaDbSchema {
             return
         }
 
-        if (-not (Test-Path -Path $SourcePath)) {
-            Stop-Function -Message "Source DACPAC file not found: $SourcePath"
+        if ((Test-Bound -Not -ParameterName TargetSqlInstance) -and (Test-Bound -Not -ParameterName TargetPath)) {
+            Stop-Function -Message "You must specify either -TargetSqlInstance (with -TargetDatabase) or -TargetPath."
             return
         }
 
-        if ((Test-Bound -Not -ParameterName TargetSqlInstance) -and (Test-Bound -Not -ParameterName TargetPath)) {
-            Stop-Function -Message "You must specify either -TargetSqlInstance (with -TargetDatabase) or -TargetPath."
+        if ((Test-Bound -ParameterName TargetSqlInstance) -and (Test-Bound -ParameterName TargetPath)) {
+            Stop-Function -Message "Specify either -TargetSqlInstance or -TargetPath, not both."
             return
         }
 
@@ -139,11 +139,17 @@ function Compare-DbaDbSchema {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        if (-not (Test-Path -Path $SourcePath)) {
+            Stop-Function -Message "Source DACPAC file not found: $SourcePath"
+            return
+        }
+
+        $sourcePathFull = (Resolve-Path -Path $SourcePath).Path
         $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
         $reportFile = Join-Path -Path $OutputPath -ChildPath "Compare-DbaDbSchema_$timeStamp.xml"
 
         # Build sqlpackage arguments
-        $sqlPackageArgs = "/action:deployreport /of:True /sf:""$SourcePath"" /op:""$reportFile"""
+        $sqlPackageArgs = "/action:deployreport /of:True /sf:""$sourcePathFull"" /op:""$reportFile"""
 
         if (Test-Bound -ParameterName TargetSqlInstance) {
             try {
@@ -161,12 +167,13 @@ function Compare-DbaDbSchema {
             $sqlPackageArgs += " /tcs:""$connStringEscaped"""
             $targetDescription = "$($targetServer.DomainInstanceName)\$TargetDatabase"
         } else {
+            $targetPathFull = (Resolve-Path -Path $TargetPath).Path
             $targetDbName = [System.IO.Path]::GetFileNameWithoutExtension($TargetPath)
-            $sqlPackageArgs += " /tf:""$TargetPath"" /tdn:""$targetDbName"""
+            $sqlPackageArgs += " /tf:""$targetPathFull"" /tdn:""$targetDbName"""
             $targetDescription = $TargetPath
         }
 
-        Write-Message -Level Verbose -Message "Running sqlpackage with args: $sqlPackageArgs"
+        Write-Message -Level Verbose -Message "Running sqlpackage DeployReport for $sourcePathFull against $targetDescription."
 
         try {
             $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -207,8 +214,6 @@ function Compare-DbaDbSchema {
             Stop-Function -Message "Failed to read or parse the deployment report at $reportFile" -ErrorRecord $_ -Target $reportFile
             return
         }
-
-        $sourcePathFull = (Resolve-Path -Path $SourcePath).Path
 
         foreach ($operation in $report.DeploymentReport.Operations.Operation) {
             $operationName = $operation.Name

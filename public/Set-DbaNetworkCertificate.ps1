@@ -354,7 +354,16 @@ function Set-DbaNetworkCertificate {
                 if ($RestartService) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Restarting SQL Server service for $instance"
                     try {
-                        $null = Restart-DbaService -SqlInstance $instance -Type Engine -Force -EnableException
+                        $splatRestartService = @{
+                            SqlInstance     = $instance
+                            Type            = "Engine"
+                            Force           = $true
+                            EnableException = $true
+                        }
+                        if ($Credential) {
+                            $splatRestartService.Credential = $Credential
+                        }
+                        $null = Restart-DbaService @splatRestartService
                     } catch {
                         $notes = "Failed to restart service"
                         Write-Message -Level Warning -Message "$notes for instance $instance."

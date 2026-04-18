@@ -1,21 +1,37 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaLsnChain",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "FilteredRestoreFiles",
-                "Continue",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    InModuleScope dbatools {
+        Context "Parameter validation" {
+            It "Should have the expected parameters" {
+                $hasParameters = (Get-Command "Test-DbaLsnChain").Parameters.Values.Name | Where-Object {
+                    $PSItem -notin @(
+                        "Verbose",
+                        "Debug",
+                        "ErrorAction",
+                        "WarningAction",
+                        "InformationAction",
+                        "ProgressAction",
+                        "ErrorVariable",
+                        "WarningVariable",
+                        "InformationVariable",
+                        "OutVariable",
+                        "OutBuffer",
+                        "PipelineVariable"
+                    )
+                }
+                $expectedParameters = @(
+                    "FilteredRestoreFiles",
+                    "Continue",
+                    "EnableException"
+                )
+                Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+            }
         }
     }
 }
@@ -112,6 +128,28 @@ Describe $CommandName -Tag IntegrationTests {
 
             It "Should return True for valid striped backup set" {
                 $output = Test-DbaLsnChain -FilteredRestoreFiles $filteredStripped -WarningAction SilentlyContinue
+                $output | Should -BeExactly $true
+            }
+        }
+
+        Context "History imported from file with deserialized LSN values" {
+            BeforeAll {
+                $historyFromFile = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml |
+                    Format-DbaBackupInformation
+                $fullBackup = $historyFromFile | Where-Object Type -eq "Database" | Select-Object -First 1
+                $transactionLogs = $historyFromFile | Where-Object Type -eq "Transaction Log"
+                $scrambledHistory = @(
+                    $fullBackup
+                    $transactionLogs[2]
+                    $transactionLogs[0]
+                    $transactionLogs[1]
+                    $transactionLogs[4]
+                    $transactionLogs[3]
+                )
+            }
+
+            It "Should sort deserialized LSN values numerically" {
+                $output = Test-DbaLsnChain -FilteredRestoreFiles $scrambledHistory -WarningAction SilentlyContinue
                 $output | Should -BeExactly $true
             }
         }

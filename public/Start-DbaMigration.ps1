@@ -191,7 +191,7 @@ function Start-DbaMigration {
         https://dbatools.io/Start-DbaMigration
 
     .OUTPUTS
-        Object (output from Copy-DbaDatabase command when -Exclude Databases is not specified)
+        Object
 
         When databases are migrated (default behavior unless -Exclude Databases is used), this function returns the output from Copy-DbaDatabase. The specific object type and properties depend on the migration method selected:
 
@@ -201,7 +201,7 @@ function Start-DbaMigration {
         When using -DetachAttach method:
         Returns database reattachment status objects showing which databases were successfully attached on destination servers.
 
-        No output is returned when -Exclude Databases is specified, as the function then only migrates server-level objects without providing pipeline output.
+        When -Exclude Databases is specified, most server-level migration operations do not return pipeline output. The exception is SSIS catalog migration, which returns MigrationObject status objects from Copy-DbaSsisCatalog when the source instance has an SSISDB catalog.
 
         All other migration operations (logins, SQL Agent jobs, configuration, etc.) perform their tasks without returning objects to the pipeline. Use -Verbose to see detailed progress messages for all migration steps.
 
@@ -367,7 +367,7 @@ function Start-DbaMigration {
             if ($ExcludePassword) { $dacNeeded = $false }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+            $dacConnected = $Source.Type -eq "Server" -and $Source.InputObject.ConnectionContext.ServerInstance -match "^ADMIN:"
 
             $dacOpened = $false
             if ($dacNeeded) {
@@ -380,6 +380,10 @@ function Start-DbaMigration {
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                     $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    if (-not $sourceServerDac) {
+                        Stop-Function -Message "Could not establish dedicated admin connection to $Source. Use -ExcludePassword to skip password migration." -Category ConnectionError -Target $Source
+                        return
+                    }
                     $dacOpened = $true
                     Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -393,6 +397,10 @@ function Start-DbaMigration {
                     Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
                     $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
                 }
+            }
+            if (-not $sourceServer) {
+                Stop-Function -Message "Could not connect to source instance $Source." -Category ConnectionError -Target $Source
+                return
             }
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -603,10 +611,19 @@ function Start-DbaMigration {
             Copy-DbaExtendedStoredProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
         }
 
-        if ($Exclude -notcontains 'SsisCatalog') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
-            Write-Message -Level Verbose -Message "Migrating SSIS catalog"
-            Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        if ($Exclude -notcontains "SsisCatalog") {
+            $sourceHasSsisCatalog = $sourceServer.VersionMajor -ge 11
+            if ($sourceHasSsisCatalog) {
+                $sourceHasSsisCatalog = $null -ne $sourceServer.Databases["SSISDB"]
+            }
+
+            if ($sourceHasSsisCatalog) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
+                Write-Message -Level Verbose -Message "Migrating SSIS catalog"
+                Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            } else {
+                Write-Message -Level Verbose -Message "Skipping SSIS catalog migration because the source instance does not have an SSISDB catalog."
+            }
         }
     }
     end {

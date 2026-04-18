@@ -44,7 +44,7 @@ function Find-DbaObject {
         - ScalarFunction: Scalar-valued functions (sys.objects type FN)
         - TableValuedFunction: Inline and multi-statement table-valued functions (sys.objects type IF/TF)
         - Synonym: Synonyms (sys.objects type SN)
-        - Trigger: SQL triggers (sys.objects type TR)
+        - Trigger: Object-level DML triggers plus database DDL SQL triggers
         - All: All of the above (default)
 
     .PARAMETER IncludeColumns
@@ -86,7 +86,7 @@ function Find-DbaObject {
         - ComputerName: The computer name of the SQL Server instance
         - SqlInstance: The SQL Server instance name
         - Database: The database containing the matched object
-        - Schema: The schema of the matched object
+        - Schema: The schema of the matched object (null for database DDL triggers)
         - Name: The name of the matched object
         - ObjectType: The SQL Server type description (e.g., USER_TABLE, VIEW, SQL_STORED_PROCEDURE)
         - MatchType: "ObjectName" when the object name matched, "ColumnName" when a column name matched
@@ -159,7 +159,9 @@ function Find-DbaObject {
             $typeFilter = ($typeCodes | Select-Object -Unique) -join ", "
         }
 
+        $includeDatabaseTriggers = "All" -in $ObjectType -or "Trigger" -in $ObjectType
         $sysFilter = if ($IncludeSystemObjects) { "" } else { "AND o.is_ms_shipped = 0" }
+        $triggerFilter = if ($IncludeSystemObjects) { "" } else { "AND tr.is_ms_shipped = 0" }
 
         $sqlObjects = "
             SELECT
@@ -172,6 +174,22 @@ function Find-DbaObject {
             FROM sys.objects o
             WHERE o.type IN ($typeFilter)
             $sysFilter"
+
+        if ($includeDatabaseTriggers) {
+            $sqlObjects += "
+            UNION ALL
+            SELECT
+                CAST(NULL AS sysname)            AS SchemaName,
+                tr.name                          AS ObjectName,
+                RTRIM(tr.type)                   AS ObjectTypeCode,
+                tr.type_desc                     AS ObjectType,
+                tr.create_date                   AS CreateDate,
+                tr.modify_date                   AS LastModified
+            FROM sys.triggers tr
+            WHERE tr.parent_class = 0
+            AND tr.type = 'TR'
+            $triggerFilter"
+        }
 
         $sqlColumns = "
             SELECT
