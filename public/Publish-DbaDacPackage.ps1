@@ -333,9 +333,15 @@ function Publish-DbaDacPackage {
                 #Create services object
                 try {
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
-                    $dacServices.CommandTimeout = $CommandTimeout
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                }
+                if (Test-Bound -ParameterName CommandTimeout) {
+                    if ($null -ne $dacServices.GetType().GetProperty("CommandTimeout")) {
+                        $dacServices.CommandTimeout = $CommandTimeout
+                    } else {
+                        Write-Message -Level Warning -Message "CommandTimeout is not supported by this version of DacFx. Upgrade SSDT or DacFx to use this parameter."
+                    }
                 }
 
                 try {
