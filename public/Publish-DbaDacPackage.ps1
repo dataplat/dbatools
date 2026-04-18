@@ -330,13 +330,10 @@ function Publish-DbaDacPackage {
                 if ($connString -notmatch "Database=") {
                     $connString = "$connString;Database=$dbName"
                 }
-                if ($connString -notmatch "CommandTimeout=") {
-                    $connString = "$connString;CommandTimeout=$CommandTimeout"
-                }
-
                 #Create services object
                 try {
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
+                    $dacServices.CommandTimeout = $CommandTimeout
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
