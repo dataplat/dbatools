@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaNetworkConfiguration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -63,12 +63,13 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command returns correct certificate information" {
         BeforeAll {
-            $certificate = New-DbaComputerCertificate -ComputerName $TestConfig.InstanceSingle -SelfSigned -KeyLength 2048 -HashAlgorithm Sha256 -EnableException
+            $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
+            $certificate = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned -KeyLength 2048 -HashAlgorithm Sha256 -EnableException
             $results = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableException
         }
 
         AfterAll {
-            $null = Remove-DbaComputerCertificate -Thumbprint $certificate.Thumbprint -EnableException
+            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $certificate.Thumbprint -EnableException
         }
 
         It "Should return a suitable certificate thumbprint" {

@@ -492,6 +492,11 @@ function Connect-DbaInstance {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        if ($AuthenticationType -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal" -and -not $SqlCredential) {
+            Stop-Function -Message "AuthenticationType $AuthenticationType requires SqlCredential."
+            return
+        }
+
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
 
@@ -781,6 +786,14 @@ function Connect-DbaInstance {
                 $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo
 
                 # Set properties of SqlConnectionInfo based on the used properties of the connection string.
+                $connectionString = $connectionString -replace "(?i)\bFailoverPartner\s*=", "Failover Partner="
+                if ($connectionString -match "(?i)\bFailover Partner\s*=" -and $connectionString -notmatch "(?i)\b(?:Initial Catalog|Database)\s*=") {
+                    if ($connectionString -match ";$") {
+                        $connectionString += "Initial Catalog=master;"
+                    } else {
+                        $connectionString += ";Initial Catalog=master;"
+                    }
+                }
                 $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
                 if ($csb.ShouldSerialize('Data Source')) {
                     Write-Message -Level Debug -Message "ServerName will be set to '$($csb.DataSource)'"
@@ -856,6 +869,7 @@ function Connect-DbaInstance {
                     $authType += 'integrated'
                 }
                 Write-Message -Level Verbose -Message "authentication method is '$authType'"
+                $authenticationTypeUsesSqlCredential = $AuthenticationType -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal"
 
                 # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
                 $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
@@ -907,12 +921,8 @@ function Connect-DbaInstance {
                 if ($AuthenticationType) {
                     Write-Message -Level Debug -Message "Authentication will be set to '$AuthenticationType' (from AuthenticationType parameter)"
                     $sqlConnectionInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::$AuthenticationType
-                    # ActiveDirectoryInteractive and ActiveDirectoryIntegrated require UseIntegratedSecurity=False
-                    # to prevent the default Integrated Security=True from conflicting with Entra ID auth
-                    if ($AuthenticationType -in 'ActiveDirectoryInteractive', 'ActiveDirectoryIntegrated', 'ActiveDirectoryDeviceCodeFlow', 'ActiveDirectoryManagedIdentity') {
-                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false' for $AuthenticationType"
-                        $sqlConnectionInfo.UseIntegratedSecurity = $false
-                    }
+                    Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false' for $AuthenticationType"
+                    $sqlConnectionInfo.UseIntegratedSecurity = $false
                 } elseif ($authType -eq 'azure integrated') {
                     # Azure AD integrated security
                     # TODO: This is not tested / How can we test that?
@@ -994,7 +1004,7 @@ function Connect-DbaInstance {
                 # We use ConnectionContext.StatementTimeout instead
 
                 #SecurePassword         Property   securestring SecurePassword {get;set;}
-                if ($authType -in 'azure ad', 'azure sql', 'local sql') {
+                if ($authenticationTypeUsesSqlCredential -or $authType -in 'azure ad', 'azure sql', 'local sql') {
                     Write-Message -Level Debug -Message "SecurePassword will be set"
                     $sqlConnectionInfo.SecurePassword = $SqlCredential.Password
                 }
@@ -1015,10 +1025,10 @@ function Connect-DbaInstance {
                 $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
 
                 #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
-                # $true is the default and it is automatically set to $false if we set a UserName, so we don't touch
+                # We rely on the default unless AuthenticationType already set it above or UserName changes it automatically.
 
                 #UserName               Property   string UserName {get;set;}
-                if ($authType -in 'azure ad', 'azure sql', 'local sql') {
+                if ($authenticationTypeUsesSqlCredential -or $authType -in 'azure ad', 'azure sql', 'local sql') {
                     Write-Message -Level Debug -Message "UserName will be set to '$username'"
                     $sqlConnectionInfo.UserName = $username
                 }
@@ -1080,7 +1090,7 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "ServerConnection was built"
                 }
 
-                if ($authType -eq 'local ad') {
+                if ($authType -eq 'local ad' -and -not $AuthenticationType) {
                     if ($IsLinux -or $IsMacOS) {
                         Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
                         return
@@ -1118,7 +1128,7 @@ function Connect-DbaInstance {
                 }
                 Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
                 $server.ConnectionContext.StatementTimeout = $StatementTimeout
-                if ($NonPooledConnection) {
+                if ($NonPooledConnection -and -not $server.ConnectionContext.NonPooledConnection) {
                     Write-Message -Level Debug -Message "Setting ConnectionContext.NonPooledConnection to 'True'"
                     $server.ConnectionContext.NonPooledConnection = $true
                 }
@@ -1172,8 +1182,9 @@ function Connect-DbaInstance {
                         $connectionSucceeded = $true
                     } catch {
                         Write-Message -Level Debug -Message "Retry with TrustServerCertificate also failed: $($_.Exception.Message)"
-                        # Use the original error for reporting since the retry also failed
+                        # Keep the latest error details available for any follow-up retry and final reporting
                         $connectionError = $_
+                        $errorMessage = $_.Exception.Message
                     }
                 }
 
@@ -1182,19 +1193,21 @@ function Connect-DbaInstance {
                 # The .NET SqlClient sends Failover Partner info from the server's TDS handshake to the
                 # connection pool, and the pool then requires Initial Catalog to be set in the connection string.
                 $isFailoverPartnerError = $errorMessage -match "Failover Partner" -and $errorMessage -match "Initial Catalog"
-                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -eq 'String') {
+                if ($isNewConnection -and $isFailoverPartnerError -and -not $connectionSucceeded -and $inputObjectType -in "String", "ConnectionString", "RegisteredServer") {
                     Write-Message -Level Verbose -Message "Connection failed because the server is configured for database mirroring (Failover Partner requires Initial Catalog). Retrying with Initial Catalog=master."
                     Write-Message -Level Debug -Message "Original error: $errorMessage"
 
                     try {
                         # Add Initial Catalog=master to satisfy the Failover Partner connection string requirement
-                        if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Initial Catalog" -and $server.ConnectionContext.SqlConnectionObject.ConnectionString -notmatch "Database=") {
-                            if ($server.ConnectionContext.SqlConnectionObject.ConnectionString -match ";$") {
-                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += "Initial Catalog=master;"
+                        $retryConnectionString = $server.ConnectionContext.SqlConnectionObject.ConnectionString -replace "(?i)\bFailoverPartner\s*=", "Failover Partner="
+                        if ($retryConnectionString -notmatch "(?i)\b(?:Initial Catalog|Database)\s*=") {
+                            if ($retryConnectionString -match ";$") {
+                                $retryConnectionString += "Initial Catalog=master;"
                             } else {
-                                $server.ConnectionContext.SqlConnectionObject.ConnectionString += ";Initial Catalog=master;"
+                                $retryConnectionString += ";Initial Catalog=master;"
                             }
                         }
+                        $server.ConnectionContext.SqlConnectionObject.ConnectionString = $retryConnectionString
 
                         # Retry the connection
                         Write-Message -Level Debug -Message "Retrying connection with Initial Catalog=master for server with database mirroring"

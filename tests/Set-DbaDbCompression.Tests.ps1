@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Set-DbaDbCompression",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -27,6 +27,121 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                if (-not ("SetDbaDbCompressionTest.MockCollection[System.Object]" -as [type])) {
+                    Add-Type -TypeDefinition @"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace SetDbaDbCompressionTest {
+    public class MockCollection<T> : IEnumerable {
+        private Dictionary<string, T> items = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+
+        public void Add(string name, T item) {
+            items[name] = item;
+        }
+
+        public T this[string name] {
+            get {
+                T value;
+                items.TryGetValue(name, out value);
+                return value;
+            }
+        }
+
+        public IEnumerator GetEnumerator() {
+            return items.Values.GetEnumerator();
+        }
+    }
+
+    public class MockDatabase {
+        public string Name { get; set; }
+        public bool IsAccessible { get; set; }
+        public int IsSystemObject { get; set; }
+        public string Status { get; set; }
+        public string CompatibilityLevel { get; set; }
+        public object[] Tables { get; set; }
+
+        public override string ToString() {
+            return Name;
+        }
+    }
+}
+"@
+                }
+
+                function Write-Message { }
+
+                function New-MockCompressionTable {
+                    param(
+                        [string]$Schema,
+                        [string]$Name
+                    )
+
+                    $table = [PSCustomObject]@{
+                        Name                = $Name
+                        Schema              = $Schema
+                        IsMemoryOptimized   = $false
+                        HasSparseColumn     = $false
+                        Indexes             = @()
+                        PhysicalPartitions  = @(
+                            [PSCustomObject]@{
+                                PartitionNumber = 1
+                                DataCompression = "NONE"
+                            }
+                        )
+                        OnlineHeapOperation = $false
+                        HasHeapIndex        = $true
+                    }
+                    $table | Add-Member -Force -MemberType ScriptMethod -Name Rebuild -Value {
+                        $script:rebuiltSchemas += $this.Schema
+                    }
+
+                    $table
+                }
+            }
+
+            It "honors schema-qualified -Table input" {
+                $script:rebuiltSchemas = @()
+                $mockDatabase = New-Object "SetDbaDbCompressionTest.MockDatabase"
+                $mockDatabase.Name = "db1"
+                $mockDatabase.IsAccessible = $true
+                $mockDatabase.IsSystemObject = 0
+                $mockDatabase.Status = "Normal"
+                $mockDatabase.CompatibilityLevel = "Version160"
+                $mockDatabase.Tables = @(
+                    (New-MockCompressionTable -Schema "dbo" -Name "Customer"),
+                    (New-MockCompressionTable -Schema "sales" -Name "Customer")
+                )
+
+                $mockDatabases = New-Object "SetDbaDbCompressionTest.MockCollection[System.Object]"
+                $mockDatabases.Add("db1", $mockDatabase)
+
+                $mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    EngineEdition      = "Enterprise"
+                    VersionMajor       = 16
+                    isAzure            = $false
+                    Databases          = $mockDatabases
+                }
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Stop-Function { throw $Message }
+
+                $results = @(Set-DbaDbCompression -SqlInstance "sql1" -Database "db1" -Table "sales.Customer" -CompressionType Row)
+
+                $results.Count | Should -Be 1
+                $results[0].Schema | Should -Be "sales"
+                $script:rebuiltSchemas | Should -Be @("sales")
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -35,12 +150,29 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $dbName = "dbatoolsci_test_$(Get-Random)"
+        $indexedViewName = "dbatoolsci_syscolview"
+        $indexedViewIndexName = "CL_dbatoolsci_syscolview"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbName]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbName)
+        $null = $server.Query("SET ANSI_NULLS ON;
+                               SET QUOTED_IDENTIFIER ON;
+                               EXEC sys.sp_executesql N'CREATE VIEW dbo.[$indexedViewName]
+                               WITH SCHEMABINDING
+                               AS
+                               SELECT object_id, column_id
+                               FROM dbo.syscols'", $dbName)
+        $null = $server.Query("SET ANSI_NULLS ON;
+                               SET ANSI_PADDING ON;
+                               SET ANSI_WARNINGS ON;
+                               SET ARITHABORT ON;
+                               SET CONCAT_NULL_YIELDS_NULL ON;
+                               SET QUOTED_IDENTIFIER ON;
+                               SET NUMERIC_ROUNDABORT OFF;
+                               CREATE UNIQUE CLUSTERED INDEX [$indexedViewIndexName] ON dbo.[$indexedViewName] (object_id, column_id)", $dbName)
 
         # Get InputObject for testing
         $inputObject = Test-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName
@@ -158,6 +290,22 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should set all objects to no compression" {
             foreach ($row in $noneResults) {
                 $row.DataCompression | Should -Be "None"
+            }
+        }
+    }
+
+    Context "Command returns indexed view metadata when rebuilding to None" {
+        BeforeAll {
+            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType Page
+            $indexedViewResults = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None |
+                Where-Object IndexName -eq $indexedViewIndexName
+        }
+
+        It "Should return the indexed view schema and name" {
+            $indexedViewResults | Should -Not -BeNullOrEmpty
+            foreach ($row in $indexedViewResults) {
+                $row.Schema | Should -Be "dbo"
+                $row.TableName | Should -Be $indexedViewName
             }
         }
     }

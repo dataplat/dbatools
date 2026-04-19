@@ -4,7 +4,8 @@ function Start-DbccCheck {
         [object]$server,
         [string]$DbName,
         [switch]$table,
-        [int]$MaxDop
+        [int]$MaxDop,
+        [switch]$DetailedOutput
     )
 
     $servername = $server.name
@@ -17,18 +18,24 @@ function Start-DbccCheck {
 
         try {
             if ($table) {
-                $null = $server.databases[$DbName].CheckTables('None')
+                $null = $server.databases[$DbName].CheckTables("None")
                 Write-Verbose "DBCC CheckTables finished successfully for $DbName on $servername"
-                return [PSCustomObject]@{
-                    Status = "Success"
-                    Output = $null
+                if ($DetailedOutput) {
+                    return [PSCustomObject]@{
+                        Status = "Success"
+                        Output = $null
+                    }
                 }
+                return "Success"
+            }
+
+            if ($MaxDop) {
+                $query = "DBCC CHECKDB ([$escapedDbName]) WITH MAXDOP = $MaxDop"
             } else {
-                if ($MaxDop) {
-                    $query = "DBCC CHECKDB ([$escapedDbName]) WITH MAXDOP = $MaxDop"
-                } else {
-                    $query = "DBCC CHECKDB ([$escapedDbName])"
-                }
+                $query = "DBCC CHECKDB ([$escapedDbName])"
+            }
+
+            if ($DetailedOutput) {
                 $dbccOutput = Invoke-DbaQuery -SqlInstance $server -Query $query -MessagesToOutput -EnableException
                 Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
                 return [PSCustomObject]@{
@@ -36,6 +43,10 @@ function Start-DbccCheck {
                     Output = $dbccOutput
                 }
             }
+
+            $null = $server.Query($query)
+            Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
+            return "Success"
         } catch {
             $originalException = $_.Exception
             $loopNo = 0
@@ -69,10 +80,14 @@ function Start-DbccCheck {
             } catch {
                 $null
             }
-            return [PSCustomObject]@{
-                Status = $message.Trim()
-                Output = $null
+
+            if ($DetailedOutput) {
+                return [PSCustomObject]@{
+                    Status = $message.Trim()
+                    Output = $null
+                }
             }
+            return $message.Trim()
         }
     }
 }

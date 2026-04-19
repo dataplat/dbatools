@@ -137,6 +137,7 @@ function Set-DbaDbMailAccount {
         [string]$EmailAddress,
         [string]$ReplyToAddress,
         [string]$NewMailServerName,
+        [ValidateRange(1, 65535)]
         [int]$Port,
         [switch]$EnableSSL,
         [switch]$UseDefaultCredentials,
@@ -145,6 +146,11 @@ function Set-DbaDbMailAccount {
         [switch]$EnableException
     )
     process {
+        if ($UseDefaultCredentials.IsPresent -and (Test-Bound -ParameterName UserName, Password)) {
+            Stop-Function -Category InvalidArgument -Message "You cannot specify -UseDefaultCredentials with -UserName or -Password."
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDbMailAccount -SqlInstance $instance -SqlCredential $SqlCredential -Account $Account -EnableException:$EnableException
         }

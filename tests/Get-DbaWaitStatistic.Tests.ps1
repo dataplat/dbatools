@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaWaitStatistic",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -20,6 +20,51 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Wait type filter validation" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                }
+                $script:mockServer | Add-Member -Force -MemberType ScriptMethod -Name Query -Value {
+                    param($Sql)
+                    $script:lastQuery = $Sql
+                    @()
+                }
+            }
+
+            It "normalizes ExcludeWaitType values and still applies them when IncludeIgnorable is used" {
+                Mock Connect-DbaInstance {
+                    $script:mockServer
+                }
+
+                $null = Get-DbaWaitStatistic -SqlInstance "sql1" -IncludeIgnorable -ExcludeWaitType "cxpacket"
+
+                $script:lastQuery | Should -Match "NOT IN \('CXPACKET'\)"
+            }
+
+            It "removes IncludeWaitType values from the default ignorable filter" {
+                Mock Connect-DbaInstance {
+                    $script:mockServer
+                }
+
+                $null = Get-DbaWaitStatistic -SqlInstance "sql1" -IncludeWaitType "sos_work_dispatcher"
+
+                $script:lastQuery | Should -Match "LAZYWRITER_SLEEP"
+                $script:lastQuery | Should -Not -Match "SOS_WORK_DISPATCHER"
+            }
+
+            It "rejects invalid wait type names before connecting" {
+                {
+                    Get-DbaWaitStatistic -SqlInstance "sql1" -ExcludeWaitType "CXPACKET'; DROP TABLE dbo.t;--"
+                } | Should -Throw
+            }
         }
     }
 }
@@ -67,24 +112,4 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "ExcludeWaitType parameter filters out additional wait types" {
-        BeforeAll {
-            $filteredResults = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeIgnorable -ExcludeWaitType "CXPACKET", "CXCONSUMER"
-        }
-
-        It "excludes specified wait types" {
-            $filteredResults.WaitType | Should -Not -Contain "CXPACKET"
-            $filteredResults.WaitType | Should -Not -Contain "CXCONSUMER"
-        }
-    }
-
-    Context "IncludeWaitType parameter includes wait types from ignorable list" {
-        BeforeAll {
-            $resultsWith = Get-DbaWaitStatistic -SqlInstance $TestConfig.InstanceSingle -Threshold 100 -IncludeWaitType "CHKPT"
-        }
-
-        It "includes specified wait type that would normally be ignored" {
-            $resultsWith.WaitType | Should -Contain "CHKPT"
-        }
-    }
 }

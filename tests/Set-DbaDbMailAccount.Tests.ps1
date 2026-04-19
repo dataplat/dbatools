@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Set-DbaDbMailAccount",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -28,6 +28,19 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Input validation" {
+            It "Should call Stop-Function when default credentials are combined with SMTP credentials" {
+                Mock Stop-Function { }
+                $securePassword = ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force
+
+                Set-DbaDbMailAccount -SqlInstance "sql1" -Account "alerts" -UseDefaultCredentials -UserName "alerts@contoso.com" -Password $securePassword | Should -BeNullOrEmpty
+
+                Should -Invoke Stop-Function -Times 1 -Exactly
+            }
         }
     }
 }

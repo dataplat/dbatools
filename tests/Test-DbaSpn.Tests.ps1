@@ -23,7 +23,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     Context "When getting SPN information" {
         BeforeAll {
-            $results = Test-DbaSpn -ComputerName $TestConfig.InstanceSingle
+            $results = Test-DbaSpn -ComputerName $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         }
 
         It "Returns some results" {

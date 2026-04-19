@@ -6,8 +6,7 @@ function Remove-DbaInstanceList {
     .DESCRIPTION
         Removes SQL Server instance names from the user-maintained list that is pre-loaded into
         the dbatools tab completion cache for the -SqlInstance parameter. The instances are
-        removed from the stored configuration but remain in the current session's TEPP cache
-        until the module is reloaded.
+        removed from the stored configuration and from the current session's autocomplete cache.
 
         Use Add-DbaInstanceList to add instances to the list and Get-DbaInstanceList to view
         the current list.
@@ -86,6 +85,13 @@ function Remove-DbaInstanceList {
                 $updated = $current | Where-Object { $toRemove -notcontains $_ }
                 if ($null -eq $updated) { $updated = @() }
                 Set-DbatoolsConfig -FullName "TabExpansion.KnownInstances" -Value @($updated)
+
+                $cache = @([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"])
+                if ($cache.Count -gt 0) {
+                    $cache = $cache | Where-Object { $toRemove -notcontains $_ }
+                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @($cache)
+                }
+
                 if ($Register) {
                     Register-DbatoolsConfig -FullName "TabExpansion.KnownInstances" -Scope $Scope
                 }

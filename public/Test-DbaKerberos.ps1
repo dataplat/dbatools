@@ -6,7 +6,7 @@ function Test-DbaKerberos {
     .DESCRIPTION
         This function performs a comprehensive suite of diagnostic checks to troubleshoot Kerberos authentication issues for SQL Server instances. It addresses the most common causes of Kerberos authentication failures including SPN configuration problems, DNS issues, time synchronization errors, service account configuration, network connectivity problems, and security policy misconfigurations.
 
-        The function performs 20 checks across 9 categories (plus additional checks per AG listener):
+        The function performs up to 18 base checks across 9 categories (plus additional checks per AG listener):
 
         SPN (1-2+ checks):
         - SPN Registration - Verifies required SPNs are registered using Test-DbaSpn
@@ -90,7 +90,7 @@ function Test-DbaKerberos {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per diagnostic check performed (typically 20-25+ checks depending on configuration) with the following properties:
+        Returns one object per diagnostic check performed (typically 12-18 checks depending on parameter set and configuration) with the following properties:
 
         - ComputerName (string) - The name of the computer or SQL Server host that was tested
         - InstanceName (string) - The SQL Server instance name if testing an instance; $null if testing at the computer level

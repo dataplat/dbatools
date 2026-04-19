@@ -276,20 +276,38 @@ function Invoke-DbaDbPiiScan {
 
                 # Filter the tables if needed
                 if ($Table) {
-                    $tableNames = $Table | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
-                    $tables = $db.Tables | Where-Object Name -In $tableNames
+                    $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                    $tables = @(foreach ($tablePart in $tableParts) {
+                            $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($db.Name, $null)
+                            }
+                        })
                 } else {
-                    $tables = $db.Tables
+                    $tables = @($db.Tables)
                 }
 
                 if ($ExcludeTable) {
-                    $excludeTableNames = $ExcludeTable | ForEach-Object { (Get-ObjectNameParts -ObjectName $_).Name }
-                    $tables = $tables | Where-Object Name -NotIn $excludeTableNames
+                    $excludeTableParts = $ExcludeTable | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                    $tables = @($tables | Where-Object {
+                            $tableObject = $PSItem
+                            -not ($excludeTableParts | Where-Object {
+                                    $_.Name -eq $tableObject.Name -and
+                                    $_.Schema -in ($tableObject.Schema, $null) -and
+                                    $_.Database -in ($db.Name, $null)
+                                })
+                        })
                 }
 
                 # Filter the tables based on the column
                 if ($Column) {
-                    $tables = $tables | Where-Object { $ColumnNames = $_.Columns.Name; $Column | Where-Object { $_ -in $ColumnNames } }
+                    $tables = @($tables | Where-Object { $ColumnNames = $_.Columns.Name; $Column | Where-Object { $_ -in $ColumnNames } })
+                }
+
+                if ($tables.Count -eq 0) {
+                    Write-Message -Level Verbose -Message "No tables to scan in database $dbName"
+                    continue
                 }
 
                 $tableNumber = 1

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaBackupInformation",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -117,6 +117,56 @@ Describe $CommandName -Tag IntegrationTests {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should -Be $true
                 $true -in ($Output.IsVerified) | Should -Be $false
+                ($null -ne $WarnVar) | Should -Be $True
+            }
+        }
+        Context "Input without IsVerified member" {
+            It "Should add IsVerified when validation fails" {
+                $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
+                $BackupHistory = $BackupHistory | Format-DbaBackupInformation
+                $BackupHistory | ForEach-Object {
+                    $PSItem.PSObject.Properties.Remove("IsVerified")
+                }
+                Mock Connect-DbaInstance -MockWith {
+                    $obj = [PSCustomObject]@{
+                        Name                 = "BASEName"
+                        NetName              = "BASENetName"
+                        ComputerName         = "BASEComputerName"
+                        InstanceName         = "BASEInstanceName"
+                        DomainInstanceName   = "BASEDomainInstanceName"
+                        InstallDataDirectory = "BASEInstallDataDirectory"
+                        ErrorLogPath         = "BASEErrorLog_{0}_{1}_{2}_Path" -f "'", '"', "]"
+                        ServiceName          = "BASEServiceName"
+                        VersionMajor         = 9
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value "put=an=equal=in=it"
+                    Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                        param($query)
+                        if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                            return @(
+                                @{ "Name"          = "master"
+                                    "PhysicalName" = "C:\temp\master.mdf"
+                                }
+                            )
+                        }
+                    }
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+                Mock Get-DbaDatabase { $null }
+                Mock New-DbaDirectory { $true }
+                Mock Test-DbaPath { [PSCustomObject]@{
+                        FilePath   = "does\not\exists"
+                        FileExists = $false
+                    }
+                }
+                Mock New-DbaDirectory { $True }
+                $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
+                ($output | Where-Object { "IsVerified" -notin $PSItem.PSObject.Properties.Name }).Count | Should -Be 0
+                $output.IsVerified | Should -Not -Contain $true
+                $output.IsVerified | Should -Not -Contain $null
                 ($null -ne $WarnVar) | Should -Be $True
             }
         }

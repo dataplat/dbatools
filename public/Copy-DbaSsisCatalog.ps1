@@ -62,13 +62,22 @@ function Copy-DbaSsisCatalog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .OUTPUTS
-        None
+        PSCustomObject
 
-        This command performs migration operations and does not return any output objects. Check the Verbose stream for operation details, or use -WhatIf to preview what would be executed.
+        Returns one object per migration operation attempt. Each object represents the result of copying a single folder, project, or environment to a destination instance.
+
+        Default display properties (via Select-DefaultView with TypeName MigrationObject):
+        - DateTime: Timestamp when the migration operation occurred (DbaDateTime)
+        - SourceServer: Name of the source SQL Server instance
+        - DestinationServer: Name of the destination SQL Server instance
+        - Name: Name of the object that was copied (folder, project, or environment name)
+        - Type: Object type (Folder, Project, or Environment)
+        - Status: Result of the migration attempt (Successful, Skipped, or Failed)
+        - Notes: Additional details about the operation or reason for skipping/failure
 
     .NOTES
         Tags: Migration, SSIS
-        Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
+        Author: Phil Schwartz (philschwartz.me, @pschwartzzz), the dbatools team + Claude
 
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -394,26 +403,45 @@ function Copy-DbaSsisCatalog {
                     $srcFolder = $sourceFolders | Where-Object {
                         $_.Name -eq $folder
                     }
+                    $copyFolderStatus = [PSCustomObject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destinationConnection.Name
+                        Type              = "Folder"
+                        Name              = $folder
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [DbaDateTime](Get-Date)
+                    }
                     if ($destinationFolders.Name -contains $folder) {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus.Status = "Skipped"
+                            $copyFolderStatus.Notes = "Integration services catalog folder exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping folder $folder and recreating")) {
                                 try {
                                     New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                    $copyFolderStatus.Status = "Successful"
                                 } catch {
                                     Stop-Function -Message "Issue dropping folder" -Target $folder -ErrorRecord $_
+                                    $copyFolderStatus.Status = "Failed"
+                                    $copyFolderStatus.Notes = $_.Exception.Message
                                 }
-
+                                $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                         }
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating folder $folder")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
+                                $copyFolderStatus.Status = "Successful"
                             } catch {
                                 Stop-Function -Message "Issue creating folder" -Target $folder -ErrorRecord $_
+                                $copyFolderStatus.Status = "Failed"
+                                $copyFolderStatus.Notes = $_.Exception.Message
                             }
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                     }
                 } else {
@@ -421,25 +449,45 @@ function Copy-DbaSsisCatalog {
                 }
             } else {
                 foreach ($srcFolder in $sourceFolders) {
+                    $copyFolderStatus = [PSCustomObject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destinationConnection.Name
+                        Type              = "Folder"
+                        Name              = $srcFolder.Name
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [DbaDateTime](Get-Date)
+                    }
                     if ($destinationFolders.Name -notcontains $srcFolder.Name) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Creating folder $($srcFolder.Name)")) {
                             try {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
+                                $copyFolderStatus.Status = "Successful"
                             } catch {
                                 Stop-Function -Message "Issue creating folder" -Target $srcFolder -ErrorRecord $_ -Continue
+                                $copyFolderStatus.Status = "Failed"
+                                $copyFolderStatus.Notes = $_.Exception.Message
                             }
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                     } else {
                         if (!$force) {
                             Write-Message -Level Warning -Message "Integration services catalog folder $($srcFolder.Name) exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus.Status = "Skipped"
+                            $copyFolderStatus.Notes = "Integration services catalog folder exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             continue
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping folder $($srcFolder.Name) and recreating")) {
                                 try {
                                     New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                    $copyFolderStatus.Status = "Successful"
                                 } catch {
                                     Stop-Function -Message "Issue dropping folder" -Target $srcFolder -ErrorRecord $_
+                                    $copyFolderStatus.Status = "Failed"
+                                    $copyFolderStatus.Notes = $_.Exception.Message
                                 }
+                                $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                         }
                     }
@@ -475,11 +523,24 @@ function Copy-DbaSsisCatalog {
                 } else {
                     foreach ($f in $folderDeploy) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Deploying project $project from folder $($f.Name)")) {
+                            $copyProjectStatus = [PSCustomObject]@{
+                                SourceServer      = $sourceServer.Name
+                                DestinationServer = $destinationConnection.Name
+                                Type              = "Project"
+                                Name              = $project
+                                Status            = $null
+                                Notes             = $null
+                                DateTime          = [DbaDateTime](Get-Date)
+                            }
                             try {
                                 Invoke-ProjectDeployment -Folder $f.Name -Project $project
+                                $copyProjectStatus.Status = "Successful"
                             } catch {
                                 Stop-Function -Message "Issue deploying project" -Target $project -ErrorRecord $_
+                                $copyProjectStatus.Status = "Failed"
+                                $copyProjectStatus.Notes = $_.Exception.Message
                             }
+                            $copyProjectStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                     }
                 }
@@ -487,11 +548,24 @@ function Copy-DbaSsisCatalog {
                 foreach ($curFolder in $sourceFolders) {
                     foreach ($proj in $curFolder.Projects) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
+                            $copyProjectStatus = [PSCustomObject]@{
+                                SourceServer      = $sourceServer.Name
+                                DestinationServer = $destinationConnection.Name
+                                Type              = "Project"
+                                Name              = $proj.Name
+                                Status            = $null
+                                Notes             = $null
+                                DateTime          = [DbaDateTime](Get-Date)
+                            }
                             try {
                                 Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
+                                $copyProjectStatus.Status = "Successful"
                             } catch {
                                 Stop-Function -Message "Issue deploying project" -Target $proj -ErrorRecord $_
+                                $copyProjectStatus.Status = "Failed"
+                                $copyProjectStatus.Notes = $_.Exception.Message
                             }
+                            $copyProjectStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                     }
                 }
@@ -505,24 +579,44 @@ function Copy-DbaSsisCatalog {
                     throw "The environment $environment cannot be found in the source Integration Services catalog."
                 } else {
                     foreach ($f in $folderDeploy) {
+                        $copyEnvStatus = [PSCustomObject]@{
+                            SourceServer      = $sourceServer.Name
+                            DestinationServer = $destinationConnection.Name
+                            Type              = "Environment"
+                            Name              = $environment
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [DbaDateTime](Get-Date)
+                        }
                         if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $environment from folder $($f.Name)")) {
                                 try {
                                     New-FolderEnvironment -Folder $f.Name -Environment $environment
+                                    $copyEnvStatus.Status = "Successful"
                                 } catch {
                                     Stop-Function -Message "Issue deploying environment" -Target $environment -ErrorRecord $_
+                                    $copyEnvStatus.Status = "Failed"
+                                    $copyEnvStatus.Notes = $_.Exception.Message
                                 }
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                         } else {
                             if (!$force) {
                                 Write-Message -Level Warning -Message "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus.Status = "Skipped"
+                                $copyEnvStatus.Notes = "Integration services catalog environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } else {
                                 If ($Pscmdlet.ShouldProcess($destinstance, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
                                     try {
                                         New-FolderEnvironment -Folder $f.Name -Environment $environment -Force
+                                        $copyEnvStatus.Status = "Successful"
                                     } catch {
                                         Stop-Function -Message "Issue dropping existing environment" -Target $environment -ErrorRecord $_
+                                        $copyEnvStatus.Status = "Failed"
+                                        $copyEnvStatus.Notes = $_.Exception.Message
                                     }
+                                    $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 }
                             }
                         }
@@ -531,25 +625,45 @@ function Copy-DbaSsisCatalog {
             } else {
                 foreach ($curFolder in $sourceFolders) {
                     foreach ($env in $curFolder.Environments) {
+                        $copyEnvStatus = [PSCustomObject]@{
+                            SourceServer      = $sourceServer.Name
+                            DestinationServer = $destinationConnection.Name
+                            Type              = "Environment"
+                            Name              = $env.Name
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [DbaDateTime](Get-Date)
+                        }
                         if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                 try {
                                     New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
+                                    $copyEnvStatus.Status = "Successful"
                                 } catch {
                                     Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
+                                    $copyEnvStatus.Status = "Failed"
+                                    $copyEnvStatus.Notes = $_.Exception.Message
                                 }
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                         } else {
                             if (!$force) {
                                 Write-Message -Level Warning -Message "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus.Status = "Skipped"
+                                $copyEnvStatus.Notes = "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 continue
                             } else {
                                 if ($Pscmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
                                     try {
                                         New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
+                                        $copyEnvStatus.Status = "Successful"
                                     } catch {
                                         Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
+                                        $copyEnvStatus.Status = "Failed"
+                                        $copyEnvStatus.Notes = $_.Exception.Message
                                     }
+                                    $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 }
                             }
                         }

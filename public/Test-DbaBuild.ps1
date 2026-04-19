@@ -286,11 +286,7 @@ function Test-DbaBuild {
             $compliant = $false
             $targetSPName = $null
             $targetCUName = $null
-            $releaseDate = $null
             $buildRefEntry = $IdxRef | Where-Object VersionObject -eq $inputbuild
-            if ($buildRefEntry -and $buildRefEntry.ReleaseDate) {
-                $releaseDate = [datetime]$buildRefEntry.ReleaseDate
-            }
             if ($BuildVersion.MatchType -eq 'Approximate') {
                 Write-Message -Level Warning -Message "$($BuildVersion.Build) is not recognized as a correct version"
             }
@@ -385,7 +381,6 @@ function Test-DbaBuild {
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name SPTarget -Value $targetSPName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name CUTarget -Value $targetCUName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name BuildTarget -Value $targetedBuild.VersionObject
-            Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name ReleaseDate -Value $releaseDate
             if ($Quiet) {
                 $BuildVersion.Compliant
             } else {

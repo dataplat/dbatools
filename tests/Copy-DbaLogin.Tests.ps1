@@ -33,6 +33,28 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "OutFile behavior" {
+        BeforeAll {
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+            Mock Get-DbaLogin {
+                [PSCustomObject]@{
+                    Name = "tester"
+                }
+            } -ModuleName dbatools
+            Mock Export-DbaLogin {
+                $FilePath
+            } -ModuleName dbatools
+        }
+
+        It "passes ExcludeDatabase to Export-DbaLogin when ExcludeDatabaseMapping is used" {
+            $null = Copy-DbaLogin -Source "sql1" -Login "tester" -OutFile "C:\temp\logins.sql" -ExcludeDatabaseMapping
+
+            Should -Invoke Export-DbaLogin -Times 1 -Exactly -ModuleName dbatools -ParameterFilter {
+                $FilePath -eq "C:\temp\logins.sql" -and $ExcludeDatabase
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

@@ -186,6 +186,10 @@ function Export-DbaDacPackage {
             foreach ($tableItem in $Table) {
                 # Use Get-ObjectNameParts to correctly handle bracketed names like [Gross.Table.Name]
                 $nameParts = Get-ObjectNameParts -ObjectName $tableItem
+                if (-not $nameParts.Parsed -or -not $nameParts.Name) {
+                    Stop-Function -Message "Table value '$tableItem' is not a valid one-, two-, or three-part name. Use bracket quoting for names that contain periods."
+                    return
+                }
                 if ($nameParts.Schema) {
                     $schemaName = $nameParts.Schema
                 } else {
@@ -224,7 +228,7 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
   AND state = 0        -- Only ONLINE databases (OnlyAccessible equivalent)
 "@
 
-            $sqlParams = @{}
+            $sqlParams = @{ }
 
             # Add ExcludeDatabase filter if specified (using parameterized queries to prevent SQL injection)
             if ($ExcludeDatabase) {

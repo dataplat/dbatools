@@ -344,10 +344,10 @@ function Invoke-DbaDbShrink {
                                     Write-Message -Level Verbose -Message ('Shrinking {0} to {1}' -f $file.Name, $shrinkSizeKB)
                                     $targetMB = [int]$shrinkSizeKB.Megabyte
                                     $shrinkSqlArgs = switch ($ShrinkMethod) {
-                                        'EmptyFile'    { "N'$escapedFileName', EMPTYFILE" }
-                                        'NoTruncate'   { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
+                                        'EmptyFile' { "N'$escapedFileName', EMPTYFILE" }
+                                        'NoTruncate' { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
                                         'TruncateOnly' { "N'$escapedFileName', $targetMB, TRUNCATEONLY" }
-                                        default        { "N'$escapedFileName', $targetMB" }
+                                        default { "N'$escapedFileName', $targetMB" }
                                     }
                                     $null = $instance.Query("DBCC SHRINKFILE ($shrinkSqlArgs)$walp", $db.name)
                                     $file.Refresh()
@@ -360,10 +360,10 @@ function Invoke-DbaDbShrink {
                             } else {
                                 $targetMB = [int]$desiredFileSizeKB.Megabyte
                                 $shrinkSqlArgs = switch ($ShrinkMethod) {
-                                    'EmptyFile'    { "N'$escapedFileName', EMPTYFILE" }
-                                    'NoTruncate'   { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
+                                    'EmptyFile' { "N'$escapedFileName', EMPTYFILE" }
+                                    'NoTruncate' { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
                                     'TruncateOnly' { "N'$escapedFileName', $targetMB, TRUNCATEONLY" }
-                                    default        { "N'$escapedFileName', $targetMB" }
+                                    default { "N'$escapedFileName', $targetMB" }
                                 }
                                 $null = $instance.Query("DBCC SHRINKFILE ($shrinkSqlArgs)$walp", $db.name)
                                 $file.Refresh()
@@ -372,7 +372,12 @@ function Invoke-DbaDbShrink {
                         } catch {
                             $success = $false
                             $errorDetails = $_.Exception.Message
-                            Stop-Function -Message "Shrink operation failed for file $($file.Name): $errorDetails" -ErrorRecord $_
+                            $failureMessage = "Shrink operation failed for file $($file.Name): $errorDetails"
+                            if ($EnableException) {
+                                Stop-Function -Message $failureMessage -EnableException $EnableException -ErrorRecord $_
+                            } else {
+                                Write-Message -Level Warning -Message $failureMessage -ErrorRecord $_
+                            }
                         } finally {
                             $instance.ConnectionContext.StatementTimeout = $previousStatementTimeout
                         }
@@ -403,11 +408,9 @@ function Invoke-DbaDbShrink {
                         $ts = [TimeSpan]::FromSeconds($timSpan.TotalSeconds)
                         $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 
-                        $notesText = 'Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE'
+                        $notesText = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                         if ($errorDetails) {
                             $notesText = "$errorDetails | $notesText"
-                        } else {
-                            $notesText = $notesText
                         }
 
                         $object = [PSCustomObject]@{

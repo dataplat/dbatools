@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Compare-DbaDbSchema",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -21,6 +21,187 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        BeforeAll {
+            function New-MockCompareDbSchemaReader {
+                param(
+                    [string]$Text
+                )
+
+                $reader = [PSCustomObject]@{
+                    Text = $Text
+                }
+                Add-Member -InputObject $reader -MemberType ScriptMethod -Name ReadToEnd -Value {
+                    $this.Text
+                } -Force
+                $reader
+            }
+
+            function New-MockCompareDbSchemaProcess {
+                $process = [PSCustomObject]@{
+                    StartInfo      = $null
+                    ExitCode       = 0
+                    StandardOutput = New-MockCompareDbSchemaReader -Text "sqlpackage completed"
+                    StandardError  = New-MockCompareDbSchemaReader -Text ""
+                }
+                Add-Member -InputObject $process -MemberType ScriptMethod -Name Start -Value {
+                    $true
+                } -Force
+                Add-Member -InputObject $process -MemberType ScriptMethod -Name WaitForExit -Value {
+                } -Force
+                $process
+            }
+
+            function New-MockCompareDbSchemaStartInfo {
+                [PSCustomObject]@{
+                    FileName               = $null
+                    Arguments              = $null
+                    RedirectStandardError  = $false
+                    RedirectStandardOutput = $false
+                    UseShellExecute        = $false
+                    CreateNoWindow         = $false
+                }
+            }
+
+            $script:mockDeploymentReport = @"
+<DeploymentReport>
+  <Operations>
+    <Operation Name="Create">
+      <Item Type="SqlTable" Value="[dbo].[SourceOnly]" />
+    </Operation>
+  </Operations>
+</DeploymentReport>
+"@
+        }
+
+        Context "Pipeline input and target validation" {
+            BeforeEach {
+                Mock Get-DbaSqlPackagePath { "C:\tools\sqlpackage.exe" }
+                Mock Test-ExportDirectory { }
+                Mock Test-FunctionInterrupt { $false }
+                Mock Test-Path {
+                    param($Path)
+                    $null -ne $Path
+                }
+                Mock Resolve-Path {
+                    param($Path)
+                    [PSCustomObject]@{
+                        ProviderPath = $Path
+                    }
+                }
+                Mock Get-Content {
+                    $script:mockDeploymentReport
+                }
+                Mock Remove-Item { }
+                function Write-Message {
+                    param(
+                        $Level,
+                        $Message,
+                        $ErrorRecord,
+                        $EnableException
+                    )
+                }
+                Mock New-Object {
+                    New-MockCompareDbSchemaStartInfo
+                } -ParameterFilter {
+                    $TypeName -eq "System.Diagnostics.ProcessStartInfo"
+                }
+                Mock New-Object {
+                    New-MockCompareDbSchemaProcess
+                } -ParameterFilter {
+                    $TypeName -eq "System.Diagnostics.Process"
+                }
+                Mock Stop-Function {
+                    throw $Message
+                }
+            }
+
+            It "accepts SourcePath from pipeline property input" {
+                $inputObject = [PSCustomObject]@{
+                    Path = "C:\temp\source.dacpac"
+                }
+
+                $result = $inputObject | Compare-DbaDbSchema -TargetPath "C:\temp\target.dacpac" -OutputPath "C:\temp\reports"
+
+                $result.SourcePath | Should -Be "C:\temp\source.dacpac"
+                $result.Target | Should -Be "C:\temp\target.dacpac"
+                $result.Operation | Should -Be "Create"
+                $result.Type | Should -Be "Table"
+                Should -Invoke Test-Path -Times 1 -Exactly -ParameterFilter {
+                    $Path -eq "C:\temp\source.dacpac"
+                }
+            }
+
+            It "rejects using both target selectors at the same time" {
+                {
+                    Compare-DbaDbSchema -SourcePath "C:\temp\source.dacpac" -TargetSqlInstance "sql1" -TargetDatabase "db1" -TargetPath "C:\temp\target.dacpac" -OutputPath "C:\temp\reports"
+                } | Should -Throw "*Specify either -TargetSqlInstance or -TargetPath, not both.*"
+            }
+        }
+
+        Context "Verbose logging" {
+            BeforeEach {
+                $script:capturedVerboseMessages = @()
+                Mock Get-DbaSqlPackagePath { "C:\tools\sqlpackage.exe" }
+                Mock Test-ExportDirectory { }
+                Mock Test-FunctionInterrupt { $false }
+                Mock Test-Path {
+                    param($Path)
+                    $null -ne $Path
+                }
+                Mock Resolve-Path {
+                    param($Path)
+                    [PSCustomObject]@{
+                        ProviderPath = $Path
+                    }
+                }
+                Mock Connect-DbaInstance {
+                    [PSCustomObject]@{
+                        DomainInstanceName = "sql1"
+                        ConnectionContext  = [PSCustomObject]@{
+                            ConnectionString = "Data Source=sql1;User ID=sqluser;Password=SuperSecret!;Initial Catalog=master"
+                        }
+                    }
+                }
+                Mock Get-Content {
+                    $script:mockDeploymentReport
+                }
+                Mock Remove-Item { }
+                function Write-Message {
+                    param($Level, $Message)
+                    if ($Level -eq "Verbose") {
+                        $script:capturedVerboseMessages += $Message
+                    }
+                }
+                Mock New-Object {
+                    New-MockCompareDbSchemaStartInfo
+                } -ParameterFilter {
+                    $TypeName -eq "System.Diagnostics.ProcessStartInfo"
+                }
+                Mock New-Object {
+                    New-MockCompareDbSchemaProcess
+                } -ParameterFilter {
+                    $TypeName -eq "System.Diagnostics.Process"
+                }
+                Mock Stop-Function {
+                    throw $Message
+                }
+            }
+
+            It "does not write SQL credentials to verbose output" {
+                $securePassword = ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force
+                $credential = New-Object -TypeName PSCredential -ArgumentList "sqluser", $securePassword
+
+                $null = Compare-DbaDbSchema -SourcePath "C:\temp\source.dacpac" -TargetSqlInstance "sql1" -TargetSqlCredential $credential -TargetDatabase "db1" -OutputPath "C:\temp\reports"
+
+                ($script:capturedVerboseMessages -join [System.Environment]::NewLine) | Should -Not -Match "SuperSecret!"
+                ($script:capturedVerboseMessages -join [System.Environment]::NewLine) | Should -Not -Match "Password="
+            }
         }
     }
 }
@@ -126,7 +307,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Compare-DbaDbSchema @splatCompare
             $result | Should -Not -BeNullOrEmpty
-            $result[0].SourcePath | Should -Be (Resolve-Path -Path $sourceDacpac).Path
+            $result[0].SourcePath | Should -Be (Resolve-Path -Path $sourceDacpac).ProviderPath
             $result[0].Target | Should -Be $emptyTargetDacpac
         }
 

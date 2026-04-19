@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.27'
+    ModuleVersion      = '2.8.0'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -84,6 +84,7 @@
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
+        'Compare-DbaLogin',
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
@@ -172,6 +173,7 @@
         'Find-DbaDbUnusedIndex',
         'Find-DbaInstance',
         'Find-DbaLoginInGroup',
+        'Find-DbaObject',
         'Find-DbaOrphanedFile',
         'Find-DbaSimilarTable',
         'Find-DbaStoredProcedure',

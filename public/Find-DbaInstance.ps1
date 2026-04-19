@@ -293,13 +293,14 @@ function Find-DbaInstance {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
                     Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Starting"
-                    Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -FunctionName Find-DbaInstance
+                    Write-Message -Level Verbose -Message "Processing: $($computer)"
 
                     #region Null variables to prevent scope lookup on conditional existence
                     $resolution = $null
                     $pingReply = $null
                     $sPNs = @()
                     $ports = @()
+                    $browserFallbackPorts = @()
                     $browseResult = $null
                     $services = @()
                     #Variable marked as unused by PSScriptAnalyzer
@@ -350,10 +351,34 @@ function Find-DbaInstance {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
-                            $ports = $browseResult.TCPPort | Test-TcpPort -ComputerName $computer
+                            Write-Message -Level Verbose -Message "Browser returned $($browseResult.Count) instance(s): $(($browseResult | ForEach-Object { "$($_.InstanceName):$($_.TCPPort)" }) -join ', ')"
+                            $portsToScan = @()
+                            $browserReportedPorts = $browseResult.TCPPort | Where-Object { $_ -gt 0 }
+                            if ($browserReportedPorts) {
+                                $portsToScan += $browserReportedPorts
+                            }
+                            if ($browseResult | Where-Object { -not $_.TCPPort }) {
+                                $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                                Write-Message -Level Verbose -Message "Browser has instance(s) without TCPPort, adding fallback ports: $($browserFallbackPorts -join ', ')"
+                                $portsToScan += $browserFallbackPorts
+                            }
+                            if ($portsToScan) {
+                                $ports = $portsToScan | Select-Object -Unique | Test-TcpPort -ComputerName $computer
+                            }
+                            Write-Message -Level Verbose -Message "Port test results from Browser: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
                         } catch {
+                            Write-Message -Level Verbose -Message "Browser scan failed: $_"
                             # here to avoid an empty catch
                             $null = 1
+                        }
+                        # Fall back to default port testing if Browser returned no port info
+                        # (e.g. SQL Server 2022+ where Browser is deprecated, or default instances
+                        # which don't report a TCP port via Browser UDP)
+                        if (-not $ports) {
+                            $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                            Write-Message -Level Verbose -Message "No port info from Browser, falling back to default ports: $($browserFallbackPorts -join ', ')"
+                            $ports = $browserFallbackPorts | Test-TcpPort -ComputerName $computer
+                            Write-Message -Level Verbose -Message "Fallback port test results: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
                         }
                     } else {
                         $ports = $TCPPort | Test-TcpPort -ComputerName $computer
@@ -413,10 +438,10 @@ function Find-DbaInstance {
                                     Ping         = $pingReply.Status -like 'Success'
                                 }
                             } else {
-                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -FunctionName Find-DbaInstance
+                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..."
                             }
                         } else {
-                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -FunctionName Find-DbaInstance
+                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping."
                         }
 
                         continue
@@ -427,6 +452,7 @@ function Find-DbaInstance {
 
                     #region Case: Named instance found
                     foreach ($instance in $instanceNames) {
+                        Write-Message -Level Verbose -Message "Processing named instance: $instance"
                         $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
                         $object.MachineName = $computer.ComputerName
                         $object.ComputerName = $computer.ComputerName
@@ -449,9 +475,21 @@ function Find-DbaInstance {
                             $object.Confidence = 'Medium'
                             if ($object.BrowseReply.TCPPort) {
                                 $object.Port = $object.BrowseReply.TCPPort
+                                Write-Message -Level Verbose -Message "Browser reported TCPPort $($object.Port), checking PortsScanned: $(($object.PortsScanned | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
 
                                 $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
                                     $object.TcpConnected = $_.IsOpen
+                                    Write-Message -Level Verbose -Message "Port $($_.Port) IsOpen=$($_.IsOpen), TcpConnected set to $($object.TcpConnected)"
+                                }
+                            } else {
+                                # Default instance - Browser doesn't report a specific TCP port,
+                                # check if any of the fallback ports we tested is open
+                                $defaultPortResults = $object.PortsScanned | Where-Object { $_.Port -in $browserFallbackPorts }
+                                Write-Message -Level Verbose -Message "Browser has no TCPPort (default instance), checking fallback PortsScanned for any open port: $(($defaultPortResults | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+                                $defaultPortResults | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
+                                    $object.Port = $_.Port
+                                    $object.TcpConnected = $true
+                                    Write-Message -Level Verbose -Message "Found open port $($_.Port), TcpConnected set to True"
                                 }
                             }
                         }
@@ -801,21 +839,20 @@ function Find-DbaInstance {
                 [Parameter(ValueFromPipeline)][int[]]$Port
             )
 
-            begin {
-                $client = New-Object Net.Sockets.TcpClient
-            }
             process {
                 foreach ($item in $Port) {
+                    $client = New-Object Net.Sockets.TcpClient
                     try {
                         $client.Connect($ComputerName.ComputerName, $item)
                         if ($client.Connected) {
-                            $client.Close()
                             New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
                         } else {
                             New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                         }
                     } catch {
                         New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
+                    } finally {
+                        $client.Dispose()
                     }
                 }
             }

@@ -307,7 +307,7 @@ function Copy-DbaDbMail {
                 $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
                 $credentialAccounts = @($sourceServer.Query($sql))
                 if ($credentialAccounts.Count -gt 0) {
-                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+                    $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException:$EnableException | Where-Object { $_.Name -in $credentialAccounts.credential_name }
                 }
             }
 

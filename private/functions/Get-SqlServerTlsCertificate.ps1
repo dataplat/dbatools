@@ -47,11 +47,11 @@ Function Get-SqlServerTlsCertificate {
     Gets the certificate of the first instance found on sql01 using the SQL Browser service to find the TCP port or Named Pipe.
 
     .EXAMPLE
-    PS> Get-SqlServerTlsCertificate -ComputerName sql01 -Instance MySQLInstance
+    PS> Get-SqlServerTlsCertificate -ComputerName sql01 -InstanceName MySQLInstance
     Gets the certificate for the instance 'sql01\MySQLInstance' using the SQL Browser service to find the TCP port or Named Pipe.
 
     .EXAMPLE
-    PS> Get-SqlServerTlSCertificate -ComputerName sql01 -Port 65334 -ConnectionType TCP
+    PS> Get-SqlServerTlsCertificate -ComputerName sql01 -Port 65334 -ConnectionType TCP
     Gets the certificate for server sql01 using the TCP port 65334
 
     .EXAMPLE
@@ -145,7 +145,12 @@ public class TdsTlsStream : Stream {
             byte[] header = new byte[8];
             int read = 0;
             while (read < 8) {
-                read += _innerStream.Read(header, 0, 8);
+                int currentRead = _innerStream.Read(header, read, 8 - read);
+                if (currentRead == 0) {
+                    throw new EndOfStreamException("Unexpected EOF while reading TDS header.");
+                }
+
+                read += currentRead;
             }
 
             int lengthBeforeHeader = (int)BitConverter.ToUInt16(new byte[] { header[3], header[2] }, 0);
@@ -191,8 +196,7 @@ public class TdsTlsStream : Stream {
     try {
         $pipeName = if ($InstanceName -and $InstanceName -ne 'MSSQLSERVER') {
             'MSSQL${0}\sql\query' -f $InstanceName
-        }
-        else {
+        } else {
             'sql\query'
         }
 
@@ -210,37 +214,33 @@ public class TdsTlsStream : Stream {
             Write-Message -Level Verbose -Message "Recieved SQL Browser response: '$rawResponse'"
             $response = $rawResponse -split ';'
 
-            $instanceInfo = [Ordered]@{}
+            $instanceInfo = [Ordered]@{ }
             $remoteInstance = @(
                 for ($i = 0; $i -lt $response.Length; $i += 2) {
                     if ($response[$i]) {
                         $instanceInfo[$response[$i]] = $response[$i + 1]
-                    }
-                    elseif ($i -eq $response.Length - 1) {
+                    } elseif ($i -eq $response.Length - 1) {
                         break
-                    }
-                    else {
+                    } else {
                         $info = [PSCustomObject]$instanceInfo
                         Write-Message -Level Verbose -Message "Processed SQL Browser Response:`n$($info | Out-String)"
 
                         $info
-                        $instanceInfo = [Ordered]@{}
+                        $instanceInfo = [Ordered]@{ }
                         $i -= 1
                     }
                 }
             ) | Where-Object { -not $InstanceName -or $_.InstanceName -eq $InstanceName } | Select-Object -First 1
 
-            if ($remoteInstance.np) {
-                $ConnectionType = 'NamedPipe'
-                $ComputerName = $remoteInstance.ServerName
-                $pipeName = $remoteInstance.np -replace "\\\\.*?\\pipe\\(.*)", '$1'
-            }
-            elseif ($remoteInstance.tcp) {
-                $ConnectionType = 'TCP'
+            if ($remoteInstance.tcp) {
+                $ConnectionType = "TCP"
                 $ComputerName = $remoteInstance.ServerName
                 $Port = $remoteInstance.tcp
-            }
-            else {
+            } elseif ($remoteInstance.np) {
+                $ConnectionType = "NamedPipe"
+                $ComputerName = $remoteInstance.ServerName
+                $pipeName = $remoteInstance.np -replace "\\\\.*?\\pipe\\(.*)", '$1'
+            } else {
                 throw "Failed to receive any SQL Browser responses from $($ComputerName):1434, cannot continue"
             }
         }
@@ -255,8 +255,7 @@ public class TdsTlsStream : Stream {
             }
 
             $targetStream = $socket.GetStream()
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Connecting to Named Pipe endpoint \\$($ComputerName)\pipe\$pipeName"
             $targetStream = New-Object -TypeName System.IO.Pipes.NamedPipeClientStream -ArgumentList @(
                 $ComputerName,
@@ -272,8 +271,7 @@ public class TdsTlsStream : Stream {
         if ($StrictEncrypt) {
             Write-Message -Level Verbose -Message "Using TDS 8 TLS Handshake"
             $streamToWrap = $targetStream
-        }
-        else {
+        } else {
             Write-Message -Level Verbose -Message "Using TDS 7.x Pre-Login method for the TLS handshake"
 
             # This is a pre-calculated TDS Pre-Login payload with the ENCRYPTION
@@ -292,7 +290,11 @@ public class TdsTlsStream : Stream {
             $headerBytes = New-Object byte[] 8
             $read = 0
             while ($read -ne $headerBytes.Length) {
-                $read += $targetStream.Read($headerBytes, $read, $headerBytes.Length - $read)
+                $bytesRead = $targetStream.Read($headerBytes, $read, $headerBytes.Length - $read)
+                if ($bytesRead -eq 0) {
+                    throw "Unexpected EOF while reading the TDS pre-login response header from $ComputerName"
+                }
+                $read += $bytesRead
             }
 
             # Integer values are big endian encoded so swap them around. It also
@@ -303,13 +305,17 @@ public class TdsTlsStream : Stream {
             $tdsPreLoginResp = New-Object byte[] $payloadLength
             $read = 0
             while ($read -ne $tdsPreLoginResp.Length) {
-                $read += $targetStream.Read($tdsPreLoginResp, $read, $tdsPreLoginResp.Length - $read)
+                $bytesRead = $targetStream.Read($tdsPreLoginResp, $read, $tdsPreLoginResp.Length - $read)
+                if ($bytesRead -eq 0) {
+                    throw "Unexpected EOF while reading the TDS pre-login response payload from $ComputerName"
+                }
+                $read += $bytesRead
             }
 
             # The TDS Pre-Login payload starts with a variable amount of headers
-            #	TYPE - BYTE
-            #	OFFSET - USHORT (offset in the payload of the value)
-            #	LENGTH - USHORT
+            #    TYPE - BYTE
+            #    OFFSET - USHORT (offset in the payload of the value)
+            #    LENGTH - USHORT
             # The headers are terminated with the type 0xFF. We want to extract the
             # value for the ENCRYPT type (1) from the payload to see if the server
             # supported encryption.
@@ -319,8 +325,7 @@ public class TdsTlsStream : Stream {
                 $plOptionType = $tdsPreLoginResp[$offset]
                 if ($plOptionType -eq 0xFF) {
                     break
-                }
-                elseif ($plOptionType -ne 1) {
+                } elseif ($plOptionType -ne 1) {
                     $offset += 5
                     continue
                 }
@@ -352,7 +357,7 @@ public class TdsTlsStream : Stream {
         # This allows it to connect to a self signed or cert with different
         # hostname. The callback will also capture more information about the peer
         # Allows us to emit warnings if it was going to fail.
-        $certState = @{}
+        $certState = @{ }
         $sslValidationCallback = [System.Net.Security.RemoteCertificateValidationCallback] {
             param($Sender, $Certificate, $Chain, $SslPolicyErrors)
 
@@ -377,11 +382,9 @@ public class TdsTlsStream : Stream {
         Write-Message -Level Verbose -Message "Found cert for $($cert.Subject), Expires: $($cert.NotAfter), SANs: $($cert.DnsNameList -join ", ")"
 
         $cert
-    }
-    catch {
+    } catch {
         $PSCmdlet.WriteError($_)
-    }
-    finally {
+    } finally {
         if ($udpClient) { $udpClient.Dispose() }
         if ($sslStream) { $sslStream.Dispose() }
         if ($targetStream) { $targetStream.Dispose() }

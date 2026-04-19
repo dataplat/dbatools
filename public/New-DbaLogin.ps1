@@ -85,8 +85,8 @@ function New-DbaLogin {
         Prevents SID collision errors during login duplication and ensures unique security identifiers.
 
     .PARAMETER ExternalProvider
-        Configures the login for Azure Active Directory authentication in Azure SQL Database or Managed Instance.
-        Use with Azure AD user principal names or service principal names for cloud-integrated authentication.
+        Configures the login for Microsoft Entra authentication in Azure SQL Database, Azure SQL Managed Instance, or SQL Server 2022 and later.
+        Use with Microsoft Entra user principal names or service principal names supported by the target platform.
 
     .PARAMETER Force
         Removes any existing login with the same name before creating the new one.
@@ -124,7 +124,7 @@ function New-DbaLogin {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Name: The login account name
-        - LoginType: The type of login (SqlLogin, WindowsUser, WindowsGroup, Certificate, AsymmetricKey, or ExternalUser)
+        - LoginType: The type of login (SqlLogin, WindowsUser, WindowsGroup, Certificate, AsymmetricKey, ExternalUser, or ExternalGroup)
         - CreateDate: DateTime when the login was created
         - LastLogin: DateTime of the most recent connection (null if never connected or SQL Server 2000)
         - HasAccess: Boolean indicating if the login has permission to connect
@@ -436,6 +436,7 @@ function New-DbaLogin {
                         $newLogin.LoginType = $loginType
 
                         $withParams = ""
+                        $externalProviderAlterParams = ""
 
                         if ($loginType -eq 'SqlLogin' -and $currentSid -and !$NewSid) {
                             Write-Message -Level Verbose -Message "Setting $loginName SID"
@@ -446,13 +447,21 @@ function New-DbaLogin {
                         if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser", "ExternalGroup")) {
                             if ($currentDefaultDatabase) {
                                 Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
-                                $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
+                                if ($loginType -in ("ExternalUser", "ExternalGroup")) {
+                                    $externalProviderAlterParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
+                                } else {
+                                    $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
+                                }
                                 $newLogin.DefaultDatabase = $currentDefaultDatabase
                             }
 
                             if ($currentLanguage) {
                                 Write-Message -Level Verbose -Message "Setting $loginName language to $currentLanguage"
-                                $withParams += ", DEFAULT_LANGUAGE = [$currentLanguage]"
+                                if ($loginType -in ("ExternalUser", "ExternalGroup")) {
+                                    $externalProviderAlterParams += ", DEFAULT_LANGUAGE = [$currentLanguage]"
+                                } else {
+                                    $withParams += ", DEFAULT_LANGUAGE = [$currentLanguage]"
+                                }
                                 $newLogin.Language = $currentLanguage
                             }
 
@@ -529,7 +538,7 @@ function New-DbaLogin {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$($SecurePassword | ConvertFrom-SecurePass)'"
                                 } elseif ($loginType -in ('ExternalUser', 'ExternalGroup') -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance' -or $server.VersionMajor -ge 16)) {
                                     # Azure SQL DB, Azure SQL Managed Instance, and SQL Server 2022+ support FROM EXTERNAL PROVIDER syntax
-                                    $sql = "CREATE LOGIN [$loginName] FROM EXTERNAL PROVIDER" + $withParams
+                                    $sql = "CREATE LOGIN [$loginName] FROM EXTERNAL PROVIDER"
                                 } elseif ($loginType -eq 'SqlLogin' ) {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams
                                 } else {
@@ -541,6 +550,16 @@ function New-DbaLogin {
                                 $usedTsql = $true
                             } catch {
                                 Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                            }
+                        }
+
+                        if ($usedTsql -and $loginType -in ("ExternalUser", "ExternalGroup") -and $externalProviderAlterParams) {
+                            try {
+                                $sql = "ALTER LOGIN [$loginName] WITH " + $externalProviderAlterParams.TrimStart(',').Trim()
+                                $null = $server.Query($sql)
+                                $newLogin = $server.Logins[$loginName]
+                            } catch {
+                                Stop-Function -Message "Failed to configure $loginName on $instance after creation." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                             }
                         }
 

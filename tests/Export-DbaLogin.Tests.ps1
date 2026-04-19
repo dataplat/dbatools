@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,6 +35,315 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "IncludeRolePermissions scripting" {
+        BeforeAll {
+            if (-not ("ExportDbaLoginRoleTest.MockServer" -as [type])) {
+                Add-Type -TypeDefinition @"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace ExportDbaLoginRoleTest {
+    public class MockCollection<T> : IEnumerable {
+        private Dictionary<string, T> items = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+
+        public void Add(string name, T item) {
+            items[name] = item;
+        }
+
+        public T this[string name] {
+            get { return items[name]; }
+        }
+
+        public IEnumerator GetEnumerator() {
+            return items.Values.GetEnumerator();
+        }
+    }
+
+    public class MockMapping {
+        public string DBName { get; set; }
+        public string UserName { get; set; }
+        public string LoginName { get; set; }
+    }
+
+    public class MockUser {
+        public string Name { get; set; }
+        public string[] Scripts { get; set; }
+
+        public string[] Script(object scriptingOptions) {
+            return Scripts;
+        }
+    }
+
+    public class MockRole {
+        public string Name { get; set; }
+        public bool IsFixedRole { get; set; }
+        public string[] Members { get; set; }
+        public string[] RoleScripts { get; set; }
+
+        public string[] EnumMembers() {
+            return Members ?? Array.Empty<string>();
+        }
+
+        public string[] Script(object scriptingOptions) {
+            return RoleScripts;
+        }
+    }
+
+    public class MockCredential {
+        public string Identity { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class MockServerRole {
+        public string Name { get; set; }
+        public string[] Members { get; set; }
+
+        public string[] EnumMemberNames() {
+            return Members ?? Array.Empty<string>();
+        }
+
+        public string[] EnumServerRoleMembers() {
+            return Members ?? Array.Empty<string>();
+        }
+    }
+
+    public class MockJob {
+        public string OwnerLoginName { get; set; }
+    }
+
+    public class MockJobServer {
+        public List<MockJob> Jobs { get; set; }
+
+        public MockJobServer() {
+            Jobs = new List<MockJob>();
+        }
+    }
+
+    public class MockLogin {
+        public string Name { get; set; }
+        public string DefaultDatabase { get; set; }
+        public string Language { get; set; }
+        public bool PasswordPolicyEnforced { get; set; }
+        public bool PasswordExpirationEnabled { get; set; }
+        public string LoginType { get; set; }
+        public bool IsDisabled { get; set; }
+        public bool DenyWindowsLogin { get; set; }
+        public MockMapping[] DatabaseMappings { get; set; }
+
+        public MockMapping[] EnumDatabaseMappings() {
+            return DatabaseMappings ?? Array.Empty<MockMapping>();
+        }
+    }
+
+    public class MockDatabase {
+        public string Name { get; set; }
+        public bool IsAccessible { get; set; }
+        public string CompatibilityLevel { get; set; }
+        public MockCollection<MockRole> Roles { get; set; }
+        public MockCollection<MockUser> Users { get; set; }
+        public MockMapping[] LoginMappings { get; set; }
+
+        public MockDatabase() {
+            Roles = new MockCollection<MockRole>();
+            Users = new MockCollection<MockUser>();
+        }
+
+        public MockMapping[] EnumLoginMappings() {
+            return LoginMappings ?? Array.Empty<MockMapping>();
+        }
+
+        public object[] EnumDatabasePermissions(string userName) {
+            return Array.Empty<object>();
+        }
+    }
+
+    public class MockServer {
+        public string Name { get; set; }
+        public int VersionMajor { get; set; }
+        public List<MockLogin> Logins { get; set; }
+        public List<MockServerRole> Roles { get; set; }
+        public MockJobServer JobServer { get; set; }
+        public List<MockCredential> Credentials { get; set; }
+        public MockCollection<MockDatabase> Databases { get; set; }
+
+        public MockServer() {
+            Logins = new List<MockLogin>();
+            Roles = new List<MockServerRole>();
+            JobServer = new MockJobServer();
+            Credentials = new List<MockCredential>();
+            Databases = new MockCollection<MockDatabase>();
+        }
+
+        public object[] EnumServerPermissions(string userName) {
+            return Array.Empty<object>();
+        }
+    }
+}
+"@
+            }
+        }
+
+        It "Should script role permissions before role membership for non-ObjectLevel export" {
+            InModuleScope dbatools {
+                function Write-Message { }
+                function Test-ExportDirectory { }
+                function Test-FunctionInterrupt { $false }
+                function Export-DbaDbRole {
+                    @(
+                        "CREATE ROLE [app_role]",
+                        "GRANT SELECT ON SCHEMA::[dbo] TO [app_role]"
+                    )
+                }
+                function Export-DbaUser {
+                    @(
+                        "CREATE ROLE [app_role]",
+                        "IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'app_user') CREATE USER [app_user] FOR LOGIN [CONTOSO\app_login]",
+                        "ALTER ROLE [app_role] ADD MEMBER [app_user]"
+                    )
+                }
+                function Connect-DbaInstance {
+                    $mapping = New-Object ExportDbaLoginRoleTest.MockMapping
+                    $mapping.DBName = "db1"
+                    $mapping.UserName = "app_user"
+                    $mapping.LoginName = "CONTOSO\app_login"
+
+                    $user = New-Object ExportDbaLoginRoleTest.MockUser
+                    $user.Name = "app_user"
+                    $user.Scripts = @(
+                        "IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'app_user') CREATE USER [app_user] FOR LOGIN [CONTOSO\app_login]"
+                    )
+
+                    $role = New-Object ExportDbaLoginRoleTest.MockRole
+                    $role.Name = "app_role"
+                    $role.IsFixedRole = $false
+                    $role.Members = @("app_user")
+                    $role.RoleScripts = @("CREATE ROLE [app_role]")
+
+                    $database = New-Object ExportDbaLoginRoleTest.MockDatabase
+                    $database.Name = "db1"
+                    $database.IsAccessible = $true
+                    $database.CompatibilityLevel = "Version160"
+                    $database.LoginMappings = @($mapping)
+                    $database.Users.Add("app_user", $user)
+                    $database.Roles.Add("app_role", $role)
+
+                    $login = New-Object ExportDbaLoginRoleTest.MockLogin
+                    $login.Name = "CONTOSO\app_login"
+                    $login.DefaultDatabase = "master"
+                    $login.Language = "us_english"
+                    $login.PasswordPolicyEnforced = $true
+                    $login.PasswordExpirationEnabled = $true
+                    $login.LoginType = "WindowsUser"
+                    $login.IsDisabled = $false
+                    $login.DenyWindowsLogin = $false
+                    $login.DatabaseMappings = @($mapping)
+
+                    $server = New-Object ExportDbaLoginRoleTest.MockServer
+                    $server.Name = "mockserver"
+                    $server.VersionMajor = 16
+                    $server.Logins.Add($login)
+                    $server.Databases.Add("db1", $database)
+
+                    $server
+                }
+
+                $results = Export-DbaLogin -SqlInstance "mockserver" -Login "CONTOSO\app_login" -Database "db1" -IncludeRolePermissions -Passthru
+
+                $createRoleIndex = $results.IndexOf("CREATE ROLE [app_role]")
+                $grantIndex = $results.IndexOf("GRANT SELECT ON SCHEMA::[dbo] TO [app_role]")
+                $membershipIndex = $results.IndexOf("ALTER ROLE [app_role] ADD MEMBER [app_user]")
+
+                $createRoleIndex | Should -BeGreaterThan -1
+                $grantIndex | Should -BeGreaterThan -1
+                $membershipIndex | Should -BeGreaterThan -1
+                $createRoleIndex | Should -BeLessThan $membershipIndex
+                $grantIndex | Should -BeLessThan $membershipIndex
+            }
+        }
+
+        It "Should not duplicate role creation in ObjectLevel export" {
+            InModuleScope dbatools {
+                function Write-Message { }
+                function Test-ExportDirectory { }
+                function Test-FunctionInterrupt { $false }
+                $script:exportDbaDbRoleCalls = 0
+                $script:exportDbaUserCalls = 0
+                function Export-DbaDbRole {
+                    $script:exportDbaDbRoleCalls++
+                    @(
+                        "CREATE ROLE [app_role]",
+                        "GRANT SELECT ON SCHEMA::[dbo] TO [app_role]"
+                    )
+                }
+                function Export-DbaUser {
+                    $script:exportDbaUserCalls++
+                    @(
+                        "CREATE ROLE [app_role]",
+                        "IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'app_user') CREATE USER [app_user] FOR LOGIN [CONTOSO\app_login]",
+                        "ALTER ROLE [app_role] ADD MEMBER [app_user]"
+                    )
+                }
+                function Connect-DbaInstance {
+                    $mapping = New-Object ExportDbaLoginRoleTest.MockMapping
+                    $mapping.DBName = "db1"
+                    $mapping.UserName = "app_user"
+                    $mapping.LoginName = "CONTOSO\app_login"
+
+                    $user = New-Object ExportDbaLoginRoleTest.MockUser
+                    $user.Name = "app_user"
+                    $user.Scripts = @(
+                        "IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'app_user') CREATE USER [app_user] FOR LOGIN [CONTOSO\app_login]"
+                    )
+
+                    $role = New-Object ExportDbaLoginRoleTest.MockRole
+                    $role.Name = "app_role"
+                    $role.IsFixedRole = $false
+                    $role.Members = @("app_user")
+                    $role.RoleScripts = @("CREATE ROLE [app_role]")
+
+                    $database = New-Object ExportDbaLoginRoleTest.MockDatabase
+                    $database.Name = "db1"
+                    $database.IsAccessible = $true
+                    $database.CompatibilityLevel = "Version160"
+                    $database.LoginMappings = @($mapping)
+                    $database.Users.Add("app_user", $user)
+                    $database.Roles.Add("app_role", $role)
+
+                    $login = New-Object ExportDbaLoginRoleTest.MockLogin
+                    $login.Name = "CONTOSO\app_login"
+                    $login.DefaultDatabase = "master"
+                    $login.Language = "us_english"
+                    $login.PasswordPolicyEnforced = $true
+                    $login.PasswordExpirationEnabled = $true
+                    $login.LoginType = "WindowsUser"
+                    $login.IsDisabled = $false
+                    $login.DenyWindowsLogin = $false
+                    $login.DatabaseMappings = @($mapping)
+
+                    $server = New-Object ExportDbaLoginRoleTest.MockServer
+                    $server.Name = "mockserver"
+                    $server.VersionMajor = 16
+                    $server.Logins.Add($login)
+                    $server.Databases.Add("db1", $database)
+
+                    $server
+                }
+
+                $results = Export-DbaLogin -SqlInstance "mockserver" -Login "CONTOSO\app_login" -Database "db1" -ObjectLevel -IncludeRolePermissions -Passthru
+                $createRoleMatches = [regex]::Matches($results, [regex]::Escape("CREATE ROLE [app_role]"))
+                $grantIndex = $results.IndexOf("GRANT SELECT ON SCHEMA::[dbo] TO [app_role]")
+                $membershipIndex = $results.IndexOf("ALTER ROLE [app_role] ADD MEMBER [app_user]")
+
+                $createRoleMatches.Count | Should -Be 1
+                $grantIndex | Should -BeGreaterThan -1
+                $membershipIndex | Should -BeGreaterThan -1
+                $script:exportDbaUserCalls | Should -Be 1
+                $script:exportDbaDbRoleCalls | Should -Be 1
+            }
         }
     }
 }
@@ -179,15 +488,39 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Executes with IncludeRolePermissions" {
         It "Should include role permissions in non-ObjectLevel export" {
             $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $createRolePattern = [regex]::Escape("CREATE ROLE [$role4]")
+            if ($server.VersionMajor -lt 11) {
+                $membershipPattern = [regex]::Escape("@rolename=N'$role4', @membername=N'$user4'")
+            } else {
+                $membershipPattern = [regex]::Escape("ALTER ROLE [$role4] ADD MEMBER [$user4]")
+            }
+            $createRoleMatches = [regex]::Matches($results, $createRolePattern)
+            $membershipMatch = [regex]::Match($results, $membershipPattern)
+
             $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
             $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
             $results | Should -Match ([regex]::Escape("[$role4]"))
+            $createRoleMatches.Count | Should -Be 1
+            $membershipMatch.Success | Should -BeTrue
+            $createRoleMatches[0].Index | Should -BeLessThan $membershipMatch.Index
         }
         It "Should include role permissions in ObjectLevel export" {
             $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -ObjectLevel -IncludeRolePermissions -Passthru -WarningAction SilentlyContinue
+            $createRolePattern = [regex]::Escape("CREATE ROLE [$role4]")
+            if ($server.VersionMajor -lt 11) {
+                $membershipPattern = [regex]::Escape("@rolename=N'$role4', @membername=N'$user4'")
+            } else {
+                $membershipPattern = [regex]::Escape("ALTER ROLE [$role4] ADD MEMBER [$user4]")
+            }
+            $createRoleMatches = [regex]::Matches($results, $createRolePattern)
+            $membershipMatch = [regex]::Match($results, $membershipPattern)
+
             $results | Should -Match "GRANT SELECT ON SCHEMA::\[dbo\]"
             $results | Should -Match "GRANT EXECUTE ON SCHEMA::\[dbo\]"
             $results | Should -Match ([regex]::Escape("[$role4]"))
+            $createRoleMatches.Count | Should -Be 1
+            $membershipMatch.Success | Should -BeTrue
+            $createRoleMatches[0].Index | Should -BeLessThan $membershipMatch.Index
         }
         It "Should not include role permissions without the switch" {
             $results = Export-DbaLogin -SqlInstance $server -Login $login4 -Database $dbname1 -Passthru -WarningAction SilentlyContinue

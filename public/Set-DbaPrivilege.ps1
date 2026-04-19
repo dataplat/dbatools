@@ -133,7 +133,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
                                         } elseif ($BLline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeBatchLogonRight = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
@@ -156,7 +156,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
                                         } elseif ($IFIline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeManageVolumePrivilege = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
@@ -179,7 +179,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
                                         } elseif ($LPIMline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeLockMemoryPrivilege = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
@@ -202,7 +202,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Security Log Privileges on $env:ComputerName"
                                         } elseif ($SALine -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeAuditPrivilege = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeAuditPrivilege = ", "SeAuditPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Write to Security Log Privileges on $env:ComputerName"
@@ -223,7 +223,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
                                         } elseif ($SLline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeServiceLogonRight = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeServiceLogonRight = ", "SeServiceLogonRight = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
@@ -244,7 +244,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Create Global Objects Privileges on $env:ComputerName"
                                         } elseif ($CGOline -notmatch $SID) {
-                                            (Get-Content $tempfile) -replace "(SeCreateGlobalPrivilege = .+)", "`$1,*$SID" |
+                                            (Get-Content $tempfile) -replace "SeCreateGlobalPrivilege = ", "SeCreateGlobalPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Create Global Objects Privileges on $env:ComputerName"

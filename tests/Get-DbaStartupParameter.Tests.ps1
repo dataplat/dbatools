@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaStartupParameter",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -17,6 +17,52 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "WMI service validation" {
+        It "Throws when the SQL Server service is not found" {
+            Mock Invoke-ManagedComputerCommand -MockWith {
+                param (
+                    $Server,
+                    $Credential,
+                    $ScriptBlock,
+                    $ArgumentList
+                )
+                $wmi = [PSCustomObject]@{
+                    Services = @()
+                }
+                & $ScriptBlock @ArgumentList
+            } -ModuleName dbatools
+
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
+        }
+
+        It "Throws when multiple SQL Server services match the instance name" {
+            Mock Invoke-ManagedComputerCommand -MockWith {
+                param (
+                    $Server,
+                    $Credential,
+                    $ScriptBlock,
+                    $ArgumentList
+                )
+                $serviceDisplayName = "SQL Server ($($ArgumentList[1]))"
+                $wmi = [PSCustomObject]@{
+                    Services = @(
+                        [PSCustomObject]@{
+                            DisplayName       = $serviceDisplayName
+                            StartupParameters = "-dC:\SQLData\master.mdf;-lC:\SQLLog\mastlog.ldf;-eC:\SQLLog\ERRORLOG"
+                        },
+                        [PSCustomObject]@{
+                            DisplayName       = $serviceDisplayName
+                            StartupParameters = "-dD:\SQLData\master.mdf;-lD:\SQLLog\mastlog.ldf;-eD:\SQLLog\ERRORLOG"
+                        }
+                    )
+                }
+                & $ScriptBlock @ArgumentList
+            } -ModuleName dbatools
+
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
         }
     }
 }

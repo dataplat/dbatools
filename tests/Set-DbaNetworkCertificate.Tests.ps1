@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Set-DbaNetworkCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -20,6 +20,62 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "RestartService" {
+            BeforeEach {
+                $script:serviceCredential = New-Object System.Management.Automation.PSCredential(
+                    "sql1\svc-sql",
+                    (ConvertTo-SecureString "Password123!" -AsPlainText -Force)
+                )
+                $script:certificateThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
+
+                Mock Test-FunctionInterrupt { $false }
+                Mock Test-DbaNetworkCertificate {
+                    [PSCustomObject]@{
+                        ComputerName                    = "sql1"
+                        InstanceName                    = "MSSQLSERVER"
+                        SqlInstance                     = "sql1"
+                        ConfiguredCertificateThumbprint = $null
+                        ConfiguredCertificateValid      = $false
+                        SuitableCertificateAvailable    = $true
+                        SuitableCertificateCount        = 1
+                        SuitableCertificates            = [PSCustomObject]@{
+                            Thumbprint = $script:certificateThumbprint
+                        }
+                    }
+                }
+                Mock Invoke-Command2 {
+                    [PSCustomObject]@{
+                        Verbose        = @()
+                        Exception      = $null
+                        ServiceAccount = "sql1\svc-sql"
+                    }
+                }
+                Mock Restart-DbaService { }
+            }
+
+            It "passes Credential to Restart-DbaService when RestartService is used" {
+                $splatSetNetworkCertificate = @{
+                    SqlInstance    = "sql1"
+                    Credential     = $script:serviceCredential
+                    RestartService = $true
+                    Confirm        = $false
+                }
+
+                $result = Set-DbaNetworkCertificate @splatSetNetworkCertificate
+
+                $result.CertificateThumbprint | Should -Be $script:certificateThumbprint
+                Assert-MockCalled -CommandName Restart-DbaService -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                    $SqlInstance.FullName -eq "sql1" -and
+                    $Credential -eq $script:serviceCredential -and
+                    $Type -eq "Engine" -and
+                    $Force -and
+                    $EnableException
+                }
+            }
         }
     }
 }

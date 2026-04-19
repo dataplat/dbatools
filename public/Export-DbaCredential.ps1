@@ -147,7 +147,7 @@ function Export-DbaCredential {
                     }
                 }
             } else {
-                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException
+                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException:$EnableException
             }
 
             if ($Identity) {
