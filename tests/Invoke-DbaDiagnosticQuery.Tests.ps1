@@ -78,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
             @($results).Count | Should -BeGreaterThan 10
         }
         It "works with specific database provided" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'File Sizes and Space', 'Log Space Usage' -Database $database2, $database3
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'File Sizes and Space', 'Database-scoped Configurations' -Database $database2, $database3
             @($results | Where-Object { $_.Database -eq $Database }).Count | Should -Be 0
             @($results | Where-Object { $_.Database -eq $Database2 }).Count | Should -Be 2
             @($results | Where-Object { $_.Database -eq $Database3 }).Count | Should -Be 2
