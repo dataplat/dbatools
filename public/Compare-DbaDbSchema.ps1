@@ -144,7 +144,7 @@ function Compare-DbaDbSchema {
             return
         }
 
-        $sourcePathFull = (Resolve-Path -Path $SourcePath).Path
+        $sourcePathFull = (Resolve-Path -Path $SourcePath).ProviderPath
         $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
         $reportFile = Join-Path -Path $OutputPath -ChildPath "Compare-DbaDbSchema_$timeStamp.xml"
 
@@ -167,7 +167,7 @@ function Compare-DbaDbSchema {
             $sqlPackageArgs += " /tcs:""$connStringEscaped"""
             $targetDescription = "$($targetServer.DomainInstanceName)\$TargetDatabase"
         } else {
-            $targetPathFull = (Resolve-Path -Path $TargetPath).Path
+            $targetPathFull = (Resolve-Path -Path $TargetPath).ProviderPath
             $targetDbName = [System.IO.Path]::GetFileNameWithoutExtension($TargetPath)
             $sqlPackageArgs += " /tf:""$targetPathFull"" /tdn:""$targetDbName"""
             $targetDescription = $TargetPath

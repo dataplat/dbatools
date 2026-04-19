@@ -91,7 +91,7 @@ Describe $CommandName -Tag UnitTests {
                 Mock Resolve-Path {
                     param($Path)
                     [PSCustomObject]@{
-                        Path = $Path
+                        ProviderPath = $Path
                     }
                 }
                 Mock Get-Content {
@@ -157,7 +157,7 @@ Describe $CommandName -Tag UnitTests {
                 Mock Resolve-Path {
                     param($Path)
                     [PSCustomObject]@{
-                        Path = $Path
+                        ProviderPath = $Path
                     }
                 }
                 Mock Connect-DbaInstance {
@@ -307,7 +307,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Compare-DbaDbSchema @splatCompare
             $result | Should -Not -BeNullOrEmpty
-            $result[0].SourcePath | Should -Be (Resolve-Path -Path $sourceDacpac).Path
+            $result[0].SourcePath | Should -Be (Resolve-Path -Path $sourceDacpac).ProviderPath
             $result[0].Target | Should -Be $emptyTargetDacpac
         }
 
