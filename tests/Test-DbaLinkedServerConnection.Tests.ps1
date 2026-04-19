@@ -25,9 +25,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $target = $TestConfig.InstanceSingle
+        $source = $TestConfig.InstanceMulti1
+        $target = $TestConfig.InstanceMulti2
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $server = Connect-DbaInstance -SqlInstance $source
         if ($server.VersionMajor -ge 17) {
             # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
             # Use @datasrc with tcp: prefix to force TCP/IP and avoid Named Pipes dependency.
@@ -55,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Function works" {
         BeforeAll {
-            $results = Test-DbaLinkedServerConnection -SqlInstance $TestConfig.InstanceSingle | Where-Object LinkedServerName -eq $target
+            $results = Test-DbaLinkedServerConnection -SqlInstance $source | Where-Object LinkedServerName -eq $target
         }
 
         It "function returns results" {
@@ -74,7 +75,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Piping to function works" {
         BeforeAll {
-            $pipeResults = Get-DbaLinkedServer -SqlInstance $TestConfig.InstanceSingle | Test-DbaLinkedServerConnection
+            $pipeResults = Get-DbaLinkedServer -SqlInstance $source | Test-DbaLinkedServerConnection
         }
 
         It "piping from Get-DbaLinkedServerConnection returns results" {
