@@ -8,6 +8,8 @@ function Copy-DbaLinkedServer {
 
         This is particularly useful during server migrations, disaster recovery scenarios, or when consolidating environments where maintaining external data connections is critical. The function handles various provider types and can optionally upgrade older SQL Client providers to current versions during migration.
 
+        When upgrading from older versions to SQL Server 2025+, MSOLEDBSQL is changed to MSOLEDBSQL19 and provider string for encrypt and trustservercertificate settings is added if not already included to ensure compatibility with the breaking changes in the new driver.
+
         Credit: Password decryption techniques provided by Antti Rantasaari (NetSPI, 2014) - https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
@@ -179,8 +181,8 @@ function Copy-DbaLinkedServer {
                 $linkedServerDataSource = $currentLinkedServer.DataSource
 
                 $copyLinkedServer = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.Name
-                    DestinationServer = $destServer.Name
+                    SourceServer      = $sourceServer.DomainInstanceName
+                    DestinationServer = $destServer.DomainInstanceName
                     Name              = $linkedServerName
                     ProductName       = $linkedServerProductName
                     DataSource        = $linkedServerDataSource
@@ -192,7 +194,12 @@ function Copy-DbaLinkedServer {
 
                 # This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
                 if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
-                    if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
+                    if ($destServer.VersionMajor -ge 17 -and $provider -eq "MSOLEDBSQL") {
+                        # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
+                        Write-Message -Level Verbose -Message "Upgrading provider from MSOLEDBSQL to MSOLEDBSQL19 to ensure compatibility with SQL Server 2025+."
+                        $provider = "MSOLEDBSQL19"
+                    }
+                    if (-not ($destServer.Settings.OleDbProviderSettings.Name -contains $provider) -and -not ($provider.StartsWith("SQLN"))) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName.")) {
                             $copyLinkedServer.Status = "Skipped"
                             $copyLinkedServer.Notes = "Missing provider"
@@ -246,7 +253,22 @@ function Copy-DbaLinkedServer {
                             $sql = $sql -replace ("sqlncli[0-9]+", $newProvider)
                         }
 
-                        $destServer.Query($sql)
+                        if ($provider -eq "MSOLEDBSQL19") {
+                            # Starting with SQL Server 2025 (17.x), MSOLEDBSQL uses Microsoft OLE DB Driver version 19, which adds support for TDS 8.0. However, this driver introduces a breaking change. You must now specify the encrypt parameter.
+                            $providerString = $currentLinkedServer.ProviderString
+                            if ($providerString) {
+                                if ($providerString -notmatch "Encrypt\s*=\s*Optional" -and $providerString -notmatch "TrustServerCertificate\s*=\s*Yes") {
+                                    Write-Message -Level Warning -Message "Provider string currently set to '$providerString', so will not change it. Please verify that it includes 'Encrypt=Optional;TrustServerCertificate=Yes' to ensure connectivity."
+                                } else {
+                                    Write-Message -Level Verbose -Message "Provider string already includes encrypt and trustservercertificate settings, so not modifying it."
+                                }
+                            } else {
+                                Write-Message -Level Verbose -Message "Provider string is empty. Adding 'Encrypt=Optional;TrustServerCertificate=Yes' to provider string for MSOLEDBSQL19."
+                                $sql = $sql -replace "@provider=N'MSOLEDBSQL'", "@provider=N'MSOLEDBSQL19', @provstr=N'Encrypt=Optional;TrustServerCertificate=Yes'"
+                            }
+                        }
+
+                        $null = $destServer.Query($sql)
 
                         if ($copyLinkedServer.ProductName -eq 'SQL Server' -and $copyLinkedServer.Name -ne $copyLinkedServer.DataSource) {
                             $sql2 = "EXEC sp_setnetname '$($copyLinkedServer.Name)', '$($copyLinkedServer.DataSource)'; "
