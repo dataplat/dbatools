@@ -170,9 +170,8 @@ function Install-DbaSqlWatch {
                     }
 
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
-                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $localCachedCopy -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
-                    $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
-                    Remove-Item -Path $DacProfile
+                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $localCachedCopy -PublishOptions $PublishOptions -EnableException | Select-Object -ExpandProperty FileName
+                    $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile -EnableException
 
                     # parse results
                     $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
@@ -190,6 +189,8 @@ function Install-DbaSqlWatch {
                     }
                 } catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+                } finally {
+                    Remove-Item -Path $DacProfile -ErrorAction SilentlyContinue
                 }
 
                 Write-Message -Level Verbose -Message "Finished installing/updating SqlWatch in $database on $instance."
