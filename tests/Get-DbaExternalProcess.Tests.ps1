@@ -68,28 +68,32 @@ Describe $CommandName -Tag IntegrationTests {
         RECONFIGURE;
         GO"
 
+        1..20 | ForEach-Object {
+            try {
+                Remove-Item -Path $sqlFile -ErrorAction Stop
+                return
+            } catch {
+                Start-Sleep -Seconds 1
+            }
+        }
         if (Get-Process sqlcmd -ErrorAction SilentlyContinue) {
             Write-Warning -Message "sqlcmd processes are still running. Attempting to stop them."
             Get-Process sqlcmd -ErrorAction SilentlyContinue | Stop-Process -Force
         }
-
-        # remove sql file
-        Remove-Item -Path $sqlFile
+        if (Test-Path -Path $sqlFile) {
+            Write-Warning -Message "File $sqlFile could not be removed."
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Can get an external process" {
         It "returns a process" {
-
             1..10 | ForEach-Object {
                 $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
                 if ($results) { return }
                 Start-Sleep -Milliseconds 500
             }
-#            Start-Sleep -Seconds 1
-#            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
-#            Start-Sleep -Seconds 5
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
