@@ -71,10 +71,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We need to restart the instance to ensure that the xp_cmdshell process has ended before we can remove the sql file.
         $null = Restart-DbaService -SqlInstance $TestConfig.InstanceRestart -Type Engine -Force
 
+        # Remove sql file
         Remove-Item -Path $sqlFile
-        if (Test-Path -Path $sqlFile) {
-            Write-Warning -Message "File $sqlFile could not be removed."
-        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

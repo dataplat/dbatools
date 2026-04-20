@@ -69,7 +69,10 @@ Describe $CommandName -Tag IntegrationTests {
         RECONFIGURE;
         GO"
 
-        # remove sql file
+        # We need to restart the instance to ensure that the xp_cmdshell process has ended before we can remove the sql file.
+        $null = Restart-DbaService -SqlInstance $TestConfig.InstanceRestart -Type Engine -Force
+
+        # Remove sql file
         Remove-Item -Path $sqlFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -77,9 +80,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Can stop an external process" {
         It "returns results" {
-            Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName $computerName | Select-Object -First 1 | Stop-DbaExternalProcess
-            Start-Sleep -Seconds 5
+            1..10 | ForEach-Object {
+                $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe" | Stop-DbaExternalProcess
+                if ($results) { return }
+                Start-Sleep -Milliseconds 500
+            }
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -BeNullOrEmpty
