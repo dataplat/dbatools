@@ -25,10 +25,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
 
         # Setup xp_cmdshell to create external processes for testing
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         -- To allow advanced options to be changed.
         EXECUTE sp_configure 'show advanced options', 1;
         GO
@@ -47,7 +47,7 @@ Describe $CommandName -Tag IntegrationTests {
         Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
 
         # Run sql file to start external process
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup: Disable xp_cmdshell for security
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         EXECUTE sp_configure 'xp_cmdshell', 0;
         GO
         RECONFIGURE;
@@ -68,18 +68,10 @@ Describe $CommandName -Tag IntegrationTests {
         RECONFIGURE;
         GO"
 
-        1..20 | ForEach-Object {
-            try {
-                Remove-Item -Path $sqlFile -ErrorAction Stop
-                return
-            } catch {
-                Start-Sleep -Seconds 1
-            }
-        }
-        if (Get-Process sqlcmd -ErrorAction SilentlyContinue) {
-            Write-Warning -Message "sqlcmd processes are still running. Attempting to stop them."
-            Get-Process sqlcmd -ErrorAction SilentlyContinue | Stop-Process -Force
-        }
+        # We need to restart the instance to ensure that the xp_cmdshell process has ended before we can remove the sql file.
+        $null = Restart-DbaService -SqlInstance $TestConfig.InstanceRestart -Type Engine -Force
+
+        Remove-Item -Path $sqlFile
         if (Test-Path -Path $sqlFile) {
             Write-Warning -Message "File $sqlFile could not be removed."
         }
