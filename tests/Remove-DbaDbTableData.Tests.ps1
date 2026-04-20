@@ -96,7 +96,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             It "Preserves the empty schema segment in three-part table names" {
-                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "MyDb..Test" -BatchSize 10
+                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "MyDb..Test" -BatchSize 10 -Confirm:$false
                 $deleteSql = $script:executedSql | Where-Object { $PSItem -like "*DELETE TOP (10) FROM*" } | Select-Object -First 1
 
                 $deleteSql | Should -Not -BeNullOrEmpty
@@ -106,7 +106,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             It "Escapes closing brackets in bracketed table names" {
-                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Test]]Name]" -BatchSize 10
+                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Test]]Name]" -BatchSize 10 -Confirm:$false
                 $deleteSql = $script:executedSql | Where-Object { $PSItem -like "*DELETE TOP (10) FROM*" } | Select-Object -First 1
 
                 $deleteSql | Should -Not -BeNullOrEmpty
@@ -117,7 +117,7 @@ Describe $CommandName -Tag UnitTests {
 
             It "Stops early when the table name cannot be parsed" {
                 {
-                    Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "one.two.three.four"
+                    Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "one.two.three.four" -Confirm:$false
                 } | Should -Throw "*could not be parsed as a valid table name*"
             }
         }
