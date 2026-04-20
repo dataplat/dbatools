@@ -58,7 +58,7 @@ Describe $CommandName -Tag UnitTests {
             It "escapes closing brackets in normalized table names for reseed" {
                 $script:lastQuery = $null
 
-                $result = Set-DbaDbIdentity -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]" -ReSeedValue 400 -Confirm:$false
+                $result = Set-DbaDbIdentity -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]" -ReSeedValue 400
 
                 $script:lastQuery | Should -Be "DBCC CHECKIDENT('[dbo].[Bad]]Name]', RESEED, 400)"
                 $result.Cmd | Should -Be "DBCC CHECKIDENT('[dbo].[Bad]]Name]', RESEED, 400)"

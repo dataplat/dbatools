@@ -115,9 +115,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should fail with clear message when trying to create duplicate profile without MailAccountName" {
             $splatDuplicate = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Profile     = $profilename
-                Description = "Duplicate attempt"
+                SqlInstance   = $TestConfig.InstanceSingle
+                Profile       = $profilename
+                Description   = "Duplicate attempt"
+                WarningAction = 'SilentlyContinue'
             }
             $results = New-DbaDbMailProfile @splatDuplicate
             $results | Should -BeNullOrEmpty

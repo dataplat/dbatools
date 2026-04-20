@@ -15,6 +15,7 @@ Start-Service -Name "MSSQL`$$instance" -WarningAction SilentlyContinue
 Start-Service -Name "SQLAgent`$$instance" -WarningAction SilentlyContinue
 
 Write-Host -Object "$indent Configuring $instance" -ForegroundColor DarkGreen
+$null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name RemoteDacConnectionsEnabled -Value $true -EnableException
 $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
 $null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Force -EnableException -Confirm:$false

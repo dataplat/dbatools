@@ -60,7 +60,7 @@ Describe $CommandName -Tag UnitTests {
             It "escapes closing brackets in normalized table names" {
                 $script:lastQuery = $null
 
-                $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]" -Confirm:$false
+                $result = Invoke-DbaDbDbccUpdateUsage -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Bad]]Name]"
 
                 $script:lastQuery | Should -Be "DBCC UPDATEUSAGE('db1', '[dbo].[Bad]]Name]')"
                 $result.Cmd | Should -Be "DBCC UPDATEUSAGE('db1', '[dbo].[Bad]]Name]')"

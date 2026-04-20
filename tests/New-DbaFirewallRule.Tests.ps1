@@ -54,7 +54,7 @@ Describe $CommandName -Tag UnitTests {
                     }
                 }
 
-                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Engine -RuleType Program -Confirm:$false
+                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Engine -RuleType Program -WarningAction SilentlyContinue
 
                 $result.Type | Should -Be "Engine"
                 $result.Program | Should -BeNullOrEmpty
@@ -68,7 +68,7 @@ Describe $CommandName -Tag UnitTests {
                     }
                 }
 
-                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Browser -RuleType Program -Confirm:$false
+                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Browser -RuleType Program -WarningAction SilentlyContinue
 
                 $result.Type | Should -Be "Browser"
                 $result.Program | Should -BeNullOrEmpty

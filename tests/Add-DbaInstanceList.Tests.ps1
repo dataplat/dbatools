@@ -26,7 +26,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        $null = Remove-DbaInstanceList -SqlInstance $instanceName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaInstanceList -SqlInstance $instanceName -ErrorAction SilentlyContinue
     }
 
     Context "adds instances to the list" {

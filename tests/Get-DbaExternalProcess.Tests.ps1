@@ -43,11 +43,13 @@ Describe $CommandName -Tag IntegrationTests {
         GO"
 
         # Create sql file with code to start an external process
-        $sqlFile = "$($TestConfig.Temp)\sleep.sql"
-        Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
+        #$sqlFile = "$($TestConfig.Temp)\sleep.sql"
+        #Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
 
         # Run sql file to start external process
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+        #Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+
+        sqlcmd -S $TestConfig.InstanceSingle -Q "xp_cmdshell 'cmd.exe /c start """" powershell -command ""sleep 5""'"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -76,9 +78,15 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Can get an external process" {
         It "returns a process" {
-            Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
-            Start-Sleep -Seconds 5
+
+            1..10 | ForEach-Object {
+                $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
+                if ($results) { return }
+                Start-Sleep -Milliseconds 500
+            }
+#            Start-Sleep -Seconds 1
+#            $results = Get-DbaExternalProcess -ComputerName $computerName | Where-Object Name -eq "cmd.exe"
+#            Start-Sleep -Seconds 5
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null

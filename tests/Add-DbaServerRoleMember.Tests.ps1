@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
             Login       = $login1, $login2
         }
         $null = Remove-DbaLogin @splatRemoveLogin
-        $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $customServerRole -Confirm:$false
+        $null = Remove-DbaServerRole -SqlInstance $TestConfig.InstanceSingle -ServerRole $customServerRole
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds Login to Roles via piped input from Get-DbaServerRole" {
             $serverRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
-            $serverRole | Add-DbaServerRoleMember -Login $login2 -Confirm:$false
+            $serverRole | Add-DbaServerRoleMember -Login $login2
 
             $roleAfter = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
             $roleAfter.EnumMemberNames() | Should -Contain $login2
