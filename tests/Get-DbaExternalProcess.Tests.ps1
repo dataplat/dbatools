@@ -70,7 +70,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         1..20 | ForEach-Object {
             try {
-                Remove-Item -Path $sqlFile
+                Remove-Item -Path $sqlFile -ErrorAction Stop
                 break
             } catch {
                 Start-Sleep -Seconds 1
