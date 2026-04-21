@@ -390,7 +390,7 @@ function Copy-DbaDbMail {
             if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+            $dacConnected = $Source.Type -eq "Server" -and $Source.InputObject.ConnectionContext.ServerInstance -match "^ADMIN:"
 
             $dacOpened = $false
             if ($dacNeeded) {
@@ -399,10 +399,17 @@ function Copy-DbaDbMail {
                     $sourceServer = $Source.InputObject
                 } else {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                    $dacOpened = $true
+                    try {
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection
+                        $dacOpened = $true
+                    } catch {
+                        Write-Message -Level Warning -Message "Unable to open dedicated admin connection on $Source. Passwords will not be copied. To suppress this warning, use -ExcludePassword."
+                        $ExcludePassword = $true
+                        $dacNeeded = $false
+                    }
                 }
-            } else {
+            }
+            if (-not $dacNeeded) {
                 Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
                 $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
             }
