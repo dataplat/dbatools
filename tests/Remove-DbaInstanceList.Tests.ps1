@@ -28,7 +28,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "removes instances from the list" {
         It "removes an instance without error" {
-            { Remove-DbaInstanceList -SqlInstance $instanceName -Confirm:$false } | Should -Not -Throw
+            { Remove-DbaInstanceList -SqlInstance $instanceName } | Should -Not -Throw
         }
 
         It "instance no longer appears in Get-DbaInstanceList after removal" {

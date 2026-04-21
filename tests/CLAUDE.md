@@ -100,7 +100,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName -Confirm:$false -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -354,7 +354,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up all resources with error suppression
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databasesToCleanup -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databasesToCleanup -ErrorAction SilentlyContinue
     }
 
     # Test code here

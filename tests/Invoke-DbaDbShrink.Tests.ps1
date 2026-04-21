@@ -200,7 +200,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Log -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be "$($db.Name)_log"
             $result.Success | Should -Be $true
@@ -213,7 +213,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shrinks just the data file(s) when FileType is Data" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
@@ -226,7 +226,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shrinks the entire database when FileType is All" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType All
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType All -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name, $db.Name
             $result.File | Should -Be "$($db.Name)_log", $db.Name
             $result.Success | Should -Be $true, $true
@@ -239,7 +239,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
@@ -252,7 +252,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Accepts pipelined databases (see #9495)" {
-            $result = $db | Invoke-DbaDbShrink -FileType Data
+            $result = $db | Invoke-DbaDbShrink -FileType Data -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
@@ -270,7 +270,7 @@ Describe $CommandName -Tag IntegrationTests {
                 return
             }
 
-            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -AbortAfterWait Self
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -WaitAtLowPriority -AbortAfterWait Self -WarningAction SilentlyContinue
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true

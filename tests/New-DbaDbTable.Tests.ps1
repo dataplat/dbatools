@@ -292,7 +292,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         AfterAll {
             if (-not $skipGraphTests) {
-                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $graphDbName -Confirm:$false
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $graphDbName
             }
         }
         It "Creates a node table when -IsNode is specified" -Skip:$skipGraphTests {

@@ -253,7 +253,7 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "uses the filtered row set when building action updates" {
-            $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config" -Confirm:$false
+            $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config"
 
             Assert-MockCalled -CommandName Invoke-DbaQuery -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 $Query.Trim() -eq "UPDATE [dbo].[people] SET [fname] = 'masked' WHERE [PersonId] IN (1);"

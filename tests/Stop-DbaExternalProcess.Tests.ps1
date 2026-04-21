@@ -26,10 +26,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceSingle -Property ComputerName
+        $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
 
-        # Enable xp_cmdshell for test process creation
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
+        # Setup xp_cmdshell to create external processes for testing
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         -- To allow advanced options to be changed.
         EXECUTE sp_configure 'show advanced options', 1;
         GO
@@ -48,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
 
         # Run sql file to start external process
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceSingle) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -58,8 +58,8 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Disable xp_cmdshell after tests
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "
+        # Cleanup: Disable xp_cmdshell for security
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         EXECUTE sp_configure 'xp_cmdshell', 0;
         GO
         RECONFIGURE;
@@ -69,7 +69,8 @@ Describe $CommandName -Tag IntegrationTests {
         RECONFIGURE;
         GO"
 
-        # remove sql file
+        # Restart the SQL Service to ensure we can remove the temporary file.
+        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
         Remove-Item -Path $sqlFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -77,9 +78,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Can stop an external process" {
         It "returns results" {
-            Start-Sleep -Seconds 1
-            $results = Get-DbaExternalProcess -ComputerName $computerName | Select-Object -First 1 | Stop-DbaExternalProcess
-            Start-Sleep -Seconds 5
+            1..10 | ForEach-Object {
+                $results = Get-DbaExternalProcess -ComputerName $computerName | Stop-DbaExternalProcess
+                if ($results) { break }
+                Start-Sleep -Milliseconds 500
+            }
             $results.ComputerName | Should -Be $computerName
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -BeNullOrEmpty
