@@ -68,6 +68,7 @@ Describe $CommandName -Tag UnitTests {
                     SecurePassword = $pfxPassword
                     Flag           = @("UserProtected", "NonExportable")
                     Confirm        = $false
+                    WarningAction  = "SilentlyContinue"
                     ErrorAction    = "SilentlyContinue"
                 }
                 $null = Add-DbaComputerCertificate @splatAddCertificate
