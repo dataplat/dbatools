@@ -106,9 +106,9 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER CheckSum
         Controls checksum validation in job commands. Valid values: Default, ForceOn, ForceOff, Remove.
         Default: uses Ola's default, which includes @Checksum = 'Y' in job commands.
-        ForceOn: explicitly sets @CheckSum = 'Y' in job commands.
-        ForceOff: explicitly sets @CheckSum = 'N' in job commands.
-        Remove: removes @CheckSum from job commands, letting the stored procedure's built-in default apply.
+        ForceOn: explicitly sets @Checksum = 'Y' in job commands.
+        ForceOff: explicitly sets @Checksum = 'N' in job commands.
+        Remove: removes @Checksum from job commands, letting the stored procedure's built-in default apply.
         Only applies when InstallJobs is specified.
 
     .PARAMETER ModificationLevel
@@ -843,18 +843,18 @@ function Install-DbaMaintenanceSolution {
                         # CheckSum parameter for all backup jobs
                         # Ola includes @Checksum = 'Y' by default. Default: leave unchanged.
                         if ($CheckSum -eq "ForceOn") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'N'", "@CheckSum = 'Y'"
-                            if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'Y'"
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'N'", "@Checksum = 'Y'"
+                            if ($modifiedCommand -notmatch "@Checksum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'Y'"
                             }
                         } elseif ($CheckSum -eq "ForceOff") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
-                            if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'N'"
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'Y'", "@Checksum = 'N'"
+                            if ($modifiedCommand -notmatch "@Checksum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'N'"
                             }
                         } elseif ($CheckSum -eq "Remove") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = '[YN]',\r?\n", ""
-                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@CheckSum = '[YN]'", ""
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = '[YN]',\r?\n", ""
+                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Checksum = '[YN]'", ""
                         }
 
                         # Update job step if command was modified
