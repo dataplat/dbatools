@@ -166,7 +166,7 @@ function Restore-DbaDatabase {
         Use this for log shipping secondary servers or when you need read-only access during restore operations.
         The directory must exist and be writable by the SQL Server service account for undo file creation.
 
-.PARAMETER StorageCredential
+    .PARAMETER StorageCredential
         Specifies the SQL Server credential name for authenticating to Azure blob storage or S3-compatible object storage during restore operations.
         Use this when restoring from Azure blob storage or S3 backups that require authentication.
         For Azure: The credential must contain valid Azure storage account keys or SAS tokens.
@@ -216,6 +216,11 @@ function Restore-DbaDatabase {
         Use this when restoring databases with CDC enabled and you need to maintain change tracking functionality.
         Cannot be combined with NoRecovery or Standby modes as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER KeepReplication
         Maintains replication settings and objects when restoring databases involved in replication topologies.
         Use this when restoring publisher or subscriber databases where you need to preserve replication configuration.
@@ -235,10 +240,15 @@ function Restore-DbaDatabase {
         Marked point in the transaction log to stop the restore at (Mark is created via BEGIN TRANSACTION (https://docs.microsoft.com/en-us/sql/t-sql/language-elements/begin-transaction-transact-sql?view=sql-server-ver15)).
 
     .PARAMETER StopBefore
-        Switch to indicate the restore should stop before StopMark occurs, default is to stop when mark is created.
+        Switch to indicate the restore should stop before StopMark or StopAtLsn occurs, default is to stop when mark/LSN is reached.
 
     .PARAMETER StopAfterDate
         By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime.
+
+    .PARAMETER StopAtLsn
+        Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
+        Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
+        The LSN value can be obtained from sys.fn_dblog, backup headers, or error logs. Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -430,6 +440,16 @@ function Restore-DbaDatabase {
 
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
+    .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001'
+
+        Restores the backups from \\ServerName\ShareName\File as database, stopping when the specified LSN is reached.
+
+    .EXAMPLE
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -StopAtLsn '00000030:00000f28:0001' -StopBefore
+
+        Restores the backups from \\ServerName\ShareName\File as database, stopping just before the specified LSN is reached.
+
         Note that Date time needs to be specified in your local SQL Server culture
 
     .EXAMPLE
@@ -443,6 +463,24 @@ function Restore-DbaDatabase {
 
         Demonstrates the recommended workflow for restoring from S3 storage. Since SQL Server cannot enumerate S3 bucket contents via T-SQL, you must first use PowerShell's Get-S3Object cmdlet to list backup files, then pass the full S3 URLs to Restore-DbaDatabase.
         The StorageCredential parameter should reference a SQL Server credential configured for S3 access.
+
+    .EXAMPLE
+        PS C:\> Get-ChildItem \\server\backups | Where-Object { $_.Extension -eq ".bak" } | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Scans the \\server\backups share and restores only files with a .bak extension, excluding any incomplete or in-progress files
+        such as those with extensions like .bak.part that may be created by SFTP clients or other upload tools during file transfer.
+
+        When backup files are uploaded to a share while a restore job is running, incomplete files with non-standard extensions
+        can cause Restore-DbaDatabase to hang while trying to read the backup header of a locked or partial file. Always filter
+        your file list to include only complete backup files before passing them to this command.
+
+    .EXAMPLE
+        PS C:\> $backupFiles = Get-ChildItem \\server\backups -Recurse | Where-Object { $_.Name -match '\.(bak|trn|dif)$' }
+        PS C:\> $backupFiles | Restore-DbaDatabase -SqlInstance server1\instance1
+
+        Recursively scans \\server\backups and filters files to only those ending in .bak, .trn, or .dif using a regex match,
+        then restores them to server1\instance1. This pattern is recommended when your backup directory may contain non-backup
+        files or files from in-progress uploads, ensuring only complete backup files are processed.
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Restore")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "StorageCredential", Justification = "For Parameter StorageCredential")]
@@ -485,6 +523,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
         [parameter(ParameterSetName = "Recovery")][switch]$Recover,
         [parameter(ParameterSetName = "Restore")][switch]$KeepCDC,
+        [parameter(ParameterSetName = "Restore")][switch]$ErrorBrokerConversations,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
@@ -498,6 +537,7 @@ function Restore-DbaDatabase {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate = (Get-Date '01/01/1971'),
+        [string]$StopAtLsn,
         [int]$StatementTimeout = 0,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Checksum,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][switch]$Restart
@@ -873,28 +913,30 @@ function Restore-DbaDatabase {
             }
             try {
                 $parms = @{
-                    SqlInstance       = $RestoreInstance
-                    WithReplace       = $WithReplace
-                    RestoreTime       = $RestoreTime
-                    StandbyDirectory  = $StandbyDirectory
-                    NoRecovery        = $NoRecovery
-                    Continue          = $Continue
-                    OutputScriptOnly  = $OutputScriptOnly
-                    BlockSize         = $BlockSize
-                    MaxTransferSize   = $MaxTransferSize
-                    BufferCount       = $Buffercount
-                    KeepCDC           = $KeepCDC
-                    VerifyOnly        = $VerifyOnly
-                    PageRestore       = $PageRestore
-                    StorageCredential = $StorageCredential
-                    KeepReplication   = $KeepReplication
-                    StopMark          = $StopMark
-                    StopAfterDate     = $StopAfterDate
-                    StopBefore        = $StopBefore
-                    ExecuteAs         = $ExecuteAs
-                    Checksum          = $Checksum
-                    Restart           = $Restart
-                    EnableException   = $true
+                    SqlInstance              = $RestoreInstance
+                    WithReplace              = $WithReplace
+                    RestoreTime              = $RestoreTime
+                    StandbyDirectory         = $StandbyDirectory
+                    NoRecovery               = $NoRecovery
+                    Continue                 = $Continue
+                    OutputScriptOnly         = $OutputScriptOnly
+                    BlockSize                = $BlockSize
+                    MaxTransferSize          = $MaxTransferSize
+                    BufferCount              = $Buffercount
+                    KeepCDC                  = $KeepCDC
+                    ErrorBrokerConversations = $ErrorBrokerConversations
+                    VerifyOnly               = $VerifyOnly
+                    PageRestore              = $PageRestore
+                    StorageCredential        = $StorageCredential
+                    KeepReplication          = $KeepReplication
+                    StopMark                 = $StopMark
+                    StopAfterDate            = $StopAfterDate
+                    StopBefore               = $StopBefore
+                    StopAtLsn                = $StopAtLsn
+                    ExecuteAs                = $ExecuteAs
+                    Checksum                 = $Checksum
+                    Restart                  = $Restart
+                    EnableException          = $true
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {

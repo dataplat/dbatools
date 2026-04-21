@@ -149,8 +149,9 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = Backup-DbaDbCertificate @splatBackupAllCerts
 
-            $results | Should -HaveCount 3
-            $results.Certificate | Should -Be $cert1.Name, $cert2.Name, $cert3.Name
+            $results.Certificate | Should -Contain $cert1.Name
+            $results.Certificate | Should -Contain $cert2.Name
+            $results.Certificate | Should -Contain $cert3.Name
         }
     }
 }

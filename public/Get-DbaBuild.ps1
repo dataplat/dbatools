@@ -70,11 +70,12 @@ function Get-DbaBuild {
         - KBLevel: Array of Knowledge Base (KB) article numbers associated with this build
         - BuildLevel: The normalized build version object
         - SupportedUntil: DateTime indicating when this build version reaches end of support from Microsoft
+        - ReleaseDate: DateTime indicating when this build was released by Microsoft (null if not available in the index)
         - MatchType: Match precision ("Exact" for precise match or "Approximate" if closest available match)
         - Warning: Alert message if the build is retired or other issues detected (null if no warnings)
 
         Properties when querying by -Build, -Kb, or -MajorVersion (SqlInstance excluded from display):
-        When using these parameters, the SqlInstance property is excluded from the default display but all 9 properties remain accessible using Select-Object *.
+        When using these parameters, the SqlInstance property is excluded from the default display but all 10 properties remain accessible using Select-Object *.
 
     .LINK
         https://dbatools.io/Get-DbaBuild
@@ -356,6 +357,9 @@ function Get-DbaBuild {
                 if ($null -ne $el.SupportedUntil) {
                     $Detected.SupportedUntil = (Get-Date -Date $el.SupportedUntil)
                 }
+                if ($null -ne $el.ReleaseDate) {
+                    $Detected.ReleaseDate = [datetime]$el.ReleaseDate
+                }
                 $Detected.Build = $el.Version
                 $Detected.KB = $el.KBList
                 if (($Build -and $el.Version -eq $Build) -or ($Kb -and $el.KBList -eq $currentKb)) {
@@ -415,6 +419,7 @@ function Get-DbaBuild {
                 KBLevel        = $Detected.KB
                 BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
+                ReleaseDate    = $Detected.ReleaseDate
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
             }
@@ -432,6 +437,7 @@ function Get-DbaBuild {
                 KBLevel        = $Detected.KB
                 BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
+                ReleaseDate    = $Detected.ReleaseDate
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
@@ -449,6 +455,7 @@ function Get-DbaBuild {
                 KBLevel        = $Detected.KB
                 BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
+                ReleaseDate    = $Detected.ReleaseDate
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance
@@ -466,6 +473,7 @@ function Get-DbaBuild {
                 KBLevel        = $Detected.KB
                 BuildLevel     = $Detected.BuildLevel
                 SupportedUntil = $Detected.SupportedUntil
+                ReleaseDate    = $Detected.ReleaseDate
                 MatchType      = $Detected.MatchType
                 Warning        = $Detected.Warning
             } | Select-DefaultView -ExcludeProperty SqlInstance

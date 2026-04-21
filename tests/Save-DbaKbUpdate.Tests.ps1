@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Save-DbaKbUpdate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -17,9 +17,28 @@ Describe $CommandName -Tag UnitTests {
                 "Architecture",
                 "Language",
                 "InputObject",
+                "UseWebRequest",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Implementation regression" {
+        It "passes ErrorAction Stop to Start-BitsTransfer so fallback errors are catchable" {
+            $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
+            $bitsTransferCall = "Start-BitsTransfer -Source " + [char]36 + "link -Destination " + [char]36 + "file -ErrorAction Stop"
+
+            $commandText | Should -Match ([regex]::Escape($bitsTransferCall))
+        }
+
+        It "checks UseWebRequest before selecting the BITS download path" {
+            $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
+            $bitsTransferCondition = "if (-not " + [char]36 + "UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore))"
+            $webRequestCall = "Invoke-TlsWebRequest -Uri " + [char]36 + "link -OutFile " + [char]36 + "file -ErrorAction Stop"
+
+            $commandText | Should -Match ([regex]::Escape($bitsTransferCondition))
+            ([regex]::Matches($commandText, [regex]::Escape($webRequestCall))).Count | Should -Be 2
         }
     }
 }

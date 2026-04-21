@@ -231,6 +231,25 @@ function Copy-DbaAgentJob {
                 $missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
 
                 if ($missingLogin.Count -gt 0) {
+                    # Secondary check: verify if the owner has access via AD group membership
+                    $missingLogin = $missingLogin | Where-Object {
+                        $ownerName = $_
+                        try {
+                            $adInfo = $destServer.EnumWindowsUserInfo($ownerName)
+                            if ($adInfo.Rows.Count -gt 0) {
+                                Write-Message -Level Verbose -Message "Login $ownerName not found as a direct login but has access via AD group membership on destination. Proceeding."
+                                $false
+                            } else {
+                                $true
+                            }
+                        } catch {
+                            Write-Message -Level Verbose -Message "Could not verify AD group membership for $ownerName on destination: $PSItem"
+                            $true
+                        }
+                    }
+                }
+
+                if ($missingLogin.Count -gt 0) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName].")) {
                             $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "

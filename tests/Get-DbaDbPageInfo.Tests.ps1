@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaDbPageInfo",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -20,6 +20,41 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:mockDatabase = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database
+                $script:mockDatabase.Name = "db1"
+                $script:mockDatabase | Add-Member -Force -MemberType NoteProperty -Name Parent -Value ([PSCustomObject]@{
+                        VersionMajor = 16
+                    })
+                $script:mockDatabase | Add-Member -Force -MemberType ScriptMethod -Name ExecuteWithResults -Value {
+                    param($Sql)
+                    $script:lastQuery = $Sql
+                    [PSCustomObject]@{
+                        Tables = @(@())
+                    }
+                }
+
+                $script:mockServer = [DbaInstanceParameter]"sql1"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value @($script:mockDatabase)
+
+                Mock Connect-DbaInstance { $script:mockServer }
+            }
+
+            It "honors schema-qualified -Table input" {
+                $script:lastQuery = $null
+
+                $null = Get-DbaDbPageInfo -SqlInstance "sql1" -Database "db1" -Table "db1.sales.Customer"
+                $normalizedQuery = $script:lastQuery -replace "\s+", " "
+
+                $normalizedQuery | Should -Match "st\.name = N'Customer'\s+AND\s+ss\.name = N'sales'\s+AND\s+DB_NAME\(\) = N'db1'"
+                $normalizedQuery | Should -Not -Match "st\.name IN"
+            }
         }
     }
 }

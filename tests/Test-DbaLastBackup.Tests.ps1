@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaLastBackup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -39,9 +39,258 @@ Describe $CommandName -Tag UnitTests {
                 "IgnoreDiffBackup",
                 "ReuseSourceFolderStructure",
                 "Checksum",
-                "Wait"
+                "Wait",
+                "Path"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Path backup discovery" {
+            BeforeEach {
+                $script:mockFiles = @()
+                $script:mockHeaders = @()
+
+                $script:mockDatabases = @{ }
+                Add-Member -InputObject $script:mockDatabases -Name Refresh -MemberType ScriptMethod -Value { } -Force
+
+                $script:mockDestinationServer = [DbaInstanceParameter]"dest"
+                Add-Member -InputObject $script:mockDestinationServer -Name Databases -MemberType NoteProperty -Value $script:mockDatabases -Force
+                Add-Member -InputObject $script:mockDestinationServer -Name Name -MemberType NoteProperty -Value "dest" -Force
+                Add-Member -InputObject $script:mockDestinationServer -Name ServiceAccount -MemberType NoteProperty -Value "NT SERVICE\MSSQLSERVER" -Force
+
+                Mock Connect-DbaInstance { $script:mockDestinationServer }
+                Mock Get-XpDirTreeRestoreFile { $script:mockFiles }
+                Mock Read-DbaBackupHeader { $script:mockHeaders }
+                Mock Get-SqlDefaultPaths {
+                    param($SqlInstance, $FileType)
+
+                    switch ($FileType) {
+                        "mdf" { "C:\sql\data" }
+                        "ldf" { "C:\sql\log" }
+                    }
+                }
+                Mock Restore-DbaDatabase {
+                    [PSCustomObject]@{
+                        RestoreComplete = $true
+                    }
+                }
+                Mock Stop-Function {
+                    throw $Message
+                }
+            }
+
+            It "Should honor wildcard database filters when using -Path" {
+                $script:mockFiles = @(
+                    "C:\backups\dbAlpha-full.bak",
+                    "C:\backups\dbBeta-full.bak",
+                    "C:\backups\other-full.bak"
+                )
+                $script:mockHeaders = @(
+                    [PSCustomObject]@{
+                        BackupSetGUID         = [guid]"11111111-1111-1111-1111-111111111111"
+                        BackupTypeDescription = "Database"
+                        MachineName           = "source1"
+                        ServiceName           = "MSSQLSERVER"
+                        ServerName            = "source1"
+                        DatabaseName          = "dbAlpha"
+                        UserName              = "sa"
+                        BackupStartDate       = [datetime]"2026-03-19T12:00:00"
+                        BackupFinishDate      = [datetime]"2026-03-19T12:01:00"
+                        BackupPath            = "C:\backups\dbAlpha-full.bak"
+                        FileList              = [PSCustomObject]@{
+                            Type         = "D"
+                            LogicalName  = "dbAlpha"
+                            PhysicalName = "C:\sql\data\dbAlpha.mdf"
+                            Size         = 1024
+                        }
+                        BackupSize            = [PSCustomObject]@{ Byte = 1048576 }
+                        CompressedBackupSize  = [PSCustomObject]@{ Byte = 524288 }
+                        Position              = 1
+                        FirstLSN              = 100
+                        DatabaseBackupLSN     = 100
+                        CheckpointLSN         = 100
+                        LastLsn               = 200
+                        SoftwareVersionMajor  = 16
+                        RecoveryModel         = "Full"
+                        IsCopyOnly            = $false
+                    },
+                    [PSCustomObject]@{
+                        BackupSetGUID         = [guid]"22222222-2222-2222-2222-222222222222"
+                        BackupTypeDescription = "Database"
+                        MachineName           = "source1"
+                        ServiceName           = "MSSQLSERVER"
+                        ServerName            = "source1"
+                        DatabaseName          = "dbBeta"
+                        UserName              = "sa"
+                        BackupStartDate       = [datetime]"2026-03-19T12:05:00"
+                        BackupFinishDate      = [datetime]"2026-03-19T12:06:00"
+                        BackupPath            = "C:\backups\dbBeta-full.bak"
+                        FileList              = [PSCustomObject]@{
+                            Type         = "D"
+                            LogicalName  = "dbBeta"
+                            PhysicalName = "C:\sql\data\dbBeta.mdf"
+                            Size         = 1024
+                        }
+                        BackupSize            = [PSCustomObject]@{ Byte = 1048576 }
+                        CompressedBackupSize  = [PSCustomObject]@{ Byte = 524288 }
+                        Position              = 1
+                        FirstLSN              = 300
+                        DatabaseBackupLSN     = 300
+                        CheckpointLSN         = 300
+                        LastLsn               = 400
+                        SoftwareVersionMajor  = 16
+                        RecoveryModel         = "Full"
+                        IsCopyOnly            = $false
+                    },
+                    [PSCustomObject]@{
+                        BackupSetGUID         = [guid]"33333333-3333-3333-3333-333333333333"
+                        BackupTypeDescription = "Database"
+                        MachineName           = "source1"
+                        ServiceName           = "MSSQLSERVER"
+                        ServerName            = "source1"
+                        DatabaseName          = "other"
+                        UserName              = "sa"
+                        BackupStartDate       = [datetime]"2026-03-19T12:10:00"
+                        BackupFinishDate      = [datetime]"2026-03-19T12:11:00"
+                        BackupPath            = "C:\backups\other-full.bak"
+                        FileList              = [PSCustomObject]@{
+                            Type         = "D"
+                            LogicalName  = "other"
+                            PhysicalName = "C:\sql\data\other.mdf"
+                            Size         = 1024
+                        }
+                        BackupSize            = [PSCustomObject]@{ Byte = 1048576 }
+                        CompressedBackupSize  = [PSCustomObject]@{ Byte = 524288 }
+                        Position              = 1
+                        FirstLSN              = 500
+                        DatabaseBackupLSN     = 500
+                        CheckpointLSN         = 500
+                        LastLsn               = 600
+                        SoftwareVersionMajor  = 16
+                        RecoveryModel         = "Full"
+                        IsCopyOnly            = $false
+                    }
+                )
+
+                $results = @(Test-DbaLastBackup -Path "C:\backups" -Destination "dest" -Database "db*" -ExcludeDatabase "dbB*" -NoCheck -NoDrop)
+
+                $results.Count | Should -Be 1
+                $results[0].Database | Should -Be "dbAlpha"
+                $results[0].SourceServer | Should -Be "source1"
+            }
+
+            It "Should keep identical database names from different sources separate when using -Path" {
+                $script:mockFiles = @(
+                    "C:\backups\source1\SharedDb-full.bak",
+                    "C:\backups\source2\SharedDb-full.bak"
+                )
+                $script:mockHeaders = @(
+                    [PSCustomObject]@{
+                        BackupSetGUID         = [guid]"44444444-4444-4444-4444-444444444444"
+                        BackupTypeDescription = "Database"
+                        MachineName           = "source1"
+                        ServiceName           = "MSSQLSERVER"
+                        ServerName            = "source1"
+                        DatabaseName          = "SharedDb"
+                        UserName              = "sa"
+                        BackupStartDate       = [datetime]"2026-03-19T12:00:00"
+                        BackupFinishDate      = [datetime]"2026-03-19T12:01:00"
+                        BackupPath            = "C:\backups\source1\SharedDb-full.bak"
+                        FileList              = [PSCustomObject]@{
+                            Type         = "D"
+                            LogicalName  = "SharedDb"
+                            PhysicalName = "C:\sql\data\SharedDb.mdf"
+                            Size         = 1024
+                        }
+                        BackupSize            = [PSCustomObject]@{ Byte = 1048576 }
+                        CompressedBackupSize  = [PSCustomObject]@{ Byte = 524288 }
+                        Position              = 1
+                        FirstLSN              = 700
+                        DatabaseBackupLSN     = 700
+                        CheckpointLSN         = 700
+                        LastLsn               = 800
+                        SoftwareVersionMajor  = 16
+                        RecoveryModel         = "Full"
+                        IsCopyOnly            = $false
+                    },
+                    [PSCustomObject]@{
+                        BackupSetGUID         = [guid]"55555555-5555-5555-5555-555555555555"
+                        BackupTypeDescription = "Database"
+                        MachineName           = "source2"
+                        ServiceName           = "MSSQLSERVER"
+                        ServerName            = "source2"
+                        DatabaseName          = "SharedDb"
+                        UserName              = "sa"
+                        BackupStartDate       = [datetime]"2026-03-19T12:05:00"
+                        BackupFinishDate      = [datetime]"2026-03-19T12:06:00"
+                        BackupPath            = "C:\backups\source2\SharedDb-full.bak"
+                        FileList              = [PSCustomObject]@{
+                            Type         = "D"
+                            LogicalName  = "SharedDb"
+                            PhysicalName = "C:\sql\data\SharedDb.mdf"
+                            Size         = 1024
+                        }
+                        BackupSize            = [PSCustomObject]@{ Byte = 1048576 }
+                        CompressedBackupSize  = [PSCustomObject]@{ Byte = 524288 }
+                        Position              = 1
+                        FirstLSN              = 900
+                        DatabaseBackupLSN     = 900
+                        CheckpointLSN         = 900
+                        LastLsn               = 1000
+                        SoftwareVersionMajor  = 16
+                        RecoveryModel         = "Full"
+                        IsCopyOnly            = $false
+                    }
+                )
+
+                $results = @(Test-DbaLastBackup -Path "C:\backups" -Destination "dest" -NoCheck -NoDrop | Sort-Object SourceServer)
+
+                $results.Count | Should -Be 2
+                $results[0].Database | Should -Be "SharedDb"
+                $results[0].SourceServer | Should -Be "source1"
+                $results[1].Database | Should -Be "SharedDb"
+                $results[1].SourceServer | Should -Be "source2"
+            }
+        }
+
+        Context "Start-DbccCheck compatibility" {
+            BeforeEach {
+                $script:lastQuery = $null
+                $script:mockServer = [DbaInstanceParameter]"dest"
+                Add-Member -InputObject $script:mockServer -Name Name -MemberType NoteProperty -Value "dest" -Force
+                Add-Member -InputObject $script:mockServer -Name ConnectionContext -MemberType NoteProperty -Value ([PSCustomObject]@{
+                        StatementTimeout = 30
+                    }) -Force
+                Add-Member -InputObject $script:mockServer -Name Databases -MemberType NoteProperty -Value @{ } -Force
+                Add-Member -InputObject $script:mockServer -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    $script:lastQuery = $query
+                } -Force
+            }
+
+            It "Should keep returning a status string by default" {
+                $result = Start-DbccCheck -Server $script:mockServer -DbName "Db]Name" -MaxDop 4
+
+                $result | Should -Be "Success"
+                $script:lastQuery | Should -Be "DBCC CHECKDB ([Db]]Name]) WITH MAXDOP = 4"
+            }
+
+            It "Should return status and messages when detailed output is requested" {
+                Mock Invoke-DbaQuery {
+                    "message 1", "message 2"
+                }
+
+                $result = Start-DbccCheck -Server $script:mockServer -DbName "Db]Name" -DetailedOutput
+
+                $result.Status | Should -Be "Success"
+                $result.Output | Should -HaveCount 2
+                $result.Output[0] | Should -Be "message 1"
+                $result.Output[1] | Should -Be "message 2"
+                $script:lastQuery | Should -BeNullOrEmpty
+                Should -Invoke Invoke-DbaQuery -Times 1 -Exactly
+            }
         }
     }
 }
@@ -105,6 +354,33 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Test restore using -Path parameter" {
+        BeforeAll {
+            $splatPathRestore = @{
+                Path        = $backupPath
+                Destination = $TestConfig.InstanceSingle
+                Database    = $testlastbackup
+            }
+            $pathParamResults = Test-DbaLastBackup @splatPathRestore
+        }
+
+        It "Should return success when using -Path" {
+            $pathParamResults.RestoreResult | Should -Be "Success"
+            $pathParamResults.DbccResult | Should -Be "Success"
+        }
+
+        It "Should return the correct database name" {
+            $pathParamResults.Database | Should -Be $testlastbackup
+        }
+    }
+
+    Context "Test -Path without -Destination fails" {
+        It "Should write an error when -Destination is not specified with -Path" {
+            $result = Test-DbaLastBackup -Path $backupPath -WarningAction SilentlyContinue
+            $WarnVar | Should -BeLike "*-Destination server must be specified*"
+        }
     }
 
     Context "Test a single database" {

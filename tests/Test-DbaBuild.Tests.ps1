@@ -14,6 +14,7 @@ Describe $CommandName -Tag UnitTests {
                 "Build",
                 "MinimumBuild",
                 "MaxBehind",
+                "MaxTimeBehind",
                 "Latest",
                 "SqlInstance",
                 "SqlCredential",
@@ -22,6 +23,30 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    Context "MaxTimeBehind compliance" {
+        It "Identifies a build as compliant with a wide time window" {
+            # SQL Server 2022 CU10 (16.0.4095) released 2023-11-16 - compliant within 360 months of today (2026-03-30)
+            $result = Test-DbaBuild -Build "16.0.4095" -MaxTimeBehind "360Mo"
+            $result.Compliant | Should -Be $true
+        }
+
+        It "Identifies a build as non-compliant with a narrow time window" {
+            # SQL Server 2022 CU10 (16.0.4095) released 2023-11-16 - more than 6 months old as of today (2026-03-30)
+            $result = Test-DbaBuild -Build "16.0.4095" -MaxTimeBehind "6Mo"
+            $result.Compliant | Should -Be $false
+        }
+
+        It "Returns non-compliant when no ReleaseDate is available" {
+            # An unrecognized build version has no release date in the index
+            $result = Test-DbaBuild -Build "16.0.9999" -MaxTimeBehind "6Mo" -WarningAction SilentlyContinue
+            $WarnVar[0] | Should -BeLike "*16.0.9999 is not recognized as a correct version"
+            $WarnVar[1] | Should -BeLike "*No ReleaseDate found for build 16.0.9999 - cannot determine time-based compliance"
+            $result.Compliant | Should -Be $false
         }
     }
 }

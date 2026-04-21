@@ -216,6 +216,21 @@ function Export-DbaUser {
             'Version160' = 'SQLServer2022'
         }
 
+        # Maps SQL Server major version number to SMO scripting version string.
+        # Used to resolve the actual server version when no DestinationVersion is specified,
+        # since the database compatibility level may be lower than the server version.
+        $serverVersionMap = @{
+            8  = 'Version80'
+            9  = 'Version90'
+            10 = 'Version100'
+            11 = 'Version110'
+            12 = 'Version120'
+            13 = 'Version130'
+            14 = 'Version140'
+            15 = 'Version150'
+            16 = 'Version160'
+        }
+
         $eol = [System.Environment]::NewLine
 
     }
@@ -232,8 +247,17 @@ function Export-DbaUser {
         foreach ($db in $InputObject) {
 
             if ([string]::IsNullOrEmpty($destinationVersion)) {
-                #Get compatibility level for scripting the objects
-                $scriptVersion = $db.CompatibilityLevel
+                # Use the actual server version rather than the database compatibility level.
+                # The compatibility level may be lower than the server version (e.g., a SQL 2022
+                # instance hosting a database at compat level 120/SQL2014). Scripting against
+                # the lower compat level causes errors for features like External users that are
+                # supported by the server but not recognised by older scripting targets.
+                $serverMajorVersion = $db.Parent.VersionMajor
+                if ($serverVersionMap.ContainsKey($serverMajorVersion)) {
+                    $scriptVersion = $serverVersionMap[$serverMajorVersion]
+                } else {
+                    $scriptVersion = $db.CompatibilityLevel
+                }
             } else {
                 $scriptVersion = $versions[$destinationVersion]
             }
@@ -560,6 +584,26 @@ function Export-DbaUser {
                         }
 
                         $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
+                    }
+
+                    #Schema Ownership
+                    $ownedSchemas = @()
+                    if ($db.Parent.VersionMajor -gt 8) {
+                        $ownedSchemas = $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }
+                    }
+
+                    if ($scriptVersion -eq "Version80" -and @($ownedSchemas).Count -gt 0) {
+                        Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -Target $db
+                        $ownedSchemas = @()
+                    }
+
+                    foreach ($schema in $ownedSchemas) {
+                        if ($Template) {
+                            $ownerName = "{templateUser}"
+                        } else {
+                            $ownerName = $schema.Owner
+                        }
+                        $outsql += "ALTER AUTHORIZATION ON SCHEMA::[{0}] TO [{1}];" -f $schema.Name, $ownerName
                     }
 
                 } catch {

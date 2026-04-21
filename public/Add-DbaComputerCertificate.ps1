@@ -286,7 +286,7 @@ function Add-DbaComputerCertificate {
             if ($isCollection -and $collectionData) {
                 foreach ($computer in $ComputerName) {
                     if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert collection")) {
-                        if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        if ("UserProtected" -in $Flag -and -not $computer.IsLocalHost) {
                             Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
                         }
                         try {
@@ -309,7 +309,7 @@ function Add-DbaComputerCertificate {
 
                     foreach ($computer in $ComputerName) {
                         if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
-                            if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                            if ("UserProtected" -in $Flag -and -not $computer.IsLocalHost) {
                                 Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
                             }
                             try {

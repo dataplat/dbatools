@@ -95,6 +95,11 @@ function Invoke-DbaAdvancedRestore {
         Essential when restoring databases where CDC is actively capturing data changes for auditing or ETL processes.
         Cannot be combined with NoRecovery or StandbyDirectory parameters as CDC requires the database to be fully recovered.
 
+    .PARAMETER ErrorBrokerConversations
+        Ends all conversations in the database with an error message when restoring, using the ERROR_BROKER_CONVERSATIONS option.
+        Use this when you want to clean up Service Broker conversations that may be left in an inconsistent state after a restore.
+        Only applied during the final restore step (WITH RECOVERY), not during intermediate log restores.
+
     .PARAMETER PageRestore
         Array of page objects from Get-DbaSuspectPage specifying corrupted pages to restore using page-level restore.
         Use this for targeted repair of specific corrupted pages without restoring the entire database.
@@ -117,14 +122,20 @@ function Invoke-DbaAdvancedRestore {
         Provides more granular control than timestamp-based recovery for critical business operations.
 
     .PARAMETER StopBefore
-        Stops the restore operation just before the specified StopMark rather than after it.
-        Use this when you need to exclude a particular marked transaction from the restored database.
-        Only effective when used in combination with the StopMark parameter for mark-based recovery scenarios.
+        Stops the restore operation just before the specified StopMark or StopAtLsn rather than after it.
+        Use this when you need to exclude a particular marked transaction or LSN from the restored database.
+        Only effective when used in combination with the StopMark or StopAtLsn parameter.
 
     .PARAMETER StopAfterDate
         DateTime value specifying that only StopMark occurrences after this date should be considered for restore termination.
         Use this when the same mark name appears multiple times in your transaction log backups.
         Ensures the restore stops at the correct instance of the mark when identical mark names exist at different times.
+
+    .PARAMETER StopAtLsn
+        Log Sequence Number (LSN) in the transaction log at which to stop the restore operation.
+        Use this for precise point-in-time recovery to an exact LSN, which provides more granular control than timestamp-based recovery.
+        Accepts either the numeric restore format used by SQL Server or the colon-delimited format returned by sys.fn_dblog.
+        Combine with -StopBefore to stop just before the specified LSN.
 
     .PARAMETER Checksum
         Enables backup checksum verification during restore operations. Forces the restore to verify backup checksums and fail if checksums are not present.
@@ -234,11 +245,13 @@ function Invoke-DbaAdvancedRestore {
         [switch]$WithReplace,
         [switch]$KeepReplication,
         [switch]$KeepCDC,
+        [switch]$ErrorBrokerConversations,
         [object[]]$PageRestore,
         [string]$ExecuteAs,
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
+        [string]$StopAtLsn,
         [switch]$Checksum,
         [switch]$Restart,
         [switch]$EnableException
@@ -250,9 +263,41 @@ function Invoke-DbaAdvancedRestore {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
-        if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))) {
+        if ($KeepCDC -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
             Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
             return
+        }
+        if ($ErrorBrokerConversations -and ($NoRecovery -or ("" -ne $StandbyDirectory))) {
+            Stop-Function -Category InvalidArgument -Message "ErrorBrokerConversations cannot be specified with Norecovery or Standby as it needs recovery to work"
+            return
+        }
+        if (-not [string]::IsNullOrWhiteSpace($StopAtLsn)) {
+            $stopAtLsnValue = $StopAtLsn.Trim()
+            if ($stopAtLsnValue -like "lsn:*") {
+                $stopAtLsnValue = $stopAtLsnValue.Substring(4)
+            }
+            if ($stopAtLsnValue -like "0x*") {
+                $stopAtLsnValue = $stopAtLsnValue.Substring(2)
+            }
+            if ($stopAtLsnValue -notmatch "^[0-9]+$") {
+                $splatLsnConversion = @{
+                    LSN             = $stopAtLsnValue
+                    EnableException = $true
+                }
+                $message = "StopAtLsn must be a numeric restore LSN or a colon-delimited value such as 00000030:00000f28:0001."
+                try {
+                    $convertedLsn = Convert-DbaLSN @splatLsnConversion
+                } catch {
+                    Stop-Function -Category InvalidArgument -Message $message -ErrorRecord $_
+                    return
+                }
+                if ($null -eq $convertedLsn -or [string]::IsNullOrWhiteSpace($convertedLsn.Numeric)) {
+                    Stop-Function -Category InvalidArgument -Message $message
+                    return
+                }
+                $stopAtLsnValue = $convertedLsn.Numeric
+            }
+            $StopAtLsn = $stopAtLsnValue
         }
 
         if ($null -ne $PageRestore) {
@@ -323,7 +368,13 @@ function Invoke-DbaAdvancedRestore {
                 } else {
                     $restore.NoRecovery = $False
                 }
-                if (-not [string]::IsNullOrEmpty($StopMark)) {
+                if (-not [string]::IsNullOrEmpty($StopAtLsn)) {
+                    if ($StopBefore -eq $True) {
+                        $restore.StopBeforeMarkName = "lsn:$StopAtLsn"
+                    } else {
+                        $restore.StopAtMarkName = "lsn:$StopAtLsn"
+                    }
+                } elseif (-not [string]::IsNullOrEmpty($StopMark)) {
                     if ($StopBefore -eq $True) {
                         $restore.StopBeforeMarkName = $StopMark
                         if ($null -ne $StopAfterDate) {
@@ -406,12 +457,22 @@ function Invoke-DbaAdvancedRestore {
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Restoring $database to $SqlInstance based on these files: $($backup.FullName -join ', ')")) {
                     try {
                         $restoreComplete = $true
-                        if ($KeepCDC -and $restore.NoRecovery -eq $false) {
+                        $executeAsLogin = $null
+                        if ($ExecuteAs -ne "" -and $BackupCnt -eq 1) {
+                            $executeAsLogin = $ExecuteAs.Replace("'", "''")
+                        }
+                        if (($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
                             $script = $restore.Script($server)
-                            if ($script -like '*WITH*') {
-                                $script = $script.TrimEnd() + ' , KEEP_CDC'
+                            $withOptions = @()
+                            if ($KeepCDC) { $withOptions += "KEEP_CDC" }
+                            if ($ErrorBrokerConversations) { $withOptions += "ERROR_BROKER_CONVERSATIONS" }
+                            if ($script -like "*WITH*") {
+                                $script = $script.TrimEnd() + " , " + ($withOptions -join " , ")
                             } else {
-                                $script = $script.TrimEnd() + ' WITH KEEP_CDC'
+                                $script = $script.TrimEnd() + " WITH " + ($withOptions -join " , ")
+                            }
+                            if ($null -ne $executeAsLogin) {
+                                $script = "EXECUTE AS LOGIN='$executeAsLogin'; " + $script
                             }
                             if ($true -ne $OutputScriptOnly) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
@@ -428,8 +489,8 @@ function Invoke-DbaAdvancedRestore {
                             }
                         } elseif ($OutputScriptOnly) {
                             $script = $restore.Script($server)
-                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
-                                $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
+                            if ($null -ne $executeAsLogin) {
+                                $script = "EXECUTE AS LOGIN='$executeAsLogin'; " + $script
                             }
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
@@ -452,9 +513,9 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $restore.Script($server)
-                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
+                            if ($null -ne $executeAsLogin) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                                $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
+                                $script = "EXECUTE AS LOGIN='$executeAsLogin'; " + $script
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             } else {

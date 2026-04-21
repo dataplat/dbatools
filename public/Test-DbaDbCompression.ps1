@@ -193,11 +193,30 @@ function Test-DbaDbCompression {
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         if ($Schema) {
-            $sqlSchemaWhere = "AND s.name IN ('$($Schema -join "','")')"
+            $schemaNames = $Schema | ForEach-Object { $_.Replace("'", "''") }
+            $sqlSchemaWhere = "AND s.name IN (N'$($schemaNames -join "','")')"
         }
 
         if ($Table) {
-            $sqlTableWhere = "AND t.name IN ('$($Table -join "','")')"
+            $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+            $tableWhereClauses = foreach ($tablePart in $tableParts) {
+                $tableName = ([string]$tablePart.Name).Replace("'", "''")
+                $clauseParts = @("t.name = N'$tableName'")
+
+                if ($tablePart.Schema) {
+                    $schemaName = ([string]$tablePart.Schema).Replace("'", "''")
+                    $clauseParts += "s.name = N'$schemaName'"
+                }
+
+                if ($tablePart.Database) {
+                    $databaseName = ([string]$tablePart.Database).Replace("'", "''")
+                    $clauseParts += "DB_NAME() = N'$databaseName'"
+                }
+
+                "($($clauseParts -join " AND "))"
+            }
+
+            $sqlTableWhere = "AND ($($tableWhereClauses -join " OR "))"
         }
 
         if ($ResultSize) {

@@ -6,6 +6,10 @@ function Get-DbaDbOrphanUser {
     .DESCRIPTION
         An orphan user is defined by a user that does not have their matching login. (Login property = "").
 
+        Note: Users in contained databases (Partial or Full containment type) are not considered orphaned for SQL logins,
+        as these users authenticate directly to the database without requiring a server-level login.
+        Windows users are still checked for orphaned status regardless of containment type.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -93,13 +97,13 @@ function Get-DbaDbOrphanUser {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $DatabaseCollection = $server.Databases | Where-Object IsAccessible
+            $DatabaseCollection = @($server.Databases | Where-Object IsAccessible)
 
             if ($Database) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
+                $DatabaseCollection = @($DatabaseCollection | Where-Object Name -In $Database)
             }
             if ($ExcludeDatabase) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
+                $DatabaseCollection = @($DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase)
             }
 
             if ($DatabaseCollection.Count -gt 0) {
@@ -107,8 +111,18 @@ function Get-DbaDbOrphanUser {
                     try {
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
                         $UsersToWork = @()
-                        $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in 'SqlLogin', 'Certificate') }
-                        $UsersToWork += $db.Users | Where-Object { ($_.Login -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in 'WindowsUser', 'WindowsGroup') }
+                        # ContainmentType is SQL Server 2012+ only, so keep the legacy path for older versions.
+                        $isContainedDatabase = (
+                            $server.versionMajor -gt 10 -and
+                            $null -ne $db.ContainmentType -and
+                            $db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None
+                        )
+                        if (-not $isContainedDatabase) {
+                            $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in "SqlLogin", "Certificate") }
+                        } else {
+                            Write-Message -Level Verbose -Message "Skipping SQL login orphan check on contained database '$db' (ContainmentType: $($db.ContainmentType))."
+                        }
+                        $UsersToWork += $db.Users | Where-Object { ($_.Login -notin $server.Logins.Name) -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -in "WindowsUser", "WindowsGroup") }
                         if ($UsersToWork.Count -gt 0) {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             foreach ($user in $UsersToWork) {

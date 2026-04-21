@@ -56,6 +56,10 @@ function Expand-DbaDbLogFile {
         Controls the size of each growth operation in megabytes during the expansion process.
         If not specified, the function calculates an optimal increment size based on your target size and SQL Server version to minimize VLF fragmentation. Only specify this if you need to override the intelligent defaults.
 
+    .PARAMETER TargetVlfCount
+        Sets the desired maximum number of Virtual Log Files (VLFs) after the expansion completes.
+        When specified, the function calculates the optimal increment size to keep total VLFs at or below this value. If the current VLF count already meets or exceeds this target, a warning is issued and the database is skipped — use -ShrinkLogFile to first reduce the VLF count. If the target is mathematically impossible given the required growth, a warning is issued and the database is skipped.
+
     .PARAMETER LogFileId
         Targets a specific transaction log file by its file ID number when databases have multiple log files.
         Use this when you need to expand secondary log files instead of the primary log file. Get the file ID from sys.database_files or SSMS properties.
@@ -161,6 +165,16 @@ function Expand-DbaDbLogFile {
 
         Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
 
+    .EXAMPLE
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -TargetVlfCount 16
+
+        Grows the transaction log for database db1 on sqlcluster to 10000MB and automatically calculates an increment size that keeps the total VLF count at or below 16.
+
+    .EXAMPLE
+        PS C:\> Expand-DbaDbLogFile -SqlInstance sqlcluster -Database db1 -TargetLogSize 10000 -ShrinkLogFile -ShrinkSize 10 -BackupDirectory R:\MSSQL\Backup -TargetVlfCount 8
+
+        Shrinks the transaction log for db1 to 10MB, then re-grows it to 10000MB using an increment size calculated to keep the final VLF count at or below 8.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
@@ -175,6 +189,7 @@ function Expand-DbaDbLogFile {
         [int]$TargetLogSize,
         [parameter(Position = 6)]
         [int]$IncrementSize = -1,
+        [int]$TargetVlfCount = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
         [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
@@ -202,6 +217,120 @@ function Expand-DbaDbLogFile {
             $false
         } else {
             $true
+        }
+
+        function Get-VlfCountForGrowthPlan {
+            param (
+                [long]$InitialSizeKB,
+                [long]$TargetSizeKB,
+                [long]$IncrementKB,
+                [int]$SqlMajorVersion
+            )
+
+            [int]$estimatedVlfCount = 0
+            [long]$simulatedSizeKB = $InitialSizeKB
+
+            while ($simulatedSizeKB -lt $TargetSizeKB) {
+                [long]$growthSizeKB = $TargetSizeKB - $simulatedSizeKB
+
+                if ($growthSizeKB -gt $IncrementKB) {
+                    $growthSizeKB = $IncrementKB
+                }
+
+                if ($SqlMajorVersion -ge 12 -and $growthSizeKB -lt ($simulatedSizeKB / 8)) {
+                    $estimatedVlfCount += 1
+                } elseif ($growthSizeKB -lt (64 * 1024)) {
+                    $estimatedVlfCount += 4
+                } elseif ($growthSizeKB -lt (1024 * 1024)) {
+                    $estimatedVlfCount += 8
+                } else {
+                    $estimatedVlfCount += 16
+                }
+
+                $simulatedSizeKB += $growthSizeKB
+            }
+
+            return $estimatedVlfCount
+        }
+
+        function Find-TargetVlfIncrementSize {
+            param (
+                [long]$CurrentSizeKB,
+                [long]$TargetSizeKB,
+                [int]$AdditionalVlfsAllowed,
+                [int]$SqlMajorVersion
+            )
+
+            if ($TargetSizeKB -le $CurrentSizeKB -or $AdditionalVlfsAllowed -lt 1) {
+                return $null
+            }
+
+            [long]$totalGrowthKB = $TargetSizeKB - $CurrentSizeKB
+            [long]$minIncrementKB = 1024
+            [long]$fourVlfMinimumKB = $minIncrementKB
+            $searchRanges = @()
+
+            if ($SqlMajorVersion -ge 12) {
+                [long]$maxOneVlfIncrementKB = [Math]::Floor(($CurrentSizeKB - 1) / 8)
+
+                if ($maxOneVlfIncrementKB -ge $minIncrementKB) {
+                    $searchRanges += @{
+                        Minimum = $minIncrementKB
+                        Maximum = [Math]::Min($totalGrowthKB, $maxOneVlfIncrementKB)
+                    }
+                }
+
+                $fourVlfMinimumKB = [Math]::Max($minIncrementKB, $maxOneVlfIncrementKB + 1)
+            }
+
+            if ($fourVlfMinimumKB -lt (64 * 1024)) {
+                $searchRanges += @{
+                    Minimum = $fourVlfMinimumKB
+                    Maximum = [Math]::Min($totalGrowthKB, (64 * 1024) - 1)
+                }
+            }
+
+            if ($totalGrowthKB -ge (64 * 1024)) {
+                $searchRanges += @{
+                    Minimum = 64 * 1024
+                    Maximum = [Math]::Min($totalGrowthKB, (1024 * 1024) - 1)
+                }
+            }
+
+            if ($totalGrowthKB -ge (1024 * 1024)) {
+                $searchRanges += @{
+                    Minimum = 1024 * 1024
+                    Maximum = $totalGrowthKB
+                }
+            }
+
+            foreach ($searchRange in $searchRanges) {
+                [long]$rangeMinimumKB = $searchRange.Minimum
+                [long]$rangeMaximumKB = $searchRange.Maximum
+                [long]$bestIncrementKB = 0
+
+                if ($rangeMaximumKB -lt $rangeMinimumKB) {
+                    continue
+                }
+
+                while ($rangeMinimumKB -le $rangeMaximumKB) {
+                    [long]$candidateIncrementKB = [Math]::Floor(($rangeMinimumKB + $rangeMaximumKB) / 2)
+                    $estimatedVlfCount = Get-VlfCountForGrowthPlan -InitialSizeKB $CurrentSizeKB -TargetSizeKB $TargetSizeKB -IncrementKB $candidateIncrementKB -SqlMajorVersion $SqlMajorVersion
+
+                    if ($estimatedVlfCount -le $AdditionalVlfsAllowed) {
+                        $bestIncrementKB = $candidateIncrementKB
+                        $rangeMaximumKB = $candidateIncrementKB - 1
+                    } else {
+                        $rangeMinimumKB = $candidateIncrementKB + 1
+                    }
+                }
+
+                if ($bestIncrementKB -gt 0) {
+                    return $bestIncrementKB
+                }
+            }
+
+            return $null
         }
 
         #Set base information
@@ -438,6 +567,7 @@ function Expand-DbaDbLogFile {
                                     while (($logfile.Size / 1024) -gt $ShrinkSize -and ++$backupRetries -lt 6)
 
                                     $currentSize = $logfile.Size
+                                    $currentSizeMB = $currentSize / 1024
                                     Write-Message -Level Verbose -Message "TLog backup and truncate for database '$dbName' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
                                 }
                             }
@@ -452,6 +582,39 @@ function Expand-DbaDbLogFile {
                         } else {
                             if ($LogIncrementSize -lt $SuggestLogIncrementSize) {
                                 Write-Message -Level Warning -Message "The input value for increment size is $([System.Math]::Round($LogIncrementSize / 1024, 0))MB, which is less than the suggested value of $($SuggestLogIncrementSize / 1024)MB."
+                            }
+                        }
+
+                        # If -TargetVlfCount is specified, calculate optimal increment size to achieve target VLF count
+                        if ($TargetVlfCount -gt 0) {
+                            # When ShrinkLogFile was used, remeasure VLFs post-shrink as the new baseline
+                            if ($ShrinkLogFile) {
+                                $vlfCountBaseline = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $dbName
+                                Write-Message -Level Verbose -Message "$step - VLF count after shrinking: $($vlfCountBaseline.Total)"
+                            } else {
+                                $vlfCountBaseline = $initialVLFCount
+                            }
+
+                            $additionalVlfsAllowed = $TargetVlfCount - $vlfCountBaseline.Total
+
+                            if ($additionalVlfsAllowed -le 0) {
+                                Write-Message -Level Warning -Message "$step - Current VLF count ($($vlfCountBaseline.Total)) is already at or above the target VLF count ($TargetVlfCount) for database '$dbName'. Use -ShrinkLogFile to reduce VLF count first, then re-expand."
+                                continue
+                            }
+
+                            $totalGrowthKB = $TargetLogSizeKB - $currentSize
+
+                            if ($totalGrowthKB -gt 0) {
+                                $calculatedIncrementKB = Find-TargetVlfIncrementSize -CurrentSizeKB $currentSize -TargetSizeKB $TargetLogSizeKB -AdditionalVlfsAllowed $additionalVlfsAllowed -SqlMajorVersion $server.Version.Major
+
+                                if ($null -eq $calculatedIncrementKB) {
+                                    Write-Message -Level Warning -Message "$step - Cannot achieve target VLF count of $TargetVlfCount for database '$dbName': the VLF budget is too small for the required growth from $currentSizeMB MB to $TargetLogSize MB. Increase -TargetVlfCount or use -ShrinkLogFile to start from a lower base."
+                                    continue
+                                }
+
+                                $estimatedAdditionalVlfCount = Get-VlfCountForGrowthPlan -InitialSizeKB $currentSize -TargetSizeKB $TargetLogSizeKB -IncrementKB $calculatedIncrementKB -SqlMajorVersion $server.Version.Major
+                                Write-Message -Level Verbose -Message "$step - TargetVlfCount ${TargetVlfCount}: overriding increment size to $([Math]::Round($calculatedIncrementKB / 1024.0, 2))MB to add an estimated $estimatedAdditionalVlfCount VLFs (was $([Math]::Round($LogIncrementSize / 1024.0, 2))MB)."
+                                $LogIncrementSize = [int]$calculatedIncrementKB
                             }
                         }
 

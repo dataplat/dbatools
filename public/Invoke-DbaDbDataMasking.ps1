@@ -351,6 +351,7 @@ function Invoke-DbaDbDataMasking {
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
                     [bool]$cleanupIdentityColumn = $false
+                    [bool]$cleanupMaskingIndex = $false
 
                     # The masking index name used for cleanup checks
                     $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
@@ -402,15 +403,29 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             Invoke-DbaQuery @queryParams
+                            $cleanupMaskingIndex = $true
                         } catch {
                             Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
                     }
 
+                    $actionIdentityValues = @()
+
                     try {
                         if ($WhatIfPreference) {
                             # In WhatIf mode, only get the row count without modifying the table structure
-                            $query = "SELECT COUNT(*) AS RowCount FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            if ($tableobject.FilterQuery) {
+                                $trimmedFilterQuery = ($tableobject.FilterQuery).Trim()
+
+                                if ($trimmedFilterQuery.EndsWith(";")) {
+                                    $trimmedFilterQuery = $trimmedFilterQuery.Substring(0, $trimmedFilterQuery.Length - 1)
+                                }
+
+                                $query = "SELECT COUNT(*) AS RowCount FROM ($trimmedFilterQuery) AS [dbatools_masking_source]"
+                            } else {
+                                $query = "SELECT COUNT(*) AS RowCount FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            }
+
                             $rowCount = ($db.Query($query)).RowCount
                             $data = New-Object object[] $rowCount
                         } elseif (-not $tableobject.FilterQuery) {
@@ -440,6 +455,8 @@ function Invoke-DbaDbDataMasking {
 
                             # Get the data
                             [array]$data = $db.Query($query)
+
+                            $actionIdentityValues = @($data | ForEach-Object { $PSItem.$identityColumn } | Where-Object { $null -ne $PSItem } | Select-Object -Unique)
                         }
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
@@ -447,7 +464,9 @@ function Invoke-DbaDbDataMasking {
 
                     #region unique indexes
                     # Check if the table contains unique indexes
-                    if ($tableobject.HasUniqueIndex) {
+                    if ($WhatIfPreference -and $tableobject.HasUniqueIndex) {
+                        Write-Message -Level Verbose -Message "Skipping unique value preparation for [$($tableobject.Schema)].[$($tableobject.Name)] because -WhatIf is active"
+                    } elseif ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for [$($tableobject.Schema)].[$($tableobject.Name)]"
@@ -842,7 +861,7 @@ function Invoke-DbaDbDataMasking {
                                 $newValue = $null
 
                                 # Handle static values
-                                if ($columnobject.StaticValue) {
+                                if ($null -ne $columnobject.StaticValue) {
                                     $newValue = $columnobject.StaticValue
 
                                     if ($null -eq $newValue -and -not $columnobject.Nullable) {
@@ -904,7 +923,7 @@ function Invoke-DbaDbDataMasking {
                                 }
 
                                 # If we haven't determined a value yet, generate one
-                                if ($null -eq $newValue -and -not $columnobject.StaticValue) {
+                                if ($null -eq $newValue -and $null -eq $columnobject.StaticValue) {
                                     # make sure min is good
                                     if ($columnobject.MinValue) {
                                         $min = $columnobject.MinValue
@@ -1149,8 +1168,17 @@ function Invoke-DbaDbDataMasking {
                                         }
                                     }
                                 }
+                                # Apply actions only to the rows returned by FilterQuery
+                                if ($validAction -and $tableobject.FilterQuery -and $actionIdentityValues.Count -ge 1) {
+                                    for ($batchStart = 0; $batchStart -lt $actionIdentityValues.Count; $batchStart += $BatchSize) {
+                                        $batchEnd = [System.Math]::Min($batchStart + $BatchSize - 1, $actionIdentityValues.Count - 1)
+                                        $identityBatch = $actionIdentityValues[$batchStart .. $batchEnd] -join ", "
+                                        $null = $stringBuilder.AppendLine($query.TrimEnd(";") + " WHERE [$identityColumn] IN ($identityBatch);")
+                                    }
+                                }
+
                                 # Add the query to the rest
-                                if ($validAction) {
+                                if ($validAction -and -not $tableobject.FilterQuery) {
                                     $null = $stringBuilder.AppendLine($query)
                                 }
                             }
@@ -1268,18 +1296,20 @@ function Invoke-DbaDbDataMasking {
                         $null = $elapsed.Reset()
                     }
 
-                    # Clean up the masking index (always runs, regardless of -WhatIf or errors during masking)
-                    try {
-                        # Refresh the indexes to make sure to have the latest list
-                        $dbTable.Indexes.Refresh()
+                    # Clean up the masking index created for this masking run
+                    if ($cleanupMaskingIndex) {
+                        try {
+                            # Refresh the indexes to make sure to have the latest list
+                            $dbTable.Indexes.Refresh()
 
-                        # Check if the index is there
-                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
-                            Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
-                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            # Check if the index is there
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
+                        } catch {
+                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
-                    } catch {
-                        Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
 
                     # Clean up the identity column (always runs, regardless of -WhatIf or errors during masking)

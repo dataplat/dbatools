@@ -288,13 +288,19 @@ function Export-DbaCsv {
             if ($PSBoundParameters.Query) {
                 $sqlToExecute = $Query
             } elseif ($PSBoundParameters.Table) {
-                # Parse table name for schema
-                if ($Table -match "^(.+)\.(.+)$") {
-                    $schemaName = $Matches[1]
-                    $tableName = $Matches[2]
+                # Parse table name using Get-ObjectNameParts so that bracketed names
+                # (e.g. [My.Table]) and two-part names (e.g. schema.[My.Table]) are
+                # handled correctly instead of relying on a naive dot-split regex.
+                $parsedTable = Get-ObjectNameParts -ObjectName $Table
+                if ($parsedTable.Parsed -and $parsedTable.Schema) {
+                    $schemaName = $parsedTable.Schema
+                    $tableName  = $parsedTable.Name
+                } elseif ($parsedTable.Parsed) {
+                    $schemaName = "dbo"
+                    $tableName  = $parsedTable.Name
                 } else {
                     $schemaName = "dbo"
-                    $tableName = $Table
+                    $tableName  = $Table
                 }
                 $sqlToExecute = "SELECT * FROM [$schemaName].[$tableName]"
             }

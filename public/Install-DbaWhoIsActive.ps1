@@ -133,27 +133,6 @@ function Install-DbaWhoIsActive {
             }
         }
 
-        if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
-            $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'sp_WhoIsActive.sql').FullName
-            if ($null -eq $sqlfile) {
-                Write-Message -Level Verbose -Message "New filename sp_WhoIsActive.sql not found, using old filename who_is_active.sql."
-                $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql').FullName
-            }
-            Write-Message -Level Verbose -Message "Using $sqlfile."
-
-            $sql = [IO.File]::ReadAllText($sqlfile)
-            $sql = $sql -replace 'USE master', ''
-
-            $matchString = 'Who Is Active? v'
-
-            If ($sql -like "*$matchString*") {
-                $posStart = $sql.IndexOf("$matchString")
-                $PosEnd = $sql.IndexOf(")", $PosStart)
-                $versionWhoIsActive = $sql.Substring($posStart + $matchString.Length, $posEnd - ($posStart + $matchString.Length) + 1).TrimEnd()
-            } Else {
-                $versionWhoIsActive = ''
-            }
-        }
     }
 
     process {
@@ -164,6 +143,43 @@ function Install-DbaWhoIsActive {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            # Select the appropriate SQL file based on the target server's version.
+            # sp_WhoIsActive ships version-specific SQL files in subfolders:
+            # - Folder "2008" for SQL Server 2005-2008 (VersionMajor <= 10)
+            # - Folder "2019" for SQL Server 2012-2019 (VersionMajor <= 15)
+            # - Base folder for SQL Server 2022+ (VersionMajor >= 16)
+            if ($server.VersionMajor -le 10) {
+                $sqlfile = Join-Path -Path (Join-Path -Path $localCachedCopy -ChildPath '2008') -ChildPath 'sp_WhoIsActive.sql'
+            } elseif ($server.VersionMajor -le 15) {
+                $sqlfile = Join-Path -Path (Join-Path -Path $localCachedCopy -ChildPath '2019') -ChildPath 'sp_WhoIsActive.sql'
+            } else {
+                $sqlfile = Join-Path -Path $localCachedCopy -ChildPath 'sp_WhoIsActive.sql'
+            }
+
+            if (-not (Test-Path -Path $sqlfile)) {
+                Write-Message -Level Verbose -Message "Version-appropriate file not found at $sqlfile, falling back to old filename who_is_active.sql."
+                $whoIsActiveOldFile = Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql' -Recurse | Select-Object -First 1
+                if ($whoIsActiveOldFile) {
+                    $sqlfile = $whoIsActiveOldFile.FullName
+                } else {
+                    Stop-Function -Message "No SQL file found in $localCachedCopy." -Target $instance -Continue
+                    continue
+                }
+            }
+
+            Write-Message -Level Verbose -Message "Using $sqlfile."
+            $sql = [IO.File]::ReadAllText($sqlfile)
+            $sql = $sql -replace 'USE master', ''
+
+            $matchString = 'Who Is Active? v'
+            if ($sql -like "*$matchString*") {
+                $posStart = $sql.IndexOf($matchString)
+                $posEnd = $sql.IndexOf(")", $posStart)
+                $versionWhoIsActive = $sql.Substring($posStart + $matchString.Length, $posEnd - ($posStart + $matchString.Length) + 1).TrimEnd()
+            } else {
+                $versionWhoIsActive = ''
             }
 
             if (-not $Database) {

@@ -39,6 +39,14 @@ function Get-DbaWaitStatistic {
         Includes wait types that are typically benign and can be safely ignored during troubleshooting, such as Service Broker idle waits and background task waits.
         Use this when you need to see all wait activity or when investigating unusual issues with specific features like mirroring or Availability Groups.
 
+    .PARAMETER ExcludeWaitType
+        Additional wait types to exclude beyond the default ignorable list. Provide an array of wait type names (e.g., "CXPACKET", "CXCONSUMER").
+        Use this when you want to filter out specific waits that may not be relevant to your analysis.
+
+    .PARAMETER IncludeWaitType
+        Wait types to always include in results, even if they appear in the ignorable list. Provide an array of wait type names.
+        Use this to ensure specific waits are shown regardless of the -IncludeIgnorable switch setting.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -108,6 +116,16 @@ function Get-DbaWaitStatistic {
 
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
 
+    .EXAMPLE
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2016 -ExcludeWaitType "CXPACKET", "CXCONSUMER"
+
+        Gets wait statistics excluding parallelism waits (CXPACKET and CXCONSUMER) in addition to the default ignorable waits.
+
+    .EXAMPLE
+        PS C:\> Get-DbaWaitStatistic -SqlInstance sql2016 -IncludeWaitType "BROKER_RECEIVE_WAITFOR"
+
+        Gets wait statistics and ensures BROKER_RECEIVE_WAITFOR is included even though it's in the default ignorable list.
+
     #>
     [CmdletBinding()]
     param (
@@ -116,10 +134,28 @@ function Get-DbaWaitStatistic {
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
         [switch]$IncludeIgnorable,
+        [ValidateScript( { -not [string]::IsNullOrWhiteSpace($_) -and $_.Trim() -match "^[A-Za-z0-9_]+$" })]
+        [string[]]$ExcludeWaitType,
+        [ValidateScript( { -not [string]::IsNullOrWhiteSpace($_) -and $_.Trim() -match "^[A-Za-z0-9_]+$" })]
+        [string[]]$IncludeWaitType,
         [switch]$EnableException
     )
 
     begin {
+        # Normalize user-supplied wait types before building the filter list.
+        $normalizedExcludeWaitType = @()
+        if ($ExcludeWaitType) {
+            $normalizedExcludeWaitType = foreach ($waitType in $ExcludeWaitType) {
+                $waitType.Trim().ToUpperInvariant()
+            }
+        }
+
+        $normalizedIncludeWaitType = @()
+        if ($IncludeWaitType) {
+            $normalizedIncludeWaitType = foreach ($waitType in $IncludeWaitType) {
+                $waitType.Trim().ToUpperInvariant()
+            }
+        }
 
         $details = [PSCustomObject]@{
             CXPACKET                         = "This indicates parallelism, not necessarily that there's a problem. The coordinator thread in a parallel query always accumulates these waits. If the parallel threads are not given equal amounts of work to do, or one thread blocks, the waiting threads will also accumulate CXPACKET waits, which will make them aggregate a lot faster - this is a problem. One thread may have a lot more to do than the others, and so the whole query is blocked while the long-running thread completes. If this is combined with a high number of PAGEIOLATCH_XX waits, it could be large parallel table scans going on because of incorrect non-clustered indexes, or a bad query plan. If neither of these are the issue, you might want to try setting MAXDOP to 4, 2, or 1 for the offending queries (or possibly the whole instance). Make sure that if you have a NUMA system that you try setting MAXDOP to the number of cores in a single NUMA node first to see if that helps the problem. You also need to consider the MAXDOP effect on a mixed-load system. Play with the cost threshold for parallelism setting (bump it up to, say, 25) before reducing the MAXDOP of the whole instance. And don't forget Resource Governor in Enterprise Edition of  SQL Server 2008 onward that allows DOP governing for a particular group of connections to the server."
@@ -808,7 +844,7 @@ function Get-DbaWaitStatistic {
             XE_TIMER_TASK_DONE                              = 'Other'
         }
 
-        $ignorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
+        $defaultIgnorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
         'BROKER_TO_FLUSH', 'BROKER_TRANSMITTER', 'CHECKPOINT_QUEUE',
         'CHKPT', 'CLR_AUTO_EVENT', 'CLR_MANUAL_EVENT', 'CLR_SEMAPHORE', 'CXCONSUMER',
         'DBMIRROR_DBM_EVENT', 'DBMIRROR_EVENTS_QUEUE', 'DBMIRROR_WORKER_QUEUE',
@@ -844,66 +880,66 @@ function Get-DbaWaitStatistic {
         'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
         'XE_DISPATCHER_WAIT', 'XE_LIVE_TARGET_TVF', 'XE_TIMER_EVENT'
 
-        if ($IncludeIgnorable) {
-            $sql = "WITH [Waits] AS
-                (SELECT
-                    [wait_type],
-                    [wait_time_ms] / 1000.0 AS [WaitS],
-                    ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
-                    [signal_wait_time_ms] / 1000.0 AS [SignalS],
-                    [waiting_tasks_count] AS [WaitCount],
-                    CASE WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
-                    ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
-                FROM sys.dm_os_wait_stats
-                WHERE [waiting_tasks_count] > 0
-                )
-                SELECT
-                    MAX ([W1].[wait_type]) AS [WaitType],
-                    CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
-                    CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
-                    CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
-                    MAX ([W1].[WaitCount]) AS [WaitCount],
-                    CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
-                    CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
-                    CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
-                    CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
-                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) AS XML) AS [URL]
-                FROM [Waits] AS [W1]
-                INNER JOIN [Waits] AS [W2]
-                    ON [W2].[RowNum] <= [W1].[RowNum]
-                GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
-        } else {
-            $IgnorableList = "'$($ignorable -join "','")'"
-            $sql = "WITH [Waits] AS
-                (SELECT
-                    [wait_type],
-                    [wait_time_ms] / 1000.0 AS [WaitS],
-                    ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
-                    [signal_wait_time_ms] / 1000.0 AS [SignalS],
-                    [waiting_tasks_count] AS [WaitCount],
-                    CASE WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
-                    ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
-                FROM sys.dm_os_wait_stats
-                WHERE [waiting_tasks_count] > 0
-                AND CAST([wait_type] AS VARCHAR(60)) NOT IN ($IgnorableList)
-                )
-                SELECT
-                    MAX ([W1].[wait_type]) AS [WaitType],
-                    CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
-                    CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
-                    CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
-                    MAX ([W1].[WaitCount]) AS [WaitCount],
-                    CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
-                    CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
-                    CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
-                    CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
-                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) AS XML) AS [URL]
-                FROM [Waits] AS [W1]
-                INNER JOIN [Waits] AS [W2]
-                    ON [W2].[RowNum] <= [W1].[RowNum]
-                GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
-
+        # Build the effective ignorable list
+        $ignorable = New-Object System.Collections.ArrayList
+        if (-not $IncludeIgnorable) {
+            $ignorable.AddRange($defaultIgnorable)
         }
+
+        # Add user-specified exclusions
+        if ($normalizedExcludeWaitType) {
+            foreach ($waitType in $normalizedExcludeWaitType) {
+                if ($ignorable -notcontains $waitType) {
+                    $null = $ignorable.Add($waitType)
+                }
+            }
+        }
+
+        # Remove user-specified inclusions from ignorable list
+        if ($normalizedIncludeWaitType) {
+            foreach ($waitType in $normalizedIncludeWaitType) {
+                if ($ignorable -contains $waitType) {
+                    $null = $ignorable.Remove($waitType)
+                }
+            }
+        }
+
+        if ($ignorable.Count -gt 0) {
+            $ignorableSql = "AND CAST([wait_type] AS VARCHAR(60)) NOT IN ('$($ignorable -join "','")')"
+        } else {
+            $ignorableSql = ""
+        }
+        Write-Message -Level Verbose -Message "Using ignorableSql '$ignorableSql'"
+
+        $sql = "WITH [Waits] AS
+            (SELECT
+                [wait_type],
+                [wait_time_ms] / 1000.0 AS [WaitS],
+                ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
+                [signal_wait_time_ms] / 1000.0 AS [SignalS],
+                [waiting_tasks_count] AS [WaitCount],
+                CASE WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
+                ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
+            FROM sys.dm_os_wait_stats
+            WHERE [waiting_tasks_count] > 0
+            $ignorableSql
+            )
+            SELECT
+                MAX ([W1].[wait_type]) AS [WaitType],
+                CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
+                CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
+                CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
+                MAX ([W1].[WaitCount]) AS [WaitCount],
+                CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
+                CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
+                CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
+                CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
+                CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) AS XML) AS [URL]
+            FROM [Waits] AS [W1]
+            INNER JOIN [Waits] AS [W2]
+                ON [W2].[RowNum] <= [W1].[RowNum]
+            GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
+
         Write-Message -Level Debug -Message $sql
     }
     process {
@@ -922,9 +958,6 @@ function Get-DbaWaitStatistic {
 
             foreach ($row in $server.Query($sql)) {
                 $waitType = $row.WaitType
-                if (-not $IncludeIgnorable) {
-                    if ($ignorable -contains $waitType) { continue }
-                }
 
                 [PSCustomObject]@{
                     ComputerName           = $server.ComputerName
@@ -940,7 +973,7 @@ function Get-DbaWaitStatistic {
                     AverageWaitSeconds     = $row.AvgWaitSeconds
                     AverageResourceSeconds = $row.AvgResSeconds
                     AverageSignalSeconds   = $row.AvgSigSeconds
-                    Ignorable              = ($ignorable -contains $waitType)
+                    Ignorable              = ($defaultIgnorable -contains $waitType)
                     URL                    = $row.URL
                     Notes                  = ($details).$waitType
                 } | Select-DefaultView -ExcludeProperty $excludeColumns

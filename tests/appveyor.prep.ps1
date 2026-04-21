@@ -28,7 +28,9 @@ Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion
 #Get dbatools.library
 Write-Host -Object "appveyor.prep: Install dbatools.library" -ForegroundColor DarkGreen
 # Use centralized version management for dbatools.library installation
-& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1"
+# Use AllUsers scope so the module is installed to C:\Program Files\WindowsPowerShell\Modules
+# which matches the AppVeyor cache path configured in appveyor.yml
+& "$PSScriptRoot\..\.github\scripts\install-dbatools-library.ps1" -Scope AllUsers
 # Validate that the correct version was installed
 $expectedVersion = (Get-Content '.github/dbatools-library-version.json' | ConvertFrom-Json).version
 $installedModule = Get-Module dbatools.library -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1
@@ -58,7 +60,7 @@ $null = New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Dire
 Write-Host -Object "appveyor.prep: Creating temp directory" -ForegroundColor DarkGreen
 $null = New-Item -Path C:\Temp -ItemType Directory
 
-Write-Host -Object "appveyor.prep: Configuring WSMan (see #9782)" -ForegroundColor DarkGreen
+Write-Host -Object "appveyor.prep: Configuring WSMan" -ForegroundColor DarkGreen
 $null = Set-WSManQuickConfig -Force
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Connect-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -42,6 +42,7 @@ Describe $CommandName -Tag UnitTests {
                 "AzureDomain",
                 "Tenant",
                 "AccessToken",
+                "AuthenticationType",
                 "DedicatedAdminConnection",
                 "DisableException"
             )
@@ -52,6 +53,214 @@ Describe $CommandName -Tag UnitTests {
     Context "Validate alias" {
         It "Should contain the alias: cdi" {
             (Get-Alias cdi) | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Failover partner retry behavior" {
+        BeforeAll {
+            function New-MockConnectionContext {
+                param(
+                    [string]$ConnectionString,
+                    [string[]]$AttemptErrors
+                )
+
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $ConnectionString
+                }
+
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    AttemptErrors       = $AttemptErrors
+                    AttemptCount        = 0
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                    $this.AttemptCount++
+                    $this.ConnectionString = $this.SqlConnectionObject.ConnectionString
+                    $attemptIndex = $this.AttemptCount - 1
+                    if ($attemptIndex -lt $this.AttemptErrors.Count -and $this.AttemptErrors[$attemptIndex]) {
+                        throw (New-Object -TypeName System.Exception -ArgumentList $this.AttemptErrors[$attemptIndex])
+                    }
+                } -Force
+
+                $connectionContext
+            }
+
+            function New-MockServer {
+                param(
+                    [string]$ConnectionString,
+                    [string[]]$AttemptErrors
+                )
+
+                [PSCustomObject]@{
+                    ConnectionContext = New-MockConnectionContext -ConnectionString $ConnectionString -AttemptErrors $AttemptErrors
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                [PSCustomObject]@{ }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockServer -ConnectionString $script:mockConnectionString -AttemptErrors $script:attemptErrors
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "retries connection string inputs when failover partner requires Initial Catalog" {
+            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;Failover Partner=mirrorpartner"
+            $script:attemptErrors = @(
+                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
+            )
+
+            $result = Connect-DbaInstance -SqlInstance $script:mockConnectionString -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Initial Catalog=master"
+        }
+
+        It "retries with Initial Catalog after a trust certificate retry exposes the failover partner requirement" {
+            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;FailoverPartner=mirrorpartner;Trust Server Certificate=False"
+            $script:attemptErrors = @(
+                "The certificate chain was issued by an authority that is not trusted.",
+                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
+            )
+
+            $result = Connect-DbaInstance -SqlInstance "sqlmirror" -FailoverPartner "mirrorpartner" -AllowTrustServerCertificate -TrustServerCertificate:$false -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Trust Server Certificate=True"
+            $result.ConnectionString | Should -Match "Initial Catalog=master"
+        }
+    }
+
+    Context "Access token connection behavior" {
+        BeforeAll {
+            function New-MockAccessTokenServer {
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $sqlConnectionObject.ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name NonPooledConnection -MemberType ScriptProperty -Value {
+                    $true
+                } -SecondValue {
+                    param($value)
+                    $script:nonPooledConnectionSetterCalls++
+                    throw "Property NonPooledConnection cannot be changed or read after a connection string has been set."
+                } -Force
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                [PSCustomObject]@{
+                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
+                    AccessToken      = $null
+                }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.Data.SqlClient.SqlConnection"
+            }
+            Mock New-Object {
+                [PSCustomObject]@{ }
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockAccessTokenServer
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "does not reapply NonPooledConnection when AccessToken already uses a SqlConnection" {
+            $script:nonPooledConnectionSetterCalls = 0
+
+            $result = Connect-DbaInstance -SqlInstance "sqltoken" -AccessToken "token" -NonPooledConnection -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Be "Data Source=sqltoken;Integrated Security=True"
+            $script:nonPooledConnectionSetterCalls | Should -Be 0
+        }
+    }
+
+    Context "AuthenticationType behavior" {
+        BeforeAll {
+            function New-MockAuthenticationServer {
+                param(
+                    $ServerConnection
+                )
+
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $ServerConnection.ConnectionString
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $sqlConnectionObject.ConnectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object {
+                $script:lastServerConnection = [PSCustomObject]@{
+                    ConnectionString      = $ArgumentList[0].ConnectionString
+                    ConnectAsUser         = $false
+                    ConnectAsUserName     = $null
+                    ConnectAsUserPassword = $null
+                }
+                $script:lastServerConnection
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
+            }
+            Mock New-Object {
+                New-MockAuthenticationServer -ServerConnection $ArgumentList[0]
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "requires SqlCredential when AuthenticationType uses password-based auth" {
+            Mock Stop-Function { } -ModuleName dbatools
+
+            Connect-DbaInstance -SqlInstance "sqlauth" -AuthenticationType ActiveDirectoryPassword | Should -BeNullOrEmpty
+
+            Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
+        }
+
+        It "uses SqlConnectionInfo credentials for ActiveDirectoryPassword on non-Azure servers" {
+            $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential ("user@contoso.com", $securePassword)
+
+            $result = Connect-DbaInstance -SqlInstance "sqlauth" -SqlCredential $credential -AuthenticationType ActiveDirectoryPassword -SqlConnectionOnly
+
+            $result.ConnectionString | Should -Match "Authentication=ActiveDirectoryPassword"
+            $result.ConnectionString | Should -Match "User ID=user@contoso.com"
+            $result.ConnectionString | Should -Not -Match "Integrated Security=True"
+            $script:lastServerConnection.ConnectAsUser | Should -Be $false
+            $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
         }
     }
 }

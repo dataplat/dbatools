@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaNetworkCertificate",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -18,6 +18,52 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Configured certificate validity" {
+        It "Should treat a configured certificate that is not valid yet as invalid" {
+            $futureThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
+
+            Mock Get-DbaNetworkConfiguration {
+                [PSCustomObject]@{
+                    ComputerName        = "sql1"
+                    InstanceName        = "MSSQLSERVER"
+                    SqlInstance         = "sql1"
+                    Certificate         = [PSCustomObject]@{
+                        Thumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
+                        Generated  = (Get-Date).AddDays(1)
+                        Expires    = (Get-Date).AddDays(30)
+                    }
+                    SuitableCertificate = @()
+                }
+            } -ModuleName dbatools
+
+            $results = Test-DbaNetworkCertificate -SqlInstance "sql1"
+
+            $results.ConfiguredCertificateValid | Should -Be $false
+            $results.ConfiguredCertificateThumbprint | Should -Be $futureThumbprint
+        }
+
+        It "Should treat a configured certificate with missing validity dates as invalid" {
+            Mock Get-DbaNetworkConfiguration {
+                [PSCustomObject]@{
+                    ComputerName        = "sql1"
+                    InstanceName        = "MSSQLSERVER"
+                    SqlInstance         = "sql1"
+                    Certificate         = [PSCustomObject]@{
+                        Thumbprint = "89ABCDEF0123456789ABCDEF0123456789ABCDEF"
+                        Generated  = $null
+                        Expires    = (Get-Date).AddDays(30)
+                    }
+                    SuitableCertificate = @()
+                }
+            } -ModuleName dbatools
+
+            $results = Test-DbaNetworkCertificate -SqlInstance "sql1"
+
+            $results.ConfiguredCertificateValid | Should -Be $false
+            $results.ConfiguredCertificateDaysValid | Should -BeGreaterThan 0
         }
     }
 }

@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaLastBackup",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -19,6 +19,39 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Replica filtering" {
+            It "skips backup history queries when filtering removes every database" {
+                $mockServer = [PSCustomObject]@{
+                    IsHadrEnabled = $true
+                    Databases     = @(
+                        [PSCustomObject]@{
+                            Name = "agdb"
+                        }
+                    )
+                }
+                Add-Member -InputObject $mockServer -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+
+                    @(
+                        [PSCustomObject]@{
+                            DatabaseName = "agdb"
+                        }
+                    )
+                }
+                Mock Connect-DbaInstance {
+                    $mockServer
+                }
+                Mock Get-DbaDbBackupHistory { }
+
+                $results = @(Get-DbaLastBackup -SqlInstance "sql1" -Database "agdb" -ExcludeReplica)
+
+                $results | Should -BeNullOrEmpty
+                Assert-MockCalled -CommandName Get-DbaDbBackupHistory -Exactly 0 -Scope It -ModuleName dbatools
+            }
         }
     }
 }

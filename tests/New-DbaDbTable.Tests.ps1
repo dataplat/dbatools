@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDbTable",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -71,6 +71,32 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Name parsing validation" {
+            BeforeEach {
+                Mock Get-DbaDatabase {
+                    [PSCustomObject]@{
+                        Parent = "dbatoolsci"
+                    }
+                }
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "Rejects three-part names so the database target stays explicit" {
+                $columnMap = @{
+                    Name = "testId"
+                    Type = "int"
+                }
+
+                {
+                    New-DbaDbTable -SqlInstance "sql1" -Database "tempdb" -Name "otherdb.dbo.testtable" -ColumnMap $columnMap -WhatIf
+                } | Should -Throw "*Specify the database separately with -Database*"
+
+                Should -Invoke Get-DbaDatabase -Times 0 -Exactly
+            }
         }
     }
 }
@@ -224,6 +250,37 @@ Describe $CommandName -Tag IntegrationTests {
             $tableWithSchema[2] | Should -Match "$tableName"
         }
     }
+    Context "Should handle bracket-quoted names and two-part names" {
+        BeforeAll {
+            $map = @{
+                Name = "testId"
+                Type = "int"
+            }
+        }
+        It "Strips brackets from a bracket-quoted table name" {
+            $random = Get-Random
+            $tableName = "table_bracket_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "[$tableName]" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be "dbo"
+        }
+        It "Parses schema and table from a two-part bracket-quoted name" {
+            $random = Get-Random
+            $tableName = "table_twopart_$random"
+            $schemaName = "schema_twopart_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "[$schemaName].[$tableName]" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be $schemaName
+        }
+        It "Parses schema and table from a two-part unquoted name" {
+            $random = Get-Random
+            $tableName = "table_unquoted_$random"
+            $schemaName = "schema_unquoted_$random"
+            $result = New-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -Name "$schemaName.$tableName" -ColumnMap $map
+            $result.Name | Should -Be $tableName
+            $result.Schema | Should -Be $schemaName
+        }
+    }
     Context "Should create graph tables with IsNode and IsEdge switches" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
@@ -235,7 +292,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
         AfterAll {
             if (-not $skipGraphTests) {
-                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $graphDbName -Confirm:$false
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $graphDbName
             }
         }
         It "Creates a node table when -IsNode is specified" -Skip:$skipGraphTests {

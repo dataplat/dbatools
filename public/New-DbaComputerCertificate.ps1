@@ -76,6 +76,7 @@ function New-DbaComputerCertificate {
         Specifies how the certificate's private key should be handled during import operations.
         Defaults to "Exportable, PersistKeySet" allowing the key to be backed up and persisted on disk.
         Use "NonExportable" for high-security environments where private keys should never leave the machine.
+        When copying certificates to remote computers, the temporary source certificate remains exportable so the destination import can honor the requested flags.
         "UserProtected" requires interactive confirmation and only works on localhost installations.
 
     .PARAMETER Dns
@@ -87,6 +88,16 @@ function New-DbaComputerCertificate {
         Creates a self-signed certificate instead of requesting one from a Certificate Authority.
         Useful for development environments or when no domain CA is available.
         Self-signed certificates will generate trust warnings unless manually added to client trust stores.
+
+    .PARAMETER DocumentEncryptionCert
+        Creates a certificate suitable for use as a Column Master Key for Always Encrypted.
+        When specified, the certificate uses KeyEncipherment key usage and includes the
+        Document Encryption (1.3.6.1.4.1.311.10.3.11) and IKE Intermediate (1.3.6.1.5.5.8.2.2)
+        Extended Key Usage OIDs required by Always Encrypted, instead of the default Server
+        Authentication OID (1.3.6.1.5.5.7.3.1).
+        For CA-signed certificates, specify -CertificateTemplate with a template configured
+        for Always Encrypted column master keys. The default WebServer template is intended
+        for TLS server certificates and is not suitable for this switch.
 
     .PARAMETER HashAlgorithm
         Specifies the cryptographic hash algorithm used for certificate signing.
@@ -180,6 +191,13 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate using the SHA256 hashing algorithm that does not expire for 5 years
 
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -SelfSigned -DocumentEncryptionCert
+
+        Creates a self-signed certificate suitable for use as a Column Master Key for Always Encrypted.
+        The certificate includes the Document Encryption and IKE Intermediate Extended Key Usage OIDs
+        required by SQL Server Always Encrypted.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -201,6 +219,7 @@ function New-DbaComputerCertificate {
         [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [string[]]$Dns,
         [switch]$SelfSigned,
+        [switch]$DocumentEncryptionCert,
         [switch]$EnableException,
         [ValidateSet("Sha256", "sha384", "sha512")]
         [string]$HashAlgorithm = "Sha256",
@@ -220,6 +239,11 @@ function New-DbaComputerCertificate {
             }
         } else {
             $flags = $Flag -join ","
+        }
+
+        if ($DocumentEncryptionCert -and -not $SelfSigned -and -not $PSBoundParameters.ContainsKey("CertificateTemplate")) {
+            Stop-Function -Message "DocumentEncryptionCert requires -SelfSigned or an explicit -CertificateTemplate configured for Always Encrypted column master keys. The default WebServer template is intended for TLS server certificates."
+            return
         }
 
         $englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225
@@ -378,8 +402,8 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "Subject = ""CN=$fqdn"""
                 Add-Content $certCfg "KeySpec = 1"
                 Add-Content $certCfg "KeyLength = $KeyLength"
-                # Set Exportable based on Flag parameter - if NonExportable is specified, set to FALSE
-                if ("NonExportable" -in $Flag) {
+                # Keep the source cert exportable whenever it must be copied to another host.
+                if ("NonExportable" -in $Flag -and -not $ClusterInstanceName -and $computer.IsLocalHost) {
                     Add-Content $certCfg "Exportable = FALSE"
                 } else {
                     Add-Content $certCfg "Exportable = TRUE"
@@ -400,9 +424,16 @@ function New-DbaComputerCertificate {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }
                 Add-Content $certCfg "HashAlgorithm = $HashAlgorithm"
-                Add-Content $certCfg "KeyUsage = 0xa0"
-                Add-Content $certCfg "[EnhancedKeyUsageExtension]"
-                Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                if ($DocumentEncryptionCert) {
+                    Add-Content $certCfg "KeyUsage = 0x20"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.8.2.2"
+                    Add-Content $certCfg "OID=1.3.6.1.4.1.311.10.3.11"
+                } else {
+                    Add-Content $certCfg "KeyUsage = 0xa0"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                }
                 Add-Content $certCfg "[Extensions]"
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"

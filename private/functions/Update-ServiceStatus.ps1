@@ -71,117 +71,181 @@ function Update-ServiceStatus {
         $svcControlBlock = {
             $group = $_.Group
             $computerName = $_.Name
-            $servicePriorityCollection = $group.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
-            foreach ($priority in $servicePriorityCollection) {
-                $services = $group | Where-Object { $_.ServicePriority -eq $priority }
-                $servicesToRestart = @()
-                foreach ($service in $services) {
-                    if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
-                        $cimObject = $service._CimObject
-                        if (($cimObject.State -eq 'Running' -and $action -eq 'start') -or ($cimObject.State -eq 'Stopped' -and $action -eq 'stop')) {
-                            $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue 'Successful' -PassThru |
-                            Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required" -PassThru
-                    } elseif ($cimObject.StartMode -eq 'Disabled' -and $action -in 'start', 'restart') {
-                        $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue 'Failed' -PassThru |
-                        Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText" -PassThru
-                } else {
-                    $servicesToRestart += $service
-                }
-            } else {
-                throw "Unknown object in pipeline - make sure to use Get-DbaService cmdlet"
+            $cimSession = $null
+            $splatCimSession = @{
+                ComputerName = $computerName
+                ErrorAction  = "Stop"
             }
-        }
-        #Set desired $action
-        if ($action -in 'start', 'restart') {
-            $methodName = 'StartService'
-            $desiredState = 'Running'
-            $undesiredState = 'Stopped'
-        } elseif ($action -eq 'stop') {
-            $methodName = 'StopService'
-            $desiredState = 'Stopped'
-            $undesiredState = 'Running'
-        }
-        $invokeResults = @()
-        foreach ($service in $servicesToRestart) {
-            if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
-                #Invoke corresponding CIM method
-                $invokeResult = Invoke-CimMethod -InputObject $service._CimObject -MethodName $methodName
-                $invokeResults += [psobject]@{
-                    InvokeResult    = $invokeResult
-                    ServiceState    = $invokeResult.State
-                    ServiceExitCode = $invokeResult.ReturnValue
-                    CheckPending    = $true
-                    Service         = $service
-                }
+            if ($Credential) {
+                $splatCimSession.Credential = $Credential
             }
-        }
 
-        $startTime = Get-Date
-        if ($Pscmdlet.ShouldProcess("Waiting the services to $action on $computerName")) {
-            #Wait for the service to complete the action until timeout
-            while ($invokeResults.CheckPending -contains $true) {
-                foreach ($result in ($invokeResults | Where-Object CheckPending -eq $true)) {
+            try {
+                # Create a CIM session preferring DCOM to avoid requiring WinRM on the target machine.
+                # CIM instances become deserialized when crossing runspace boundaries and lose their
+                # session context, causing Invoke-CimMethod to attempt a new WinRM connection by default.
+                # Using DCOM avoids this WinRM dependency for machines where WinRM is not configured.
+                $splatCimDcomOption = @{
+                    Protocol = "Dcom"
+                }
+                $cimDcomOption = New-CimSessionOption @splatCimDcomOption
+                $splatCimSession.SessionOption = $cimDcomOption
+                try {
+                    $cimSession = New-CimSession @splatCimSession
+                } catch {
+                    # Fall back to default protocol (WinRM) if DCOM is unavailable
+                    $null = $splatCimSession.Remove("SessionOption")
                     try {
-                        #Refresh Cim instance - not using Get-DbaCmObject because module is not loaded here, but it only refreshes existing object
-                        $result.Service._CimObject = $result.Service._CimObject | Get-CimInstance
+                        $cimSession = New-CimSession @splatCimSession
                     } catch {
-                        $result.ServiceExitCode = -3
-                        $result.ServiceState = 'Unknown'
-                        $result.CheckPending = $false
-                        continue
+                        $cimSession = $null
                     }
-                    $result.ServiceState = $result.Service._CimObject.State
-                    #Failed or succeeded
-                    if ($result.ServiceExitCode -ne 0 -or $result.ServiceState -eq $desiredState) {
-                        $result.CheckPending = $false
-                        continue
-                    }
-                    #Failed after being in the Pending state
-                    if ($result.CheckPending -and $result.ServiceState -eq $undesiredState) {
-                        $result.ServiceExitCode = -2
-                        $result.CheckPending = $false
-                        continue
-                    }
-                    #Timed out
-                    if ($timeout -gt 0 -and ((Get-Date) - $startTime).TotalSeconds -gt $timeout) {
-                        $result.ServiceExitCode = -1
-                        $result.CheckPending = $false
-                        continue
-                    }
-                    #Still pending - leave CheckPending as is and run again
                 }
-                Start-Sleep -Milliseconds 200
-            }
-        }
-        foreach ($result in $invokeResults) {
-            #Add status
-            $status = switch ($result.ServiceExitCode) {
-                0 { 'Successful' }
-                10 { 'Successful ' } #Already running - FullText service is started automatically
-                default { 'Failed' }
-            }
-            Add-Member -Force -InputObject $result.Service -NotePropertyName Status -NotePropertyValue $status
-            #Add error message
-            $errorMessageFromReturnValue = if ($result.ServiceExitCode -in 0..($errorCodes.Length - 1)) {
-                $errorCodes[$result.ServiceExitCode]
-            } else { "Unknown error." }
-            $message = switch ($result.ServiceExitCode) {
-                -2 { "The service failed to $action." }
-                -1 { "The attempt to $action the service has timed out." }
-                0 { "Service was successfully $actionText." }
-                default { "The attempt to $action the service returned the following error: $errorMessageFromReturnValue" }
-            }
-            Add-Member -Force -InputObject $result.Service -NotePropertyName Message -NotePropertyValue $message
-            # Refresh service state for the object
-            if ($result.ServiceState) { $result.Service.State = $result.ServiceState }
-            $result
-        }
-    }
-}
+                $servicePriorityCollection = $group.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne "stop" }
+                foreach ($priority in $servicePriorityCollection) {
+                    $services = $group | Where-Object { $_.ServicePriority -eq $priority }
+                    $servicesToRestart = @()
+                    foreach ($service in $services) {
+                        if ("dbatools.DbaSqlService" -in $service.PSObject.TypeNames) {
+                            $cimObject = $service._CimObject
+                            if (($cimObject.State -eq "Running" -and $action -eq "start") -or ($cimObject.State -eq "Stopped" -and $action -eq "stop")) {
+                                $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue "Successful" -PassThru |
+                                    Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required" -PassThru
+                            } elseif ($cimObject.StartMode -eq "Disabled" -and $action -in "start", "restart") {
+                                $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue "Failed" -PassThru |
+                                    Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText" -PassThru
+                            } else {
+                                $servicesToRestart += $service
+                            }
+                        } else {
+                            throw "Unknown object in pipeline - make sure to use Get-DbaService cmdlet"
+                        }
+                    }
+                    #Set desired $action
+                    if ($action -in "start", "restart") {
+                        $methodName = "StartService"
+                        $desiredState = "Running"
+                        $undesiredState = "Stopped"
+                    } elseif ($action -eq "stop") {
+                        $methodName = "StopService"
+                        $desiredState = "Stopped"
+                        $undesiredState = "Running"
+                    }
+                    $invokeResults = @()
+                    foreach ($service in $servicesToRestart) {
+                        if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
+                            # Get a fresh CIM instance via the DCOM session to avoid issues with deserialized
+                            # CIM objects crossing runspace boundaries without their session context.
+                            if ($cimSession) {
+                                try {
+                                    $splatGetFreshCim = @{
+                                        CimSession = $cimSession
+                                        Namespace  = "root\cimv2"
+                                        Query      = "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'"
+                                    }
+                                    $freshCimObj = Get-CimInstance @splatGetFreshCim
+                                    if ($freshCimObj) {
+                                        $service._CimObject = $freshCimObj
+                                    }
+                                } catch {
+                                    # Fall back to using the existing deserialized CIM object if session refresh fails
+                                }
+                            }
+                            #Invoke corresponding CIM method
+                            $invokeResult = Invoke-CimMethod -InputObject $service._CimObject -MethodName $methodName
+                            $invokeResults += [psobject]@{
+                                InvokeResult    = $invokeResult
+                                ServiceState    = $invokeResult.State
+                                ServiceExitCode = $invokeResult.ReturnValue
+                                CheckPending    = $true
+                                Service         = $service
+                            }
+                        }
+                    }
 
-$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } }
-$errorCodes = Get-DbaServiceErrorMessage
-}
+                    $startTime = Get-Date
+                    if ($Pscmdlet.ShouldProcess("Waiting the services to $action on $computerName")) {
+                        #Wait for the service to complete the action until timeout
+                        while ($invokeResults.CheckPending -contains $true) {
+                            foreach ($result in ($invokeResults | Where-Object CheckPending -eq $true)) {
+                                try {
+                                    #Refresh Cim instance - not using Get-DbaCmObject because module is not loaded here, but it only refreshes existing object
+                                    if ($cimSession) {
+                                        $splatRefreshCim = @{
+                                            CimSession = $cimSession
+                                            Namespace  = "root\cimv2"
+                                            Query      = "SELECT State FROM Win32_Service WHERE Name = '$($result.Service.ServiceName)'"
+                                        }
+                                        $refreshedCimObj = Get-CimInstance @splatRefreshCim
+                                        if ($refreshedCimObj) {
+                                            $result.Service._CimObject = $refreshedCimObj
+                                        }
+                                    } else {
+                                        $result.Service._CimObject = $result.Service._CimObject | Get-CimInstance
+                                    }
+                                } catch {
+                                    $result.ServiceExitCode = -3
+                                    $result.ServiceState = "Unknown"
+                                    $result.CheckPending = $false
+                                    continue
+                                }
+                                $result.ServiceState = $result.Service._CimObject.State
+                                #Failed or succeeded
+                                if ($result.ServiceExitCode -ne 0 -or $result.ServiceState -eq $desiredState) {
+                                    $result.CheckPending = $false
+                                    continue
+                                }
+                                #Failed after being in the Pending state
+                                if ($result.CheckPending -and $result.ServiceState -eq $undesiredState) {
+                                    $result.ServiceExitCode = -2
+                                    $result.CheckPending = $false
+                                    continue
+                                }
+                                #Timed out
+                                if ($timeout -gt 0 -and ((Get-Date) - $startTime).TotalSeconds -gt $timeout) {
+                                    $result.ServiceExitCode = -1
+                                    $result.CheckPending = $false
+                                    continue
+                                }
+                                #Still pending - leave CheckPending as is and run again
+                            }
+                            Start-Sleep -Milliseconds 200
+                        }
+                    }
+                    foreach ($result in $invokeResults) {
+                        #Add status
+                        $status = switch ($result.ServiceExitCode) {
+                            0 { "Successful" }
+                            10 { "Successful " } #Already running - FullText service is started automatically
+                            default { "Failed" }
+                        }
+                        Add-Member -Force -InputObject $result.Service -NotePropertyName Status -NotePropertyValue $status
+                        #Add error message
+                        $errorMessageFromReturnValue = if ($result.ServiceExitCode -in 0..($errorCodes.Length - 1)) {
+                            $errorCodes[$result.ServiceExitCode]
+                        } else { "Unknown error." }
+                        $message = switch ($result.ServiceExitCode) {
+                            -2 { "The service failed to $action." }
+                            -1 { "The attempt to $action the service has timed out." }
+                            0 { "Service was successfully $actionText." }
+                            default { "The attempt to $action the service returned the following error: $errorMessageFromReturnValue" }
+                        }
+                        Add-Member -Force -InputObject $result.Service -NotePropertyName Message -NotePropertyValue $message
+                        # Refresh service state for the object
+                        if ($result.ServiceState) { $result.Service.State = $result.ServiceState }
+                        $result
+                    }
+                }
+            } finally {
+                if ($cimSession) {
+                    Remove-CimSession -CimSession $cimSession -ErrorAction "SilentlyContinue"
+                }
+            }
+        }
+
+        $actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } }
+        $errorCodes = Get-DbaServiceErrorMessage
+    }
 
 process {
     #Group services for each computer

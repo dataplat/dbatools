@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.7.27'
+    ModuleVersion      = '2.8.1'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -80,9 +80,11 @@
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
         'Clear-DbaWaitStatistics',
+        'Compare-DbaDbSchema',
         'Compare-DbaAgReplicaAgentJob',
         'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
+        'Compare-DbaLogin',
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
@@ -171,6 +173,7 @@
         'Find-DbaDbUnusedIndex',
         'Find-DbaInstance',
         'Find-DbaLoginInGroup',
+        'Find-DbaObject',
         'Find-DbaOrphanedFile',
         'Find-DbaSimilarTable',
         'Find-DbaStoredProcedure',
@@ -196,6 +199,7 @@
         'Get-DbaAgHadr',
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
+        'Get-DbaAgRingBuffer',
         'Get-DbaAvailabilityGroup',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
@@ -332,6 +336,7 @@
         'Get-DbaMsdtc',
         'Get-DbaNetworkActivity',
         'Get-DbaNetworkCertificate',
+        'Get-DbaNetworkEncryption',
         'Get-DbaNetworkConfiguration',
         'Get-DbaOpenTransaction',
         'Get-DbaOperatingSystem',
@@ -539,6 +544,7 @@
         'Remove-DbaAgentAlert',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobCategory',
+        'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
         'Remove-DbaAgentOperator',
         'Remove-DbaAgentSchedule',
@@ -621,6 +627,7 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbFileGrowth',
         'Set-DbaDbIdentity',
+        'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
         'Set-DbaDbOwner',
         'Set-DbaDbQueryStoreOption',
@@ -668,6 +675,7 @@
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaAgentJobOwner',
+        'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaBackupInformation',
         'Test-DbaBuild',
@@ -722,6 +730,9 @@
         'Get-DbaExtendedProperty',
         'Set-DbaExtendedProperty',
         'Add-DbaExtendedProperty',
+        'Get-DbaDbDataClassification',
+        'Set-DbaDbDataClassification',
+        'Remove-DbaDbDataClassification',
         'Get-DbaOleDbProvider',
         'Get-DbaConnectedInstance',
         'Disconnect-DbaInstance',
@@ -755,7 +766,10 @@
         'New-DbaReplSubscription',
         'Remove-DbaReplSubscription',
         'New-DbaReplCreationScriptOptions',
-        'Get-DbaReplSubscription'
+        'Get-DbaReplSubscription',
+        'Add-DbaInstanceList',
+        'Get-DbaInstanceList',
+        'Remove-DbaInstanceList'
     )
 
     # Cmdlets to export from this module

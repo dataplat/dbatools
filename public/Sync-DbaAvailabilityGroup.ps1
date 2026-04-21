@@ -189,31 +189,10 @@ function Sync-DbaAvailabilityGroup {
         }
 
         if ($InputObject) {
-            # Do we need a dedicated admin connection for password retrieval?
-            # If passwords are excluded, we don't need a DAC
-            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
-
-            # Do we have a dedicated admin connection already?
-            $dacConnected = $InputObject.Parent.Name -match '^ADMIN:'
-
-            if ($dacNeeded -and -not $dacConnected) {
-                Stop-Function -Message "Pipeline source must use a dedicated admin connection to retrieve passwords. Use -ExcludePassword to bypass this requirement if you don't need passwords."
-                return
-            }
-
-            Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
             $server = $InputObject.Parent
         } else {
             try {
-                $dacOpened = $false
-                if ($ExcludePassword) {
-                    Write-Message -Level Verbose -Message "Opening normal connection because we don't need the passwords."
-                    $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
-                } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
-                    $dacOpened = $true
-                }
+                $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
@@ -376,6 +355,7 @@ function Sync-DbaAvailabilityGroup {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
                 $splatGetJob = @{
                     SqlInstance = $server
+                    Type        = "Local"
                 }
                 if (Test-Bound 'Job') {
                     $splatGetJob['Job'] = $Job
@@ -384,9 +364,6 @@ function Sync-DbaAvailabilityGroup {
                     $splatGetJob['ExcludeJob'] = $ExcludeJob
                 }
                 $jobsToSync = Get-DbaAgentJob @splatGetJob
-
-                # Always exclude MSX jobs (CategoryID = 1) - they cannot be synced to secondary replicas
-                $jobsToSync = $jobsToSync | Where-Object CategoryID -ne 1
 
                 $splatCopyJob = @{
                     Destination          = $secondaries
@@ -401,10 +378,6 @@ function Sync-DbaAvailabilityGroup {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
                 Sync-DbaLoginPermission -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin
             }
-        }
-
-        if ($dacOpened) {
-            $null = $server | Disconnect-DbaInstance -WhatIf:$false
         }
     }
 }

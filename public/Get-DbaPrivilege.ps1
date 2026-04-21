@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Retrieves Windows security privileges critical for SQL Server performance from target computers.
 
     .DESCRIPTION
-        Audits five Windows privileges that directly impact SQL Server performance and functionality: Lock Pages in Memory, Instant File Initialization, Logon as Batch, Generate Security Audits, and Logon as a Service. These privileges are essential for SQL Server service accounts to achieve optimal performance and proper operation.
+        Audits six Windows privileges that directly impact SQL Server performance and functionality: Lock Pages in Memory, Instant File Initialization, Logon as Batch, Generate Security Audits, Logon as a Service, and Create Global Objects. These privileges are essential for SQL Server service accounts to achieve optimal performance and proper operation.
 
         Use this to verify that SQL Server service accounts have the necessary Windows privileges configured, troubleshoot performance issues related to missing privileges, or audit security configurations across your SQL Server environment. The function exports the local security policy using secedit and parses the results to show which users and groups hold these critical privileges.
 
@@ -36,7 +36,7 @@ function Get-DbaPrivilege {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per unique user or group found across the five Windows security privileges being audited.
+        Returns one object per unique user or group found across the six Windows security privileges being audited.
 
         Properties:
         - ComputerName: The name of the computer where the privilege audit was performed
@@ -46,6 +46,7 @@ function Get-DbaPrivilege {
         - LockPagesInMemory: Boolean indicating if the user has SeLockMemoryPrivilege
         - GenerateSecurityAudit: Boolean indicating if the user has SeAuditPrivilege
         - LogonAsAService: Boolean indicating if the user has SeServiceLogonRight privilege
+        - CreateGlobalObjects: Boolean indicating if the user has SeCreateGlobalPrivilege (required by some backup agents)
 
     .EXAMPLE
         PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
@@ -73,15 +74,17 @@ function Get-DbaPrivilege {
     )
 
     begin {
-        function Convert-SIDToUserName ([string] $SID ) {
-            try {
-                $objSID = New-Object System.Security.Principal.SecurityIdentifier ($SID)
-                $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
-                $objUser.Value
-            } catch {
-                $SID
-            }
-        }
+        $ResolveSIDToAccountName = @"
+function Convert-SIDToUserName ([string] `$SID ) {
+    try {
+        `$objSID = New-Object System.Security.Principal.SecurityIdentifier (`$SID)
+        `$objUser = `$objSID.Translate([System.Security.Principal.NTAccount])
+        `$objUser.Value
+    } catch {
+        `$SID
+    }
+}
+"@
 
         $ComputerName = $ComputerName.ComputerName | Select-Object -Unique
 
@@ -96,100 +99,135 @@ function Get-DbaPrivilege {
 
             try {
                 Write-Message -Level Verbose -Message "Exporting Privileges on $computer and cleaning up temporary files"
-                $secPol = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
+                $privData = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSIDToAccountName -ScriptBlock {
+                    param ($ResolveSIDToAccountName)
+                    . ([ScriptBlock]::Create($ResolveSIDToAccountName))
+
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
                     secedit /export /cfg $temp\secpolByDbatools.cfg > $null
                     $CFG = Get-Content $temp\secpolByDbatools.cfg -Force
                     Remove-Item $temp\secpolByDbatools.cfg -Force
-                    $CFG
-                }
 
-                Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $computer"
-                $blEntries = $secPol | Where-Object { $_ -like "SeBatchLogonRight*" }
-
-                $bl = if ($null -ne $blEntries) {
-                    $blEntries.Substring(20).Split(",") | ForEach-Object {
-                        if ($_ -match '^\*S-') {
-                            Convert-SIDToUserName -SID $_.TrimStart('*')
-                        } else {
-                            $_
+                    $blEntries = $CFG | Where-Object { $_ -like "SeBatchLogonRight*" }
+                    $bl = if ($null -ne $blEntries) {
+                        $blEntries.Substring(20).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
+                    }
+
+                    $ifiEntries = $CFG | Where-Object { $_ -like 'SeManageVolumePrivilege*' }
+                    $ifi = if ($null -ne $ifiEntries) {
+                        $ifiEntries.Substring(26).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+
+                    $lpimEntries = $CFG | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }
+                    $lpim = if ($null -ne $lpimEntries) {
+                        $lpimEntries.Substring(24).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+
+                    $gsaEntries = $CFG | Where-Object { $_ -like 'SeAuditPrivilege*' }
+                    $gsa = if ($null -ne $gsaEntries) {
+                        $gsaEntries.Substring(19).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+
+                    $losEntries = $CFG | Where-Object { $_ -like "SeServiceLogonRight*" }
+                    $los = if ($null -ne $losEntries) {
+                        $losEntries.Substring(22).split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+
+                    $cgoEntries = $CFG | Where-Object { $_ -like "SeCreateGlobalPrivilege*" }
+                    $cgo = if ($null -ne $cgoEntries) {
+                        $cgoEntries.Substring(26).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                <# DO NOT use Write-Message as this is inside of a script block #>
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+
+                    [PSCustomObject]@{
+                        BatchLogon                = $bl
+                        InstantFileInitialization = $ifi
+                        LockPagesInMemory         = $lpim
+                        GenerateSecurityAudit     = $gsa
+                        LogonAsAService           = $los
+                        CreateGlobalObjects       = $cgo
                     }
                 }
 
+                $bl   = @($privData.BatchLogon)
+                $ifi  = @($privData.InstantFileInitialization)
+                $lpim = @($privData.LockPagesInMemory)
+                $gsa  = @($privData.GenerateSecurityAudit)
+                $los  = @($privData.LogonAsAService)
+                $cgo  = @($privData.CreateGlobalObjects)
+
+                Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $computer"
                 if ($bl.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $computer"
-                $ifiEntries = $secPol | Where-Object { $_ -like 'SeManageVolumePrivilege*' }
-
-                $ifi = if ($null -ne $ifiEntries) {
-                    $ifiEntries.Substring(26).Split(",") | ForEach-Object {
-                        if ($_ -match '^\*S-') {
-                            Convert-SIDToUserName -SID $_.TrimStart('*')
-                        } else {
-                            $_
-                        }
-                    }
-                }
-
                 if ($ifi.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $computer"
-                $lpimEntries = $secPol | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }
-
-                $lpim = if ($null -ne $lpimEntries) {
-                    $lpimEntries.Substring(24).Split(",") | ForEach-Object {
-                        if ($_ -match '^\*S-') {
-                            Convert-SIDToUserName -SID $_.TrimStart('*')
-                        } else {
-                            $_
-                        }
-                    }
-                }
-
                 if ($lpim.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Generate Security Audits Privileges on $computer"
-                $gsaEntries = $secPol | Where-Object { $_ -like 'SeAuditPrivilege*' }
-
-                $gsa = if ($null -ne $gsaEntries) {
-                    $gsaEntries.Substring(19).Split(",") | ForEach-Object {
-                        if ($_ -match '^\*S-') {
-                            Convert-SIDToUserName -SID $_.TrimStart('*')
-                        } else {
-                            $_
-                        }
-                    }
-                }
-
                 if ($gsa.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Generate Security Audits Rights on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Logon as a service Privileges on $computer"
-                $losEntries = $secPol | Where-Object { $_ -like "SeServiceLogonRight*" }
-
-                $los = if ($null -ne $losEntries) {
-                    $losEntries.Substring(22).split(",") | ForEach-Object {
-                        if ($_ -match '^\*S-') {
-                            Convert-SIDToUserName -SID $_.TrimStart('*')
-                        } else {
-                            $_
-                        }
-                    }
-                }
-
                 if ($los.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Logon as a service Rights on $computer"
                 }
 
-                $users = @() + $bl + $ifi + $lpim + $gsa + $los | Select-Object -Unique
+                Write-Message -Level Verbose -Message "Getting Create Global Objects Privileges on $computer"
+                if ($cgo.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Create Global Objects Rights on $computer"
+                }
+
+                $users = @() + $bl + $ifi + $lpim + $gsa + $los + $cgo | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
@@ -199,6 +237,7 @@ function Get-DbaPrivilege {
                         LockPagesInMemory         = $lpim -contains $_
                         GenerateSecurityAudit     = $gsa -contains $_
                         LogonAsAService           = $los -contains $_
+                        CreateGlobalObjects       = $cgo -contains $_
                     }
                 }
 

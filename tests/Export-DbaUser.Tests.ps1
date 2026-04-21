@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaUser",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -32,6 +32,88 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Schema ownership compatibility" {
+            BeforeEach {
+                function Write-Message { }
+                function Write-ProgressHelper { }
+                function Test-ExportDirectory { }
+                function Test-FunctionInterrupt { $false }
+
+                Mock Get-ExportFilePath { "C:\temp\mock-export.sql" }
+                Mock Stop-Function { }
+
+                $mockServerBase = New-Object Microsoft.SqlServer.Management.Smo.Server
+                $mockServer = New-MockObject -InputObject $mockServerBase -Properties @{
+                    Name         = "mockserver"
+                    VersionMajor = 16
+                }
+
+                $mockServiceBroker = [PSCustomObject]@{
+                    MessageTypes     = @()
+                    Routes           = @()
+                    ServiceContracts = @()
+                    Services         = @()
+                }
+
+                $mockUser = [PSCustomObject]@{
+                    Name           = "app_user"
+                    IsSystemObject = $false
+                    Login          = "app_login"
+                }
+                $mockUser | Add-Member -Force -MemberType ScriptMethod -Name Script -Value {
+                    param($ScriptingOptionsObject)
+                    @("CREATE USER [app_user] FOR LOGIN [app_login]")
+                }
+
+                $mockSchema = [PSCustomObject]@{
+                    Name  = "app_schema"
+                    Owner = "app_user"
+                }
+
+                $mockDatabaseBase = New-Object Microsoft.SqlServer.Management.Smo.Database
+                $mockDatabaseBase.Name = "appdb"
+                $mockDatabase = New-MockObject -InputObject $mockDatabaseBase -Properties @{
+                    Parent                = $mockServer
+                    CompatibilityLevel    = "Version160"
+                    Users                 = @($mockUser)
+                    Roles                 = @()
+                    Schemas               = @($mockSchema)
+                    ApplicationRoles      = @()
+                    Assemblies            = @()
+                    Certificates          = @()
+                    DatabaseRoles         = @()
+                    FullTextCatalogs      = @()
+                    FullTextStopLists     = @()
+                    SearchPropertyLists   = @()
+                    RemoteServiceBindings = @()
+                    AsymmetricKeys        = @()
+                    SymmetricKeys         = @()
+                    XmlSchemaCollections  = @()
+                    ServiceBroker         = $mockServiceBroker
+                } -Methods @{
+                    EnumDatabasePermissions = { @() }
+                    EnumObjectPermissions   = {
+                        param($UserName)
+                        @()
+                    }
+                }
+
+                Mock Get-DbaDatabase { $mockDatabase }
+            }
+
+            It "Stops instead of emitting invalid schema ownership for SQL Server 2000 destinations" {
+                $results = Export-DbaUser -SqlInstance "mockserver" -Database "appdb" -User "app_user" -DestinationVersion SQLServer2000 -Passthru
+
+                $results | Should -Not -Match "ALTER AUTHORIZATION ON SCHEMA::"
+                Should -Invoke Stop-Function -Times 1 -Exactly -ParameterFilter {
+                    $Message -like "*does not exist on the destination version (SQLServer2000)*" -and
+                    $Continue
+                }
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -56,6 +138,7 @@ Describe $CommandName -Tag IntegrationTests {
         $user2 = "dbatoolsci_exportdbauser_user2"
         $table = "dbatoolsci_exportdbauser_table"
         $role = "dbatoolsci_exportdbauser_role"
+        $schema = "dbatoolsci_exportdbauser_schema"
 
         $outputPath = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFolder"
         $outputFile = "$($TestConfig.Temp)\Dbatoolsci_user_CustomFile.sql"
@@ -93,6 +176,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $db.Query("CREATE TABLE $table (C1 INT);")
         $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user];")
         $null = $db.Query("EXEC sp_addrolemember '$role', '$user';")
+        $null = $db.Query("CREATE SCHEMA [$schema] AUTHORIZATION [$user];")
         $null = $db.Query("EXEC sp_addrolemember '$role01', '$user01';")
         $null = $db.Query("EXEC sp_addrolemember '$role02', '$user01';")
         $null = $db.Query("EXEC sp_addrolemember '$role02', '$user02';")
@@ -214,6 +298,25 @@ Describe $CommandName -Tag IntegrationTests {
                 $content | Should -BeLike "*ALTER ROLE [[]$role03] ADD MEMBER [[]$user02]*"
                 $content | Should -Not -BeLike "*ALTER ROLE [[]$role01]*"
             }
+        }
+    }
+
+    Context "Schema ownership" {
+        It "Exports schema ownership for users that own schemas" {
+            $results = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Passthru
+            $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]$user]*"
+        }
+
+        It "Exports schema ownership with template placeholders" {
+            $results = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -Template -Passthru
+            $results | Should -BeLike "*ALTER AUTHORIZATION ON SCHEMA::[[]$schema] TO [[]``{templateUser``}]*"
+        }
+
+        It "Warns when schema ownership cannot be scripted to SQL Server 2000" {
+            $WarnVar = $null
+            $results = Export-DbaUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname -User $user -DestinationVersion SQLServer2000 -Passthru -WarningVariable WarnVar -WarningAction SilentlyContinue
+            $results | Should -Not -Match "ALTER AUTHORIZATION ON SCHEMA::"
+            $WarnVar | Should -Match "does not exist on the destination version"
         }
     }
 }

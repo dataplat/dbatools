@@ -215,7 +215,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
 
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Should -Be $script:TestDbName2
-            $result.Type | Should -Be "Database"
+            $result.Type | Should -Be "Full"
         }
     }
 
@@ -393,7 +393,7 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             # Should successfully read the specific file
             $result | Should -Not -BeNullOrEmpty
             $result.Database | Should -Be $script:TestDbName5
-            $result.Type | Should -Be "Database"
+            $result.Type | Should -Be "Full"
         }
 
         It "Should successfully enumerate local file system paths (contrast with S3)" {

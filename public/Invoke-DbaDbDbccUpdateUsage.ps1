@@ -163,25 +163,39 @@ function Invoke-DbaDbDbccUpdateUsage {
                 try {
                     $query = $StringBuilder.ToString()
                     if (Test-Bound -ParameterName Table) {
+                        if ($Table -notmatch "^\d+$") {
+                            $tableNameParts = Get-ObjectNameParts -ObjectName $Table
+                            if ($tableNameParts.Name) {
+                                $escapedTableName = $tableNameParts.Name.Replace("]", "]]")
+                                if ($tableNameParts.Schema) {
+                                    $escapedTableSchema = $tableNameParts.Schema.Replace("]", "]]")
+                                    $tableIdentifier = "[$escapedTableSchema].[$escapedTableName]"
+                                } else {
+                                    $tableIdentifier = "[$escapedTableName]"
+                                }
+                            } else {
+                                $tableIdentifier = $Table
+                            }
+                        }
                         if (Test-Bound -ParameterName Index) {
-                            if ($Table -match '^\d+$') {
-                                if ($Index -match '^\d+$') {
+                            if ($Table -match "^\d+$") {
+                                if ($Index -match "^\d+$") {
                                     $query = $query.Replace('#options#', "'$($db.name)', $Table, $Index")
                                 } else {
                                     $query = $query.Replace('#options#', "'$($db.name)', $Table, '$Index'")
                                 }
                             } else {
-                                if ($Index -match '^\d+$') {
-                                    $query = $query.Replace('#options#', "'$($db.name)', '$Table', $Index")
+                                if ($Index -match "^\d+$") {
+                                    $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier', $Index")
                                 } else {
-                                    $query = $query.Replace('#options#', "'$($db.name)', '$Table', '$Index'")
+                                    $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier', '$Index'")
                                 }
                             }
                         } else {
-                            if ($Table -match '^\d+$') {
+                            if ($Table -match "^\d+$") {
                                 $query = $query.Replace('#options#', "'$($db.name)', $Table")
                             } else {
-                                $query = $query.Replace('#options#', "'$($db.name)', '$Table'")
+                                $query = $query.Replace('#options#', "'$($db.name)', '$tableIdentifier'")
                             }
                         }
                     } else {

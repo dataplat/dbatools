@@ -4,10 +4,12 @@ function Start-DbccCheck {
         [object]$server,
         [string]$DbName,
         [switch]$table,
-        [int]$MaxDop
+        [int]$MaxDop,
+        [switch]$DetailedOutput
     )
 
     $servername = $server.name
+    $escapedDbName = $DbName.Replace("]", "]]")
 
     if ($Pscmdlet.ShouldProcess($sourceserver, "Running dbcc check on $DbName on $servername")) {
         if ($server.ConnectionContext.StatementTimeout -ne 0) {
@@ -16,17 +18,34 @@ function Start-DbccCheck {
 
         try {
             if ($table) {
-                $null = $server.databases[$DbName].CheckTables('None')
-                Write-Verbose "Dbcc CheckTables finished successfully for $DbName on $servername"
+                $null = $server.databases[$DbName].CheckTables("None")
+                Write-Verbose "DBCC CheckTables finished successfully for $DbName on $servername"
+                if ($DetailedOutput) {
+                    return [PSCustomObject]@{
+                        Status = "Success"
+                        Output = $null
+                    }
+                }
+                return "Success"
+            }
+
+            if ($MaxDop) {
+                $query = "DBCC CHECKDB ([$escapedDbName]) WITH MAXDOP = $MaxDop"
             } else {
-                if ($MaxDop) {
-                    $null = $server.Query("DBCC CHECKDB ([$DbName]) WITH MAXDOP = $MaxDop")
-                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
-                } else {
-                    $null = $server.Query("DBCC CHECKDB ([$DbName])")
-                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                $query = "DBCC CHECKDB ([$escapedDbName])"
+            }
+
+            if ($DetailedOutput) {
+                $dbccOutput = Invoke-DbaQuery -SqlInstance $server -Query $query -MessagesToOutput -EnableException
+                Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
+                return [PSCustomObject]@{
+                    Status = "Success"
+                    Output = $dbccOutput
                 }
             }
+
+            $null = $server.Query($query)
+            Write-Verbose "DBCC CHECKDB finished successfully for $DbName on $servername"
             return "Success"
         } catch {
             $originalException = $_.Exception
@@ -60,6 +79,13 @@ function Start-DbccCheck {
                 $message = $newmessage
             } catch {
                 $null
+            }
+
+            if ($DetailedOutput) {
+                return [PSCustomObject]@{
+                    Status = $message.Trim()
+                    Output = $null
+                }
             }
             return $message.Trim()
         }

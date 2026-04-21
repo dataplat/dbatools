@@ -134,27 +134,27 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             if (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) {
-                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation -Confirm:$false
+                $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation
             }
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should not remove jobs when -Job is null" {
             $nullVariable = $null
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $nullVariable -Confirm:$false
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $nullVariable
             $result | Should -BeNullOrEmpty
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is empty string" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "" -Confirm:$false -WarningAction SilentlyContinue
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "" -WarningAction SilentlyContinue
             $WarnVar | Should -BeLike "*Job  doesn't exist*"
             $result | Should -BeNullOrEmpty
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
 
         It "Should not remove jobs when -Job is whitespace" {
-            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "   " -Confirm:$false
+            $result = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "   "
             $result | Should -BeNullOrEmpty
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }

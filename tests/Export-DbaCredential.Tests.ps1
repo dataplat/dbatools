@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Export-DbaCredential",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -23,6 +23,44 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Decryption behavior" {
+        BeforeAll {
+            Mock Test-ExportDirectory { } -ModuleName dbatools
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+            Mock Connect-DbaInstance {
+                New-Object Microsoft.SqlServer.Management.Smo.Server "sql1"
+            } -ModuleName dbatools
+            Mock Disconnect-DbaInstance { } -ModuleName dbatools
+            Mock Get-ExportFilePath { "C:\temp\credentials.sql" } -ModuleName dbatools
+            Mock Get-DecryptedObject {
+                [PSCustomObject]@{
+                    Name            = "cred1"
+                    Quotename       = "[cred1]"
+                    Identity        = "cred1identity"
+                    Password        = "Password1!"
+                    MappedClassType = $null
+                    ProviderName    = $null
+                }
+            } -ModuleName dbatools
+        }
+
+        It "Should not force decryption errors to throw by default" {
+            $null = Export-DbaCredential -SqlInstance "sql1" -Passthru
+
+            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                -not $EnableException
+            }
+        }
+
+        It "Should request terminating decryption errors when EnableException is specified" {
+            $null = Export-DbaCredential -SqlInstance "sql1" -Passthru -EnableException
+
+            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                $EnableException
+            }
         }
     }
 }
@@ -93,7 +131,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Should export all credentials" {
         BeforeAll {
-            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle
+            $exportFile = Export-DbaCredential -SqlInstance $TestConfig.InstanceSingle -EnableException
             $exportResults = Get-Content -Path $exportFile -Raw
         }
 
@@ -108,15 +146,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have the password" {
             $exportResults | Should -Match "ReallyT3rrible!"
         }
+
+        It "Should include IF NOT EXISTS guard" {
+            $exportResults | Should -Match "IF NOT EXISTS"
+        }
     }
 
     Context "Should export a specific credential" {
         BeforeAll {
             $specificFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportSpecific = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Identity    = $captainCredIdentity
-                FilePath    = $specificFilePath
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $captainCredIdentity
+                FilePath        = $specificFilePath
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportSpecific
             $specificResults = Get-Content -Path $specificFilePath
@@ -139,10 +182,11 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $appendFilePath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
             $splatExportAppend = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Identity    = $hulkCredIdentity
-                FilePath    = $appendFilePath
-                Append      = $true
+                SqlInstance     = $TestConfig.InstanceSingle
+                Identity        = $hulkCredIdentity
+                FilePath        = $appendFilePath
+                Append          = $true
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportAppend
             $appendResults = Get-Content -Path $appendFilePath
@@ -169,6 +213,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Identity        = $captainCredIdentity
                 FilePath        = $excludePasswordFilePath
                 ExcludePassword = $true
+                EnableException = $true
             }
             $null = Export-DbaCredential @splatExportNoPassword
             $excludePasswordResults = Get-Content -Path $excludePasswordFilePath

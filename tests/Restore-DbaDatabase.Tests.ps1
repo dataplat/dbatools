@@ -45,6 +45,7 @@ Describe $CommandName -Tag UnitTests {
                 "DestinationFileSuffix",
                 "Recover",
                 "KeepCDC",
+                "ErrorBrokerConversations",
                 "GetBackupInformation",
                 "StopAfterGetBackupInformation",
                 "SelectBackupInformation",
@@ -63,7 +64,8 @@ Describe $CommandName -Tag UnitTests {
                 "ExecuteAs",
                 "Checksum",
                 "Restart",
-                "NoXpDirRecurse"
+                "NoXpDirRecurse",
+                "StopAtLsn"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -900,7 +902,7 @@ use master
     }
 
 
-    Context -Skip "Test restoring with StopAt and StopAfterDate" {
+    Context -Skip "Test restoring with StopAt, StopAtLsn and StopAfterDate" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
         }
@@ -911,6 +913,21 @@ use master
             $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
             $sqlOut.ms | Should -Be 29876
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database StopAt2
+        }
+
+        It "Should have stoped at lsn" {
+            $dbName = "TestStopAtLsn_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
+            $fullBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Path $backupPath
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "CREATE TABLE Test (id int IDENTITY)"
+            1..5 | ForEach-Object -Process { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "INSERT INTO Test DEFAULT VALUES" }
+            $lsn = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX([Current LSN]) FROM sys.fn_dblog(NULL, NULL)" -As SingleValue
+            1..5 | ForEach-Object -Process { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "INSERT INTO Test DEFAULT VALUES" }
+            $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Path $backupPath -Type Log
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path $fullBackup.Path, $logBackup.Path -DatabaseName $dbName -StopAtLsn "0x$lsn" -WithReplace
+            $id = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query "SELECT MAX(id) FROM Test" -As SingleValue
+            $id | Should -Be 5
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         }
     }
 

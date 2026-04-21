@@ -379,41 +379,75 @@ function Add-DbaAgDatabase {
             if ($db.EncryptionEnabled -and $db.HasDatabaseEncryptionKey -and $db.DatabaseEncryptionKey.EncryptorType -eq "ServerCertificate") {
                 $encryptorName = $db.DatabaseEncryptionKey.EncryptorName
                 Write-Message -Level Verbose -Message "Database $($db.Name) is TDE-encrypted using certificate '$encryptorName'. Checking secondary replicas."
-                if ($SharedPath) {
-                    $failure = $false
-                    foreach ($replicaName in $replicaServerSMO.Keys) {
-                        $replicaServer = $replicaServerSMO[$replicaName]
-                        $existingCert = Get-DbaDbCertificate -SqlInstance $replicaServer -Database master -Certificate $encryptorName
-                        if (-not $existingCert) {
-                            if ($Pscmdlet.ShouldProcess($replicaServer, "Copy TDE certificate '$encryptorName' from primary to replica $replicaName")) {
-                                try {
-                                    Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' not found on $replicaName. Copying from primary."
-                                    $splatTdeCert = @{
-                                        Source          = $server
-                                        Destination     = $replicaServer
-                                        Database        = "master"
-                                        Certificate     = $encryptorName
-                                        SharedPath      = $SharedPath
-                                        EnableException = $true
-                                    }
-                                    if ($MasterKeySecurePassword) {
-                                        $splatTdeCert.MasterKeyPassword = $MasterKeySecurePassword
-                                    }
-                                    $null = Copy-DbaDbCertificate @splatTdeCert
-                                } catch {
-                                    $failure = $true
-                                    Stop-Function -Message "Failed to copy TDE certificate '$encryptorName' to replica $replicaName." -ErrorRecord $_ -Continue
-                                }
-                            }
-                        } else {
-                            Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' already exists on replica $replicaName."
+
+                try {
+                    $sourceTdeCert = Get-DbaDbCertificate -SqlInstance $server -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
+                } catch {
+                    Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on primary instance $($server.Name)." -ErrorRecord $_ -Continue
+                }
+
+                if (-not $sourceTdeCert) {
+                    Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but that certificate was not found in master on $($server.Name)." -Continue
+                }
+
+                if (-not $sourceTdeCert.PrivateKeyExists) {
+                    Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but the certificate on $($server.Name) does not have an accessible private key." -Continue
+                }
+
+                $failure = $false
+                foreach ($replicaName in $replicaServerSMO.Keys) {
+                    $replicaServer = $replicaServerSMO[$replicaName]
+                    try {
+                        $existingCert = Get-DbaDbCertificate -SqlInstance $replicaServer -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
+                    } catch {
+                        $failure = $true
+                        Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on replica $replicaName." -ErrorRecord $_ -Continue
+                    }
+
+                    if (-not $existingCert) {
+                        if (-not $SharedPath) {
+                            $failure = $true
+                            Stop-Function -Message "Replica $replicaName is missing TDE certificate '$encryptorName'. Provide -SharedPath and optionally -MasterKeySecurePassword to copy it automatically, or pre-stage the matching certificate before adding the database." -Continue
                         }
+
+                        if ($Pscmdlet.ShouldProcess($replicaServer, "Copy TDE certificate '$encryptorName' from primary to replica $replicaName")) {
+                            try {
+                                Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' not found on $replicaName. Copying from primary."
+                                $splatTdeCert = @{
+                                    Source          = $server
+                                    Destination     = $replicaServer
+                                    Database        = "master"
+                                    Certificate     = $encryptorName
+                                    SharedPath      = $SharedPath
+                                    EnableException = $true
+                                }
+                                if ($MasterKeySecurePassword) {
+                                    $splatTdeCert.MasterKeyPassword = $MasterKeySecurePassword
+                                }
+                                $null = Copy-DbaDbCertificate @splatTdeCert
+                            } catch {
+                                $failure = $true
+                                Stop-Function -Message "Failed to copy TDE certificate '$encryptorName' to replica $replicaName." -ErrorRecord $_ -Continue
+                            }
+                        }
+                        continue
                     }
-                    if ($failure) {
-                        Stop-Function -Message "Failed to copy TDE certificate to all replicas for database $($db.Name)." -Continue
+
+                    if (-not $existingCert.PrivateKeyExists) {
+                        $failure = $true
+                        Stop-Function -Message "TDE certificate '$encryptorName' exists on replica $replicaName but does not include a private key. Restore or automatic seeding cannot use it." -Continue
                     }
-                } else {
-                    Write-Message -Level Warning -Message "Database $($db.Name) is TDE-encrypted with certificate '$encryptorName', but no SharedPath was provided. The TDE certificate must exist on all secondary replicas before the database can be added. Use -SharedPath and optionally -MasterKeySecurePassword to enable automatic certificate copying."
+
+                    if ($existingCert.Thumbprint -ne $sourceTdeCert.Thumbprint) {
+                        $failure = $true
+                        Stop-Function -Message "TDE certificate '$encryptorName' on replica $replicaName does not match the primary certificate on $($server.Name)." -Continue
+                    }
+
+                    Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' already exists on replica $replicaName and matches the primary certificate."
+                }
+
+                if ($failure) {
+                    Stop-Function -Message "Failed to validate or copy TDE certificate '$encryptorName' for all replicas of database $($db.Name)." -Continue
                 }
             }
 

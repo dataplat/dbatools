@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaInstantFileInitialization",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -16,6 +16,81 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        Context "IFI best practice detection" {
+            BeforeAll {
+                $script:mockServices = @()
+                $script:mockPrivileges = @()
+
+                function Write-Message { }
+                function Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        [Parameter(ValueFromRemainingArguments)]
+                        $RemainingArguments
+                    )
+
+                    process {
+                        $InputObject
+                    }
+                }
+                function Stop-Function {
+                    param(
+                        $Message,
+                        $ErrorRecord,
+                        $Target,
+                        [switch]$Continue
+                    )
+
+                    throw "$Message :: $($ErrorRecord.Exception.Message)"
+                }
+                function Get-DbaService {
+                    param(
+                        $ComputerName,
+                        $Credential,
+                        $Type,
+                        [switch]$EnableException
+                    )
+
+                    $script:mockServices
+                }
+                function Get-DbaPrivilege {
+                    param(
+                        $ComputerName,
+                        $Credential,
+                        [switch]$EnableException
+                    )
+
+                    $script:mockPrivileges
+                }
+            }
+
+            It "Treats a matching virtual service StartName as best practice" {
+                $script:mockServices = [PSCustomObject]@{
+                    ComputerName = "sql1"
+                    InstanceName = "MSSQLSERVER"
+                    ServiceName  = "MSSQLSERVER"
+                    StartName    = "NT SERVICE\MSSQLSERVER"
+                }
+
+                $script:mockPrivileges = [PSCustomObject]@{
+                    User                      = "NT SERVICE\MSSQLSERVER"
+                    InstantFileInitialization = $true
+                }
+
+                $result = Test-DbaInstantFileInitialization -ComputerName "sql1"
+
+                $result.ServiceNameIFI | Should -BeTrue
+                $result.StartNameIFI | Should -BeTrue
+                $result.IsEnabled | Should -BeTrue
+                $result.IsBestPractice | Should -BeTrue
+            }
         }
     }
 }

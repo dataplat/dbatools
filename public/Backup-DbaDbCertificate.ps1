@@ -225,15 +225,24 @@ function Backup-DbaDbCertificate {
 
                     # because the password shouldn't go to memory...
                     if ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -gt 0) {
+                        if ($cert.PrivateKeyEncryptionType -eq [Microsoft.SqlServer.Management.Smo.PrivateKeyEncryptionType]::MasterKey) {
+                            Write-Message -Level Verbose -Message "Both passwords passed in but private key of $certName is encrypted by the database master key. DecryptionPassword will be ignored."
 
-                        Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
+                            $cert.export(
+                                $exportPathCert,
+                                $exportPathKey,
+                                ($EncryptionPassword | ConvertFrom-SecurePass)
+                            )
+                        } else {
+                            Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
 
-                        $cert.export(
-                            $exportPathCert,
-                            $exportPathKey,
-                            ($EncryptionPassword | ConvertFrom-SecurePass),
-                            ($DecryptionPassword | ConvertFrom-SecurePass)
-                        )
+                            $cert.export(
+                                $exportPathCert,
+                                $exportPathKey,
+                                ($EncryptionPassword | ConvertFrom-SecurePass),
+                                ($DecryptionPassword | ConvertFrom-SecurePass)
+                            )
+                        }
                     } elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
                         Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
 

@@ -100,8 +100,18 @@ function Get-DbaStartupParameter {
                     $ogInstance = $args[2]
                     $Simple = $args[3]
 
-                    $wmisvc = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instanceName)"
-                    if (-not $wmisvc) { return }
+                    $serviceDisplayName = "SQL Server ($instanceName)"
+                    $wmisvc = @($wmi.Services | Where-Object DisplayName -eq $serviceDisplayName)
+
+                    if ($wmisvc.Count -eq 0) {
+                        throw "SQL Server service '$serviceDisplayName' was not found on $computerName."
+                    }
+
+                    if ($wmisvc.Count -gt 1) {
+                        throw "Multiple SQL Server services named '$serviceDisplayName' were found on $computerName."
+                    }
+
+                    $wmisvc = $wmisvc[0]
 
                     $params = $wmisvc.StartupParameters -split ';'
 
