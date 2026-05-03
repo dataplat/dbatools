@@ -40,16 +40,13 @@ Describe $CommandName -Tag UnitTests {
                 "ColumnMap",
                 "KeepOrdinalOrder",
                 "AutoCreateTable",
-                "StoreStringAsUtf8",
+                "NoUtf8",
                 "NoColumnOptimize",
                 "NoProgress",
                 "UseFileNameForSchema",
                 "NoTransaction",
                 "StaticColumns",
-                "EnableException",
-                "Parallel",
-                "ThrottleLimit",
-                "ParallelBatchSize"
+                "EnableException"
             )
             ($expectedParameters | Where-Object { $PSItem -notin $hasParameters }) | Should -BeNullOrEmpty
         }
@@ -165,7 +162,7 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
 
     Context "Deterministic lab fixtures" {
         It "imports mixed-type fixture rows and preserves exact values" {
-            $result = Import-DbaParquet -Path $pathMixedTypes -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table mixed_types -NoColumnOptimize -StoreStringAsUtf8:$false
+            $result = Import-DbaParquet -Path $pathMixedTypes -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table mixed_types -NoColumnOptimize -NoUtf8
 
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 3
@@ -217,7 +214,7 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
         }
 
         It "imports binary fixture bytes and preserves their lengths" {
-            $result = Import-DbaParquet -Path $pathBoundaries -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table world_boundaries_exact -NoColumnOptimize -StoreStringAsUtf8:$false
+            $result = Import-DbaParquet -Path $pathBoundaries -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table world_boundaries_exact -NoColumnOptimize -NoUtf8
 
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -Be 2
@@ -286,7 +283,7 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
 
     Context "Static columns" {
         It "adds static columns to imported data" {
-            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table ecdc_cases_static -StaticColumns @{ ImportSource = 'test' }
+            $result = Import-DbaParquet -Path $pathEcdc -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table ecdc_cases_static -StaticColumns @{ ImportSource = "test" }
 
             $result | Should -Not -BeNullOrEmpty
             $result.RowsCopied | Should -BeGreaterThan 0
@@ -358,16 +355,15 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
         }
     }
 
-    Context "StoreStringAsUtf8 behavior" {
+    Context "NoUtf8 behavior" {
         It "creates UTF-8 varchar columns by default" {
             $splatImport = @{
-                Path              = $pathEcdc
-                SqlInstance       = $TestConfig.InstanceMulti1
-                Database          = "tempdb"
-                AutoCreateTable   = $true
-                Table             = "ecdc_cases_utf8"
-                NoColumnOptimize  = $true
-                StoreStringAsUtf8 = $true
+                Path             = $pathEcdc
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = "tempdb"
+                AutoCreateTable  = $true
+                Table            = "ecdc_cases_utf8"
+                NoColumnOptimize = $true
             }
             $result = Import-DbaParquet @splatImport
 
@@ -390,15 +386,15 @@ ORDER BY c.column_id
             $utf8Column.CollationName | Should -Match "UTF8"
         }
 
-        It "creates nvarchar columns when StoreStringAsUtf8 is false" {
+        It "creates nvarchar columns when NoUtf8 is specified" {
             $splatImport = @{
-                Path              = $pathEcdc
-                SqlInstance       = $TestConfig.InstanceMulti1
-                Database          = "tempdb"
-                AutoCreateTable   = $true
-                Table             = "ecdc_cases_utf16"
-                NoColumnOptimize  = $true
-                StoreStringAsUtf8 = $false
+                Path             = $pathEcdc
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = "tempdb"
+                AutoCreateTable  = $true
+                Table            = "ecdc_cases_utf16"
+                NoColumnOptimize = $true
+                NoUtf8           = $true
             }
             $result = Import-DbaParquet @splatImport
 
@@ -428,27 +424,4 @@ ORDER BY c.column_id
         }
     }
 
-    Context "Parallel flags guardrail" {
-        It "throws when parallel-related parameters are supplied" {
-            $splatImport = @{
-                Path              = $pathEcdc
-                SqlInstance       = $TestConfig.InstanceMulti1
-                Database          = "tempdb"
-                Table             = "ecdc_cases"
-                Parallel          = $true
-                ThrottleLimit     = 2
-                ParallelBatchSize = 10
-                EnableException   = $true
-            }
-            $errorRecord = $null
-            try {
-                $null = Import-DbaParquet @splatImport
-            } catch {
-                $errorRecord = $PSItem
-            }
-
-            $errorRecord | Should -Not -BeNullOrEmpty
-            $errorRecord.Exception.Message | Should -Match "Parallel import is not implemented"
-        }
-    }
 }

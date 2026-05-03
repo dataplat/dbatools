@@ -14,7 +14,7 @@ function Get-DbaParquetPath {
 
     .NOTES
         Tags: Parquet, Import
-        Author: dbatools team
+        Author: Jovan Popovic, the dbatools team + Claude
 
         Website: https://dbatools.io
         Copyright: (c) 2026 by dbatools, licensed under MIT
@@ -76,9 +76,6 @@ This will download Parquet.NET and its managed dependencies to your dbatools dat
         return $null
     }
 
-    Stop-Function -Message $message -Target "Parquet.NET"
-    if ($EnableException) {
-        throw "Parquet.NET not found"
-    }
+    Stop-Function -Message $message -Target "Parquet.NET" -EnableException $EnableException
     return $null
 }

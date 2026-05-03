@@ -8,7 +8,7 @@ function Import-DbaParquet {
 
         Parquet files are read using Parquet.NET, which provides high-performance columnar data access. Unlike CSV, Parquet files contain schema information including column names and data types, which are used automatically during import.
 
-        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with string columns using UTF-8 varchar(MAX) by default (or nvarchar(MAX) with -StoreStringAsUtf8:$false). For production use, create your table first with proper data types and constraints. The function intelligently maps Parquet columns to table columns by name, with fallback to ordinal position when needed.
+        When the target table doesn't exist, you can use -AutoCreateTable to create it on the fly with string columns using UTF-8 varchar(MAX) by default (or nvarchar(MAX) with -NoUtf8). For production use, create your table first with proper data types and constraints. The function intelligently maps Parquet columns to table columns by name, with fallback to ordinal position when needed.
 
         Column mapping lets you import specific columns or rename them during import, while schema detection can automatically place data in the correct schema based on filename patterns.
 
@@ -53,17 +53,17 @@ function Import-DbaParquet {
 
     .PARAMETER AutoCreateTable
         Creates the destination table automatically if it doesn't exist, using Parquet schema types for SQL column definitions.
-        String columns are created as UTF-8 varchar(MAX) by default (or nvarchar(MAX) if -StoreStringAsUtf8:$false), then automatically optimized based on actual data lengths.
+        String columns are created as UTF-8 varchar(MAX) by default (or nvarchar(MAX) with -NoUtf8), then automatically optimized based on actual data lengths.
         For production use with specific constraints, create tables manually with appropriate data types, indexes, and constraints.
 
-    .PARAMETER StoreStringAsUtf8
-        Controls string column type used by -AutoCreateTable.
-        By default ($true), string columns are created as varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8.
-        Set to $false to create string columns as nvarchar(MAX) instead.
+    .PARAMETER NoUtf8
+        Switches AutoCreateTable string columns from UTF-8 varchar to nvarchar.
+        By default, string columns are created as varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8.
+        Use this switch to create string columns as nvarchar(MAX) instead.
 
     .PARAMETER NoColumnOptimize
         Skips the automatic column size optimization that runs after AutoCreateTable imports.
-        By default, AutoCreateTable creates string columns as UTF-8 varchar(MAX) (or nvarchar(MAX) with -StoreStringAsUtf8:$false) and then shrinks them to fit the imported data.
+        By default, AutoCreateTable creates string columns as UTF-8 varchar(MAX) (or nvarchar(MAX) with -NoUtf8) and then shrinks them to fit the imported data.
         Use this switch when importing multiple Parquet files into the same auto-created table, so that later files
         with longer values are not rejected due to columns being shrunk to fit only the first file's data.
 
@@ -113,15 +113,6 @@ function Import-DbaParquet {
         Keys are column names, values are the static values to insert.
         Example: @{ SourceFile = "data.parquet"; ImportDate = (Get-Date) }
 
-    .PARAMETER Parallel
-        Reserved for future use. Parallel processing is not currently implemented for Parquet imports.
-
-    .PARAMETER ThrottleLimit
-        Reserved for future use. Only used when Parallel is specified.
-
-    .PARAMETER ParallelBatchSize
-        Reserved for future use. Only used when Parallel is specified.
-
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -135,10 +126,10 @@ function Import-DbaParquet {
 
     .NOTES
         Tags: Import, Data, Utility
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: Jovan Popovic, the dbatools team + Claude
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2026 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
         Requires Parquet.NET. Use Install-DbaParquet to install the external Parquet.NET assemblies if they are not already available.
@@ -198,8 +189,8 @@ function Import-DbaParquet {
 
     .EXAMPLE
         PS C:\> $columns = @{
-        >> Text = 'FirstName'
-        >> Number = 'PhoneNumber'
+        >> Text = "FirstName"
+        >> Number = "PhoneNumber"
         >> }
         PS C:\> Import-DbaParquet -Path c:\temp\supersmall.parquet -SqlInstance sql2016 -Database tempdb -ColumnMap $columns
 
@@ -225,7 +216,7 @@ function Import-DbaParquet {
         optimized by querying actual max lengths and altering columns from varchar(MAX) to padded sizes
         like varchar(16), varchar(32), varchar(64), etc.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
@@ -249,26 +240,24 @@ function Import-DbaParquet {
         [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
-        [bool]$StoreStringAsUtf8 = $true,
+        [switch]$NoUtf8,
         [switch]$NoColumnOptimize,
         [switch]$NoProgress,
         [switch]$UseFileNameForSchema,
         [switch]$NoTransaction,
         [hashtable]$StaticColumns,
-        [switch]$Parallel,
-        [int]$ThrottleLimit = 0,
-        [int]$ParallelBatchSize = 100,
         [switch]$EnableException
     )
     begin {
         $scriptelapsed = [System.Diagnostics.Stopwatch]::StartNew()
+        $StoreStringAsUtf8 = -not $NoUtf8
 
         if ($PSBoundParameters.UseFileNameForSchema -and $PSBoundParameters.Schema) {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
         }
 
         # Load Parquet.NET assembly
-        $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Parquet' }
+        $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "Parquet" }
         if (-not $parquetAssembly) {
             $parquetDllPath = Get-DbaParquetPath -EnableException:$EnableException
             if (-not $parquetDllPath) {
@@ -436,8 +425,8 @@ function Import-DbaParquet {
         function Convert-ParquetTypeToSqlType {
             param([object]$DataField)
             $clrType = $DataField.ClrType
-            switch ($ClrType.FullName) {
-                'System.String' {
+            switch ($clrType.FullName) {
+                "System.String" {
                     $stringLength = "MAX"
                     if ($DataField.SchemaElement -and
                         $DataField.SchemaElement.Type -eq "FIXED_LEN_BYTE_ARRAY" -and
@@ -454,14 +443,14 @@ function Import-DbaParquet {
                     }
                     return "nvarchar($stringLength)"
                 }
-                'System.Int32' { return 'int' }
-                'System.Int64' { return 'bigint' }
-                'System.Int16' { return 'smallint' }
-                'System.Byte' { return 'tinyint' }
-                'System.Boolean' { return 'bit' }
-                'System.Single' { return 'real' }
-                'System.Double' { return 'float' }
-                'System.Decimal' {
+                "System.Int32" { return "int" }
+                "System.Int64" { return "bigint" }
+                "System.Int16" { return "smallint" }
+                "System.Byte" { return "tinyint" }
+                "System.Boolean" { return "bit" }
+                "System.Single" { return "real" }
+                "System.Double" { return "float" }
+                "System.Decimal" {
                     $precision = 38
                     $scale = 18
 
@@ -480,10 +469,10 @@ function Import-DbaParquet {
 
                     return "decimal($precision,$scale)"
                 }
-                'System.DateTime' { return 'datetime2(6)' }
-                'System.DateTimeOffset' { return 'datetimeoffset' }
-                'System.TimeSpan' { return 'time' }
-                'System.Byte[]' {
+                "System.DateTime" { return "datetime2(6)" }
+                "System.DateTimeOffset" { return "datetimeoffset" }
+                "System.TimeSpan" { return "time" }
+                "System.Byte[]" {
                     if ($DataField.SchemaElement -and
                         $DataField.SchemaElement.Type -eq "FIXED_LEN_BYTE_ARRAY" -and
                         $DataField.SchemaElement.TypeLength -gt 0) {
@@ -491,7 +480,7 @@ function Import-DbaParquet {
                     }
                     return "varbinary(MAX)"
                 }
-                'System.Guid' { return 'uniqueidentifier' }
+                "System.Guid" { return "uniqueidentifier" }
                 default {
                     Stop-Function -Message "Unsupported Parquet type: $($clrType.FullName)" -EnableException $true
                     return
@@ -521,7 +510,7 @@ function Import-DbaParquet {
                 [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
 
-            $sqldatatypes = @();
+            $sqldatatypes = @()
             foreach ($df in $DataFields) {
                 $sqlType = Convert-ParquetTypeToSqlType -DataField $df
                 $sqldatatypes += "[$($df.Name)] $sqlType NULL"
@@ -533,8 +522,7 @@ function Import-DbaParquet {
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
             } catch {
-                $errormessage = $_.Exception.Message.ToString()
-                Stop-Function -Continue -Message "Failed to execute $sql. `n$errormessage"
+                Stop-Function -Continue -Message "Failed to execute $sql" -ErrorRecord $_
             }
 
             Write-Message -Level Verbose -Message "Successfully created table $schema.$table with the following column definitions:`n $($sqldatatypes -join "`n ")"
@@ -574,7 +562,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
   AND c.max_length = -1
 "@
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($getColumnsSql, $SqlConn)
-            $null = $sqlcmd.Parameters.AddWithValue('tableName', "[$Schema].[$Table]")
+            $null = $sqlcmd.Parameters.AddWithValue("tableName", "[$Schema].[$Table]")
 
             $columns = @{ }
             $reader = $sqlcmd.ExecuteReader()
@@ -594,7 +582,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             # Build MAX(LEN()) query for all columns
             $columnNames = @($columns.Keys)
             $maxLenSelects = $columnNames | ForEach-Object { "MAX(LEN([$_])) AS [$_]" }
-            $maxLenSql = "SELECT $($maxLenSelects -join ', ') FROM [$Schema].[$Table]"
+            $maxLenSql = "SELECT $($maxLenSelects -join ", ") FROM [$Schema].[$Table]"
 
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($maxLenSql, $SqlConn)
             $reader = $sqlcmd.ExecuteReader()
@@ -673,30 +661,30 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             )
 
             switch ($DataType) {
-                'BigInt' { return [System.Int64] }
-                'Binary' { return [System.Byte[]] }
-                'VarBinary' { return [System.Byte[]] }
-                'Bit' { return [System.Boolean] }
-                'Char' { return [System.String] }
-                'VarChar' { return [System.String] }
-                'NChar' { return [System.String] }
-                'NVarChar' { return [System.String] }
-                'DateTime' { return [System.DateTime] }
-                'SmallDateTime' { return [System.DateTime] }
-                'Date' { return [System.DateTime] }
-                'Time' { return [System.DateTime] }
-                'DateTime2' { return [System.DateTime] }
-                'Decimal' { return [System.Decimal] }
-                'Numeric' { return [System.Decimal] }
-                'Money' { return [System.Decimal] }
-                'SmallMoney' { return [System.Decimal] }
-                'Float' { return [System.Double] }
-                'Int' { return [System.Int32] }
-                'Real' { return [System.Single] }
-                'UniqueIdentifier' { return [System.Guid] }
-                'SmallInt' { return [System.Int16] }
-                'TinyInt' { return [System.Byte] }
-                'Xml' { return [System.String] }
+                "BigInt" { return [System.Int64] }
+                "Binary" { return [System.Byte[]] }
+                "VarBinary" { return [System.Byte[]] }
+                "Bit" { return [System.Boolean] }
+                "Char" { return [System.String] }
+                "VarChar" { return [System.String] }
+                "NChar" { return [System.String] }
+                "NVarChar" { return [System.String] }
+                "DateTime" { return [System.DateTime] }
+                "SmallDateTime" { return [System.DateTime] }
+                "Date" { return [System.DateTime] }
+                "Time" { return [System.DateTime] }
+                "DateTime2" { return [System.DateTime] }
+                "Decimal" { return [System.Decimal] }
+                "Numeric" { return [System.Decimal] }
+                "Money" { return [System.Decimal] }
+                "SmallMoney" { return [System.Decimal] }
+                "Float" { return [System.Double] }
+                "Int" { return [System.Int32] }
+                "Real" { return [System.Single] }
+                "UniqueIdentifier" { return [System.Guid] }
+                "SmallInt" { return [System.Int16] }
+                "TinyInt" { return [System.Byte] }
+                "Xml" { return [System.String] }
                 default { throw "Unsupported SMO DataType: $($DataType)" }
             }
         }
@@ -705,13 +693,14 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             param (
                 [string]$table,
                 [string]$schema,
-                $sqlconn
+                $sqlconn,
+                $transaction
             )
 
             $query = "SELECT c.COLUMN_NAME, c.DATA_TYPE, c.ORDINAL_POSITION - 1 FROM INFORMATION_SCHEMA.COLUMNS AS c WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table;"
             $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($query, $sqlconn, $transaction)
-            $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
-            $null = $sqlcmd.Parameters.AddWithValue('table', $table)
+            $null = $sqlcmd.Parameters.AddWithValue("schema", $schema)
+            $null = $sqlcmd.Parameters.AddWithValue("table", $table)
 
             $result = @()
             try {
@@ -725,7 +714,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 }
                 $reader.Close()
             } catch {
-                # callers report back the error if $result is empty
+                Write-Message -Level Debug -Message "Error querying table definition: $_"
             }
 
             return $result
@@ -734,11 +723,6 @@ WHERE c.object_id = OBJECT_ID(@tableName)
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
     }
     process {
-        if ($PSBoundParameters.ContainsKey('Parallel') -or $PSBoundParameters.ContainsKey('ThrottleLimit') -or $PSBoundParameters.ContainsKey('ParallelBatchSize')) {
-            Stop-Function -Message "Parallel import is not implemented for Import-DbaParquet." -EnableException $EnableException
-            return
-        }
-
         foreach ($filename in $Path) {
             if (-not $PSBoundParameters.ColumnMap) {
                 $ColumnMap = $null
@@ -758,10 +742,11 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
             # Automatically generate Table name if not specified
             if (-not $PSBoundParameters.Table) {
-                if ($filename.IndexOf('.') -ne -1) { $periodFound = $true }
+                $periodFound = $false
+                if ($filename.IndexOf(".") -ne -1) { $periodFound = $true }
 
                 if ($UseFileNameForSchema -and $periodFound -and -not $PSBoundParameters.Schema) {
-                    $table = $filename.Remove(0, $filename.IndexOf('.') + 1)
+                    $table = $filename.Remove(0, $filename.IndexOf(".") + 1)
                     Write-Message -Level Verbose -Message "Table name not specified, using $table from file name"
                 } else {
                     $table = $filename
@@ -772,15 +757,15 @@ WHERE c.object_id = OBJECT_ID(@tableName)
             # Use dbo as schema name if not specified in params, or as first string before a period in filename
             if (-not ($PSBoundParameters.Schema)) {
                 if ($UseFileNameForSchema) {
-                    if ($filename.IndexOf('.') -eq -1) {
+                    if ($filename.IndexOf(".") -eq -1) {
                         $schema = "dbo"
                         Write-Message -Level Verbose -Message "Schema not specified, and not found in file name, using dbo"
                     } else {
-                        $schema = $filename.SubString(0, $filename.IndexOf('.'))
+                        $schema = $filename.SubString(0, $filename.IndexOf("."))
                         Write-Message -Level Verbose -Message "Schema detected in filename, using $schema"
                     }
                 } else {
-                    $schema = 'dbo'
+                    $schema = "dbo"
                     Write-Message -Level Verbose -Message "Schema not specified, using dbo"
                 }
             }
@@ -802,7 +787,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
-                    if ($sqlconn.State -ne 'Open') {
+                    if ($sqlconn.State -ne "Open") {
                         $sqlconn.Open()
                     }
                 } catch {
@@ -820,7 +805,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 # Ensure Schema exists
                 $sql = "SELECT COUNT(*) FROM sys.schemas WHERE name = @schema"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
+                $null = $sqlcmd.Parameters.AddWithValue("schema", $schema)
                 # If Schema doesn't exist create it
                 # Defaulting to dbo.
                 if (($sqlcmd.ExecuteScalar()) -eq 0) {
@@ -841,15 +826,13 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                 # Ensure table or view exists
                 $sql = "SELECT COUNT(*) FROM sys.tables WHERE name = @table AND schema_id = schema_id(@schema)"
                 $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                $null = $sqlcmd.Parameters.AddWithValue('schema', $schema)
-                $null = $sqlcmd.Parameters.AddWithValue('table', $table)
+                $null = $sqlcmd.Parameters.AddWithValue("schema", $schema)
+                $null = $sqlcmd.Parameters.AddWithValue("table", $table)
 
                 $sql2 = "SELECT COUNT(*) FROM sys.views WHERE name = @table AND schema_id=schema_id(@schema)"
                 $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
-                $null = $sqlcmd2.Parameters.AddWithValue('schema', $schema)
-                $null = $sqlcmd2.Parameters.AddWithValue('table', $table)
-
-                $shouldMapCorrectTypes = $false
+                $null = $sqlcmd2.Parameters.AddWithValue("schema", $schema)
+                $null = $sqlcmd2.Parameters.AddWithValue("table", $table)
 
                 # Track if we created a "fat" table (varchar(MAX) for all columns) that needs post-import optimization
                 $createdFatTable = $false
@@ -880,7 +863,6 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         }
                     }
                 } else {
-                    $shouldMapCorrectTypes = $true
                     Write-Message -Level Verbose -Message "Table exists"
                 }
 
@@ -1106,24 +1088,6 @@ WHERE c.object_id = OBJECT_ID(@tableName)
         }
     }
     end {
-        # Close everything just in case & ignore errors
-        # Only close SQL connection if we created it (not user-provided)
-        try {
-            if (-not $startedWithAnOpenConnection) {
-                $null = $sqlconn.Close()
-                $null = $sqlconn.Dispose()
-            }
-            $null = $bulkCopy.Close()
-            $bulkcopy.Dispose()
-            if ($parquetReader) {
-                $parquetReader.Dispose()
-            }
-        } catch {
-            #here to avoid an empty catch
-            $null = 1
-        }
-
-        # Script is finished. Show elapsed time.
         $totaltime = [math]::Round($scriptelapsed.Elapsed.TotalSeconds, 2)
         Write-Message -Level Verbose -Message "Total Elapsed Time for everything: $totaltime seconds"
     }
