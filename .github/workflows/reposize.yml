@@ -26,7 +26,7 @@ jobs:
           gh pr checkout $env:PR
           $objects = git count-objects -v
           $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
-          $size = $sizepack -split " " | Select-Object -Last 1
+          $size = [int]($sizepack -split " " | Select-Object -Last 1)
           Write-Output "Repo size is $size"
           # old size = 110299 or 250000+
           if ($size -gt 105000) { # Size is 96250, so 105000 keeps headroom while catching old clones
