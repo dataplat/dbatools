@@ -141,7 +141,7 @@ function Import-DbaParquet {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        Requires Parquet.NET library (Parquet.Net.dll) in the dbatools module bin directory.
+        Requires Parquet.NET. Use Install-DbaParquet to install the external Parquet.NET assemblies if they are not already available.
 
     .LINK
         https://dbatools.io/Import-DbaParquet
@@ -270,31 +270,40 @@ function Import-DbaParquet {
         # Load Parquet.NET assembly
         $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'Parquet' }
         if (-not $parquetAssembly) {
-            $moduleRoot = $script:PSModuleRoot
-            if (-not $moduleRoot) {
-                $moduleRoot = Split-Path -Path (Split-Path -Path $MyInvocation.MyCommand.ScriptBlock.File -Parent) -Parent
+            $parquetDllPath = Get-DbaParquetPath -EnableException:$EnableException
+            if (-not $parquetDllPath) {
+                return
             }
 
-            $dependencyDllRelativePaths = @(
-                "bin\parquet\CommunityToolkit.HighPerformance.dll",
-                "bin\parquet\Microsoft.IO.RecyclableMemoryStream.dll",
-                "bin\parquet\Snappier.dll"
-            )
-            foreach ($dependencyDllRelativePath in $dependencyDllRelativePaths) {
-                $dependencyDllPath = Join-Path -Path $moduleRoot -ChildPath $dependencyDllRelativePath
-                if (Test-Path $dependencyDllPath) {
-                    try {
-                        Add-Type -Path $dependencyDllPath
-                    } catch {
+            $parquetDirectory = Split-Path -Path $parquetDllPath -Parent
+            $script:dbatools_ParquetAssemblyPath = $parquetDirectory
+            if (-not $script:dbatools_ParquetAssemblyResolveRegistered) {
+                $script:dbatools_ParquetAssemblyResolve = [System.ResolveEventHandler] {
+                    param($sender, $resolveArgs)
+
+                    $assemblyName = (New-Object -TypeName System.Reflection.AssemblyName -ArgumentList $resolveArgs.Name).Name
+                    $candidate = Join-Path -Path $script:dbatools_ParquetAssemblyPath -ChildPath "$assemblyName.dll"
+                    if (Test-Path -Path $candidate) {
+                        return [System.Reflection.Assembly]::LoadFrom($candidate)
                     }
+                    return $null
+                }
+                [System.AppDomain]::CurrentDomain.add_AssemblyResolve($script:dbatools_ParquetAssemblyResolve)
+                $script:dbatools_ParquetAssemblyResolveRegistered = $true
+            }
+
+            Get-ChildItem -Path $parquetDirectory -Filter "*.dll" | Where-Object Name -notin "Parquet.dll", "Parquet.Net.dll" | Sort-Object Name | ForEach-Object {
+                try {
+                    Add-Type -Path $PSItem.FullName -ErrorAction Stop
+                } catch {
+                    Write-Message -Level Verbose -Message "Could not preload Parquet.NET dependency $($PSItem.Name): $($_.Exception.Message)"
                 }
             }
 
-            $parquetDllPath = Join-Path -Path $moduleRoot -ChildPath "bin\parquet\Parquet.Net.dll"
-            if (Test-Path $parquetDllPath) {
-                Add-Type -Path $parquetDllPath
-            } else {
-                Stop-Function -Message "Parquet.NET library not found. Ensure Parquet.Net.dll is available in the dbatools module directory at $parquetDllPath" -EnableException $true
+            try {
+                Add-Type -Path $parquetDllPath -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
                 return
             }
         }

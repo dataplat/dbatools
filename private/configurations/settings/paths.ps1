@@ -48,6 +48,9 @@ if (-not (Test-Path -Path $script:AppData)) {
 # The default path where dbatools stores persistent data
 Set-DbatoolsConfig -FullName 'Path.DbatoolsData' -Value (Join-DbaPath $script:AppData "PowerShell" "dbatools") -Initialize -Validation string -Handler { } -Description "The path where dbatools stores persistent data on a per user basis."
 
+# The default path where dbatools stores Parquet.NET assemblies
+Set-DbatoolsConfig -FullName 'Path.DbatoolsParquet' -Value (Join-DbaPath $script:AppData "PowerShell" "dbatools" "parquet") -Initialize -Validation string -Handler { } -Description "The path where dbatools stores Parquet.NET assemblies."
+
 # The default path where dbatools stores temporary data
 Set-DbatoolsConfig -FullName 'Path.DbatoolsTemp' -Value $temp -Initialize -Validation string -Handler { } -Description "The path where dbatools stores temporary data."
 

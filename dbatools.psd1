@@ -439,6 +439,7 @@
         'Install-DbaInstance',
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
+        'Install-DbaParquet',
         'Install-DbaSqlPackage',
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',

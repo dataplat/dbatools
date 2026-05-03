@@ -884,6 +884,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Export-DbaSysDbUserObject',
         'Test-DbaDbQueryStore',
         'Install-DbaMultiTool',
+        'Install-DbaParquet',
         'New-DbaAgentOperator',
         'Remove-DbaAgentOperator',
         'Remove-DbaDbTableData',

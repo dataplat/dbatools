@@ -96,6 +96,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $null = Install-DbaParquet
+
         # Set up Parquet file paths for testing
         $pathEcdc = "$($TestConfig.appveyorlabrepo)\parquet\ecdc_cases.parquet"
         $pathBoundaries = "$($TestConfig.appveyorlabrepo)\parquet\world-administrative-boundaries.parquet"
