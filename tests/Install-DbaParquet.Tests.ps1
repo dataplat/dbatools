@@ -20,3 +20,30 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $script:originalParquetPath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
+    }
+
+    AfterAll {
+        Set-DbatoolsConfig -FullName "Path.DbatoolsParquet" -Value $script:originalParquetPath
+    }
+
+    Context "NuGet installation" {
+        It "installs Parquet.NET and managed dependencies to a custom path" {
+            $installPath = Join-Path $TestDrive "parquet"
+
+            $result = Install-DbaParquet -Path $installPath -Force -EnableException
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.Installed | Should -BeTrue
+            @("Parquet.dll", "Parquet.Net.dll") | Should -Contain $result.Name
+            Test-Path -Path $result.Path | Should -BeTrue
+
+            foreach ($assemblyName in "CommunityToolkit.HighPerformance.dll", "K4os.Compression.LZ4.dll", "Snappier.dll", "ZstdSharp.dll") {
+                Test-Path -Path (Join-Path $installPath $assemblyName) | Should -BeTrue
+            }
+        }
+    }
+}

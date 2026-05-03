@@ -11,9 +11,11 @@ if ($null -eq $PSDefaultParameterValues) {
 
 $hasIntegrationConfig = $false
 if ($TestConfig -and $TestConfig.appveyorlabrepo -and $TestConfig.InstanceMulti1) {
-    $pathEcdc = Join-Path $TestConfig.appveyorlabrepo "parquet\ecdc_cases.parquet"
-    $pathBoundaries = Join-Path $TestConfig.appveyorlabrepo "parquet\world-administrative-boundaries.parquet"
-    $hasIntegrationConfig = (Test-Path $pathEcdc) -and (Test-Path $pathBoundaries)
+    $parquetFixturePath = Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet"
+    $pathEcdc = Join-Path -Path $parquetFixturePath -ChildPath "ecdc_cases.parquet"
+    $pathBoundaries = Join-Path -Path $parquetFixturePath -ChildPath "world-administrative-boundaries.parquet"
+    $pathMixedTypes = Join-Path -Path $parquetFixturePath -ChildPath "mixed_types.parquet"
+    $hasIntegrationConfig = (Test-Path $pathEcdc) -and (Test-Path $pathBoundaries) -and (Test-Path $pathMixedTypes)
 }
 
 Describe $CommandName -Tag UnitTests {
@@ -99,8 +101,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
         $null = Install-DbaParquet
 
         # Set up Parquet file paths for testing
-        $pathEcdc = "$($TestConfig.appveyorlabrepo)\parquet\ecdc_cases.parquet"
-        $pathBoundaries = "$($TestConfig.appveyorlabrepo)\parquet\world-administrative-boundaries.parquet"
+        $parquetFixturePath = Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet"
+        $pathEcdc = Join-Path -Path $parquetFixturePath -ChildPath "ecdc_cases.parquet"
+        $pathBoundaries = Join-Path -Path $parquetFixturePath -ChildPath "world-administrative-boundaries.parquet"
+        $pathMixedTypes = Join-Path -Path $parquetFixturePath -ChildPath "mixed_types.parquet"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -109,7 +113,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup test tables
-        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases, "world-administrative-boundaries", ecdc_cases_static, ecdc_cases_ordinal, ecdc_cases_notxn, ecdc_cases_utf8, ecdc_cases_utf16 -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+        Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases, "world-administrative-boundaries", ecdc_cases_static, ecdc_cases_ordinal, ecdc_cases_notxn, ecdc_cases_utf8, ecdc_cases_utf16, mixed_types, mixed_types_columns, mixed_types_column_map, world_boundaries_exact -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -155,6 +159,77 @@ WHERE c.object_id = OBJECT_ID('dbo.ecdc_cases')
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table ecdc_cases -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Deterministic lab fixtures" {
+        It "imports mixed-type fixture rows and preserves exact values" {
+            $result = Import-DbaParquet -Path $pathMixedTypes -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table mixed_types -NoColumnOptimize -StoreStringAsUtf8:$false
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 3
+
+            $data = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT [key], label, CAST(amount AS decimal(10,2)) AS amount, CONVERT(date, imported_on) AS imported_on FROM dbo.mixed_types ORDER BY [key]"
+            $data.Count | Should -Be 3
+            $data[0]."key" | Should -Be 10
+            $data[0].label | Should -Be "alpha"
+            $data[0].amount | Should -Be ([decimal]"12.34")
+            $data[0].imported_on | Should -Be ([datetime]"2024-05-01")
+            $data[2]."key" | Should -Be 30
+            $data[2].label | Should -Be "gamma"
+            $data[2].amount | Should -Be ([decimal]"90.12")
+            $data[2].imported_on | Should -Be ([datetime]"2024-05-03")
+        }
+
+        It "imports a selected-column projection into a pre-created table" {
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "IF OBJECT_ID('dbo.mixed_types_columns') IS NOT NULL DROP TABLE dbo.mixed_types_columns; CREATE TABLE dbo.mixed_types_columns ([key] int NULL, [label] nvarchar(20) NULL);"
+
+            $result = Import-DbaParquet -Path $pathMixedTypes -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table mixed_types_columns -Column key, label
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 3
+
+            $metadata = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT COUNT(*) AS cnt FROM sys.columns WHERE object_id = OBJECT_ID('dbo.mixed_types_columns') AND name IN ('amount', 'imported_on')"
+            $metadata.cnt | Should -Be 0
+
+            $summary = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT COUNT(*) AS cnt, MIN([key]) AS min_key, MAX([key]) AS max_key, MAX(label) AS max_label FROM dbo.mixed_types_columns"
+            $summary.cnt | Should -Be 3
+            $summary.min_key | Should -Be 10
+            $summary.max_key | Should -Be 30
+            $summary.max_label | Should -Be "gamma"
+        }
+
+        It "maps parquet columns into differently named SQL columns" {
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "IF OBJECT_ID('dbo.mixed_types_column_map') IS NOT NULL DROP TABLE dbo.mixed_types_column_map; CREATE TABLE dbo.mixed_types_column_map ([identifier] int NULL, [display_name] nvarchar(20) NULL);"
+
+            $columnMap = @{
+                key   = "identifier"
+                label = "display_name"
+            }
+            $result = Import-DbaParquet -Path $pathMixedTypes -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table mixed_types_column_map -ColumnMap $columnMap
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 3
+
+            $row = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT identifier, display_name FROM dbo.mixed_types_column_map WHERE identifier = 20"
+            $row.display_name | Should -Be "beta"
+        }
+
+        It "imports binary fixture bytes and preserves their lengths" {
+            $result = Import-DbaParquet -Path $pathBoundaries -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -AutoCreateTable -Table world_boundaries_exact -NoColumnOptimize -StoreStringAsUtf8:$false
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $lengths = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELECT objectid, DATALENGTH(shape) AS shape_length FROM dbo.world_boundaries_exact ORDER BY objectid"
+            $lengths[0].shape_length | Should -Be 3
+            $lengths[1].shape_length | Should -Be 4
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table mixed_types, mixed_types_columns, mixed_types_column_map, world_boundaries_exact -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
