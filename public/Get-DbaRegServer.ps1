@@ -32,7 +32,7 @@ function Get-DbaRegServer {
         Specifies a pattern for filtering registered servers using regular expressions.
         Use this when you need to match servers by pattern, such as "^prod" or ".*-db$".
         This parameter supports standard .NET regular expression syntax and matches against both Name and ServerName properties.
-    
+
     .PARAMETER ExcludeServerName
         Excludes registered servers with specific server instance names (the actual SQL Server connection strings).
         Use this when you want to retrieve most servers but skip certain instances like those under maintenance or decommissioned.
@@ -199,14 +199,18 @@ function Get-DbaRegServer {
         }
 
         $servers = @()
+        $serverstores = @()
         $serverToServerStore = @{ }
         foreach ($instance in $SqlInstance) {
+            $serverstore = $null
 
             try {
                 $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             } catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
+                continue
             }
+            $serverstores += $serverstore
 
             if ($Group) {
                 $groupservers = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
@@ -289,7 +293,7 @@ function Get-DbaRegServer {
             Write-Message -Level Verbose -Message "Filtering by pattern for $Pattern"
             $servers = $servers | Where-Object { & $matchesPattern $_.Name $_.ServerName $Pattern }
         }
-        
+
         if ($ExcludeServerName) {
             Write-Message -Level Verbose -Message "Excluding servers: $ExcludeServerName"
             $servers = $servers | Where-Object ServerName -notin $ExcludeServerName
@@ -379,22 +383,25 @@ function Get-DbaRegServer {
             Select-DefaultView -InputObject $server -Property $defaults
         }
 
-        if ($IncludeSelf -and $SqlInstance -and $serverstore) {
-            Write-Message -Level Verbose -Message "Adding CMS instance"
-            $self = [PSCustomObject]@{
-                Name         = "CMS Instance"
-                ServerName   = $serverstore.SqlInstance
-                Group        = $null
-                Description  = $null
-                Source       = "Central Management Servers"
-                ComputerName = $serverstore.ComputerName
-                InstanceName = $serverstore.InstanceName
-                SqlInstance  = $serverstore.SqlInstance
-                FQDN         = $null
-                IPAddress    = $null
+        if ($IncludeSelf -and $serverstores) {
+            foreach ($currentServerStore in $serverstores) {
+                Write-Message -Level Verbose -Message "Adding CMS instance"
+                $self = [PSCustomObject]@{
+                    Name         = "CMS Instance"
+                    ServerName   = $currentServerStore.SqlInstance
+                    Group        = $null
+                    Description  = $null
+                    Source       = "Central Management Servers"
+                    ComputerName = $currentServerStore.ComputerName
+                    InstanceName = $currentServerStore.InstanceName
+                    SqlInstance  = $currentServerStore.SqlInstance
+                    ParentServer = $currentServerStore.ParentServer
+                    FQDN         = $null
+                    IPAddress    = $null
+                }
+                $self | Add-Member -MemberType ScriptMethod -Name ToString -Value { $this.ServerName } -Force
+                Select-DefaultView -InputObject $self -Property $defaults
             }
-            $self | Add-Member -MemberType ScriptMethod -Name ToString -Value { $this.ServerName } -Force
-            Select-DefaultView -InputObject $self -Property $defaults
         }
     }
 }

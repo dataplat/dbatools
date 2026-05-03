@@ -155,22 +155,33 @@ function Copy-DbaPolicyManagement {
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
             $destStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $destSqlStoreConnection
 
+            $storePoliciesToCopy = $storePolicies
+            $storeConditionsToCopy = $storeConditions
+            $storeObjectSetsToCopy = $storeObjectSets
+
             if ($Policy) {
-                $storePolicies = $storePolicies | Where-Object Name -In $Policy
+                $storePoliciesToCopy = $storePoliciesToCopy | Where-Object Name -In $Policy
             }
             if ($ExcludePolicy) {
-                $storePolicies = $storePolicies | Where-Object Name -NotIn $ExcludePolicy
+                $storePoliciesToCopy = $storePoliciesToCopy | Where-Object Name -NotIn $ExcludePolicy
             }
             if ($Condition) {
-                $storeConditions = $storeConditions | Where-Object Name -In $Condition
+                $storeConditionsToCopy = $storeConditionsToCopy | Where-Object Name -In $Condition
             }
             if ($ExcludeCondition) {
-                $storeConditions = $storeConditions | Where-Object Name -NotIn $ExcludeCondition
+                $storeConditionsToCopy = $storeConditionsToCopy | Where-Object Name -NotIn $ExcludeCondition
             }
 
             if ($Policy -and $Condition) {
-                $storeConditions = $null
-                $storePolicies = $null
+                $storeConditionsToCopy = $null
+                $storePoliciesToCopy = $null
+            }
+
+            if ($Policy -or $ExcludePolicy) {
+                $requiredObjectSets = $storePoliciesToCopy |
+                    Select-Object -ExpandProperty ObjectSet -Unique |
+                    Where-Object { $PSItem }
+                $storeObjectSetsToCopy = $storeObjectSetsToCopy | Where-Object Name -In $requiredObjectSets
             }
 
             <#
@@ -178,7 +189,7 @@ function Copy-DbaPolicyManagement {
             #>
 
             Write-Message -Level Verbose -Message "Migrating categories"
-            $uniquePolicyCategories = $storePolicies | Select-Object -ExpandProperty PolicyCategory -Unique
+            $uniquePolicyCategories = $storePoliciesToCopy | Select-Object -ExpandProperty PolicyCategory -Unique
             $storeCategories = $sourceStore.PolicyCategories | Where-Object { $_.Name -in $uniquePolicyCategories }
             foreach ($category in $storeCategories) {
                 $categoryName = $category.Name
@@ -227,7 +238,7 @@ function Copy-DbaPolicyManagement {
             #>
 
             Write-Message -Level Verbose -Message "Migrating conditions"
-            foreach ($condition in $storeConditions) {
+            foreach ($condition in $storeConditionsToCopy) {
                 $conditionName = $condition.Name
 
                 $copyConditionStatus = [PSCustomObject]@{
@@ -296,7 +307,7 @@ function Copy-DbaPolicyManagement {
             #>
 
             Write-Message -Level Verbose -Message "Migrating object sets"
-            foreach ($objectSet in $storeObjectSets) {
+            foreach ($objectSet in $storeObjectSetsToCopy) {
                 $objectSetName = $objectSet.Name
 
                 $copyObjectSetStatus = [PSCustomObject]@{
@@ -344,7 +355,7 @@ function Copy-DbaPolicyManagement {
             #>
 
             Write-Message -Level Verbose -Message "Migrating policies"
-            foreach ($policy in $storePolicies) {
+            foreach ($policy in $storePoliciesToCopy) {
                 $policyName = $policy.Name
 
                 $copyPolicyStatus = [PSCustomObject]@{

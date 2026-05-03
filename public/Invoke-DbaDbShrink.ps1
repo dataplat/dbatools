@@ -58,6 +58,16 @@ function Invoke-DbaDbShrink {
         Sets the command timeout in minutes for the shrink operation. Defaults to 0 (infinite timeout).
         Large database shrinks can take hours to complete, so the default allows operations to run without timing out.
 
+    .PARAMETER WaitAtLowPriority
+        Instructs DBCC SHRINKFILE to wait at low priority for schema modification locks, minimizing blocking of other sessions.
+        Requires SQL Server 2022 (version 16) or later. When a lock cannot be obtained, SQL Server will abort the operation
+        after approximately one minute and log error 49516. The AbortAfterWait parameter controls what is aborted.
+
+    .PARAMETER AbortAfterWait
+        Specifies what to abort when the WAIT_AT_LOW_PRIORITY wait period expires. Valid values are Self and Blockers.
+        Self aborts the shrink operation itself. Blockers kills the user sessions that block the lock acquisition.
+        Defaults to Self. Only applies when WaitAtLowPriority is specified.
+
     .PARAMETER LogsOnly
         Deprecated. Use FileType instead.
 
@@ -165,6 +175,11 @@ function Invoke-DbaDbShrink {
 
         Shrinks all databases coming from a pre-filtered list via Get-DbaDatabase
 
+    .EXAMPLE
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2022 -Database AdventureWorks2014 -WaitAtLowPriority -AbortAfterWait Blockers
+
+        Shrinks AdventureWorks2014 using WAIT_AT_LOW_PRIORITY, killing blocking sessions if the wait expires. Requires SQL Server 2022+.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -183,6 +198,9 @@ function Invoke-DbaDbShrink {
         [string]$FileType = 'All',
         [int64]$StepSize,
         [int]$StatementTimeout = 0,
+        [switch]$WaitAtLowPriority,
+        [ValidateSet('Self', 'Blockers')]
+        [string]$AbortAfterWait = 'Self',
         [switch]$ExcludeIndexStats,
         [switch]$ExcludeUpdateUsage,
         [switch]$EnableException,
@@ -201,6 +219,11 @@ function Invoke-DbaDbShrink {
             $stepSizeKB = ([dbasize]($StepSize)).Kilobyte
         }
         $StatementTimeoutSeconds = $StatementTimeout * 60
+
+        $walp = ""
+        if ($WaitAtLowPriority) {
+            $walp = " WITH WAIT_AT_LOW_PRIORITY (ABORT_AFTER_WAIT = $($AbortAfterWait.ToUpper()))"
+        }
 
         $sql = 'SELECT
                   AVG(avg_fragmentation_in_percent) AS [avg_fragmentation_in_percent]
@@ -255,6 +278,10 @@ function Invoke-DbaDbShrink {
                 continue
             }
 
+            if ($WaitAtLowPriority -and $instance.VersionMajor -lt 16) {
+                Stop-Function -Message "WAIT_AT_LOW_PRIORITY for DBCC SHRINKFILE requires SQL Server 2022 (version 16) or later. $instance is running version $($instance.VersionMajor)." -Target $instance -Continue
+            }
+
             $files = @()
             if ($FileType -in ('Log', 'All')) {
                 $files += $db.LogFiles
@@ -278,6 +305,8 @@ function Invoke-DbaDbShrink {
                 Write-Message -Level Verbose -Message "Initial Freespace: $($spaceAvailableKB)"
                 Write-Message -Level Verbose -Message "Target Freespace: $($desiredSpaceAvailableKB)"
                 Write-Message -Level Verbose -Message "Target FileSize: $($desiredFileSizeKB)"
+
+                $escapedFileName = $file.Name.Replace("'", "''")
 
                 if ($spaceAvailableKB -le $desiredSpaceAvailableKB) {
                     Write-Message -Level Warning -Message "File size of ($startingSizeKB) is less than or equal to the desired outcome ($desiredFileSizeKB) for $($file.Name)"
@@ -313,7 +342,14 @@ function Invoke-DbaDbShrink {
                                         $shrinkSizeKB = $desiredFileSizeKB
                                     }
                                     Write-Message -Level Verbose -Message ('Shrinking {0} to {1}' -f $file.Name, $shrinkSizeKB)
-                                    $file.Shrink($shrinkSizeKB.Megabyte, $ShrinkMethod)
+                                    $targetMB = [int]$shrinkSizeKB.Megabyte
+                                    $shrinkSqlArgs = switch ($ShrinkMethod) {
+                                        'EmptyFile' { "N'$escapedFileName', EMPTYFILE" }
+                                        'NoTruncate' { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
+                                        'TruncateOnly' { "N'$escapedFileName', $targetMB, TRUNCATEONLY" }
+                                        default { "N'$escapedFileName', $targetMB" }
+                                    }
+                                    $null = $instance.Query("DBCC SHRINKFILE ($shrinkSqlArgs)$walp", $db.name)
                                     $file.Refresh()
 
                                     if ($startingSizeKB -eq ($file.Size * 1024)) {
@@ -322,14 +358,26 @@ function Invoke-DbaDbShrink {
                                     }
                                 }
                             } else {
-                                $file.Shrink(($desiredFileSizeKB.Megabyte), $ShrinkMethod)
+                                $targetMB = [int]$desiredFileSizeKB.Megabyte
+                                $shrinkSqlArgs = switch ($ShrinkMethod) {
+                                    'EmptyFile' { "N'$escapedFileName', EMPTYFILE" }
+                                    'NoTruncate' { "N'$escapedFileName', $targetMB, NOTRUNCATE" }
+                                    'TruncateOnly' { "N'$escapedFileName', $targetMB, TRUNCATEONLY" }
+                                    default { "N'$escapedFileName', $targetMB" }
+                                }
+                                $null = $instance.Query("DBCC SHRINKFILE ($shrinkSqlArgs)$walp", $db.name)
                                 $file.Refresh()
                             }
                             $success = $true
                         } catch {
                             $success = $false
                             $errorDetails = $_.Exception.Message
-                            Stop-Function -Message "Shrink operation failed for file $($file.Name): $errorDetails" -ErrorRecord $_
+                            $failureMessage = "Shrink operation failed for file $($file.Name): $errorDetails"
+                            if ($EnableException) {
+                                Stop-Function -Message $failureMessage -EnableException $EnableException -ErrorRecord $_
+                            } else {
+                                Write-Message -Level Warning -Message $failureMessage -ErrorRecord $_
+                            }
                         } finally {
                             $instance.ConnectionContext.StatementTimeout = $previousStatementTimeout
                         }
@@ -360,11 +408,9 @@ function Invoke-DbaDbShrink {
                         $ts = [TimeSpan]::FromSeconds($timSpan.TotalSeconds)
                         $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 
-                        $notesText = 'Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE'
+                        $notesText = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                         if ($errorDetails) {
                             $notesText = "$errorDetails | $notesText"
-                        } else {
-                            $notesText = $notesText
                         }
 
                         $object = [PSCustomObject]@{

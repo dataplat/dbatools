@@ -69,7 +69,8 @@ function Get-SQLInstanceComponent {
         [DbaInstanceParameter[]]$ComputerName = $Env:COMPUTERNAME,
         [ValidateSet('SSDS', 'SSAS', 'SSRS')]
         [string[]]$Component = @('SSDS', 'SSAS', 'SSRS'),
-        [pscredential]$Credential
+        [pscredential]$Credential,
+        [string]$Authentication = "Default"
     )
 
     begin {
@@ -297,7 +298,17 @@ function Get-SQLInstanceComponent {
     process {
         foreach ($computer in $ComputerName) {
             $arguments = @{ Component = $Component }
-            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList $arguments -RequiredPSVersion 3.0
+            $splatInvokeCommand2 = @{
+                ComputerName      = $computer
+                ScriptBlock       = $regScript
+                Credential        = $Credential
+                Authentication    = $Authentication
+                ErrorAction       = "Stop"
+                Raw               = $true
+                ArgumentList      = $arguments
+                RequiredPSVersion = [version]"3.0"
+            }
+            $results = Invoke-Command2 @splatInvokeCommand2
 
             # Log is stored in the log property, pile it all into the debug log
             foreach ($logEntry in $results.Log) {

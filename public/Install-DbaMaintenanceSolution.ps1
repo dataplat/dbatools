@@ -50,7 +50,8 @@ function Install-DbaMaintenanceSolution {
         Without this switch, only the stored procedures are installed and must be scheduled manually or called from custom jobs.
 
     .PARAMETER AutoScheduleJobs
-        Automatically creates optimized job schedules for backup operations. Valid values: WeeklyFull, DailyFull, NoDiff, FifteenMinuteLog, HourlyLog.
+        Automatically creates optimized job schedules for backup operations when InstallJobs is specified. Valid values: WeeklyFull, DailyFull, NoDiff, FifteenMinuteLog, HourlyLog.
+        Specify exactly one full backup cadence, WeeklyFull or DailyFull, and optionally combine it with NoDiff, FifteenMinuteLog, or HourlyLog.
         WeeklyFull creates weekly full backups, daily differentials, and 15-minute log backups. DailyFull skips differentials. Use HourlyLog for less frequent transaction log backups.
         System databases are always backed up daily regardless of user database schedule. Automatically resolves schedule conflicts by adjusting start times.
 
@@ -105,9 +106,9 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER CheckSum
         Controls checksum validation in job commands. Valid values: Default, ForceOn, ForceOff, Remove.
         Default: uses Ola's default, which includes @Checksum = 'Y' in job commands.
-        ForceOn: explicitly sets @CheckSum = 'Y' in job commands.
-        ForceOff: explicitly sets @CheckSum = 'N' in job commands.
-        Remove: removes @CheckSum from job commands, letting the stored procedure's built-in default apply.
+        ForceOn: explicitly sets @Checksum = 'Y' in job commands.
+        ForceOff: explicitly sets @Checksum = 'N' in job commands.
+        Remove: removes @Checksum from job commands, letting the stored procedure's built-in default apply.
         Only applies when InstallJobs is specified.
 
     .PARAMETER ModificationLevel
@@ -223,7 +224,7 @@ function Install-DbaMaintenanceSolution {
         >> SqlInstance = "localhost"
         >> InstallJobs = $true
         >> CleanupTime = 720
-        >> AutoSchedule = "WeeklyFull"
+        >> AutoScheduleJobs = "WeeklyFull"
         >> }
         >> Install-DbaMaintenanceSolution @params
 
@@ -324,7 +325,7 @@ function Install-DbaMaintenanceSolution {
             return
         }
 
-        if ($BackupLocation -eq "NUL" -and $Verify -notin "ForceOff", "Remove") {
+        if ($InstallJobs -and $BackupLocation -eq "NUL" -and $Verify -notin "ForceOff", "Remove") {
             Stop-Function -Message "Verify is not supported when backing up to NUL. Either backup to a different directory or set -Verify to 'ForceOff' or 'Remove'."
             return
         }
@@ -332,6 +333,21 @@ function Install-DbaMaintenanceSolution {
         if ((Test-Bound -ParameterName CleanupTime) -and -not $InstallJobs) {
             Stop-Function -Message "CleanupTime is only useful when installing jobs. To install jobs, please use '-InstallJobs' in addition to CleanupTime."
             return
+        }
+
+        if (Test-Bound -ParameterName AutoScheduleJobs) {
+            if (-not $InstallJobs) {
+                Stop-Function -Message "AutoScheduleJobs is only useful when installing jobs. To create and schedule SQL Agent jobs, please use '-InstallJobs' in addition to AutoScheduleJobs."
+                return
+            }
+
+            $hasWeeklyFull = "WeeklyFull" -in $AutoScheduleJobs
+            $hasDailyFull = "DailyFull" -in $AutoScheduleJobs
+
+            if ($hasWeeklyFull -eq $hasDailyFull) {
+                Stop-Function -Message "AutoScheduleJobs requires exactly one full backup schedule. Specify either 'WeeklyFull' or 'DailyFull'."
+                return
+            }
         }
 
         if ($ReplaceExisting -eq $true) {
@@ -636,7 +652,9 @@ function Install-DbaMaintenanceSolution {
                     }
                 }
 
-                $fullschedule = New-DbaAgentSchedule @fullparams
+                if ("WeeklyFull" -in $AutoScheduleJobs -or "DailyFull" -in $AutoScheduleJobs) {
+                    $fullschedule = New-DbaAgentSchedule @fullparams
+                }
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
                     $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-|1\.", ""
@@ -708,13 +726,15 @@ function Install-DbaMaintenanceSolution {
 
                 if ("HourlyLog" -in $AutoScheduleJobs) {
                     $logparams = @{
-                        SqlInstance       = $server
-                        Job               = "DatabaseBackup - USER_DATABASES - LOG"
-                        Schedule          = "Hourly Log Backup"
-                        FrequencyType     = "Daily"
-                        FrequencyInterval = 1
-                        StartTime         = "003000"
-                        Force             = $true
+                        SqlInstance             = $server
+                        Job                     = "DatabaseBackup - USER_DATABASES - LOG"
+                        Schedule                = "Hourly Log Backup"
+                        FrequencyType           = "Daily"
+                        FrequencyInterval       = 1
+                        FrequencySubDayType     = "Hours"
+                        FrequencySubDayInterval = 1
+                        StartTime               = "000000"
+                        Force                   = $true
                     }
                 } else {
                     $logparams = @{
@@ -823,18 +843,18 @@ function Install-DbaMaintenanceSolution {
                         # CheckSum parameter for all backup jobs
                         # Ola includes @Checksum = 'Y' by default. Default: leave unchanged.
                         if ($CheckSum -eq "ForceOn") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'N'", "@CheckSum = 'Y'"
-                            if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'Y'"
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'N'", "@Checksum = 'Y'"
+                            if ($modifiedCommand -notmatch "@Checksum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'Y'"
                             }
                         } elseif ($CheckSum -eq "ForceOff") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = 'Y'", "@CheckSum = 'N'"
-                            if ($modifiedCommand -notmatch "@CheckSum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CheckSum = 'N'"
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'Y'", "@Checksum = 'N'"
+                            if ($modifiedCommand -notmatch "@Checksum") {
+                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'N'"
                             }
                         } elseif ($CheckSum -eq "Remove") {
-                            $modifiedCommand = $modifiedCommand -replace "@CheckSum = '[YN]',\r?\n", ""
-                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@CheckSum = '[YN]'", ""
+                            $modifiedCommand = $modifiedCommand -replace "@Checksum = '[YN]',\r?\n", ""
+                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Checksum = '[YN]'", ""
                         }
 
                         # Update job step if command was modified

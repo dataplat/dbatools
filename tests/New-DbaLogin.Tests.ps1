@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaLogin",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -35,6 +35,97 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "External provider fallback" {
+            BeforeEach {
+                $script:queryStatements = @()
+
+                $script:createdLogin = [PSCustomObject]@{
+                    Name               = $null
+                    DenyWindowsLogin   = $null
+                    MustChangePassword = $false
+                }
+
+                $script:pendingLogin = [PSCustomObject]@{
+                    Name                      = "pending"
+                    LoginType                 = $null
+                    DefaultDatabase           = $null
+                    Language                  = $null
+                    PasswordExpirationEnabled = $null
+                    PasswordPolicyEnforced    = $null
+                    DenyWindowsLogin          = $null
+                    MustChangePassword        = $false
+                    AsymmetricKey             = $null
+                    Certificate               = $null
+                    Sid                       = $null
+                }
+                Add-Member -InputObject $script:pendingLogin -Name Set_Sid -MemberType ScriptMethod -Value {
+                    param($sid)
+                    $this.Sid = $sid
+                } -Force
+                Add-Member -InputObject $script:pendingLogin -Name Create -MemberType ScriptMethod -Value {
+                    throw "SMO create failed for test"
+                } -Force
+                Add-Member -InputObject $script:pendingLogin -Name Refresh -MemberType ScriptMethod -Value { } -Force
+                Add-Member -InputObject $script:pendingLogin -Name AddCredential -MemberType ScriptMethod -Value {
+                    param($credential)
+                    $this.Credential = $credential
+                } -Force
+                Add-Member -InputObject $script:pendingLogin -Name Drop -MemberType ScriptMethod -Value { } -Force
+                Add-Member -InputObject $script:pendingLogin -Name Disable -MemberType ScriptMethod -Value { } -Force
+                Add-Member -InputObject $script:pendingLogin -Name Alter -MemberType ScriptMethod -Value { } -Force
+                Add-Member -InputObject $script:pendingLogin -Name ChangePassword -MemberType ScriptMethod -Value {
+                    param($securePassword, $mustChange)
+                    $this.MustChangePassword = $mustChange
+                } -Force
+
+                $script:mockLogins = @{ }
+                Add-Member -InputObject $script:mockLogins -Name Refresh -MemberType ScriptMethod -Value { } -Force
+
+                $script:mockServer = [DbaInstanceParameter]"sql2022"
+                Add-Member -InputObject $script:mockServer -Name IsAzure -MemberType NoteProperty -Value $false -Force
+                Add-Member -InputObject $script:mockServer -Name LoginMode -MemberType NoteProperty -Value ([Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -Force
+                Add-Member -InputObject $script:mockServer -Name DatabaseEngineType -MemberType NoteProperty -Value "Standalone" -Force
+                Add-Member -InputObject $script:mockServer -Name DatabaseEngineEdition -MemberType NoteProperty -Value "Enterprise" -Force
+                Add-Member -InputObject $script:mockServer -Name VersionMajor -MemberType NoteProperty -Value 16 -Force
+                Add-Member -InputObject $script:mockServer -Name Logins -MemberType NoteProperty -Value $script:mockLogins -Force
+                Add-Member -InputObject $script:mockServer -Name Query -MemberType ScriptMethod -Value {
+                    param($sql)
+                    $script:queryStatements += $sql
+                    if ($sql -match "^CREATE LOGIN \[(?<LoginName>.+)\] FROM EXTERNAL PROVIDER$") {
+                        $script:createdLogin.Name = $Matches.LoginName
+                        $this.Logins[$Matches.LoginName] = $script:createdLogin
+                    }
+                } -Force
+
+                Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+                Mock Connect-DbaInstance { $script:mockServer } -ModuleName dbatools
+                Mock Add-TeppCacheItem { } -ModuleName dbatools
+                Mock Get-DbaLogin {
+                    [PSCustomObject]@{
+                        Name      = $Login
+                        LoginType = "ExternalUser"
+                    }
+                } -ModuleName dbatools
+                Mock Stop-Function {
+                    throw $Message
+                } -ModuleName dbatools
+                Mock New-Object {
+                    $script:pendingLogin
+                } -ModuleName dbatools
+            }
+
+            It "Should use ALTER LOGIN for external provider defaults after T-SQL fallback" {
+                $null = New-DbaLogin -SqlInstance "sql2022" -Login "entra-user" -ExternalProvider -DefaultDatabase "tempdb" -Language "Deutsch"
+
+                $script:queryStatements.Count | Should -Be 2
+                $script:queryStatements[0] | Should -Be "CREATE LOGIN [entra-user] FROM EXTERNAL PROVIDER"
+                $script:queryStatements[0] | Should -Not -Match "WITH"
+                $script:queryStatements[1] | Should -Be "ALTER LOGIN [entra-user] WITH DEFAULT_DATABASE = [tempdb], DEFAULT_LANGUAGE = [Deutsch]"
+            }
         }
     }
 }
@@ -284,7 +375,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    if ((Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1).LoginMode -eq "Mixed") {
+    if ($TestConfig.InstanceMulti1 -and (Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1).LoginMode -eq "Mixed") {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
                 $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)

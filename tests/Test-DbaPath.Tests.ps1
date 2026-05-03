@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaPath",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -17,6 +17,54 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope dbatools {
+        BeforeAll {
+            function New-MockTestDbaPathServer {
+                $connectionContext = [PSCustomObject]@{
+                }
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                    throw "xp_fileexist failed"
+                } -Force
+
+                [PSCustomObject]@{
+                    Name              = "sql1"
+                    ServiceName       = "MSSQLSERVER"
+                    ComputerName      = "sql1"
+                    ConnectionContext = $connectionContext
+                }
+            }
+        }
+
+        Context "xp_fileexist execution failures" {
+            BeforeAll {
+                Mock Connect-DbaInstance {
+                    New-MockTestDbaPathServer
+                }
+            }
+
+            It "Returns false for a single path by default" {
+                $result = Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak"
+
+                $result | Should -Be $false
+            }
+
+            It "Returns false objects for array input by default" {
+                $results = Test-DbaPath -SqlInstance "sql1" -Path @("C:\temp\file1.bak", "C:\temp\file2.bak")
+
+                ($results | Measure-Object).Count | Should -Be 2
+                ($results | Where-Object FilePath -eq "C:\temp\file1.bak").FileExists | Should -Be $false
+                ($results | Where-Object FilePath -eq "C:\temp\file2.bak").IsContainer | Should -Be $false
+            }
+
+            It "Honors EnableException when xp_fileexist execution fails" {
+                { Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -EnableException } | Should -Throw
+            }
         }
     }
 }

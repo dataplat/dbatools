@@ -25,7 +25,7 @@ function Start-DbaDbEncryption {
         Use this when you need to encrypt specific databases instead of all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Specifies which databases to exclude from TDE encryption when using AllUserDatabases.
+        Specifies which databases to exclude from TDE encryption.
         Useful when you want to encrypt most databases but need to skip specific ones due to compatibility or business requirements.
 
     .PARAMETER EncryptorName
@@ -489,7 +489,7 @@ function Start-DbaDbEncryption {
                 # Step 3: Create a database encryption key in the target database if needed
                 # This has to be done before parallel processing as New-DbaDbEncryptionKey uses Get-DbaDatabase internally
                 # which uses the custom method .Query() that is not present in runspaces due to the way dbatools is loaded there.
-                foreach ($db in $InputObject) {
+                foreach ($db in $databases) {
                     try {
                         if ($db.HasDatabaseEncryptionKey) {
                             Write-Message -Level Verbose -Message "$($db.Name) on $($db.Parent.Name) already has a database encryption key"
@@ -549,7 +549,7 @@ function Start-DbaDbEncryption {
                             Error             = $_.Exception.Message
                         }
                     } finally {
-                        $null = $server | Disconnect-DbaInstance
+                        $null = $server | Disconnect-DbaInstance -WhatIf:$false
                     }
                 }
 

@@ -116,14 +116,34 @@ function Get-DbaDbPageInfo {
                         INNER JOIN sys.schemas AS ss ON ss.schema_id = st.schema_id"
 
         if ($Schema) {
-            $sql = "$sql WHERE ss.name IN ('$($Schema -join "','")')"
+            $schemaNames = $Schema | ForEach-Object { $_.Replace("'", "''") }
+            $sql = "$sql WHERE ss.name IN (N'$($schemaNames -join "','")')"
         }
 
         if ($Table) {
-            if ($schema) {
-                $sql = "$sql AND st.name IN ('$($Table -join "','")')"
+            $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+            $tableWhereClauses = foreach ($tablePart in $tableParts) {
+                $tableName = ([string]$tablePart.Name).Replace("'", "''")
+                $clauseParts = @("st.name = N'$tableName'")
+
+                if ($tablePart.Schema) {
+                    $schemaName = ([string]$tablePart.Schema).Replace("'", "''")
+                    $clauseParts += "ss.name = N'$schemaName'"
+                }
+
+                if ($tablePart.Database) {
+                    $databaseName = ([string]$tablePart.Database).Replace("'", "''")
+                    $clauseParts += "DB_NAME() = N'$databaseName'"
+                }
+
+                "($($clauseParts -join " AND "))"
+            }
+
+            $tableWhereClause = $tableWhereClauses -join " OR "
+            if ($Schema) {
+                $sql = "$sql AND ($tableWhereClause)"
             } else {
-                $sql = "$sql WHERE st.name IN ('$($Table -join "','")')"
+                $sql = "$sql WHERE $tableWhereClause"
             }
         }
     }

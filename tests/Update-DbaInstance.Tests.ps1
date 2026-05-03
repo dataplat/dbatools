@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Update-DbaInstance",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -61,13 +61,13 @@ Describe -skip $CommandName -Tag UnitTests {
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@{
                         "SqlInstance" = $null
-                        "Build" = "11.0.5058"
-                        "NameLevel" = "2012"
-                        "SPLevel" = "SP2"
-                        "CULevel" = $null
-                        "KBLevel" = "2958429"
-                        "BuildLevel" = [version]'11.0.5058'
-                        "MatchType" = "Exact"
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
                     }
                 }
             }
@@ -125,35 +125,35 @@ Describe -skip $CommandName -Tag UnitTests {
                 @(
                     [PSCustomObject]@{ InstanceName = 'LAB0'; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "14.0.3038"
-                            "NameLevel" = "2017"
-                            "SPLevel" = "RTM"
-                            "CULevel" = 'CU11'
-                            "KBLevel" = "4462262"
-                            "BuildLevel" = [version]'14.0.3038'
-                            "MatchType" = "Exact"
+                            "Build"       = "14.0.3038"
+                            "NameLevel"   = "2017"
+                            "SPLevel"     = "RTM"
+                            "CULevel"     = 'CU11'
+                            "KBLevel"     = "4462262"
+                            "BuildLevel"  = [version]'14.0.3038'
+                            "MatchType"   = "Exact"
                         }
                     }
                     [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "11.0.5058"
-                            "NameLevel" = "2012"
-                            "SPLevel" = "SP2"
-                            "CULevel" = $null
-                            "KBLevel" = "2958429"
-                            "BuildLevel" = [version]'11.0.5058'
-                            "MatchType" = "Exact"
+                            "Build"       = "11.0.5058"
+                            "NameLevel"   = "2012"
+                            "SPLevel"     = "SP2"
+                            "CULevel"     = $null
+                            "KBLevel"     = "2958429"
+                            "BuildLevel"  = [version]'11.0.5058'
+                            "MatchType"   = "Exact"
                         }
                     }
                     [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "10.0.5770"
-                            "NameLevel" = "2008"
-                            "SPLevel" = "SP3"
-                            "CULevel" = "CU3"
-                            "KBLevel" = "2648098"
-                            "BuildLevel" = [version]'10.0.5770'
-                            "MatchType" = "Exact"
+                            "Build"       = "10.0.5770"
+                            "NameLevel"   = "2008"
+                            "SPLevel"     = "SP3"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "2648098"
+                            "BuildLevel"  = [version]'10.0.5770'
+                            "MatchType"   = "Exact"
                         }
                     }
                 )
@@ -289,24 +289,24 @@ Describe -skip $CommandName -Tag UnitTests {
                 @(
                     [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "13.0.4435"
-                            "NameLevel" = "2016"
-                            "SPLevel" = "SP1"
-                            "CULevel" = "CU3"
-                            "KBLevel" = "4019916"
-                            "BuildLevel" = [version]'13.0.4435'
-                            "MatchType" = "Exact"
+                            "Build"       = "13.0.4435"
+                            "NameLevel"   = "2016"
+                            "SPLevel"     = "SP1"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "4019916"
+                            "BuildLevel"  = [version]'13.0.4435'
+                            "MatchType"   = "Exact"
                         }
                     }
                     [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "10.0.4279"
-                            "NameLevel" = "2008"
-                            "SPLevel" = "SP2"
-                            "CULevel" = "CU3"
-                            "KBLevel" = "2498535"
-                            "BuildLevel" = [version]'10.0.4279'
-                            "MatchType" = "Exact"
+                            "Build"       = "10.0.4279"
+                            "NameLevel"   = "2008"
+                            "SPLevel"     = "SP2"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "2498535"
+                            "BuildLevel"  = [version]'10.0.4279'
+                            "MatchType"   = "Exact"
                         }
                     }
                 )
@@ -413,24 +413,24 @@ Describe -skip $CommandName -Tag UnitTests {
                 @(
                     [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "13.0.4435"
-                            "NameLevel" = "2016"
-                            "SPLevel" = "SP1"
-                            "CULevel" = "CU3"
-                            "KBLevel" = "4019916"
-                            "BuildLevel" = [version]'13.0.4435'
-                            "MatchType" = "Exact"
+                            "Build"       = "13.0.4435"
+                            "NameLevel"   = "2016"
+                            "SPLevel"     = "SP1"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "4019916"
+                            "BuildLevel"  = [version]'13.0.4435'
+                            "MatchType"   = "Exact"
                         }
                     }
                     [PSCustomObject]@{ InstanceName = 'LAB2'; Version = [PSCustomObject]@{
                             "SqlInstance" = $null
-                            "Build" = "10.0.4279"
-                            "NameLevel" = "2008"
-                            "SPLevel" = "SP2"
-                            "CULevel" = "CU3"
-                            "KBLevel" = "2498535"
-                            "BuildLevel" = [version]'10.0.4279'
-                            "MatchType" = "Exact"
+                            "Build"       = "10.0.4279"
+                            "NameLevel"   = "2008"
+                            "SPLevel"     = "SP2"
+                            "CULevel"     = "CU3"
+                            "KBLevel"     = "2498535"
+                            "BuildLevel"  = [version]'10.0.4279'
+                            "MatchType"   = "Exact"
                         }
                     }
                 )
@@ -495,13 +495,13 @@ Describe -skip $CommandName -Tag UnitTests {
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@{
                         "SqlInstance" = $null
-                        "Build" = "11.0.5058"
-                        "NameLevel" = "2012"
-                        "SPLevel" = "SP2"
-                        "CULevel" = $null
-                        "KBLevel" = "2958429"
-                        "BuildLevel" = [version]'11.0.5058'
-                        "MatchType" = "Exact"
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
                     }
                     Resume       = $true
                 }
@@ -540,13 +540,13 @@ Describe -skip $CommandName -Tag UnitTests {
                     InstanceName = "LAB"
                     Version      = [PSCustomObject]@{
                         "SqlInstance" = $null
-                        "Build" = "11.0.5058"
-                        "NameLevel" = "2012"
-                        "SPLevel" = "SP2"
-                        "CULevel" = $null
-                        "KBLevel" = "2958429"
-                        "BuildLevel" = [version]'11.0.5058'
-                        "MatchType" = "Exact"
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
                     }
                 }
             }
@@ -778,13 +778,13 @@ Describe -skip $CommandName -Tag UnitTests {
             Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
                 [PSCustomObject]@{ InstanceName = "LAB"; Version = [PSCustomObject]@{
                         "SqlInstance" = $null
-                        "Build" = "10.0.4279"
-                        "NameLevel" = "2008"
-                        "SPLevel" = "SP2"
-                        "CULevel" = "CU3"
-                        "KBLevel" = "2498535"
-                        "BuildLevel" = [version]'10.0.4279'
-                        "MatchType" = "Exact"
+                        "Build"       = "10.0.4279"
+                        "NameLevel"   = "2008"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = "CU3"
+                        "KBLevel"     = "2498535"
+                        "BuildLevel"  = [version]'10.0.4279'
+                        "MatchType"   = "Exact"
                     }
                 }
             }
@@ -800,7 +800,7 @@ Describe -skip $CommandName -Tag UnitTests {
         It "fails when a reboot is pending" {
             #override default mock
             Mock -CommandName Test-PendingReboot -MockWith { $true } -ModuleName dbatools
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Reboot the computer before proceeding'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw "Reboot the computer before proceeding"
             #revert default mock
             Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         }
@@ -817,11 +817,11 @@ Describe -skip $CommandName -Tag UnitTests {
             { Update-DbaInstance -Version 2008SP3CU7 -Path $exeDir -EnableException } | Should -Throw 'Could not find installer for the SQL2008 update KB'
         }
         It "fails when SP level is lower than required" {
-            { Update-DbaInstance -Type CumulativeUpdate -EnableException } | Should -Throw 'Current SP version SQL2008SP2 is not the latest available'
+            { Update-DbaInstance -Type CumulativeUpdate -Path $exeDir -EnableException } | Should -Throw "Current SP version SQL2008SP2 is not the latest available"
         }
         It "fails when repository is not available" {
-            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw 'Cannot find path'
-            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw 'Path to SQL Server updates folder is not set'
+            { Update-DbaInstance -Version 2008SP3CU7 -Path .\NonExistingFolder -EnableException } | Should -Throw "Cannot find path"
+            { Update-DbaInstance -Version 2008SP3CU7 -EnableException } | Should -Throw "Path is required"
         }
         It "fails when update execution has failed" {
             #Mock Get-Item and Get-ChildItem with a dummy file
@@ -877,6 +877,123 @@ Describe -Skip "$CommandName Integration Tests" -Tag IntegrationTests {
             if ($testBuild.Compliant -eq $false) {
                 Assert-MockCalled -CommandName Find-SqlInstanceUpdate -Scope It -ModuleName dbatools
             }
+        }
+    }
+}
+
+Describe "Update-DbaInstance authentication regression" -Tag UnitTests {
+    BeforeAll {
+        $credentialPassword = "pwd" | ConvertTo-SecureString -AsPlainText -Force
+        $testCredential = New-Object PSCredential("usr", $credentialPassword)
+
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate"; Successful = $true; Status = "Dummy" }
+        }
+        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate"; Successful = $true; Status = "Dummy" }
+        }
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                InstanceName = "LAB"
+                Version      = [PSCustomObject]@{
+                    "SqlInstance" = $null
+                    "Build"       = "11.0.5058"
+                    "NameLevel"   = "2012"
+                    "SPLevel"     = "SP2"
+                    "CULevel"     = $null
+                    "KBLevel"     = "2958429"
+                    "BuildLevel"  = [version]"11.0.5058"
+                    "MatchType"   = "Exact"
+                }
+            }
+        }
+        Mock -CommandName Invoke-Command2 -ModuleName dbatools -MockWith { $true }
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                FullName = "c:\mocked\filename.exe"
+            }
+        }
+        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+        Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                FullName = "c:\mocked\path"
+            }
+        }
+        Mock -CommandName Invoke-DbaAdvancedUpdate -ModuleName dbatools -MockWith { }
+        Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                FullComputerName = "mocked"
+            }
+        }
+        Mock -CommandName Initialize-CredSSP -ModuleName dbatools -MockWith { }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{ SystemType = "x64" } }
+    }
+
+    It "passes Authentication to remote preparation helpers" {
+        $null = Update-DbaInstance -ComputerName "mocked" -Credential $testCredential -Authentication Credssp -Version "2012SP3" -Path "mocked" -EnableException
+
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+        Assert-MockCalled -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+    }
+}
+
+Describe "Update-DbaInstance path validation regression" -Tag UnitTests {
+    It "fails early when Path contains only whitespace" {
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith { throw "Get-SQLInstanceComponent should not be called" }
+
+        { Update-DbaInstance -Version "2012SP3" -Path "   " -EnableException } | Should -Throw "*Path is required*"
+
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 0 -Scope It -ModuleName dbatools
+    }
+}
+
+InModuleScope dbatools {
+    Describe "Update-DbaInstance helper regressions" -Tag UnitTests {
+        It "passes Authentication to Invoke-Command2 when gathering instance components" {
+            $credentialPassword = "pwd" | ConvertTo-SecureString -AsPlainText -Force
+            $testCredential = New-Object PSCredential("usr", $credentialPassword)
+
+            Mock -CommandName Invoke-Command2 -MockWith {
+                [PSCustomObject]@{
+                    ComputerName = "MOCKED"
+                    InstanceName = "LAB"
+                    InstanceType = "Database Engine"
+                    Version      = "11.0.5058"
+                    Log          = @()
+                }
+            }
+            Mock -CommandName Get-DbaBuild -MockWith {
+                [PSCustomObject]@{
+                    Build      = "11.0.5058"
+                    NameLevel  = "2012"
+                    BuildLevel = [version]"11.0.5050"
+                    MatchType  = "Exact"
+                }
+            }
+
+            $result = Get-SQLInstanceComponent -ComputerName "mocked" -Credential $testCredential -Authentication Credssp
+
+            $result | Should -Not -BeNullOrEmpty
+            Assert-MockCalled -CommandName Invoke-Command2 -Exactly 1 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
+        }
+
+        It "passes Authentication to Invoke-Command2 without using Get-DbaCmObject for pending reboot checks" {
+            $credentialPassword = "pwd" | ConvertTo-SecureString -AsPlainText -Force
+            $testCredential = New-Object PSCredential("usr", $credentialPassword)
+
+            Mock -CommandName Invoke-Command2 -MockWith { $null }
+            Mock -CommandName Get-DbaCmObject -MockWith { throw "Get-DbaCmObject should not be called" }
+
+            $result = Test-PendingReboot -ComputerName "mocked" -Credential $testCredential -Authentication Credssp
+
+            $result | Should -BeFalse
+            Assert-MockCalled -CommandName Invoke-Command2 -Exactly 3 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
+            Assert-MockCalled -CommandName Get-DbaCmObject -Exactly 0 -Scope It
         }
     }
 }

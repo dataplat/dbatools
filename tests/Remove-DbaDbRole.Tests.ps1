@@ -138,7 +138,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("CREATE SCHEMA [$testRole] AUTHORIZATION [$testRole]", $dbname1)
 
             # Remove the role (schema should be dropped automatically)
-            Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole
 
             # Verify role is removed
             $result = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole
@@ -161,7 +161,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("CREATE TABLE [$diffSchema].[TestTable] (ID INT)", $dbname1)
 
             # Try to remove the role without Force (should fail with warning)
-            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -Confirm:$false -WarningVariable warn -WarningAction SilentlyContinue
+            $result = Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -WarningVariable warn -WarningAction SilentlyContinue
 
             # Verify role still exists
             $roleCheck = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole
@@ -176,7 +176,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Query("CREATE TABLE [$diffSchema].[TestTable] (ID INT)", $dbname1)
 
             # Remove the role with Force (should reassign schema to dbo and remove role)
-            Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -Force -Confirm:$false
+            Remove-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole -Force
 
             # Verify role is removed
             $roleCheck = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $testRole

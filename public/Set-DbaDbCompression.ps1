@@ -264,7 +264,14 @@ function Set-DbaDbCompression {
                     if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
                         $tables = $server.Databases[$($db.name)].Tables
                         if ($Table) {
-                            $tables = $tables | Where-Object Name -in $Table
+                            $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                            $tables = foreach ($tablePart in $tableParts) {
+                                $server.Databases[$($db.name)].Tables | Where-Object {
+                                    $_.Name -eq $tablePart.Name -and
+                                    $tablePart.Schema -in ($_.Schema, $null) -and
+                                    $tablePart.Database -in ($db.Name, $null)
+                                }
+                            }
                         }
 
                         foreach ($obj in $tables | Where-Object { !$_.IsMemoryOptimized -and !$_.HasSparseColumn }) {
@@ -359,6 +366,7 @@ function Set-DbaDbCompression {
                             }
                         }
                         foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object { $_.Indexes }).Indexes) {
+                            $parentView = $index.Parent
                             foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                 Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
                                 try {
@@ -382,15 +390,15 @@ function Set-DbaDbCompression {
                                         $index.Rebuild()
                                     }
                                 } catch {
-                                    Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
+                                    Stop-Function -Message "Compression failed for $instance - $db - view $($parentView.Schema).$($parentView.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                 }
                                 [PSCustomObject]@{
                                     ComputerName                  = $server.ComputerName
                                     InstanceName                  = $server.ServiceName
                                     SqlInstance                   = $server.DomainInstanceName
                                     Database                      = $db.Name
-                                    Schema                        = $obj.Schema
-                                    TableName                     = $obj.Name
+                                    Schema                        = $parentView.Schema
+                                    TableName                     = $parentView.Name
                                     IndexName                     = $index.Name
                                     Partition                     = $p.PartitionNumber
                                     IndexID                       = $index.Id

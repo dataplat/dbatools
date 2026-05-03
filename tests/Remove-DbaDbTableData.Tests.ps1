@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Remove-DbaDbTableData",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -25,6 +25,101 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                function Write-Message { }
+                function Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        [Parameter(ValueFromRemainingArguments)]
+                        $RemainingArguments
+                    )
+
+                    process {
+                        $InputObject
+                    }
+                }
+            }
+
+            BeforeEach {
+                $script:executedSql = @()
+                $script:deleteRowCounts = @(10, 0)
+                $script:rowCountIndex = 0
+
+                $script:mockServer = [PSCustomObject]@{
+                    Name               = "sql1"
+                    ComputerName       = "sql1"
+                    DatabaseEngineType = [Microsoft.SqlServer.Management.Common.DatabaseEngineType]::Standalone
+                }
+
+                $script:mockDatabase = [PSCustomObject]@{
+                    Name          = "db1"
+                    Parent        = $script:mockServer
+                    RecoveryModel = "Simple"
+                }
+
+                Add-Member -InputObject $script:mockDatabase -Name Query -MemberType ScriptMethod -Value {
+                    param($sql)
+
+                    $script:executedSql += $sql
+
+                    if ($sql -like "SELECT COUNT(1) FROM msdb.dbo.log_shipping_monitor_primary*") {
+                        return 0
+                    }
+
+                    if ($sql -eq "CHECKPOINT") {
+                        return [PSCustomObject]@{
+                            RowCount     = 0
+                            ErrorMessage = $null
+                        }
+                    }
+
+                    $rowCount = $script:deleteRowCounts[$script:rowCountIndex]
+                    if ($script:rowCountIndex -lt ($script:deleteRowCounts.Count - 1)) {
+                        $script:rowCountIndex += 1
+                    }
+
+                    return [PSCustomObject]@{
+                        RowCount     = $rowCount
+                        ErrorMessage = $null
+                    }
+                } -Force
+
+                Mock Test-FunctionInterrupt { $false }
+                Mock Get-DbaDatabase { $script:mockDatabase }
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "Preserves the empty schema segment in three-part table names" {
+                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "MyDb..Test" -BatchSize 10 -Confirm:$false
+                $deleteSql = $script:executedSql | Where-Object { $PSItem -like "*DELETE TOP (10) FROM*" } | Select-Object -First 1
+
+                $deleteSql | Should -Not -BeNullOrEmpty
+                $deleteSql.Contains("DELETE TOP (10) FROM [MyDb]..[Test];") | Should -Be $true
+                $result.TotalRowsDeleted | Should -Be 10
+                $result.TotalIterations | Should -Be 1
+            }
+
+            It "Escapes closing brackets in bracketed table names" {
+                $result = Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "[dbo].[Test]]Name]" -BatchSize 10 -Confirm:$false
+                $deleteSql = $script:executedSql | Where-Object { $PSItem -like "*DELETE TOP (10) FROM*" } | Select-Object -First 1
+
+                $deleteSql | Should -Not -BeNullOrEmpty
+                $deleteSql.Contains("DELETE TOP (10) FROM [dbo].[Test]]Name];") | Should -Be $true
+                $result.TotalRowsDeleted | Should -Be 10
+                $result.TotalIterations | Should -Be 1
+            }
+
+            It "Stops early when the table name cannot be parsed" {
+                {
+                    Remove-DbaDbTableData -SqlInstance "sql1" -Database "db1" -Table "one.two.three.four" -Confirm:$false
+                } | Should -Throw "*could not be parsed as a valid table name*"
+            }
         }
     }
 }
@@ -174,6 +269,46 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Timings.Count | Should -Be 10
             $result.Database | Should -Be $dbnameSimpleModel
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query "SELECT COUNT(1) AS [RowCount] FROM dbo.Test").RowCount | Should -Be 0
+        }
+
+        It "Removes Data for a specified database when -Table uses database..table format" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table "$dbnameSimpleModel..Test" -BatchSize 10
+            $result.TotalIterations | Should -Be 10
+            $result.TotalRowsDeleted | Should -Be 100
+            $result.LogBackups.Count | Should -Be 0
+            $result.Timings.Count | Should -Be 10
+            $result.Database | Should -Be $dbnameSimpleModel
+            (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query "SELECT COUNT(1) AS [RowCount] FROM dbo.Test").RowCount | Should -Be 0
+        }
+    }
+
+    Context "Functionality with escaped table names" {
+        BeforeEach {
+            $sqlAddRowsToEscapedTable = "
+                    IF OBJECT_ID(N'[dbo].[Test]]Name]', N'U') IS NOT NULL
+                        DROP TABLE [dbo].[Test]]Name];
+
+                    CREATE TABLE [dbo].[Test]]Name] (Id INTEGER);
+
+                    DECLARE
+                        @loopCounter INTEGER = 0;
+
+                    WHILE @loopCounter < 25
+                    BEGIN
+                        INSERT INTO [dbo].[Test]]Name] VALUES (@loopCounter);
+                        SET @loopCounter = @loopCounter + 1;
+                    END;"
+            $null = Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query $sqlAddRowsToEscapedTable
+        }
+
+        It "Removes Data for a table name that contains a closing bracket" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table "[dbo].[Test]]Name]" -BatchSize 10
+            $result.TotalIterations | Should -Be 3
+            $result.TotalRowsDeleted | Should -Be 25
+            $result.LogBackups.Count | Should -Be 0
+            $result.Timings.Count | Should -Be 3
+            $result.Database | Should -Be $dbnameSimpleModel
+            (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query "SELECT COUNT(1) AS [RowCount] FROM [dbo].[Test]]Name]").RowCount | Should -Be 0
         }
     }
 

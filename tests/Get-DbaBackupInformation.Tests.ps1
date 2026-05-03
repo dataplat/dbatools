@@ -129,11 +129,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return 2 full backups" {
-            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 2
+            ($results | Where-Object Type -eq "Full").Count | Should -BeExactly 2
         }
 
         It "Should return 2 log backups" {
-            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 2
+            ($results | Where-Object Type -eq "Log").Count | Should -BeExactly 2
         }
     }
 
@@ -152,11 +152,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Be 1 full backup" {
-            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Full").Count | Should -BeExactly 1
         }
 
         It "Should be 1 log backups" {
-            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Log").Count | Should -BeExactly 1
         }
 
         It "Should only be backups of $dbname2" {
@@ -199,11 +199,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should Be 1 full backup" {
-            ($results | Where-Object Type -eq "Database").Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Full").Count | Should -BeExactly 1
         }
 
         It "Should be 1 log backups" {
-            ($results | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 1
+            ($results | Where-Object Type -eq "Log").Count | Should -BeExactly 1
         }
 
         It "Should only be backups of $dbname3" {
@@ -229,7 +229,7 @@ Describe $CommandName -Tag IntegrationTests {
                 IgnoreLogBackup     = $true
             }
             $ResultsSanLog = Get-DbaBackupInformation @splatMaintenanceNoLog
-            ($ResultsSanLog | Where-Object Type -eq "Database").Count | Should -BeExactly 1
+            ($ResultsSanLog | Where-Object Type -eq "Full").Count | Should -BeExactly 1
         }
 
         It "Should be 0 log backups when ignoring log backups" {
@@ -240,7 +240,7 @@ Describe $CommandName -Tag IntegrationTests {
                 IgnoreLogBackup     = $true
             }
             $resultsSanLog = Get-DbaBackupInformation @splatMaintenanceNoLog
-            ($resultsSanLog | Where-Object Type -eq "Transaction Log").Count | Should -BeExactly 0
+            ($resultsSanLog | Where-Object Type -eq "Log").Count | Should -BeExactly 0
         }
 
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {

@@ -1,9 +1,28 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Remove-DbaAgentJobSchedule",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
+
+class MockAgentServer {
+    [string]$Name
+    [string]$ComputerName
+    [string]$ServiceName
+    [string]$DomainInstanceName
+    [object]$JobServer
+
+    MockAgentServer([string]$Name) {
+        $this.Name = $Name
+        $this.ComputerName = $Name
+        $this.ServiceName = "MSSQLSERVER"
+        $this.DomainInstanceName = $Name
+    }
+
+    [string] ToString() {
+        return $this.Name
+    }
+}
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
@@ -19,6 +38,130 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope "dbatools" {
+        BeforeAll {
+            function New-MockAgentSchedule {
+                param(
+                    [string]$Name,
+                    [int]$Id,
+                    [switch]$ThrowOnDrop
+                )
+
+                $schedule = [PSCustomObject]@{
+                    Name         = $Name
+                    Id           = $Id
+                    ScheduleUid  = [guid]::NewGuid()
+                    DropCount    = 0
+                    KeepSchedule = $null
+                    ThrowOnDrop  = $ThrowOnDrop
+                }
+                $schedule | Add-Member -MemberType ScriptMethod -Name Drop -Value {
+                    param([bool]$keepSchedule)
+
+                    $this.DropCount++
+                    $this.KeepSchedule = $keepSchedule
+
+                    if ($this.ThrowOnDrop) {
+                        throw "drop failed for $($this.Name)"
+                    }
+                } -Force
+
+                return $schedule
+            }
+
+            function New-MockAgentJob {
+                param(
+                    [string]$Name,
+                    [object[]]$JobSchedules
+                )
+
+                return [PSCustomObject]@{
+                    Name         = $Name
+                    Parent       = $null
+                    JobSchedules = $JobSchedules
+                }
+            }
+
+            function New-MockAgentServer {
+                param([object[]]$Job)
+
+                $jobs = @{ }
+                foreach ($jobObject in $Job) {
+                    $jobs[$jobObject.Name] = $jobObject
+                }
+                $jobs | Add-Member -MemberType ScriptProperty -Name Name -Value { $this.Keys } -Force
+
+                $server = [MockAgentServer]::new("sql1")
+                $jobServer = [PSCustomObject]@{
+                    Parent = $server
+                    Jobs   = $jobs
+                }
+                $server.JobServer = $jobServer
+
+                foreach ($jobObject in $Job) {
+                    $jobObject.Parent = $jobServer
+                }
+
+                return $server
+            }
+        }
+
+        Context "When multiple schedules with the same name are attached to a job" {
+            BeforeAll {
+                $script:scheduleOne = New-MockAgentSchedule -Name "SharedSchedule" -Id 1
+                $script:scheduleTwo = New-MockAgentSchedule -Name "SharedSchedule" -Id 2
+                $job = New-MockAgentJob -Name "Job1" -JobSchedules @($script:scheduleOne, $script:scheduleTwo)
+                $script:mockServer = New-MockAgentServer -Job $job
+
+                Mock Connect-DbaInstance { $script:mockServer }
+            }
+
+            It "Should detach each matching schedule instead of failing on an array of job schedules" {
+                $splatDetach = @{
+                    SqlInstance = "sql1"
+                    Job         = "Job1"
+                    Schedule    = "SharedSchedule"
+                    Confirm     = $false
+                }
+                $result = Remove-DbaAgentJobSchedule @splatDetach
+
+                $result.Count | Should -Be 2
+                ($result | Where-Object IsDetached).Count | Should -Be 2
+                ($result | Select-Object -ExpandProperty ScheduleId) | Should -Be @(1, 2)
+                $script:scheduleOne.DropCount | Should -Be 1
+                $script:scheduleTwo.DropCount | Should -Be 1
+                $script:scheduleOne.KeepSchedule | Should -Be $true
+                $script:scheduleTwo.KeepSchedule | Should -Be $true
+            }
+        }
+
+        Context "When detaching a schedule fails" {
+            BeforeAll {
+                $script:failingSchedule = New-MockAgentSchedule -Name "BrokenSchedule" -Id 9 -ThrowOnDrop
+                $job = New-MockAgentJob -Name "Job1" -JobSchedules $script:failingSchedule
+                $script:mockServer = New-MockAgentServer -Job $job
+
+                Mock Connect-DbaInstance { $script:mockServer }
+                Mock Stop-Function { }
+            }
+
+            It "Should return the failed detach result instead of skipping output" {
+                $splatDetach = @{
+                    SqlInstance = "sql1"
+                    Job         = "Job1"
+                    Schedule    = "BrokenSchedule"
+                    Confirm     = $false
+                }
+                $result = Remove-DbaAgentJobSchedule @splatDetach
+
+                $result | Should -Not -BeNullOrEmpty
+                $result.IsDetached | Should -Be $false
+                $result.Status | Should -Match "drop failed for BrokenSchedule"
+                $script:failingSchedule.DropCount | Should -Be 1
+            }
         }
     }
 }

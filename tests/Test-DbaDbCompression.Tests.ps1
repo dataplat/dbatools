@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Test-DbaDbCompression",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -23,6 +23,55 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Table name normalization" {
+            BeforeAll {
+                $script:lastQuery = $null
+                $script:mockDatabase = [PSCustomObject]@{
+                    Name               = "db1"
+                    IsAccessible       = $true
+                    IsSystemObject     = 0
+                    CompatibilityLevel = "Version160"
+                    Status             = "Normal"
+                }
+                $script:mockServer = [DbaInstanceParameter]"sql1"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value "sql1"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name ServiceName -Value "MSSQLSERVER"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name DomainInstanceName -Value "sql1"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name ConnectionContext -Value ([PSCustomObject]@{
+                        StatementTimeout = 30
+                    })
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name EngineEdition -Value "EnterpriseOrDeveloper"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name VersionString -Value "16.0.1000.0"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value @($script:mockDatabase)
+                $script:mockServer | Add-Member -Force -MemberType ScriptMethod -Name Query -Value {
+                    param($Sql, $DatabaseName)
+                    $script:lastQuery = $Sql
+                    @()
+                }
+
+                Mock Connect-DbaInstance { $script:mockServer }
+                Mock Get-DbaBuild {
+                    [PSCustomObject]@{
+                        Build = [PSCustomObject]@{
+                            Major = 16
+                        }
+                    }
+                }
+            }
+
+            It "honors schema-qualified -Table input" {
+                $script:lastQuery = $null
+
+                $null = Test-DbaDbCompression -SqlInstance "sql1" -Database "db1" -Table "db1.sales.Customer"
+                $normalizedQuery = $script:lastQuery -replace "\s+", " "
+
+                $normalizedQuery | Should -Match "t\.name = N'Customer'\s+AND\s+s\.name = N'sales'\s+AND\s+DB_NAME\(\) = N'db1'"
+                $normalizedQuery | Should -Not -Match "t\.name IN"
+            }
         }
     }
 }

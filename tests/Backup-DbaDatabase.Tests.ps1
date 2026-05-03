@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Backup-DbaDatabase",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -416,6 +416,35 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Should handle StorageBaseUrl striping when OutputScriptOnly specified" {
+        BeforeAll {
+            $storageScriptServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $s3StorageCredential = "dbatools_ci_s3"
+            $singleS3StorageBaseUrl = "s3://dbatools-test.s3.us-west-2.amazonaws.com/backups"
+            $multipleS3StorageBaseUrls = @(
+                "s3://dbatools-test.s3.us-west-2.amazonaws.com/backups-a",
+                "s3://dbatools-test.s3.us-west-2.amazonaws.com/backups-b"
+            )
+        }
+
+        It "Should respect explicit FileCount when a single StorageBaseUrl is used" -Skip:($storageScriptServer.VersionMajor -lt 16) {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -StorageBaseUrl $singleS3StorageBaseUrl -StorageCredential $s3StorageCredential -FileCount 3 -OutputScriptOnly
+
+            ([regex]::Matches($result, "URL = N'")).Count | Should -Be 3
+            $result | Should -Match "-1-of-3\.bak'"
+            $result | Should -Match "-3-of-3\.bak'"
+        }
+
+        It "Should let multiple StorageBaseUrl values determine the stripe count" -Skip:($storageScriptServer.VersionMajor -lt 16) {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -StorageBaseUrl $multipleS3StorageBaseUrls -StorageCredential $s3StorageCredential -FileCount 4 -OutputScriptOnly
+
+            ([regex]::Matches($result, "URL = N'")).Count | Should -Be 2
+            $result | Should -Match "-1-of-2\.bak'"
+            $result | Should -Match "-2-of-2\.bak'"
+            $result | Should -Not -Match "-1-of-4\.bak'"
+        }
+    }
+
     Context "Should handle an encrypted database when compression is specified" {
         BeforeAll {
             $sqlencrypt = @"
@@ -492,6 +521,15 @@ go
             $serverName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).ComputerName
             $results.BackupPath | Should -BeLike "$DestBackupDir\$serverName\$instanceName\master\Full\*"
             $results.BackupPath | Should -Not -BeLike "*\master\master\*"
+        }
+    }
+
+    Context "Test CreateFolder with ReplaceInName keeps db folder when only filename contains dbname" {
+        It "Should still append the database folder when only the file name contains dbname token" {
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path "$DestBackupDir\servername\instancename\backuptype" -BackupFileName "dbname-backuptype-timestamp.bak" -ReplaceInName -CreateFolder -BuildPath
+            $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).InstanceName
+            $serverName = ([DbaInstanceParameter]$TestConfig.InstanceCopy1).ComputerName
+            $results.BackupPath | Should -BeLike "$DestBackupDir\$serverName\$instanceName\Full\master\master-Full-*.bak"
         }
     }
 

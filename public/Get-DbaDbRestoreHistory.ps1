@@ -86,7 +86,7 @@ function Get-DbaDbRestoreHistory {
         - BackupStartDate: Timestamp when the backup operation started
         - BackupFinishDate: Timestamp when the backup operation completed
         - StopAt: The point-in-time stop value specified during the restore operation (NULL if not specified)
-        - LastRestorePoint: The effective point in time the database was restored to (StopAt if specified and earlier than BackupStartDate, otherwise BackupStartDate)
+        - LastRestorePoint: The effective point in time the database was restored to (StopAt if specified, otherwise BackupStartDate)
 
         All properties from the underlying DataRow object are accessible using Select-Object *.
 
@@ -188,10 +188,7 @@ function Get-DbaDbRestoreHistory {
                     bs.backup_finish_date,
                     bs.backup_finish_date AS BackupFinishDate,
                     rsh.stop_at AS StopAt,
-                    CASE
-                        WHEN COALESCE(rsh.stop_at, '9999-12-31') < bs.backup_start_date THEN rsh.stop_at
-                        ELSE bs.backup_start_date
-                    END AS LastRestorePoint
+                    COALESCE(rsh.stop_at, bs.backup_start_date) AS LastRestorePoint
                     "
                 }
 

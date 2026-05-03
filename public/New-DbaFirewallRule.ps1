@@ -317,7 +317,7 @@ function New-DbaFirewallRule {
                     # Try to get the program path for executable-based rule
                     try {
                         $service = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Credential $Credential -Type Engine -EnableException
-                        if ($service.BinaryPath -match '^"?(.+sqlservr\.exe)') {
+                        if ($service.BinaryPath -match "^""?(.+sqlservr\.exe)(?:\s|""|$)") {
                             $rule.Config.Program = $Matches[1]
                             Write-Message -Level Verbose -Message "Creating program-based firewall rule targeting: $($Matches[1])"
                         } else {
@@ -376,7 +376,7 @@ function New-DbaFirewallRule {
                     # Try to get the SQL Browser service executable path
                     try {
                         $browserService = Get-DbaService -ComputerName $instance.ComputerName -Credential $Credential -Type Browser -EnableException | Select-Object -First 1
-                        if ($browserService.BinaryPath -match '^"?(.+sqlbrowser\.exe)') {
+                        if ($browserService.BinaryPath -match "^""?(.+sqlbrowser\.exe)(?:\s|""|$)") {
                             $rule.Config.Program = $Matches[1]
                             $rule.Config.Protocol = 'Any'
                             Write-Message -Level Verbose -Message "Creating program-based firewall rule for Browser targeting: $($Matches[1])"

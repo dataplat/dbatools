@@ -198,31 +198,61 @@ function Import-DbaXESessionTemplate {
 
                     try {
                         $basename = (Get-ChildItem $file).Basename
-                        $contents = Get-Content $file -Raw -ErrorAction Stop
+                        $templateXml = [xml](Get-Content $file -Raw -ErrorAction Stop)
+                        $namespaceUri = $templateXml.DocumentElement.NamespaceURI
+                        $eventSessionNode = $templateXml.SelectSingleNode("/*[local-name()='event_sessions']/*[local-name()='event_session']")
+                        if (-not $eventSessionNode) {
+                            throw "No event_session element found in template $file."
+                        }
 
-                        if ($contents -notmatch 'name="event_file"') {
+                        $eventFileTargetNode = $eventSessionNode.SelectSingleNode("*[local-name()='target' and @name='event_file']")
+                        $eventFileTargetExists = $null -ne $eventFileTargetNode
+
+                        if (-not $eventFileTargetExists) {
                             # No event_file target found in template - add one so TargetFilePath is honored
                             Write-Message -Level Verbose -Message "No event_file target found in template, adding one with TargetFilePath."
-                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
-                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /><parameter name=""metadatafile"" value=""$TargetFileMetadataPath$basename"" /></target>"
-                            } else {
-                                $newTarget = "    <target package=""package0"" name=""event_file""><parameter name=""filename"" value=""$TargetFilePath$basename"" /></target>"
+                            $eventFileTargetNode = $templateXml.CreateElement("target", $namespaceUri)
+                            $null = $eventFileTargetNode.SetAttribute("package", "package0")
+                            $null = $eventFileTargetNode.SetAttribute("name", "event_file")
+                        }
+
+                        $filenameParameterNode = $eventFileTargetNode.SelectSingleNode("*[local-name()='parameter' and @name='filename']")
+                        if (-not $filenameParameterNode) {
+                            $filenameParameterNode = $templateXml.CreateElement("parameter", $namespaceUri)
+                            $null = $filenameParameterNode.SetAttribute("name", "filename")
+                            $null = $eventFileTargetNode.AppendChild($filenameParameterNode)
+                        }
+
+                        $filenameValue = $filenameParameterNode.GetAttribute("value")
+                        if ([string]::IsNullOrWhiteSpace($filenameValue)) {
+                            $filenameValue = $basename
+                        }
+                        $null = $filenameParameterNode.SetAttribute("value", "$TargetFilePath$filenameValue")
+
+                        if (Test-Bound -ParameterName TargetFileMetadataPath) {
+                            $metadataParameterNode = $eventFileTargetNode.SelectSingleNode("*[local-name()='parameter' and @name='metadatafile']")
+                            if ($metadataParameterNode) {
+                                $metadataValue = $metadataParameterNode.GetAttribute("value")
+                                if ([string]::IsNullOrWhiteSpace($metadataValue)) {
+                                    $metadataValue = $basename
+                                }
+                                $null = $metadataParameterNode.SetAttribute("value", "$TargetFileMetadataPath$metadataValue")
+                            } elseif (-not $eventFileTargetExists) {
+                                $metadataParameterNode = $templateXml.CreateElement("parameter", $namespaceUri)
+                                $null = $metadataParameterNode.SetAttribute("name", "metadatafile")
+                                $null = $metadataParameterNode.SetAttribute("value", "$TargetFileMetadataPath$basename")
+                                $null = $eventFileTargetNode.AppendChild($metadataParameterNode)
                             }
-                            $contents = $contents.Replace("</event_session>", "$newTarget</event_session>")
-                        } else {
-                            # Perform replace on existing event_file target parameters
-                            $xelphrase = 'name="filename" value="'
-                            $xemphrase = 'name="metadatafile" value="'
-                            $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
-                            if (Test-Bound -ParameterName TargetFileMetadataPath) {
-                                $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
-                            }
+                        }
+
+                        if (-not $eventFileTargetExists) {
+                            $null = $eventSessionNode.AppendChild($eventFileTargetNode)
                         }
 
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\").TrimEnd("/")
                         $tempfile = Join-DbaPath $temp $basename
-                        $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
-                        $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
+                        $null = Set-Content -Path $tempfile -Value $templateXml.OuterXml -Encoding UTF8
+                        $xml = $templateXml
                         $file = $tempfile
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue

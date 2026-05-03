@@ -1,18 +1,18 @@
 function ConvertTo-DbaTimeline {
     <#
     .SYNOPSIS
-        Generates interactive HTML timeline visualizations from SQL Server job history and backup history data
+        Generates interactive HTML timeline visualizations from SQL Server job history, backup history, and database growth event data
 
     .DESCRIPTION
-        Transforms SQL Server job execution and backup operation data into visual timeline reports for analysis and troubleshooting. Takes piped output from Get-DbaAgentJobHistory and Get-DbaDbBackupHistory and generates a complete HTML file with an interactive Google Charts timeline.
+        Transforms SQL Server job execution, backup operation, and database growth event data into visual timeline reports for analysis and troubleshooting. Takes piped output from Get-DbaAgentJobHistory, Get-DbaDbBackupHistory, or Find-DbaDbGrowthEvent and generates a complete HTML file with an interactive Google Charts timeline.
 
-        Perfect for analyzing job schedules, identifying backup windows, troubleshooting overlapping operations, or creating visual reports for management. The timeline shows execution duration, status, and timing relationships across multiple instances, with hover tooltips displaying detailed information including start/end times and duration calculations.
+        Perfect for analyzing job schedules, identifying backup windows, visualizing auto-growth events, troubleshooting overlapping operations, or creating visual reports for management. The timeline shows execution duration, status, and timing relationships across multiple instances, with hover tooltips displaying detailed information including start/end times and duration calculations.
 
         Output is a self-contained HTML file that can be viewed in any browser, emailed to stakeholders, or archived for historical analysis. Supports both single and multi-instance scenarios with automatic labeling and color-coded status indicators.
 
     .PARAMETER InputObject
-        Specifies the SQL Server data to convert into timeline visualization. Accepts piped output from Get-DbaAgentJobHistory or Get-DbaDbBackupHistory.
-        Use this to transform job execution history or backup operation data into an interactive HTML timeline chart.
+        Specifies the SQL Server data to convert into timeline visualization. Accepts piped output from Get-DbaAgentJobHistory, Get-DbaDbBackupHistory, or Find-DbaDbGrowthEvent.
+        Use this to transform job execution history, backup operation data, or database auto-growth/shrink events into an interactive HTML timeline chart.
         The function automatically detects the input type and formats the timeline appropriately with status colors and duration calculations.
 
     .PARAMETER ExcludeRowLabel
@@ -60,6 +60,11 @@ function ConvertTo-DbaTimeline {
         PS C:\> Get-DbaRegServer -SqlInstance sqlcm | Get-DbaDbBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
 
         Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
+
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance sql-1 | ConvertTo-DbaTimeline | Out-File C:\temp\DbaDbGrowthEvent.html -Encoding ASCII
+
+        Creates an output file containing a timeline of all database auto-growth and auto-shrink events for sql-1.
 
     .EXAMPLE
         PS C:\> $messageParameters = @{
@@ -164,6 +169,9 @@ function ConvertTo-DbaTimeline {
         } elseif ($InputObject[0] -is [Dataplat.Dbatools.Database.BackupHistory]) {
             $CallerName = " Get-DbaDbBackupHistory"
             $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { "[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $_.Database } }, @{ Name = "hLabel"; Expression = { $_.Type } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.Start)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.End)) } }
+        } elseif ($null -ne $InputObject[0].PSObject.Properties['EventClass'] -and $null -ne $InputObject[0].PSObject.Properties['ChangeInSize']) {
+            $CallerName = "Find-DbaDbGrowthEvent"
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { ("[" + $($_.SqlInstance -replace "\\", "\\\") + "] " + $($_.DatabaseName -replace "\\", "\\\")).Replace("'", "\'") } }, @{ Name = "hLabel"; Expression = { switch ([int]$_.EventClass) { 92 { "Data Grow" } 93 { "Log Grow" } 94 { "Data Shrink" } 95 { "Log Shrink" } default { "Unknown" } } } }, @{ Name = "Style"; Expression = { if ([int]$_.EventClass -in 92, 93) { "#36B300" } else { "#FF8C00" } } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartTime)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndTime)) } }
         } else {
             # sorry to be so formal, can't help it ;)
             Stop-Function -Message "Unsupported input data. To request support for additional commands, please file an issue at dbatools.io/issues and we'll take a look"

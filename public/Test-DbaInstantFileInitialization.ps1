@@ -125,11 +125,13 @@ function Test-DbaInstantFileInitialization {
             foreach ($service in $services) {
                 Write-Message -Level Verbose -Message "Checking IFI for service $($service.ServiceName) on $computer"
 
-                $serviceNameIFI = ($privileges | Where-Object User -eq "NT SERVICE\$($service.ServiceName)").InstantFileInitialization -eq $true
+                $serviceVirtualAccount = "NT SERVICE\$($service.ServiceName)"
+                $serviceNameIFI = ($privileges | Where-Object User -eq $serviceVirtualAccount).InstantFileInitialization -eq $true
                 $startNameIFI = ($privileges | Where-Object User -eq $service.StartName).InstantFileInitialization -eq $true
+                $startNameUsesVirtualAccount = $service.StartName -eq $serviceVirtualAccount
 
                 $isEnabled = $serviceNameIFI -or $startNameIFI
-                $isBestPractice = $serviceNameIFI -and -not $startNameIFI
+                $isBestPractice = $serviceNameIFI -and ($startNameUsesVirtualAccount -or -not $startNameIFI)
 
                 [PSCustomObject]@{
                     ComputerName   = $service.ComputerName

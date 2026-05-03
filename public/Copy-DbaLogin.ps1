@@ -46,6 +46,10 @@ function Copy-DbaLogin {
         Skips copying server roles, database permissions, and security mappings for the login accounts.
         Use this when you only need the login accounts created but plan to configure permissions separately, or when copying logins for testing purposes.
 
+    .PARAMETER ExcludeDatabaseMapping
+        Skips copying database-level permissions and role memberships, syncing only server-level roles and securables.
+        Use this when you want to sync server permissions (sysadmin membership, server securables, etc.) without iterating through all databases, which significantly improves performance on instances with many databases. When used with -OutFile, generated scripts also exclude database user mappings and permissions.
+
     .PARAMETER SyncSaName
         Renames the destination sa account to match the source sa account name if they differ.
         Use this during migrations when your organization has renamed the sa account for security purposes and you need consistent naming across instances.
@@ -215,6 +219,7 @@ function Copy-DbaLogin {
         [switch]$Force,
         [switch]$ObjectLevel,
         [switch]$ExcludePermissionSync,
+        [switch]$ExcludeDatabaseMapping,
         [switch]$EnableException
     )
 
@@ -508,7 +513,15 @@ function Copy-DbaLogin {
                         # In rare cases, when the instance has a case sensitive collation and there are two logins that differ only in case, New-DbaLogin will return them both into $destLogin
                         # So we loop, just in case...
                         foreach ($dl in $destLogin) {
-                            Update-SqlPermission -SourceServer $sourceServer -SourceLogin $Login -DestServer $destServer -DestLogin $dl -ObjectLevel:$ObjectLevel
+                            $splatPermission = @{
+                                SourceServer           = $sourceServer
+                                SourceLogin            = $Login
+                                DestServer             = $destServer
+                                DestLogin              = $dl
+                                ObjectLevel            = $ObjectLevel
+                                ExcludeDatabaseMapping = $ExcludeDatabaseMapping
+                            }
+                            Update-SqlPermission @splatPermission
                         }
                     }
                 }
@@ -535,7 +548,19 @@ function Copy-DbaLogin {
         }
 
         if ($OutFile) {
-            return (Export-DbaLogin -SqlInstance $Source -SqlCredential $SourceSqlCredential -FilePath $OutFile -Login $loginsCollection -ObjectLevel:$ObjectLevel -ExcludeLogin $ExcludeLogin -EnableException:$EnableException)
+            $splatExportLogin = @{
+                SqlInstance     = $Source
+                SqlCredential   = $SourceSqlCredential
+                FilePath        = $OutFile
+                Login           = $loginsCollection
+                ObjectLevel     = $ObjectLevel
+                ExcludeLogin    = $ExcludeLogin
+                EnableException = $EnableException
+            }
+            if ($ExcludeDatabaseMapping) {
+                $splatExportLogin.ExcludeDatabase = $true
+            }
+            return (Export-DbaLogin @splatExportLogin)
         }
         foreach ($loginObject in $loginsCollection) {
             $sourceServer = $loginObject.Parent

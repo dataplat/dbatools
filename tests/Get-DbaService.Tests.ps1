@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Get-DbaService",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -28,6 +28,71 @@ Describe $CommandName -Tag UnitTests {
         It "Cannot resolve hostname of computer" {
             Mock Resolve-DbaNetworkName { $null }
             { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
+    InModuleScope "dbatools" {
+        Context "Type filtering" {
+            BeforeAll {
+                Mock Resolve-DbaNetworkName {
+                    [PSCustomObject]@{
+                        FullComputerName = "sql01"
+                    }
+                }
+
+                Mock Get-DbaReportingService {
+                    [PSCustomObject]@{
+                        ComputerName = "sql01"
+                        ServiceName  = "PowerBIReportServer"
+                        ServiceType  = "PowerBI"
+                        InstanceName = "PBIRS"
+                        DisplayName  = "Power BI Report Server"
+                        StartName    = "CONTOSO\\svc-pbirs"
+                        State        = "Running"
+                        StartMode    = "Automatic"
+                    }
+                }
+
+                Mock Get-DbaCmObject {
+                    param(
+                        $ComputerName,
+                        $Credential,
+                        $Namespace,
+                        $ClassName,
+                        $Query,
+                        $EnableException
+                    )
+
+                    if ($Namespace -eq "root\Microsoft" -and $ClassName -eq "__NAMESPACE") {
+                        [PSCustomObject]@{
+                            Name = "Microsoft"
+                        }
+                    }
+                }
+
+                Mock Select-DefaultView {
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject,
+                        $Property,
+                        $TypeName
+                    )
+                    process {
+                        $InputObject
+                    }
+                }
+            }
+
+            It "skips SqlService lookups when only PowerBI services are requested" {
+                $results = Get-DbaService -ComputerName "sql01" -Type PowerBI
+
+                $results | Should -HaveCount 1
+                $results.ServiceType | Should -Be "PowerBI"
+                Assert-MockCalled Get-DbaReportingService -Times 1 -Exactly -Scope It
+                Assert-MockCalled Get-DbaCmObject -Times 0 -Exactly -Scope It -ParameterFilter { $Namespace -eq "root\Microsoft\SQLServer" }
+            }
         }
     }
 }

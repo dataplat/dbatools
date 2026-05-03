@@ -1239,10 +1239,18 @@ function Copy-DbaDatabase {
                                         }
 
                                     } else {
+                                        $splatBackup = @{
+                                            SqlInstance      = $sourceServer
+                                            Database         = $dbName
+                                            BackupDirectory  = $SharedPath
+                                            FileCount        = $numberfiles
+                                            CopyOnly         = $CopyOnly
+                                            IgnoreFileChecks = $true
+                                        }
                                         if ($AdvancedBackupParams) {
-                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly @AdvancedBackupParams
+                                            $backupTmpResult = Backup-DbaDatabase @splatBackup @AdvancedBackupParams
                                         } else {
-                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                            $backupTmpResult = Backup-DbaDatabase @splatBackup
                                         }
                                     }
 

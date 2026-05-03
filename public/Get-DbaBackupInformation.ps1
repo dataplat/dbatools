@@ -360,7 +360,16 @@ function Get-DbaBackupInformation {
                 if (-not $dbLsn) {
                     $dbLsn = 0
                 }
-                $description = $group.Group[0].BackupTypeDescription
+                $description = switch ($group.Group[0].BackupTypeDescription) {
+                    "Database"              { "Full" }
+                    "Database Differential" { "Differential" }
+                    "Transaction Log"       { "Log" }
+                    "File or Filegroup"     { "File" }
+                    "File Differential"     { "Differential File" }
+                    "Partial Database"      { "Partial Full" }
+                    "Partial Differential"  { "Partial Differential" }
+                    default                 { $group.Group[0].BackupTypeDescription }
+                }
                 if (-not $description) {
                     try {
                         $header = Read-DbaBackupHeader -SqlInstance $server -Path $Path -EnableException | Select-Object -First 1
@@ -375,7 +384,13 @@ function Get-DbaBackupInformation {
                 }
                 $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
                 $historyObject.ComputerName = $group.Group[0].MachineName
-                $historyObject.InstanceName = $group.Group[0].ServiceName
+                $instanceName = $group.Group[0].ServiceName
+                if (-not $instanceName -and $group.Group[0].ServerName -like "*\*") {
+                    $instanceName = $group.Group[0].ServerName.Split("\")[1]
+                } elseif (-not $instanceName) {
+                    $instanceName = "MSSQLSERVER"
+                }
+                $historyObject.InstanceName = $instanceName
                 $historyObject.SqlInstance = $group.Group[0].ServerName
                 $historyObject.Database = $group.Group[0].DatabaseName
                 $historyObject.UserName = $group.Group[0].UserName
@@ -383,7 +398,10 @@ function Get-DbaBackupInformation {
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
                 $historyObject.Path = [string[]]$group.Group.BackupPath
-                $historyObject.FileList = ($group.Group.FileList | Select-Object Type, LogicalName, PhysicalName, @{
+                $historyObject.FileList = ($group.Group.FileList | Select-Object @{
+                        Name       = "FileType"
+                        Expression = { $PSItem.Type }
+                    }, LogicalName, PhysicalName, @{
                         Name       = "Size"
                         Expression = { [dbasize]$PSItem.Size }
                     } -Unique)
@@ -401,6 +419,9 @@ function Get-DbaBackupInformation {
                 $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
                 $historyObject.RecoveryModel = $group.Group.RecoveryModel
                 $historyObject.IsCopyOnly = $group.Group[0].IsCopyOnly
+                if ($null -ne $group.Group[0].LastRecoveryForkGUID) {
+                    $historyObject.LastRecoveryForkGuid = $group.Group[0].LastRecoveryForkGUID
+                }
                 $groupResults += $historyObject
             }
         }
@@ -420,7 +441,7 @@ function Get-DbaBackupInformation {
                 $group.UserName = Get-HashString -InString $group.UserName
                 $group.Path = Get-HashString -InString  $group.Path
                 $group.FullName = Get-HashString -InString $group.FullName
-                $group.FileList = ($group.FileList | Select-Object Type,
+                $group.FileList = ($group.FileList | Select-Object FileType,
                     @{Name = "LogicalName"; Expression = { Get-HashString -InString $_."LogicalName" } },
                     @{Name = "PhysicalName"; Expression = { Get-HashString -InString $_."PhysicalName" } })
             }

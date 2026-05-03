@@ -18,6 +18,10 @@ function Invoke-DbaBalanceDataFiles {
         A file group would have at least have 2 data files and should be writable.
         If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
+        When the -TargetFileGroup parameter is specified, indexes can be moved from their current filegroup
+        to the specified target filegroup regardless of how many data files the current filegroup contains.
+        This allows consolidating or migrating data between filegroups.
+
         Note: this command does not perform a disk space check for non-Windows machines so make sure you have enough space on the disk.
 
     .PARAMETER SqlInstance
@@ -37,6 +41,12 @@ function Invoke-DbaBalanceDataFiles {
     .PARAMETER Table
         Specifies which tables to balance data for within the target databases. Only tables with clustered indexes in file groups containing multiple data files will be processed.
         When omitted, all eligible tables in the database will be processed. Use this to target specific large tables that need data redistribution.
+
+    .PARAMETER TargetFileGroup
+        The name of the filegroup to rebuild indexes into. When specified, indexes can be moved from their current filegroup
+        to the target filegroup, regardless of how many data files the current filegroup contains.
+
+        When not specified, the function only processes tables in filegroups with at least 2 data files.
 
     .PARAMETER RebuildOffline
         Forces all clustered index rebuilds to occur offline, which redistributes data between files but blocks table access during the operation.
@@ -107,6 +117,16 @@ function Invoke-DbaBalanceDataFiles {
         This command will consider the fact that there might be a SQL Server edition that does not support online rebuilds of indexes.
         By supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.
 
+    .EXAMPLE
+        PS C:\> Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -TargetFileGroup "SECONDARY"
+
+        This command will rebuild all clustered indexes into the SECONDARY filegroup, moving data from whatever filegroup each table currently resides in.
+
+    .EXAMPLE
+        PS C:\> Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -Table table1,table2 -TargetFileGroup "SECONDARY" -RebuildOffline
+
+        This command will rebuild the clustered indexes of table1 and table2 offline, moving them into the SECONDARY filegroup.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
@@ -117,6 +137,7 @@ function Invoke-DbaBalanceDataFiles {
         [object[]]$Database,
         [Alias("Tables")]
         [object[]]$Table,
+        [string]$TargetFileGroup,
         [switch]$RebuildOffline,
         [switch]$EnableException,
         [switch]$Force
@@ -245,14 +266,32 @@ function Invoke-DbaBalanceDataFiles {
 
                     # Check the tables parameter
                     if ($Table) {
-                        if ($Table -notin $db.Table) {
+                        $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+                        $missingTables = foreach ($tablePart in $tableParts) {
+                            $matchingTable = $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                            if (-not $matchingTable) {
+                                $tablePart.InputValue
+                            }
+                        }
+
+                        if ($missingTables) {
                             # Set the success flag
                             $success = $false
 
                             Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
                         }
 
-                        $tableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+                        $tableCollection = foreach ($tablePart in $tableParts) {
+                            $db.Tables | Where-Object {
+                                $_.Name -eq $tablePart.Name -and
+                                $tablePart.Schema -in ($_.Schema, $null) -and
+                                $tablePart.Database -in ($_.Parent.Name, $null)
+                            }
+                        }
                     } else {
                         $tableCollection = $db.Tables
                     }
@@ -264,13 +303,34 @@ function Invoke-DbaBalanceDataFiles {
                     # ARray to hold the file groups with properties
                     $balanceableTables = @()
 
-                    # Loop through each of the file groups
+                    if ($TargetFileGroup) {
+                        # Validate the target filegroup exists and is writable
+                        $targetFG = $fileGroups[$TargetFileGroup]
+                        if (-not $targetFG) {
+                            Stop-Function -Message "FileGroup '$TargetFileGroup' does not exist in database $db on instance $instance" -Target $instance -Continue
+                            continue
+                        }
+                        if ($targetFG.Readonly) {
+                            Stop-Function -Message "FileGroup '$TargetFileGroup' is read-only in database $db on instance $instance" -Target $instance -Continue
+                            continue
+                        }
+                        if ($targetFG.Files.Count -lt 1) {
+                            Stop-Function -Message "FileGroup '$TargetFileGroup' does not contain any data files in database $db on instance $instance" -Target $instance -Continue
+                            continue
+                        }
 
-                    foreach ($fg in $fileGroups) {
+                        # When a target filegroup is specified, all tables are eligible
+                        Write-Message -Message "Target filegroup '$TargetFileGroup' specified - all tables with clustered indexes are eligible" -Level Verbose
+                        $balanceableTables = $db.Tables
+                    } else {
+                        # Loop through each of the file groups
 
-                        # If there is less than 2 files balancing out data is not possible
-                        if (($fg.Files.Count -ge 2) -and ($fg.Readonly -eq $false)) {
-                            $balanceableTables += $fg.EnumObjects() | Where-Object { $_.GetType().Name -eq 'Table' }
+                        foreach ($fg in $fileGroups) {
+
+                            # If there is less than 2 files balancing out data is not possible
+                            if (($fg.Files.Count -ge 2) -and ($fg.Readonly -eq $false)) {
+                                $balanceableTables += $fg.EnumObjects() | Where-Object { $_.GetType().Name -eq 'Table' }
+                            }
                         }
                     }
 
@@ -285,7 +345,7 @@ function Invoke-DbaBalanceDataFiles {
                             Write-Message -Message "Processing table $tbl" -Level Verbose
 
                             # Chck the tables and get the clustered indexes
-                            if ($tableCollection.Indexes.Count -lt 1) {
+                            if (@($tbl.Indexes).Count -lt 1) {
                                 # Set the success flag
                                 $success = $false
 
@@ -293,7 +353,7 @@ function Invoke-DbaBalanceDataFiles {
                             } else {
 
                                 # Get all the clustered indexes for the table
-                                $clusteredIndexes = $tableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+                                $clusteredIndexes = @($tbl.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' })
 
                                 if ($clusteredIndexes.Count -lt 1) {
                                     # Set the success flag
@@ -313,12 +373,21 @@ function Invoke-DbaBalanceDataFiles {
                                     # Get the original index operation
                                     [bool]$originalIndexOperation = $ci.OnlineIndexOperation
 
+                                    # Save the original filegroup in case of error
+                                    $originalFileGroup = $ci.FileGroup
+
                                     # Set the rebuild option to be either offline or online
                                     if ($RebuildOffline) {
                                         $ci.OnlineIndexOperation = $false
                                     } elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
                                         Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
                                         $ci.OnlineIndexOperation = $true
+                                    }
+
+                                    # Set the target filegroup if specified
+                                    if ($TargetFileGroup) {
+                                        Write-Message -Message "Setting filegroup for index $($ci.Name) to $TargetFileGroup" -Level Verbose
+                                        $ci.FileGroup = $TargetFileGroup
                                     }
 
                                     # Rebuild the index
@@ -331,6 +400,11 @@ function Invoke-DbaBalanceDataFiles {
                                     } catch {
                                         # Set the original index operation back for the index
                                         $ci.OnlineIndexOperation = $originalIndexOperation
+
+                                        # Restore the original filegroup if we changed it
+                                        if ($TargetFileGroup) {
+                                            $ci.FileGroup = $originalFileGroup
+                                        }
 
                                         # Set the success flag
                                         $success = $false
