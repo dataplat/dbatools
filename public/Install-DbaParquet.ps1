@@ -152,17 +152,14 @@ function Install-DbaParquet {
                 [string]$DestinationPath
             )
 
-            if (-not (Test-Path -Path $DestinationPath)) {
-                $null = New-Item -Path $DestinationPath -ItemType Directory -Force
+            # Use System.IO.Compression rather than Expand-Archive because Expand-Archive is PowerShell v5+
+            # and silently skips entries it cannot translate (some NuGet packages contain files Expand-Archive
+            # quietly drops, leading to "lib not found" failures downstream). dbatools must support PowerShell v3.
+            Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+            if (Test-Path -Path $DestinationPath) {
+                Remove-Item -LiteralPath $DestinationPath -Recurse -Force -ErrorAction SilentlyContinue
             }
-
-            $archivePath = $PackageFile
-            if (-not $PackageFile.EndsWith(".zip", [System.StringComparison]::OrdinalIgnoreCase)) {
-                $archivePath = Join-Path -Path ([System.IO.Path]::GetDirectoryName($PackageFile)) -ChildPath "$([System.IO.Path]::GetFileName($PackageFile)).zip"
-                Copy-Item -Path $PackageFile -Destination $archivePath -Force
-            }
-
-            Expand-Archive -LiteralPath $archivePath -DestinationPath $DestinationPath -Force
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($PackageFile, $DestinationPath)
         }
 
         function Get-NuGetLibPath {
@@ -176,17 +173,32 @@ function Install-DbaParquet {
                 return $null
             }
 
-            $preferredFrameworks = @(
-                "netstandard2.0",
-                "netstandard2.1",
-                "net8.0",
-                "net7.0",
-                "net6.0",
-                "net461",
-                "net462",
-                "net472",
-                "net48"
-            )
+            # Pick the closest TFM to the host runtime. On .NET Core / .NET 5+ the netstandard2.0 builds
+            # of Parquet.NET hit Span<T>/System.Memory ambiguity and throw NotImplementedException at
+            # runtime, so we walk net*.0 down from the running major version first. On Windows PowerShell
+            # we stay on .NET Framework targets.
+            $psEdition = $PSVersionTable.PSEdition
+            if (-not $psEdition) { $psEdition = "Desktop" }
+
+            if ($psEdition -eq "Core") {
+                $preferredFrameworks = @()
+                $netMajor = [System.Environment]::Version.Major
+                if ($netMajor -lt 5) { $netMajor = 8 }
+                for ($i = $netMajor; $i -ge 5; $i--) {
+                    $preferredFrameworks += "net$i.0"
+                }
+                $preferredFrameworks += @("netstandard2.1", "netcoreapp3.1", "netcoreapp3.0", "netstandard2.0")
+            } else {
+                $preferredFrameworks = @(
+                    "net48",
+                    "net472",
+                    "net471",
+                    "netstandard2.0",
+                    "net462",
+                    "net461",
+                    "net46"
+                )
+            }
 
             foreach ($framework in $preferredFrameworks) {
                 $candidate = Join-Path -Path $libRoot -ChildPath $framework
@@ -241,27 +253,27 @@ function Install-DbaParquet {
             }
         }
 
-        function Copy-NuGetLibAssemblies {
+        function Compare-NuGetVersion {
             param (
                 [Parameter(Mandatory)]
-                [string]$ExtractPath,
+                [string]$Left,
                 [Parameter(Mandatory)]
-                [string]$DestinationPath
+                [string]$Right
             )
 
-            $libPath = Get-NuGetLibPath -ExtractPath $ExtractPath
-            if (-not $libPath) {
-                Write-Message -Level Verbose -Message "No lib assets found in $ExtractPath"
-                return
-            }
+            $leftClean = ($Left -split "-", 2)[0].Trim()
+            $rightClean = ($Right -split "-", 2)[0].Trim()
 
-            Get-ChildItem -Path $libPath -Filter "*.dll" | ForEach-Object {
-                Copy-Item -Path $PSItem.FullName -Destination $DestinationPath -Force
-                Write-Message -Level Verbose -Message "Installed $($PSItem.Name)"
+            try {
+                $leftVer = [System.Version]$leftClean
+                $rightVer = [System.Version]$rightClean
+                return $leftVer.CompareTo($rightVer)
+            } catch {
+                return [string]::Compare($leftClean, $rightClean, [System.StringComparison]::OrdinalIgnoreCase)
             }
         }
 
-        function Install-NuGetPackageWithDependencies {
+        function Resolve-NuGetPackageGraph {
             param (
                 [Parameter(Mandatory)]
                 [string]$PackageId,
@@ -272,24 +284,73 @@ function Install-DbaParquet {
                 [Parameter(Mandatory)]
                 [string]$ExtractRoot,
                 [Parameter(Mandatory)]
-                [string]$DestinationPath,
-                [Parameter(Mandatory)]
-                [hashtable]$VisitedPackages
+                [hashtable]$ResolvedPackages
             )
 
-            $visitKey = "$($PackageId.ToLowerInvariant())|$($PackageVersion.ToLowerInvariant())"
-            if ($VisitedPackages[$visitKey]) {
-                return
+            # NuGet "highest minimum" resolution: when multiple deps require the same package id,
+            # keep the highest minimum version instead of letting DFS order decide.
+            $lowerId = $PackageId.ToLowerInvariant()
+            if ($ResolvedPackages.ContainsKey($lowerId)) {
+                $comparison = Compare-NuGetVersion -Left $PackageVersion -Right $ResolvedPackages[$lowerId].Version
+                if ($comparison -le 0) {
+                    return
+                }
             }
-            $VisitedPackages[$visitKey] = $true
 
             $packageFile = Save-NuGetPackage -PackageId $PackageId -PackageVersion $PackageVersion -PackageCache $PackageCache
-            $extractPath = Join-Path -Path $ExtractRoot -ChildPath $visitKey.Replace("|", ".")
+            $extractPath = Join-Path -Path $ExtractRoot -ChildPath "$lowerId.$($PackageVersion.ToLowerInvariant())"
             Expand-NuGetPackage -PackageFile $packageFile -DestinationPath $extractPath
-            Copy-NuGetLibAssemblies -ExtractPath $extractPath -DestinationPath $DestinationPath
+
+            $ResolvedPackages[$lowerId] = [PSCustomObject]@{
+                Id          = $PackageId
+                Version     = $PackageVersion
+                ExtractPath = $extractPath
+            }
 
             foreach ($dependency in Get-NuGetDependencies -ExtractPath $extractPath) {
-                Install-NuGetPackageWithDependencies -PackageId $dependency.Id -PackageVersion $dependency.Version -PackageCache $PackageCache -ExtractRoot $ExtractRoot -DestinationPath $DestinationPath -VisitedPackages $VisitedPackages
+                Resolve-NuGetPackageGraph -PackageId $dependency.Id -PackageVersion $dependency.Version -PackageCache $PackageCache -ExtractRoot $ExtractRoot -ResolvedPackages $ResolvedPackages
+            }
+        }
+
+        function Copy-ResolvedAssemblies {
+            param (
+                [Parameter(Mandatory)]
+                [hashtable]$ResolvedPackages,
+                [Parameter(Mandatory)]
+                [string]$DestinationPath
+            )
+
+            # Collect every candidate DLL from the resolved package set, keyed by filename.
+            # When the same DLL ships in multiple packages, keep the highest file version so
+            # transitive dependencies cannot regress newer assemblies pulled in by leaf packages.
+            $dllsByName = @{ }
+            foreach ($package in $ResolvedPackages.Values) {
+                $libPath = Get-NuGetLibPath -ExtractPath $package.ExtractPath
+                if (-not $libPath) {
+                    Write-Message -Level Verbose -Message "No lib assets found for $($package.Id) $($package.Version)"
+                    continue
+                }
+
+                Get-ChildItem -Path $libPath -Filter "*.dll" | ForEach-Object {
+                    $key = $PSItem.Name.ToLowerInvariant()
+                    if (-not $dllsByName.ContainsKey($key)) {
+                        $dllsByName[$key] = $PSItem
+                        return
+                    }
+
+                    $existingVersion = [System.Version]"0.0.0.0"
+                    $candidateVersion = [System.Version]"0.0.0.0"
+                    try { $existingVersion = [System.Version]$dllsByName[$key].VersionInfo.FileVersion } catch { }
+                    try { $candidateVersion = [System.Version]$PSItem.VersionInfo.FileVersion } catch { }
+                    if ($candidateVersion -gt $existingVersion) {
+                        $dllsByName[$key] = $PSItem
+                    }
+                }
+            }
+
+            foreach ($file in $dllsByName.Values) {
+                Copy-Item -Path $file.FullName -Destination $DestinationPath -Force
+                Write-Message -Level Verbose -Message "Installed $($file.Name) ($($file.VersionInfo.FileVersion))"
             }
         }
 
@@ -399,11 +460,13 @@ function Install-DbaParquet {
                 Write-Progress -Activity "Installing Parquet.NET" -Status "Installing local assemblies..." -PercentComplete 40
                 Install-LocalParquetAssemblies -SourcePath $LocalFile -DestinationPath $Path -ExtractRoot $tempRoot
             } else {
-                Write-Progress -Activity "Installing Parquet.NET" -Status "Downloading NuGet packages..." -PercentComplete 35
+                Write-Progress -Activity "Installing Parquet.NET" -Status "Resolving NuGet dependencies..." -PercentComplete 35
                 $packageCache = Join-Path -Path $Path -ChildPath "packages"
                 $extractRoot = Join-Path -Path $tempRoot -ChildPath "packages"
-                $visitedPackages = @{ }
-                Install-NuGetPackageWithDependencies -PackageId "Parquet.Net" -PackageVersion $Version -PackageCache $packageCache -ExtractRoot $extractRoot -DestinationPath $Path -VisitedPackages $visitedPackages
+                $resolvedPackages = @{ }
+                Resolve-NuGetPackageGraph -PackageId "Parquet.Net" -PackageVersion $Version -PackageCache $packageCache -ExtractRoot $extractRoot -ResolvedPackages $resolvedPackages
+                Write-Progress -Activity "Installing Parquet.NET" -Status "Installing assemblies..." -PercentComplete 70
+                Copy-ResolvedAssemblies -ResolvedPackages $resolvedPackages -DestinationPath $Path
             }
 
             Write-Progress -Activity "Installing Parquet.NET" -Status "Verifying installation..." -PercentComplete 90

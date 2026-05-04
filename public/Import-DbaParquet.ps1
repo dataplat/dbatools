@@ -507,13 +507,25 @@ function Import-DbaParquet {
                 [Parameter(Mandatory)]
                 [object[]]$DataFields,
                 [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
-                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction,
+                [hashtable]$StaticColumns
             )
 
             $sqldatatypes = @()
             foreach ($df in $DataFields) {
                 $sqlType = Convert-ParquetTypeToSqlType -DataField $df
                 $sqldatatypes += "[$($df.Name)] $sqlType NULL"
+            }
+
+            # Static columns ride along on every row in the DataTable, so they must exist in the
+            # destination too — otherwise SqlBulkCopy.ColumnMappings.Add fails with "does not match
+            # up with any column in the source or destination". Use the same string column shape
+            # the rest of AutoCreateTable picks for parquet strings.
+            if ($StaticColumns) {
+                $stringSqlType = if ($StoreStringAsUtf8) { "varchar(MAX) COLLATE Latin1_General_100_BIN2_UTF8" } else { "nvarchar(MAX)" }
+                foreach ($key in $StaticColumns.Keys) {
+                    $sqldatatypes += "[$key] $stringSqlType NULL"
+                }
             }
 
             $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ", ")) END"
@@ -856,7 +868,15 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
                         try {
-                            New-SqlTable -DataFields $dataFields -SqlConn $sqlconn -Transaction $transaction
+                            $splatNewSqlTable = @{
+                                DataFields  = $dataFields
+                                SqlConn     = $sqlconn
+                                Transaction = $transaction
+                            }
+                            if ($PSBoundParameters.StaticColumns) {
+                                $splatNewSqlTable.StaticColumns = $StaticColumns
+                            }
+                            New-SqlTable @splatNewSqlTable
                             $createdFatTable = $true
                         } catch {
                             Stop-Function -Continue -Message "Failure" -ErrorRecord $_
