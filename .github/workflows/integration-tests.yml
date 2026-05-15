@@ -140,7 +140,7 @@ jobs:
         run: |
           Write-Output "Stable version detected, bypassing PSModuleCache in this secret-bearing job"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          ./.github/scripts/install-dbatools-library.ps1
+          ./.github/scripts/install-dbatools-library.ps1 -Scope AllUsers
 
       - name: Install dbatools.library for PowerShell 7 (stable versions)
         if: steps.get-version.outputs.is_preview == 'False'
@@ -148,7 +148,7 @@ jobs:
         run: |
           Write-Output "Stable version detected, bypassing PSModuleCache in this secret-bearing job"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          ./.github/scripts/install-dbatools-library.ps1
+          ./.github/scripts/install-dbatools-library.ps1 -Scope AllUsers
 
       - name: Install dbatools.library (preview versions)
         if: steps.get-version.outputs.is_preview == 'True'
@@ -156,7 +156,7 @@ jobs:
         run: |
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          ./.github/scripts/install-dbatools-library.ps1
+          ./.github/scripts/install-dbatools-library.ps1 -Scope AllUsers
 
       - name: Install SQL Server engine and localdb
         uses: potatoqualitee/mssqlsuite@v1.8
