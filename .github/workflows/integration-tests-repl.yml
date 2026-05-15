@@ -23,6 +23,9 @@ on:
 defaults:
   run:
     shell: pwsh
+
+permissions:
+  contents: read
 jobs:
   repl-tests-part1:
     runs-on: ubuntu-latest

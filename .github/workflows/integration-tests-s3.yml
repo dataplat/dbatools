@@ -32,6 +32,9 @@ defaults:
   run:
     shell: pwsh
 
+permissions:
+  contents: read
+
 jobs:
   s3-backup-tests:
     env:

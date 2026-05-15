@@ -1,6 +1,9 @@
 name: Validate Target Branch
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   # This workflow contains a single job called "build"
   build:

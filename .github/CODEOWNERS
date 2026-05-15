@@ -1,0 +1,6 @@
+# CI, release, and agent automation are part of the supply-chain boundary.
+/.github/workflows/ @potatoqualitee @niphlod @andreasjordan
+/.github/scripts/ @potatoqualitee @niphlod @andreasjordan
+/.github/prompts/ @potatoqualitee @niphlod @andreasjordan
+/.github/copilot-instructions.md @potatoqualitee @niphlod @andreasjordan
+/appveyor.yml @potatoqualitee @niphlod @andreasjordan

@@ -10,18 +10,15 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    if: contains(fromJSON('["potatoqualitee","niphlod","andreasjordan"]'), github.actor)
 
     runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: 1
     permissions:
       contents: read
       pull-requests: read
       issues: read
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -29,12 +26,21 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Validate PR number
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+        run: |
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "PR number must be numeric"
+            exit 1
+          fi
+
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_bots: "*"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.inputs.pr_number }}
@@ -52,5 +58,6 @@ jobs:
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
-
+          claude_args: >-
+            --max-turns 10
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
