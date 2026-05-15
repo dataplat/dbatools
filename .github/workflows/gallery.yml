@@ -56,6 +56,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Output "Stable version detected, bypassing PSModuleCache in this secret-bearing job"
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           ./.github/scripts/install-dbatools-library.ps1
 
       - name: Install dbatools.library (preview versions)
@@ -63,6 +64,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           ./.github/scripts/install-dbatools-library.ps1
 
       - name: Download dbatools from Gallery
