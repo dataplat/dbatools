@@ -2,7 +2,10 @@ name: Mark stale issues
 
 on:
   workflow_dispatch:
-  
+
+permissions:
+  issues: write
+
 jobs:
   stale:
 

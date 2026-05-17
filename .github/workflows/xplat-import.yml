@@ -21,6 +21,9 @@ on:
       - '!bin/dbatools-buildref-index.json'
       - '!bin/dbatools-sqlinstallationcomponents.json'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     env:
