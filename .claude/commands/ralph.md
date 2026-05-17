@@ -2,7 +2,7 @@
 
 Generate a Ralph Wiggum-style iterative automation for large tasks. The Ralph Wiggum technique runs an AI CLI in a stateless loop where each iteration does ONE unit of work, then stops. Progress is tracked via git history and filesystem state.
 
-Supports two AI engines: **Claude CLI** (default) and **GitHub Copilot CLI** (`--type copilot`).
+Supports three AI engines: **Claude CLI** (default), **GitHub Copilot CLI** (`--type copilot`), and **Codex CLI** (`--type codex`).
 
 ## Task Description
 
@@ -10,30 +10,33 @@ $ARGUMENTS
 
 ## CLI Engine Parameters
 
-Parse these from `$ARGUMENTS` if present (flags like `--type copilot --model opus --effort high`):
+Parse these from `$ARGUMENTS` if present (flags like `--type copilot --model opus --effort high` or `--type codex --model gpt-5.5 --effort xhigh`):
 
 | Parameter | Values | Default |
 |-----------|--------|---------|
-| `--type` | `claude`, `copilot` | `claude` |
+| `--type` | `claude`, `copilot`, `codex` | `claude` |
 | `--model` | See model table below | `opus` |
-| `--effort` | `low`, `medium`, `high`, `max` | `high` |
+| `--effort` | `low`, `medium`, `high`, `max`, `xhigh` | `high` |
 
 ### Model Name Mapping
 
-The two CLIs use different model name formats:
+The CLIs use different model name formats:
 
-| Alias | Claude CLI (`--model`) | Copilot CLI (`--model`) |
-|-------|----------------------|------------------------|
-| `opus` | `claude-opus-4-6` | `claude-opus-4.6` |
-| `sonnet` | `claude-sonnet-4-6` | `claude-sonnet-4.6` |
-| `haiku` | `claude-haiku-4-5` | `claude-haiku-4.5` |
+| Alias | Claude CLI (`--model`) | Copilot CLI (`--model`) | Codex CLI (`--model`) |
+|-------|----------------------|------------------------|----------------------|
+| `opus` | `claude-opus-4-6` | `claude-opus-4.6` | `gpt-5.5` |
+| `sonnet` | `claude-sonnet-4-6` | `claude-sonnet-4.6` | `gpt-5.4` |
+| `haiku` | `claude-haiku-4-5` | `claude-haiku-4.5` | `gpt-5.4-mini` |
+| `codex` | n/a | n/a | `gpt-5.5` |
+| `gpt-5.5` | n/a | n/a | `gpt-5.5` |
 
 ### Effort Support
 
 | Engine | Flag | Values | Notes |
 |--------|------|--------|-------|
 | Claude | `--effort` | `low`, `medium`, `high`, `max` | `max` is Opus-only |
-| Copilot | `--reasoning-effort` | `low`, `medium`, `high`, `xhigh` | Map `max` → `xhigh` |
+| Copilot | `--reasoning-effort` | `low`, `medium`, `high`, `xhigh` | Map `max` -> `xhigh` |
+| Codex | `-c model_reasoning_effort="..."` | `low`, `medium`, `high`, `xhigh` | Map `max` -> `xhigh` |
 
 Strip `--type`, `--model`, and `--effort` from `$ARGUMENTS` before processing the task description.
 
@@ -85,9 +88,9 @@ The generated prompt MUST include ALL 8 quality check sections from the "Quality
 **CRITICAL**: Set `$MaxIterations` to **item count + 5**.
 
 **Resolve template placeholders** from the parsed CLI parameters:
-- `{TYPE}` → `claude` or `copilot` (default: `claude`)
-- `{MODEL}` → resolved model name for the chosen engine (use the Model Name Mapping table above; default: `opus` alias → `claude-opus-4-6` for claude, `claude-opus-4.6` for copilot)
-- `{EFFORT}` → `low`, `medium`, `high`, or `max` (default: `high`)
+- `{TYPE}` -> `claude`, `copilot`, or `codex` (default: `claude`)
+- `{MODEL}` -> resolved model name for the chosen engine (use the Model Name Mapping table above; default: `opus` alias -> `claude-opus-4-6` for claude, `claude-opus-4.6` for copilot, `gpt-5.5` for codex)
+- `{EFFORT}` -> `low`, `medium`, `high`, `max`, or `xhigh` (default: `high`)
 
 Use this template for the PowerShell orchestrator - it streams tool use with file details:
 
@@ -95,15 +98,18 @@ Use this template for the PowerShell orchestrator - it streams tool use with fil
 #!/usr/bin/env pwsh
 param(
     [int]$MaxIterations = {ITEM_COUNT + 10},
-    [ValidateSet('claude', 'copilot')]
+    [ValidateSet('claude', 'copilot', 'codex')]
     [string]$Type = '{TYPE}',
     [string]$Model = '{MODEL}',
-    [ValidateSet('low', 'medium', 'high', 'max')]
+    [ValidateSet('low', 'medium', 'high', 'max', 'xhigh')]
     [string]$Effort = '{EFFORT}',
     [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
+if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 $TrackerPath = "/workspace/docs/trackers/features/{TASK}-TRACKER.md"
 $PromptPath = "/workspace/scripts/{task}-prompt.md"
 
@@ -114,6 +120,8 @@ if ($Type -eq 'copilot') {
         Write-Host "ERROR: Copilot CLI not found at $EngineBin" -ForegroundColor Red
         exit 1
     }
+} elseif ($Type -eq 'codex') {
+    $EngineBin = "codex"
 } else {
     $EngineBin = "claude"
 }
@@ -155,12 +163,28 @@ function Invoke-Iteration {
             return $true
         }
 
-        & $EngineBin @engineArgs 2>&1 | ForEach-Object {
+        & $EngineBin @engineArgs | ForEach-Object {
             $line = "$PSItem"
             if ($line -and $line -notmatch '^\s*$') {
                 Write-Host "  $line" -ForegroundColor White
             }
         }
+    } elseif ($Type -eq 'codex') {
+        $codexEffort = if ($Effort -eq 'max') { 'xhigh' } else { $Effort }
+        $engineArgs = @(
+            'exec'
+            '--model', $Model
+            '--config', "model_reasoning_effort=`"$codexEffort`""
+            '--dangerously-bypass-approvals-and-sandbox'
+            '-'
+        )
+
+        if ($DryRun) {
+            Write-Host "  [DRY RUN] Would run: codex exec --model $Model --config model_reasoning_effort=`"$codexEffort`" --dangerously-bypass-approvals-and-sandbox - < prompt" -ForegroundColor DarkGray
+            return $true
+        }
+
+        $prompt | & $EngineBin @engineArgs
     } else {
         $sessionId = [guid]::NewGuid().ToString()
         $engineArgs = @(
@@ -180,7 +204,7 @@ function Invoke-Iteration {
         }
 
         # Stream and parse JSON - show tool use with file details
-        & $EngineBin @engineArgs 2>&1 | ForEach-Object {
+        & $EngineBin @engineArgs | ForEach-Object {
             $line = $PSItem
             try {
                 $obj = $line | ConvertFrom-Json -ErrorAction Stop
@@ -265,6 +289,11 @@ while ($iteration -lt $MaxIterations) {
         }
     }
 
+    if ($DryRun) {
+        Write-Host "Dry run complete. Tracker was not modified." -ForegroundColor DarkGray
+        break
+    }
+
     # Zero-trust: verify the iteration actually progressed
     $completedAfter = Get-CompletedCount
 
@@ -298,6 +327,7 @@ Show:
 - Generated file paths
 - How to run: `./scripts/{task}.ps1`
 - Engine override example: `./scripts/{task}.ps1 -Type copilot -Model claude-sonnet-4.6 -Effort high`
+- Codex 5.5 xhigh example: `./scripts/{task}.ps1 -Type codex -Model gpt-5.5 -Effort xhigh`
 
 ### Verification Before Writing Code
 

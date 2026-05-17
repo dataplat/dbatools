@@ -177,6 +177,10 @@ function Test-DbaSpn {
                 foreach ($spn in $spns) {
                     $ports = @()
 
+                    if (-not $spn.TcpEnabled) {
+                        continue
+                    }
+
                     $ips = (($wmi.ServerInstances | Where-Object { $_.Name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
                     $ipAllPort = $null
                     foreach ($ip in $ips) {

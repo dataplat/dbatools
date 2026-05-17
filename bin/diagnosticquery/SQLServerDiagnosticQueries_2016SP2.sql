@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 15, 2026
+-- Last Modified: May 12, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -89,7 +89,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5865.1		SP2 CU15 + Security Update	1/12/2021		https://support.microsoft.com/en-us/help/4583461/kb4583461-security-update-for-sql-server-2016-sp2-cu15	
 -- 13.0.5882.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
 -- 13.0.5888.11		SP2 CU17					3/29/2021		https://support.microsoft.com/en-us/topic/kb5001092-cumulative-update-17-for-sql-server-2016-sp2-5876a4d6-59ac-484a-93dc-4be456cd87d1
--- 13.0.5893.48		CU17 + GDR					6/14/2022		https://support.microsoft.com/en-us/topic/kb5014351-description-of-the-security-update-for-sql-server-2016-sp2-cu17-june-14-2022-d30a69f4-1a72-41b2-a545-6a211b5fc0f7
+-- 13.0.5893.48		SP2 CU17 + GDR				6/14/2022		https://support.microsoft.com/en-us/topic/kb5014351-description-of-the-security-update-for-sql-server-2016-sp2-cu17-june-14-2022-d30a69f4-1a72-41b2-a545-6a211b5fc0f7
 
 
 
@@ -108,6 +108,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.6475.1		SP3 + GDR					11/11/2025		https://support.microsoft.com/en-us/topic/kb5068401-description-of-the-security-update-for-sql-server-2016-sp3-gdr-november-11-2025-59a59fc0-f673-45c2-b8de-492b95c0e423
 -- 13.0.6480.4		SP3 + GDR					3/10/2026		https://support.microsoft.com/en-us/topic/kb5077474-description-of-the-security-update-for-sql-server-2016-sp3-gdr-march-10-2026-3f455bec-1221-4962-b068-0b11bf96b66a
 -- 13.0.6485.1		SP3 + GDR					4/14/2026		https://support.microsoft.com/en-us/topic/kb5084821-description-of-the-security-update-for-sql-server-2016-sp3-gdr-april-14-2026-825c8bb5-cf16-4265-b2db-10ce404287de
+-- 13.0.6490.1		SP3 + GDR					5/12/2026		https://support.microsoft.com/en-us/topic/kb5089271-description-of-the-security-update-for-sql-server-2016-sp3-gdr-may-12-2026-f4c3f32d-5ae9-4eae-ac04-b63de1eae66f	
 
 
 -- Azure Connect Pack Builds
@@ -124,6 +125,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.7070.1		Azure Connect Pack + GDR	11/11/2025		https://support.microsoft.com/en-us/topic/kb5068400-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-11-2025-9ea222c4-2d64-4b8d-aaf0-2fae80392540
 -- 13.0.7075.5		Azure Connect Pack + GDR	3/10/2026		https://support.microsoft.com/en-us/topic/kb5077473-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-march-10-2026-037c7860-1e79-4844-aa0d-d6e11449bfa2
 -- 13.0.7080.1		Azure Connect Pack + GDR	4/14/2026		https://support.microsoft.com/en-us/topic/kb5084820-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-april-14-2026-bc8bf4cb-40c2-470b-9316-33faefe75916
+-- 13.0.7085.1		Azure Connect Pack + GDR	5/12/2026		https://support.microsoft.com/en-us/topic/kb5089270-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-may-12-2026-289f3e3e-a52b-4da2-b733-cf3ddf68a988
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -210,21 +212,22 @@ SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];	-- New
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
-SELECT name, value, value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
+SELECT [name], [value], value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
 FROM sys.configurations WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Focus on these settings:
 -- automatic soft-NUMA disabled (should be 0 in most cases)
 -- backup checksum default (should be 1)
+-- backup compression algorithm
 -- backup compression default (should be 1 in most cases)
 -- clr enabled (only enable if it is needed)
 -- cost threshold for parallelism (depends on your workload)
 -- lightweight pooling (should be zero)
 -- max degree of parallelism (depends on your workload and hardware)
 -- max server memory (MB) (set to an appropriate value, not the default)
--- optimize for ad hoc workloads (should be 1)
+-- optimize for ad hoc workloads (should be 1 in most cases)
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
 
