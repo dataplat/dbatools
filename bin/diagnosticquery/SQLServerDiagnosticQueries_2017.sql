@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 15, 2026
+-- Last Modified: May 12, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -109,7 +109,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3505.1		CU31 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065225-description-of-the-security-update-for-sql-server-2017-cu31-september-9-2025-b1addb22-3bfd-4870-b914-c020c2a3d2be	
 -- 14.0.3515.1		CU31 + GDR						   11/11/2025		https://support.microsoft.com/en-us/topic/kb5068402-description-of-the-security-update-for-sql-server-2017-cu31-november-11-2025-1be08efe-ad14-4b95-a0de-ecbbf2703114
 -- 14.0.3520.4		CU31 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077471-description-of-the-security-update-for-sql-server-2017-cu31-march-10-2026-f020d5eb-e356-42e8-a9ba-0ef061430b15
--- 14.0.3525.1		CU31 + GDR							4/15/2026		https://support.microsoft.com/en-us/topic/kb5084818-description-of-the-security-update-for-sql-server-2017-cu31-april-14-2026-0ddfecfe-673e-4f3e-8ffd-8dfeb66f97e4
+-- 14.0.3525.1		CU31 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5084818-description-of-the-security-update-for-sql-server-2017-cu31-april-14-2026-0ddfecfe-673e-4f3e-8ffd-8dfeb66f97e4
+-- 14.0.3530.2		CU31 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5090354-description-of-the-security-update-for-sql-server-2017-cu31-may-12-2026-278c1395-f4e4-42d3-ba28-4b03067a9656	
 
 
 -- SQL Server 2017 Azure Connect Pack builds
@@ -207,21 +208,22 @@ SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
-SELECT name, value, value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
+SELECT [name], [value], value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
 FROM sys.configurations WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Focus on these settings:
 -- automatic soft-NUMA disabled (should be 0 in most cases)
 -- backup checksum default (should be 1)
+-- backup compression algorithm
 -- backup compression default (should be 1 in most cases)
 -- clr enabled (only enable if it is needed)
 -- cost threshold for parallelism (depends on your workload)
 -- lightweight pooling (should be zero)
 -- max degree of parallelism (depends on your workload and hardware)
 -- max server memory (MB) (set to an appropriate value, not the default)
--- optimize for ad hoc workloads (should be 1)
+-- optimize for ad hoc workloads (should be 1 in most cases)
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
 

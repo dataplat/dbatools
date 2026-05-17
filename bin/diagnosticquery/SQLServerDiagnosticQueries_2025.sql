@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 16, 2026
+-- Last Modified: May 12, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -69,6 +69,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.4025.3		CU3									3/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate3
 -- 17.0.4030.1		CU3 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5083245-description-of-the-security-update-for-sql-server-2025-cu3-april-14-2026-05c1d543-9323-4484-9b11-23093088cd76
 -- 17.0.4035.5		CU24								4/16/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate4
+-- 17.0.4040.1		CU24 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089899-description-of-the-security-update-for-sql-server-2025-cu4-may-12-2026-de2c44d3-81c5-46f7-a756-d579a067f24e
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -148,9 +149,9 @@ SERVERPROPERTY('SuspendedDatabaseCount') AS [SuspendedDatabaseCount];
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
-SELECT name, value, value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
+SELECT [name], [value], value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
 FROM sys.configurations WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Focus on these settings:
@@ -163,7 +164,7 @@ ORDER BY name OPTION (RECOMPILE);
 -- lightweight pooling (should be zero)
 -- max degree of parallelism (depends on your workload and hardware)
 -- max server memory (MB) (set to an appropriate value, not the default)
--- optimize for ad hoc workloads (should be 1)
+-- optimize for ad hoc workloads (should be 1 in most cases)
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
 -- tempdb metadata memory-optimized (0 by default, some workloads may benefit by enabling)
@@ -246,8 +247,7 @@ FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- Last backup information by database  (Query 8) (Last Backup By Database)
-SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], 
-    d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
+SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
 	CONVERT(DECIMAL(18,2), ds.cntr_value/1024.0) AS [Total Data File Size on Disk (MB)],
 	CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Total Log File Size on Disk (MB)], 
 	CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100 AS [Log Used %],
@@ -260,18 +260,18 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
 	MAX(CASE WHEN bs.[type] = 'L' THEN bs.last_valid_restore_time ELSE NULL END) AS [Last Valid Restore Time],
 	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]
 FROM sys.databases AS d WITH (NOLOCK)
-INNER JOIN sys.master_files as mf WITH (NOLOCK)
+INNER JOIN sys.master_files AS mf WITH (NOLOCK)
 ON d.database_id = mf.database_id
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
 AND bs.backup_finish_date > GETDATE()- 30
 LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
-ON d.name = lu.instance_name
+ON d.[name] = lu.instance_name
 LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
-ON d.name = ls.instance_name
+ON d.[name] = ls.instance_name
 INNER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
-ON d.name = ds.instance_name
-WHERE d.name <> N'tempdb'
+ON d.[name] = ds.instance_name
+WHERE d.[name] <> N'tempdb'
 AND lu.counter_name LIKE N'Log File(s) Used Size (KB)%' 
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
 AND ds.counter_name LIKE N'Data File(s) Size (KB)%'
@@ -305,8 +305,8 @@ FROM sys.dm_server_accelerator_status WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- Get SQL Server Agent jobs and Category information (Query 10) (SQL Server Agent Jobs)
-SELECT sj.name AS [Job Name], sj.[description] AS [Job Description], 
-sc.name AS [CategoryName], SUSER_SNAME(sj.owner_sid) AS [Job Owner],
+SELECT sj.[name] AS [Job Name], sj.[description] AS [Job Description], 
+sc.[name] AS [CategoryName], SUSER_SNAME(sj.owner_sid) AS [Job Owner],
 sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], h.run_status,
 CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date],
 RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
@@ -331,7 +331,7 @@ ON s.schedule_id = js.schedule_id
 ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOMPILE);
 ------
 
---run_status	
+-- run_status	
 -- Value   Status of the job execution
 -- 0 =     Failed
 -- 1 =     Succeeded
@@ -356,10 +356,10 @@ ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOM
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
-SELECT name, event_source, message_id, severity, [enabled], has_notification, 
+SELECT [name] AS [Alert Name], event_source, message_id, severity, [enabled], has_notification, 
        delay_between_responses, occurrence_count, last_occurrence_date, last_occurrence_time
 FROM msdb.dbo.sysalerts WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Gives you some basic information about your SQL Server Agent Alerts 
@@ -430,6 +430,7 @@ DECLARE @SystemMemoryState AS NVARCHAR(50);
 DECLARE @SQLServerStartTime AS DATETIME; 
 DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @SQLCACHESTORE_SQLCPMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @AvgPageLifeExpectancy int = 0;
 DECLARE @LastMemoryHealthSeverityLevel tinyint = 0;
 DECLARE @PeakMemoryHealthSeverityLevel tinyint = 0;
@@ -457,18 +458,23 @@ SELECT @SQLServerStartTime = sqlserver_start_time
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- SQLBUFFERPOOL Memory Clerk Usage 
-SELECT @SQLBufferPoolMemoryUsageMB = 
-		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+SELECT @SQLBufferPoolMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
 FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'MEMORYCLERK_SQLBUFFERPOOL'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
 
 -- MEMORYCLERK_SOSNODE Memory Clerk Usage 
-SELECT @SQLSOSNODEMemoryUsageMB = 
-		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+SELECT @SQLSOSNODEMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
 FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'MEMORYCLERK_SOSNODE'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- CACHESTORE_SQLCP Memory Clerk Usage 
+SELECT @SQLCACHESTORE_SQLCPMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'CACHESTORE_SQLCP'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
 
 -- Most recent and peak sys.dm_os_memory_health_history values
 SELECT TOP (1) @LastMemoryHealthSeverityLevel = mh.severity_level,
@@ -502,6 +508,7 @@ SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version I
 		@AvgPageLifeExpectancy AS [Page Life Expectancy (Seconds)],
 		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
 		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
+		@SQLCACHESTORE_SQLCPMemoryUsageMB AS [CACHESTORE_SQLCP Memory Clerk Memory Usage (MB)],
 		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
 		@SQLServerStartTime AS [SQL Server Start Time];
 GO
@@ -1209,6 +1216,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'PREEMPTIVE_XE_GETTARGETSTATE', N'PREEMPTIVE_XE_SESSIONCOMMIT',
 		N'PREEMPTIVE_XE_TARGETINIT', N'PREEMPTIVE_XE_TARGETFINALIZE',
 		N'POPULATE_LOCK_ORDINALS', N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
+		N'PVS_PREALLOCATE',
 		N'PWAIT_EXTENSIBILITY_CLEANUP_TASK', N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', N'QDS_ASYNC_QUEUE',
         N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'REQUEST_FOR_DEADLOCK_SEARCH',
 		N'RESOURCE_QUEUE', N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH', N'SLEEP_DBSTARTUP',

@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 15, 2026
+-- Last Modified: May 12, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -119,6 +119,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4455.2		CU32 + GDR							11-11-2025		https://support.microsoft.com/en-us/topic/kb5068404-description-of-the-security-update-for-sql-server-2019-cu32-november-11-2025-c203bfbf-036e-46d2-bc10-6c01200dc48a
 -- 15.0.4460.4		CU32 + GDR							3-10-2026		https://support.microsoft.com/en-us/topic/kb5077469-description-of-the-security-update-for-sql-server-2019-cu32-march-10-2026-5ec2c609-35cb-483d-aa80-5e66821e5c97
 -- 15.0.4465.1		CU32 + GDR							4-14-2026		https://support.microsoft.com/en-us/topic/kb5084816-description-of-the-security-update-for-sql-server-2019-cu32-april-14-2026-b135e76b-1601-4477-9185-0520debd95a6
+-- 15.0.4470.1		CU32 + GDR							5-12-2026		https://support.microsoft.com/en-us/topic/kb5090407-description-of-the-security-update-for-sql-server-2019-cu32-may-12-2026-3551e15f-b89c-4255-bb6a-97f745e642af
 
 
 
@@ -210,21 +211,22 @@ SERVERPROPERTY('IsTempdbMetadataMemoryOptimized') AS [IsTempdbMetadataMemoryOpti
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
-SELECT name, value, value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
+SELECT [name], [value], value_in_use, minimum, maximum, [description], is_dynamic, is_advanced
 FROM sys.configurations WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Focus on these settings:
 -- automatic soft-NUMA disabled (should be 0 in most cases)
 -- backup checksum default (should be 1)
+-- backup compression algorithm
 -- backup compression default (should be 1 in most cases)
 -- clr enabled (only enable if it is needed)
 -- cost threshold for parallelism (depends on your workload)
 -- lightweight pooling (should be zero)
 -- max degree of parallelism (depends on your workload and hardware)
 -- max server memory (MB) (set to an appropriate value, not the default)
--- optimize for ad hoc workloads (should be 1)
+-- optimize for ad hoc workloads (should be 1 in most cases)
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
 -- tempdb metadata memory-optimized (0 by default, some workloads may benefit by enabling)
@@ -465,6 +467,7 @@ DECLARE @SystemMemoryState AS NVARCHAR(50);
 DECLARE @SQLServerStartTime AS DATETIME; 
 DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @SQLCACHESTORE_SQLCPMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @AvgPageLifeExpectancy int = 0;
 
 -- Basic information about OS memory amounts and state  
@@ -488,17 +491,21 @@ SELECT @SQLServerStartTime = sqlserver_start_time
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- SQLBUFFERPOOL Memory Clerk Usage 
-SELECT @SQLBufferPoolMemoryUsageMB = 
-		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+SELECT @SQLBufferPoolMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
 FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'MEMORYCLERK_SQLBUFFERPOOL'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
 
 -- MEMORYCLERK_SOSNODE Memory Clerk Usage 
-SELECT @SQLSOSNODEMemoryUsageMB = 
-		CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+SELECT @SQLSOSNODEMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
 FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'MEMORYCLERK_SOSNODE'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
+-- CACHESTORE_SQLCP Memory Clerk Usage 
+SELECT @SQLCACHESTORE_SQLCPMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'CACHESTORE_SQLCP'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
 
 -- Page Life Expectancy (PLE) value for current instance  
@@ -518,6 +525,7 @@ SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version I
 		@AvgPageLifeExpectancy AS [Page Life Expectancy (Seconds)],
 		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
 		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
+		@SQLCACHESTORE_SQLCPMemoryUsageMB AS [CACHESTORE_SQLCP Memory Clerk Memory Usage (MB)],
 		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
 		@SQLServerStartTime AS [SQL Server Start Time];
 GO
@@ -1173,6 +1181,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'PREEMPTIVE_XE_GETTARGETSTATE', N'PREEMPTIVE_XE_SESSIONCOMMIT',
 		N'PREEMPTIVE_XE_TARGETINIT', N'PREEMPTIVE_XE_TARGETFINALIZE',
 		N'POPULATE_LOCK_ORDINALS', N'PWAIT_ALL_COMPONENTS_INITIALIZED', N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
+		N'PVS_PREALLOCATE',
 		N'PWAIT_EXTENSIBILITY_CLEANUP_TASK', N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', N'QDS_ASYNC_QUEUE',
         N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', N'REQUEST_FOR_DEADLOCK_SEARCH',
 		N'RESOURCE_QUEUE', N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH', N'SLEEP_DBSTARTUP',
