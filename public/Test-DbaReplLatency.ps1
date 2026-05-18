@@ -136,8 +136,8 @@ function Test-DbaReplLatency {
                 # Create an instance of TransPublication
                 $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
 
-                $transPub.Name = $publication.PublicationName
-                $transPub.DatabaseName = $publication.Database
+                $transPub.Name = $publication.Name
+                $transPub.DatabaseName = $publication.DatabaseName
 
                 # Set the Name and DatabaseName properties for the publication, and set the ConnectionContext property to the connection created in step 1.
                 $transsqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
@@ -175,10 +175,10 @@ function Test-DbaReplLatency {
 
                 $pubMon = New-Object Microsoft.SqlServer.Replication.PublicationMonitor
 
-                $pubMon.Name = $publication.PublicationName
+                $pubMon.Name = $publication.Name
                 $pubMon.DistributionDBName = $distributionDatabase
-                $pubMon.PublisherName = $publication.Server
-                $pubMon.PublicationDBName = $publication.Database
+                $pubMon.PublisherName = $publication.SqlInstance.SqlInstance
+                $pubMon.PublicationDBName = $publication.DatabaseName
 
                 $distsqlconn = New-SqlConnection -SqlInstance $DistributionServer -SqlCredential $SqlCredential
                 $pubMon.ConnectionContext = $distsqlconn
@@ -228,13 +228,13 @@ function Test-DbaReplLatency {
 
                         [PSCustomObject]@{
                             ComputerName                   = $server.ComputerName
-                            InstanceName                   = $server.InstanceName
+                            InstanceName                   = $server.DbaInstanceName
                             SqlInstance                    = $server.SqlInstance
                             TokenID                        = $tracerTokenId
                             TokenCreateDate                = $token.PublisherCommitTime
-                            PublicationServer              = $publication.Server
-                            PublicationDB                  = $publication.Database
-                            PublicationName                = $publication.PublicationName
+                            PublicationServer              = $publication.SqlInstance.SqlInstance
+                            PublicationDB                  = $publication.DatabaseName
+                            PublicationName                = $publication.Name
                             PublicationType                = $publication.Type
                             DistributionServer             = $distributionServer
                             DistributionDB                 = $distributionDatabase
