@@ -5431,15 +5431,15 @@
             "ReleaseDate": "2026-04-16"
         },
         {
+            "Version": "17.0.4040",
+            "KBList": "5089899",
+            "ReleaseDate": "2026-05-12"
+        },
+        {
             "CU": "CU5",
             "Version": "17.0.4045",
             "KBList": "5084896",
             "ReleaseDate": "2026-05-20"
-        },
-        {
-            "Version": "17.0.4040",
-            "KBList": "5089899",
-            "ReleaseDate": "2026-05-12"
         }
     ]
 }
