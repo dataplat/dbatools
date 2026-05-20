@@ -5338,12 +5338,6 @@
             "ReleaseDate": "2026-03-12"
         },
         {
-            "CU": "CU25",
-            "Version": "16.0.4255",
-            "KBList": "5081477",
-            "ReleaseDate": "2026-05-20"
-        },
-        {
             "Version": "16.0.4250",
             "KBList": "5083252",
             "ReleaseDate": "2026-04-14"
@@ -5352,6 +5346,12 @@
             "Version": "16.0.4252",
             "KBList": "5089900",
             "ReleaseDate": "2026-05-12"
+        },
+        {
+            "CU": "CU25",
+            "Version": "16.0.4255",
+            "KBList": "5081477",
+            "ReleaseDate": "2026-05-20"
         },
         {
             "Version": "17.0.100",
