@@ -36,7 +36,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest, macOS-14]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
 
     - name: Show pwsh version
       shell: pwsh
@@ -56,7 +56,7 @@ jobs:
 
     - name: Install and cache PowerShell modules (stable versions)
       if: steps.get-version.outputs.is_preview == 'False'
-      uses: potatoqualitee/psmodulecache@v6.2.1
+      uses: potatoqualitee/psmodulecache@ee5e9494714abf56f6efbfa51527b2aec5c761b8 # v6.2.1
       with:
           modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
 

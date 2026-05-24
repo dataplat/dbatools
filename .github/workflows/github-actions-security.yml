@@ -1,0 +1,33 @@
+name: GitHub Actions Security
+
+on:
+  pull_request:
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/scripts/Test-GitHubActionsPins.ps1"
+      - ".github/workflows/**"
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - "**"
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/scripts/Test-GitHubActionsPins.ps1"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  action-pinning:
+    name: Require pinned actions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Verify action refs
+        shell: pwsh
+        run: ./.github/scripts/Test-GitHubActionsPins.ps1
