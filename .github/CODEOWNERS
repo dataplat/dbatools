@@ -2,5 +2,7 @@
 /.github/workflows/ @potatoqualitee @niphlod @andreasjordan
 /.github/scripts/ @potatoqualitee @niphlod @andreasjordan
 /.github/prompts/ @potatoqualitee @niphlod @andreasjordan
+/.github/CODEOWNERS @potatoqualitee @niphlod @andreasjordan
 /.github/copilot-instructions.md @potatoqualitee @niphlod @andreasjordan
+/.github/dependabot.yml @potatoqualitee @niphlod @andreasjordan
 /appveyor.yml @potatoqualitee @niphlod @andreasjordan
