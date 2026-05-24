@@ -7,4 +7,8 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Paris"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     open-pull-requests-limit: 5
