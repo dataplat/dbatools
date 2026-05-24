@@ -124,7 +124,7 @@ function Test-DbaReplLatency {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -Type "Transactional"
+            $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredential -Type "Transactional"
 
             if ($PublicationName) {
                 $publicationNames = $publicationNames | Where-Object Name -in $PublicationName
@@ -154,7 +154,7 @@ function Test-DbaReplLatency {
 
             ##################################################################################
             ### Determine Latency and validate connections for a transactional publication ###
-`           ##################################################################################
+            ##################################################################################
 
             $repServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer
             $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
