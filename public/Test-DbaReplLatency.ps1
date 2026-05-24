@@ -127,7 +127,7 @@ function Test-DbaReplLatency {
             $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -Type "Transactional"
 
             if ($PublicationName) {
-                $publicationNames = $publicationNames | Where-Object PublicationName -in $PublicationName
+                $publicationNames = $publicationNames | Where-Object Name -in $PublicationName
             }
 
 
