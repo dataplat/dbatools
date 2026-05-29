@@ -331,7 +331,7 @@ For more troubleshooting help, visit our [troubleshooting guide](https://dbatool
 
 ## Contributing
 
-We'd love to have you join us! Check out our [Contributing Guide](contributing.md) and the [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/).
+We'd love to have you join us! Check out our [Contributing Guide](CONTRIBUTING.md) and the [dbatools-dev Slack channel](https://sqlcommunity.slack.com/messages/C3EJ852JD/).
 
 ## License
 
