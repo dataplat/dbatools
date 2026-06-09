@@ -1,0 +1,127 @@
+name: Security Triage
+description: Report a suspected security issue or AI-assisted security finding
+labels: ["triage required"]
+body:
+  - type: markdown
+    id: intro-md
+    attributes:
+      value: |
+        Thanks for helping improve dbatools security.
+
+        Use this form for suspected security issues that are safe to discuss in a public GitHub issue. Do not include real credentials, tokens, connection strings, customer data, server names, IP addresses, or exploit details that could put users at risk.
+
+        If this report includes an actively exploitable vulnerability, sensitive target details, or non-public exploit information, please use GitHub private vulnerability reporting if it is available for this repository, or contact the maintainers privately before opening a public issue.
+  - type: dropdown
+    id: existing-issue
+    attributes:
+      label: "Verified issue does not already exist?"
+      description: "Please search to see if an issue already exists for this security concern."
+      options:
+        - "No, I did not search"
+        - "I have searched and found no existing issue"
+    validations:
+      required: true
+  - type: dropdown
+    id: finding-source
+    attributes:
+      label: "How was this finding identified?"
+      options:
+        - "Manual code review"
+        - "AI-assisted audit"
+        - "Automated scanner"
+        - "Runtime behavior"
+        - "User report"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: affected-area
+    attributes:
+      label: "Affected command or area"
+      description: "Name the command, function, file, workflow, or behavior that appears to be affected."
+      placeholder: "Example: Invoke-DbaQuery parameter handling, credential logging, backup path validation"
+    validations:
+      required: true
+  - type: dropdown
+    id: risk-area
+    attributes:
+      label: "Suspected risk area"
+      options:
+        - "SQL construction or escaping"
+        - "Credentials, tokens, or connection strings"
+        - "File paths, backup paths, or restore paths"
+        - "Remote execution, services, or network access"
+        - "Logging, errors, or output disclosure"
+        - "Permissions or destructive operations"
+        - "Dependency, build, or CI configuration"
+        - "Other or unsure"
+    validations:
+      required: true
+  - type: dropdown
+    id: suspected-severity
+    attributes:
+      label: "Suspected severity"
+      description: "Choose your best estimate. Maintainers may reclassify this during triage."
+      options:
+        - "Critical"
+        - "High"
+        - "Medium"
+        - "Low"
+        - "Unsure"
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Potential impact"
+      description: "Describe what could go wrong if the finding is valid. Keep details redacted if the issue is public."
+      placeholder: "Example: User-controlled input may affect generated T-SQL; credentials may appear in logs; a path may overwrite an unexpected file."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Reproduction steps or reasoning"
+      description: "Provide redacted steps, a minimal example, or enough reasoning for maintainers to verify the issue."
+      value: |
+        ```powershell
+        # provide a minimal redacted example if available
+        # use fake server, database, username, path, token, or credential values
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Evidence, logs, or regression test idea"
+      description: "Include scanner output, reviewed code paths, sanitized logs, or a suggested failing test that would prove the issue."
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: "Suggested fix or mitigation"
+      description: "If you have a proposed fix, guardrail, validation rule, or documentation change, describe it here."
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: "dbatools and environment details"
+      description: "Provide the dbatools version, PowerShell version, OS, SQL Server version, and any relevant module or dependency versions."
+      value: |
+        ```powershell
+        Get-Module dbatools | Select-Object Name, Version
+        $PSVersionTable
+        ```
+    validations:
+      required: true
+  - type: checkboxes
+    id: public-safety
+    attributes:
+      label: "Public issue safety"
+      options:
+        - label: "I have removed or replaced real secrets, credentials, tokens, server names, IP addresses, and customer data."
+          required: true
+        - label: "I understand this issue is public and have avoided posting exploit details that could put users at risk."
+          required: true
