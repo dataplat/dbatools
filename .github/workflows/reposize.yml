@@ -12,7 +12,7 @@ jobs:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v1
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v1
       - uses: jwalton/gh-find-current-pr@f3d61b485d2801773f7a07b2aaa3306bd8f8e653 # v1
         id: findpr
         with:
