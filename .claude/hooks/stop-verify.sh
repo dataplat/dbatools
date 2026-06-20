@@ -1,22 +1,57 @@
 #!/bin/bash
-# stop-verify.sh - Comprehensive quality gate when Claude finishes responding
-# Incorporates: doublecheck, simplify, review, verify, and completeness checks.
-# Injects a reminder to self-verify. Does NOT hard-block (no infinite loops).
+# stop-verify.sh - Quality gate when Claude finishes a dbatools session.
+# Injects a self-verify reminder. Does NOT hard-block.
 # Guards against re-entry via stop_hook_active flag.
 
 INPUT=$(cat)
 
-# Prevent infinite loops: if stop hook is already active, exit immediately
-STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
-if [[ "$STOP_ACTIVE" == "true" ]]; then
+# Prevent infinite loops
+if echo "$INPUT" | grep -qE '"stop_hook_active":[[:space:]]*(true)'; then
     exit 0
 fi
 
-jq -n '{
-    hookSpecificOutput: {
-        hookEventName: "Stop",
-        additionalContext: "QUALITY GATE — If you wrote or modified code in this response, perform ALL checks below before finishing. If you only answered a question or did research, skip this.\n\n## 1. VERIFY (does it work?)\n- Check for syntax errors in changed files\n- Run tests if applicable (Pester for PS, dotnet test for C#)\n- Confirm imports, dependencies, and module loading work\n- Report what works and what does not\n\n## 2. REVIEW (is it safe and correct?)\n- Logic errors and edge cases\n- Security: credential handling, injection vulnerabilities (SQL, XSS)\n- Missing validation on user input\n- Error responses must not expose stack traces\n- Destructive operations need confirmation\n- API naming contract (plural URLs, kebab-case)\n- PSU endpoints use New-ProtectedEndpoint\n\n## 3. SIMPLIFY (is it clean?)\n- Remove unnecessary complexity\n- Consolidate duplicate logic\n- Use idiomatic patterns (PowerShell best practices for .ps1)\n- Remove dead code, unused variables, unused imports\n- Do not add features or change functionality — only simplify\n\n## 4. DOUBLECHECK (final verification)\nCreate a table:\n| Claim/Item | Verified? | Notes |\n|------------|-----------|-------|\nInclude: primary functionality, tests passing, security, naming conventions.\nBe thorough and honest about what you could not verify.\n\n## 5. COMPLETENESS\n- Were ALL requested changes made?\n- Any TODO/FIXME left behind that should be resolved?\n- Files over 400 lines that need splitting?\n- OBSERVABILITY IN ACTION: If you built or modified a page displaying fleet data, does it include action capabilities (Fix Now / Schedule / Execute buttons)? Display-only pages are not acceptable unless purely audit/history.\n\nIf anything fails, fix it before finishing."
-    }
-}'
+# Only trigger if PowerShell files changed
+CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
+CODE_FILES=$(echo "$CHANGED" | sort -u | grep -E '\.(ps1|psm1|psd1)$')
 
-exit 0
+if [[ -z "$CODE_FILES" ]]; then
+    exit 0
+fi
+
+python3 << 'PY'
+import sys, json
+
+msg = (
+    "QUALITY GATE — If you wrote or modified PowerShell code in this response, "
+    "perform ALL checks below before finishing. Skip if you only answered a question.\n\n"
+    "## 1. SYNTAX AND IMPORT\n"
+    "- Check for parse errors: pwsh -NoProfile -Command \"& { . './public/<file.ps1>' }\"\n"
+    "- Confirm module still imports: pwsh -NoProfile -Command \"Import-Module ./dbatools.psd1 -Force\"\n"
+    "- Run changed command tests if Pester test file exists\n\n"
+    "## 2. DBATOOLS PATTERNS\n"
+    "- SMO first, T-SQL only for DMVs/stored procs/version-specific logic\n"
+    "- Pipeline output emitted immediately — no ArrayList, no $results = @()\n"
+    "- No backticks (hook-enforced); splats for 3+ params with $splat<Purpose> naming\n"
+    "- Hashtable = signs vertically aligned; double quotes throughout\n\n"
+    "## 3. NEW COMMAND (if you created a public/*.ps1)\n"
+    "- [ ] Registered in dbatools.psd1 FunctionsToExport\n"
+    "- [ ] Registered in dbatools.psm1 Export-ModuleMember\n"
+    "- [ ] .SYNOPSIS, .DESCRIPTION, .EXAMPLE, .OUTPUTS all present\n"
+    "- [ ] Author: \"the dbatools team + Claude\"\n"
+    "- [ ] Singular noun (Get-DbaDatabase not Get-DbaDatabases)\n\n"
+    "## 4. PARAMETER CHANGES (if you changed parameters)\n"
+    "- [ ] Parameter validation tests updated\n"
+    "- [ ] No callers broken by rename or removal\n\n"
+    "## 5. COMMIT MESSAGE\n"
+    "Must include (do CommandName) to target CI test runs.\n"
+    "Example: 'Get-DbaDatabase: Add recovery model filter\\n\\n(do Get-DbaDatabase)'\n\n"
+    "If anything fails, fix it before finishing."
+)
+
+sys.stdout.write(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "Stop",
+        "additionalContext": msg
+    }
+}) + "\n")
+PY

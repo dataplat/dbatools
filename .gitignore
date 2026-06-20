@@ -66,3 +66,4 @@ PR_DESCRIPTION.md
 nul
 .claude/settings.local.json
 /scripts
+/migration

@@ -6,7 +6,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File .claude/hooks/validate-style.ps1"
+            "command": "pwsh -NoProfile -File .claude/hooks/validate-style.ps1",
+            "timeout": 10,
+            "statusMessage": "Checking dbatools style..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-edit-read-check.sh",
+            "timeout": 5,
+            "statusMessage": "Checking Read-before-Edit..."
           }
         ]
       },
@@ -15,7 +23,59 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/prevent-destructive-git.sh"
+            "command": "bash .claude/hooks/prevent-destructive-git.sh",
+            "timeout": 5,
+            "statusMessage": "Checking for destructive git commands..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-bash-commit-do.sh",
+            "timeout": 5,
+            "statusMessage": "Checking commit message (do ...) pattern..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-read-track.sh",
+            "timeout": 5,
+            "statusMessage": "Tracking Read for Read-before-Edit..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-compact-reset-reads.sh",
+            "timeout": 5,
+            "statusMessage": "Resetting Read tracker post-compaction..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-registration-check.sh",
+            "timeout": 10,
+            "statusMessage": "Checking psd1/psm1 registration for new commands..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-no-deflection.sh",
+            "timeout": 10,
+            "statusMessage": "Checking for deflection language..."
           }
         ]
       }
