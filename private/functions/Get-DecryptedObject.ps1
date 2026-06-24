@@ -52,10 +52,10 @@ function Get-DecryptedObject {
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
     try {
-        $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x0300000001"
+        $sql = "SELECT SUBSTRING(crypt_property, 9, DATALENGTH(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x0300000001"
         $smkBytes = $server.Query($sql).smk
         if (-not $smkBytes) {
-            $sql = "SELECT SUBSTRING(crypt_property, 9, LEN(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x03"
+            $sql = "SELECT SUBSTRING(crypt_property, 9, DATALENGTH(crypt_property) - 8) AS smk FROM sys.key_encryptions WHERE key_id = 102 AND thumbprint = 0x03"
             $smkBytes = $server.Query($sql).smk
         }
     } catch {
@@ -106,7 +106,7 @@ function Get-DecryptedObject {
                 NULL AS Quotename,
                 syslnklgns.name AS [Identity],
                 SUBSTRING(syslnklgns.pwdhash, 5, $ivlen) AS iv,
-                SUBSTRING(syslnklgns.pwdhash, $($ivlen + 5), LEN(syslnklgns.pwdhash) - $($ivlen + 4)) AS pass,
+                SUBSTRING(syslnklgns.pwdhash, $($ivlen + 5), DATALENGTH(syslnklgns.pwdhash) - $($ivlen + 4)) AS pass,
                 NULL AS MappedClassType,
                 NULL AS ProviderName
             FROM master.sys.syslnklgns
@@ -119,7 +119,7 @@ function Get-DecryptedObject {
                 QUOTENAME(cred.name) AS Quotename,
                 cred.credential_identity AS [Identity],
                 SUBSTRING(obj.imageval, 5, $ivlen) AS iv,
-                SUBSTRING(obj.imageval, $($ivlen + 5), LEN(obj.imageval) - $($ivlen + 4)) AS pass,
+                SUBSTRING(obj.imageval, $($ivlen + 5), DATALENGTH(obj.imageval) - $($ivlen + 4)) AS pass,
                 cred.target_type AS MappedClassType,
                 cp.name AS ProviderName
             FROM sys.credentials cred
