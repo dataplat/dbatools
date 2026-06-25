@@ -19,6 +19,7 @@ jobs:
       contents: read
       pull-requests: read
       issues: read
+      id-token: write # Required for the action to fetch a GitHub OIDC token
 
     steps:
       - name: Checkout repository
