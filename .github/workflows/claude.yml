@@ -31,6 +31,38 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Set up bubblewrap for subprocess isolation
+        shell: bash
+        run: |
+          # CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1 forces the Claude Code CLI to run every
+          # subprocess under bubblewrap with secrets (OAuth token, GITHUB_TOKEN, cloud
+          # creds) scrubbed from its environment. The CLI refuses to start if bubblewrap
+          # is missing, so install it on the runner before invoking the action.
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          # Ubuntu 24.04 (ubuntu-latest) blocks unprivileged user namespaces via AppArmor,
+          # which bubblewrap needs. Rather than globally disabling the kernel restriction
+          # (kernel.apparmor_restrict_unprivileged_userns), load a dedicated AppArmor profile
+          # granting only /usr/bin/bwrap the userns capability - the same profile shape
+          # Ubuntu ships for Flatpak and Chrome - so host hardening stays intact.
+          # Ref: https://code.claude.com/docs/en/sandboxing
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = "1" ]; then
+            sudo tee /etc/apparmor.d/bwrap > /dev/null <<'PROFILE'
+          abi <abi/4.0>,
+          include <tunables/global>
+
+          profile bwrap /usr/bin/bwrap flags=(unconfined) {
+            userns,
+            include if exists <local/bwrap>
+          }
+          PROFILE
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          fi
+          # Fail fast here if bwrap still cannot create a user namespace, instead of
+          # letting the Claude Code install fail later with a less obvious error.
+          bwrap --ro-bind / / --unshare-user true
+          echo "bubblewrap ready: $(bwrap --version)"
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@fbda2eb1bdc90d319b8d853f5deb53bca199a7c1 # v1
