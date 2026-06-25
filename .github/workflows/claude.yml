@@ -76,7 +76,7 @@ jobs:
           # Keep public-triggered Claude runs read-only. Use a maintainer-run
           # local session or a separate protected workflow for code-writing tasks.
           claude_args: >-
-            --max-turns 10
+            --max-turns 100
             --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
