@@ -1281,6 +1281,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
+                                $restoreResultTmp = $null  # Reset so a failed restore doesn't inherit the previous iteration's result
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
