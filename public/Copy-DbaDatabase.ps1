@@ -1511,7 +1511,7 @@ function Copy-DbaDatabase {
                                 }
                             } catch {
                                 Write-Message -Level Verbose -Message "Failed to update ReadOnly status on $destinationDbName."
-                                $propfailures = "Read only"
+                                $propfailures += "Read only"
                             }
                         }
                     }
