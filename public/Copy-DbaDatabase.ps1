@@ -1011,7 +1011,7 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
                     }
 
-                    $filestructure.databases[$dbName].Add('destinationDbName', $destinationDbName)
+                    $filestructure.databases[$dbName]['destinationDbName'] = $destinationDbName
                     ForEach ($key in $filestructure.databases[$dbName].Destination.Keys) {
                         $splitFileName = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename -Leaf
                         $SplitPath = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename
