@@ -452,7 +452,7 @@ function Copy-DbaDatabase {
                         $d.physical = $destfile.filename
 
                         if ($null -eq $d.physical) {
-                            $directory = Get-SqlDefaultPaths $destServer data
+                            $directory = Get-SqlDefaultPaths $destServer log
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
