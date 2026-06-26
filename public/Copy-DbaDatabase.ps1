@@ -1340,21 +1340,21 @@ function Copy-DbaDatabase {
                         }
 
                         if ($SetSourceReadOnly) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to read-write after source was set to read only")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $destinationDbName to read-write after source was set to read only")) {
                                 try {
-                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -ReadWrite -EnableException -Force
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $destinationDbName -ReadWrite -EnableException -Force
                                 } catch {
-                                    Stop-Function -Message "Couldn't set $dbName to read-write on $($destserver.Name)" -ErrorRecord $_
+                                    Stop-Function -Message "Couldn't set $destinationDbName to read-write on $($destserver.Name)" -ErrorRecord $_
                                 }
                             }
                         }
 
                         if ($SetSourceOffline) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to online after source was set to offline")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $destinationDbName to online after source was set to offline")) {
                                 try {
-                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -Online -EnableException -Force
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $destinationDbName -Online -EnableException -Force
                                 } catch {
-                                    Stop-Function -Message "Couldn't set $dbName to online on $($destserver.Name)" -ErrorRecord $_
+                                    Stop-Function -Message "Couldn't set $destinationDbName to online on $($destserver.Name)" -ErrorRecord $_
                                 }
                             }
                         }
