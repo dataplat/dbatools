@@ -598,7 +598,7 @@ function Invoke-DbaAdvancedRestore {
                         if ($restore.Devices.Count -gt 0) {
                             $restore.Devices.Clear()
                         }
-                        Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
+                        Write-Message -Level Verbose -Message "Closing Server connection"
                         $server.ConnectionContext.Disconnect()
                     }
                 }
