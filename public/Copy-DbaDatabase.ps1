@@ -1369,9 +1369,9 @@ function Copy-DbaDatabase {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
                                 try {
-                                    $null = $destServer.Query("ALTER DATABASE [$destinationDbName] SET READ_WRITE")
+                                    $null = Set-DbaDbOwner -SqlInstance $destServer -Database $destinationDbName -TargetLogin $dbOwner -EnableException
                                 } catch {
-                                    Stop-Function -Message "Failure setting $destinationDbName to read-write on destination server" -ErrorRecord $_
+                                    Stop-Function -Message "Failure setting database owner to $dbOwner for $destinationDbName on destination server" -ErrorRecord $_
                                 }
                             }
                         }
