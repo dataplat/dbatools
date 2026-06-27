@@ -6,6 +6,10 @@ function Install-DbaMaintenanceSolution {
     .DESCRIPTION
         Deploys Ola Hallengren's comprehensive maintenance framework including DatabaseBackup, DatabaseIntegrityCheck, IndexOptimize, and CommandExecute stored procedures to automate backup, DBCC checks, and index maintenance tasks. Optionally creates pre-configured SQL Agent jobs with intelligent scheduling for daily, weekly, and log backup routines. Replaces manual maintenance scripting with industry-standard procedures used by thousands of SQL Server environments worldwide.
 
+        The Maintenance Solution is compatible with SQL Server 2017 and later.
+        For earlier versions, please use the version of Ola Hallengren's scripts that corresponds to your SQL Server version.
+        You can find the appropriate version of the scripts at https://ola.hallengren.com/downloads.html.
+
     .PARAMETER SqlInstance
         The target SQL Server instance onto which the Maintenance Solution will be installed.
 
@@ -456,6 +460,10 @@ function Install-DbaMaintenanceSolution {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($server.Version.Major -lt 14) {
+                Stop-Function -Message "The Maintenance Solution is not supported on SQL Server version $($server.Version). Skipping $instance." -Target $instance -Continue
             }
 
             $db = $server.Databases[$Database]
