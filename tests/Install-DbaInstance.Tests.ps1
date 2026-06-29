@@ -104,9 +104,9 @@ Describe $CommandName -Tag IntegrationTests {
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
 
             $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Feature All
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -148,16 +148,16 @@ Describe $CommandName -Tag IntegrationTests {
                 AdminAccount                  = "local\foo", "local\bar"
             }
             $result = Install-DbaInstance @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
             if ($version -in "2008", "2008R2", "2012", "2014") {
-                Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+                Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
             } else {
                 # SQLSVCINSTANTFILEINIT is used for version 2016 and later
-                Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 0 -Scope It -ModuleName dbatools
+                Should -Invoke -CommandName Set-DbaPrivilege -Exactly 0 -Scope It -ModuleName dbatools
             }
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -204,9 +204,9 @@ Describe $CommandName -Tag IntegrationTests {
                 ConfigurationFile = "TestDrive:\Configuration.ini"
             }
             $result = Install-DbaInstance @splatConfig -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -237,9 +237,9 @@ Describe $CommandName -Tag IntegrationTests {
         ) {
             param($version, $canonicVersion, $mainNode)
             $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -UpdateSourcePath TestDrive:
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -273,10 +273,10 @@ Describe $CommandName -Tag IntegrationTests {
                 Restart = $true
             }
             $result = Install-DbaInstance @splatRestart -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -313,9 +313,9 @@ Describe $CommandName -Tag IntegrationTests {
                 Feature = "Tools"
             }
             $result = Install-DbaInstance @splatTools -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.Version | Should -Be $canonicVersion

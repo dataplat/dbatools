@@ -237,7 +237,7 @@ Describe $CommandName -Tag IntegrationTests {
                     'Times'       = 1
                     'Exactly'     = $true
                 }
-                Assert-MockCalled @assertMockParams
+                Should -Invoke @assertMockParams
             } # it
             It -Skip "Returns all information with detailed for correct and incorrect owner" {
                 Mock Connect-SQLInstance -MockWith {

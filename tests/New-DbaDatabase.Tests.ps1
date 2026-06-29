@@ -110,6 +110,7 @@ Describe $CommandName -Tag UnitTests {
                 Mock Connect-DbaInstance { $script:mockServer } -ModuleName dbatools
                 Mock Stop-Function { throw $Message } -ModuleName dbatools
                 Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
                 Mock New-Object {
                     [PSCustomObject]@{
                         Name       = $ArgumentList[1]

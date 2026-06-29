@@ -114,10 +114,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -189,10 +189,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -264,10 +264,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -339,10 +339,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -414,10 +414,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*
@@ -489,10 +489,10 @@ Describe $CommandName -Tag IntegrationTests {
                 PerformVolumeMaintenanceTasks = $true
             }
             $result = Invoke-DbaAdvancedInstall @splatInstall -EnableException
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.ComputerName | Should -BeLike $env:COMPUTERNAME*

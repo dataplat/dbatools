@@ -119,7 +119,7 @@ Describe $CommandName -Tag UnitTests {
                 $results[0].Success | Should -Be $false
                 $results[0].Notes | Should -Match "simulated shrink failure"
                 ($script:warningMessages -join " ") | Should -Match "Shrink operation failed for file testdb: .*simulated shrink failure"
-                Assert-MockCalled -CommandName Stop-Function -Exactly 0 -Scope It
+                Should -Invoke -CommandName Stop-Function -Exactly 0 -Scope It
             }
 
             It "still uses Stop-Function when EnableException is requested" {
@@ -133,7 +133,7 @@ Describe $CommandName -Tag UnitTests {
                     Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats -EnableException
                 } | Should -Throw "*Shrink operation failed for file testdb:*simulated shrink failure*"
 
-                Assert-MockCalled -CommandName Stop-Function -Exactly 1 -Scope It
+                Should -Invoke -CommandName Stop-Function -Exactly 1 -Scope It
             }
         }
     }
