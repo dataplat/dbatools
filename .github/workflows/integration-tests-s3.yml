@@ -213,7 +213,7 @@ jobs:
       - name: Install Pester 6 release candidate
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -RequiredVersion 6.0.0-rc2 -AllowPrerelease -Force -Scope CurrentUser -SkipPublisherCheck
+          Install-Module -Name Pester -RequiredVersion 6.0.0-rc4 -AllowPrerelease -Force -Scope CurrentUser -SkipPublisherCheck
 
       - name: Install AWS.Tools.S3 for S3 enumeration tests
         run: |

@@ -51,7 +51,7 @@ if ($installedModule.Version.ToString() -notmatch [regex]::Escape($expectedVersi
 
 # Get Pester (to run tests)
 Write-Host -Object "appveyor.prep: Install Pester 6 release candidate" -ForegroundColor DarkGreen
-Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 6.0.0-rc2 -AllowPrerelease
+Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 6.0.0-rc4 -AllowPrerelease
 
 # Setup DbatoolsConfig Path.DbatoolsExport path
 Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
