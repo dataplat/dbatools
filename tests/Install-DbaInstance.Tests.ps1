@@ -70,6 +70,18 @@ Describe $CommandName -Tag IntegrationTests {
         Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith { }
         Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith { }
         Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{ NumberOfLogicalProcessors = 24 } } -ParameterFilter { $ClassName -eq "Win32_processor" }
+        # Resolve the (local) host without touching the network. Resolve-DbaNetworkName
+        # internally calls Get-DbaCmObject -ClassName win32_ComputerSystem, which is not
+        # covered by the Win32_processor mock above; under Pester 6 an unmatched
+        # parameter-filtered mock throws instead of falling through to the real command,
+        # so we mock the whole resolver to keep the tests offline and deterministic
+        # (matches Update-DbaInstance.Tests.ps1).
+        Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                ComputerName     = $env:COMPUTERNAME
+                FullComputerName = $env:COMPUTERNAME
+            }
+        }
         # mock searching for setup, proper file should always it find
         Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
