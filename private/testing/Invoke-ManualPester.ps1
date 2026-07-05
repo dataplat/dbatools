@@ -241,15 +241,30 @@ function Invoke-ManualPester {
         #removes previously imported dbatools, if any
         # No need the force will do it
         #Remove-Module dbatools -ErrorAction Ignore
-        #imports the module making sure DLL is loaded ok
-        Write-DetailedMessage "Importing dbatools psd1"
-        Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force -NoClobber
-        #imports the psm1 to be able to use internal functions in tests
-        Write-DetailedMessage "Importing dbatools psm1"
-        Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force -NoClobber
+        # Invoke-ManualPester itself lives in the dbatools module, so a -Force re-import here
+        # tears down the very session state this function is executing in: the begin-block
+        # helpers (Get-PesterTestVersion, Write-DetailedMessage, ...) vanish mid-run and the
+        # Pester version detection silently falls back to v4 (verified on pwsh 7.4). The
+        # documented call shape (tests/CLAUDE.md, migration runbook) imports dbatools.psm1
+        # -Force right before calling this function, so only import when dbatools is not
+        # loaded at all - never force from inside ourselves.
+        if (-not (Get-Module -Name dbatools)) {
+            #imports the module making sure DLL is loaded ok
+            Write-DetailedMessage "Importing dbatools psd1"
+            Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -NoClobber
+            #imports the psm1 to be able to use internal functions in tests
+            Write-DetailedMessage "Importing dbatools psm1"
+            Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -NoClobber
+        }
 
         Write-DetailedMessage "Reading test configuration"
-        $TestConfig = Get-TestConfig
+        # Global on purpose: test files resolve $TestConfig from the session (param defaults
+        # like $TestConfig.Defaults evaluate inside Pester's scope, not this function's), so a
+        # function-local variable is invisible there when the runner is invoked
+        # non-interactively (pwsh -Command "...; Invoke-ManualPester ..." - the migration gate
+        # shape). Interactive use worked only because tests/CLAUDE.md has the user assign a
+        # global $TestConfig themselves first.
+        $global:TestConfig = Get-TestConfig
 
         $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
@@ -312,7 +327,8 @@ function Invoke-ManualPester {
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
                 if ($PassThru) {
-                    $pester5config.Run.PassThru = $passThru
+                    # Pester.BoolOption cannot convert a SwitchParameter directly - cast first
+                    $pester5config.Run.PassThru = [bool]$PassThru
                 }
                 $pester5config.Output.Verbosity = $show
                 if ($Coverage) {
