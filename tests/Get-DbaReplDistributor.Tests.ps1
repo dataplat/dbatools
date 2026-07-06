@@ -27,4 +27,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.DistributorInstalled | Should -Be $false
         }
     }
+
+    Context "When the distributor is configured" {
+        # Characterization tests (2026-07-06, Track A): distribution was configured on
+        # InstanceCopy1 (sp_adddistributor / sp_adddistributiondb / sp_adddistpublisher,
+        # local distributor+publisher, distribution db "distribution", working directory
+        # \\dc1\DbaToolsTemp). These pin the observed behavior of the current
+        # implementation ahead of the C# port. InstanceSingle above must stay
+        # distributor-free - do not consolidate these contexts onto one instance.
+        BeforeAll {
+            $configuredResults = Get-DbaReplDistributor -SqlInstance $TestConfig.InstanceCopy1
+        }
+
+        It "Reports the distributor as installed and available" {
+            $configuredResults.DistributorInstalled | Should -Be $true
+            $configuredResults.DistributorAvailable | Should -Be $true
+            $configuredResults.IsDistributor | Should -Be $true
+        }
+
+        It "Reports the local distribution topology" {
+            $configuredResults.IsPublisher | Should -Be $true
+            $configuredResults.DistributionDatabase | Should -Be "distribution"
+            $configuredResults.DistributionServer | Should -Not -BeNullOrEmpty
+            $configuredResults.HasRemotePublisher | Should -Be $false
+        }
+
+        It "Decorates the instance identity columns" {
+            $configuredResults.ComputerName | Should -Not -BeNullOrEmpty
+            $configuredResults.InstanceName | Should -Not -BeNullOrEmpty
+            $configuredResults.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
 }
