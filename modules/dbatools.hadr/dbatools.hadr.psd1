@@ -26,7 +26,8 @@
         'Get-DbaWsfcDisk',
         'Get-DbaWsfcNetwork',
         'Get-DbaWsfcNetworkInterface',
-        'Get-DbaWsfcResource'
+        'Get-DbaWsfcResource',
+        'Get-DbaWsfcResourceGroup'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
