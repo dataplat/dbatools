@@ -28,7 +28,8 @@
         'Get-DbaWsfcNetworkInterface',
         'Get-DbaWsfcResource',
         'Get-DbaWsfcResourceGroup',
-        'Get-DbaWsfcResourceType'
+        'Get-DbaWsfcResourceType',
+        'Get-DbaWsfcRole'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
