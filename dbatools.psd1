@@ -37,7 +37,11 @@
         'dbatools.core',
         'dbatools.agent',
         'dbatools.hadr',
-        'dbatools.security'
+        'dbatools.security',
+        'dbatools.database',
+        'dbatools.performance',
+        'dbatools.xevents',
+        'dbatools.maintenance'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -228,7 +232,6 @@
         'Get-DbaDbccProcCache',
         'Get-DbaDbccSessionBuffer',
         'Get-DbaDbccStatistic',
-        'Get-DbaDbccUserOption',
         'Copy-DbaDbCertificate',
         'Get-DbaDbCheckConstraint',
         'Remove-DbaDbCheckConstraint',
@@ -282,7 +285,6 @@
         'Get-DbaDbSharePoint',
         'Get-DbaDbSnapshot',
         'Get-DbaDbSpace',
-        'Get-DbaDbState',
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
         'Get-DbaDbTable',
@@ -372,7 +374,6 @@
         'Get-DbaReplServer',
         'Get-DbaResourceGovernor',
         'Get-DbaRgClassifierFunction',
-        'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
         'Get-DbaRunningJob',
         'Get-DbaSchemaChangeHistory',
@@ -398,7 +399,6 @@
         'Get-DbatoolsLog',
         'Get-DbatoolsPath',
         'Get-DbaTopResourceUsage',
-        'Get-DbaTrace',
         'Get-DbaUptime',
         'Get-DbaUserPermission',
         'Get-DbaWaitingTask',

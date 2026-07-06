@@ -23,7 +23,8 @@
         'Get-DbaTraceFlag',
         'Get-DbaCustomError',
         'Get-DbaDefaultPath',
-        'Get-DbaInstanceProperty'
+        'Get-DbaInstanceProperty',
+        'Get-DbaTrace'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
