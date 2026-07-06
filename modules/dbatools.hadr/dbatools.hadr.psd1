@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaAvailabilityGroup',
-        'Get-DbaWsfcCluster'
+        'Get-DbaWsfcCluster',
+        'Get-DbaWsfcNode'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
