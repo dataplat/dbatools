@@ -41,7 +41,8 @@
         'dbatools.database',
         'dbatools.performance',
         'dbatools.xevents',
-        'dbatools.maintenance'
+        'dbatools.maintenance',
+        'dbatools.computer'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -355,7 +356,6 @@
         'Get-DbaPfDataCollectorSet',
         'Get-DbaPfDataCollectorSetTemplate',
         'Get-DbaPlanCache',
-        'Get-DbaPowerPlan',
         'Get-DbaPrivilege',
         'Get-DbaProcess',
         'Get-DbaProductKey',

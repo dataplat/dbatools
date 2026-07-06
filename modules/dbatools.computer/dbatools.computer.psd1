@@ -3,13 +3,13 @@
     # built in dbatools.library and staged here at publish/dev-stage time; CmdletsToExport is
     # maintained by the flip tool (Switch-CommandExport.ps1) and stays an explicit name list -
     # PowerShell auto-loading reads the manifest without executing it, so do not wildcard.
-    RootModule             = 'dbatools.security.psm1'
+    RootModule             = 'dbatools.computer.psm1'
     ModuleVersion          = '2026.7.6'
-    GUID                   = 'b08b730c-6849-4aeb-8987-e9281f21d86e'
+    GUID                   = 'f9b7f062-95dc-4f5c-bc8f-b9976051dad1'
     Author                 = 'the dbatools team'
     CompanyName            = 'Dataplat'
     Copyright              = 'Copyright (c) 2026 by dbatools, licensed under MIT'
-    Description            = 'dbatools.security: logins, roles, certificates, encryption and audit commands of the dbatools module family'
+    Description            = 'dbatools.computer: the Windows around the SQL Server - part of the dbatools module family'
     PowerShellVersion      = '3.0'
 
     RequiredModules        = @(
@@ -19,7 +19,7 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaDbCertificate'
+        'Get-DbaPowerPlan'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
