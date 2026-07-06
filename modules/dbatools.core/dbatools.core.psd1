@@ -19,7 +19,10 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaMaxMemory'
+        'Get-DbaMaxMemory',
+        'Get-DbaTraceFlag',
+        'Get-DbaCustomError',
+        'Get-DbaDefaultPath'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

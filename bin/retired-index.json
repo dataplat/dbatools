@@ -9,6 +9,11 @@
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
     "flippedUtc": "2026-07-06T09:50:37Z"
   },
+  "Get-DbaCustomError": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaCustomError.ps1",
+    "flippedUtc": "2026-07-06T10:22:04Z"
+  },
   "Get-DbaDbCertificate": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaDbCertificate.ps1",
@@ -19,9 +24,19 @@
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
     "flippedUtc": "2026-07-06T09:51:14Z"
   },
+  "Get-DbaDefaultPath": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",
+    "flippedUtc": "2026-07-06T10:22:20Z"
+  },
   "Get-DbaMaxMemory": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",
     "flippedUtc": "2026-07-06T09:20:21Z"
+  },
+  "Get-DbaTraceFlag": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaTraceFlag.ps1",
+    "flippedUtc": "2026-07-06T10:21:45Z"
   }
 }
