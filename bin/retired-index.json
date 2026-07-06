@@ -109,6 +109,11 @@
     "retiredPath": "private/retired/Get-DbaWsfcCluster.ps1",
     "flippedUtc": "2026-07-06T13:53:46Z"
   },
+  "Get-DbaWsfcDisk": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaWsfcDisk.ps1",
+    "flippedUtc": "2026-07-06T17:28:54Z"
+  },
   "Get-DbaWsfcNode": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcNode.ps1",
