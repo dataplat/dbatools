@@ -64,6 +64,11 @@
     "retiredPath": "private/retired/Get-DbaRgResourcePool.ps1",
     "flippedUtc": "2026-07-06T10:40:40Z"
   },
+  "Get-DbaSsisExecutionHistory": {
+    "module": "dbatools.ssis",
+    "retiredPath": "private/retired/Get-DbaSsisExecutionHistory.ps1",
+    "flippedUtc": "2026-07-06T12:06:00Z"
+  },
   "Get-DbaTrace": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaTrace.ps1",

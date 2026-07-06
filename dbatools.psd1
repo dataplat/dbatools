@@ -43,7 +43,8 @@
         'dbatools.xevents',
         'dbatools.maintenance',
         'dbatools.computer',
-        'dbatools.replication'
+        'dbatools.replication',
+        'dbatools.ssis'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -383,7 +384,6 @@
         'Get-DbaSpConfigure',
         'Get-DbaSpinLockStatistic',
         'Get-DbaSpn',
-        'Get-DbaSsisExecutionHistory',
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
