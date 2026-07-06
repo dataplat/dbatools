@@ -21,7 +21,8 @@
     CmdletsToExport        = @(
         'Get-DbaAvailabilityGroup',
         'Get-DbaWsfcCluster',
-        'Get-DbaWsfcNode'
+        'Get-DbaWsfcNode',
+        'Get-DbaWsfcAvailableDisk'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
