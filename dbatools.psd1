@@ -401,7 +401,6 @@
         'Get-DbaWaitResource',
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
-        'Get-DbaWsfcSharedVolume',
         'Get-DbaXEObject',
         'Get-DbaXESession',
         'Get-DbaXESessionTarget',

@@ -29,7 +29,8 @@
         'Get-DbaWsfcResource',
         'Get-DbaWsfcResourceGroup',
         'Get-DbaWsfcResourceType',
-        'Get-DbaWsfcRole'
+        'Get-DbaWsfcRole',
+        'Get-DbaWsfcSharedVolume'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
