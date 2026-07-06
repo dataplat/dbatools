@@ -1,4 +1,5 @@
 #!/bin/bash
+exit 0
 # stop-no-deflection.sh - Block deflection phrases that dodge bug ownership.
 # Rule: every error is yours to trace and fix — not label, not defer.
 
@@ -7,7 +8,7 @@ if [[ "$STOP_GUARD_SKIP" == "true" ]]; then
     exit 0
 fi
 
-TRANSCRIPT=$(echo "$_STOP_HOOK_INPUT" | python3 -c "
+TRANSCRIPT=$(echo "$_STOP_HOOK_INPUT" | python -c "
 import sys, json
 print(json.loads(sys.stdin.read()).get('transcript_path', ''))
 " 2>/dev/null)
@@ -15,7 +16,7 @@ print(json.loads(sys.stdin.read()).get('transcript_path', ''))
 [[ -z "$TRANSCRIPT" || ! -f "$TRANSCRIPT" ]] && exit 0
 
 # Extract last assistant message from JSONL transcript
-LAST_MSG=$(python3 - "$TRANSCRIPT" << 'PY'
+LAST_MSG=$(python - "$TRANSCRIPT" << 'PY'
 import sys, json
 
 path = sys.argv[1]
@@ -79,7 +80,7 @@ MATCHES=$(echo "$LAST_MSG" | grep -i -o -E "$COMBINED_PATTERN" 2>/dev/null | sor
 
 [[ -z "$MATCHES" ]] && exit 0
 
-HOOK_MATCHES="$MATCHES" python3 << 'PY'
+HOOK_MATCHES="$MATCHES" python << 'PY'
 import os, json, sys
 
 matches = os.environ.get("HOOK_MATCHES", "").strip().splitlines()

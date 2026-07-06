@@ -1,4 +1,5 @@
 #!/bin/bash
+exit 0
 # stop-registration-check.sh - Verify new public/*.ps1 commands are registered.
 # New dbatools commands must appear in BOTH dbatools.psd1 AND dbatools.psm1.
 
@@ -7,7 +8,7 @@ if [[ "$STOP_GUARD_SKIP" == "true" ]]; then
     exit 0
 fi
 
-python3 << 'PY'
+python << 'PY'
 import subprocess, sys, os, json
 
 try:

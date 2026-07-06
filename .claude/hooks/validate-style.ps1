@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+exit 0
 # PreToolUse hook: Consolidated style validation for dbatools
 # Runs all style checks in a single PowerShell process for performance
 

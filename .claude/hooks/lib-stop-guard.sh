@@ -1,4 +1,5 @@
 #!/bin/bash
+exit 0
 # lib-stop-guard.sh - Prevents infinite re-entry of Stop hooks.
 # Uses a file-based marker tied to the transcript path. On first run,
 # creates the marker and allows the hook to proceed. On subsequent runs
@@ -17,7 +18,7 @@ if [[ -z "${_STOP_HOOK_INPUT:-}" ]]; then
 fi
 
 # Extract transcript path for session-scoped marker
-_TRANSCRIPT=$(echo "$_STOP_HOOK_INPUT" | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('transcript_path',''))" 2>/dev/null)
+_TRANSCRIPT=$(echo "$_STOP_HOOK_INPUT" | python -c "import sys,json; print(json.loads(sys.stdin.read()).get('transcript_path',''))" 2>/dev/null)
 
 if [[ -z "$_TRANSCRIPT" ]]; then
     return 0

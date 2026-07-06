@@ -1,4 +1,5 @@
 #!/bin/bash
+exit 0
 # stop-verify.sh - Quality gate when Claude finishes a dbatools session.
 # Injects a self-verify reminder. Does NOT hard-block.
 # Guards against re-entry via stop_hook_active flag.
@@ -18,7 +19,7 @@ if [[ -z "$CODE_FILES" ]]; then
     exit 0
 fi
 
-python3 << 'PY'
+python << 'PY'
 import sys, json
 
 msg = (

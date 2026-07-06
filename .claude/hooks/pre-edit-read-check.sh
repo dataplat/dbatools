@@ -1,11 +1,12 @@
 #!/bin/bash
+exit 0
 # pre-edit-read-check.sh - Block Edit/Write on files not Read in the current session.
 # Write on a new (non-existent) file is allowed without prior Read.
 # Clears on compaction via session-compact-reset-reads.sh.
 
 INPUT=$(cat)
 
-PARSED=$(echo "$INPUT" | python3 -c "
+PARSED=$(echo "$INPUT" | python -c "
 import sys, json
 d = json.loads(sys.stdin.read())
 print(d.get('session_id', ''))

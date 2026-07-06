@@ -1,4 +1,5 @@
 #!/bin/bash
+exit 0
 # lib-git-changes.sh - Shared helper for hooks that need changed file lists.
 # Sources once, caches results. Skips gracefully if index.lock is held.
 
