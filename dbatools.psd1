@@ -29,10 +29,13 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{
+    RequiredModules    = @(
+        @{
         ModuleName    = 'dbatools.library';
         ModuleVersion = '2025.12.28'
-    }
+    },
+        'dbatools.core'
+    )
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
@@ -329,7 +332,6 @@
         'Get-DbaLogin',
         'Get-DbaMaintenanceSolutionLog',
         'Get-DbaManagementObject',
-        'Get-DbaMaxMemory',
         'Get-DbaMemoryCondition',
         'Get-DbaMemoryUsage',
         'Get-DbaModule',

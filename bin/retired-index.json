@@ -1,0 +1,7 @@
+{
+  "Get-DbaMaxMemory": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",
+    "flippedUtc": "2026-07-06T09:20:21Z"
+  }
+}
