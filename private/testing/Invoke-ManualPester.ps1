@@ -23,6 +23,13 @@ function Invoke-ManualPester {
     dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
     see Get-TestConfig for customizations
 
+.PARAMETER Tag
+    Runs only tests carrying the given Pester tag(s), e.g. -Tag IntegrationTests. The migration
+    gate (migration/tools/Test-MigratedCommand.ps1) uses this to run integration tests only:
+    mock-based unit tests intercept internal calls of PowerShell function implementations and
+    are structurally unable to pass against a flipped binary cmdlet, while the parity contract
+    scopes "tests pass unmodified" to the integration suite.
+
 .PARAMETER Coverage
     Enables measuring code coverage on the tested function. For Pester v5 tests, this will generate coverage in JaCoCo format.
 
@@ -93,6 +100,7 @@ function Invoke-ManualPester {
         [string]$Show = "Normal",
         [switch]$PassThru,
         [switch]$TestIntegration,
+        [string[]]$Tag,
         [switch]$Coverage,
         [switch]$DependencyCoverage,
         [switch]$ScriptAnalyzer
@@ -337,6 +345,9 @@ function Invoke-ManualPester {
                 }
                 if (!($testInt)) {
                     $pester5Config.Filter.ExcludeTag = "IntegrationTests"
+                }
+                if ($Tag) {
+                    $pester5Config.Filter.Tag = $Tag
                 }
                 Invoke-Pester -Configuration $pester5config
             } else {
