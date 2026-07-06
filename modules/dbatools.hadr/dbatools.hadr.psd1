@@ -23,7 +23,8 @@
         'Get-DbaWsfcCluster',
         'Get-DbaWsfcNode',
         'Get-DbaWsfcAvailableDisk',
-        'Get-DbaWsfcDisk'
+        'Get-DbaWsfcDisk',
+        'Get-DbaWsfcNetwork'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

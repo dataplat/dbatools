@@ -401,7 +401,6 @@
         'Get-DbaWaitResource',
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
-        'Get-DbaWsfcNetwork',
         'Get-DbaWsfcNetworkInterface',
         'Get-DbaWsfcResource',
         'Get-DbaWsfcResourceGroup',
