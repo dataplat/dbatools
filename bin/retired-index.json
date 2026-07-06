@@ -29,6 +29,11 @@
     "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",
     "flippedUtc": "2026-07-06T10:22:20Z"
   },
+  "Get-DbaInstanceProperty": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaInstanceProperty.ps1",
+    "flippedUtc": "2026-07-06T10:33:23Z"
+  },
   "Get-DbaMaxMemory": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",

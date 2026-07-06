@@ -22,7 +22,8 @@
         'Get-DbaMaxMemory',
         'Get-DbaTraceFlag',
         'Get-DbaCustomError',
-        'Get-DbaDefaultPath'
+        'Get-DbaDefaultPath',
+        'Get-DbaInstanceProperty'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

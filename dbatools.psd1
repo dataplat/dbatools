@@ -315,7 +315,6 @@
         'Get-DbaInstanceAuditSpecification',
         'Get-DbaInstalledPatch',
         'Get-DbaInstanceInstallDate',
-        'Get-DbaInstanceProperty',
         'Get-DbaInstanceProtocol',
         'Get-DbaInstanceTrigger',
         'Get-DbaInstanceUserOption',
