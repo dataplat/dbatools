@@ -1,4 +1,6 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
+    $hasAzureServicePrincipal = [bool]($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET)
+
     BeforeAll {
         if (-not (Get-Module dbatools)) {
             Write-Warning "Importing dbatools from source"
@@ -13,7 +15,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $extractOptions | Should -Not -BeNullOrEmpty
     }
 
-    It "connects to Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -21,7 +23,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 
-    It "gets a database from Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "gets a database from Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring

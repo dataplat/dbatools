@@ -101,3 +101,8 @@ GNUmakefile       text
 *.psd1 linguist-language=Powershell
 *.psm1 linguist-language=Powershell
 *.sql linguist-language=TSQL
+
+# Claude Code hook scripts run under bash on Linux and Git Bash on Windows;
+# CRLF breaks them ("bad interpreter"), so force LF on checkout everywhere.
+.claude/**/*.sh text eol=lf
+.claude/**/*.py text eol=lf

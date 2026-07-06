@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "DisableOnSource",
                 "DisableOnDestination",
                 "Force",
+                "NewName",
                 "UseLastModified",
                 "InputObject",
                 "EnableException"
@@ -259,6 +260,62 @@ WHERE a.name = '$testAlertName'
 
             $alertCheck.AlertName | Should -Be $testAlertName
             $alertCheck.JobName | Should -Be $testJobWithAlert
+        }
+    }
+
+    Context "-NewName parameter" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $sourceNewNameJob = "dbatoolsci_newname_source"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceNewNameJob
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "dbatoolsci_newname_source", "dbatoolsci_newname_copy" -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "dbatoolsci_newname_renamed" -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "copies job to same server with new name" {
+            $splatSameServer = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy1
+                Job         = $sourceNewNameJob
+                NewName     = "dbatoolsci_newname_copy"
+            }
+            $result = Copy-DbaAgentJob @splatSameServer
+
+            $result.Name | Should -Be "dbatoolsci_newname_copy"
+            $result.Status | Should -Be "Successful"
+            $copiedJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "dbatoolsci_newname_copy"
+            $copiedJob | Should -Not -BeNullOrEmpty
+        }
+
+        It "fails when copying to same server without -NewName" {
+            $splatNoNewName = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy1
+                Job             = $sourceNewNameJob
+                EnableException = $true
+            }
+            { Copy-DbaAgentJob @splatNoNewName } | Should -Throw
+        }
+
+        It "copies job to different server with new name" {
+            $splatDiffServer = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Job         = $sourceNewNameJob
+                NewName     = "dbatoolsci_newname_renamed"
+            }
+            $result = Copy-DbaAgentJob @splatDiffServer
+
+            $result.Name | Should -Be "dbatoolsci_newname_renamed"
+            $result.Status | Should -Be "Successful"
+            $renamedJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "dbatoolsci_newname_renamed"
+            $renamedJob | Should -Not -BeNullOrEmpty
         }
     }
 }

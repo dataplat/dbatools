@@ -10,31 +10,70 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    if: contains(fromJSON('["potatoqualitee","niphlod","andreasjordan"]'), github.actor)
 
     runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: 1
     permissions:
       contents: read
       pull-requests: read
       issues: read
-      id-token: write
+      id-token: write # Required for the action to fetch a GitHub OIDC token
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
 
+      - name: Validate PR number
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+        run: |
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "PR number must be numeric"
+            exit 1
+          fi
+
+      - name: Set up bubblewrap for subprocess isolation
+        shell: bash
+        run: |
+          # CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1 forces the Claude Code CLI to run every
+          # subprocess under bubblewrap with secrets (OAuth token, GITHUB_TOKEN, cloud
+          # creds) scrubbed from its environment. The CLI refuses to start if bubblewrap
+          # is missing, so install it on the runner before invoking the action.
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          # Ubuntu 24.04 (ubuntu-latest) blocks unprivileged user namespaces via AppArmor,
+          # which bubblewrap needs. Rather than globally disabling the kernel restriction
+          # (kernel.apparmor_restrict_unprivileged_userns), load a dedicated AppArmor profile
+          # granting only /usr/bin/bwrap the userns capability - the same profile shape
+          # Ubuntu ships for Flatpak and Chrome - so host hardening stays intact.
+          # Ref: https://code.claude.com/docs/en/sandboxing
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = "1" ]; then
+            sudo tee /etc/apparmor.d/bwrap > /dev/null <<'PROFILE'
+          abi <abi/4.0>,
+          include <tunables/global>
+
+          profile bwrap /usr/bin/bwrap flags=(unconfined) {
+            userns,
+            include if exists <local/bwrap>
+          }
+          PROFILE
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          fi
+          # Fail fast here if bwrap still cannot create a user namespace, instead of
+          # letting the Claude Code install fail later with a less obvious error.
+          bwrap --ro-bind / / --unshare-user true
+          echo "bubblewrap ready: $(bwrap --version)"
+
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@558b1d6cab4085c7753fe402c10bef0fbb92ac7a # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_bots: "*"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.inputs.pr_number }}
@@ -52,5 +91,6 @@ jobs:
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
-
+          claude_args: >-
+            --max-turns 100
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
