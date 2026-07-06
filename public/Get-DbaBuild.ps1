@@ -217,8 +217,17 @@ function Get-DbaBuild {
                 $EnableException
             )
 
+            # Under some hosted runners (observed: Invoke-ManualPester on PowerShell 5.1,
+            # migration tracker row RB-IMP-51) module-scope reads resolve empty mid-run, so
+            # both paths fall back defensively instead of dying on a null Join-Path/Resolve-Path.
+            if (-not $Moduledirectory) {
+                $Moduledirectory = (Get-Module -Name dbatools | Where-Object ModuleType -eq 'Script' | Select-Object -First 1).ModuleBase
+            }
             $orig_idxfile = Resolve-Path "$Moduledirectory\bin\dbatools-buildref-index.json"
             $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
+            if (-not $DbatoolsData) {
+                $DbatoolsData = [System.IO.Path]::GetTempPath()
+            }
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
