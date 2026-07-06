@@ -19,7 +19,8 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaPowerPlan'
+        'Get-DbaPowerPlan',
+        'Get-DbaOperatingSystem'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

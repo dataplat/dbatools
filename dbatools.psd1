@@ -342,7 +342,6 @@
         'Get-DbaNetworkEncryption',
         'Get-DbaNetworkConfiguration',
         'Get-DbaOpenTransaction',
-        'Get-DbaOperatingSystem',
         'Get-DbaPageFileSetting',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',
