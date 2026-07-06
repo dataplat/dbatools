@@ -20,7 +20,9 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaPowerPlan',
-        'Get-DbaOperatingSystem'
+        'Get-DbaOperatingSystem',
+        'Get-DbaDiskSpace',
+        'Get-DbaPageFileSetting'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

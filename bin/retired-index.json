@@ -39,6 +39,11 @@
     "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",
     "flippedUtc": "2026-07-06T10:22:20Z"
   },
+  "Get-DbaDiskSpace": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaDiskSpace.ps1",
+    "flippedUtc": "2026-07-06T14:30:26Z"
+  },
   "Get-DbaInstanceProperty": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaInstanceProperty.ps1",
@@ -54,6 +59,11 @@
     "retiredPath": "private/retired/Get-DbaOperatingSystem.ps1",
     "flippedUtc": "2026-07-06T14:19:31Z"
   },
+  "Get-DbaPageFileSetting": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaPageFileSetting.ps1",
+    "flippedUtc": "2026-07-06T14:30:45Z"
+  },
   "Get-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaPowerPlan.ps1",
@@ -63,6 +73,11 @@
     "module": "dbatools.replication",
     "retiredPath": "private/retired/Get-DbaReplDistributor.ps1",
     "flippedUtc": "2026-07-06T11:50:51Z"
+  },
+  "Get-DbaReplPublisher": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Get-DbaReplPublisher.ps1",
+    "flippedUtc": "2026-07-06T14:31:03Z"
   },
   "Get-DbaRgResourcePool": {
     "module": "dbatools.performance",
