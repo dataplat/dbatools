@@ -1,4 +1,24 @@
 {
+  "Get-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-06T09:50:16Z"
+  },
+  "Get-DbaAvailabilityGroup": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-07-06T09:50:37Z"
+  },
+  "Get-DbaDbCertificate": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaDbCertificate.ps1",
+    "flippedUtc": "2026-07-06T09:50:55Z"
+  },
+  "Get-DbaDbMailProfile": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
+    "flippedUtc": "2026-07-06T09:51:14Z"
+  },
   "Get-DbaMaxMemory": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",

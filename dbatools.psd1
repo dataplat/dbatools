@@ -34,7 +34,10 @@
         ModuleName    = 'dbatools.library';
         ModuleVersion = '2025.12.28'
     },
-        'dbatools.core'
+        'dbatools.core',
+        'dbatools.agent',
+        'dbatools.hadr',
+        'dbatools.security'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -189,7 +192,6 @@
         'Get-DbaAgDatabaseReplicaState',
         'Get-DbaAgentAlert',
         'Get-DbaAgentAlertCategory',
-        'Get-DbaAgentJob',
         'Get-DbaAgentJobCategory',
         'Get-DbaAgentJobHistory',
         'Get-DbaAgentJobOutputFile',
@@ -203,7 +205,6 @@
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
         'Get-DbaAgRingBuffer',
-        'Get-DbaAvailabilityGroup',
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBackupInformation',
@@ -229,7 +230,6 @@
         'Get-DbaDbccSessionBuffer',
         'Get-DbaDbccStatistic',
         'Get-DbaDbccUserOption',
-        'Get-DbaDbCertificate',
         'Copy-DbaDbCertificate',
         'Get-DbaDbCheckConstraint',
         'Remove-DbaDbCheckConstraint',
@@ -260,7 +260,6 @@
         'Get-DbaDbMailConfig',
         'Get-DbaDbMailHistory',
         'Get-DbaDbMailLog',
-        'Get-DbaDbMailProfile',
         'Get-DbaDbMailServer',
         'Get-DbaDbMasterKey',
         'Get-DbaDbMemoryUsage',
