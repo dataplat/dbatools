@@ -138,5 +138,10 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcResourceGroup.ps1",
     "flippedUtc": "2026-07-06T21:36:47Z"
+  },
+  "Get-DbaWsfcResourceType": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaWsfcResourceType.ps1",
+    "flippedUtc": "2026-07-06T21:50:49Z"
   }
 }

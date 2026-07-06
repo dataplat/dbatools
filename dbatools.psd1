@@ -401,7 +401,6 @@
         'Get-DbaWaitResource',
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
-        'Get-DbaWsfcResourceType',
         'Get-DbaWsfcRole',
         'Get-DbaWsfcSharedVolume',
         'Get-DbaXEObject',
