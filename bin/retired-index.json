@@ -78,5 +78,10 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaTraceFlag.ps1",
     "flippedUtc": "2026-07-06T10:21:45Z"
+  },
+  "Get-DbaWsfcCluster": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaWsfcCluster.ps1",
+    "flippedUtc": "2026-07-06T13:53:46Z"
   }
 }

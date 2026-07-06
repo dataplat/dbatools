@@ -406,7 +406,6 @@
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
         'Get-DbaWsfcAvailableDisk',
-        'Get-DbaWsfcCluster',
         'Get-DbaWsfcDisk',
         'Get-DbaWsfcNetwork',
         'Get-DbaWsfcNetworkInterface',
