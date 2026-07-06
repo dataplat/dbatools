@@ -1,51 +1,89 @@
 #!/bin/bash
 # stop-no-deflection.sh - Block deflection phrases that dodge bug ownership.
 # Rule: every error is yours to trace and fix — not label, not defer.
+# Bounded by the stop-guard budget; fails open when no JSON tool exists to
+# read the transcript.
+set -uo pipefail
 
 source "$(dirname "$0")/lib-stop-guard.sh"
-if [[ "$STOP_GUARD_SKIP" == "true" ]]; then
-    exit 0
-fi
 
-TRANSCRIPT=$(echo "$_STOP_HOOK_INPUT" | python3 -c "
-import sys, json
-print(json.loads(sys.stdin.read()).get('transcript_path', ''))
-" 2>/dev/null)
-
+TRANSCRIPT="${_TRANSCRIPT:-}"
 [[ -z "$TRANSCRIPT" || ! -f "$TRANSCRIPT" ]] && exit 0
 
-# Extract last assistant message from JSONL transcript
-LAST_MSG=$(python3 - "$TRANSCRIPT" << 'PY'
-import sys, json
+hook_detect_parser || exit 0
 
-path = sys.argv[1]
-last_msg = ""
+# Last assistant message text. Transcript lines nest the message under
+# .message (current schema) but older lines carried role/content at the top
+# level — read both so a schema shift degrades instead of breaking.
+last_assistant_text() {
+    case "$HOOK_JSON_PARSER" in
+        jq)
+            jq -r '
+                select((.message.role // .role // .type) == "assistant")
+                | (.message.content // .content // [])
+                | if type == "array" then [.[] | select(.type == "text") | .text] | join("\n")
+                  elif type == "string" then .
+                  else "" end
+                | select((. | gsub("[[:space:]]"; "")) != "")
+                | @base64' "$TRANSCRIPT" 2>/dev/null | tail -1 | base64 -d 2>/dev/null
+            ;;
+        python|python3|py)
+            local bin=("$HOOK_JSON_PARSER")
+            [[ "$HOOK_JSON_PARSER" == "py" ]] && bin=(py -3)
+            "${bin[@]}" -c "
+import sys, json
 try:
-    lines = open(path, encoding="utf-8", errors="replace").readlines()
+    lines = open(sys.argv[1], encoding='utf-8', errors='replace').readlines()
 except OSError:
     sys.exit(0)
-
 for line in reversed(lines):
     line = line.strip()
     if not line:
         continue
     try:
         obj = json.loads(line)
-    except json.JSONDecodeError:
+    except Exception:
         continue
-    if obj.get("role") != "assistant":
+    msg = obj.get('message') if isinstance(obj.get('message'), dict) else None
+    role = (msg or {}).get('role') or obj.get('role') or obj.get('type')
+    if role != 'assistant':
         continue
-    content = obj.get("content", "")
+    content = (msg or obj).get('content', '')
     if isinstance(content, list):
-        last_msg = "\n".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
+        text = '\n'.join(b.get('text', '') for b in content if isinstance(b, dict) and b.get('type') == 'text')
     elif isinstance(content, str):
-        last_msg = content
-    if last_msg.strip():
+        text = content
+    else:
+        text = ''
+    if text.strip():
+        sys.stdout.write(text)
         break
+" "$TRANSCRIPT" 2>/dev/null
+            ;;
+        node)
+            node -e "
+const fs = require('fs');
+let lines;
+try { lines = fs.readFileSync(process.argv[1], 'utf8').split('\n'); } catch (e) { process.exit(0); }
+for (let i = lines.length - 1; i >= 0; i--) {
+    const l = lines[i].trim();
+    if (!l) continue;
+    let o; try { o = JSON.parse(l); } catch (e) { continue; }
+    const m = (o.message && typeof o.message === 'object') ? o.message : null;
+    const role = (m && m.role) || o.role || o.type;
+    if (role !== 'assistant') continue;
+    const c = (m || o).content;
+    let t = '';
+    if (Array.isArray(c)) t = c.filter(b => b && b.type === 'text').map(b => b.text || '').join('\n');
+    else if (typeof c === 'string') t = c;
+    if (t.trim()) { process.stdout.write(t); break; }
+}
+" "$TRANSCRIPT" 2>/dev/null
+            ;;
+    esac
+}
 
-print(last_msg)
-PY)
-
+LAST_MSG=$(last_assistant_text)
 [[ -z "$LAST_MSG" ]] && exit 0
 
 # Deflection phrases to catch
@@ -75,27 +113,24 @@ DEFLECTION_PATTERNS=(
 )
 
 COMBINED_PATTERN=$(IFS='|'; echo "${DEFLECTION_PATTERNS[*]}")
-MATCHES=$(echo "$LAST_MSG" | grep -i -o -E "$COMBINED_PATTERN" 2>/dev/null | sort -u | head -5)
+MATCHES=$(printf '%s' "$LAST_MSG" | grep -i -o -E "$COMBINED_PATTERN" 2>/dev/null | sort -u | head -5)
 
-[[ -z "$MATCHES" ]] && exit 0
+if [[ -z "$MATCHES" ]]; then
+    stop_guard_emit ""
+    exit 0
+fi
 
-HOOK_MATCHES="$MATCHES" python3 << 'PY'
-import os, json, sys
+MATCH_LIST=$(printf '%s\n' "$MATCHES" | sed 's/^/  - "/; s/$/"/')
 
-matches = os.environ.get("HOOK_MATCHES", "").strip().splitlines()
-match_list = "\n".join(f'  - "{m}"' for m in matches if m)
+stop_guard_emit "DEFLECTION DETECTED — You used blame-dodging language:
 
-msg = (
-    "DEFLECTION DETECTED — You used blame-dodging language:\n\n"
-    + match_list
-    + "\n\nRule: Every error is yours to trace and fix — not label, not defer.\n\n"
-    "You have two options:\n"
-    "1. FIX IT NOW — trace the root cause and resolve it.\n"
-    "2. DOCUMENT IT PRECISELY — state the exact file path, line number, what is "
-    "wrong, and the specific technical reason you cannot fix it in this session "
-    "(not 'out of scope' — a real reason like 'requires PowerShell v5 feature' "
-    "or 'blocked on upstream dbatools change').\n\n"
-    "Do NOT use vague labels. Do NOT defer without specifics. Rewrite your response."
-)
-sys.stdout.write(json.dumps({"decision": "block", "reason": msg}) + "\n")
-PY
+${MATCH_LIST}
+
+Rule: Every error is yours to trace and fix — not label, not defer.
+
+You have two options:
+1. FIX IT NOW — trace the root cause and resolve it.
+2. DOCUMENT IT PRECISELY — state the exact file path, line number, what is wrong, and the specific technical reason you cannot fix it in this session (not 'out of scope' — a real reason like 'requires PowerShell v5 feature' or 'blocked on upstream SMO change').
+
+Do NOT use vague labels. Do NOT defer without specifics. Rewrite your response."
+exit 0
