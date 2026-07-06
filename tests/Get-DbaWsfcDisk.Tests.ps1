@@ -20,7 +20,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     # Characterization tests (2026-07-06, Track A TA-066): pin the observed behavior of the live
     # implementation ahead of the C# port. InstanceMulti2 is the FCI network name (sqlcluster);
     # querying it reaches the WSFC (wincluster in the lab, sqlnode1/sqlnode2 as members).
