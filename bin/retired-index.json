@@ -54,6 +54,11 @@
     "retiredPath": "private/retired/Get-DbaPowerPlan.ps1",
     "flippedUtc": "2026-07-06T11:34:39Z"
   },
+  "Get-DbaReplDistributor": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Get-DbaReplDistributor.ps1",
+    "flippedUtc": "2026-07-06T11:50:51Z"
+  },
   "Get-DbaRgResourcePool": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaRgResourcePool.ps1",

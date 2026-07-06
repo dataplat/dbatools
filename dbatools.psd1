@@ -42,7 +42,8 @@
         'dbatools.performance',
         'dbatools.xevents',
         'dbatools.maintenance',
-        'dbatools.computer'
+        'dbatools.computer',
+        'dbatools.replication'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -368,7 +369,6 @@
         'Get-DbaRegServer',
         'Get-DbaRegServerGroup',
         'Get-DbaRegServerStore',
-        'Get-DbaReplDistributor',
         'Get-DbaReplPublication',
         'Get-DbaReplPublisher',
         'Get-DbaReplServer',
