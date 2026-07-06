@@ -29,7 +29,6 @@ bash .claude/hooks/hooks-doctor.sh
 | Stop | `stop-todo-report.sh` | TODO/FIXME/HACK in changed files must be resolved or explained | git |
 | Stop | `stop-no-deflection.sh` | blocks blame-dodging language ("pre-existing", "out of scope"...) | JSON tool* |
 | Stop | `stop-verify.sh` | one self-verification checklist round per session when `.ps1` changed | git |
-| Stop | `stop-jscpd-ratchet.sh` | blocks NEW copy-paste duplication vs `.jscpd-baseline.json` | jscpd + Python + baseline |
 | Stop | `stop-codex-review.sh` | external codex review of this session's diff; blocks until `VERDICT: CLEAN` | codex CLI |
 
 \* *JSON tool = first working one of jq, python, python3, py, node. Without
@@ -58,18 +57,6 @@ tail -f ~/.codex-review.live.log
 ```
 
 No codex installed? The gate silently skips. Install: `npm install -g @openai/codex`, then `codex login`.
-
-## The jscpd duplication ratchet
-
-Opt-in per clone of the repo: it stays dormant until a baseline exists.
-
-```bash
-npm install -g jscpd
-bash .claude/hooks/jscpd-baseline.sh          # records existing duplication
-```
-
-From then on, a turn that introduces duplication the baseline doesn't record
-is blocked. Refresh with `--force` after intentional duplication or paydown.
 
 ## Per-developer opt-outs
 

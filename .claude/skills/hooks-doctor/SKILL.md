@@ -13,7 +13,7 @@ bash .claude/hooks/hooks-doctor.sh
 
 Present the results conversationally:
 
-1. **All OK** — say the hook environment is fully functional and list the active gates (style validation, read-before-edit, destructive-command guard, registration/TODO/verify Stop gates, codex auto-review, jscpd ratchet if baselined).
+1. **All OK** — say the hook environment is fully functional and list the active gates (style validation, read-before-edit, destructive-command guard, registration/TODO/verify Stop gates, codex auto-review).
 2. **Something MISSING** — explain what that specific absence disables (the script prints it) and give the one-line install fix. Every hook fails open, so a missing tool never breaks the session — it just silently removes that protection.
 3. **Hook errors in the transcript** — if the user reports `hook error` messages, check:
    - Hook paths in [.claude/settings.json](../../settings.json) must use `"$CLAUDE_PROJECT_DIR"` (hooks run in the session cwd, not the repo root — relative paths break)

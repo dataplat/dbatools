@@ -109,12 +109,6 @@
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-jscpd-ratchet.sh",
-            "timeout": 240,
-            "statusMessage": "Checking for new copy-paste duplication..."
-          },
-          {
-            "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-codex-review.sh",
             "timeout": 660,
             "statusMessage": "Running codex auto-review — tail -f ~/.codex-review.live.log to watch"

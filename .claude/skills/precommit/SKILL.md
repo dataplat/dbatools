@@ -1,6 +1,6 @@
 ---
 name: precommit
-description: Run every dbatools quality gate on demand before committing — style scan, command registration, TODO sweep, duplication ratchet, and a codex review of the working diff.
+description: Run every dbatools quality gate on demand before committing — style scan, command registration, TODO sweep, and a codex review of the working diff.
 argument-hint: "[optional: file paths to limit the check]"
 ---
 
@@ -22,15 +22,11 @@ For each new `public/*.ps1`, confirm the function name appears in `dbatools.psd1
 
 `grep -n -i -E '\b(TODO|FIXME|HACK|XXX|WORKAROUND)\b'` across changed code files (exclude `.claude/`). Each hit must be resolved or explicitly acknowledged by the user.
 
-### 4. Duplication ratchet (if `.jscpd-baseline.json` exists)
-
-Run a scan the same way the Stop gate does and compare against the baseline — see [.claude/hooks/stop-jscpd-ratchet.sh](../../hooks/stop-jscpd-ratchet.sh). Skip silently if jscpd or Python is unavailable.
-
-### 5. Codex review (if codex is installed)
+### 4. Codex review (if codex is installed)
 
 Invoke the [/codex](../codex/SKILL.md) skill with `uncommitted` scope. Skip with a note if codex is not installed.
 
-### 6. Commit message reminder
+### 5. Commit message reminder
 
 Remind that the commit message must include the `(do <CommandName>)` CI targeting pattern.
 

@@ -57,28 +57,6 @@ else
 fi
 echo
 
-echo "jscpd duplication ratchet (Stop gate, opt-in via baseline):"
-source "$(dirname "$0")/lib-jscpd.sh"
-JSCPD_PATH=$(jscpd_locate || true)
-PY_PATH=$(jscpd_find_python || true)
-REPO_ROOT=$(hook_to_unix_path "$(git rev-parse --show-toplevel 2>/dev/null)")
-if [[ -n "$JSCPD_PATH" ]]; then
-    pass "jscpd found: $JSCPD_PATH"
-else
-    warn "jscpd not installed -> ratchet skipped (npm install -g jscpd)"
-fi
-if [[ -n "$PY_PATH" ]]; then
-    pass "python for ratchet: $PY_PATH"
-else
-    warn "no working Python 3 -> ratchet skipped"
-fi
-if [[ -n "$REPO_ROOT" && -f "$REPO_ROOT/.jscpd-baseline.json" ]]; then
-    pass "baseline present: .jscpd-baseline.json"
-else
-    warn "no .jscpd-baseline.json -> ratchet dormant (opt in: bash .claude/hooks/jscpd-baseline.sh)"
-fi
-echo
-
 echo "Opt-outs:"
 echo "  - All hooks:        .claude/settings.local.json -> {\"disableAllHooks\": true}"
 echo "  - codex review:     CLAUDE_CODEX_REVIEW=off"
