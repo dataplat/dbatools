@@ -1,34 +1,31 @@
 #!/bin/bash
-exit 0
 # pre-bash-commit-do.sh - Enforce (do CommandName) in dbatools commit messages.
 # The (do ...) pattern tells dbatools CI which test suites to run.
 # Without it all tests run — slow and resource-expensive.
+set -uo pipefail
 
-export LC_ALL=C.UTF-8
-INPUT=$(cat)
+source "$(dirname "$0")/lib-hook-common.sh"
+hook_read_input
 
-COMMAND=$(echo "$INPUT" | python -c "
-import sys, json
-d = json.loads(sys.stdin.read())
-print(d.get('tool_input', {}).get('command', ''))
-" 2>/dev/null)
-
+COMMAND=$(hook_field '.tool_input.command')
 [[ -z "$COMMAND" ]] && exit 0
 
 # Only check git commit commands
-echo "$COMMAND" | grep -qE 'git[[:space:]]+commit\b' || exit 0
+printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+commit([[:space:]]|$)' || exit 0
 
-# Try to extract message from -m "..." or -m '...'
-MSG=$(echo "$COMMAND" | grep -oE '\-m[[:space:]]+"[^"]*"' | head -1 | sed 's/^-m[[:space:]]*"//; s/"$//')
-if [[ -z "$MSG" ]]; then
-    MSG=$(echo "$COMMAND" | grep -oE "\-m[[:space:]]+'[^']*'" | head -1 | sed "s/^-m[[:space:]]*'//; s/'$//")
+# Commits that reuse or amend an existing message are out of scope
+if printf '%s' "$COMMAND" | grep -qE -- '--amend|--no-edit|--fixup|--squash|--reuse-message|-C[[:space:]]|-c[[:space:]]|--file|-F[[:space:]]'; then
+    exit 0
 fi
 
-# Can't extract message (heredoc, --file, etc.) — let through
-[[ -z "$MSG" ]] && exit 0
+# The message must be visible inline to be checkable: -m "..." or a heredoc.
+# A commit without either (opens an editor, reads from a file we can't see)
+# passes through — fail open, CI still catches it.
+printf '%s' "$COMMAND" | grep -qE -- '-m[[:space:]]|--message|<<' || exit 0
 
-# Check for (do pattern
-echo "$MSG" | grep -qE '\(do[[:space:]]+' && exit 0
+# The (do ...) pattern anywhere in the inline command text (covers -m strings
+# AND heredoc bodies, which are part of the command string).
+printf '%s' "$COMMAND" | grep -qE '\(do[[:space:]]+' && exit 0
 
 cat >&2 << 'EOF'
 BLOCKED: Commit message is missing the (do ...) CI targeting pattern.

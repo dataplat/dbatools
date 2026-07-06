@@ -1,33 +1,29 @@
 #!/bin/bash
-exit 0
 # pre-edit-read-check.sh - Block Edit/Write on files not Read in the current session.
 # Write on a new (non-existent) file is allowed without prior Read.
 # Clears on compaction via session-compact-reset-reads.sh.
+# Fails open when no JSON tool exists to parse the hook input.
+set -uo pipefail
 
-INPUT=$(cat)
+source "$(dirname "$0")/lib-hook-common.sh"
+hook_read_input
 
-PARSED=$(echo "$INPUT" | python -c "
-import sys, json
-d = json.loads(sys.stdin.read())
-print(d.get('session_id', ''))
-print(d.get('tool_name', ''))
-print(d.get('tool_input', {}).get('file_path', '') or d.get('tool_input', {}).get('notebook_path', ''))
-" 2>/dev/null)
-
-SESSION_ID=$(echo "$PARSED" | sed -n '1p')
-TOOL_NAME=$(echo "$PARSED" | sed -n '2p')
-FILE_PATH=$(echo "$PARSED" | sed -n '3p')
+SESSION_ID=$(hook_field '.session_id')
+TOOL_NAME=$(hook_field '.tool_name')
+FILE_PATH=$(hook_field_first '.tool_input.file_path' '.tool_input.notebook_path')
 
 [[ -z "$FILE_PATH" || -z "$SESSION_ID" ]] && exit 0
 
-# Write on a new file is allowed without prior Read
-if [[ "$TOOL_NAME" == "Write" ]] && [[ ! -e "$FILE_PATH" ]]; then
+# Write on a new file is allowed without prior Read. The existence check must
+# use a spelling bash understands on both platforms.
+if [[ "$TOOL_NAME" == "Write" ]] && [[ ! -e "$(hook_to_unix_path "$FILE_PATH")" ]]; then
     exit 0
 fi
 
-STATE_FILE="/tmp/claude-read-tracker/${SESSION_ID}.txt"
+STATE_FILE="$HOOK_STATE_ROOT/read-tracker/${SESSION_ID}.txt"
+NORMALIZED=$(hook_normalize_path "$FILE_PATH")
 
-if [[ -f "$STATE_FILE" ]] && grep -qxF "$FILE_PATH" "$STATE_FILE"; then
+if [[ -f "$STATE_FILE" ]] && grep -qxF "$NORMALIZED" "$STATE_FILE" 2>/dev/null; then
     exit 0
 fi
 

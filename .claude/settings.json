@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
     "PreToolUse": [
       {
@@ -6,14 +7,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File .claude/hooks/validate-style.ps1",
-            "timeout": 10,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-write-style.sh",
+            "timeout": 20,
             "statusMessage": "Checking dbatools style..."
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/pre-edit-read-check.sh",
-            "timeout": 5,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-edit-read-check.sh",
+            "timeout": 10,
             "statusMessage": "Checking Read-before-Edit..."
           }
         ]
@@ -23,15 +24,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/prevent-destructive-git.sh",
-            "timeout": 5,
-            "statusMessage": "Checking for destructive git commands..."
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-bash-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking for destructive commands..."
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/pre-bash-commit-do.sh",
-            "timeout": 5,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-bash-commit-do.sh",
+            "timeout": 10,
             "statusMessage": "Checking commit message (do ...) pattern..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-bash-pwsh-script.sh",
+            "timeout": 10,
+            "statusMessage": "Checking inline PowerShell usage..."
           }
         ]
       }
@@ -42,9 +49,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/post-read-track.sh",
-            "timeout": 5,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-read-track.sh",
+            "timeout": 10,
             "statusMessage": "Tracking Read for Read-before-Edit..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-write-track-session-files.sh",
+            "timeout": 10,
+            "statusMessage": "Tracking session writes..."
           }
         ]
       }
@@ -55,8 +73,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/session-compact-reset-reads.sh",
-            "timeout": 5,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-compact-reset-reads.sh",
+            "timeout": 10,
             "statusMessage": "Resetting Read tracker post-compaction..."
           }
         ]
@@ -67,15 +85,39 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/stop-registration-check.sh",
-            "timeout": 10,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-registration-check.sh",
+            "timeout": 15,
             "statusMessage": "Checking psd1/psm1 registration for new commands..."
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/stop-no-deflection.sh",
-            "timeout": 10,
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-todo-report.sh",
+            "timeout": 15,
+            "statusMessage": "Scanning changed files for TODO/FIXME..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-no-deflection.sh",
+            "timeout": 15,
             "statusMessage": "Checking for deflection language..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-verify.sh",
+            "timeout": 15,
+            "statusMessage": "Quality gate checklist..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-jscpd-ratchet.sh",
+            "timeout": 240,
+            "statusMessage": "Checking for new copy-paste duplication..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-codex-review.sh",
+            "timeout": 660,
+            "statusMessage": "Running codex auto-review — tail -f ~/.codex-review.live.log to watch"
           }
         ]
       }

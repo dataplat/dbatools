@@ -1,17 +1,13 @@
 #!/bin/bash
-exit 0
 # session-compact-reset-reads.sh - Clear the Read tracker after context compaction.
 # After compaction the agent's in-context memory of what was Read is gone.
 # Clearing here forces a fresh Read on every file touched post-compaction.
 
-INPUT=$(cat)
+source "$(dirname "$0")/lib-hook-common.sh"
+hook_read_input
 
-SESSION_ID=$(echo "$INPUT" | python -c "
-import sys, json
-print(json.loads(sys.stdin.read()).get('session_id', ''))
-" 2>/dev/null)
-
+SESSION_ID=$(hook_field '.session_id')
 [[ -z "$SESSION_ID" ]] && exit 0
 
-rm -f "/tmp/claude-read-tracker/${SESSION_ID}.txt"
+rm -f "$HOOK_STATE_ROOT/read-tracker/${SESSION_ID}.txt" 2>/dev/null
 exit 0

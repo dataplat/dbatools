@@ -1,58 +1,57 @@
 #!/bin/bash
-exit 0
 # stop-verify.sh - Quality gate when Claude finishes a dbatools session.
-# Injects a self-verify reminder. Does NOT hard-block.
-# Guards against re-entry via stop_hook_active flag.
+# Fires ONCE per session, the first time PowerShell files have changed, and
+# forces a single self-verification round. Disable per-session with
+# CLAUDE_STOP_VERIFY=off.
+set -uo pipefail
 
-INPUT=$(cat)
+source "$(dirname "$0")/lib-stop-guard.sh"
+source "$(dirname "$0")/lib-git-changes.sh"
 
-# Prevent infinite loops
-if echo "$INPUT" | grep -qE '"stop_hook_active":[[:space:]]*(true)'; then
+if [[ "${CLAUDE_STOP_VERIFY:-}" == "off" ]]; then
     exit 0
 fi
 
-# Only trigger if PowerShell files changed
-CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
-CODE_FILES=$(echo "$CHANGED" | sort -u | grep -E '\.(ps1|psm1|psd1)$')
+# Needs transcript context to mark "already verified" — without it, stay quiet
+# rather than risk a block loop.
+[[ -z "${_MARKER_DIR:-}" || -z "${_TRANSCRIPT_HASH:-}" ]] && exit 0
 
-if [[ -z "$CODE_FILES" ]]; then
-    exit 0
-fi
+CODE_FILES=$(printf '%s\n' "$CHANGED_FILES" | grep -E '\.(ps1|psm1|psd1)$' | grep -v '^\.claude/')
+[[ -z "$CODE_FILES" ]] && exit 0
 
-python << 'PY'
-import sys, json
+# Own marker, created only when we actually fire — the automatic stop-guard
+# marker is set on every source, which would mis-mark sessions whose first
+# stop happened before any code changed.
+DONE_MARKER="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_stop-verify.done"
+[[ -f "$DONE_MARKER" ]] && exit 0
+touch "$DONE_MARKER" 2>/dev/null
 
-msg = (
-    "QUALITY GATE — If you wrote or modified PowerShell code in this response, "
-    "perform ALL checks below before finishing. Skip if you only answered a question.\n\n"
-    "## 1. SYNTAX AND IMPORT\n"
-    "- Check for parse errors: pwsh -NoProfile -Command \"& { . './public/<file.ps1>' }\"\n"
-    "- Confirm module still imports: pwsh -NoProfile -Command \"Import-Module ./dbatools.psd1 -Force\"\n"
-    "- Run changed command tests if Pester test file exists\n\n"
-    "## 2. DBATOOLS PATTERNS\n"
-    "- SMO first, T-SQL only for DMVs/stored procs/version-specific logic\n"
-    "- Pipeline output emitted immediately — no ArrayList, no $results = @()\n"
-    "- No backticks (hook-enforced); splats for 3+ params with $splat<Purpose> naming\n"
-    "- Hashtable = signs vertically aligned; double quotes throughout\n\n"
-    "## 3. NEW COMMAND (if you created a public/*.ps1)\n"
-    "- [ ] Registered in dbatools.psd1 FunctionsToExport\n"
-    "- [ ] Registered in dbatools.psm1 Export-ModuleMember\n"
-    "- [ ] .SYNOPSIS, .DESCRIPTION, .EXAMPLE, .OUTPUTS all present\n"
-    "- [ ] Author: \"the dbatools team + Claude\"\n"
-    "- [ ] Singular noun (Get-DbaDatabase not Get-DbaDatabases)\n\n"
-    "## 4. PARAMETER CHANGES (if you changed parameters)\n"
-    "- [ ] Parameter validation tests updated\n"
-    "- [ ] No callers broken by rename or removal\n\n"
-    "## 5. COMMIT MESSAGE\n"
-    "Must include (do CommandName) to target CI test runs.\n"
-    "Example: 'Get-DbaDatabase: Add recovery model filter\\n\\n(do Get-DbaDatabase)'\n\n"
-    "If anything fails, fix it before finishing."
-)
+emit_stop_block "QUALITY GATE — PowerShell files changed this session. Perform ALL checks below, then finish (this gate fires once per session).
 
-sys.stdout.write(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": "Stop",
-        "additionalContext": msg
-    }
-}) + "\n")
-PY
+## 1. SYNTAX AND IMPORT
+- Check changed files for parse errors
+- Confirm the module still imports: Import-Module ./dbatools.psd1 -Force
+- Run changed command tests if a Pester test file exists
+
+## 2. DBATOOLS PATTERNS
+- SMO first, T-SQL only for DMVs/stored procs/version-specific logic
+- Pipeline output emitted immediately — no ArrayList, no \$results = @()
+- No backticks (hook-enforced); splats for 3+ params with \$splat<Purpose> naming
+- Hashtable = signs vertically aligned; double quotes throughout
+
+## 3. NEW COMMAND (if you created a public/*.ps1)
+- Registered in dbatools.psd1 FunctionsToExport
+- Registered in dbatools.psm1 Export-ModuleMember
+- .SYNOPSIS, .DESCRIPTION, .EXAMPLE, .OUTPUTS all present
+- Author: 'the dbatools team + Claude'
+- Singular noun (Get-DbaDatabase not Get-DbaDatabases)
+
+## 4. PARAMETER CHANGES (if you changed parameters)
+- Parameter validation tests updated
+- No callers broken by rename or removal
+
+## 5. COMMIT MESSAGE
+Must include (do CommandName) to target CI test runs.
+
+If anything fails, fix it before finishing. If everything passes, state what you verified and finish."
+exit 0

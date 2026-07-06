@@ -1,5 +1,4 @@
 #!/bin/bash
-exit 0
 # lib-git-changes.sh - Shared helper for hooks that need changed file lists.
 # Sources once, caches results. Skips gracefully if index.lock is held.
 
@@ -10,8 +9,12 @@ _LIB_GIT_CHANGES_LOADED=1
 
 CHANGED_FILES=""
 
-# Skip if another git process holds the lock
-if [[ -f "${GIT_DIR:-.git}/index.lock" ]]; then
+# Skip if git is unavailable or another git process holds the lock
+if ! command -v git >/dev/null 2>&1; then
+    return 0
+fi
+_GIT_TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
+if [[ -z "$_GIT_TOPLEVEL" || -f "$_GIT_TOPLEVEL/.git/index.lock" ]]; then
     return 0
 fi
 
