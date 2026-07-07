@@ -185,3 +185,62 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $singleBackupPath = "$($TestConfig.AppveyorLabRepo)\singlerestore\singlerestore.bak"
+        $restoredDbName = "dbatoolsci_advrestore_$(Get-Random)"
+
+        # The fixture's embedded file paths point at the 2008 R2 default data directory of
+        # the box that took the backup, so retarget them at this instance's defaults and a
+        # unique database name before handing the chain to Invoke-DbaAdvancedRestore.
+        $defaultPath = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceSingle
+        $splatFormat = @{
+            DataFileDirectory   = $defaultPath.Data
+            LogFileDirectory    = $defaultPath.Log
+            ReplaceDatabaseName = $restoredDbName
+            ReplaceDbNameInFile = $true
+        }
+        $backupHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $singleBackupPath | Format-DbaBackupInformation @splatFormat | Select-DbaBackupInformation
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoredDbName -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Scripting a restore" {
+        It "Returns the restore T-SQL with -OutputScriptOnly" {
+            $scriptOnly = $backupHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -OutputScriptOnly -WithReplace
+            $scriptOnly | Should -BeOfType [System.String]
+            $scriptOnly | Should -Match "RESTORE DATABASE \[$restoredDbName\]"
+        }
+    }
+
+    Context "Running a restore" {
+        It "Restores the database from piped backup history" {
+            $restoreResults = $backupHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -WithReplace
+            @($restoreResults).Count | Should -BeExactly 1
+            $restoreResults.RestoreComplete | Should -BeTrue
+            $restoreResults.Database | Should -Be $restoredDbName
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoredDbName).Name | Should -Be $restoredDbName
+        }
+    }
+
+    Context "VerifyOnly" {
+        It "Emits the verify message and the result object" {
+            $verifyResults = @($backupHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -VerifyOnly)
+            # characterization: current behavior emits BOTH the literal string and the
+            # result object for a successful VerifyOnly run, do not "fix" without a
+            # surface-diff decision
+            $verifyResults.Count | Should -BeExactly 2
+            $verifyResults[0] | Should -Be "Verify successful"
+            $verifyResults[1].RestoreComplete | Should -BeTrue
+        }
+    }
+}
