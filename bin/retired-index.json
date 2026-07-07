@@ -54,6 +54,11 @@
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",
     "flippedUtc": "2026-07-06T09:20:21Z"
   },
+  "Get-DbaNetworkConfiguration": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaNetworkConfiguration.ps1",
+    "flippedUtc": "2026-07-07T00:38:43Z"
+  },
   "Get-DbaOperatingSystem": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaOperatingSystem.ps1",

@@ -339,7 +339,6 @@
         'Get-DbaNetworkActivity',
         'Get-DbaNetworkCertificate',
         'Get-DbaNetworkEncryption',
-        'Get-DbaNetworkConfiguration',
         'Get-DbaOpenTransaction',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',

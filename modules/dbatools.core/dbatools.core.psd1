@@ -24,7 +24,8 @@
         'Get-DbaCustomError',
         'Get-DbaDefaultPath',
         'Get-DbaInstanceProperty',
-        'Get-DbaStartupParameter'
+        'Get-DbaStartupParameter',
+        'Get-DbaNetworkConfiguration'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
