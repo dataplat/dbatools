@@ -22,7 +22,8 @@
         'Get-DbaPowerPlan',
         'Get-DbaOperatingSystem',
         'Get-DbaDiskSpace',
-        'Get-DbaPageFileSetting'
+        'Get-DbaPageFileSetting',
+        'Get-DbaComputerSystem'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
