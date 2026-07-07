@@ -30,7 +30,9 @@
         'Connect-DbaInstance'
     )
     VariablesToExport      = @()
-    AliasesToExport        = @()
+    # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
+    # the psm1 and exported explicitly here - auto-loading reads this list without execution.
+    AliasesToExport        = @('cdi')
 
     PrivateData            = @{
         PSData = @{
