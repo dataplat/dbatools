@@ -210,10 +210,10 @@ jobs:
           sudo update-ca-certificates
           echo "MinIO certificate added to system trust store"
 
-      - name: Install Pester 6 release candidate
+      - name: Install Pester 6
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -RequiredVersion 6.0.0-rc4 -AllowPrerelease -Force -Scope CurrentUser -SkipPublisherCheck
+          Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
 
       - name: Install AWS.Tools.S3 for S3 enumeration tests
         run: |

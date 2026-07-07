@@ -204,8 +204,8 @@ function Invoke-ManualPester {
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
         if ($PesterVersion -gt $MaximumPesterVersion) {
-            Write-Warning "Please get Pester to the 6.0.0 release candidate"
-            Write-Warning "     Install-Module -Name Pester -RequiredVersion '6.0.0-rc4' -AllowPrerelease -Force -SkipPublisherCheck"
+            Write-Warning "Please get Pester to the 6.0.0 release"
+            Write-Warning "     Install-Module -Name Pester -RequiredVersion '6.0.0' -Force -SkipPublisherCheck"
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
 
