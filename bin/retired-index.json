@@ -89,6 +89,11 @@
     "retiredPath": "private/retired/Get-DbaSsisExecutionHistory.ps1",
     "flippedUtc": "2026-07-06T12:06:00Z"
   },
+  "Get-DbaStartupParameter": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaStartupParameter.ps1",
+    "flippedUtc": "2026-07-06T23:59:47Z"
+  },
   "Get-DbaTrace": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaTrace.ps1",

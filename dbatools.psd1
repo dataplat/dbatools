@@ -383,7 +383,6 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
-        'Get-DbaStartupParameter',
         'Get-DbaStartupProcedure',
         'Get-DbaSuspectPage',
         'Get-DbaTcpPort',
