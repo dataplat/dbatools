@@ -354,7 +354,10 @@ $shortcuts = @{
     'cdi' = 'Connect-DbaInstance'
 }
 foreach ($sc in $shortcuts.GetEnumerator()) {
-    New-Alias -Name $sc.Key -Value $sc.Value
+    # Satellites export their own shortcut aliases once their command flips to a cmdlet
+    # (BP-604; dbatools.core owns cdi) - -Force keeps this registration idempotent when the
+    # satellite already delivered the alias into the session.
+    New-Alias -Name $sc.Key -Value $sc.Value -Force
 }
 
 # Leave forever
