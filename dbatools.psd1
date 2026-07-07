@@ -307,7 +307,6 @@
         'Get-DbaFile',
         'Get-DbaFilestream',
         'Get-DbaFirewallRule',
-        'Get-DbaForceNetworkEncryption',
         'Get-DbaHelpIndex',
         'Get-DbaHideInstance',
         'Get-DbaInstanceAudit',
