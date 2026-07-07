@@ -4,6 +4,11 @@
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",
     "flippedUtc": "2026-07-07T03:04:51Z"
   },
+  "Format-DbaBackupInformation": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Format-DbaBackupInformation.ps1",
+    "flippedUtc": "2026-07-07T10:20:34Z"
+  },
   "Get-DbaAgentJob": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaAgentJob.ps1",
@@ -13,6 +18,11 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
     "flippedUtc": "2026-07-06T09:50:37Z"
+  },
+  "Get-DbaBackupInformation": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaBackupInformation.ps1",
+    "flippedUtc": "2026-07-07T10:20:20Z"
   },
   "Get-DbaCustomError": {
     "module": "dbatools.core",
@@ -173,5 +183,30 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1",
     "flippedUtc": "2026-07-06T22:25:53Z"
+  },
+  "Invoke-DbaAdvancedRestore": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Invoke-DbaAdvancedRestore.ps1",
+    "flippedUtc": "2026-07-07T10:21:15Z"
+  },
+  "Read-DbaBackupHeader": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
+    "flippedUtc": "2026-07-07T10:20:06Z"
+  },
+  "Restore-DbaDatabase": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-07T10:21:29Z"
+  },
+  "Select-DbaBackupInformation": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Select-DbaBackupInformation.ps1",
+    "flippedUtc": "2026-07-07T10:20:48Z"
+  },
+  "Test-DbaBackupInformation": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
+    "flippedUtc": "2026-07-07T10:21:01Z"
   }
 }

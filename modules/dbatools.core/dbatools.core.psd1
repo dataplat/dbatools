@@ -27,7 +27,14 @@
         'Get-DbaStartupParameter',
         'Get-DbaNetworkConfiguration',
         'Get-DbaService',
-        'Connect-DbaInstance'
+        'Connect-DbaInstance',
+        'Read-DbaBackupHeader',
+        'Get-DbaBackupInformation',
+        'Format-DbaBackupInformation',
+        'Select-DbaBackupInformation',
+        'Test-DbaBackupInformation',
+        'Invoke-DbaAdvancedRestore',
+        'Restore-DbaDatabase'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
