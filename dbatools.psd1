@@ -375,7 +375,6 @@
         'Get-DbaSchemaChangeHistory',
         'Get-DbaServerRole',
         'Get-DbaServerRoleMember',
-        'Get-DbaService',
         'Get-DbaSpConfigure',
         'Get-DbaSpinLockStatistic',
         'Get-DbaSpn',
