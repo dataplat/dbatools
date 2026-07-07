@@ -23,7 +23,8 @@
         'Get-DbaOperatingSystem',
         'Get-DbaDiskSpace',
         'Get-DbaPageFileSetting',
-        'Get-DbaComputerSystem'
+        'Get-DbaComputerSystem',
+        'Get-DbaClientProtocol'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

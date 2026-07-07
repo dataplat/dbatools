@@ -214,7 +214,6 @@
         'Get-DbaBackupDevice',
         'Get-DbaBuild',
         'Get-DbaClientAlias',
-        'Get-DbaClientProtocol',
         'Get-DbaCmConnection',
         'Get-DbaCmObject',
         'Get-DbaComputerCertificate',

@@ -24,6 +24,11 @@
     "retiredPath": "private/retired/Get-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:20Z"
   },
+  "Get-DbaClientProtocol": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaClientProtocol.ps1",
+    "flippedUtc": "2026-07-07T21:22:00Z"
+  },
   "Get-DbaComputerSystem": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaComputerSystem.ps1",
