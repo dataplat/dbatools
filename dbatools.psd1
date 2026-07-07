@@ -323,7 +323,6 @@
         'Get-DbaLastGoodCheckDb',
         'Get-DbaLatchStatistic',
         'Get-DbaLinkedServer',
-        'Get-DbaLocaleSetting',
         'Get-DbaLogin',
         'Get-DbaMaintenanceSolutionLog',
         'Get-DbaManagementObject',
