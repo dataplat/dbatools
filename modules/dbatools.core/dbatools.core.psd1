@@ -26,7 +26,8 @@
         'Get-DbaInstanceProperty',
         'Get-DbaStartupParameter',
         'Get-DbaNetworkConfiguration',
-        'Get-DbaService'
+        'Get-DbaService',
+        'Connect-DbaInstance'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

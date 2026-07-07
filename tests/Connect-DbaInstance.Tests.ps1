@@ -44,7 +44,8 @@ Describe $CommandName -Tag UnitTests {
                 "AccessToken",
                 "AuthenticationType",
                 "DedicatedAdminConnection",
-                "DisableException"
+                "DisableException",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
