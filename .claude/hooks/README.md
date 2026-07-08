@@ -19,11 +19,12 @@ bash .claude/hooks/hooks-doctor.sh
 |---|---|---|---|
 | Before Write/Edit | `pre-write-style.sh` → `validate-style.ps1` | dbatools style rules on `*.ps1` content (no backticks, double quotes, splats, hashtable alignment, PS v3 compat...) | any PowerShell |
 | Before Write/Edit | `pre-edit-read-check.sh` | blocks editing a file that wasn't Read this session | JSON tool* |
+| Before Write/Edit | `pre-write-snapshot-baseline.sh` | snapshots a file's pre-write content on first touch, so codex reviews THIS session's authored delta, not a sibling session's edits | md5sum |
 | Before Bash | `pre-bash-guard.sh` | blocks destructive commands (force push, reset --hard, clean -f, --no-verify, catastrophic rm...) | JSON tool* |
 | Before Bash | `pre-bash-commit-do.sh` | commit messages must carry the `(do CommandName)` CI targeting pattern | JSON tool* |
 | Before Bash | `pre-bash-pwsh-script.sh` | long/multi-line inline `-Command` PowerShell must be a `.ps1` run with `-File` (powershell.exe itself is allowed and supported) | JSON tool* |
 | After Read | `post-read-track.sh` | records Reads for the read-before-edit gate | JSON tool* |
-| After Write/Edit | `post-write-track-session-files.sh` | records this session's writes (scopes the review gates) | JSON tool* |
+| After Write/Edit | `post-write-track-session-files.sh` | records this session's writes (scopes the review gates) and snapshots the just-written content (the "current" side of the isolated diff) | JSON tool* |
 | Session start (compact/resume) | `session-compact-reset-reads.sh` | resets the Read tracker after compaction | JSON tool* |
 | Stop (turn end) | `stop-registration-check.sh` | new `public/*.ps1` must be registered in dbatools.psd1 AND dbatools.psm1 | git |
 | Stop | `stop-todo-report.sh` | TODO/FIXME/HACK in changed files must be resolved or explained | git |
@@ -42,8 +43,20 @@ When the turn ends and this session wrote code files, the diff is sent to the
 `CLEAN` lets it finish. Cost/loop controls:
 
 - a per-diff **clean cache** — an approved diff is never re-reviewed
+- a per-diff **blocked cache** — an *unchanged* diff that was already blocked
+  re-blocks from the saved findings without re-running codex, so an unresolved
+  diff costs one review, not one xhigh run every turn until the budget
 - a per-diff **strike budget** (`STOP_GUARD_MAX_BLOCKS`, default 3) — after
   that the gate loudly stands down instead of trapping the session
+- **authored-delta isolation** — the reviewed diff is `pre-write baseline ->
+  what this session last wrote` (from the snapshot hooks), not the shared
+  working tree, so a parallel session's edits to the same file (e.g. both
+  registering a command in `dbatools.psd1`) are neither reviewed here nor
+  churn this session's clean cache. For a Write/Edit'd file that has no
+  snapshot (`md5sum` absent, or a first touch predating these hooks) the review
+  falls back to a git working-tree diff. Files changed **only** via Bash
+  (`sed -i`, generators) are never tracked as session writes at all, so they
+  are never auto-reviewed — use `/codex` or review them manually
 - **prior-round memory** — the next round verifies fixes instead of
   re-reviewing blind
 - a **dispositions ledger** (`.claude/codex-review-dispositions.jsonl`,

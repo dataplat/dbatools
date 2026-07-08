@@ -12,6 +12,10 @@
 # Convergence / cost control:
 #   - A per-session "clean" cache (keyed by diff hash) skips re-reviewing a
 #     diff codex already approved — no wasted codex call, no spurious block.
+#   - Symmetrically, a BLOCKED diff that is byte-identical to the last review
+#     re-blocks from the saved findings without re-running codex — an
+#     unresolved diff costs ONE review, not one xhigh run per turn until the
+#     strike budget runs out.
 #   - stop_guard_emit (lib-stop-guard.sh) bounds forced rounds via
 #     STOP_GUARD_MAX_BLOCKS (default 3); after the budget it downgrades to an
 #     advisory so the agent is never trapped in a Stop->work->Stop loop.
@@ -31,6 +35,17 @@
 # parallel sessions must not review each other's edits. Code changed purely
 # via Bash (sed -i, generators) is not tracked; use the /codex skill for
 # those.
+#
+# Authored-delta isolation: for each such file the reviewed diff is this
+# session's own change — the pre-write baseline snapshot (first touch, captured
+# by pre-write-snapshot-baseline.sh) vs the content this session last wrote
+# (post-write snapshot) — NOT the shared working tree. So a concurrent session's
+# edits to the same file (e.g. two sessions both registering a command in
+# dbatools.psd1) are neither reviewed here nor churn this session's clean-cache.
+# When no snapshot exists (md5sum absent, or a first touch that predates this
+# hook) the build falls back to a git working-tree diff vs HEAD. A file the
+# maintainer has since committed is skipped regardless of snapshots, so already-
+# landed code is never re-reviewed.
 #
 # Review memory (lib-codex-review-memory.sh):
 #   * .claude/codex-review-dispositions.jsonl — audited ledger of findings
@@ -63,9 +78,25 @@ source "$(dirname "$0")/lib-codex-review-memory.sh"
 source "$(dirname "$0")/lib-codex-review-prompt.sh"
 source "$(dirname "$0")/lib-codex-review-exec.sh"
 
+# codex_emit_block <review-body> -- build the standard CHANGES_REQUESTED block
+# message (findings + the false-positive dispute protocol) and route it through
+# the strike budget. Shared by the live-review path (step 9) and the unchanged-
+# diff fast path (step 4) so a byte-identical, already-reviewed diff re-blocks
+# with the identical message instead of paying for another codex run.
+codex_emit_block() {
+    local review="$1"
+    local dispute_howto='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a documented project ruling), do not ignore it and do not burn rounds arguing: append ONE JSON line to .claude/codex-review-dispositions.jsonl -- {"date":"YYYY-MM-DD","file":"<repo-relative path>","finding":"<short summary of the finding>","ruling":"rejected","reason":"<why it is wrong, citing the governing rule>"} -- then fix everything else. The ledger edit is itself reviewed next round (an illegitimate ruling is a finding), and legitimate rulings suppress materially-matching findings from then on.'
+    local reason
+    reason=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: codex, effort %s. Disable for this session with CLAUDE_CODEX_REVIEW=off.)' \
+        "$review" "$dispute_howto" "${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}")
+    stop_guard_emit "$reason"
+}
+
 # Extensions worth reviewing, PLUS markdown — docs are deliverables, reviewed
-# for accuracy rather than code style.
-CODE_EXT_RE='\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh|md)$'
+# for accuracy rather than code style. Single-sourced in lib-hook-common.sh
+# (HOOK_REVIEWABLE_EXT_RE) so the snapshot hooks copy exactly the files reviewed
+# here and never drift from this list.
+CODE_EXT_RE="$HOOK_REVIEWABLE_EXT_RE"
 
 SESSION_ID=$(hook_field '.session_id')
 
@@ -105,7 +136,7 @@ fi
 build_session_payload() {
     CODE_FILES=""
     PAYLOAD=""
-    local f rf spec d
+    local f rf rel spec git_d is_new d body
     while IFS= read -r f; do
         [[ -z "$f" ]] && continue
         # Canonicalize before the containment check: a traversal path like
@@ -115,18 +146,43 @@ build_session_payload() {
         rf=$(realpath -m "$(hook_to_unix_path "$f")" 2>/dev/null) || continue
         [[ -n "$rf" && "$rf" == "$REPO_ROOT/"* ]] || continue
         f="$rf"
+        rel="${f#$REPO_ROOT/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a
         # file named e.g. `*.ps1` could otherwise pull unrelated files in.
-        spec=":(literal)${f#$REPO_ROOT/}"
-        # diff vs HEAD first: catches modifications AND deletions of tracked
-        # files. For an untracked, still-present file that yields nothing
-        # here, fall back to --no-index so its full content is reviewed.
-        d=$(git -C "$REPO_ROOT" diff --no-color HEAD -- "$spec" 2>/dev/null)
-        if [[ -z "$d" && -f "$f" ]] && ! git -C "$REPO_ROOT" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
-            d=$(git -C "$REPO_ROOT" diff --no-index --no-color -- /dev/null "${f#$REPO_ROOT/}" 2>/dev/null)
+        spec=":(literal)$rel"
+        # Working-tree delta vs HEAD, used both as the containment/relevance
+        # gate and as the fallback diff. Empty here means the file is either
+        # clean/committed (nothing to review) OR an untracked, still-present
+        # new file (its whole content is the change).
+        git_d=$(git -C "$REPO_ROOT" diff --no-color HEAD -- "$spec" 2>/dev/null)
+        is_new=0
+        if [[ -z "$git_d" ]]; then
+            if [[ -f "$f" ]] && ! git -C "$REPO_ROOT" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
+                is_new=1
+            else
+                continue                                 # clean/committed -> nothing to review
+            fi
         fi
-        [[ -z "$d" ]] && continue                        # written but no net change
-        CODE_FILES+="${f#$REPO_ROOT/}"$'\n'
+        # There IS something uncommitted. Prefer this session's ISOLATED
+        # authored diff (baseline snapshot -> content we last wrote) so a
+        # parallel session's edits to the same file are neither reviewed here
+        # nor churn our clean-cache. The git_d gate above still applies, so a
+        # file the maintainer has since committed is skipped even if we hold a
+        # snapshot for it. Fall back to the working-tree diff when no snapshot
+        # exists (snapshot hooks not installed, or the write wasn't captured).
+        if hook_snapshot_paths "$SESSION_ID" "$f" && [[ -f "$SNAP_BASE" && -f "$SNAP_CUR" ]]; then
+            # --label keeps clean a/ b/ headers — the temp snapshot paths never
+            # leak into the payload.
+            body=$(diff -u --label "a/$rel" --label "b/$rel" "$SNAP_BASE" "$SNAP_CUR" 2>/dev/null)
+            [[ -z "$body" ]] && continue                 # our authored delta is nil -> ignore sibling churn
+            d="diff --git a/$rel b/$rel"$'\n'"$body"
+        elif (( is_new )); then
+            d=$(git -C "$REPO_ROOT" diff --no-index --no-color -- /dev/null "$rel" 2>/dev/null)
+            [[ -z "$d" ]] && continue
+        else
+            d="$git_d"
+        fi
+        CODE_FILES+="$rel"$'\n'
         PAYLOAD+="$d"$'\n'
     done <<< "$SESSION_FILES"
 }
@@ -180,6 +236,21 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
         [[ "$n" =~ ^[0-9]+$ ]] || n=0
         if (( n >= ${STOP_GUARD_MAX_BLOCKS:-3} )); then
             emit_system_message "CODEX AUTO-REVIEW gate bypassed after ${n} blocked rounds -- this is NOT an approval; unresolved findings almost certainly remain. Fix the remaining items now or re-review in a fresh turn; raise STOP_GUARD_MAX_BLOCKS for more rounds, or set CLAUDE_CODEX_REVIEW=off to opt out deliberately."
+            exit 0
+        fi
+    fi
+
+    # Fast path: an unchanged diff we already reviewed AND blocked this streak
+    # re-blocks on the SAVED findings, no second codex run. COUNT_FILE is reset
+    # the instant the diff changes (the budget-reset step just above), so its
+    # presence proves the .prev findings were saved for THIS exact hash -- a
+    # byte-identical diff means they still apply verbatim. A changed or
+    # first-seen diff has no COUNT_FILE (or no saved findings) and falls through
+    # to a real review below.
+    if [[ -f "$COUNT_FILE" ]]; then
+        codex_memory_load_prev
+        if [[ -n "${PREV_FINDINGS:-}" ]]; then
+            codex_emit_block "$PREV_FINDINGS"
             exit 0
         fi
     fi
@@ -263,12 +334,11 @@ if [[ "$VERDICT" == "CLEAN" ]]; then
 fi
 
 # 9. CHANGES_REQUESTED, or a missing/garbled verdict -> block (fail safe).
-#    Save the findings so the NEXT round's reviewer verifies fixes against
-#    them instead of re-reviewing blind, and teach the dispute protocol so a
-#    false positive gets a durable ruling instead of an argument loop.
+#    Save the findings so the NEXT round's reviewer verifies fixes against them
+#    instead of re-reviewing blind -- and so the unchanged-diff fast path can
+#    re-block on them without a second codex run -- and teach the dispute
+#    protocol so a false positive gets a durable ruling instead of an argument
+#    loop.
 codex_memory_save_prev "$REVIEW"
-DISPUTE_HOWTO='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a documented project ruling), do not ignore it and do not burn rounds arguing: append ONE JSON line to .claude/codex-review-dispositions.jsonl -- {"date":"YYYY-MM-DD","file":"<repo-relative path>","finding":"<short summary of the finding>","ruling":"rejected","reason":"<why it is wrong, citing the governing rule>"} -- then fix everything else. The ledger edit is itself reviewed next round (an illegitimate ruling is a finding), and legitimate rulings suppress materially-matching findings from then on.'
-REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: codex, effort %s. Disable for this session with CLAUDE_CODEX_REVIEW=off.)' \
-    "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}")
-stop_guard_emit "$REASON"
+codex_emit_block "$REVIEW"
 exit 0

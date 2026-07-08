@@ -71,3 +71,4 @@ nul
 # Satellite cmdlet assemblies are built in dbatools.library and staged at publish/dev time
 # (migration/specs/modules.md section 5.3); only the manifests and shims are tracked
 modules/**/*.dll
+.claude/codex-review-dispositions.jsonl

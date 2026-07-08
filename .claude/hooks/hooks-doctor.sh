@@ -47,6 +47,15 @@ else
 fi
 echo
 
+echo "Authored-delta isolation (codex reviews THIS session's change, not siblings'):"
+if command -v md5sum >/dev/null 2>&1; then
+    pass "md5sum found -> per-session pre/post-write snapshots active"
+else
+    warn "md5sum missing -> codex review falls back to a git working-tree diff"
+    echo "            -> parallel sessions editing the same file may review each other's edits."
+fi
+echo
+
 echo "codex CLI (external auto-review at turn end):"
 if command -v codex >/dev/null 2>&1; then
     pass "codex found: $(command -v codex)"
