@@ -68,7 +68,7 @@ Describe $CommandName -Tag UnitTests {
                 $result = Set-DbaNetworkCertificate @splatSetNetworkCertificate
 
                 $result.CertificateThumbprint | Should -Be $script:certificateThumbprint
-                Assert-MockCalled -CommandName Restart-DbaService -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                Should -Invoke -CommandName Restart-DbaService -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                     $SqlInstance.FullName -eq "sql1" -and
                     $Credential -eq $script:serviceCredential -and
                     $Type -eq "Engine" -and

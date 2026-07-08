@@ -168,7 +168,7 @@ function Invoke-ManualPester {
         $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
         $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
         $MinimumPesterVersion = [Version] '4.0.0.0' # Because this is when -Show was introduced
-        $MaximumPesterVersion = [Version] '6.0.0.0' # Because we have either pester4 or pester5 tests
+        $MaximumPesterVersion = [Version] '7.0.0.0' # Because we have either pester4 or pester5+ tests
         $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
         $HasPester = $null -ne $PesterVersion
         $ScriptAnalyzerCorrectVersion = '1.18.2'
@@ -204,8 +204,8 @@ function Invoke-ManualPester {
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
         if ($PesterVersion -gt $MaximumPesterVersion) {
-            Write-Warning "Please get Pester to the 5.* release"
-            Write-Warning "     Install-Module -Name Pester  -MaximumVersion '5.7.1' -Force -SkipPublisherCheck"
+            Write-Warning "Please get Pester to the 6.0.0 release"
+            Write-Warning "     Install-Module -Name Pester -RequiredVersion '6.0.0' -Force -SkipPublisherCheck"
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
 
@@ -308,7 +308,7 @@ function Invoke-ManualPester {
             if ($pesterVersionToUse -eq '5') {
                 Write-DetailedMessage "Running Pester 5 tests $($f.Name)"
                 Remove-Module -Name Pester -ErrorAction SilentlyContinue
-                Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop
+                Import-Module Pester -RequiredVersion 6.0.0 -ErrorAction Stop
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
                 if ($PassThru) {

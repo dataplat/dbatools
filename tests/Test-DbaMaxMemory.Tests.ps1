@@ -64,9 +64,9 @@ Describe $CommandName -Tag UnitTests {
 
                 $result = Test-DbaMaxMemory -SqlInstance "ABC"
 
-                Assert-MockCalled Connect-DbaInstance -Scope It -Times 1
-                Assert-MockCalled Get-DbaService -Scope It -Times 1
-                Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
+                Should -Invoke Connect-DbaInstance -Scope It -Times 1
+                Should -Invoke Get-DbaService -Scope It -Times 1
+                Should -Invoke Get-DbaMaxMemory -Scope It -Times 1
             }
 
             It "Connect to SQL Server and retrieve the Max Server Memory setting" {

@@ -101,6 +101,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
             Mock New-Object {
                 [PSCustomObject]@{ }
             } -ModuleName dbatools -ParameterFilter {
@@ -168,6 +169,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
             Mock New-Object {
                 [PSCustomObject]@{
                     ConnectionString = "Data Source=sqltoken;Integrated Security=True"
@@ -224,6 +226,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
             Mock New-Object {
                 $script:lastServerConnection = [PSCustomObject]@{
                     ConnectionString      = $ArgumentList[0].ConnectionString

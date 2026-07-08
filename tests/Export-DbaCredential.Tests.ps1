@@ -50,7 +50,7 @@ Describe $CommandName -Tag UnitTests {
         It "Should not force decryption errors to throw by default" {
             $null = Export-DbaCredential -SqlInstance "sql1" -Passthru
 
-            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 -not $EnableException
             }
         }
@@ -58,7 +58,7 @@ Describe $CommandName -Tag UnitTests {
         It "Should request terminating decryption errors when EnableException is specified" {
             $null = Export-DbaCredential -SqlInstance "sql1" -Passthru -EnableException
 
-            Assert-MockCalled -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Get-DecryptedObject -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 $EnableException
             }
         }

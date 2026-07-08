@@ -99,23 +99,23 @@ Describe -skip $CommandName -Tag UnitTests {
             $password = "pwd" | ConvertTo-SecureString -AsPlainText -Force
             $cred = New-Object PSCredential("usr", $password)
             $null = Update-DbaInstance -ComputerName "mocked" -Credential $cred -Version "2012SP3" -Path "mocked" -EnableException
-            Assert-MockCalled -ParameterFilter { $Authentication -eq 'CredSSP' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'CredSSP' } -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -ParameterFilter { $Authentication -eq 'CredSSP' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Initialize-CredSSP -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'CredSSP' } -Exactly 2 -Scope It -ModuleName dbatools
         }
         It "should call internal functions using Default" {
             $null = Update-DbaInstance -ComputerName "mocked" -Version "2012SP3" -Path "mocked" -EnableException
-            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Default' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Default' } -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -ParameterFilter { $Authentication -eq 'Default' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Default' } -Exactly 2 -Scope It -ModuleName dbatools
         }
         It "should call internal functions using Kerberos" {
             $password = "pwd" | ConvertTo-SecureString -AsPlainText -Force
             $cred = New-Object PSCredential("usr", $password)
             $null = Update-DbaInstance -ComputerName "mocked" -Authentication Kerberos -Credential $cred -Version "2012SP3" -Path "mocked" -EnableException
-            Assert-MockCalled -ParameterFilter { $Authentication -eq 'Kerberos' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Kerberos' } -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -ParameterFilter { $Authentication -eq 'Kerberos' } -CommandName Find-SqlInstanceUpdate -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Initialize-CredSSP -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -ParameterFilter { $Authentication -eq 'Kerberos' } -Exactly 2 -Scope It -ModuleName dbatools
         }
     }
     Context "Validate upgrades to a latest version" {
@@ -194,10 +194,10 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
             $result = Update-DbaInstance -Version 2017 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-DbaBuild -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2017
@@ -211,10 +211,10 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade SQL2008\LAB2 to latest SP" {
             $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -229,12 +229,12 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade SQL2008\LAB2 passing extra command line parameters" {
             $result = Update-DbaInstance -Version 2008 -InstanceName LAB2 -Type ServicePack -Path $exeDir -ArgumentList @("/foo", "/bar=foobar") -EnableException
-            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 if ($ArgumentList[0] -like '/x:*' -and $ArgumentList[1] -eq "/quiet") { return $true }
             }
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/bar=foobar" -and $ArgumentList -contains "/quiet") { return $true }
             }
 
@@ -250,10 +250,10 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade two versions to latest SPs" {
             $results = Update-DbaInstance -Version 2008, 2012 -Type ServicePack -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-DbaBuild -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 2
 
@@ -334,9 +334,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade SQL2008 to SP3 (KB2546951)" {
             $result = Update-DbaInstance -Kb KB2546951 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2008
@@ -350,9 +350,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade SQL2016 to SP1CU4 (KB3182545 + KB4024305) " {
             $result = Update-DbaInstance -Kb 3182545, 4024305 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2016
@@ -366,9 +366,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade both versions to different KBs" {
             $results = Update-DbaInstance -Kb 3182545, 4040714, KB2546951, KB2738350 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 6 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 3 -Scope It -ModuleName dbatools
 
             ($results | Measure-Object).Count | Should -Be 3
 
@@ -470,9 +470,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade two SQL2016 servers to SP2" {
             $results = Update-DbaInstance -ComputerName "localhost", "127.0.0.1" -Version SQL2016SP2 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
 
             foreach ($result in $results) {
                 $result | Should -Not -BeNullOrEmpty
@@ -516,9 +516,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should mock-upgrade interrupted setup of SQL2012 SP2" {
             $result = Update-DbaInstance -Continue -InstanceName LAB -Version 2012SP2 -Path $exeDir -Restart -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 1 -Scope It -ModuleName dbatools
 
             $result | Should -Not -BeNullOrEmpty
             $result.MajorVersion | Should -Be 2012
@@ -563,9 +563,9 @@ Describe -skip $CommandName -Tag UnitTests {
         }
         It "Should download and mock-upgrade SQL2012 KB3045321" {
             $result = Update-DbaInstance -InstanceName LAB -KB KB3045321 -Path $exeDir -Download -EnableException
-            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Save-DbaKbUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Save-DbaKbUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 $Name -eq '3045321' -and $Path -eq [System.IO.Path]::GetTempPath() -and $Architecture -eq 'x64'
             }
 
@@ -751,9 +751,9 @@ Describe -skip $CommandName -Tag UnitTests {
                     }
                     It "$v to $cuLevel" {
                         $results = Update-DbaInstance -Version "$v$cuLevel" -Path "mocked" -Restart -EnableException
-                        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
-                        Assert-MockCalled -CommandName Invoke-Program -Exactly ($steps * 2) -Scope It -ModuleName dbatools
-                        Assert-MockCalled -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
+                        Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+                        Should -Invoke -CommandName Invoke-Program -Exactly ($steps * 2) -Scope It -ModuleName dbatools
+                        Should -Invoke -CommandName Restart-Computer -Exactly $steps -Scope It -ModuleName dbatools
                         for ($i = 0; $i -lt $steps; $i++) {
                             $result = $results | Select-Object -First 1 -Skip $i
                             $result | Should -Not -BeNullOrEmpty
@@ -872,10 +872,10 @@ Describe -Skip "$CommandName Integration Tests" -Tag IntegrationTests {
             $instance = $server.ServiceName
             $null = Update-DbaInstance -ComputerName $TestConfig.InstanceSingle -Path $exeDir -Restart -EnableException -WhatIf -InstanceName $instance 3>$null
             $testBuild = Test-DbaBuild -SqlInstance $server -MaxBehind 0CU
-            Assert-MockCalled -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-PendingReboot -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Test-ElevationRequirement -Scope It -ModuleName dbatools
             if ($testBuild.Compliant -eq $false) {
-                Assert-MockCalled -CommandName Find-SqlInstanceUpdate -Scope It -ModuleName dbatools
+                Should -Invoke -CommandName Find-SqlInstanceUpdate -Scope It -ModuleName dbatools
             }
         }
     }
@@ -937,8 +937,8 @@ Describe "Update-DbaInstance authentication regression" -Tag UnitTests {
     It "passes Authentication to remote preparation helpers" {
         $null = Update-DbaInstance -ComputerName "mocked" -Credential $testCredential -Authentication Credssp -Version "2012SP3" -Path "mocked" -EnableException
 
-        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
-        Assert-MockCalled -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+        Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+        Should -Invoke -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
     }
 }
 
@@ -948,7 +948,7 @@ Describe "Update-DbaInstance path validation regression" -Tag UnitTests {
 
         { Update-DbaInstance -Version "2012SP3" -Path "   " -EnableException } | Should -Throw "*Path is required*"
 
-        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 0 -Scope It -ModuleName dbatools
+        Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 0 -Scope It -ModuleName dbatools
     }
 }
 
@@ -979,7 +979,7 @@ InModuleScope dbatools {
             $result = Get-SQLInstanceComponent -ComputerName "mocked" -Credential $testCredential -Authentication Credssp
 
             $result | Should -Not -BeNullOrEmpty
-            Assert-MockCalled -CommandName Invoke-Command2 -Exactly 1 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
+            Should -Invoke -CommandName Invoke-Command2 -Exactly 1 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
         }
 
         It "passes Authentication to Invoke-Command2 without using Get-DbaCmObject for pending reboot checks" {
@@ -992,8 +992,8 @@ InModuleScope dbatools {
             $result = Test-PendingReboot -ComputerName "mocked" -Credential $testCredential -Authentication Credssp
 
             $result | Should -BeFalse
-            Assert-MockCalled -CommandName Invoke-Command2 -Exactly 3 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
-            Assert-MockCalled -CommandName Get-DbaCmObject -Exactly 0 -Scope It
+            Should -Invoke -CommandName Invoke-Command2 -Exactly 3 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
+            Should -Invoke -CommandName Get-DbaCmObject -Exactly 0 -Scope It
         }
     }
 }

@@ -128,11 +128,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Validate upgrades to a latest version" {
         It "Should mock-upgrade SQL2017\LAB0 to SP0CU12 thinking it's latest" {
             $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -EnableException -Action $singleAction -ArgumentList @("/foo")
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Restart-Computer -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 if ($ArgumentList[0] -like "/x:*" -and $ArgumentList[1] -eq "/quiet") { return $true }
             }
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 if ($ArgumentList -contains "/foo" -and $ArgumentList -contains "/quiet") { return $true }
             }
 
@@ -148,8 +148,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should mock-upgrade 2008 to SP3CU7" {
             $results = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Restart $true -EnableException -Action $doubleAction
-            Assert-MockCalled -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
-            Assert-MockCalled -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Invoke-Program -Exactly 4 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Restart-Computer -Exactly 2 -Scope It -ModuleName dbatools
 
             $results.Count | Should -BeExactly 2
             #2008SP3

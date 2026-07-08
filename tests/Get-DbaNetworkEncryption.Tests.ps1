@@ -183,6 +183,7 @@ Describe $CommandName -Tag UnitTests {
                         $Message
                     )
                 }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     New-MockNetworkEncryptionUdpClient
                 } -ParameterFilter {
