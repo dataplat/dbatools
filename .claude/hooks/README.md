@@ -17,6 +17,7 @@ bash .claude/hooks/hooks-doctor.sh
 
 | Event | Hook | What it does | Needs |
 |---|---|---|---|
+| Before Write/Edit | `pre-write-snapshot-baseline.sh` | snapshots a file's pre-write content on first touch (per-session diff baseline for review gates); passive, never blocks | JSON tool* |
 | Before Write/Edit | `pre-write-style.sh` → `validate-style.ps1` | dbatools style rules on `*.ps1` content (no backticks, double quotes, splats, hashtable alignment, PS v3 compat...) | any PowerShell |
 | Before Write/Edit | `pre-edit-read-check.sh` | blocks editing a file that wasn't Read this session | JSON tool* |
 | Before Bash | `pre-bash-guard.sh` | blocks destructive commands (force push, reset --hard, clean -f, --no-verify, catastrophic rm...) | JSON tool* |
@@ -29,6 +30,7 @@ bash .claude/hooks/hooks-doctor.sh
 | Stop | `stop-todo-report.sh` | TODO/FIXME/HACK in changed files must be resolved or explained | git |
 | Stop | `stop-no-deflection.sh` | blocks blame-dodging language ("pre-existing", "out of scope"...) | JSON tool* |
 | Stop | `stop-verify.sh` | one self-verification checklist round per session when `.ps1` changed | git |
+| Stop | `stop-jscpd-ratchet.sh` → `lib-jscpd.js` | blocks NEW copy-paste duplication vs `.jscpd-baseline.json` | node + jscpd + baseline |
 | Stop | `stop-codex-review.sh` | external codex review of this session's diff; blocks until `VERDICT: CLEAN` | codex CLI |
 
 \* *JSON tool = first working one of jq, python, python3, py, node. Without
@@ -58,6 +60,25 @@ tail -f ~/.codex-review.live.log
 
 No codex installed? The gate silently skips. Install: `npm install -g @openai/codex`, then `codex login`.
 
+## The jscpd duplication ratchet
+
+Opt-in per clone of the repo: it stays dormant until a baseline exists.
+
+```bash
+bash .claude/hooks/jscpd-baseline.sh          # records existing duplication
+```
+
+From then on, a turn that introduces duplication the baseline doesn't record
+is blocked. Refresh with `--force` after intentional duplication or paydown.
+
+The whole ratchet runs on node (which jscpd itself needs anyway) — no Python,
+no jq. jscpd 5.x ships a native binary per platform, so a Windows install
+can't be shared with WSL: the baseline script auto-installs a platform-local
+copy to `~/.dbatools-jscpd` (user-level, no sudo, outside the repo tree — the
+repo root ships to the PowerShell Gallery, so `node_modules` must never live
+there). See `lib-jscpd.js` for the full resolution order (`$JSCPD_BIN`
+override included).
+
 ## Per-developer opt-outs
 
 | Scope | How |
@@ -65,6 +86,7 @@ No codex installed? The gate silently skips. Install: `npm install -g @openai/co
 | one review round | fix the findings (the point) |
 | codex review, this session | `CLAUDE_CODEX_REVIEW=off` |
 | verify checklist, this session | `CLAUDE_STOP_VERIFY=off` |
+| duplication ratchet, this session | `CLAUDE_JSCPD_RATCHET=off` |
 | smaller block budgets | `STOP_GUARD_MAX_BLOCKS=1` |
 | everything, permanently, just you | `.claude/settings.local.json` → `{"disableAllHooks": true}` |
 
@@ -73,7 +95,9 @@ No codex installed? The gate silently skips. Install: `npm install -g @openai/co
 
 ## Conventions for adding hooks
 
-- Bash only, LF line endings (enforced via `.gitattributes`).
+- Bash launchers, LF line endings (enforced via `.gitattributes`). Heavier
+  logic may live in a node engine the launcher invokes (see `lib-jscpd.js`) —
+  node is the one scripting runtime present on every supported setup.
 - Source `lib-hook-common.sh`; parse hook JSON with `hook_field`, never raw
   grep. Emit JSON with `emit_deny` / `emit_stop_block` / `emit_system_message`.
 - Blocking Stop gates go through `stop_guard_emit` (bounded budget) so they

@@ -72,3 +72,10 @@ nul
 # (migration/specs/modules.md section 5.3); only the manifests and shims are tracked
 modules/**/*.dll
 .claude/codex-review-dispositions.jsonl
+
+# jscpd duplication ratchet: the baseline is per-clone (opt-in, never shared),
+# and node_modules must never enter the repo tree (the root ships to the
+# PowerShell Gallery). See .claude/hooks/README.md.
+.jscpd-baseline.json
+.jscpd-baseline-*.tmp
+node_modules/

@@ -166,20 +166,65 @@ emit_system_message() {
 }
 
 # ---------------------------------------------------------------- PowerShell
-# hook_find_powershell — echo the best available PowerShell host.
+# hook_find_powershell — echo the best available WORKING PowerShell host.
 # Order matters: pwsh (7+, cross-platform) first, then Windows PowerShell 5.1
 # (powershell.exe) so Windows boxes without pwsh still get style validation —
 # Windows PowerShell also carries Windows-only modules that some dbatools
 # work needs, so it is a first-class citizen here, never blocked.
+#
+# Each candidate is verified with a real startup (`exit 0`), not just
+# command -v: a corrupted install (seen in the wild — a bit-flipped pwsh that
+# dies at startup with FileLoadException) would otherwise be picked forever
+# and crash the style hook on every write instead of falling back to the next
+# host. The probe costs a process spawn, so the winner is cached for an hour;
+# reinstalling a broken pwsh is picked up at the next cache expiry (or delete
+# <state-root>/powershell.cached to re-probe immediately).
+hook_verify_powershell() {
+    "$1" -NoProfile -NonInteractive -Command 'exit 0' >/dev/null 2>&1
+}
+
 hook_find_powershell() {
-    local c
-    for c in pwsh powershell.exe powershell; do
-        if command -v "$c" >/dev/null 2>&1; then
+    local cache="$HOOK_STATE_ROOT/powershell.cached" c
+    if [[ -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
+        c=$(cat "$cache" 2>/dev/null)
+        if [[ -n "$c" ]] && command -v "$c" >/dev/null 2>&1; then
             printf '%s' "$c"
             return 0
         fi
+    fi
+    for c in pwsh powershell.exe powershell; do
+        command -v "$c" >/dev/null 2>&1 || continue
+        hook_verify_powershell "$c" || continue
+        printf '%s' "$c" > "$cache" 2>/dev/null
+        printf '%s' "$c"
+        return 0
     done
+    rm -f "$cache" 2>/dev/null
     return 1
+}
+
+# ---------------------------------------------------------------- codex
+# hook_find_codex — echo the codex binary if it exists AND starts.
+# `command -v` alone is not enough: an npm-global codex installed on Windows is
+# visible from WSL through /mnt/..., but @openai/codex ships a NATIVE binary
+# per platform, so the shim dies instantly on the other OS ("Missing optional
+# dependency @openai/codex-linux-x64"). Probe with --version and cache the
+# success for an hour so healthy machines pay one probe, not one per turn.
+hook_find_codex() {
+    command -v codex >/dev/null 2>&1 || return 1
+    local cache="$HOOK_STATE_ROOT/codex.cached"
+    if [[ -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
+        printf 'codex'
+        return 0
+    fi
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 15 codex --version >/dev/null 2>&1 || return 1
+    else
+        codex --version >/dev/null 2>&1 || return 1
+    fi
+    touch "$cache" 2>/dev/null
+    printf 'codex'
+    return 0
 }
 
 # ---------------------------------------------------------------- paths

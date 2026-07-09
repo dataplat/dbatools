@@ -61,8 +61,9 @@ timeout "${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}" codex exec \
     --ignore-user-config \
     --ephemeral \
     --color never \
+    --model "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" \
     -o "$OUT_FILE" \
-    -c model_reasoning_effort="${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}" \
+    -c model_reasoning_effort="${CLAUDE_CODEX_REVIEW_EFFORT:-high}" \
     - < "$PROMPT_FILE"
 ```
 

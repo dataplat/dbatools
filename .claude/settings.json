@@ -7,6 +7,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-write-snapshot-baseline.sh",
+            "timeout": 10,
+            "statusMessage": "Snapshotting pre-write baseline..."
+          },
+          {
+            "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-write-style.sh",
             "timeout": 20,
             "statusMessage": "Checking dbatools style..."
@@ -106,6 +112,12 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-verify.sh",
             "timeout": 15,
             "statusMessage": "Quality gate checklist..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-jscpd-ratchet.sh",
+            "timeout": 240,
+            "statusMessage": "Checking for new copy-paste duplication..."
           },
           {
             "type": "command",

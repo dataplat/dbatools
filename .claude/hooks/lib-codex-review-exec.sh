@@ -34,8 +34,9 @@ codex_review_setup_livelog() {
     _cand="$HOME/.codex-review.live.log"
     if [[ ! -L "$_cand" ]] && { [[ ! -e "$_cand" ]] || { [[ -f "$_cand" && -O "$_cand" ]]; }; } \
        && { [[ ! -e "$_cand" ]] || chmod 0600 "$_cand" 2>/dev/null; }; then
-        ( umask 077; printf '===== codex auto-review %s | effort=%s | %s =====\n' \
-            "$(date '+%H:%M:%S' 2>/dev/null)" "${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}" \
+        ( umask 077; printf '===== codex auto-review %s | model=%s | effort=%s | %s =====\n' \
+            "$(date '+%H:%M:%S' 2>/dev/null)" "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" \
+            "${CLAUDE_CODEX_REVIEW_EFFORT:-high}" \
             "$(printf '%s' "$CODE_FILES" | tr '\n' ' ')" > "$_cand" ) 2>/dev/null && LIVE_LOG="$_cand"
     fi
 }

@@ -23,5 +23,17 @@ fi
 
 PS_BIN=$(hook_find_powershell) || exit 0
 
-printf '%s' "$HOOK_INPUT" | "$PS_BIN" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(dirname "$0")/validate-style.ps1"
+# A Windows host (pwsh.exe / powershell.exe) cannot read a WSL /mnt/... path.
+# Git Bash converts Unix-looking arguments automatically; WSL does not, so
+# hand Windows hosts the Windows spelling of the validator path explicitly.
+VALIDATOR="$(dirname "$0")/validate-style.ps1"
+case "$PS_BIN" in
+    *.exe)
+        if command -v wslpath >/dev/null 2>&1; then
+            VALIDATOR=$(wslpath -w "$VALIDATOR" 2>/dev/null) || VALIDATOR="$(dirname "$0")/validate-style.ps1"
+        fi
+        ;;
+esac
+
+printf '%s' "$HOOK_INPUT" | "$PS_BIN" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$VALIDATOR"
 exit $?

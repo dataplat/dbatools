@@ -43,7 +43,8 @@
 # Env knobs:
 #   CLAUDE_CODEX_REVIEW=off       - disable for the session.
 #   CLAUDE_CODEX_REVIEW_TIMEOUT   - codex wall-clock seconds (default 600).
-#   CLAUDE_CODEX_REVIEW_EFFORT    - codex model_reasoning_effort (default xhigh).
+#   CLAUDE_CODEX_REVIEW_MODEL     - codex model (default gpt-5.6-sol).
+#   CLAUDE_CODEX_REVIEW_EFFORT    - codex model_reasoning_effort (default high).
 #   CLAUDE_CODEX_REVIEW_MAXBYTES  - max diff bytes sent (default 200000); a
 #                                   larger diff is marked truncated and fails
 #                                   safe toward CHANGES_REQUESTED.
@@ -74,7 +75,17 @@ SESSION_ID=$(hook_field '.session_id')
 if [[ "${CLAUDE_CODEX_REVIEW:-}" == "off" || "${CLAUDE_CODEX_REVIEW:-}" == "OFF" ]]; then
     exit 0
 fi
-if ! command -v codex >/dev/null 2>&1; then
+if ! hook_find_codex >/dev/null; then
+    # Distinguish "not installed" (silent — the intended degradation) from
+    # "installed but cannot start" (say so, at most once every few hours, so a
+    # wrong-platform install doesn't masquerade as a codex outage every turn).
+    if command -v codex >/dev/null 2>&1; then
+        BROKEN_MARKER="$HOOK_STATE_ROOT/codex-broken.warned"
+        if [[ -z "$(find "$BROKEN_MARKER" -mmin -240 2>/dev/null)" ]]; then
+            touch "$BROKEN_MARKER" 2>/dev/null
+            emit_system_message "codex is on PATH but cannot start on this platform (wrong-platform npm install?) — auto-review is skipped. Diagnose: bash .claude/hooks/hooks-doctor.sh"
+        fi
+    fi
     exit 0
 fi
 
@@ -214,8 +225,9 @@ printf '%s' "$PROMPT" | timeout "${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}" codex exec
     --ignore-user-config \
     --ephemeral \
     --color never \
+    --model "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" \
     -o "$OUT_FILE" \
-    -c model_reasoning_effort="${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}" \
+    -c model_reasoning_effort="${CLAUDE_CODEX_REVIEW_EFFORT:-high}" \
     - 2>/dev/null | tee -a "$LIVE_LOG" > "$RUN_LOG"
 RC=${PIPESTATUS[1]}                              # codex's exit through the pipe, NOT tee's
 
@@ -268,7 +280,7 @@ fi
 #    false positive gets a durable ruling instead of an argument loop.
 codex_memory_save_prev "$REVIEW"
 DISPUTE_HOWTO='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a documented project ruling), do not ignore it and do not burn rounds arguing: append ONE JSON line to .claude/codex-review-dispositions.jsonl -- {"date":"YYYY-MM-DD","file":"<repo-relative path>","finding":"<short summary of the finding>","ruling":"rejected","reason":"<why it is wrong, citing the governing rule>"} -- then fix everything else. The ledger edit is itself reviewed next round (an illegitimate ruling is a finding), and legitimate rulings suppress materially-matching findings from then on.'
-REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: codex, effort %s. Disable for this session with CLAUDE_CODEX_REVIEW=off.)' \
-    "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_EFFORT:-xhigh}")
+REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: %s, effort %s. Disable for this session with CLAUDE_CODEX_REVIEW=off.)' \
+    "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" "${CLAUDE_CODEX_REVIEW_EFFORT:-high}")
 stop_guard_emit "$REASON"
 exit 0
