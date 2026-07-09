@@ -114,6 +114,11 @@
     "retiredPath": "private/retired/Get-DbaPowerPlan.ps1",
     "flippedUtc": "2026-07-06T11:34:39Z"
   },
+  "Get-DbaPrivilege": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaPrivilege.ps1",
+    "flippedUtc": "2026-07-09T19:50:06Z"
+  },
   "Get-DbaReplDistributor": {
     "module": "dbatools.replication",
     "retiredPath": "private/retired/Get-DbaReplDistributor.ps1",

@@ -346,7 +346,6 @@
         'Get-DbaPfDataCollectorSet',
         'Get-DbaPfDataCollectorSetTemplate',
         'Get-DbaPlanCache',
-        'Get-DbaPrivilege',
         'Get-DbaProcess',
         'Get-DbaProductKey',
         'Get-DbaQueryExecutionTime',
