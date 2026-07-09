@@ -139,6 +139,11 @@
     "retiredPath": "private/retired/Get-DbaProductKey.ps1",
     "flippedUtc": "2026-07-09T20:06:57Z"
   },
+  "Get-DbaRegistryRoot": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaRegistryRoot.ps1",
+    "flippedUtc": "2026-07-09T22:49:09Z"
+  },
   "Get-DbaReplDistributor": {
     "module": "dbatools.replication",
     "retiredPath": "private/retired/Get-DbaReplDistributor.ps1",

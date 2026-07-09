@@ -349,7 +349,6 @@
         'Get-DbaRandomizedDatasetTemplate',
         'Get-DbaRandomizedType',
         'Get-DbaRandomizedValue',
-        'Get-DbaRegistryRoot',
         'Get-DbaRegServer',
         'Get-DbaRegServerGroup',
         'Get-DbaRegServerStore',

@@ -35,7 +35,8 @@
         'Test-DbaComputerCertificateExpiration',
         'Get-DbaNetworkEncryption',
         'Test-DbaPowerPlan',
-        'Test-DbaSpn'
+        'Test-DbaSpn',
+        'Get-DbaRegistryRoot'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
