@@ -672,7 +672,6 @@
         'Test-DbaPath',
         'Test-DbaInstantFileInitialization',
         'Test-DbaReplLatency',
-        'Test-DbaSpn',
         'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
