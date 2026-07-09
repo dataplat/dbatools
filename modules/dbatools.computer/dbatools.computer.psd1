@@ -28,7 +28,8 @@
         'Get-DbaLocaleSetting',
         'Get-DbaForceNetworkEncryption',
         'Get-DbaMsdtc',
-        'Get-DbaPrivilege'
+        'Get-DbaPrivilege',
+        'Get-DbaProductKey'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
