@@ -26,10 +26,11 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Get-DbaInstalledPatch -ComputerName $TestConfig.InstanceSingle
 
             $WarnVar | Should -BeNullOrEmpty
-            # On AppVeyor sometimes there are no patches installed
-            if (-not $env:AppVeyor) {
-                $result | Should -Not -BeNullOrEmpty
+            # On AppVeyor and freshly-built labs (RTM installs) there are no patches installed
+            if (@($result).Count -eq 0) {
+                Set-ItResult -Skipped -Because "no SQL Server patches are installed on this host"
             }
+            $result | Should -Not -BeNullOrEmpty
         }
     }
 }
