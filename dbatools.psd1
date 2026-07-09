@@ -515,7 +515,6 @@
         'Remove-DbaBackup',
         'Remove-DbaClientAlias',
         'Remove-DbaCmConnection',
-        'Remove-DbaComputerCertificate',
         'Remove-DbaCustomError',
         'Remove-DbaDatabase',
         'Remove-DbaDatabaseSafely',

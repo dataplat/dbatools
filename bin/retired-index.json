@@ -259,6 +259,11 @@
     "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
     "flippedUtc": "2026-07-07T10:20:06Z"
   },
+  "Remove-DbaComputerCertificate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Remove-DbaComputerCertificate.ps1",
+    "flippedUtc": "2026-07-09T23:48:41Z"
+  },
   "Restore-DbaDatabase": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",

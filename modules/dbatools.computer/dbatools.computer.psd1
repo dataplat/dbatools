@@ -39,7 +39,8 @@
         'Get-DbaRegistryRoot',
         'Get-DbaInstalledPatch',
         'Set-DbaPowerPlan',
-        'Backup-DbaComputerCertificate'
+        'Backup-DbaComputerCertificate',
+        'Remove-DbaComputerCertificate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
