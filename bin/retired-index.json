@@ -253,5 +253,10 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:21:01Z"
+  },
+  "Test-DbaComputerCertificateExpiration": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Test-DbaComputerCertificateExpiration.ps1",
+    "flippedUtc": "2026-07-09T20:46:28Z"
   }
 }
