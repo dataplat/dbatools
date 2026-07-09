@@ -216,7 +216,6 @@
         'Get-DbaClientAlias',
         'Get-DbaCmConnection',
         'Get-DbaCmObject',
-        'Get-DbaComputerCertificate',
         'Get-DbaConnection',
         'Get-DbaCpuRingBuffer',
         'Get-DbaCpuUsage',

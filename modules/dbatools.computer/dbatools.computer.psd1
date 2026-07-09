@@ -30,7 +30,8 @@
         'Get-DbaMsdtc',
         'Get-DbaPrivilege',
         'Get-DbaProductKey',
-        'Get-DbaFeature'
+        'Get-DbaFeature',
+        'Get-DbaComputerCertificate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
