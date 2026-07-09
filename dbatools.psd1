@@ -303,7 +303,6 @@
         'Get-DbaExecutionPlan',
         'Get-DbaExtendedProtection',
         'Get-DbaExternalProcess',
-        'Get-DbaFeature',
         'Get-DbaFile',
         'Get-DbaFilestream',
         'Get-DbaFirewallRule',

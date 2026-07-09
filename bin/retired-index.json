@@ -69,6 +69,11 @@
     "retiredPath": "private/retired/Get-DbaDiskSpace.ps1",
     "flippedUtc": "2026-07-06T14:30:26Z"
   },
+  "Get-DbaFeature": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaFeature.ps1",
+    "flippedUtc": "2026-07-09T20:23:10Z"
+  },
   "Get-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaForceNetworkEncryption.ps1",
