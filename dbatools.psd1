@@ -603,7 +603,6 @@
         'Set-DbaMaxMemory',
         'Set-DbaNetworkCertificate',
         'Set-DbaNetworkConfiguration',
-        'Set-DbaPowerPlan',
         'Set-DbaPrivilege',
         'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
