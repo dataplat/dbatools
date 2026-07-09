@@ -28,6 +28,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns at least one named instance if more than one result is returned" {
+            if (@($results).Count -le 1) {
+                Set-ItResult -Skipped -Because "only one instance was returned, so no named instance is expected"
+            }
             $named = $results | Where-Object SqlInstance -match '\\'
             $named.SqlInstance.Count -gt 0 | Should -BeTrue
         }
