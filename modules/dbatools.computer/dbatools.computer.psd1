@@ -36,7 +36,8 @@
         'Get-DbaNetworkEncryption',
         'Test-DbaPowerPlan',
         'Test-DbaSpn',
-        'Get-DbaRegistryRoot'
+        'Get-DbaRegistryRoot',
+        'Get-DbaInstalledPatch'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

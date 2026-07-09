@@ -309,7 +309,6 @@
         'Get-DbaHideInstance',
         'Get-DbaInstanceAudit',
         'Get-DbaInstanceAuditSpecification',
-        'Get-DbaInstalledPatch',
         'Get-DbaInstanceInstallDate',
         'Get-DbaInstanceProtocol',
         'Get-DbaInstanceTrigger',
