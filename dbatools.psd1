@@ -328,7 +328,6 @@
         'Get-DbaMemoryCondition',
         'Get-DbaMemoryUsage',
         'Get-DbaModule',
-        'Get-DbaMsdtc',
         'Get-DbaNetworkActivity',
         'Get-DbaNetworkCertificate',
         'Get-DbaNetworkEncryption',

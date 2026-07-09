@@ -89,6 +89,11 @@
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",
     "flippedUtc": "2026-07-06T09:20:21Z"
   },
+  "Get-DbaMsdtc": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaMsdtc.ps1",
+    "flippedUtc": "2026-07-09T19:27:51Z"
+  },
   "Get-DbaNetworkConfiguration": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaNetworkConfiguration.ps1",

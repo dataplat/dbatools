@@ -26,7 +26,8 @@
         'Get-DbaComputerSystem',
         'Get-DbaClientProtocol',
         'Get-DbaLocaleSetting',
-        'Get-DbaForceNetworkEncryption'
+        'Get-DbaForceNetworkEncryption',
+        'Get-DbaMsdtc'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
