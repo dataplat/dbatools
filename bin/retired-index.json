@@ -1,4 +1,9 @@
 {
+  "Backup-DbaComputerCertificate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Backup-DbaComputerCertificate.ps1",
+    "flippedUtc": "2026-07-09T23:36:32Z"
+  },
   "Connect-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",

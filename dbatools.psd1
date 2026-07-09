@@ -83,7 +83,6 @@
         'Add-DbaRegServer',
         'Add-DbaRegServerGroup',
         'Add-DbaServerRoleMember',
-        'Backup-DbaComputerCertificate',
         'Backup-DbaDatabase',
         'Test-DbaBackupEncrypted',
         'Backup-DbaDbCertificate',
