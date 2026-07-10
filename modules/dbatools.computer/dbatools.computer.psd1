@@ -58,7 +58,8 @@
         'Remove-DbaFirewallRule',
         'Get-DbaKbUpdate',
         'Save-DbaKbUpdate',
-        'Test-DbaKerberos'
+        'Test-DbaKerberos',
+        'Invoke-DbaAdvancedUpdate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
