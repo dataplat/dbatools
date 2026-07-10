@@ -30,6 +30,11 @@ function Get-DbaAgDatabase {
         Specifies one or more databases to exclude from the results using exact name matching.
         Use this to filter out specific databases like test or staging environments from your results.
 
+    .PARAMETER Pattern
+        Specifies a pattern for filtering databases using regular expressions.
+        Use this when you need to match databases by pattern, such as "^dbatools_" or ".*_prod$".
+        This parameter supports standard .NET regular expression syntax.
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup via pipeline input.
         Use this when you want to chain commands to get database details from already retrieved availability groups.
@@ -118,6 +123,12 @@ function Get-DbaAgDatabase {
         Returns all the databases in each availability group found on sql2017a, excluding TestDB and StagingDB.
 
     .EXAMPLE
+        PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a -Pattern "^dbatools_"
+
+        Returns all databases in each availability group found on sql2017a that match the regex pattern "^dbatools_" (e.g., dbatools_example1, dbatools_example2)
+
+
+    .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint | Get-DbaAgDatabase -Database Sharepoint_Config
 
         Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
@@ -129,10 +140,22 @@ function Get-DbaAgDatabase {
         [string[]]$AvailabilityGroup,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
+        [string[]]$Pattern,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        # Helper function to test if a name matches any of the provided regex patterns
+        $matchesPattern = {
+            param($name, $patterns)
+            if (!$patterns) { return $true }
+            foreach ($pattern in $patterns) {
+                if ($name -match $pattern) { return $true }
+            }
+            return $false
+        }
+    }
     process {
         if (Test-Bound -Not SqlInstance, InputObject) {
             Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
@@ -146,6 +169,7 @@ function Get-DbaAgDatabase {
         foreach ($db in $InputObject.AvailabilityDatabases) {
             if ($Database -and $db.Name -notin $Database) { continue }
             if ($ExcludeDatabase -and $db.Name -in $ExcludeDatabase) { continue }
+            if ($Pattern -and -not (& $matchesPattern $db.Name $Pattern)) { continue }
             $ag = $db.Parent
             $server = $db.Parent.Parent
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
