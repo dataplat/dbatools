@@ -538,7 +538,6 @@
         'Remove-DbaRegServerGroup',
         'Remove-DbaRgResourcePool',
         'Remove-DbaServerRole',
-        'Remove-DbaSpn',
         'Remove-DbaTrace',
         'Remove-DbaXESession',
         'Rename-DbaDatabase',

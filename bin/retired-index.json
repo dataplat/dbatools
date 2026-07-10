@@ -314,6 +314,11 @@
     "retiredPath": "private/retired/Remove-DbaNetworkCertificate.ps1",
     "flippedUtc": "2026-07-10T02:51:35Z"
   },
+  "Remove-DbaSpn": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Remove-DbaSpn.ps1",
+    "flippedUtc": "2026-07-10T20:34:30Z"
+  },
   "Restore-DbaDatabase": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
