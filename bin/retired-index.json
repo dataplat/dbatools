@@ -194,6 +194,11 @@
     "retiredPath": "private/retired/Get-DbaService.ps1",
     "flippedUtc": "2026-07-07T01:08:57Z"
   },
+  "Get-DbaSpn": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaSpn.ps1",
+    "flippedUtc": "2026-07-10T01:45:09Z"
+  },
   "Get-DbaSsisExecutionHistory": {
     "module": "dbatools.ssis",
     "retiredPath": "private/retired/Get-DbaSsisExecutionHistory.ps1",

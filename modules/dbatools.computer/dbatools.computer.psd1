@@ -46,7 +46,8 @@
         'Disable-DbaForceNetworkEncryption',
         'New-DbaComputerCertificateSigningRequest',
         'New-DbaComputerCertificate',
-        'Get-DbaNetworkCertificate'
+        'Get-DbaNetworkCertificate',
+        'Get-DbaSpn'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
