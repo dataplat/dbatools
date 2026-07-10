@@ -129,6 +129,11 @@
     "retiredPath": "private/retired/Get-DbaMsdtc.ps1",
     "flippedUtc": "2026-07-09T19:27:51Z"
   },
+  "Get-DbaNetworkCertificate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaNetworkCertificate.ps1",
+    "flippedUtc": "2026-07-10T01:11:54Z"
+  },
   "Get-DbaNetworkConfiguration": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaNetworkConfiguration.ps1",

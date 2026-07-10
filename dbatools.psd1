@@ -322,7 +322,6 @@
         'Get-DbaMemoryUsage',
         'Get-DbaModule',
         'Get-DbaNetworkActivity',
-        'Get-DbaNetworkCertificate',
         'Get-DbaOpenTransaction',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',
