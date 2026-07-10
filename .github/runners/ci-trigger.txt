@@ -1,2 +1,2 @@
 ci-azure validation trigger
-run: 4 (FULL SUITE)
+run: 5 (FULL SUITE, clean fleet, spent-VM guard)
