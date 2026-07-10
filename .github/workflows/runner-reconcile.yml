@@ -148,10 +148,17 @@ jobs:
             esac
             echo "registering $VM"
             TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
-            az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-              --scripts @/tmp/bootstrap-runner.ps1 \
-              --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
-              --query "value[0].message" -o tsv | tail -3 &
+            (
+              OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
+                --scripts @/tmp/bootstrap-runner.ps1 \
+                --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
+                --query "value[0].message" -o tsv || true)
+              echo "$OUT" | tail -3
+              if echo "$OUT" | grep -q "SPENT-VM"; then
+                echo "$VM already served a job -- deleting instead of reusing"
+                az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
+              fi
+            ) &
           done
           wait
 
