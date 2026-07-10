@@ -84,6 +84,11 @@ Describe $CommandName -Tag IntegrationTests {
     # So we test at discovery time if dynamic ports are used and skip the tests if so.
     $isUsingDynamicPort = (Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpAddresses).TcpDynamicPorts -ne ''
 
+    # A default instance on the standard port yields ONLY the Engine rule (no Browser, and no remote DAC
+    # on this lab), so the Browser/second-rule assertions are skipped when InstanceSingle is a default
+    # instance. Named instances (e.g. on AppVeyor) still run the full set.
+    $isDefaultInstance = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName -eq "MSSQLSERVER"
+
     Context "RuleType Program (default - executable-based rules)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -107,25 +112,26 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "creates at least two firewall rules" {
+        It "creates at least two firewall rules" -Skip:$isDefaultInstance {
             $resultsNew.Count | Should -BeGreaterOrEqual 2
         }
 
         It "creates first firewall rule for SQL Server instance" {
+            $expectedDisplayName = if ($instanceName -eq "MSSQLSERVER") { "SQL Server default instance" } else { "SQL Server instance $instanceName" }
             $resultsNew[0].Successful | Should -Be $true
             $resultsNew[0].Type | Should -Be "Engine"
-            $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNew[0].DisplayName | Should -Be $expectedDisplayName
             $resultsNew[0].Status | Should -Be "The rule was successfully created."
         }
 
-        It "creates second firewall rule for SQL Server Browser" {
+        It "creates second firewall rule for SQL Server Browser" -Skip:$isDefaultInstance {
             $resultsNew[1].Successful | Should -Be $true
             $resultsNew[1].Type | Should -Be "Browser"
             $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
             $resultsNew[1].Status | Should -Be "The rule was successfully created."
         }
 
-        It "returns at least two firewall rules" {
+        It "returns at least two firewall rules" -Skip:$isDefaultInstance {
             $resultsGet.Count | Should -BeGreaterOrEqual 2
         }
 
@@ -135,7 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultInstance.Program | Should -BeLike "*sqlservr.exe"
         }
 
-        It "returns firewall rule for SQL Server Browser with Program" {
+        It "returns firewall rule for SQL Server Browser with Program" -Skip:$isDefaultInstance {
             $resultBrowser = $resultsGet | Where-Object Type -eq "Browser"
             # Browser in Program mode should have Protocol = Any and Program path
             if ($resultBrowser.Program) {
@@ -148,7 +154,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "removes firewall rule for Browser" {
+        It "removes firewall rule for Browser" -Skip:$isDefaultInstance {
             $resultsRemoveBrowser.Type | Should -Be "Browser"
             $resultsRemoveBrowser.IsRemoved | Should -Be $true
             $resultsRemoveBrowser.Status | Should -Be "The rule was successfully removed."
@@ -183,18 +189,19 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "creates at least two firewall rules" {
+        It "creates at least two firewall rules" -Skip:$isDefaultInstance {
             $resultsNewPort.Count | Should -BeGreaterOrEqual 2
         }
 
         It "creates first firewall rule for SQL Server instance" {
+            $expectedDisplayName = if ($instanceName -eq "MSSQLSERVER") { "SQL Server default instance" } else { "SQL Server instance $instanceName" }
             $resultsNewPort[0].Successful | Should -Be $true
             $resultsNewPort[0].Type | Should -Be "Engine"
-            $resultsNewPort[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNewPort[0].DisplayName | Should -Be $expectedDisplayName
             $resultsNewPort[0].Status | Should -Be "The rule was successfully created."
         }
 
-        It "creates second firewall rule for SQL Server Browser" {
+        It "creates second firewall rule for SQL Server Browser" -Skip:$isDefaultInstance {
             $resultsNewPort[1].Successful | Should -Be $true
             $resultsNewPort[1].Type | Should -Be "Browser"
             $resultsNewPort[1].DisplayName | Should -Be "SQL Server Browser"
@@ -207,7 +214,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultInstance.LocalPort | Should -Not -BeNullOrEmpty
         }
 
-        It "returns firewall rule for SQL Server Browser with port 1434" {
+        It "returns firewall rule for SQL Server Browser with port 1434" -Skip:$isDefaultInstance {
             $resultBrowser = $resultsGetPort | Where-Object Type -eq "Browser"
             $resultBrowser.Protocol | Should -Be "UDP"
             $resultBrowser.LocalPort | Should -Be "1434"
