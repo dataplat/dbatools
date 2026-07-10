@@ -42,7 +42,8 @@
         'Backup-DbaComputerCertificate',
         'Remove-DbaComputerCertificate',
         'Add-DbaComputerCertificate',
-        'Enable-DbaForceNetworkEncryption'
+        'Enable-DbaForceNetworkEncryption',
+        'Disable-DbaForceNetworkEncryption'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -138,7 +138,6 @@
         'Copy-DbaXESessionTemplate',
         'Disable-DbaAgHadr',
         'Disable-DbaFilestream',
-        'Disable-DbaForceNetworkEncryption',
         'Disable-DbaHideInstance',
         'Disable-DbaStartupProcedure',
         'Disable-DbaTraceFlag',
