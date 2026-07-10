@@ -28,7 +28,8 @@ jobs:
       - name: Dispatch runner-reconcile
         env:
           GH_TOKEN: ${{ github.token }}
-        # dispatch on the pushed branch, not development: until PR #10414 merges,
-        # runner-reconcile.yml does not exist on development, and the pushed branch
-        # always carries the same-vintage reconcile as the boost that nudged it
-        run: gh workflow run runner-reconcile.yml --ref "${{ github.ref_name }}" -R "${{ github.repository }}"
+        # TEMP until PR #10414 merges (then flip back to development): reconcile
+        # does not exist on development right now, and the Azure OIDC federated
+        # credential only trusts specific branch subjects, so every nudge targets
+        # vmssredux -- the one feature branch with a matching credential
+        run: gh workflow run runner-reconcile.yml --ref vmssredux -R "${{ github.repository }}"
