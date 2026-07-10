@@ -111,6 +111,9 @@ jobs:
       - name: Run CI pipeline (prep, instances, pester, post)
         shell: powershell
         run: |
+          # GitHub's powershell shell injects ErrorActionPreference=Stop; AppVeyor runs
+          # its build script lines under Continue, so restore AppVeyor semantics
+          $ErrorActionPreference = "Continue"
           . C:\github\dbatools\tests\gha.shim.ps1
           Invoke-GhaStage -Script "tests\appveyor.prep.ps1"
           Invoke-GhaStage -Script "tests\appveyor.sqlserver.ps1"
