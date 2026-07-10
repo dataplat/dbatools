@@ -3,11 +3,19 @@
 # node20-based actions (checkout, etc.) will not start on Server 2012, so any job
 # that must stay portable to the legacy pool has to remain action-free.
 #
-# Dispatch: gh workflow run runner-gate-hello.yml --ref <branch> -R dataplat/dbatools
+# workflow_dispatch only resolves against the default branch, so while this file
+# lives on a feature branch the gate is fired by touching the trigger file below
+# (markdown on purpose: every other push-triggered workflow path-ignores *.md, so
+# a trigger commit runs this workflow and nothing else).
 name: runner-gate-hello
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - vmssredux
+    paths:
+      - ".github/runners/phase0/gate-b-trigger.md"
 
 permissions:
   contents: read
