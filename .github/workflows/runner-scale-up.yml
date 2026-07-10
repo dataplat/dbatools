@@ -65,7 +65,7 @@ jobs:
           IDLE=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")
 
-          INSTANCES=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_')])" -o tsv)
+          INSTANCES=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_')])" -o tsv 2>/dev/null || echo 0)
 
           NEED=$(( QUEUED - IDLE ))
           [ "$NEED" -lt 0 ] && NEED=0
@@ -87,7 +87,7 @@ jobs:
 
           # Wait for any scale-out to finish provisioning
           for attempt in $(seq 1 20); do
-            NOT_READY=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_') && provisioningState != 'Succeeded'])" -o tsv)
+            NOT_READY=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_') && provisioningState != 'Succeeded'])" -o tsv 2>/dev/null || echo 0)
             [ "$NOT_READY" = "0" ] && break
             echo "waiting: $NOT_READY instance(s) still provisioning"
             sleep 20
@@ -97,7 +97,7 @@ jobs:
           # otherwise wait for the (often tardy) reconcile cron
           for sweep in 1 2; do
             REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-            VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv)
+            VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv 2>/dev/null || true)
 
             MISSED=0
             for VM in $VMS; do
