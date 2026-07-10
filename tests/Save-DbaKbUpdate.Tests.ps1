@@ -24,15 +24,19 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
+    # These two regressions assert SOURCE TEXT of the PS implementation; a compiled cmdlet has no
+    # ScriptBlock to inspect, so they only apply while the command is still a script function. The
+    # behavior itself (BITS -ErrorAction Stop + the UseWebRequest gate + the IWR fallback) is
+    # covered end-to-end by the IntegrationTests downloads.
     Context "Implementation regression" {
-        It "passes ErrorAction Stop to Start-BitsTransfer so fallback errors are catchable" {
+        It "passes ErrorAction Stop to Start-BitsTransfer so fallback errors are catchable" -Skip:((Get-Command $CommandName).CommandType -ne "Function") {
             $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
             $bitsTransferCall = "Start-BitsTransfer -Source " + [char]36 + "link -Destination " + [char]36 + "file -ErrorAction Stop"
 
             $commandText | Should -Match ([regex]::Escape($bitsTransferCall))
         }
 
-        It "checks UseWebRequest before selecting the BITS download path" {
+        It "checks UseWebRequest before selecting the BITS download path" -Skip:((Get-Command $CommandName).CommandType -ne "Function") {
             $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
             $bitsTransferCondition = "if (-not " + [char]36 + "UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore))"
             $webRequestCall = "Invoke-TlsWebRequest -Uri " + [char]36 + "link -OutFile " + [char]36 + "file -ErrorAction Stop"
