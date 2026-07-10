@@ -530,7 +530,6 @@
         'Remove-DbaDbUser',
         'Remove-DbaDbView',
         'Remove-DbaEndpoint',
-        'Remove-DbaFirewallRule',
         'Remove-DbaLinkedServer',
         'Remove-DbaLogin',
         'Remove-DbaNetworkCertificate',
