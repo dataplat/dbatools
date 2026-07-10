@@ -26,6 +26,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: ci-azure-${{ github.ref }}
@@ -132,3 +133,17 @@ jobs:
               "- $($_.Name) ($([math]::Round($_.Length / 1KB, 1)) KB)" >> $env:GITHUB_STEP_SUMMARY
             }
           }
+
+      - name: Nudge fleet reconcile (prompt spent-VM replacement)
+        if: always()
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $splatNudge = @{
+            Method  = "Post"
+            Uri     = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
+            Headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
+            Body    = (ConvertTo-Json -InputObject @{ ref = "development" })
+          }
+          try { Invoke-RestMethod @splatNudge } catch { Write-Host "nudge skipped: $($_.Exception.Message)" }
