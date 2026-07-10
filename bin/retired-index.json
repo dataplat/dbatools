@@ -329,6 +329,11 @@
     "retiredPath": "private/retired/Test-DbaComputerCertificateExpiration.ps1",
     "flippedUtc": "2026-07-09T20:46:28Z"
   },
+  "Test-DbaNetworkCertificate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Test-DbaNetworkCertificate.ps1",
+    "flippedUtc": "2026-07-10T02:43:36Z"
+  },
   "Test-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaPowerPlan.ps1",
