@@ -20,3 +20,28 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When listing SQL Server SPNs for a computer" {
+        BeforeAll {
+            $results = @(Get-DbaSpn -ComputerName $TestConfig.InstanceSingle.Split("\")[0] -WarningVariable warn 3> $null)
+        }
+
+        It "Should run without warning" {
+            $warn | Should -BeNullOrEmpty
+        }
+
+        It "Should return at least one MSSQLSvc SPN" {
+            $results.Count | Should -BeGreaterThan 0
+        }
+
+        It "Should have the expected properties" {
+            $expectedProps = @("Input", "AccountName", "ServiceClass", "Port", "SPN")
+            foreach ($result in $results) {
+                ($result.PsObject.Properties.Name | Sort-Object) | Should -BeExactly ($expectedProps | Sort-Object)
+                $result.ServiceClass | Should -BeExactly "MSSQLSvc"
+                $result.SPN | Should -Match "^MSSQLSvc/"
+            }
+        }
+    }
+}
