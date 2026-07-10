@@ -81,10 +81,7 @@ $configArgs = @(
     "--labels", $Labels,
     "--work", "_work",
     "--ephemeral",
-    "--disableupdate",
-    "--runasservice",
-    "--windowslogonaccount", ".\appveyor",
-    "--windowslogonpassword", "Password12!"
+    "--disableupdate"
 )
 & .\config.cmd @configArgs 2>&1 | ForEach-Object { "$_" }
 "config exit: $LASTEXITCODE"
@@ -92,7 +89,26 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Content -Path "C:\github-runner\.bootstrapped-once" -Value (Get-Date -Format o)
+$ErrorActionPreference = "Stop"
 
-Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | ForEach-Object {
-    "service: $($_.Name) [$($_.Status)]"
+# AppVeyor runs builds in an interactive desktop session (BITS transfers, used by
+# Copy-DbaBackupDevice among others, fail in service sessions). Mirror that: the
+# appveyor user autologs on after a reboot and a logon task starts the runner there.
+$winlogonPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+Set-ItemProperty -Path $winlogonPath -Name AutoAdminLogon -Value "1" -Type String
+Set-ItemProperty -Path $winlogonPath -Name DefaultUserName -Value "appveyor" -Type String
+Set-ItemProperty -Path $winlogonPath -Name DefaultPassword -Value "Password12!" -Type String
+Set-ItemProperty -Path $winlogonPath -Name DefaultDomainName -Value "." -Type String
+
+$splatTaskPieces = @{
+    Action    = New-ScheduledTaskAction -Execute "C:\github-runner\run.cmd" -WorkingDirectory "C:\github-runner"
+    Trigger   = New-ScheduledTaskTrigger -AtLogOn -User "appveyor"
+    Principal = New-ScheduledTaskPrincipal -UserId "appveyor" -LogonType Interactive -RunLevel Highest
+    Settings  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries
+    TaskName  = "gha-runner-interactive"
+    Force     = $true
 }
+$null = Register-ScheduledTask @splatTaskPieces
+
+"runner configured; rebooting into the interactive session"
+& shutdown.exe /r /t 8 /c "runner bootstrap reboot"
