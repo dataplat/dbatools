@@ -145,7 +145,6 @@
         'Dismount-DbaDatabase',
         'Enable-DbaAgHadr',
         'Enable-DbaFilestream',
-        'Enable-DbaForceNetworkEncryption',
         'Enable-DbaHideInstance',
         'Enable-DbaStartupProcedure',
         'Enable-DbaTraceFlag',

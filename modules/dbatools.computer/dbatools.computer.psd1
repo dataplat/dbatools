@@ -41,7 +41,8 @@
         'Set-DbaPowerPlan',
         'Backup-DbaComputerCertificate',
         'Remove-DbaComputerCertificate',
-        'Add-DbaComputerCertificate'
+        'Add-DbaComputerCertificate',
+        'Enable-DbaForceNetworkEncryption'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
