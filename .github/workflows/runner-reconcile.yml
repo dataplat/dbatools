@@ -146,7 +146,7 @@ jobs:
             if [ -n "$DELETE" ]; then
               echo "deleting $VM -- $DELETE"
               [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-              az vm delete -g "$RG" -n "$VM" --yes --no-wait
+              az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
             else
               KEEP=$((KEEP + 1))
             fi
@@ -177,7 +177,7 @@ jobs:
               R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .id")
               echo "trim: deleting idle $VM"
               [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-              az vm delete -g "$RG" -n "$VM" --yes --no-wait
+              az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
               TRIM=$(( TRIM - 1 ))
             done
           fi
