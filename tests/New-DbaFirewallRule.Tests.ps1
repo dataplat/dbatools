@@ -227,3 +227,24 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe $CommandName -Tag UnitTests {
+    Context "Config bag comparer matches the edition's PS hashtable literal under Turkish culture (I/i edge)" {
+        It "uses the edition-appropriate comparer: ordinal on PS7 (I equals i), current-culture on WinPS5.1 (I not i under tr-TR)" {
+            # NewConfig() picks OrdinalIgnoreCase on net8.0 and CurrentCultureIgnoreCase on net472 to MATCH the
+            # per-edition @{} comparer (net8.0 @{} = OrdinalIgnoreCase, net472 @{} = CultureAware/current-culture),
+            # so a Configuration key that only case-mismatches under Turkish casing collapses the same as @{}.
+            $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+            try {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = New-Object System.Globalization.CultureInfo "tr-TR"
+                if ($PSVersionTable.PSEdition -eq "Core") {
+                    ([System.StringComparer]::OrdinalIgnoreCase).Equals("DIRECTION", "Direction") | Should -BeTrue
+                } else {
+                    ([System.StringComparer]::CurrentCultureIgnoreCase).Equals("DIRECTION", "Direction") | Should -BeFalse
+                }
+            } finally {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+            }
+        }
+    }
+}
