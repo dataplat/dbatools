@@ -107,7 +107,6 @@ if (-not $SkipVmss) {
             "--ephemeral-os-disk", "true",
             "--ephemeral-os-disk-placement", "ResourceDisk",
             "--os-disk-caching", "ReadOnly",
-            "--upgrade-policy-mode", "Manual",
             "--output", "none"
         )
         az @splatVmssArgs --only-show-errors

@@ -23,8 +23,8 @@ concurrency:
 env:
   RG: ${{ vars.CI_AZURE_RG }}
   LEGACY_IMAGE: /subscriptions/${{ vars.AZURE_SUBSCRIPTION_ID }}/resourceGroups/DBATOOLS-CI-IMAGES/providers/Microsoft.Compute/galleries/dbatoolsGallery/images/dbatools-golden-image/versions/1.0.0
-  RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}
-  ZIP_BASE: https://codeload.github.com/${{ github.repository }}/zip/refs/heads/${{ github.event.repository.default_branch }}
+  RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
+  ZIP_BASE: https://codeload.github.com/${{ github.repository }}/zip/refs/heads/${{ github.ref_name }}
 
 jobs:
   ps3-smoke:
