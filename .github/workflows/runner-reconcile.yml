@@ -73,7 +73,7 @@ jobs:
           RUNNERS_JSON=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
           VMS_JSON=$(az vm list -g "$RG" --show-details \
-            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json)
+            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
 
           QUEUED=$(gh api "repos/$REPO/actions/runs?status=queued&per_page=100" \
             --jq '[.workflow_runs[] | select(.name == "ci-azure")] | length')
@@ -87,7 +87,7 @@ jobs:
           register_unregistered() {
             local registered vms vm token
             registered=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-            vms=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv)
+            vms=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv 2>/dev/null || true)
             for vm in $vms; do
               case " $registered " in
                 *" $vm "*) continue ;;
@@ -118,7 +118,7 @@ jobs:
           RUNNERS_JSON=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
           VMS_JSON=$(az vm list -g "$RG" --show-details \
-            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json)
+            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
 
           # ---- pass 2: delete spent/zombie instances ----------------------------
           KEEP=0
@@ -183,7 +183,7 @@ jobs:
           fi
 
           # ---- pass 4: drop runner records with no matching VM -----------------
-          VMS_NOW=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv | tr '\n' ' ')
+          VMS_NOW=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv 2>/dev/null | tr '\n' ' ' || true)
           for R_NAME in $(echo "$RUNNERS_JSON" | jq -r '.[] | select(.busy != true) | .name'); do
             case " $VMS_NOW " in
               *" $R_NAME "*) continue ;;
