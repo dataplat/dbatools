@@ -42,11 +42,13 @@ Write-Output "== Defender exclusions for hot paths"
 Add-MpPreference -ExclusionPath "C:\github", "C:\Temp", "C:\github-runner", "C:\Program Files\Microsoft SQL Server"
 
 Write-Output "== Git for Windows"
-$gitExe = "C:\Temp\git-setup.exe"
-$webClient.DownloadFile($gitUrl, $gitExe)
-$gitArgs = "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-"
-Start-Process -FilePath $gitExe -ArgumentList $gitArgs -Wait
-Remove-Item -Path $gitExe -Force
+if (-not (Test-Path -Path "C:\Program Files\Git\cmd\git.exe")) {
+    $gitExe = "C:\Temp\git-setup.exe"
+    $webClient.DownloadFile($gitUrl, $gitExe)
+    $gitArgs = "/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-"
+    Start-Process -FilePath $gitExe -ArgumentList $gitArgs -Wait
+    Remove-Item -Path $gitExe -Force
+}
 $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 if ($machinePath -notlike "*Git\usr\bin*") {
     # unix2dos and friends live in usr\bin; appveyor.yml before_test uses unix2dos
@@ -56,7 +58,9 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 git --version
 
 Write-Output "== Chocolatey (prep installs codecov through it)"
-Invoke-Expression -Command $webClient.DownloadString("https://community.chocolatey.org/install.ps1")
+if (-not (Test-Path -Path "C:\ProgramData\chocolatey\bin\choco.exe")) {
+    Invoke-Expression -Command $webClient.DownloadString("https://community.chocolatey.org/install.ps1")
+}
 
 Write-Output "== NuGet provider + trusted PSGallery (so Install-Module never prompts)"
 $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
@@ -68,7 +72,16 @@ Install-Module -Name PSScriptAnalyzer -MaximumVersion 1.18.2 -Force -SkipPublish
 
 Write-Output "== dbatools clone (development) + dbatools.library"
 if (-not (Test-Path -Path "C:\github\dbatools\dbatools.psd1")) {
-    git clone --branch development https://github.com/dataplat/dbatools.git C:\github\dbatools 2>&1 | Select-Object -Last 2
+    if (Test-Path -Path "C:\github\dbatools") {
+        Remove-Item -Path "C:\github\dbatools" -Recurse -Force
+    }
+    # git writes progress to stderr, which must not become a terminating error
+    $ErrorActionPreference = "Continue"
+    git clone --quiet --branch development https://github.com/dataplat/dbatools.git C:\github\dbatools 2>&1 | Out-Null
+    $ErrorActionPreference = "Stop"
+    if (-not (Test-Path -Path "C:\github\dbatools\dbatools.psd1")) {
+        throw "dbatools clone failed"
+    }
 }
 & C:\github\dbatools\.github\scripts\install-dbatools-library.ps1 -Scope AllUsers
 $library = Get-Module -Name dbatools.library -ListAvailable | Select-Object -First 1
