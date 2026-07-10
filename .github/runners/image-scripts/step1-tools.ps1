@@ -35,6 +35,9 @@ Write-Output "== network profile + WinRM (prep runs Set-WSManQuickConfig)"
 Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
+Write-Output "== firewall off (AppVeyor parity; the NSG still denies all inbound)"
+Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled False
+
 Write-Output "== local appveyor admin user (runner service account, AppVeyor parity)"
 if (-not (Get-LocalUser -Name appveyor -ErrorAction SilentlyContinue)) {
     $securePass = ConvertTo-SecureString -String "Password12!" -AsPlainText -Force
