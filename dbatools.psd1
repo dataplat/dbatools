@@ -309,7 +309,6 @@
         'Get-DbaInstanceTrigger',
         'Get-DbaInstanceUserOption',
         'Get-DbaIoLatency',
-        'Get-DbaKbUpdate',
         'Get-DbaLastBackup',
         'Get-DbaLastGoodCheckDb',
         'Get-DbaLatchStatistic',

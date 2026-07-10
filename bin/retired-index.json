@@ -119,6 +119,11 @@
     "retiredPath": "private/retired/Get-DbaInstanceProperty.ps1",
     "flippedUtc": "2026-07-06T10:33:23Z"
   },
+  "Get-DbaKbUpdate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaKbUpdate.ps1",
+    "flippedUtc": "2026-07-10T21:47:00Z"
+  },
   "Get-DbaLocaleSetting": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaLocaleSetting.ps1",
