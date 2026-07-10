@@ -61,8 +61,11 @@ function Get-SmokeInstancePort {
     $instanceId = $instanceKey.$InstanceName
     if (-not $instanceId) { return $null }
     $tcpKey = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$instanceId\MSSQLServer\SuperSocketNetLib\Tcp\IPAll" -ErrorAction SilentlyContinue
-    if ($tcpKey.TcpPort) { return ($tcpKey.TcpPort -split ",")[0] }
-    if ($tcpKey.TcpDynamicPorts) { return ($tcpKey.TcpDynamicPorts -split ",")[0] }
+    # dynamic ports read 0 until the engine has started and written the assigned port back
+    $staticPort = ($tcpKey.TcpPort -split ",")[0]
+    if ($staticPort -and $staticPort -ne "0") { return $staticPort }
+    $dynamicPort = ($tcpKey.TcpDynamicPorts -split ",")[0]
+    if ($dynamicPort -and $dynamicPort -ne "0") { return $dynamicPort }
     return $null
 }
 
@@ -119,8 +122,10 @@ if (-not $LibraryVersion) {
         $LibraryVersion = (Get-Content -Path $versionFile -Raw | ConvertFrom-Json).version
     }
 }
+$libraryManifest = $null
 $library = Get-Module -Name dbatools.library -ListAvailable | Select-Object -First 1
 if ($library) {
+    $libraryManifest = $library.Path
     Write-SmokeResult -Name "dbatools.library" -Ok -Detail "(v$($library.Version) already installed)"
 } else {
     try {
@@ -135,9 +140,26 @@ if ($library) {
             Remove-Item -Path $moduleDir -Recurse -Force
         }
         [System.IO.Compression.ZipFile]::ExtractToDirectory($nupkgPath, $moduleDir)
+        $libraryManifest = Join-Path $moduleDir "dbatools.library.psd1"
+        if (-not (Test-Path -Path $libraryManifest)) {
+            $libraryManifest = (Get-ChildItem -Path $moduleDir -Filter "dbatools.library.psd1" -Recurse | Select-Object -First 1).FullName
+        }
         Write-SmokeResult -Name "dbatools.library" -Ok -Detail "(v$LibraryVersion from PSGallery)"
     } catch {
         Write-SmokeResult -Name "dbatools.library" -Detail $_.Exception.Message
+    }
+}
+
+# PS 3.0 does not search Program Files for modules (that arrived in PS 4.0), so
+# RequiredModules cannot resolve the library on its own -- load it explicitly first
+if ($libraryManifest) {
+    try {
+        Import-Module -Name $libraryManifest -ErrorAction Stop
+        Write-SmokeResult -Name "Import dbatools.library" -Ok -Detail "(explicit path)"
+    } catch {
+        Write-SmokeResult -Name "Import dbatools.library" -Detail $_.Exception.Message
+        "[SUMMARY] pass=$($script:passCount) fail=$($script:failCount)"
+        exit 1
     }
 }
 
@@ -165,6 +187,10 @@ if (Get-Command -Name Set-DbatoolsInsecureConnection -ErrorAction SilentlyContin
 if ($SkipConnect) {
     "[SKIP] instance battery (SkipConnect)"
 } else {
+    if ($Instance.Count -eq 1 -and $Instance[0] -match ",") {
+        # run-command passes parameters as plain strings, so allow a comma-joined list
+        $Instance = $Instance[0] -split ","
+    }
     if (-not $Instance) {
         $Instance = Get-Service -Name "MSSQL`$*" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name.Split("$")[1] }
     }
@@ -177,23 +203,34 @@ if ($SkipConnect) {
             $service = Get-Service -Name $serviceName -ErrorAction Stop
             if ($service.Status -ne "Running") {
                 Set-Service -Name $serviceName -StartupType Manual -ErrorAction SilentlyContinue
-                Start-Service -Name $serviceName -ErrorAction Stop
-                $deadline = (Get-Date).AddSeconds(90)
+                Start-Service -Name $serviceName -ErrorAction SilentlyContinue
+                $deadline = (Get-Date).AddSeconds(180)
                 while ((Get-Service -Name $serviceName).Status -ne "Running" -and (Get-Date) -lt $deadline) {
-                    Start-Sleep -Seconds 3
+                    Start-Sleep -Seconds 5
                 }
-                # give the engine a moment to finish recovery before connecting
-                Start-Sleep -Seconds 5
+            }
+            if ((Get-Service -Name $serviceName).Status -ne "Running") {
+                Write-SmokeResult -Name "$instanceName service" -Detail "(not running after 180s)"
+                continue
             }
         } catch {
             Write-SmokeResult -Name "$instanceName service" -Detail $_.Exception.Message
             continue
         }
 
-        $port = Get-SmokeInstancePort -InstanceName $instanceName
+        # wait for the engine to write its (dynamic) port back to the registry
+        $port = $null
+        $portDeadline = (Get-Date).AddSeconds(120)
+        while (-not $port -and (Get-Date) -lt $portDeadline) {
+            $port = Get-SmokeInstancePort -InstanceName $instanceName
+            if (-not $port) { Start-Sleep -Seconds 5 }
+        }
         if ($port) {
             $target = "localhost,$port"
         } else {
+            # last resort: SQL Browser can resolve localhost\NAME
+            Set-Service -Name "SQLBrowser" -StartupType Manual -ErrorAction SilentlyContinue
+            Start-Service -Name "SQLBrowser" -ErrorAction SilentlyContinue
             $target = "localhost\$instanceName"
         }
 
