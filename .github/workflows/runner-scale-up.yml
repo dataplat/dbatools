@@ -93,26 +93,33 @@ jobs:
             sleep 20
           done
 
-          REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-          VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv)
+# two sweeps: instances that finish provisioning after the first pass would
+          # otherwise wait for the (often tardy) reconcile cron
+          for sweep in 1 2; do
+            REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
+            VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv)
 
-          for VM in $VMS; do
-            case " $REGISTERED " in
-              *" $VM "*) echo "$VM already registered"; continue ;;
-            esac
-            echo "registering $VM"
-            TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
-            (
-              OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-                --scripts @/tmp/bootstrap-runner.ps1 \
-                --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
-                --query "value[0].message" -o tsv || true)
-              echo "$OUT" | tail -5
-              if echo "$OUT" | grep -q "SPENT-VM"; then
-                echo "$VM already served a job -- deleting instead of reusing"
-                az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
-              fi
-            ) &
+            MISSED=0
+            for VM in $VMS; do
+              case " $REGISTERED " in
+                *" $VM "*) continue ;;
+              esac
+              MISSED=$((MISSED + 1))
+              echo "registering $VM (sweep $sweep)"
+              TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
+              (
+                OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
+                  --scripts @/tmp/bootstrap-runner.ps1 \
+                  --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
+                  --query "value[0].message" -o tsv || true)
+                echo "$OUT" | tail -5
+                if echo "$OUT" | grep -q "SPENT-VM"; then
+                  echo "$VM already served a job -- deleting instead of reusing"
+                  az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
+                fi
+              ) &
+            done
+            wait
+            echo "registration sweep $sweep complete ($MISSED handled)"
+            [ "$sweep" = "1" ] && sleep 90
           done
-          wait
-          echo "registration pass complete"
