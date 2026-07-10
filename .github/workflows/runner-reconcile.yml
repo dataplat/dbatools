@@ -17,10 +17,8 @@ on:
   workflow_run:
     workflows: ["ci-azure"]
     types: [completed]
-  # every finished job promptly replaces its spent VM instead of waiting for the
-  # (best-effort, often late) cron; the concurrency group coalesces bursts
-  workflow_job:
-    types: [completed]
+  # ci-azure jobs also nudge this workflow via workflow_dispatch as they finish,
+  # so spent VMs are replaced promptly without waiting for the best-effort cron
   workflow_dispatch:
 
 permissions:
