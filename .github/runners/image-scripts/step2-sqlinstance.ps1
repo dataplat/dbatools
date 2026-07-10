@@ -34,6 +34,14 @@ $logDirVersion = $stepArgs.logDirVersion
 $mediaUrl = $stepArgs.mediaUrl
 $saPassword = "Password12!"
 
+# the smalldisk marketplace image keeps a 30GB partition even on a larger disk
+$partitionMax = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
+$partitionNow = (Get-Partition -DriveLetter C).Size
+if ($partitionMax - $partitionNow -gt 1GB) {
+    Resize-Partition -DriveLetter C -Size $partitionMax
+    Write-Output "extended C: partition to $([math]::Round($partitionMax / 1GB, 0)) GB"
+}
+
 $mediaDir = "C:\media"
 if (-not (Test-Path -Path $mediaDir)) {
     $null = New-Item -Path $mediaDir -ItemType Directory -Force

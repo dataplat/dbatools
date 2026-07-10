@@ -1,0 +1,111 @@
+# Scales the dbatools-runners VMSS up when CI jobs queue, and registers an ephemeral
+# runner on every new instance. Runs on free GitHub-hosted compute in default-branch
+# context only -- runner VMs themselves never hold Azure credentials or the PAT.
+#
+# The CI_RUNNER_PAT secret mints single-use registration tokens (GITHUB_TOKEN cannot).
+# Azure access is OIDC (federated credential on the dbatools-ci-github Entra app); no
+# client secrets exist anywhere in this pipeline.
+name: runner-scale-up
+
+on:
+  workflow_run:
+    workflows: ["ci-azure"]
+    types: [requested]
+  workflow_dispatch:
+    inputs:
+      ensure:
+        description: "Minimum instance count to ensure (defaults to standby floor logic)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: runner-fleet
+  cancel-in-progress: false
+
+jobs:
+  scale-up:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.CI_RUNNER_PAT }}
+      REPO: ${{ github.repository }}
+      RG: ${{ vars.CI_AZURE_RG }}
+      VMSS: ${{ vars.CI_VMSS_NAME }}
+      MAX_RUNNERS: ${{ vars.MAX_RUNNERS }}
+      RUNNER_LABEL: dbatools-modern
+      RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Compute demand and scale out
+        id: scale
+        run: |
+          set -euo pipefail
+
+          # Give the triggering run a moment to materialize its jobs
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            sleep 25
+            QUEUED=$(gh api "repos/$REPO/actions/runs/${{ github.event.workflow_run.id }}/jobs?per_page=100" --paginate \
+              --jq "[.jobs[] | select(.status == \"queued\" or .status == \"waiting\") | select((.labels // []) | index(\"$RUNNER_LABEL\"))] | length")
+          else
+            QUEUED="${{ inputs.ensure }}"
+            QUEUED="${QUEUED:-0}"
+          fi
+
+          IDLE=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
+            --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")
+
+          INSTANCES=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_')])" -o tsv)
+
+          NEED=$(( QUEUED - IDLE ))
+          [ "$NEED" -lt 0 ] && NEED=0
+          TARGET=$(( INSTANCES + NEED ))
+          [ "$TARGET" -gt "$MAX_RUNNERS" ] && TARGET=$MAX_RUNNERS
+
+          echo "queued=$QUEUED idle=$IDLE instances=$INSTANCES target=$TARGET"
+          if [ "$TARGET" -gt "$INSTANCES" ]; then
+            az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$TARGET" --no-wait
+            echo "scaled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scaled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Register runners on unregistered instances
+        run: |
+          set -euo pipefail
+          curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
+
+          # Wait for any scale-out to finish provisioning
+          for attempt in $(seq 1 20); do
+            NOT_READY=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_') && provisioningState != 'Succeeded'])" -o tsv)
+            [ "$NOT_READY" = "0" ] && break
+            echo "waiting: $NOT_READY instance(s) still provisioning"
+            sleep 20
+          done
+
+          REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
+          VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv)
+
+          for VM in $VMS; do
+            case " $REGISTERED " in
+              *" $VM "*) echo "$VM already registered"; continue ;;
+            esac
+            echo "registering $VM"
+            TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
+            az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
+              --scripts @/tmp/bootstrap-runner.ps1 \
+              --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
+              --query "value[0].message" -o tsv | tail -5 &
+          done
+          wait
+          echo "registration pass complete"

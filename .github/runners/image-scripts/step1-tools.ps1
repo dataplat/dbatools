@@ -35,6 +35,21 @@ Write-Output "== network profile + WinRM (prep runs Set-WSManQuickConfig)"
 Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
+Write-Output "== local appveyor admin user (runner service account, AppVeyor parity)"
+if (-not (Get-LocalUser -Name appveyor -ErrorAction SilentlyContinue)) {
+    $securePass = ConvertTo-SecureString -String "Password12!" -AsPlainText -Force
+    $splatUser = @{
+        Name                 = "appveyor"
+        Password             = $securePass
+        PasswordNeverExpires = $true
+        AccountNeverExpires  = $true
+        FullName             = "CI runner user"
+    }
+    $null = New-LocalUser @splatUser
+    Add-LocalGroupMember -Group Administrators -Member appveyor
+}
+$null = New-Item -Path "C:\Users\appveyor\Documents\DbatoolsExport" -ItemType Directory -Force -ErrorAction SilentlyContinue
+
 Write-Output "== Windows Update service to Manual (parity with appveyor build_script)"
 Set-Service -Name wuauserv -StartupType Manual
 
