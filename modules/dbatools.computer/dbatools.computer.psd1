@@ -47,7 +47,8 @@
         'New-DbaComputerCertificateSigningRequest',
         'New-DbaComputerCertificate',
         'Get-DbaNetworkCertificate',
-        'Get-DbaSpn'
+        'Get-DbaSpn',
+        'Get-DbaFirewallRule'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

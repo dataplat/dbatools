@@ -300,7 +300,6 @@
         'Get-DbaExternalProcess',
         'Get-DbaFile',
         'Get-DbaFilestream',
-        'Get-DbaFirewallRule',
         'Get-DbaHelpIndex',
         'Get-DbaHideInstance',
         'Get-DbaInstanceAudit',

@@ -99,6 +99,11 @@
     "retiredPath": "private/retired/Get-DbaFeature.ps1",
     "flippedUtc": "2026-07-09T20:23:10Z"
   },
+  "Get-DbaFirewallRule": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Get-DbaFirewallRule.ps1",
+    "flippedUtc": "2026-07-10T02:18:31Z"
+  },
   "Get-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaForceNetworkEncryption.ps1",
