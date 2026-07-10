@@ -20,8 +20,24 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When removing the network certificate from a default instance" {
+        BeforeAll {
+            $results = Remove-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceSingle -Confirm:$false -WarningVariable warn 3> $null
+        }
+
+        It "Should run without warning" {
+            # The instance uses an auto-generated fallback certificate (none explicitly configured),
+            # so the Certificate registry value is already empty and this clears a no-op; a status
+            # object is still returned.
+            $warn | Should -BeNullOrEmpty
+        }
+
+        It "Should return a status object with the expected properties" {
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "ServiceAccount", "RemovedThumbprint")
+            foreach ($prop in $expectedProps) {
+                $results.PSObject.Properties.Name | Should -Contain $prop
+            }
+        }
+    }
+}
