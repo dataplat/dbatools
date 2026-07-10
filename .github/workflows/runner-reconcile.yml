@@ -95,7 +95,9 @@ jobs:
             fi
             if [ -z "$R_STATUS" ] && [ "$AGE_MIN" -gt 30 ]; then
               DELETE="never registered after ${AGE_MIN}m"
-            elif [ "$R_STATUS" = "offline" ]; then
+            elif [ "$R_STATUS" = "offline" ] && [ "$AGE_MIN" -gt 15 ]; then
+              # bootstrap reboots into the interactive session; fresh instances are
+              # briefly offline between config and the post-reboot logon
               DELETE="runner offline (spent ephemeral or dead)"
             elif [ "$AGE_MIN" -gt 180 ]; then
               DELETE="zombie: age ${AGE_MIN}m"
