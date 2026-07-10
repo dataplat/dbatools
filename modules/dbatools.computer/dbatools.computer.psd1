@@ -59,7 +59,8 @@
         'Get-DbaKbUpdate',
         'Save-DbaKbUpdate',
         'Test-DbaKerberos',
-        'Invoke-DbaAdvancedUpdate'
+        'Invoke-DbaAdvancedUpdate',
+        'Invoke-DbaAdvancedInstall'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

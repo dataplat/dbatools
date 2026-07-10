@@ -284,6 +284,11 @@
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1",
     "flippedUtc": "2026-07-06T22:25:53Z"
   },
+  "Invoke-DbaAdvancedInstall": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Invoke-DbaAdvancedInstall.ps1",
+    "flippedUtc": "2026-07-10T23:50:37Z"
+  },
   "Invoke-DbaAdvancedRestore": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Invoke-DbaAdvancedRestore.ps1",

@@ -398,7 +398,6 @@
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',
         'Invoke-DbaDbAzSqlTip',
-        'Invoke-DbaAdvancedInstall',
         'Invoke-DbaAgFailover',
         'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaCycleErrorLog',
