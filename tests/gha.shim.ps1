@@ -29,14 +29,14 @@
     Author: the dbatools team + Claude
 #>
 
-$script:GhaArtifactDir = "C:\Temp\gha-artifacts"
-$script:GhaExitFlag = "C:\Temp\gha-exit-build.flag"
-$script:GhaSummaryStarted = $false
+$global:GhaArtifactDir = "C:\Temp\gha-artifacts"
+$global:GhaExitFlag = "C:\Temp\gha-exit-build.flag"
+$global:GhaSummaryStarted = $false
 
 if (-not (Test-Path -Path "C:\Temp")) {
     $null = New-Item -Path "C:\Temp" -ItemType Directory -Force
 }
-Remove-Item -Path $script:GhaExitFlag -Force -ErrorAction SilentlyContinue
+Remove-Item -Path $global:GhaExitFlag -Force -ErrorAction SilentlyContinue
 
 # ---- environment mapping (idempotent, only fills what is not already set) ----
 if (-not $env:APPVEYOR) {
@@ -103,10 +103,10 @@ function Update-AppveyorTest {
     )
     $seconds = [math]::Round($Duration / 1000, 1)
     Write-Host -Object "[gha] test $($Outcome.ToLower()): $Name (${seconds}s)" -ForegroundColor DarkCyan
-    if (-not $script:GhaSummaryStarted) {
+    if (-not $global:GhaSummaryStarted) {
         Write-GhaSummary -Line "| Test | Outcome | Duration |"
         Write-GhaSummary -Line "| --- | --- | --- |"
-        $script:GhaSummaryStarted = $true
+        $global:GhaSummaryStarted = $true
     }
     Write-GhaSummary -Line "| $Name | $Outcome | ${seconds}s |"
     if ($Outcome -eq "Failed") {
@@ -124,14 +124,14 @@ function Push-AppveyorArtifact {
         [string]$Path,
         [string]$FileName
     )
-    if (-not (Test-Path -Path $script:GhaArtifactDir)) {
-        $null = New-Item -Path $script:GhaArtifactDir -ItemType Directory -Force
+    if (-not (Test-Path -Path $global:GhaArtifactDir)) {
+        $null = New-Item -Path $global:GhaArtifactDir -ItemType Directory -Force
     }
     if (-not $FileName) {
         $FileName = Split-Path -Path $Path -Leaf
     }
     if (Test-Path -Path $Path) {
-        Copy-Item -Path $Path -Destination (Join-Path $script:GhaArtifactDir $FileName) -Force
+        Copy-Item -Path $Path -Destination (Join-Path $global:GhaArtifactDir $FileName) -Force
         Write-Host -Object "[gha] artifact staged: $FileName" -ForegroundColor DarkCyan
     } else {
         Write-Host -Object "[gha] artifact missing, skipped: $Path" -ForegroundColor Yellow
@@ -139,7 +139,7 @@ function Push-AppveyorArtifact {
 }
 
 function Exit-AppveyorBuild {
-    Set-Content -Path $script:GhaExitFlag -Value "requested at $(Get-Date -Format o)"
+    Set-Content -Path $global:GhaExitFlag -Value "requested at $(Get-Date -Format o)"
     Write-Host -Object "[gha] Exit-AppveyorBuild: remaining stages will be skipped" -ForegroundColor Yellow
     Write-GhaSummary -Line "Build exited early: nothing to run for this change."
 }
@@ -150,7 +150,7 @@ function Invoke-GhaStage {
         [string]$Script,
         [hashtable]$Arguments
     )
-    if (Test-Path -Path $script:GhaExitFlag) {
+    if (Test-Path -Path $global:GhaExitFlag) {
         Write-Host -Object "[gha] skipping $Script (build exited early)" -ForegroundColor Yellow
         return
     }
@@ -169,7 +169,7 @@ function Invoke-GhaStage {
 function Repair-GhaSqlServerName {
     # golden-image instances remember the build VM name until repaired; several
     # dbatools tests expect @@SERVERNAME to match the actual host
-    if (Test-Path -Path $script:GhaExitFlag) {
+    if (Test-Path -Path $global:GhaExitFlag) {
         return
     }
     $runningEngines = Get-Service -Name "MSSQL`$*" -ErrorAction SilentlyContinue | Where-Object Status -eq "Running"

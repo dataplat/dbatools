@@ -1,2 +1,2 @@
 ci-azure validation trigger
-run: 1 (scoped Get-DbaDatabase)
+run: 2 (scoped Get-DbaDatabase, shim scope fix)
