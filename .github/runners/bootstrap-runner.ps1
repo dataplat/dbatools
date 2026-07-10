@@ -43,6 +43,11 @@ if (Test-Path -Path "C:\github-runner\.bootstrapped-once") {
 
 Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 
+# AppVeyor parity: their workers run with Windows Firewall off, and several tests
+# reach the local instances over loopback SMB/WMI/WinRM by computer name. The NSG
+# still default-denies everything from the internet.
+Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled False
+
 # the smalldisk base keeps a 30GB partition; harmless no-op when already extended
 $partitionMax = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
 $partitionNow = (Get-Partition -DriveLetter C).Size
