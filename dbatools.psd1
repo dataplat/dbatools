@@ -533,7 +533,6 @@
         'Remove-DbaFirewallRule',
         'Remove-DbaLinkedServer',
         'Remove-DbaLogin',
-        'Remove-DbaNetworkCertificate',
         'Remove-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorSet',
         'Remove-DbaRegServer',
