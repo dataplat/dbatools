@@ -229,21 +229,135 @@ Describe $CommandName -Tag IntegrationTests {
 }
 
 Describe $CommandName -Tag UnitTests {
-    Context "Config bag comparer matches the edition's PS hashtable literal under Turkish culture (I/i edge)" {
-        It "uses the edition-appropriate comparer: ordinal on PS7 (I equals i), current-culture on WinPS5.1 (I not i under tr-TR)" {
-            # NewConfig() picks OrdinalIgnoreCase on net8.0 and CurrentCultureIgnoreCase on net472 to MATCH the
-            # per-edition @{} comparer (net8.0 @{} = OrdinalIgnoreCase, net472 @{} = CultureAware/current-culture),
-            # so a Configuration key that only case-mismatches under Turkish casing collapses the same as @{}.
-            $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
-            try {
-                [System.Threading.Thread]::CurrentThread.CurrentCulture = New-Object System.Globalization.CultureInfo "tr-TR"
-                if ($PSVersionTable.PSEdition -eq "Core") {
-                    ([System.StringComparer]::OrdinalIgnoreCase).Equals("DIRECTION", "Direction") | Should -BeTrue
-                } else {
-                    ([System.StringComparer]::CurrentCultureIgnoreCase).Equals("DIRECTION", "Direction") | Should -BeFalse
+    InModuleScope dbatools {
+        # These exercise the CMDLET'S OWN config bag and its status-append path (not a framework comparer).
+        # SqlInstance is LOCALHOST so RemoteExecutionService takes its in-process path (a local Invoke-Command
+        # with no -Session, in the current runspace) where the New-NetFirewallRule mock IS visible - so no
+        # real firewall rule is ever created; each test asserts the mock was actually invoked to prove it. A
+        # Port rule takes the Get-DbaNetworkConfiguration port and never parses a service BinaryPath.
+        Context "Config bag and status-append reflect PS semantics" {
+            BeforeEach {
+                Mock Get-DbaNetworkConfiguration {
+                    [PSCustomObject]@{
+                        TcpPort         = "1433"
+                        TcpDynamicPorts = ""
+                    }
                 }
-            } finally {
-                [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+            }
+
+            It "merges -Configuration into the config bag using the CURRENT culture per call (en-US then tr-TR)" {
+                Mock New-NetFirewallRule {
+                    [PSCustomObject]@{ Status = "The rule was parsed successfully from the store" }
+                }
+                # The comparer must be read PER CALL, not captured once. Warm up under en-US (a regressed static
+                # comparer would snapshot en-US here), THEN switch to tr-TR and merge "DIRECTION" over the
+                # default "Direction" key. Under tr-TR the dotless-I means DIRECTION != Direction, so a per-call
+                # CurrentCultureIgnoreCase (net472 @{}) keeps BOTH keys, while OrdinalIgnoreCase (net8.0 @{})
+                # still collapses them. A static en-US comparer would collapse on BOTH editions and fail net472.
+                $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+                try {
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = New-Object System.Globalization.CultureInfo "en-US"
+                    $splatWarmup = @{
+                        SqlInstance   = "localhost"
+                        Type          = "Engine"
+                        RuleType      = "Port"
+                        Configuration = @{ DIRECTION = "Outbound" }
+                        Confirm       = $false
+                        WarningAction = "SilentlyContinue"
+                    }
+                    $null = New-DbaFirewallRule @splatWarmup
+
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = New-Object System.Globalization.CultureInfo "tr-TR"
+                    $splatFirewallRule = @{
+                        SqlInstance   = "localhost"
+                        Type          = "Engine"
+                        RuleType      = "Port"
+                        Configuration = @{ DIRECTION = "Outbound" }
+                        Confirm       = $false
+                        WarningAction = "SilentlyContinue"
+                    }
+                    $result = New-DbaFirewallRule @splatFirewallRule
+                } finally {
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+                }
+
+                Should -Invoke New-NetFirewallRule -Scope It
+                $directionKeys = @($result.RuleConfig.Keys | Where-Object { "$PSItem" -match "^direction$" })
+                if ($PSVersionTable.PSEdition -eq "Core") {
+                    $directionKeys.Count | Should -Be 1
+                    $result.RuleConfig["Direction"] | Should -Be "Outbound"
+                } else {
+                    $directionKeys.Count | Should -Be 2
+                    $result.RuleConfig["Direction"] | Should -Be "Inbound"
+                }
+            }
+
+            It "joins a multi-element Warning with the default `$OFS (single space), not the collection type name" {
+                Mock New-NetFirewallRule {
+                    Write-Warning "first warning"
+                    Write-Warning "second warning"
+                    [PSCustomObject]@{ Status = "The rule was parsed successfully from the store" }
+                }
+                $splatFirewallRule = @{
+                    SqlInstance   = "localhost"
+                    Type          = "Engine"
+                    RuleType      = "Port"
+                    Confirm       = $false
+                    WarningAction = "SilentlyContinue"
+                }
+                $result = New-DbaFirewallRule @splatFirewallRule
+                Should -Invoke New-NetFirewallRule -Scope It
+                $result.Status | Should -Match "Warning: first warning second warning\."
+                $result.Status | Should -Not -Match "System.Collections"
+            }
+
+            It "joins a multi-element Error with the default `$OFS (single space)" {
+                Mock New-NetFirewallRule {
+                    Write-Error "first error"
+                    Write-Error "second error"
+                    [PSCustomObject]@{ Status = "The rule was parsed successfully from the store" }
+                }
+                $splatFirewallRule = @{
+                    SqlInstance   = "localhost"
+                    Type          = "Engine"
+                    RuleType      = "Port"
+                    Confirm       = $false
+                    WarningAction = "SilentlyContinue"
+                }
+                $result = New-DbaFirewallRule @splatFirewallRule
+                Should -Invoke New-NetFirewallRule -Scope It
+                $result.Status | Should -Match "Error: first error second error\."
+                $result.Status | Should -Not -Match "System.Collections"
+            }
+
+            It "honors a session `$OFS override when joining the Warning collection" {
+                Mock New-NetFirewallRule {
+                    Write-Warning "first warning"
+                    Write-Warning "second warning"
+                    [PSCustomObject]@{ Status = "The rule was parsed successfully from the store" }
+                }
+                $splatFirewallRule = @{
+                    SqlInstance   = "localhost"
+                    Type          = "Engine"
+                    RuleType      = "Port"
+                    Confirm       = $false
+                    WarningAction = "SilentlyContinue"
+                }
+                # Capture $OFS's ORIGINAL state (it is usually undefined) and restore it EXACTLY afterward -
+                # setting it to " " would leak a defined module-scope $OFS across tests.
+                $ofsExisted = Test-Path Variable:OFS
+                $ofsOriginal = if ($ofsExisted) { Get-Variable -Name OFS -ValueOnly } else { $null }
+                $OFS = ","
+                try {
+                    $result = New-DbaFirewallRule @splatFirewallRule
+                    $result.Status | Should -Match "Warning: first warning,second warning\."
+                } finally {
+                    if ($ofsExisted) {
+                        Set-Variable -Name OFS -Value $ofsOriginal
+                    } else {
+                        Remove-Variable -Name OFS -ErrorAction SilentlyContinue
+                    }
+                }
             }
         }
     }
