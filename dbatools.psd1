@@ -453,7 +453,6 @@
         'New-DbaAzAccessToken',
         'New-DbaClientAlias',
         'New-DbaCmConnection',
-        'New-DbaComputerCertificate',
         'New-DbaConnectionString',
         'New-DbaConnectionStringBuilder',
         'New-DbaCredential',
