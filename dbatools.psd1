@@ -622,7 +622,6 @@
         'Test-DbaCmConnection',
         'Test-DbaConnection',
         'Test-DbaConnectionAuthScheme',
-        'Test-DbaKerberos',
         'Test-DbaDbCollation',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCompression',
