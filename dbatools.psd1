@@ -594,7 +594,6 @@
         'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
         'Set-DbaSpConfigure',
-        'Set-DbaSpn',
         'Set-DbaStartupParameter',
         'Set-DbaTcpPort',
         'Set-DbaTempDbConfig',

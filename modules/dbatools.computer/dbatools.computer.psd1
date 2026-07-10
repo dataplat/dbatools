@@ -52,7 +52,8 @@
         'Test-DbaNetworkCertificate',
         'Remove-DbaNetworkCertificate',
         'New-DbaFirewallRule',
-        'Set-DbaPrivilege'
+        'Set-DbaPrivilege',
+        'Set-DbaSpn'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

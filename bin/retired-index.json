@@ -334,6 +334,11 @@
     "retiredPath": "private/retired/Set-DbaPrivilege.ps1",
     "flippedUtc": "2026-07-10T19:40:44Z"
   },
+  "Set-DbaSpn": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Set-DbaSpn.ps1",
+    "flippedUtc": "2026-07-10T20:33:54Z"
+  },
   "Test-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
