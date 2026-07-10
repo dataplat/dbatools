@@ -553,7 +553,6 @@
         'Resume-DbaAgDbDataMovement',
         'Revoke-DbaAgPermission',
         'Save-DbaDiagnosticQueryScript',
-        'Save-DbaKbUpdate',
         'Select-DbaDbSequenceNextValue',
         'Set-DbaAgentAlert',
         'Set-DbaAgentJob',

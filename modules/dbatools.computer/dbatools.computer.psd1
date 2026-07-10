@@ -56,7 +56,8 @@
         'Set-DbaSpn',
         'Remove-DbaSpn',
         'Remove-DbaFirewallRule',
-        'Get-DbaKbUpdate'
+        'Get-DbaKbUpdate',
+        'Save-DbaKbUpdate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

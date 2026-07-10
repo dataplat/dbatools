@@ -334,6 +334,11 @@
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
     "flippedUtc": "2026-07-07T10:21:29Z"
   },
+  "Save-DbaKbUpdate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Save-DbaKbUpdate.ps1",
+    "flippedUtc": "2026-07-10T21:47:35Z"
+  },
   "Select-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Select-DbaBackupInformation.ps1",
