@@ -1,2 +1,2 @@
 ci-azure validation trigger
-run: 3 (scoped Get-DbaDatabase, EAP continue)
+run: 4 (FULL SUITE)

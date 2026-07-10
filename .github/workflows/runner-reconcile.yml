@@ -121,6 +121,23 @@ jobs:
             sleep 60
           fi
 
+          # ---- pass 2b: trim surplus idle instances (oldest first) --------------
+          if [ "$KEEP" -gt "$DESIRED" ]; then
+            TRIM=$(( KEEP - DESIRED ))
+            echo "trimming $TRIM surplus idle instance(s)"
+            for VM in $(echo "$VMS_JSON" | jq -r 'sort_by(.created) | .[].name'); do
+              [ "$TRIM" -le 0 ] && break
+              R_BUSY=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .busy")
+              [ "$R_BUSY" = "true" ] && continue
+              az vm show -g "$RG" -n "$VM" --query name -o tsv >/dev/null 2>&1 || continue
+              R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .id")
+              echo "trim: deleting idle $VM"
+              [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
+              az vm delete -g "$RG" -n "$VM" --yes --no-wait
+              TRIM=$(( TRIM - 1 ))
+            done
+          fi
+
           # ---- pass 3: register any healthy unregistered instance --------------
           curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
           REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
