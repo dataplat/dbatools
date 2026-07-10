@@ -19,8 +19,23 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Command works against a default instance" {
+        BeforeAll {
+            $results = Get-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceSingle -WarningVariable warn 3> $null
+        }
+
+        It "Should run without warning" {
+            # Instances using SQL Server's auto-generated fallback certificate have no explicitly
+            # configured network certificate, so no object is returned; when one is configured this
+            # returns one certificate object per instance.
+            $warn | Should -BeNullOrEmpty
+        }
+
+        It "Returns only certificate objects that carry a Thumbprint" {
+            foreach ($result in $results) {
+                $result.Thumbprint | Should -Not -BeNullOrEmpty
+            }
+        }
+    }
+}
