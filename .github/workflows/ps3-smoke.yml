@@ -42,7 +42,8 @@ jobs:
         run: |
           set -euo pipefail
           VM="ps3smoke-${{ github.run_number }}"
-          PASS="Db$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)!5k"
+          # no tr|head pipeline here: with pipefail the SIGPIPE would kill the step
+          PASS="Db$(openssl rand -hex 10)!5k"
 
           cleanup() {
             echo "== cleanup"
