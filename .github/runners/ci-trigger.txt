@@ -1,0 +1,2 @@
+ci-azure validation trigger
+run: 1 (scoped Get-DbaDatabase)
