@@ -309,6 +309,11 @@
     "retiredPath": "private/retired/Remove-DbaComputerCertificate.ps1",
     "flippedUtc": "2026-07-09T23:48:41Z"
   },
+  "Remove-DbaFirewallRule": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Remove-DbaFirewallRule.ps1",
+    "flippedUtc": "2026-07-10T21:20:52Z"
+  },
   "Remove-DbaNetworkCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaNetworkCertificate.ps1",
