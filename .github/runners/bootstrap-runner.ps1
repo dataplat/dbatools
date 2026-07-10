@@ -34,6 +34,12 @@ if (Test-Path -Path "C:\github-runner\.runner") {
     "runner already configured on $env:COMPUTERNAME"
     exit 0
 }
+if (Test-Path -Path "C:\github-runner\.bootstrapped-once") {
+    # the ephemeral runner already served its single job and unregistered itself;
+    # this VM is dirty (SQL state, workspace) and must be deleted, never reused
+    "SPENT-VM: $env:COMPUTERNAME already served a job"
+    exit 1
+}
 
 Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 
@@ -66,6 +72,7 @@ $configArgs = @(
 if ($LASTEXITCODE -ne 0) {
     exit 1
 }
+Set-Content -Path "C:\github-runner\.bootstrapped-once" -Value (Get-Date -Format o)
 
 Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | ForEach-Object {
     "service: $($_.Name) [$($_.Status)]"
