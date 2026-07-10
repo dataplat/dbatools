@@ -48,6 +48,20 @@ Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 # still default-denies everything from the internet.
 Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled False
 
+# local accounts (the appveyor runner user) need an unfiltered token over loopback
+# admin shares (Copy-DbaBackupDevice and friends copy via \\COMPUTERNAME\x$)
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name LocalAccountTokenFilterPolicy -Value 1 -Type DWord
+
+# ephemeral-OS VMs come up with no pagefile; the setting object alone satisfies
+# Get-DbaPageFileSetting (activation would need a reboot these VMs never get)
+if (-not (Get-CimInstance -ClassName Win32_PageFileSetting -ErrorAction SilentlyContinue)) {
+    $splatPageFile = @{
+        ClassName = "Win32_PageFileSetting"
+        Property  = @{ Name = "D:\pagefile.sys"; InitialSize = [uint32]4096; MaximumSize = [uint32]8192 }
+    }
+    $null = New-CimInstance @splatPageFile
+}
+
 # the smalldisk base keeps a 30GB partition; harmless no-op when already extended
 $partitionMax = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
 $partitionNow = (Get-Partition -DriveLetter C).Size
