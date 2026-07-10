@@ -20,8 +20,9 @@ GitHub (public repo)                          Azure (eastus)
 |---|---|
 | Runner label | `dbatools-modern` (`runs-on: [self-hosted, dbatools-modern]`) |
 | Golden image | `dbatoolsGallery/dbatools-modern-image` — Server 2022, SQL 2017/2019/2022 Developer (instances `SQL2017/SQL2019/SQL2022`, ports 14334/14335/14336, Manual start, mixed auth sa=AppVeyor convention) |
-| Legacy image | `dbatoolsGallery/dbatools-golden-image` v1.0.0 — Server 2012, PS 3.0, SQL 2008R2/2012/2014/2016/2017 (used by nightly `ps3-smoke.yml`, runnerless) |
-| Runner service account | local admin `appveyor` (AppVeyor parity: `$env:USERNAME`, `C:\Users\appveyor\Documents\DbatoolsExport`) |
+| Legacy image | `dbatoolsGallery/dbatools-golden-image` v1.0.0 — Server 2012, PS 3.0, SQL 2008R2/2012/2014/2016/2017 (used by nightly `ps3-smoke.yml`, runnerless); v2.0.0 adds WMF 5.1 (PS 5.1) for a future legacy runner pool |
+| Runner execution | **interactive autologon session** as local admin `appveyor` (AppVeyor parity: BITS transfers, `$env:USERNAME`, `C:\Users\appveyor\Documents\DbatoolsExport`); bootstrap registers the ephemeral runner, arms autologon + a logon task, reboots |
+| Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
 | Scaling controls | repo variables `STANDBY_COUNT` / `STANDBY_HOURS` / `STANDBY_TZ` / `MAX_RUNNERS` |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
@@ -69,7 +70,8 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 1. Push/PR triggers `ci-azure.yml` → 8 matrix jobs queue on label `dbatools-modern`.
 2. `runner-scale-up.yml` (workflow_run: requested) counts queued jobs, raises VMSS
    capacity (cap `MAX_RUNNERS`), and registers an ephemeral runner on every new
-   instance via `az vm run-command` + `bootstrap-runner.ps1`.
+   instance via `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the
+   VM into the appveyor autologon session where run.cmd picks up the job).
 3. Each job: sync repo at `C:\github\dbatools` → CRLF tests → one PowerShell session
    runs prep → instance setup (`appveyor.SQL*.ps1` set static ports, start services,
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.
