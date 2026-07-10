@@ -6,10 +6,11 @@
 # Standby floor: STANDBY_COUNT instances during STANDBY_HOURS (STANDBY_TZ) Mon-Fri,
 # zero outside them. All three come from repo variables so tuning needs no code change.
 #
-# Maintainer boost: when anyone in BOOST_USERS pushes to a branch other than
-# development/master, the floor is raised to BOOST_COUNT until BOOST_HOURS have
-# passed since their last such push (any hour, any day). runner-boost.yml nudges
-# this workflow on those pushes so the boost kicks in without waiting for cron.
+# Maintainer boost: once the users in BOOST_USERS have pushed BOOST_COMMITS
+# commits (default 3) to branches other than development/master within the
+# trailing BOOST_HOURS window, the floor is raised to BOOST_COUNT until the
+# window drains (any hour, any day). runner-boost.yml nudges this workflow on
+# those pushes so the boost kicks in without waiting for cron.
 #
 # Mondays at 07:00 UTC one extra scheduled tick posts month-to-date spend to the
 # "CI cost tracker" issue.
@@ -52,6 +53,7 @@ jobs:
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
+      BOOST_COMMITS: ${{ vars.BOOST_COMMITS }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
@@ -86,9 +88,10 @@ jobs:
             RECENT=$(echo "$EVENTS" | jq -s --arg cutoff "$CUTOFF" --arg users "$BOOST_USERS" \
               '[.[][] | select(.type == "PushEvent" and .created_at > $cutoff
                 and (.actor.login | IN($users | split(" ")[]))
-                and ((.payload.ref // "") | test("^refs/heads/(development|master)$") | not))] | length')
-            if [ "${RECENT:-0}" -gt 0 ]; then
-              echo "maintainer boost: $RECENT push(es) to feature branches by [$BOOST_USERS] in the last ${BOOST_HOURS:-3}h -- floor raised to $BOOST_COUNT"
+                and ((.payload.ref // "") | test("^refs/heads/(development|master)$") | not))
+                | .payload.size // 1] | add // 0')
+            if [ "${RECENT:-0}" -ge "${BOOST_COMMITS:-3}" ]; then
+              echo "maintainer boost: $RECENT commit(s) to feature branches by [$BOOST_USERS] in the last ${BOOST_HOURS:-3}h (threshold ${BOOST_COMMITS:-3}) -- floor raised to $BOOST_COUNT"
               FLOOR=$BOOST_COUNT
             fi
           fi

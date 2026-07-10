@@ -1,7 +1,7 @@
 # When a maintainer listed in the BOOST_USERS repo variable pushes to a branch
 # other than development/master, immediately dispatch runner-reconcile so the
-# maintainer-boost floor (BOOST_COUNT runners for BOOST_HOURS after their last
-# push) kicks in without waiting for the best-effort cron.
+# maintainer-boost floor (BOOST_COUNT runners once BOOST_COMMITS commits land
+# within BOOST_HOURS) kicks in without waiting for the best-effort cron.
 #
 # The boost decision itself lives in runner-reconcile.yml -- this workflow is
 # only a promptness nudge, and only fires from branches that carry this file.

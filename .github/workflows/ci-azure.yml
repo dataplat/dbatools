@@ -1,5 +1,5 @@
 # The AppVeyor matrix, ported 1:1 to self-hosted Azure VMSS runners. The appveyor.*.ps1
-# harness runs UNTOUCHED via tests/gha.shim.ps1, so AppVeyor keeps working in parallel
+# harness runs UNTOUCHED via tests/gha.shim.ps1, so AppVeyor keeps building in parallel
 # during burn-in. Commit-message controls carry over: (do Command) scopes tests,
 # [skip ci] skips entirely, part: n/m splitting comes from the matrix.
 #
@@ -11,8 +11,19 @@ name: ci-azure
 on:
   push:
     branches:
-      - vmssredux
-    # burn-in only; at cutover this becomes: development + pull_request triggers
+      - development
+    paths-ignore:
+      - "**/*.md"
+      - ".github/FUNDING.yml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".aider/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
+      - "en-us/**"
+  pull_request:
+    branches:
+      - development
     paths-ignore:
       - "**/*.md"
       - ".github/FUNDING.yml"

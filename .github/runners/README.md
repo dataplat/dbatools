@@ -25,7 +25,7 @@ GitHub (public repo)                          Azure (eastus)
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
 | Scaling controls | repo variables `STANDBY_COUNT` / `STANDBY_HOURS` / `STANDBY_TZ` / `MAX_RUNNERS` |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — a push by a listed user to any branch except development/master raises the floor to `BOOST_COUNT` until `BOOST_HOURS` after their last such push (any hour, any day); `runner-boost.yml` nudges reconcile on those pushes so it applies within ~1 minute |
+| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` / `BOOST_COMMITS` — once listed users have pushed `BOOST_COMMITS` commits (default 3) to branches other than development/master within the trailing `BOOST_HOURS` window, the floor rises to `BOOST_COUNT` until the window drains (any hour, any day); `runner-boost.yml` nudges reconcile on those pushes so it applies within ~1 minute |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 
@@ -84,8 +84,9 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 - Budget `dbatools-ci-budget`: $600/month on RG `dbatools-ci`, email at 50/80/100%.
 - Zombie kill: reconcile deletes any non-busy instance older than 3h.
 - Scale-to-zero outside `STANDBY_HOURS` (`STANDBY_TZ`, Mon–Fri).
-- Maintainer boost holds `BOOST_COUNT` warm runners; it self-expires `BOOST_HOURS`
-  after the last qualifying push (worst case ~10 × D4ds_v5 for 3h ≈ $7).
+- Maintainer boost holds `BOOST_COUNT` warm runners once `BOOST_COMMITS` commits
+  land in the window; it self-expires `BOOST_HOURS` after the last qualifying
+  push (worst case ~10 × D4ds_v5 for 3h ≈ $7).
 - Weekly month-to-date spend lands on the "CI cost tracker" issue (Mondays).
 - Ephemeral OS disks cost nothing; the only storage bill is the gallery replicas.
 
