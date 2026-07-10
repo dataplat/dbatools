@@ -477,7 +477,6 @@
         'New-DbaDiagnosticAdsNotebook',
         'New-DbaDirectory',
         'New-DbaEndpoint',
-        'New-DbaFirewallRule',
         'New-DbaLogin',
         'New-DbaRgResourcePool',
         'New-DbaScriptingOption',
