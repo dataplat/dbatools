@@ -80,7 +80,45 @@ jobs:
           echo "$VMS_JSON" | jq -r '.[] | "vm: \(.name) \(.power) created \(.created)"'
           echo "$RUNNERS_JSON" | jq -r '.[] | "runner: \(.name) \(.status) busy=\(.busy)"'
 
-          # ---- pass 1: delete spent/zombie instances ---------------------------
+          # ---- registration helper (also detects and deletes spent VMs) ---------
+          curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
+          register_unregistered() {
+            local registered vms vm token
+            registered=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
+            vms=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv)
+            for vm in $vms; do
+              case " $registered " in
+                *" $vm "*) continue ;;
+              esac
+              echo "registering $vm"
+              token=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
+              (
+                OUT=$(az vm run-command invoke -g "$RG" -n "$vm" --command-id RunPowerShellScript \
+                  --scripts @/tmp/bootstrap-runner.ps1 \
+                  --parameters "Token=$token" "RunnerName=$vm" "Labels=$RUNNER_LABEL" \
+                  --query "value[0].message" -o tsv || true)
+                echo "$OUT" | tail -3
+                if echo "$OUT" | grep -q "SPENT-VM"; then
+                  echo "$vm already served a job -- deleting instead of reusing"
+                  az vm delete -g "$RG" -n "$vm" --yes --no-wait || true
+                fi
+              ) &
+            done
+            wait
+          }
+
+          # ---- pass 1: try to register BEFORE any deletion decisions ------------
+          # (cron delivery is unreliable; a slow-provisioning instance must get its
+          # registration attempt before the never-registered rule can reap it)
+          register_unregistered
+
+          # refresh state after registration/spent-deletions
+          RUNNERS_JSON=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
+            --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
+          VMS_JSON=$(az vm list -g "$RG" --show-details \
+            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json)
+
+          # ---- pass 2: delete spent/zombie instances ----------------------------
           KEEP=0
           for VM in $(echo "$VMS_JSON" | jq -r '.[].name'); do
             CREATED=$(echo "$VMS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .created")
@@ -93,8 +131,8 @@ jobs:
             if [ "$R_BUSY" = "true" ] && [ "$AGE_MIN" -lt 180 ]; then
               KEEP=$((KEEP + 1)); continue
             fi
-            if [ -z "$R_STATUS" ] && [ "$AGE_MIN" -gt 30 ]; then
-              DELETE="never registered after ${AGE_MIN}m"
+            if [ -z "$R_STATUS" ] && [ "$AGE_MIN" -gt 45 ]; then
+              DELETE="never registered after ${AGE_MIN}m (registration was attempted this cycle)"
             elif [ "$R_STATUS" = "offline" ] && [ "$AGE_MIN" -gt 15 ]; then
               # bootstrap reboots into the interactive session; fresh instances are
               # briefly offline between config and the post-reboot logon
@@ -112,7 +150,7 @@ jobs:
             fi
           done
 
-          # ---- pass 2: top up to floor / demand --------------------------------
+          # ---- pass 3: top up to floor / demand ----------------------------------
           BUSY=$(echo "$RUNNERS_JSON" | jq '[.[] | select(.busy == true)] | length')
           DESIRED=$(( BUSY + QUEUED ))
           [ "$DESIRED" -lt "$FLOOR" ] && DESIRED=$FLOOR
@@ -120,10 +158,12 @@ jobs:
           echo "keep=$KEEP desired=$DESIRED"
           if [ "$KEEP" -lt "$DESIRED" ]; then
             az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$DESIRED" --no-wait || true
-            sleep 60
+            echo "waiting for new instances to provision"
+            sleep 150
+            register_unregistered
           fi
 
-          # ---- pass 2b: trim surplus idle instances (oldest first) --------------
+          # ---- pass 3b: trim surplus idle instances (oldest first) ---------------
           if [ "$KEEP" -gt "$DESIRED" ]; then
             TRIM=$(( KEEP - DESIRED ))
             echo "trimming $TRIM surplus idle instance(s)"
@@ -139,30 +179,6 @@ jobs:
               TRIM=$(( TRIM - 1 ))
             done
           fi
-
-          # ---- pass 3: register any healthy unregistered instance --------------
-          curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
-          REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-          VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv)
-          for VM in $VMS; do
-            case " $REGISTERED " in
-              *" $VM "*) continue ;;
-            esac
-            echo "registering $VM"
-            TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
-            (
-              OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-                --scripts @/tmp/bootstrap-runner.ps1 \
-                --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
-                --query "value[0].message" -o tsv || true)
-              echo "$OUT" | tail -3
-              if echo "$OUT" | grep -q "SPENT-VM"; then
-                echo "$VM already served a job -- deleting instead of reusing"
-                az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
-              fi
-            ) &
-          done
-          wait
 
           # ---- pass 4: drop runner records with no matching VM -----------------
           VMS_NOW=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv | tr '\n' ' ')
