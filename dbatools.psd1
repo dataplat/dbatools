@@ -591,7 +591,6 @@
         'Set-DbaMaxMemory',
         'Set-DbaNetworkCertificate',
         'Set-DbaNetworkConfiguration',
-        'Set-DbaPrivilege',
         'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
         'Set-DbaSpConfigure',
