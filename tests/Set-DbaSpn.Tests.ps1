@@ -37,7 +37,11 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     AfterAll {
         # Remove both SPNs and any delegation entries straight from AD, position-independently,
         # regardless of what the tests managed to do.
+        # Bind the verification read to the DOMAIN (the same DC-locator binding the command's
+        # Get-DbaADObject write path uses): the lab runs TWO DCs, and a serverless bind can hit
+        # the OTHER one before replication converges - an immediate read there sees stale state.
         $searcher = [ADSISearcher]"(&(objectClass=computer)(name=$env:COMPUTERNAME))"
+        $searcher.SearchRoot = [ADSI]"LDAP://$env:USERDOMAIN"
         $adEntry = $searcher.FindOne().GetDirectoryEntry()
         foreach ($prop in @("servicePrincipalName", "msDS-AllowedToDelegateTo")) {
             foreach ($value in @($testSpn, $testSpnNoDeleg)) {
@@ -84,7 +88,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results[0].IsSet | Should -BeTrue
             $results[0].Notes | Should -Be "Successfully added SPN"
 
+            # Domain-bound read: same DC-locator binding as the command's write path (two-DC lab,
+            # serverless binds can hit the other DC before replication converges).
             $searcher = [ADSISearcher]"(&(objectClass=computer)(name=$env:COMPUTERNAME))"
+            $searcher.SearchRoot = [ADSI]"LDAP://$env:USERDOMAIN"
             $adEntry = $searcher.FindOne().GetDirectoryEntry()
             @($adEntry.Properties["servicePrincipalName"] | Where-Object { $PSItem -eq $testSpn }).Count | Should -Be 1
         }
