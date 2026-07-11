@@ -316,3 +316,112 @@ Describe $CommandName -Tag UnitTests, "InputParameters" {
         }
     }
 }
+
+Describe "$CommandName compiled-cmdlet characterization" -Tag IntegrationTests {
+    BeforeAll {
+        # Characterization scenarios for the migration gate (which executes -Tag IntegrationTests):
+        # ConvertTo-DbaDataTable is pure compute, so these run everywhere (lab and AppVeyor) with no
+        # SQL instance. Expected values were captured against the current script function on both
+        # editions (PS 5.1 and PS 7) before the compiled-cmdlet flip; assertions are edition-agnostic.
+        $charAlpha = New-Object -TypeName psobject -Property @{ Name = [int]1 }
+        $charOmega = New-Object -TypeName psobject -Property @{ Name = [int]3 }
+        $hetFirst = New-Object -TypeName psobject -Property @{ Name = "first" }
+        $hetSecond = New-Object -TypeName psobject -Property @{ Name = "second" }
+        $numGood = New-Object -TypeName psobject -Property @{ Num = [int]1 }
+        $numBad = New-Object -TypeName psobject -Property @{ Num = "not-a-number" }
+        $tagBag = New-Object -TypeName psobject -Property @{ Tags = @("a", "b", "c") }
+        $emptyStringBag = New-Object -TypeName psobject -Property @{ Name = "" }
+        $sameA = New-Object -TypeName psobject -Property @{ V = "same" }
+        $sameB = New-Object -TypeName psobject -Property @{ V = "same" }
+        $lastC = New-Object -TypeName psobject -Property @{ V = "diff" }
+        $rawBag = New-Object -TypeName psobject -Property @{ Num = [int]5 }
+        $sizeBag = New-Object -TypeName psobject -Property @{ Size = [dbasize]1048576 }
+        Add-Member -InputObject $hetSecond -MemberType NoteProperty -Name Extra -Value ([int]42)
+        Add-Member -InputObject $emptyStringBag -MemberType NoteProperty -Name Other -Value "x"
+    }
+
+    Context "Output shape and null handling" {
+        It "Emits a single DataTable object and keeps a piped null as an empty row" {
+            $result = @($charAlpha, $null, $charOmega) | ConvertTo-DbaDataTable
+            $result -is [System.Data.DataTable] | Should -BeTrue
+            $result.Rows.Count | Should -Be 3
+            $result.Rows[0].Name | Should -Be 1
+            $result.Rows[1].Name.GetType().FullName | Should -Be "System.DBNull"
+            $result.Rows[2].Name | Should -Be 3
+        }
+
+        It "Converts a lone piped null into one empty row with no columns" {
+            $result = $null | ConvertTo-DbaDataTable
+            $result.Rows.Count | Should -Be 1
+            $result.Columns.Count | Should -Be 0
+        }
+
+        It "Drops a lone piped null entirely when IgnoreNull is set" {
+            $result = $null | ConvertTo-DbaDataTable -IgnoreNull
+            $result.Rows.Count | Should -Be 0
+        }
+
+        It "Binds InputObject positionally" {
+            $result = ConvertTo-DbaDataTable $charAlpha
+            $result.Rows.Count | Should -Be 1
+            $result.Rows[0].Name | Should -Be 1
+        }
+    }
+
+    Context "Column creation" {
+        It "Adds a typed column on the fly when a later object introduces a new property" {
+            $result = ConvertTo-DbaDataTable -InputObject @($hetFirst, $hetSecond) -WarningVariable charWarn -WarningAction SilentlyContinue
+            ($result.Columns | Where-Object ColumnName -eq "Extra").DataType.FullName | Should -Be "System.Int32"
+            $result.Rows[0].Extra.GetType().FullName | Should -Be "System.DBNull"
+            $result.Rows[1].Extra | Should -Be 42
+            $charWarn | Should -BeNullOrEmpty
+        }
+
+        It "Joins an object array property into a comma separated string column" {
+            $result = ConvertTo-DbaDataTable -InputObject $tagBag
+            ($result.Columns | Where-Object ColumnName -eq "Tags").DataType.FullName | Should -Be "System.String"
+            $result.Rows[0].Tags | Should -Be "a, b, c"
+        }
+
+        It "Creates all columns as strings when Raw is set" {
+            $result = ConvertTo-DbaDataTable -InputObject $rawBag -Raw
+            ($result.Columns | Where-Object ColumnName -eq "Num").DataType.FullName | Should -Be "System.String"
+            $result.Rows[0].Num | Should -Be "5"
+        }
+
+        It "Converts a dbasize property to Int64 bytes by default" {
+            $result = ConvertTo-DbaDataTable -InputObject $sizeBag
+            ($result.Columns | Where-Object ColumnName -eq "Size").DataType.FullName | Should -Be "System.Int64"
+            $result.Rows[0].Size | Should -Be 1048576
+        }
+    }
+
+    Context "Value handling" {
+        It "Leaves a zero length string value as DBNull" {
+            $result = ConvertTo-DbaDataTable -InputObject $emptyStringBag
+            $result.Rows[0].Name.GetType().FullName | Should -Be "System.DBNull"
+            $result.Rows[0].Other | Should -Be "x"
+        }
+
+        It "Warns and keeps the row with a DBNull cell when a value cannot convert to the column type" {
+            $result = ConvertTo-DbaDataTable -InputObject @($numGood, $numBad) -WarningVariable charWarn -WarningAction SilentlyContinue
+            $result.Rows.Count | Should -Be 2
+            $result.Rows[1].Num.GetType().FullName | Should -Be "System.DBNull"
+            $charWarn | Should -Match "Failed to add property Num"
+        }
+
+        It "Throws instead of warning when EnableException is set and a value cannot convert" {
+            { ConvertTo-DbaDataTable -InputObject @($numGood, $numBad) -EnableException -WarningAction SilentlyContinue } | Should -Throw "*was not in a correct format*"
+        }
+    }
+
+    Context "DataRow passthrough" {
+        It "Merges piped DataRows through the distinct view so duplicate rows collapse" {
+            $dedupSource = ConvertTo-DbaDataTable -InputObject @($sameA, $sameB, $lastC)
+            $dedupSource.Rows.Count | Should -Be 3
+            $cloned = $dedupSource | ConvertTo-DbaDataTable
+            $cloned.Rows.Count | Should -Be 2
+            ($cloned.Rows | ForEach-Object { $PSItem.V }) -join "," | Should -Be "same,diff"
+        }
+    }
+}
