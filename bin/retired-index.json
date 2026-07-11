@@ -94,6 +94,11 @@
     "retiredPath": "private/retired/Get-DbaComputerSystem.ps1",
     "flippedUtc": "2026-07-07T13:51:11Z"
   },
+  "Get-DbaConnectedInstance": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaConnectedInstance.ps1",
+    "flippedUtc": "2026-07-11T17:51:09Z"
+  },
   "Get-DbaCustomError": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaCustomError.ps1",
