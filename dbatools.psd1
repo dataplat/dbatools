@@ -164,7 +164,6 @@
         'Export-DbaServerRole',
         'Export-DbaSpConfigure',
         'Export-DbaSysDbUserObject',
-        'Export-DbatoolsConfig',
         'Export-DbaUser',
         'Export-DbaXESession',
         'Export-DbaXESessionTemplate',

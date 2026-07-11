@@ -49,6 +49,11 @@
     "retiredPath": "private/retired/Export-DbaScript.ps1",
     "flippedUtc": "2026-07-11T10:57:22Z"
   },
+  "Export-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Export-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-11T13:18:50Z"
+  },
   "Format-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Format-DbaBackupInformation.ps1",
