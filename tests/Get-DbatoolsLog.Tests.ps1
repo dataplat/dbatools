@@ -21,7 +21,8 @@ Describe $CommandName -Tag UnitTests {
                 "Level",
                 "Raw",
                 "Errors",
-                "LastError"
+                "LastError",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
