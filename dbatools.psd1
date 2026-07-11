@@ -161,7 +161,6 @@
         'Export-DbaPfDataCollectorSetTemplate',
         'Export-DbaRegServer',
         'Export-DbaReplServerSetting',
-        'Export-DbaScript',
         'Export-DbaServerRole',
         'Export-DbaSpConfigure',
         'Export-DbaSysDbUserObject',
