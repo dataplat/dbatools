@@ -14,7 +14,8 @@ Describe $CommandName -Tag UnitTests {
                 "FullName",
                 "Name",
                 "Module",
-                "Force"
+                "Force",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
