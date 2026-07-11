@@ -13,7 +13,8 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "FullName",
                 "Fallback",
-                "NotNull"
+                "NotNull",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
