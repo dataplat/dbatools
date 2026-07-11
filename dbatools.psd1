@@ -664,7 +664,6 @@
         'Remove-DbaDbDataClassification',
         'Get-DbaOleDbProvider',
         'Get-DbaConnectedInstance',
-        'Disconnect-DbaInstance',
         'Set-DbaDefaultPath',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',

@@ -29,6 +29,11 @@
     "retiredPath": "private/retired/Disable-DbaForceNetworkEncryption.ps1",
     "flippedUtc": "2026-07-10T00:14:20Z"
   },
+  "Disconnect-DbaInstance": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Disconnect-DbaInstance.ps1",
+    "flippedUtc": "2026-07-11T09:34:44Z"
+  },
   "Enable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Enable-DbaForceNetworkEncryption.ps1",
