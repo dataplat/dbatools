@@ -37,7 +37,8 @@
         'Restore-DbaDatabase',
         'ConvertTo-DbaDataTable',
         'ConvertTo-DbaTimeline',
-        'Disconnect-DbaInstance'
+        'Disconnect-DbaInstance',
+        'Export-DbaCsv'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

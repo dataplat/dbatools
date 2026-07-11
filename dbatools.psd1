@@ -380,7 +380,6 @@
         'Get-DbaXESessionTemplate',
         'Get-DbaXEStore',
         'Grant-DbaAgPermission',
-        'Export-DbaCsv',
         'Import-DbaCsv',
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
