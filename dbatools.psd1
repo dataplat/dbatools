@@ -99,7 +99,6 @@
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
-        'ConvertTo-DbaDataTable',
         'ConvertTo-DbaTimeline',
         'ConvertTo-DbaXESession',
         'Copy-DbaAgentAlert',

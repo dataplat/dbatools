@@ -14,6 +14,11 @@
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",
     "flippedUtc": "2026-07-07T03:04:51Z"
   },
+  "ConvertTo-DbaDataTable": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/ConvertTo-DbaDataTable.ps1",
+    "flippedUtc": "2026-07-11T08:19:16Z"
+  },
   "Disable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Disable-DbaForceNetworkEncryption.ps1",
