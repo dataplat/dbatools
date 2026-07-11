@@ -357,7 +357,6 @@
         'Get-DbaSuspectPage',
         'Get-DbaTcpPort',
         'Get-DbaTempdbUsage',
-        'Get-DbatoolsError',
         'Get-DbatoolsLog',
         'Get-DbatoolsPath',
         'Get-DbaTopResourceUsage',

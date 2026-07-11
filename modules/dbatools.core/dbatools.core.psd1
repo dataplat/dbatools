@@ -45,7 +45,8 @@
         'Get-DbaConnectedInstance',
         'Get-DbatoolsChangeLog',
         'Get-DbatoolsConfig',
-        'Get-DbatoolsConfigValue'
+        'Get-DbatoolsConfigValue',
+        'Get-DbatoolsError'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
