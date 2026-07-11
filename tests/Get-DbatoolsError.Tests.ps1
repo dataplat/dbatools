@@ -14,7 +14,8 @@ Describe $CommandName -Tag UnitTests {
                 "First",
                 "Last",
                 "Skip",
-                "All"
+                "All",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
