@@ -997,3 +997,78 @@ InModuleScope dbatools {
         }
     }
 }
+
+Describe "$CommandName compiled-cmdlet characterization" -Tag IntegrationTests {
+    BeforeAll {
+        # Mock-driven characterization of the orchestrator against the whole helper chain so the
+        # migration gate (which runs -Tag IntegrationTests) exercises the ported cmdlet with zero
+        # live SQL - the command's own IntegrationTests Describe is owner-skipped because real
+        # patching is destructive. The harness mirrors the maintained "authentication regression"
+        # Describe. -Confirm:$false is used on the calls that reach ShouldProcess because
+        # Update-DbaInstance is ConfirmImpact.High and its confirmation NREs in this non-interactive
+        # nested-pwsh-under-Pester host (the script function faults there too).
+        $credentialPassword = "pwd" | ConvertTo-SecureString -AsPlainText -Force
+        $testCredential = New-Object PSCredential("usr", $credentialPassword)
+
+        Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
+        Mock -CommandName Test-ElevationRequirement -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Restart-Computer -MockWith { $null } -ModuleName dbatools
+        Mock -CommandName Register-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate"; Successful = $true; Status = "Dummy" }
+        }
+        Mock -CommandName Unregister-RemoteSessionConfiguration -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{ "Name" = "dbatoolsInstallSqlServerUpdate"; Successful = $true; Status = "Dummy" }
+        }
+        Mock -CommandName Get-DbaDiskSpace -MockWith { [PSCustomObject]@{ Name = "C:\"; Free = 1 } } -ModuleName dbatools
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+            [PSCustomObject]@{
+                InstanceName = "LAB"
+                Version      = [PSCustomObject]@{
+                    "SqlInstance" = $null
+                    "Build"       = "11.0.5058"
+                    "NameLevel"   = "2012"
+                    "SPLevel"     = "SP2"
+                    "CULevel"     = $null
+                    "KBLevel"     = "2958429"
+                    "BuildLevel"  = [version]"11.0.5058"
+                    "MatchType"   = "Exact"
+                }
+            }
+        }
+        Mock -CommandName Invoke-Command2 -ModuleName dbatools -MockWith { $true }
+        Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
+        Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith { [PSCustomObject]@{ FullName = "c:\mocked\filename.exe" } }
+        Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+        Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith { [PSCustomObject]@{ FullName = "c:\mocked\path" } }
+        Mock -CommandName Invoke-DbaAdvancedUpdate -ModuleName dbatools -MockWith { }
+        Mock -CommandName Resolve-DbaNetworkName -ModuleName dbatools -MockWith { [PSCustomObject]@{ FullComputerName = "mocked" } }
+        Mock -CommandName Initialize-CredSSP -ModuleName dbatools -MockWith { }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [PSCustomObject]@{ SystemType = "x64" } }
+    }
+
+    It "propagates Authentication into the discovery and reboot-check helpers" {
+        $null = Update-DbaInstance -ComputerName "mocked" -Credential $testCredential -Authentication Credssp -Version "2012SP3" -Path "mocked" -EnableException -Confirm:$false
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+        Assert-MockCalled -CommandName Test-PendingReboot -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+    }
+
+    It "runs the Version action plan through discovery and delegates execution to Invoke-DbaAdvancedUpdate" {
+        $null = Update-DbaInstance -ComputerName "mocked" -Credential $testCredential -Authentication Credssp -Version "2012SP3" -Path "mocked" -EnableException -Confirm:$false
+        Assert-MockCalled -CommandName Invoke-DbaAdvancedUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $ComputerName -eq "mocked" }
+    }
+
+    It "fails early when Path contains only whitespace, before any discovery" {
+        Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith { throw "Get-SQLInstanceComponent should not be called" }
+        { Update-DbaInstance -Version "2012SP3" -Path "   " -EnableException } | Should -Throw "*Path is required*"
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 0 -Scope It -ModuleName dbatools
+    }
+
+    It "rejects a malformed Version value during validation" {
+        { Update-DbaInstance -ComputerName "mocked" -Version "SQL2008-SP3" -Path "mocked" -EnableException -Confirm:$false } | Should -Throw "*is an incorrect Version value*"
+    }
+
+    It "runs the KB action plan through discovery with the requested Authentication" {
+        $null = Update-DbaInstance -ComputerName "mocked" -Credential $testCredential -Authentication Credssp -KB "KB2958429" -Path "mocked" -EnableException -Confirm:$false
+        Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
+    }
+}
