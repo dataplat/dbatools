@@ -40,7 +40,8 @@
         'Disconnect-DbaInstance',
         'Export-DbaCsv',
         'Export-DbaScript',
-        'Export-DbatoolsConfig'
+        'Export-DbatoolsConfig',
+        'Get-DbaClientAlias'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
