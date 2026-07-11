@@ -175,7 +175,6 @@
         'Find-DbaDbDuplicateIndex',
         'Find-DbaDbGrowthEvent',
         'Find-DbaDbUnusedIndex',
-        'Find-DbaInstance',
         'Find-DbaLoginInGroup',
         'Find-DbaObject',
         'Find-DbaOrphanedFile',
