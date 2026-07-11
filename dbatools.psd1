@@ -391,7 +391,6 @@
         'Import-DbaXESessionTemplate',
         'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
-        'Install-DbaInstance',
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
         'Install-DbaSqlPackage',
