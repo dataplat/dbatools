@@ -95,6 +95,17 @@ else
 fi
 if [[ -n "$REPO_ROOT" && -f "$REPO_ROOT/.jscpd-baseline.json" ]]; then
     pass "baseline present: .jscpd-baseline.json"
+    # A baseline from another fingerprint scheme makes the gate fail open on
+    # every turn (silent dormancy) — surface it here since Stop-hook stderr
+    # is invisible.
+    if [[ -n "$NODE_BIN" ]]; then
+        ENGINE_FPV=$("$NODE_BIN" "$(dirname "$0")/lib-jscpd.js" --fp-version 2>/dev/null)
+        BASE_FPV=$(grep -o '"fingerprintVersion": *[0-9]*' "$REPO_ROOT/.jscpd-baseline.json" 2>/dev/null | grep -o '[0-9]*$')
+        if [[ -n "$ENGINE_FPV" && "${BASE_FPV:-1}" != "$ENGINE_FPV" ]]; then
+            warn "baseline fingerprint scheme v${BASE_FPV:-1} != engine v$ENGINE_FPV -> ratchet fails open every turn"
+            echo "            -> regenerate: bash .claude/hooks/jscpd-baseline.sh --force"
+        fi
+    fi
 else
     warn "no .jscpd-baseline.json -> ratchet dormant (opt in: bash .claude/hooks/jscpd-baseline.sh)"
 fi

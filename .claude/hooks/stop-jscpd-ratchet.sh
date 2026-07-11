@@ -84,6 +84,12 @@ if [[ ${#TOUCH_ARGS[@]} -eq 0 ]]; then
     exit 0
 fi
 
+# Pre-write snapshots (pre-write-snapshot-baseline.sh) let the engine attribute
+# a clone to THIS session: duplication that already existed in a touched file
+# before the session (stale baseline, upstream merge) must not block the turn.
+SNAP_DIR="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.snap"
+[[ -d "$SNAP_DIR" ]] && TOUCH_ARGS+=(--snap-dir "$SNAP_DIR")
+
 VERDICT=$(cd "$REPO_ROOT" && "$NODE_BIN" "$SCRIPT_DIR/lib-jscpd.js" --compare "$BASELINE" "${TOUCH_ARGS[@]}" 2>/dev/null)
 
 STATE="${VERDICT%%|*}"

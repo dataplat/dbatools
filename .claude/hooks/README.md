@@ -71,6 +71,12 @@ bash .claude/hooks/jscpd-baseline.sh          # records existing duplication
 From then on, a turn that introduces duplication the baseline doesn't record
 is blocked. Refresh with `--force` after intentional duplication or paydown.
 
+Blocks are attributed to the session: the gate consumes the pre-write
+snapshots (`pre-write-snapshot-baseline.sh`), so duplication that already
+existed in a file before the session touched it — a stale baseline, an
+upstream merge — never blocks; only copies the session itself added do.
+Engine tests: `bash .claude/hooks/test-jscpd-ratchet.sh`.
+
 The whole ratchet runs on node (which jscpd itself needs anyway) — no Python,
 no jq. jscpd 5.x ships a native binary per platform, so a Windows install
 can't be shared with WSL: the baseline script auto-installs a platform-local

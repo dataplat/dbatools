@@ -7,14 +7,27 @@
  *
  * Runs jscpd over the scan roots, parses its JSON report, and derives a stable,
  * location-independent fingerprint for every detected clone — sha1(normalized
- * code slice), computed from the byte positions jscpd reports, so a clone keeps
- * the same fingerprint even when unrelated edits push it up or down in the file
- * (and whitespace normalization makes CRLF/LF spellings hash identically across
- * platforms). Alongside each fingerprint it records the set of files the clone
+ * code slice), taken from the EXACT position range jscpd reports, applied to
+ * CRLF->LF-normalized content because that is the text jscpd computes its
+ * offsets on (whole-line fallback only when an entry carries no usable
+ * positions; see sliceFingerprint). A clone therefore keeps its fingerprint
+ * when unrelated edits push it around the file or touch the non-cloned
+ * overhang on its first/last line, and whitespace normalization makes CRLF/LF
+ * spellings hash identically across platforms. Alongside each fingerprint it records the set of files the clone
  * spans and jscpd's clone-pair count, which is what lets the ratchet catch a NEW
  * copy of already-baselined code: a fresh copy adds a file to the fingerprint's
  * file set and/or raises its pair count, even though the fingerprint itself is
  * unchanged.
+ *
+ * Attribution (--snap-dir): the repo-wide baseline alone cannot tell WHO
+ * introduced a clone — duplication that predates this session (merged from
+ * upstream, made via raw Bash, or simply newer than the baseline) must not
+ * block a session that merely touched the file. When the caller passes the
+ * session's snapshot dir (written by pre-write-snapshot-baseline.sh), a clone
+ * only blocks if some session-touched file contains MORE normalized copies of
+ * the cloned fragment now than it did in its pre-write snapshot — i.e. this
+ * session actually added a copy. A missing snapshot falls back to the
+ * baseline-only verdict (blocking), never to a silent pass.
  *
  * This module owns ALL JSON parsing, baseline writing, and comparison so the
  * shell wrappers never interpolate values into an interpreter (no injection
@@ -28,7 +41,8 @@
  *   1. $JSCPD_BIN                                  (explicit override, spawned as-is)
  *   2. $CLAUDE_PROJECT_DIR/node_modules/jscpd      (repo-local pin, if someone made one)
  *   3. ~/.dbatools-jscpd/node_modules/jscpd        (auto-installed by jscpd-baseline.sh)
- *   4. a jscpd shim's sibling node_modules on PATH (e.g. a global npm install)
+ *   4. a jscpd shim's sibling node_modules on PATH, or the shim's symlink
+ *      target's package dir (POSIX npm -g symlinks into .../lib/node_modules)
  * On WSL, PATH entries under /mnt/ are skipped — those are Windows installs
  * carrying the wrong platform's binary. If nothing resolves, callers fail open.
  *
@@ -36,9 +50,14 @@
  *   (default)              print {"error", "clones": {...}} as JSON to stdout
  *   --baseline-out PATH    scan whole root, write baseline JSON to PATH
  *   --compare PATH         scan --touching files, print "BLOCK|n" / "OK|" / "OPEN|why"
- *   --where                print the resolved jscpd invocation, exit 1 if none
+ *   --where                print the resolved jscpd invocation after verifying it
+ *                          actually runs (--version); exit 1 if none works
+ *   --snap-key PATH        print the snapshot key this engine derives for PATH,
+ *                          so the test suite can assert bash/node key parity on
+ *                          the platform it runs on (drive-letter form included)
  *
  * Common flags: --root a,b  --min-tokens N  --touching ABS_PATH (repeatable)
+ *               --snap-dir DIR (session snapshot store, enables attribution)
  */
 "use strict";
 
@@ -57,6 +76,13 @@ const { spawnSync } = require("child_process");
 // powershell (.ps1/.psm1), csharp (.cs) and sql (.sql). Keep this list in
 // lockstep with the extension gate in stop-jscpd-ratchet.sh.
 const FORMATS = ["powershell", "csharp", "sql"];
+// Bump whenever fingerprint derivation changes: fingerprints from another
+// scheme silently match nothing, which would misread every old clone as new.
+// A version-mismatched baseline fails OPEN with a regenerate hint instead
+// (and hooks-doctor surfaces it), so stale baselines can never false-block.
+// v3: positions decoded as UTF-8 byte offsets (v2 sliced UTF-16 and drifted
+// on any non-ASCII text before a clone).
+const FP_VERSION = 3;
 const IGNORE_PATTERNS = [
     "**/node_modules/**",
     "**/bin/**",
@@ -103,13 +129,31 @@ function findJscpd() {
         // WSL: /mnt/* PATH entries are Windows npm installs whose native cpd
         // binary is the wrong platform — running it would only fail open noisily.
         if (process.platform !== "win32" && dir.startsWith("/mnt/")) continue;
-        if (fs.existsSync(path.join(dir, "jscpd")) || fs.existsSync(path.join(dir, "jscpd.cmd"))) {
+        for (const shim of ["jscpd", "jscpd.cmd"]) {
+            const shimPath = path.join(dir, shim);
+            if (!fs.existsSync(shimPath)) continue;
+            // Windows npm keeps the package right next to the shim; POSIX npm -g
+            // symlinks the shim into .../lib/node_modules/jscpd — resolve the
+            // link and walk back to the package dir so both layouts are found.
             pkgDirs.push(path.join(dir, "node_modules", "jscpd"));
+            try {
+                const target = fs.realpathSync(shimPath).replace(/\\/g, "/");
+                const m = target.match(/^(.*\/node_modules\/jscpd)\//);
+                if (m) pkgDirs.push(m[1]);
+            } catch (e) { /* dangling symlink — other candidates may still work */ }
         }
     }
     for (const pkgDir of pkgDirs) {
         const script = readPackageBinScript(pkgDir);
-        if (script) return [process.execPath, script];
+        if (!script) continue;
+        // An install that EXISTS can still be broken — most plausibly a
+        // node_modules synced from the other OS on a Windows/WSL-shared
+        // checkout, carrying the wrong platform's native cpd binary. Probe
+        // before committing, so a dead higher-priority candidate falls
+        // through to a working one instead of failing every scan open.
+        const probe = spawnSync(process.execPath, [script, "--version"], { stdio: "ignore", timeout: 30000 });
+        if (probe.error || probe.status !== 0) continue;
+        return [process.execPath, script];
     }
     return null;
 }
@@ -133,22 +177,42 @@ function resolvePath(rootsAbs, name) {
 }
 
 function sliceFingerprint(absPath, entry) {
-    // sha1 of the normalized code slice at absPath named by a jscpd entry.
-    // Returns null when the slice cannot be read (missing file, bad offsets) so
-    // the caller skips it rather than crash — a fingerprint we can't compute
-    // must never masquerade as a match or a miss.
+    // sha1 + normalized text of the EXACT clone range at absPath named by a
+    // jscpd entry. jscpd computes `position` offsets on newline-normalized
+    // text, so the content is CRLF->LF normalized before slicing — the offsets
+    // then address the precise token range on every platform. Exact ranges
+    // (never whole lines) matter twice over: the fingerprint must not change
+    // when someone edits the NON-cloned overhang sharing the clone's first or
+    // last line, and attribution must count occurrences of the clone itself,
+    // not clone-plus-neighbors. Falls back to the whole-line range when a
+    // report entry carries no usable positions. Returns null when the slice
+    // cannot be read so the caller skips it rather than crash — a fingerprint
+    // we can't compute must never masquerade as a match or a miss.
     let content;
     try {
-        content = fs.readFileSync(absPath, "utf8");
+        content = fs.readFileSync(absPath, "utf8").replace(/\r\n/g, "\n");
     } catch (e) {
         return null;
     }
+    // Positions are UTF-8 BYTE offsets (verified empirically: with multi-byte
+    // text before a clone, only byte-space slicing aligns both sides of the
+    // pair), so slice the UTF-8 buffer, never the UTF-16 string — String.slice
+    // drifts on every non-ASCII character and corrupts the fragment.
+    let raw = null;
+    const buf = Buffer.from(content, "utf8");
     const start = entry && entry.startLoc ? entry.startLoc.position : undefined;
     const end = entry && entry.endLoc ? entry.endLoc.position : undefined;
-    if (typeof start !== "number" || typeof end !== "number" || end <= start) return null;
-    const frag = normalize(content.slice(start, end));
+    if (typeof start === "number" && typeof end === "number" && start >= 0 && end > start && end <= buf.length) {
+        raw = buf.subarray(start, end).toString("utf8");
+    } else {
+        const startLine = entry && entry.startLoc ? entry.startLoc.line : undefined;
+        const endLine = entry && entry.endLoc ? entry.endLoc.line : undefined;
+        if (typeof startLine !== "number" || typeof endLine !== "number" || endLine < startLine || startLine < 1) return null;
+        raw = content.split("\n").slice(startLine - 1, endLine).join("\n");
+    }
+    const frag = normalize(raw);
     if (!frag) return null;
-    return crypto.createHash("sha1").update(frag, "utf8").digest("hex");
+    return { fp: crypto.createHash("sha1").update(frag, "utf8").digest("hex"), frag: frag };
 }
 
 function runJscpd(rootsAbs, minTokens, outDir) {
@@ -183,14 +247,18 @@ function runJscpd(rootsAbs, minTokens, outDir) {
     }
 }
 
+function repoRel(abs) {
+    return path.relative(process.cwd(), abs).replace(/\\/g, "/");
+}
+
 function collect(roots, minTokens, touching) {
-    // Returns {error, clones: {fp: {files: [...], pairs: N}}}. clones is
-    // filtered to fingerprints involving a `touching` file when given, but each
-    // entry always carries its FULL tree-wide file set and pair count so a
-    // caller can compare like-for-like against a baseline.
-    const repoRel = (abs) => path.relative(process.cwd(), abs).replace(/\\/g, "/");
+    // Returns {error, clones: {fp: {files: [...], pairs: N[, frag]}}}. clones
+    // is filtered to fingerprints involving a `touching` file when given (and
+    // then each entry carries the normalized cloned fragment for attribution),
+    // but every entry always carries its FULL tree-wide file set and pair
+    // count so a caller can compare like-for-like against a baseline.
     const rootsAbs = roots.map((r) => path.resolve(r));
-    const touchingAbs = new Set((touching || []).map((t) => path.resolve(t)));
+    const touchingAbs = new Set((touching || []).map((t) => canonicalAbs(t)));
 
     let outDir;
     let report;
@@ -202,7 +270,7 @@ function collect(roots, minTokens, touching) {
     }
     if (report === null) return { error: "jscpd-unavailable", clones: {} };
 
-    const clones = {}; // fp -> {files: Set, pairs: int}, tree-wide
+    const clones = {}; // fp -> {files: Set, pairs: int, frags: {rel: [text]}}, tree-wide
     const touchingFps = new Set();
     for (const dup of report.duplicates || []) {
         const first = dup.firstFile || {};
@@ -213,16 +281,25 @@ function collect(roots, minTokens, touching) {
         // baselines written on Windows and Linux agree exactly).
         const firstAbs = resolvePath(rootsAbs, first.name);
         const secondAbs = resolvePath(rootsAbs, second.name);
-        let fp = null;
-        if (firstAbs) fp = sliceFingerprint(firstAbs, first);
-        if (fp === null && secondAbs) fp = sliceFingerprint(secondAbs, second);
-        if (fp === null) continue;
-        const rec = clones[fp] || (clones[fp] = { files: new Set(), pairs: 0 });
+        // Slice BOTH sides: exact-range fragments are normally identical
+        // across the pair, but report entries can be asymmetric (one side
+        // unreadable, position fallback to whole lines on one side only), so
+        // attribution always compares a touched file against ITS OWN fragment
+        // — a literal substring of that file by construction — never the
+        // other side's. The fingerprint stays derived from the first readable
+        // side, exactly as the baseline format always has.
+        const hitFirst = firstAbs ? sliceFingerprint(firstAbs, first) : null;
+        const hitSecond = secondAbs ? sliceFingerprint(secondAbs, second) : null;
+        const hit = hitFirst || hitSecond;
+        if (hit === null) continue;
+        const rec = clones[hit.fp] || (clones[hit.fp] = { files: new Set(), pairs: 0, frags: {} });
         rec.pairs += 1;
-        for (const abs of [firstAbs, secondAbs]) {
+        for (const [abs, sideHit] of [[firstAbs, hitFirst], [secondAbs, hitSecond]]) {
             if (!abs) continue;
-            rec.files.add(repoRel(abs));
-            if (touchingAbs.has(abs)) touchingFps.add(fp);
+            const rel = repoRel(abs);
+            rec.files.add(rel);
+            if (sideHit) (rec.frags[rel] = rec.frags[rel] || []).push(sideHit.frag);
+            if (touchingAbs.has(canonicalAbs(abs))) touchingFps.add(hit.fp);
         }
     }
 
@@ -230,23 +307,141 @@ function collect(roots, minTokens, touching) {
     const out = {};
     for (const fp of keys) {
         out[fp] = { files: [...clones[fp].files].sort(), pairs: clones[fp].pairs };
+        // Fragments are only needed for attribution against snapshots, which
+        // only happens in touching mode — keep baselines lean and stable.
+        if (touchingAbs.size) out[fp].frags = clones[fp].frags;
     }
     return { error: null, clones: out };
 }
 
-function countNew(currentClones, baselineClones) {
-    // How many of current's clones are NOT accounted for by the baseline.
-    // New = a fingerprint the baseline never saw, OR a baselined fingerprint
-    // that has spread to a file the baseline didn't list, OR one whose pair
-    // count rose.
+// ---------------------------------------------------------------- attribution
+function canonicalAbs(p) {
+    // Match the canonical form pre-write-snapshot-baseline.sh keys on:
+    // realpath when resolvable, plain resolution otherwise.
+    try {
+        return fs.realpathSync(path.resolve(p));
+    } catch (e) {
+        return path.resolve(p);
+    }
+}
+
+function snapshotKey(absPath) {
+    // Same derivation as the snapshot hook: sha1 of the canonical path,
+    // forward slashes, lowercased only on case-insensitive Windows. On
+    // Windows the hook runs under Git Bash where realpath speaks /c/x while
+    // node speaks C:/x — convert to the Git Bash spelling before hashing or
+    // producer and consumer derive different keys and attribution silently
+    // falls back to blocking. (--snap-key exposes this for the test suite.)
+    let p = absPath.replace(/\\/g, "/");
+    if (process.platform === "win32") {
+        p = p.replace(/^([A-Za-z]):\//, (m, drive) => "/" + drive + "/").toLowerCase();
+    }
+    return crypto.createHash("sha1").update(p, "utf8").digest("hex");
+}
+
+function snapshotContent(snapDir, absPath) {
+    // Pre-write content of absPath as snapshotted at first touch this session;
+    // "" for a file the session created (empty baseline), null when unknown.
+    try {
+        return fs.readFileSync(path.join(snapDir, snapshotKey(absPath) + ".base"), "utf8");
+    } catch (e) {
+        return null;
+    }
+}
+
+function countOccurrences(hay, needle) {
+    if (!needle) return 0;
+    let n = 0;
+    let i = hay.indexOf(needle);
+    while (i !== -1) {
+        n += 1;
+        i = hay.indexOf(needle, i + needle.length);
+    }
+    return n;
+}
+
+function baselineAccounts(rec, base, touchedRelSet) {
+    // Does the repo-wide baseline already account for this clone?
+    // Spread matters only when it lands in a file THIS session touched — a
+    // copy some other session added elsewhere is not this turn's doing (and a
+    // genuine foreign copy still raises the pair count, so nothing hides).
+    if (!base) return false;
+    const spreadToTouched = (rec.files || []).some(
+        (f) => !(base.files || []).includes(f) && touchedRelSet.has(f)
+    );
+    if (spreadToTouched) return false;
+    if ((rec.pairs || 0) > (base.pairs || 0)) return false;
+    return true;
+}
+
+function snapshotVerdict(rec, ctx) {
+    // Per-clone attribution against this session's pre-write snapshots:
+    //   "added"     — some touched file the clone involves holds MORE
+    //                 normalized copies of its fragment now than in its
+    //                 pre-write snapshot: this session pasted a copy.
+    //   "not-added" — every touched involved file has a snapshot and none
+    //                 gained a copy.
+    //   "unknown"   — attribution impossible (no snapshot store, no per-side
+    //                 fragment, missing snapshot, unreadable file, or the
+    //                 clone involves no touched file).
+    // Each touched file is compared against ITS OWN recorded fragments
+    // (report entries can be asymmetric — an unreadable side, or a whole-line
+    // fallback on one side only — so the other side's text may legitimately
+    // occur zero times here).
+    // Never conclude "unknown" from the FIRST gap: scan every touched involved
+    // file, because a later one may hold snapshot PROOF of an added copy —
+    // "added" must win over "unknown" or an attribution gap in one file lets
+    // a proven paste in another escape the baseline-offset scenarios.
+    if (!ctx.snapDir) return "unknown";
+    let sawSnapshot = false;
+    let sawUnknown = false;
+    for (const abs of ctx.touchedAbs) {
+        const rel = repoRel(abs);
+        if (!(rec.files || []).includes(rel)) continue;
+        const sideFrags = (rec.frags || {})[rel];
+        if (!sideFrags || !sideFrags.length) {
+            sawUnknown = true;
+            continue;
+        }
+        const snap = snapshotContent(ctx.snapDir, abs);
+        if (snap === null) {
+            sawUnknown = true;
+            continue;
+        }
+        let current;
+        try {
+            current = fs.readFileSync(abs, "utf8");
+        } catch (e) {
+            sawUnknown = true;
+            continue;
+        }
+        sawSnapshot = true;
+        const currentNorm = normalize(current);
+        const snapNorm = normalize(snap);
+        for (const frag of sideFrags) {
+            if (countOccurrences(currentNorm, frag) > countOccurrences(snapNorm, frag)) {
+                return "added";
+            }
+        }
+    }
+    if (sawUnknown || !sawSnapshot) return "unknown";
+    return "not-added";
+}
+
+function countNew(currentClones, baselineClones, ctx) {
+    // How many of current's clones are NEW WORK OF THIS SESSION. Snapshot
+    // attribution outranks aggregate baseline accounting in BOTH directions:
+    // a proven session-added copy blocks even when an unrelated removal
+    // elsewhere keeps the tree-wide file set and pair count at baselined
+    // levels, and a provenly pre-existing clone passes even when the baseline
+    // missed it. Only an "unknown" falls back to the baseline-only verdict,
+    // so attribution gaps can never grant a silent pass.
     let n = 0;
     for (const [fp, rec] of Object.entries(currentClones)) {
-        const base = baselineClones[fp];
-        if (!base) {
+        const verdict = snapshotVerdict(rec, ctx);
+        if (verdict === "added") {
             n += 1;
-        } else if ((rec.files || []).some((f) => !(base.files || []).includes(f))) {
-            n += 1;
-        } else if ((rec.pairs || 0) > (base.pairs || 0)) {
+        } else if (verdict === "unknown" && !baselineAccounts(rec, baselineClones[fp], ctx.touchedRelSet)) {
             n += 1;
         }
     }
@@ -258,20 +453,26 @@ function parseArgs(argv) {
         root: "public,private",
         minTokens: 50,
         touching: [],
+        snapDir: null,
         baselineOut: null,
         noClobber: false,
         compare: null,
         where: false,
+        snapKey: null,
+        fpVersion: false,
     };
     for (let i = 0; i < argv.length; i++) {
         switch (argv[i]) {
             case "--root": args.root = argv[++i]; break;
             case "--min-tokens": args.minTokens = parseInt(argv[++i], 10); break;
             case "--touching": args.touching.push(argv[++i]); break;
+            case "--snap-dir": args.snapDir = argv[++i]; break;
             case "--baseline-out": args.baselineOut = argv[++i]; break;
             case "--no-clobber": args.noClobber = true; break;
             case "--compare": args.compare = argv[++i]; break;
             case "--where": args.where = true; break;
+            case "--snap-key": args.snapKey = argv[++i]; break;
+            case "--fp-version": args.fpVersion = true; break;
             default:
                 process.stderr.write(`lib-jscpd.js: unknown argument ${argv[i]}\n`);
                 process.exit(1);
@@ -286,9 +487,24 @@ function main() {
     const roots = args.root.split(",").map((r) => r.trim()).filter(Boolean);
 
     if (args.where) {
+        // Report only an invocation that actually RUNS: an existing-but-broken
+        // binary (wrong platform, $JSCPD_BIN=/bin/false) must read as absent,
+        // or hooks-doctor reports green while every scan fails open.
         const argv = findJscpd();
         if (argv === null) return 1;
+        const probe = spawnSync(argv[0], [...argv.slice(1), "--version"], { stdio: "ignore", timeout: 30000 });
+        if (probe.error || probe.status !== 0) return 1;
         process.stdout.write(argv.join(" ") + "\n");
+        return 0;
+    }
+
+    if (args.snapKey) {
+        process.stdout.write(snapshotKey(canonicalAbs(args.snapKey)) + "\n");
+        return 0;
+    }
+
+    if (args.fpVersion) {
+        process.stdout.write(FP_VERSION + "\n");
         return 0;
     }
 
@@ -301,19 +517,18 @@ function main() {
         const baseline = {
             generatedFrom: roots.join(","),
             minTokens: args.minTokens,
+            fingerprintVersion: FP_VERSION,
             clones: result.clones,
         };
         // Atomic publish: an interrupted in-place truncate would leave a corrupt
         // baseline, and the hook would then fail open indefinitely. Write to a
         // temp file in the SAME directory, then publish. --no-clobber publishes
-        // via link(2), which fails atomically if the target already exists — no
-        // check-then-act window for two concurrent runs to clobber each other
-        // (with a plain existence check as the fallback where hardlinks aren't
-        // supported, e.g. some WSL drvfs mounts).
+        // via link(2), which fails atomically if the target already exists; where
+        // hardlinks aren't supported (some WSL drvfs mounts) fall back to
+        // COPYFILE_EXCL — also exclusive, so two concurrent runs can never both
+        // win. Random temp name + "wx" (O_CREAT|O_EXCL) keeps a pre-planted
+        // symlink from redirecting the write.
         const outAbs = path.resolve(args.baselineOut);
-        // Random name + exclusive create ("wx" -> O_CREAT|O_EXCL): a predictable
-        // temp path could be pre-planted as a symlink and writeFileSync would
-        // happily follow it; O_EXCL refuses to open through any existing path.
         const tmp = path.join(
             path.dirname(outAbs),
             `.jscpd-baseline-${crypto.randomBytes(8).toString("hex")}.tmp`
@@ -322,17 +537,29 @@ function main() {
             fs.writeFileSync(tmp, JSON.stringify(sortKeysDeep(baseline), null, 2) + "\n", { flag: "wx" });
             if (args.noClobber) {
                 try {
+                    // JSCPD_TEST_NO_LINK is a test-suite-only knob: hardlinks
+                    // work on every filesystem the tests run on, so the
+                    // COPYFILE_EXCL fallback would otherwise be untestable.
+                    if (process.env.JSCPD_TEST_NO_LINK === "1") {
+                        const err = new Error("test-forced link failure");
+                        err.code = "ENOTSUP";
+                        throw err;
+                    }
                     fs.linkSync(tmp, outAbs);
                 } catch (e) {
                     if (e.code === "EEXIST") {
                         process.stderr.write(`refusing to overwrite existing ${args.baselineOut} (pass --force to regenerate)\n`);
                         return 1;
                     }
-                    if (fs.existsSync(outAbs)) {
-                        process.stderr.write(`refusing to overwrite existing ${args.baselineOut} (pass --force to regenerate)\n`);
-                        return 1;
+                    try {
+                        fs.copyFileSync(tmp, outAbs, fs.constants.COPYFILE_EXCL);
+                    } catch (e2) {
+                        if (e2.code === "EEXIST") {
+                            process.stderr.write(`refusing to overwrite existing ${args.baselineOut} (pass --force to regenerate)\n`);
+                            return 1;
+                        }
+                        throw e2;
                     }
-                    fs.renameSync(tmp, outAbs);
                 }
             } else {
                 fs.renameSync(tmp, outAbs);
@@ -356,6 +583,11 @@ function main() {
             process.stdout.write(`OPEN|baseline unreadable: ${e.message}\n`);
             return 0;
         }
+        const baseV = baseline.fingerprintVersion || 1;
+        if (baseV !== FP_VERSION) {
+            process.stdout.write(`OPEN|baseline fingerprint scheme v${baseV} != engine v${FP_VERSION} — regenerate: bash .claude/hooks/jscpd-baseline.sh --force\n`);
+            return 0;
+        }
         const baselineClones = baseline.clones || {};
         const scanRoots = String(baseline.generatedFrom || args.root).split(",").map((r) => r.trim()).filter(Boolean);
         const minTokens = parseInt(baseline.minTokens, 10) || args.minTokens;
@@ -364,7 +596,13 @@ function main() {
             process.stdout.write(`OPEN|jscpd unavailable: ${result.error}\n`);
             return 0;
         }
-        const fresh = countNew(result.clones, baselineClones);
+        const touchedAbs = args.touching.map(canonicalAbs);
+        const ctx = {
+            snapDir: args.snapDir && fs.existsSync(args.snapDir) ? args.snapDir : null,
+            touchedAbs: touchedAbs,
+            touchedRelSet: new Set(touchedAbs.map(repoRel)),
+        };
+        const fresh = countNew(result.clones, baselineClones, ctx);
         process.stdout.write(fresh ? `BLOCK|${fresh}\n` : "OK|\n");
         return 0;
     }
