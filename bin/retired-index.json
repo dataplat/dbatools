@@ -264,6 +264,11 @@
     "retiredPath": "private/retired/Get-DbatoolsChangeLog.ps1",
     "flippedUtc": "2026-07-11T18:14:03Z"
   },
+  "Get-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-11T18:43:51Z"
+  },
   "Get-DbaTrace": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaTrace.ps1",
