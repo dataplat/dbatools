@@ -403,5 +403,10 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaSpn.ps1",
     "flippedUtc": "2026-07-09T22:01:50Z"
+  },
+  "Update-DbaInstance": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Update-DbaInstance.ps1",
+    "flippedUtc": "2026-07-11T03:07:39Z"
   }
 }

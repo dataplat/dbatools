@@ -651,7 +651,6 @@
         'Uninstall-DbaSqlWatch',
         'Unregister-DbatoolsConfig',
         'Update-DbaBuildReference',
-        'Update-DbaInstance',
         'Update-DbaServiceAccount',
         'Update-Dbatools',
         'Watch-DbaDbLogin',
