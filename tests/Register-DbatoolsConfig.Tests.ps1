@@ -27,6 +27,11 @@ Describe $CommandName -Tag IntegrationTests {
     # asserted under this harness - Invoke-ManualPester blanks the module-scope
     # $script:path_Registry*/$script:path_File* variables (RB-IMP-51), so the command's own
     # write targets are empty here for the script function and the compiled cmdlet alike.
+    # (A 2026-07-12 revision asserted a real HKCU round-trip here after gate runs appeared
+    # to show the cmdlet registering under the harness - those runs were measuring a Gallery
+    # dbatools 2.8.2 function through the Gallery-shadow auto-load incident, see
+    # migration/CAMPAIGN-STATE.md. Post-fix, the compiled cmdlet's module hop reads the same
+    # blanked variables, so the honest harness shape below is restored.)
     # The out-of-harness registry/file behavior is pinned by the migration smoke battery
     # (see migration/trackers WAVE-1 W1-032 Evidence). These tests pin the
     # environment-independent no-op paths plus the harness-observable failure shape.
@@ -46,19 +51,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Registration under the harness" {
-        It "Registers a value by FullName to the user default registry scope" {
-            # The compiled cmdlet resolves the module path variables through its live
-            # module hop, so registration works here; the RETIRED FUNCTION could not
-            # (its module-scope $script:path_Registry* read blank under this harness -
-            # RB-IMP-51; recorded in the W1-032 tracker Evidence).
+        It "Warns Failed-to-export when the module path variables are blanked (RB-IMP-51 harness reality)" {
             $configName = "dbatoolsci.registertest$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "regvalue"
-            $null = Register-DbatoolsConfig -FullName $configName
-            $regPath = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
-            $props = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
-            $prop = if ($props) { $props.PSObject.Properties[$configName] } else { $null }
-            $prop.Value | Should -Match "regvalue"
-            Remove-ItemProperty -Path $regPath -Name $configName -ErrorAction SilentlyContinue
+            $null = Register-DbatoolsConfig -FullName $configName -WarningVariable warn -WarningAction SilentlyContinue
+            $warn | Should -Match "Failed to export"
         }
     }
 }
