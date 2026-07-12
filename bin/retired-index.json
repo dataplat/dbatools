@@ -449,6 +449,11 @@
     "retiredPath": "private/retired/New-DbaFirewallRule.ps1",
     "flippedUtc": "2026-07-10T11:03:00Z"
   },
+  "New-DbaScriptingOption": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaScriptingOption.ps1",
+    "flippedUtc": "2026-07-12T07:41:00Z"
+  },
   "Read-DbaBackupHeader": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
