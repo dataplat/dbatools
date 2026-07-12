@@ -4,18 +4,28 @@
 
 .DESCRIPTION
     Runs every 6 hours from Azure Automation (account: dbatools-ci-janitor,
-    runbook: Remove-RunawayRunner), entirely independent of GitHub. The
-    GitHub-side janitor (runner-reconcile.yml) reaps spent and zombie VMs within
-    minutes; this backstop only matters when that machinery is dead -- GitHub
-    outage, broken workflow file, lost dispatch chain. It deletes:
+    runbook: Remove-RunawayRunner), entirely independent of GitHub Actions.
+    This is the LAST-DITCH kill switch: the GitHub-side janitor
+    (runner-reconcile.yml) owns normal fleet lifecycle; this backstop exists so
+    the fleet can never idle all day on a wedged dispatch chain.
 
-      - dbatools-runners_* instances older than the age cap: 3h on nights and
-        weekends, 13h during weekday daytime (06-17 UTC) so the reconcile
-        standby floor can idle legitimately. A runner doing real work lives
-        ~100 minutes at most (90-minute job timeout plus boot).
-      - ps3smoke-* VMs older than 2 hours (the nightly job caps at 55 minutes).
-      - unattached ps3smoke/instance NICs and public IPs, which survive a
-        workflow that died mid-teardown and leak a few dollars a month each.
+    The kill rule is keyed to maintainer activity, not the clock:
+
+      - STALE (no push by a maintainer in the last 6 hours, checked through the
+        anonymous GitHub events API): every dbatools-runners_* VM older than
+        2 hours is deleted. The 2-hour grace only spares an in-flight job from
+        a manual dispatch -- jobs time out at 90 minutes, so anything older is
+        by definition runaway.
+      - ACTIVE (maintainer push within 6 hours): reconcile owns the window, so
+        only true zombies older than 14 hours are deleted here.
+      - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
+        apply -- 3 hours on nights and weekends, 13 hours on weekday daytime
+        (06-17 UTC) so a healthy standby floor is not murdered blind.
+
+    Always, regardless of mode:
+      - ps3smoke-* VMs older than 2 hours are deleted (nightly job caps at 55m).
+      - Unattached ps3smoke/instance NICs and public IPs are deleted; they
+        survive workflows that died mid-teardown and leak money slowly.
 
     Identity: system-assigned managed identity holding the dbatools-ci-operator
     custom role scoped to the dbatools-ci resource group ONLY. It cannot see
@@ -31,16 +41,62 @@
 $ErrorActionPreference = "Continue"
 $null = Connect-AzAccount -Identity
 $rg = "dbatools-ci"
+$repo = "dataplat/dbatools"
+$maintainers = @("potatoqualitee", "andreasjordan")
+$activityWindowHours = 6
 $utcNow = (Get-Date).ToUniversalTime()
 
-$isWeekend = $utcNow.DayOfWeek -in @([DayOfWeek]::Saturday, [DayOfWeek]::Sunday)
-$isWeekdayDaytime = (-not $isWeekend) -and $utcNow.Hour -ge 6 -and $utcNow.Hour -lt 17
-if ($isWeekdayDaytime) {
-    $runnerMaxHours = 13
-} else {
-    $runnerMaxHours = 3
+# ---- how long since the last maintainer push? (anonymous API, public repo) ----
+$mode = "github-unreachable"
+$lastPushAgeHours = $null
+try {
+    $splatEvents = @{
+        Uri        = "https://api.github.com/repos/$repo/events?per_page=100"
+        Headers    = @{ "User-Agent" = "dbatools-ci-janitor" }
+        TimeoutSec = 30
+    }
+    $events = Invoke-RestMethod @splatEvents
+    $pushes = @($events | Where-Object { $PSItem.type -eq "PushEvent" -and $PSItem.actor.login -in $maintainers })
+    if ($pushes) {
+        $lastPush = ($pushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
+        $lastPushAgeHours = ($utcNow - $lastPush).TotalHours
+        if ($lastPushAgeHours -le $activityWindowHours) {
+            $mode = "active"
+        } else {
+            $mode = "stale"
+        }
+    } else {
+        # no maintainer push within the last ~100 repo events: definitely stale
+        $mode = "stale"
+    }
+} catch {
+    Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
 }
-Write-Output "scan $($utcNow.ToString("u")): runner age cap ${runnerMaxHours}h, smoke cap 2h"
+
+switch ($mode) {
+    "active" {
+        $runnerMaxHours = 14
+        Write-Output "mode=active: last maintainer push $([math]::Round($lastPushAgeHours, 1))h ago (window ${activityWindowHours}h); only zombies past ${runnerMaxHours}h die"
+    }
+    "stale" {
+        $runnerMaxHours = 2
+        $ageText = "not in the last 100 events"
+        if ($null -ne $lastPushAgeHours) {
+            $ageText = "$([math]::Round($lastPushAgeHours, 1))h ago"
+        }
+        Write-Output "mode=stale: last maintainer push $ageText -- every runner VM past ${runnerMaxHours}h dies"
+    }
+    default {
+        $isWeekend = $utcNow.DayOfWeek -in @([DayOfWeek]::Saturday, [DayOfWeek]::Sunday)
+        $isWeekdayDaytime = (-not $isWeekend) -and $utcNow.Hour -ge 6 -and $utcNow.Hour -lt 17
+        if ($isWeekdayDaytime) {
+            $runnerMaxHours = 13
+        } else {
+            $runnerMaxHours = 3
+        }
+        Write-Output "mode=github-unreachable: conservative age cap ${runnerMaxHours}h"
+    }
+}
 
 $deleted = 0
 $vms = Get-AzVM -ResourceGroupName $rg
@@ -64,7 +120,7 @@ foreach ($vm in $vms) {
         $ageHours = ($utcNow - $vm.TimeCreated.ToUniversalTime()).TotalHours
     }
     if ($ageHours -gt $cap) {
-        Write-Warning "RUNAWAY: $($vm.Name) is $([math]::Round($ageHours, 1))h old (cap ${cap}h) -- deleting"
+        Write-Warning "RUNAWAY: $($vm.Name) is $([math]::Round($ageHours, 1))h old (cap ${cap}h, mode $mode) -- deleting"
         $null = Remove-AzVM -ResourceGroupName $rg -Name $vm.Name -Force
         $deleted++
     } else {
