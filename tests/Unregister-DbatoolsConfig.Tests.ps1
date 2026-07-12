@@ -27,30 +27,24 @@ Describe $CommandName -Tag IntegrationTests {
     # Characterization tests (TA-049). Real registry/file unregistration cannot be asserted
     # under this harness - Invoke-ManualPester blanks the module-scope $script:path_Registry*/
     # $script:path_File* variables (RB-IMP-51, the W1-032 Register class), so the begin-block
-    # store collection reads empty stores here for the script function and the compiled
-    # cmdlet alike. The out-of-harness registry round-trip is pinned by the migration smoke
-    # battery (see the W1-041 tracker Evidence). These tests pin the harness-observable
-    # no-op shapes: no pipeline output, no warnings.
+    # store collection hits Test-Path with a null path and the call dies on the nested
+    # binding error for the script function and the compiled cmdlet alike (validated against
+    # the function both editions). The out-of-harness registry round-trip is pinned by the
+    # migration smoke battery (see the W1-041 tracker Evidence).
 
-    Context "No-op paths" {
-        It "Silently ignores an unregistered FullName" {
-            $results = @(Unregister-DbatoolsConfig -FullName "dbatoolsci.doesnotexist$(Get-Random)" -WarningVariable warn -WarningAction SilentlyContinue -ErrorAction SilentlyContinue)
-            $results.Count | Should -BeExactly 0
-            @($warn).Count | Should -BeExactly 0
+    Context "Harness-observable failure shape (RB-IMP-51 blanked store paths)" {
+        It "FullName input dies on the blanked registry path" {
+            { Unregister-DbatoolsConfig -FullName "dbatoolsci.doesnotexist$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
         }
 
-        It "Silently ignores a module filter that matches nothing" {
-            $results = @(Unregister-DbatoolsConfig -Module "dbatoolscinomatch$(Get-Random)" -WarningVariable warn -WarningAction SilentlyContinue -ErrorAction SilentlyContinue)
-            $results.Count | Should -BeExactly 0
-            @($warn).Count | Should -BeExactly 0
+        It "Module input dies on the blanked registry path" {
+            { Unregister-DbatoolsConfig -Module "dbatoolscinomatch$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
         }
 
-        It "Silently ignores a piped configuration object" {
+        It "Piped configuration input dies on the blanked registry path" {
             $configName = "dbatoolsci.unregpipe$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "x"
-            $results = @(Get-DbatoolsConfig -FullName $configName | Unregister-DbatoolsConfig -WarningVariable warn -WarningAction SilentlyContinue -ErrorAction SilentlyContinue)
-            $results.Count | Should -BeExactly 0
-            @($warn).Count | Should -BeExactly 0
+            { Get-DbatoolsConfig -FullName $configName | Unregister-DbatoolsConfig } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
         }
     }
 }
