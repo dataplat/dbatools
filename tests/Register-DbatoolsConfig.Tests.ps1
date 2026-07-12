@@ -58,7 +58,11 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $warnText = @($warn) -join "~"
             $errText = @($err | ForEach-Object { $PSItem.Exception.GetType().Name }) -join "~"
-            "warnN=$(@($warn).Count) warn=<$warnText> errN=$(@($err).Count) err=<$errText> caught=<$caught> outN=$($out.Count)" | Should -BeExactly "IMPOSSIBLE"
+            $regPath = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
+            $prop = (Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue).PSObject.Properties[$configName]
+            $regValue = if ($prop) { $prop.Value } else { "<missing>" }
+            Remove-ItemProperty -Path $regPath -Name $configName -ErrorAction SilentlyContinue
+            "warnN=$(@($warn).Count) warn=<$warnText> errN=$(@($err).Count) err=<$errText> caught=<$caught> outN=$($out.Count) reg=<$regValue>" | Should -BeExactly "IMPOSSIBLE"
         }
     }
 }
