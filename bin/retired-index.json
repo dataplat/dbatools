@@ -404,6 +404,11 @@
     "retiredPath": "private/retired/Join-DbaPath.ps1",
     "flippedUtc": "2026-07-12T03:26:28Z"
   },
+  "Measure-DbatoolsImport": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Measure-DbatoolsImport.ps1",
+    "flippedUtc": "2026-07-12T03:51:41Z"
+  },
   "New-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaComputerCertificate.ps1",

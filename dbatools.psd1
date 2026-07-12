@@ -411,7 +411,6 @@
         'Measure-DbaBackupThroughput',
         'Measure-DbaDbVirtualLogFile',
         'Measure-DbaDiskSpaceRequirement',
-        'Measure-DbatoolsImport',
         'Mount-DbaDatabase',
         'Move-DbaDbFile',
         'Move-DbaRegServer',
