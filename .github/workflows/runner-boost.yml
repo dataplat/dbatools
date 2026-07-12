@@ -1,0 +1,35 @@
+# When a maintainer listed in the BOOST_USERS repo variable pushes to a branch
+# other than development/master, immediately dispatch runner-reconcile so the
+# maintainer-boost floor (BOOST_COUNT runners once BOOST_COMMITS commits land
+# within BOOST_HOURS) kicks in without waiting for the best-effort cron.
+#
+# The boost decision itself lives in runner-reconcile.yml -- this workflow is
+# only a promptness nudge, and only fires from branches that carry this file.
+# Branches created before it merged are still covered by the */10 cron.
+name: runner-boost
+
+on:
+  push:
+    branches-ignore:
+      - development
+      - master
+
+permissions:
+  actions: write
+
+jobs:
+  nudge:
+    # space-padded contains() gives exact username matching within the
+    # space-separated BOOST_USERS list (no substring false positives)
+    if: contains(format(' {0} ', vars.BOOST_USERS), format(' {0} ', github.actor))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch runner-reconcile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # TEMP until PR #10414 merges (then flip back to development): reconcile
+        # does not exist on development right now, and the Azure OIDC federated
+        # credential only trusts specific branch subjects, so every nudge targets
+        # vmssredux -- the one feature branch with a matching credential
+        run: gh workflow run runner-reconcile.yml --ref vmssredux -R "${{ github.repository }}"

@@ -1,0 +1,175 @@
+# The AppVeyor matrix, ported to self-hosted Azure VMSS runners. The appveyor.*.ps1
+# harness runs UNTOUCHED via tests/gha.shim.ps1; the AppVeyor webhook is disabled, so
+# this workflow is the test suite of record. Commit-message controls carry over:
+# (do Command) scopes tests, [skip ci] skips entirely, part: n/m splitting comes from
+# the matrix. HADR and RESTART run on sql2019 (the image also carries sql2017 and
+# sql2022) so the suite exercises three engine versions instead of one.
+#
+# Runner rules (also apply to the future legacy 2012 pool):
+#   - zero node-based actions on self-hosted jobs (git via run: steps only)
+#   - every job lands on a factory-fresh ephemeral VM; runner-reconcile deletes it after
+name: ci-azure
+
+on:
+  push:
+    branches:
+      - development
+    paths-ignore:
+      - "**/*.md"
+      - ".github/FUNDING.yml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".aider/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
+      - "en-us/**"
+  pull_request:
+    branches:
+      - development
+    paths-ignore:
+      - "**/*.md"
+      - ".github/FUNDING.yml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".aider/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
+      - "en-us/**"
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Commit message the harness sees; the default (no (do ...) scope) runs the full suite"
+        required: false
+        default: "Full-suite validation run"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: ci-azure-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APPVEYOR: "True"
+  APPVEYOR_BUILD_FOLDER: C:\github\dbatools
+  APPVEYOR_REPO_BRANCH: ${{ github.base_ref || github.ref_name }}
+  APPVEYOR_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+  APPVEYOR_BUILD_VERSION: 2.1.${{ github.run_number }}
+  DBATOOLS_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || inputs.message }}
+  environment: development
+  version: 2.1.${{ github.run_number }}
+
+jobs:
+  test:
+    runs-on: [self-hosted, dbatools-modern]
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scenario: SINGLE
+            part: 1/3
+            InstanceSingle: sql2022
+          - scenario: SINGLE
+            part: 2/3
+            InstanceSingle: sql2022
+          - scenario: SINGLE
+            part: 3/3
+            InstanceSingle: sql2022
+          - scenario: MULTI
+            InstanceMulti1: sql2022
+            InstanceMulti2: sql2017
+          - scenario: COPY
+            InstanceCopy1: sql2017
+            InstanceCopy2: sql2022
+          - scenario: HADR
+            InstanceHadr: sql2019
+          - scenario: RESTART
+            InstanceRestart: sql2019
+          - scenario: default
+    env:
+      scenario: ${{ matrix.scenario }}
+      part: ${{ matrix.part }}
+      InstanceSingle: ${{ matrix.InstanceSingle }}
+      InstanceMulti1: ${{ matrix.InstanceMulti1 }}
+      InstanceMulti2: ${{ matrix.InstanceMulti2 }}
+      InstanceCopy1: ${{ matrix.InstanceCopy1 }}
+      InstanceCopy2: ${{ matrix.InstanceCopy2 }}
+      InstanceHadr: ${{ matrix.InstanceHadr }}
+      InstanceRestart: ${{ matrix.InstanceRestart }}
+    defaults:
+      run:
+        working-directory: C:\github\dbatools
+    steps:
+      - name: Sync repo to build commit
+        shell: cmd
+        run: |
+          git config --global --add safe.directory C:/github/dbatools
+          git fetch --force origin development
+          if "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
+            git fetch --force origin %GITHUB_REF_NAME%
+          ) else (
+            git fetch --force origin pull/%APPVEYOR_PULL_REQUEST_NUMBER%/merge
+          )
+          git checkout --force %GITHUB_SHA%
+          git clean -xdff
+          git log -1 --oneline
+
+      - name: Convert tests to CRLF (unix2dos equivalent)
+        shell: powershell
+        run: |
+          Get-ChildItem -Path C:\github\dbatools\tests -Filter *.ps1 | ForEach-Object {
+            $content = [System.IO.File]::ReadAllText($_.FullName)
+            $converted = $content -replace "(?<!\r)\n", "`r`n"
+            if ($converted -ne $content) {
+              [System.IO.File]::WriteAllText($_.FullName, $converted)
+            }
+          }
+
+      - name: Run CI pipeline (prep, instances, pester, post)
+        shell: powershell
+        run: |
+          # GitHub's powershell shell injects ErrorActionPreference=Stop; AppVeyor runs
+          # its build script lines under Continue, so restore AppVeyor semantics
+          $ErrorActionPreference = "Continue"
+          . C:\github\dbatools\tests\gha.shim.ps1
+          Invoke-GhaStage -Script "tests\appveyor.prep.ps1"
+          Assert-GhaDbatoolsLoaded
+          Invoke-GhaStage -Script "tests\appveyor.sqlserver.ps1"
+          Repair-GhaSqlServerName
+          Invoke-GhaStage -Script "tests\appveyor.pester.ps1"
+          Invoke-GhaStage -Script "tests\appveyor.pester.ps1" -Arguments @{ Finalize = $true }
+          Invoke-GhaStage -Script "tests\appveyor.post.ps1"
+
+      - name: Stage artifacts summary
+        if: always()
+        shell: powershell
+        run: |
+          if (Test-Path C:\Temp\gha-artifacts) {
+            "## Artifacts (on-runner, forensic)" >> $env:GITHUB_STEP_SUMMARY
+            Get-ChildItem C:\Temp\gha-artifacts | ForEach-Object {
+              "- $($_.Name) ($([math]::Round($_.Length / 1KB, 1)) KB)" >> $env:GITHUB_STEP_SUMMARY
+            }
+          }
+
+      - name: Nudge fleet reconcile (prompt spent-VM replacement)
+        if: always()
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # dispatch against the ref that actually carries runner-reconcile.yml: the
+          # PR head branch for pull_request runs, the pushed/dispatched ref otherwise.
+          # Refs without the workflow file fail soft into the catch below.
+          $nudgeRef = $env:GITHUB_HEAD_REF
+          if (-not $nudgeRef) {
+            $nudgeRef = $env:GITHUB_REF_NAME
+          }
+          $splatNudge = @{
+            Method  = "Post"
+            Uri     = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
+            Headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
+            Body    = (ConvertTo-Json -InputObject @{ ref = $nudgeRef })
+          }
+          try { Invoke-RestMethod @splatNudge } catch { Write-Host "nudge skipped: $($_.Exception.Message)" }

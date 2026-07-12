@@ -72,6 +72,24 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When enabling encryption directly" {
         It "Should enable encryption on a database" {
+            # The pipeline test above starts an asynchronous TDE encryption scan and
+            # ALTER DATABASE fails while any scan is still running, so wait for the
+            # scan to settle before disabling encryption for this scenario
+            $splatScanState = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "master"
+                Query       = "SELECT encryption_state FROM sys.dm_database_encryption_keys WHERE database_id = DB_ID('$($testDb.Name)')"
+                As          = "SingleValue"
+            }
+            $scanDeadline = (Get-Date).AddSeconds(120)
+            do {
+                $scanState = Invoke-DbaQuery @splatScanState
+                if ($scanState -notin 2, 4, 5, 6) {
+                    break
+                }
+                Start-Sleep -Seconds 1
+            } while ((Get-Date) -lt $scanDeadline)
+
             $null = Disable-DbaDbEncryption -SqlInstance $TestConfig.InstanceSingle -Database $testDb.Name
             $splatEnableEncryption = @{
                 SqlInstance   = $TestConfig.InstanceSingle
