@@ -120,3 +120,37 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization tests (W1-040). CI-safe: xp_fileexist against the single instance
+    # with paths that exist on every Windows SQL host. The bare-bool SCALAR mode fires only
+    # for one path + one instance + non-array raw input; any array input (even one element)
+    # returns the six-property object.
+
+    Context "Scalar mode" {
+        It "Returns a bare true for an existing directory" {
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path "C:\Windows"
+            $result | Should -BeOfType [bool]
+            $result | Should -BeTrue
+        }
+
+        It "Returns a bare false for a missing path" {
+            Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path "C:\dbatoolsci-nope-$(Get-Random)" | Should -BeFalse
+        }
+    }
+
+    Context "Object mode" {
+        It "Returns per-path objects for array input" {
+            $results = @(Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path @("C:\Windows", "C:\dbatoolsci-nope-$(Get-Random)"))
+            $results.Count | Should -BeExactly 2
+            $results[0].FileExists | Should -BeTrue
+            $results[0].IsContainer | Should -BeTrue
+            $results[1].FileExists | Should -BeFalse
+            $results[0].PSObject.Properties.Name -join "," | Should -BeExactly "SqlInstance,InstanceName,ComputerName,FilePath,FileExists,IsContainer"
+        }
+
+        It "Returns an object (not a bare bool) for a single-element array" {
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path @("C:\Windows")
+            $result.FileExists | Should -BeTrue
+        }
+    }
+}
