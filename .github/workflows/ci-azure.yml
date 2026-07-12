@@ -69,13 +69,19 @@ jobs:
       matrix:
         include:
           - scenario: SINGLE
-            part: 1/3
+            part: 1/5
             InstanceSingle: sql2022
           - scenario: SINGLE
-            part: 2/3
+            part: 2/5
             InstanceSingle: sql2022
           - scenario: SINGLE
-            part: 3/3
+            part: 3/5
+            InstanceSingle: sql2022
+          - scenario: SINGLE
+            part: 4/5
+            InstanceSingle: sql2022
+          - scenario: SINGLE
+            part: 5/5
             InstanceSingle: sql2022
           - scenario: MULTI
             InstanceMulti1: sql2022
