@@ -31,8 +31,9 @@ Describe $CommandName -Tag IntegrationTests {
             $configSuffix = Get-Random
             $configName = "dbatoolsci.registertest$configSuffix"
             $null = Set-DbatoolsConfig -FullName $configName -Value "regvalue$configSuffix" -PassThru
-            $dbatoolsModule = Get-Module dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
-            $registryPath = & $dbatoolsModule { $script:path_RegistryUserDefault }
+            # The module's $script:path_RegistryUserDefault - hardcoded because module-scope
+            # variable reads blank under the Invoke-ManualPester harness (RB-IMP-51).
+            $registryPath = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
         }
 
         AfterAll {
