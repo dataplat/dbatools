@@ -14,9 +14,33 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "Path",
                 "Register",
-                "Scope"
+                "Scope",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization tests (TA-046). In-session config-store scenarios only, CI-safe and
+    # harness-safe (the -Register branch writes registry through Register-DbatoolsConfig,
+    # whose targets are RB-IMP-51-blanked under this harness - it is exercised by the
+    # migration smoke battery out of harness instead).
+
+    Context "Managed path round-trip" {
+        It "Sets a managed path retrievable via Get-DbatoolsPath and emits nothing" {
+            $pathName = "dbatoolscipath$(Get-Random)"
+            $results = Set-DbatoolsPath -Name $pathName -Path "C:\temp"
+            @($results).Count | Should -BeExactly 0
+            Get-DbatoolsPath -Name $pathName | Should -BeExactly "C:\temp"
+        }
+
+        It "Overwrites an existing managed path" {
+            $pathName = "dbatoolscipath$(Get-Random)"
+            Set-DbatoolsPath -Name $pathName -Path "C:\temp"
+            Set-DbatoolsPath -Name $pathName -Path "C:\windows"
+            Get-DbatoolsPath -Name $pathName | Should -BeExactly "C:\windows"
         }
     }
 }
