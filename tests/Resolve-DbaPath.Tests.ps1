@@ -66,8 +66,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Failure shapes (always terminating - EnableException is hardcoded)" {
-        It "Throws Failed-to-resolve for a nonexistent path" {
-            { Resolve-DbaPath -Path (Join-Path $resolveRoot "doesnotexist-$(Get-Random).txt") } | Should -Throw -ExpectedMessage "*Failed to resolve path*"
+        It "Throws the original Cannot-find-path error for a nonexistent path" {
+            # Stop-Function -EnableException $true WITH -ErrorRecord re-throws the ORIGINAL
+            # exception (the composed "Failed to resolve path" text is not what surfaces).
+            { Resolve-DbaPath -Path (Join-Path $resolveRoot "doesnotexist-$(Get-Random).txt") } | Should -Throw -ExpectedMessage "*Cannot find path*"
         }
 
         It "Throws when SingleItem resolves to multiple paths" {
@@ -101,8 +103,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "Throws Failed-to-resolve for a nonexistent parent" {
-            { Resolve-DbaPath -Path (Join-Path (Join-Path $resolveRoot "nosuchdir") "x.log") -NewChild } | Should -Throw -ExpectedMessage "*Failed to resolve path*"
+        It "Throws the original Cannot-find-path error for a nonexistent parent" {
+            { Resolve-DbaPath -Path (Join-Path (Join-Path $resolveRoot "nosuchdir") "x.log") -NewChild } | Should -Throw -ExpectedMessage "*Cannot find path*"
         }
     }
 }
