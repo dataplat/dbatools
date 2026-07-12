@@ -558,7 +558,6 @@
         'Set-DbaStartupParameter',
         'Set-DbaTcpPort',
         'Set-DbaTempDbConfig',
-        'Set-DbatoolsPath',
         'Show-DbaDbList',
         'Show-DbaInstanceFileSystem',
         'Start-DbaAgentJob',

@@ -549,6 +549,11 @@
     "retiredPath": "private/retired/Set-DbatoolsInsecureConnection.ps1",
     "flippedUtc": "2026-07-12T17:36:08Z"
   },
+  "Set-DbatoolsPath": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbatoolsPath.ps1",
+    "flippedUtc": "2026-07-12T17:52:06Z"
+  },
   "Test-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
