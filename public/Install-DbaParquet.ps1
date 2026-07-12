@@ -44,7 +44,7 @@ function Install-DbaParquet {
 
     .NOTES
         Tags: Import, Parquet, Install
-        Author: dbatools team
+        Author: the dbatools team + Claude
 
         Website: https://dbatools.io
         Copyright: (c) 2026 by dbatools, licensed under MIT
