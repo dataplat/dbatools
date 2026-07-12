@@ -499,6 +499,11 @@
     "retiredPath": "private/retired/Remove-DbaSpn.ps1",
     "flippedUtc": "2026-07-10T20:34:30Z"
   },
+  "Reset-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Reset-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-12T17:01:28Z"
+  },
   "Restore-DbaDatabase": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",

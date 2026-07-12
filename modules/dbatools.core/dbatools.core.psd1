@@ -65,7 +65,8 @@
         'New-DbaSqlParameter',
         'New-DbatoolsSupportPackage',
         'Register-DbatoolsConfig',
-        'Remove-DbaClientAlias'
+        'Remove-DbaClientAlias',
+        'Reset-DbatoolsConfig'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
