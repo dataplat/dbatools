@@ -32,19 +32,41 @@ Describe $CommandName -Tag IntegrationTests {
     # the function both editions). The out-of-harness registry round-trip is pinned by the
     # migration smoke battery (see the W1-041 tracker Evidence).
 
-    Context "Harness-observable failure shape (RB-IMP-51 blanked store paths)" {
-        It "FullName input dies on the blanked registry path" {
-            { Unregister-DbatoolsConfig -FullName "dbatoolsci.doesnotexist$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+    # EDITION SPLIT (engine, not command): Test-Path $null THROWS the binding error on 5.1
+    # but returns $false on 7+ (the PS 6.1 Test-Path null/empty change), so the blanked
+    # begin block dies on Desktop and silently collects nothing on Core.
+
+    Context "Harness-observable shape (RB-IMP-51 blanked store paths)" {
+        It "FullName input: dies on 5.1, silent no-op on 7+" {
+            if ($PSVersionTable.PSEdition -ne "Core") {
+                { Unregister-DbatoolsConfig -FullName "dbatoolsci.doesnotexist$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+            } else {
+                $results = @(Unregister-DbatoolsConfig -FullName "dbatoolsci.doesnotexist$(Get-Random)" -WarningVariable warn -WarningAction SilentlyContinue)
+                $results.Count | Should -BeExactly 0
+                @($warn).Count | Should -BeExactly 0
+            }
         }
 
-        It "Module input dies on the blanked registry path" {
-            { Unregister-DbatoolsConfig -Module "dbatoolscinomatch$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+        It "Module input: dies on 5.1, silent no-op on 7+" {
+            if ($PSVersionTable.PSEdition -ne "Core") {
+                { Unregister-DbatoolsConfig -Module "dbatoolscinomatch$(Get-Random)" } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+            } else {
+                $results = @(Unregister-DbatoolsConfig -Module "dbatoolscinomatch$(Get-Random)" -WarningVariable warn -WarningAction SilentlyContinue)
+                $results.Count | Should -BeExactly 0
+                @($warn).Count | Should -BeExactly 0
+            }
         }
 
-        It "Piped configuration input dies on the blanked registry path" {
+        It "Piped configuration input: dies on 5.1, silent no-op on 7+" {
             $configName = "dbatoolsci.unregpipe$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "x"
-            { Get-DbatoolsConfig -FullName $configName | Unregister-DbatoolsConfig } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+            if ($PSVersionTable.PSEdition -ne "Core") {
+                { Get-DbatoolsConfig -FullName $configName | Unregister-DbatoolsConfig } | Should -Throw -ExpectedMessage "*Cannot bind argument to parameter*"
+            } else {
+                $results = @(Get-DbatoolsConfig -FullName $configName | Unregister-DbatoolsConfig -WarningVariable warn -WarningAction SilentlyContinue)
+                $results.Count | Should -BeExactly 0
+                @($warn).Count | Should -BeExactly 0
+            }
         }
     }
 }
