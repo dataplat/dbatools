@@ -419,6 +419,11 @@
     "retiredPath": "private/retired/New-DbaAzAccessToken.ps1",
     "flippedUtc": "2026-07-12T06:13:48Z"
   },
+  "New-DbaClientAlias": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaClientAlias.ps1",
+    "flippedUtc": "2026-07-12T06:51:10Z"
+  },
   "New-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaComputerCertificate.ps1",

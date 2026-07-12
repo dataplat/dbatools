@@ -423,7 +423,6 @@
         'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
         'New-DbaAvailabilityGroup',
-        'New-DbaClientAlias',
         'New-DbaCmConnection',
         'New-DbaConnectionString',
         'New-DbaConnectionStringBuilder',
