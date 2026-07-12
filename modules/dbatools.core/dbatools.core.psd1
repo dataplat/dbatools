@@ -52,7 +52,8 @@
         'Find-DbaInstance',
         'Import-DbaCsv',
         'Import-DbatoolsConfig',
-        'Invoke-DbaQuery'
+        'Invoke-DbaQuery',
+        'Join-DbaPath'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
