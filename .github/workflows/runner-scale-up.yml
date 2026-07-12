@@ -65,15 +65,18 @@ jobs:
           IDLE=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")
 
-          INSTANCES=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_')])" -o tsv 2>/dev/null || echo 0)
+          # sku.capacity is authoritative; az vm list is eventually consistent and can
+          # hide fresh instances. Basing the target on a stale listing would make the
+          # bidirectional `az vmss scale` DELETE the newest instances (scale-in).
+          CAPACITY=$(az vmss show -g "$RG" -n "$VMSS" --query sku.capacity -o tsv 2>/dev/null || echo 0)
 
           NEED=$(( QUEUED - IDLE ))
           [ "$NEED" -lt 0 ] && NEED=0
-          TARGET=$(( INSTANCES + NEED ))
+          TARGET=$(( CAPACITY + NEED ))
           [ "$TARGET" -gt "$MAX_RUNNERS" ] && TARGET=$MAX_RUNNERS
 
-          echo "queued=$QUEUED idle=$IDLE instances=$INSTANCES target=$TARGET"
-          if [ "$TARGET" -gt "$INSTANCES" ]; then
+          echo "queued=$QUEUED idle=$IDLE capacity=$CAPACITY target=$TARGET"
+          if [ "$TARGET" -gt "$CAPACITY" ]; then
             az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$TARGET" --no-wait
             echo "scaled=true" >> "$GITHUB_OUTPUT"
           else

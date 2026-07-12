@@ -102,8 +102,18 @@ jobs:
           VMS_JSON=$(az vm list -g "$RG" --show-details \
             --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
 
-          QUEUED=$(gh api "repos/$REPO/actions/runs?status=queued&per_page=100" \
-            --jq '[.workflow_runs[] | select(.name == "ci-azure")] | length')
+          # count queued JOBS, not queued runs: a matrix run flips to in_progress the
+          # moment one job starts, hiding its other queued jobs from a run-level count
+          QUEUED=0
+          CI_RUN_IDS=$( (gh api "repos/$REPO/actions/runs?status=queued&per_page=50" \
+              --jq '.workflow_runs[] | select(.name == "ci-azure") | .id'; \
+            gh api "repos/$REPO/actions/runs?status=in_progress&per_page=50" \
+              --jq '.workflow_runs[] | select(.name == "ci-azure") | .id') 2>/dev/null || true)
+          for CI_RUN_ID in $CI_RUN_IDS; do
+            N=$(gh api "repos/$REPO/actions/runs/$CI_RUN_ID/jobs?per_page=100" --paginate \
+              --jq "[.jobs[] | select(.status == \"queued\" or .status == \"waiting\") | select((.labels // []) | index(\"$RUNNER_LABEL\"))] | length" 2>/dev/null || echo 0)
+            QUEUED=$((QUEUED + N))
+          done
 
           echo "floor=$FLOOR queued_runs=$QUEUED"
           echo "$VMS_JSON" | jq -r '.[] | "vm: \(.name) \(.power) created \(.created)"'
@@ -184,22 +194,42 @@ jobs:
           DESIRED=$(( BUSY + QUEUED ))
           [ "$DESIRED" -lt "$FLOOR" ] && DESIRED=$FLOOR
           [ "$DESIRED" -gt "$MAX_RUNNERS" ] && DESIRED=$MAX_RUNNERS
-          echo "keep=$KEEP desired=$DESIRED"
-          if [ "$KEEP" -lt "$DESIRED" ]; then
+          # az vmss scale is bidirectional: pushing a target BELOW the real capacity
+          # scale-INS the newest instances -- which is exactly what happens when the
+          # eventually-consistent vm listing hides fresh VMs from KEEP. Scale-out only
+          # ever raises capacity (sku.capacity is authoritative, listings are not);
+          # scale-in happens exclusively through the explicit per-VM deletes above.
+          CAPACITY=$(az vmss show -g "$RG" -n "$VMSS" --query sku.capacity -o tsv 2>/dev/null || echo 0)
+          echo "keep=$KEEP desired=$DESIRED capacity=$CAPACITY"
+          if [ "$KEEP" -lt "$DESIRED" ] && [ "$DESIRED" -gt "$CAPACITY" ]; then
             az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$DESIRED" --no-wait || true
             echo "waiting for new instances to provision"
             sleep 150
+            register_unregistered
+          elif [ "$KEEP" -lt "$DESIRED" ]; then
+            # capacity is already there; the instances just have not registered yet
             register_unregistered
           fi
 
           # ---- pass 3b: trim surplus idle instances (oldest first) ---------------
           if [ "$KEEP" -gt "$DESIRED" ]; then
+            # refresh state right before deleting: registration races and az listing
+            # lag make the snapshots minutes old by now, and a "surplus idle" VM may
+            # in fact be freshly registered and about to take a queued job
+            RUNNERS_JSON=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
+              --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
+            VMS_JSON=$(az vm list -g "$RG" --show-details \
+              --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
             TRIM=$(( KEEP - DESIRED ))
             echo "trimming $TRIM surplus idle instance(s)"
             for VM in $(echo "$VMS_JSON" | jq -r 'sort_by(.created) | .[].name'); do
               [ "$TRIM" -le 0 ] && break
               R_BUSY=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .busy")
               [ "$R_BUSY" = "true" ] && continue
+              CREATED=$(echo "$VMS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .created")
+              AGE_MIN=$(( (NOW - $(date -u -d "$CREATED" +%s)) / 60 ))
+              # a young VM is still booting/registering toward queued work, not surplus
+              [ "$AGE_MIN" -lt 20 ] && continue
               az vm show -g "$RG" -n "$VM" --query name -o tsv >/dev/null 2>&1 || continue
               R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .id")
               echo "trim: deleting idle $VM"
