@@ -38,6 +38,19 @@ if (-not (Test-Path -Path "C:\Temp")) {
 }
 Remove-Item -Path $global:GhaExitFlag -Force -ErrorAction SilentlyContinue
 
+# prep installs dbatools.library WITHOUT -Force (unlike its Pester/PSScriptAnalyzer
+# installs), so an untrusted PSGallery turns that install into a silent no-op in a
+# non-interactive session ("User declined to install module") and the golden image
+# keeps serving whatever library version it was baked with
+try {
+    if ((Get-PSRepository -Name PSGallery -ErrorAction Stop).InstallationPolicy -ne "Trusted") {
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Write-Host -Object "[gha] PSGallery marked trusted for module installs" -ForegroundColor DarkCyan
+    }
+} catch {
+    Write-Host -Object "[gha] PSGallery trust setup skipped: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 # ---- environment mapping (idempotent, only fills what is not already set) ----
 if (-not $env:APPVEYOR) {
     $env:APPVEYOR = "True"
@@ -157,13 +170,38 @@ function Invoke-GhaStage {
     $fullPath = Join-Path $env:APPVEYOR_BUILD_FOLDER $Script
     Write-Host -Object "`n===== stage: $Script =====" -ForegroundColor Green
     $stageWatch = [System.Diagnostics.Stopwatch]::StartNew()
-    if ($Arguments) {
-        & $fullPath @Arguments
-    } else {
-        & $fullPath
+    try {
+        if ($Arguments) {
+            & $fullPath @Arguments
+        } else {
+            & $fullPath
+        }
+    } catch {
+        # AppVeyor parity: a build-script line that throws fails the build right
+        # there -- later lines never run. Without this, a dead prep stage lets the
+        # instance setup run without dbatools and the suite fails in confusing ways.
+        $stageWatch.Stop()
+        Write-Output "::error title=$Script::stage threw: $($_.Exception.Message)"
+        Write-Host -Object "===== stage FAILED: $Script ($([int]$stageWatch.Elapsed.TotalSeconds)s) =====" -ForegroundColor Red
+        exit 1
     }
     $stageWatch.Stop()
     Write-Host -Object "===== stage done: $Script ($([int]$stageWatch.Elapsed.TotalSeconds)s) =====" -ForegroundColor Green
+}
+
+function Assert-GhaDbatoolsLoaded {
+    # the harness only WARNS when the manifest cannot load (EAP=Continue), so a
+    # library/manifest version mismatch would otherwise surface minutes later as
+    # CommandNotFoundException noise inside the instance setup scripts
+    if (Test-Path -Path $global:GhaExitFlag) {
+        return
+    }
+    if (-not (Get-Module -Name dbatools)) {
+        Write-Output "::error title=dbatools import::dbatools is not loaded after prep -- check the dbatools.library install/version (image vs .github/dbatools-library-version.json)"
+        exit 1
+    }
+    $libraryModule = Get-Module -Name dbatools.library
+    Write-Host -Object "[gha] dbatools $((Get-Module -Name dbatools).Version) loaded with dbatools.library $($libraryModule.Version)" -ForegroundColor DarkCyan
 }
 
 function Repair-GhaSqlServerName {

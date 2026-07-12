@@ -135,6 +135,7 @@ jobs:
           $ErrorActionPreference = "Continue"
           . C:\github\dbatools\tests\gha.shim.ps1
           Invoke-GhaStage -Script "tests\appveyor.prep.ps1"
+          Assert-GhaDbatoolsLoaded
           Invoke-GhaStage -Script "tests\appveyor.sqlserver.ps1"
           Repair-GhaSqlServerName
           Invoke-GhaStage -Script "tests\appveyor.pester.ps1"
