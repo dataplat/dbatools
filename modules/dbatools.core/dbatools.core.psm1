@@ -27,7 +27,8 @@ Export-ModuleMember -Cmdlet *
 # banned on the net472 floor, so the owning satellite registers Set-Alias plus an explicit
 # AliasesToExport entry in the manifest.
 Set-Alias -Name cdi -Value Connect-DbaInstance
-Export-ModuleMember -Alias cdi
+Set-Alias -Name ivq -Value Invoke-DbaQuery
+Export-ModuleMember -Alias cdi, ivq
 
 # TEPP completer registration for this module's commands arrives with the TEPP bridge (P0-012);
 # PS 3/4 must stay completion-free and warning-clean, so nothing is registered before then.

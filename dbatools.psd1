@@ -404,7 +404,6 @@
         'Invoke-DbaDbUpgrade',
         'Invoke-DbaDiagnosticQuery',
         'Invoke-DbaPfRelog',
-        'Invoke-DbaQuery',
         'Invoke-DbatoolsFormatter',
         'Invoke-DbatoolsRenameHelper',
         'Invoke-DbaWhoIsActive',

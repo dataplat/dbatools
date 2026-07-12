@@ -389,6 +389,11 @@
     "retiredPath": "private/retired/Invoke-DbaAdvancedUpdate.ps1",
     "flippedUtc": "2026-07-10T23:30:06Z"
   },
+  "Invoke-DbaQuery": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Invoke-DbaQuery.ps1",
+    "flippedUtc": "2026-07-12T01:26:36Z"
+  },
   "New-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaComputerCertificate.ps1",
