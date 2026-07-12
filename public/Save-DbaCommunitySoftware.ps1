@@ -396,7 +396,7 @@ function Save-DbaCommunitySoftware {
                 } else {
                     Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName, and $LocalDirectory is not a folder."
                     Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                    Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                    Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                     return
                 }
             }
@@ -404,7 +404,7 @@ function Save-DbaCommunitySoftware {
             if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
                 Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
         }
@@ -413,12 +413,15 @@ function Save-DbaCommunitySoftware {
         if ($PSCmdlet.ShouldProcess($zipFolder, "Copying content to $LocalDirectory")) {
             try {
                 if (Test-Path -Path $LocalDirectory) {
-                    Remove-Item -Path $LocalDirectory -Recurse -ErrorAction Stop
+                    # -Force is required on macOS/Linux: GitHub archives contain dotfiles
+                    # (.github, .gitignore) which PowerShell treats as hidden there, and
+                    # Remove-Item refuses hidden items without it.
+                    Remove-Item -Path $LocalDirectory -Recurse -Force -ErrorAction Stop
                 }
             } catch {
                 Stop-Function -Message "Unable to remove the old target directory $LocalDirectory." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
             try {
@@ -426,7 +429,7 @@ function Save-DbaCommunitySoftware {
             } catch {
                 Stop-Function -Message "Unable to copy the directory $sourceDirectory to the target directory $localDirectoryBase." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
         }
@@ -435,7 +438,7 @@ function Save-DbaCommunitySoftware {
             Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
         }
         if ($PSCmdlet.ShouldProcess($zipFolder, "Removing temporary folder")) {
-            Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 }

@@ -112,5 +112,20 @@ Describe $CommandName -Tag UnitTests {
             $WarnVar | Should -Match "after 3 attempts"
             Test-Path -Path $targetDirectory | Should -BeFalse
         }
+
+        It "Replaces an existing cached copy that contains dotfiles" {
+            # GitHub archives ship dotfiles (.github, .gitignore) which PowerShell treats as
+            # hidden on macOS/Linux, and Remove-Item without -Force refuses hidden items with
+            # "You do not have sufficient access rights". Regression test for the cache refresh.
+            $global:dbatoolsciDownloadResults = @("write")
+            $null = New-Item -Path $targetDirectory -ItemType Directory
+            Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath ".gitignore") -Value "dbatoolsci hidden file"
+            Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") -Value "dbatoolsci stale content"
+
+            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -EnableException
+
+            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "readme.txt") | Should -BeTrue
+            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") | Should -BeFalse
+        }
     }
 }
