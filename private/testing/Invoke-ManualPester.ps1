@@ -168,7 +168,7 @@ function Invoke-ManualPester {
         $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
         $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
         $MinimumPesterVersion = [Version] '4.0.0.0' # Because this is when -Show was introduced
-        $MaximumPesterVersion = [Version] '6.0.0.0' # Because we have either pester4 or pester5 tests
+        $MaximumPesterVersion = [Version] '7.0.0.0' # Because we have either pester4 or pester5+ tests
         $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
         $HasPester = $null -ne $PesterVersion
         $ScriptAnalyzerCorrectVersion = '1.18.2'
@@ -186,6 +186,10 @@ function Invoke-ManualPester {
                     Write-Warning "Please install PSScriptAnalyzer $ScriptAnalyzerCorrectVersion"
                     Write-Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
                 }
+                # Re-read the version after the corrective import so the gate below compares the
+                # module that is loaded now, not the stale value captured before Import-Module ran
+                $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
+                $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
             }
         }
 
@@ -200,12 +204,20 @@ function Invoke-ManualPester {
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
         if ($PesterVersion -gt $MaximumPesterVersion) {
-            Write-Warning "Please get Pester to the 5.* release"
-            Write-Warning "     Install-Module -Name Pester  -MaximumVersion '5.7.1' -Force -SkipPublisherCheck"
+            Write-Warning "Please get Pester to the 6.0.0 release"
+            Write-Warning "     Install-Module -Name Pester -RequiredVersion '6.0.0' -Force -SkipPublisherCheck"
             Write-Warning "     or go to https://github.com/pester/Pester"
         }
 
-        if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -lt $MaximumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
+        # PSScriptAnalyzer is only consumed by the -ScriptAnalyzer and -Coverage paths, so a
+        # missing or wrong-version module must not block plain test runs (e.g. on PS 5.1 where
+        # another PSScriptAnalyzer version resolves first)
+        $ScriptAnalyzerGateOk = $true
+        if ($ScriptAnalyzer -or $Coverage) {
+            $ScriptAnalyzerGateOk = $HasScriptAnalyzer -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)
+        }
+
+        if (($HasPester -and $ScriptAnalyzerGateOk -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -lt $MaximumPesterVersion)) -eq $false) {
             Write-Warning "Exiting..."
             $stopProcess = $true
         }
@@ -296,7 +308,7 @@ function Invoke-ManualPester {
             if ($pesterVersionToUse -eq '5') {
                 Write-DetailedMessage "Running Pester 5 tests $($f.Name)"
                 Remove-Module -Name Pester -ErrorAction SilentlyContinue
-                Import-Module Pester -MinimumVersion 5.7.1 -ErrorAction Stop
+                Import-Module Pester -RequiredVersion 6.0.0 -ErrorAction Stop
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
                 if ($PassThru) {

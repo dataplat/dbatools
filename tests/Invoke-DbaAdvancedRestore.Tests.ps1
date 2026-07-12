@@ -111,6 +111,7 @@ Describe $CommandName -Tag UnitTests {
 
             BeforeEach {
                 Mock Connect-DbaInstance { $script:mockServer }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     $script:lastRestore = New-MockRestore
                     $script:lastRestore

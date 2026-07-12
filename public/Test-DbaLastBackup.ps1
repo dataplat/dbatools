@@ -735,8 +735,8 @@ function Test-DbaLastBackup {
                 $fileexists = $false
                 $skipRestoreResult = "Skipped"
                 $skipDbccResult = "Skipped"
-            } elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith("\\") -eq $false -and -not $CopyFile) {
-                Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
+            } elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith("\\") -eq $false -and $lastbackup[0].Path -notlike "http*" -and $lastbackup[0].Path -notlike "s3*" -and -not $CopyFile) {
+                Write-Message -Level Verbose -Message "Path not UNC or cloud storage and source does not match destination. Use -CopyFile to move the backup file."
                 $fileexists = "Skipped"
                 $skipRestoreResult = "Restore not located on shared location"
                 $skipDbccResult = "Skipped"

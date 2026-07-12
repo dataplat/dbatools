@@ -1,4 +1,7 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
+    $hasAzureServicePrincipal = [bool]($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET)
+    $hasAzureQueryStringCredentials = [bool]($env:CLIENTID -and $env:CLIENTSECRET -and (($PSVersionTable.PSEdition -ne "Core") -or ($env:CLIENT_GUID -and $env:CLIENT_GUID_SECRET)))
+
     BeforeAll {
         # if desktop then use localdb if desktop then use full
         if ($PSVersionTable.PSEdition -eq "Core") {
@@ -43,7 +46,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -Database $db.Name
     }
 
-    It "connects to Azure using tenant and client id + client secret" {
+    It -Skip:(-not $hasAzureServicePrincipal) "connects to Azure using tenant and client id + client secret" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -51,7 +54,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
 
-    It "connects to Azure using a query string" {
+    It -Skip:(-not $hasAzureQueryStringCredentials) "connects to Azure using a query string" {
         # this doesn't work on github, it throws
         # Method not found: 'Microsoft.Identity.Client.AcquireTokenByUsernamePasswordParameterBuilder'
         if ($PSVersionTable.PSEdition -eq "Core") {
@@ -63,7 +66,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    It "gets a database from Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "gets a database from Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring

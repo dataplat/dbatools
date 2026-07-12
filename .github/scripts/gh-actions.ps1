@@ -1,4 +1,6 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
+    $hasAzureServicePrincipal = [bool]($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET)
+
     BeforeAll {
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
@@ -256,7 +258,7 @@ exec sp_addrolemember 'userrole','bob';
         $results.Status | Should -Be "Successful"
     }
 
-    It "connects to Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -264,7 +266,7 @@ exec sp_addrolemember 'userrole','bob';
         Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 
-    It "gets a database from Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "gets a database from Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
@@ -412,7 +414,7 @@ exec sp_addrolemember 'userrole','bob';
     # - Microsoft recommends SAS tokens for SQL Server 2016+ (creates block blobs, up to 12.8 TB striped)
     # - Use the SAS token test above for modern Azure blob storage log shipping
 
-    It "tests Get-DbaLastGoodCheckDb against Azure" {
+    It -Skip:(-not $hasAzureServicePrincipal) "tests Get-DbaLastGoodCheckDb against Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring

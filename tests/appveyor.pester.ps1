@@ -386,8 +386,8 @@ if (-not $Finalize) {
 
     # Remove any previously loaded pester module
     Remove-Module -Name Pester -ErrorAction SilentlyContinue
-    # Import pester 5
-    Import-Module -Name Pester -RequiredVersion 5.7.1
+    # Import Pester 6 release candidate
+    Import-Module -Name Pester -RequiredVersion 6.0.0
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file

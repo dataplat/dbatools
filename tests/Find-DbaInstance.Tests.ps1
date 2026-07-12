@@ -95,6 +95,7 @@ Describe $CommandName -Tag UnitTests {
                 }
                 function Write-Message {
                 }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     New-MockFindDbaInstanceUdpClient -ResponseBytes $script:browserResponseBytes
                 } -ParameterFilter {

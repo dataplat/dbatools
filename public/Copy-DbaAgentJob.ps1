@@ -57,6 +57,11 @@ function Copy-DbaAgentJob {
         Overwrites existing jobs on the destination server and automatically sets missing job owners to the 'sa' login.
         Use this when you need to replace existing jobs or when source job owners don't exist on the destination server during migrations.
 
+    .PARAMETER NewName
+        The new name for the job on the destination server.
+        Required when source and destination are the same server instance. Use this to create a copy of a job under a different name on the same or a different server.
+        Cannot be used when copying multiple jobs simultaneously.
+
     .PARAMETER UseLastModified
         When enabled, compares the last modification date (date_modified) from msdb.dbo.sysjobs between source and destination instances.
         Jobs are only copied or updated if the source job is newer than the destination job. This provides intelligent synchronization:
@@ -120,6 +125,11 @@ function Copy-DbaAgentJob {
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014b -UseLastModified
 
         Copies jobs from sqlserver2014a to sqlserver2014b, but only creates new jobs or updates existing jobs where the source job has a newer date_modified timestamp. Jobs with matching timestamps are skipped.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014a -Job "OriginalJob" -NewName "JobCopy"
+
+        Copies the job "OriginalJob" on sqlserver2014a to the same server as "JobCopy". When source and destination are the same instance, -NewName is required.
     #>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -133,6 +143,7 @@ function Copy-DbaAgentJob {
         [switch]$DisableOnSource,
         [switch]$DisableOnDestination,
         [switch]$Force,
+        [string]$NewName,
         [switch]$UseLastModified,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
@@ -157,6 +168,10 @@ function Copy-DbaAgentJob {
                 return
             }
         }
+        if ((Test-Bound "NewName") -and $InputObject.Count -gt 1) {
+            Stop-Function -Message "Cannot use -NewName when copying multiple jobs"
+            return
+        }
         if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
@@ -174,11 +189,16 @@ function Copy-DbaAgentJob {
                 $jobId = $serverJob.JobId
                 $sourceserver = $serverJob.Parent.Parent
                 $alertsReferencingJob = @()
+                $destJobName = if (Test-Bound "NewName") { $NewName } else { $jobName }
+
+                if ($sourceserver.Name -eq $destServer.Name -and -not (Test-Bound "NewName")) {
+                    Stop-Function -Message "Source and destination are the same server ($($destServer.Name)). Use -NewName to copy job [$jobName] with a different name on the same server." -Continue
+                }
 
                 $copyJobStatus = [PSCustomObject]@{
                     SourceServer      = $sourceserver.Name
                     DestinationServer = $destServer.Name
-                    Name              = $jobName
+                    Name              = $destJobName
                     Type              = "Agent Job"
                     Status            = $null
                     Notes             = $null
@@ -290,7 +310,7 @@ function Copy-DbaAgentJob {
                     continue
                 }
 
-                if ($destJobs.name -contains $serverJob.name) {
+                if ($destJobs.name -contains $destJobName) {
                     if ($UseLastModified) {
                         # Query date_modified from both source and destination using parameterized queries
                         try {
@@ -306,7 +326,7 @@ function Copy-DbaAgentJob {
                                 SqlInstance  = $destServer
                                 Database     = "msdb"
                                 Query        = "SELECT date_modified FROM dbo.sysjobs WHERE name = @jobName"
-                                SqlParameter = @{ jobName = $jobName }
+                                SqlParameter = @{ jobName = $destJobName }
                             }
                             $destDate = (Invoke-DbaQuery @splatDestDate).date_modified
 
@@ -323,19 +343,19 @@ function Copy-DbaAgentJob {
                                 }
                             } elseif ($sourceDate -gt $destDate) {
                                 # Source is newer, proceed with drop and recreate
-                                if ($Pscmdlet.ShouldProcess($destinstance, "Source job is newer (modified $sourceDate). Dropping and recreating job $jobName")) {
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Source job is newer (modified $sourceDate). Dropping and recreating job $destJobName")) {
                                     try {
-                                        Write-Message -Message "Source job $jobName is newer. Dropping and recreating." -Level Verbose
+                                        Write-Message -Message "Source job $jobName is newer. Dropping and recreating $destJobName." -Level Verbose
                                         # Before dropping, save which alerts reference this job
                                         $splatAlertsForJob = @{
                                             SqlInstance  = $destServer
                                             Database     = "msdb"
                                             Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
-                                            SqlParameter = @{ jobName = $jobName }
+                                            SqlParameter = @{ jobName = $destJobName }
                                         }
                                         $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
-                                        Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $jobName" -Level Verbose
-                                        $destServer.JobServer.Jobs[$jobName].Drop()
+                                        Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
+                                        $destServer.JobServer.Jobs[$destJobName].Drop()
                                     } catch {
                                         $copyJobStatus.Status = "Failed"
                                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
@@ -384,19 +404,19 @@ function Copy-DbaAgentJob {
                         }
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job $jobName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job $destJobName and recreating")) {
                             try {
-                                Write-Message -Message "Dropping Job $jobName" -Level Verbose
+                                Write-Message -Message "Dropping Job $destJobName" -Level Verbose
                                 # Before dropping, save which alerts reference this job
                                 $splatAlertsForJob = @{
                                     SqlInstance  = $destServer
                                     Database     = "msdb"
                                     Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
-                                    SqlParameter = @{ jobName = $jobName }
+                                    SqlParameter = @{ jobName = $destJobName }
                                 }
                                 $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
-                                Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $jobName" -Level Verbose
-                                $destServer.JobServer.Jobs[$jobName].Drop()
+                                Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
+                                $destServer.JobServer.Jobs[$destJobName].Drop()
                             } catch {
                                 $copyJobStatus.Status = "Failed"
                                 $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
@@ -408,9 +428,9 @@ function Copy-DbaAgentJob {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destinstance, "Creating Job $jobName")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating Job $destJobName")) {
                     try {
-                        Write-Message -Message "Copying Job $jobName" -Level Verbose
+                        Write-Message -Message "Copying Job $jobName as $destJobName" -Level Verbose
                         $sql = $serverJob.Script() | Out-String
 
                         if ($missingLogin.Count -gt 0 -and $force) {
@@ -420,12 +440,16 @@ function Copy-DbaAgentJob {
 
                         $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), "@server=N'$($destServer.DomainInstanceName)'"
 
+                        if (Test-Bound "NewName") {
+                            $sql = $sql -replace [Regex]::Escape("@job_name=N'$jobName'"), "@job_name=N'$NewName'"
+                        }
+
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
 
                         $destServer.JobServer.Jobs.Refresh()
-                        $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
-                        $destServer.JobServer.Jobs[$serverJob.name].Alter()
+                        $destServer.JobServer.Jobs[$destJobName].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
+                        $destServer.JobServer.Jobs[$destJobName].Alter()
 
                         # Restore alert-to-job links if job was dropped and recreated
                         if ($alertsReferencingJob -and $alertsReferencingJob.Count -gt 0) {
@@ -461,10 +485,10 @@ function Copy-DbaAgentJob {
                 }
 
                 if ($DisableOnDestination) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Disabling $jobName")) {
-                        Write-Message -Message "Disabling $jobName on $destinstance" -Level Verbose
-                        $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $False
-                        $destServer.JobServer.Jobs[$serverJob.name].Alter()
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Disabling $destJobName")) {
+                        Write-Message -Message "Disabling $destJobName on $destinstance" -Level Verbose
+                        $destServer.JobServer.Jobs[$destJobName].IsEnabled = $False
+                        $destServer.JobServer.Jobs[$destJobName].Alter()
                     }
                 }
 

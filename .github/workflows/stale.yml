@@ -2,14 +2,17 @@ name: Mark stale issues
 
 on:
   workflow_dispatch:
-  
+
+permissions:
+  issues: write
+
 jobs:
   stale:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/stale@v3.0.9
+    - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: >

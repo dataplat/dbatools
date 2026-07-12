@@ -50,7 +50,7 @@ Describe $CommandName -Tag UnitTests {
                 $results = @(Get-DbaLastBackup -SqlInstance "sql1" -Database "agdb" -ExcludeReplica)
 
                 $results | Should -BeNullOrEmpty
-                Assert-MockCalled -CommandName Get-DbaDbBackupHistory -Exactly 0 -Scope It -ModuleName dbatools
+                Should -Invoke -CommandName Get-DbaDbBackupHistory -Exactly 0 -Scope It -ModuleName dbatools
             }
         }
     }

@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "AvailabilityGroup",
                 "Database",
                 "ExcludeDatabase",
+                "Pattern",
                 "InputObject",
                 "EnableException"
             )
@@ -78,6 +79,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When getting AG database" {
         It "Returns correct database information" {
             $results = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbName
+            $results.AvailabilityGroup | Should -Be $agName
+            $results.Name | Should -Be $dbName
+            $results.LocalReplicaRole | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns matching database information when using Pattern parameter" {
+            $results = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Pattern "^dbatoolsci_getagdb_agroupdb"
             $results.AvailabilityGroup | Should -Be $agName
             $results.Name | Should -Be $dbName
             $results.LocalReplicaRole | Should -Not -BeNullOrEmpty

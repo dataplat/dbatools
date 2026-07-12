@@ -130,7 +130,7 @@ Describe $CommandName -Tag UnitTests {
         It "does not prepare unique helper tables when WhatIf is used" {
             $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config" -WhatIf
 
-            Assert-MockCalled -CommandName Convert-DbaIndexToTable -Exactly 0 -Scope It -ModuleName dbatools
+            Should -Invoke -CommandName Convert-DbaIndexToTable -Exactly 0 -Scope It -ModuleName dbatools
         }
 
         It "uses FilterQuery when counting rows for WhatIf" {
@@ -255,7 +255,7 @@ Describe $CommandName -Tag UnitTests {
         It "uses the filtered row set when building action updates" {
             $null = Invoke-DbaDbDataMasking -SqlInstance "sql1" -Database "db1" -FilePath "http://masking-config"
 
-            Assert-MockCalled -CommandName Invoke-DbaQuery -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+            Should -Invoke -CommandName Invoke-DbaQuery -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
                 $Query.Trim() -eq "UPDATE [dbo].[people] SET [fname] = 'masked' WHERE [PersonId] IN (1);"
             }
         }

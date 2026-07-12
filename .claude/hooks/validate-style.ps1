@@ -1,6 +1,8 @@
 #!/usr/bin/env pwsh
 # PreToolUse hook: Consolidated style validation for dbatools
 # Runs all style checks in a single PowerShell process for performance
+# Launched by pre-write-style.sh, which picks pwsh or powershell.exe —
+# this script must stay Windows PowerShell 5.1 compatible.
 
 $ErrorActionPreference = "Stop"
 

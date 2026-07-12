@@ -22,6 +22,9 @@ on:
 defaults:
   run:
     shell: pwsh
+
+permissions:
+  contents: read
 jobs:
   linux-tests:
     env:
@@ -34,7 +37,7 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Read dbatools.library version
         id: get-version
@@ -48,17 +51,20 @@ jobs:
           Write-Output "Using dbatools.library version: $version"
           Write-Output "Is preview version: $isPreview"
 
-      - name: Install and cache PowerShell modules (stable versions)
+      - name: Install dbatools.library (stable versions)
         if: steps.get-version.outputs.is_preview == 'False'
-        uses: potatoqualitee/psmodulecache@v6.2.1
-        with:
-          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+        shell: pwsh
+        run: |
+          Write-Output "Stable version detected, bypassing PSModuleCache in this secret-bearing job"
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          ./.github/scripts/install-dbatools-library.ps1
 
       - name: Install dbatools.library (preview versions)
         if: steps.get-version.outputs.is_preview == 'True'
         shell: pwsh
         run: |
           Write-Output "Preview version detected, bypassing PSModuleCache and using install script"
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           ./.github/scripts/install-dbatools-library.ps1
 
       - name: Download dbatools from Gallery

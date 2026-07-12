@@ -452,7 +452,7 @@ function Copy-DbaDatabase {
                         $d.physical = $destfile.filename
 
                         if ($null -eq $d.physical) {
-                            $directory = Get-SqlDefaultPaths $destServer data
+                            $directory = Get-SqlDefaultPaths $destServer log
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
@@ -1011,7 +1011,7 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
                     }
 
-                    $filestructure.databases[$dbName].Add('destinationDbName', $destinationDbName)
+                    $filestructure.databases[$dbName]['destinationDbName'] = $destinationDbName
                     ForEach ($key in $filestructure.databases[$dbName].Destination.Keys) {
                         $splitFileName = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename -Leaf
                         $SplitPath = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename
@@ -1281,6 +1281,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
+                                $restoreResultTmp = $null  # Reset so a failed restore doesn't inherit the previous iteration's result
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
@@ -1339,21 +1340,21 @@ function Copy-DbaDatabase {
                         }
 
                         if ($SetSourceReadOnly) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to read-write after source was set to read only")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $destinationDbName to read-write after source was set to read only")) {
                                 try {
-                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -ReadWrite -EnableException -Force
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $destinationDbName -ReadWrite -EnableException -Force
                                 } catch {
-                                    Stop-Function -Message "Couldn't set $dbName to read-write on $($destserver.Name)" -ErrorRecord $_
+                                    Stop-Function -Message "Couldn't set $destinationDbName to read-write on $($destserver.Name)" -ErrorRecord $_
                                 }
                             }
                         }
 
                         if ($SetSourceOffline) {
-                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $dbName to online after source was set to offline")) {
+                            If ($Pscmdlet.ShouldProcess($destServer.Name, "Set $destinationDbName to online after source was set to offline")) {
                                 try {
-                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $dbName -Online -EnableException -Force
+                                    $null = Set-DbaDbState -SqlInstance $destServer -Database $destinationDbName -Online -EnableException -Force
                                 } catch {
-                                    Stop-Function -Message "Couldn't set $dbName to online on $($destserver.Name)" -ErrorRecord $_
+                                    Stop-Function -Message "Couldn't set $destinationDbName to online on $($destserver.Name)" -ErrorRecord $_
                                 }
                             }
                         }
@@ -1368,9 +1369,9 @@ function Copy-DbaDatabase {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
                                 }
                                 try {
-                                    $null = $destServer.Query("ALTER DATABASE [$destinationDbName] SET READ_WRITE")
+                                    $null = Set-DbaDbOwner -SqlInstance $destServer -Database $destinationDbName -TargetLogin $dbOwner -EnableException
                                 } catch {
-                                    Stop-Function -Message "Failure setting $destinationDbName to read-write on destination server" -ErrorRecord $_
+                                    Stop-Function -Message "Failure setting database owner to $dbOwner for $destinationDbName on destination server" -ErrorRecord $_
                                 }
                             }
                         }
@@ -1510,7 +1511,7 @@ function Copy-DbaDatabase {
                                 }
                             } catch {
                                 Write-Message -Level Verbose -Message "Failed to update ReadOnly status on $destinationDbName."
-                                $propfailures = "Read only"
+                                $propfailures += "Read only"
                             }
                         }
                     }
