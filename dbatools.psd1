@@ -370,7 +370,6 @@
         'Get-DbaXESessionTemplate',
         'Get-DbaXEStore',
         'Grant-DbaAgPermission',
-        'Import-DbaCsv',
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
         'Import-DbaSpConfigure',

@@ -49,7 +49,8 @@
         'Get-DbatoolsError',
         'Get-DbatoolsLog',
         'Get-DbatoolsPath',
-        'Find-DbaInstance'
+        'Find-DbaInstance',
+        'Import-DbaCsv'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
