@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
             @("Parquet.dll", "Parquet.Net.dll") | Should -Contain $result.Name
             Test-Path -Path $result.Path | Should -BeTrue
 
-            foreach ($assemblyName in "CommunityToolkit.HighPerformance.dll", "K4os.Compression.LZ4.dll", "Snappier.dll", "ZstdSharp.dll") {
+            foreach ($assemblyName in "IronCompress.dll", "Microsoft.IO.RecyclableMemoryStream.dll", "Snappier.dll", "ZstdSharp.dll") {
                 Test-Path -Path (Join-Path $installPath $assemblyName) | Should -BeTrue
             }
         }

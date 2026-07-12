@@ -19,7 +19,9 @@ function Install-DbaParquet {
         If not specified, defaults to the Path.DbatoolsParquet configuration value.
 
     .PARAMETER Version
-        Specifies the Parquet.Net NuGet package version to install. Defaults to 5.5.0, the version used by Import-DbaParquet.
+        Specifies the Parquet.Net NuGet package version to install. Defaults to 5.4.0, the version used by Import-DbaParquet.
+        Parquet.Net 5.5.0 and later ship a netstandard2.0 build whose read path throws NotImplementedException
+        (StreamExtensions.CopyToAsync), which breaks Windows PowerShell, so do not bump this default until upstream fixes it.
 
     .PARAMETER LocalFile
         Specifies a local nupkg, zip file, or directory containing Parquet.dll or Parquet.Net.dll and its dependency DLLs.
@@ -80,8 +82,11 @@ function Install-DbaParquet {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [string]$Path,
+        # Pinned to 5.4.0: the netstandard2.0 builds of Parquet.Net 5.5.0 through at least 6.0.3 throw
+        # NotImplementedException in StreamExtensions.CopyToAsync when reading data pages, which breaks
+        # every import on Windows PowerShell (no net4x target exists, so Desktop always gets netstandard2.0).
         [ValidateNotNullOrEmpty()]
-        [string]$Version = "5.5.0",
+        [string]$Version = "5.4.0",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$EnableException
