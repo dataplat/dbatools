@@ -72,7 +72,7 @@ Describe $CommandName -Tag UnitTests {
     }
 
     Context "Implementation regression" {
-        It "caches SupportsMultiline binding before helper scopes" {
+        It "caches SupportsMultiline binding before helper scopes" -Skip:((Get-Command $CommandName).CommandType -ne "Function") {
             $commandText = (Get-Command $CommandName).ScriptBlock.ToString()
             $cachedBindingText = "supportsMultilineSpecified = " + [char]36 + "PSBoundParameters.ContainsKey(" + [char]34 + "SupportsMultiline" + [char]34 + ")"
             $allowMultilineAssignmentText = "AllowMultilineFields = " + [char]36 + "allowMultilineFields"
