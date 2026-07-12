@@ -414,6 +414,11 @@
     "retiredPath": "private/retired/Measure-DbatoolsImport.ps1",
     "flippedUtc": "2026-07-12T03:51:41Z"
   },
+  "New-DbaAzAccessToken": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaAzAccessToken.ps1",
+    "flippedUtc": "2026-07-12T06:13:48Z"
+  },
   "New-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaComputerCertificate.ps1",
