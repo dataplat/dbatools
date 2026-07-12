@@ -89,6 +89,14 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   push (worst case ~10 × D4ds_v5 for 3h ≈ $7).
 - Weekly month-to-date spend lands on the "CI cost tracker" issue (Mondays).
 - Ephemeral OS disks cost nothing; the only storage bill is the gallery replicas.
+- Dead man's switch: Azure Automation account `dbatools-ci-janitor` runs the
+  `Remove-RunawayRunner` runbook every 6 hours, entirely independent of GitHub
+  (source: `janitor-runbook.ps1`). It deletes runner VMs past their age cap
+  (3h nights/weekends, 13h weekday daytime so the standby floor may idle),
+  ps3smoke VMs past 2h, and orphaned CI NICs/public IPs. Its managed identity
+  holds only the `dbatools-ci-operator` role on RG `dbatools-ci` -- no storage,
+  no other resource groups. If GitHub-side reconcile ever dies, worst-case
+  runaway spend is bounded at roughly one fleet-day instead of unbounded.
 
 ## Phase 0 gate results (2026-07-10)
 
