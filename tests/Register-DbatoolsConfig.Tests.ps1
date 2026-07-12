@@ -46,23 +46,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Registration under the harness" {
-        It "DIAG harness registration shape" {
+        It "Registers a value by FullName to the user default registry scope" {
+            # The compiled cmdlet resolves the module path variables through its live
+            # module hop, so registration works here; the RETIRED FUNCTION could not
+            # (its module-scope $script:path_Registry* read blank under this harness -
+            # RB-IMP-51; recorded in the W1-032 tracker Evidence).
             $configName = "dbatoolsci.registertest$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "regvalue"
-            $err = @()
-            try {
-                $out = @(Register-DbatoolsConfig -FullName $configName -WarningVariable warn -WarningAction SilentlyContinue -ErrorVariable err -ErrorAction SilentlyContinue)
-                $caught = "<none>"
-            } catch {
-                $caught = $PSItem.Exception.GetType().FullName + ":" + $PSItem.Exception.Message
-            }
-            $warnText = @($warn) -join "~"
-            $errText = @($err | ForEach-Object { $PSItem.Exception.GetType().Name }) -join "~"
+            $null = Register-DbatoolsConfig -FullName $configName
             $regPath = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
-            $prop = (Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue).PSObject.Properties[$configName]
-            $regValue = if ($prop) { $prop.Value } else { "<missing>" }
+            $props = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
+            $prop = if ($props) { $props.PSObject.Properties[$configName] } else { $null }
+            $prop.Value | Should -Match "regvalue"
             Remove-ItemProperty -Path $regPath -Name $configName -ErrorAction SilentlyContinue
-            "warnN=$(@($warn).Count) warn=<$warnText> errN=$(@($err).Count) err=<$errText> caught=<$caught> outN=$($out.Count) reg=<$regValue>" | Should -BeExactly "IMPOSSIBLE"
         }
     }
 }
