@@ -399,6 +399,11 @@
     "retiredPath": "private/retired/Invoke-DbatoolsFormatter.ps1",
     "flippedUtc": "2026-07-12T03:39:17Z"
   },
+  "Invoke-DbatoolsRenameHelper": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Invoke-DbatoolsRenameHelper.ps1",
+    "flippedUtc": "2026-07-12T04:01:04Z"
+  },
   "Join-DbaPath": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Join-DbaPath.ps1",

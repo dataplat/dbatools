@@ -55,7 +55,8 @@
         'Invoke-DbaQuery',
         'Join-DbaPath',
         'Invoke-DbatoolsFormatter',
-        'Measure-DbatoolsImport'
+        'Measure-DbatoolsImport',
+        'Invoke-DbatoolsRenameHelper'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
