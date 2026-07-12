@@ -459,7 +459,6 @@
         'Read-DbaTraceFile',
         'Read-DbaTransactionLog',
         'Read-DbaXEFile',
-        'Register-DbatoolsConfig',
         'Remove-DbaAgDatabase',
         'Remove-DbaAgentAlertCategory',
         'Remove-DbaAgentAlert',
