@@ -1,0 +1,2 @@
+ci-azure validation trigger
+run: 6 (FULL SUITE, final config: interactive runners, all parity fixes)
