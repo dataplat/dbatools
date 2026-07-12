@@ -1,7 +1,9 @@
-# The AppVeyor matrix, ported 1:1 to self-hosted Azure VMSS runners. The appveyor.*.ps1
-# harness runs UNTOUCHED via tests/gha.shim.ps1, so AppVeyor keeps building in parallel
-# during burn-in. Commit-message controls carry over: (do Command) scopes tests,
-# [skip ci] skips entirely, part: n/m splitting comes from the matrix.
+# The AppVeyor matrix, ported to self-hosted Azure VMSS runners. The appveyor.*.ps1
+# harness runs UNTOUCHED via tests/gha.shim.ps1; the AppVeyor webhook is disabled, so
+# this workflow is the test suite of record. Commit-message controls carry over:
+# (do Command) scopes tests, [skip ci] skips entirely, part: n/m splitting comes from
+# the matrix. HADR and RESTART run on sql2019 (the image also carries sql2017 and
+# sql2022) so the suite exercises three engine versions instead of one.
 #
 # Runner rules (also apply to the future legacy 2012 pool):
 #   - zero node-based actions on self-hosted jobs (git via run: steps only)
@@ -77,9 +79,9 @@ jobs:
             InstanceCopy1: sql2017
             InstanceCopy2: sql2022
           - scenario: HADR
-            InstanceHadr: sql2022
+            InstanceHadr: sql2019
           - scenario: RESTART
-            InstanceRestart: sql2022
+            InstanceRestart: sql2019
           - scenario: default
     env:
       scenario: ${{ matrix.scenario }}
@@ -151,10 +153,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # dispatch against the ref that actually carries runner-reconcile.yml: the
+          # PR head branch for pull_request runs, the pushed/dispatched ref otherwise.
+          # Refs without the workflow file fail soft into the catch below.
+          $nudgeRef = $env:GITHUB_HEAD_REF
+          if (-not $nudgeRef) {
+            $nudgeRef = $env:GITHUB_REF_NAME
+          }
           $splatNudge = @{
             Method  = "Post"
             Uri     = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
             Headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
-            Body    = (ConvertTo-Json -InputObject @{ ref = "development" })
+            Body    = (ConvertTo-Json -InputObject @{ ref = $nudgeRef })
           }
           try { Invoke-RestMethod @splatNudge } catch { Write-Host "nudge skipped: $($_.Exception.Message)" }
