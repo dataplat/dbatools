@@ -290,7 +290,15 @@ foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/confi
 # Not converting the path separators based on OS was also an issue.
 
 if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Dataplat.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
+    # Inlined from Join-DbaPath's no-instance branch. This line runs BEFORE the satellite
+    # loader, so now that Join-DbaPath is a satellite cmdlet a bare call here misses module
+    # resolution and triggers PowerShell auto-loading - on any machine where another module
+    # named dbatools (e.g. a Gallery install) sits earlier in PSModulePath, that stale module
+    # gets imported mid-import and its functions shadow every flipped cmdlet. Import-time code
+    # in this file must NEVER bare-invoke a flipped command.
+    [Dataplat.Dbatools.Message.LogHost]::LoggingPath = @($script:AppData) + @("PowerShell", "dbatools") -join
+    [IO.Path]::DirectorySeparatorChar -replace
+    "\\|/", [IO.Path]::DirectorySeparatorChar
 }
 
 # Run all optional code

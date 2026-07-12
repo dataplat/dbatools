@@ -135,8 +135,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "warns that the key doesn't exist" {
-            $null = Remove-DbaClientAlias -Alias dbatoolscialias5 -WarningVariable warnvar -WarningAction SilentlyContinue
-            $missingKeyWarnings = @($warnvar) -match "Registry key \(.*WOW6432Node.*\) does not exist"
+            # The warning is written by the registry scriptblock inside the Invoke-Command2 hop,
+            # which bypasses the caller's -WarningVariable for the function and the cmdlet alike
+            # (lab-proven: -WarningVariable captures 0 for both); the 3>&1 merge is the shape
+            # that observes it for both implementations on both editions.
+            $merged = Remove-DbaClientAlias -Alias dbatoolscialias5 3>&1
+            $missingKeyWarnings = @($merged) -match "Registry key \(.*WOW6432Node.*\) does not exist"
             $missingKeyWarnings | Should -Not -BeNullOrEmpty
         }
     }
