@@ -25,12 +25,17 @@ defaults:
 
 permissions:
   contents: read
+
+concurrency:
+  group: gallery-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   linux-tests:
     env:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

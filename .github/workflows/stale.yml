@@ -10,6 +10,7 @@ jobs:
   stale:
 
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
@@ -24,7 +25,7 @@ jobs:
             * Add any additional steps you followed to reproduce if necessary
           🚨🚧
           
-          ⌛️ This issue will be closed in 30 days ⌛️
+          ⌛️ Stale issues are reviewed periodically by the maintainers ⌛️
         stale-issue-label: stale
         exempt-issue-labels: 'Feature,Documentation,Question,Confirmed,solution-provided'
         days-before-stale: 90

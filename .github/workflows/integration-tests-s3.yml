@@ -35,6 +35,10 @@ defaults:
 permissions:
   contents: read
 
+concurrency:
+  group: integration-tests-s3-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   s3-backup-tests:
     env:
@@ -46,6 +50,7 @@ jobs:
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

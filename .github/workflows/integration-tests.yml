@@ -27,12 +27,17 @@ defaults:
 permissions:
   contents: read
 
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux-tests:
     env:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -117,6 +122,7 @@ jobs:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: windows-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout dbatools repo
@@ -216,6 +222,7 @@ jobs:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: macos-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout dbatools repo
