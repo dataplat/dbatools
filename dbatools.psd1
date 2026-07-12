@@ -609,7 +609,6 @@
         'Test-DbaMigrationConstraint',
         'Test-DbaNetworkLatency',
         'Test-DbaOptimizeForAdHoc',
-        'Test-DbaPath',
         'Test-DbaInstantFileInitialization',
         'Test-DbaReplLatency',
         'Test-DbaTempDbConfig',

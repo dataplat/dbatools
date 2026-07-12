@@ -71,7 +71,8 @@
         'Set-DbaDefaultPath',
         'Set-DbatoolsInsecureConnection',
         'Set-DbatoolsPath',
-        'Test-DbaConnection'
+        'Test-DbaConnection',
+        'Test-DbaPath'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
