@@ -564,6 +564,11 @@
     "retiredPath": "private/retired/Test-DbaComputerCertificateExpiration.ps1",
     "flippedUtc": "2026-07-09T20:46:28Z"
   },
+  "Test-DbaConnection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaConnection.ps1",
+    "flippedUtc": "2026-07-12T18:13:26Z"
+  },
   "Test-DbaKerberos": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",

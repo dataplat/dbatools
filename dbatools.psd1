@@ -584,7 +584,6 @@
         'Test-DbaAvailabilityGroup',
         'Test-DbaBuild',
         'Test-DbaCmConnection',
-        'Test-DbaConnection',
         'Test-DbaConnectionAuthScheme',
         'Test-DbaDbCollation',
         'Test-DbaDbCompatibility',
