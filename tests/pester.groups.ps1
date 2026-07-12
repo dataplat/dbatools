@@ -206,6 +206,7 @@ $TestsRunGroups = @{
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
         'Import-DbaCsv',
+        'Import-DbaParquet',
         'Import-DbaPfDataCollectorSetTemplate',
         'Import-DbaRegServer',
         'Install-DbaDarlingData',
