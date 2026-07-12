@@ -58,7 +58,8 @@
         'Measure-DbatoolsImport',
         'Invoke-DbatoolsRenameHelper',
         'New-DbaAzAccessToken',
-        'New-DbaClientAlias'
+        'New-DbaClientAlias',
+        'New-DbaConnectionString'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
