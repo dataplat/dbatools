@@ -472,7 +472,6 @@
         'Remove-DbaAgReplica',
         'Remove-DbaAvailabilityGroup',
         'Remove-DbaBackup',
-        'Remove-DbaClientAlias',
         'Remove-DbaCmConnection',
         'Remove-DbaCustomError',
         'Remove-DbaDatabase',

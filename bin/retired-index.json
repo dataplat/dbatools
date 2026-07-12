@@ -474,6 +474,11 @@
     "retiredPath": "private/retired/Register-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T08:28:46Z"
   },
+  "Remove-DbaClientAlias": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Remove-DbaClientAlias.ps1",
+    "flippedUtc": "2026-07-12T10:15:42Z"
+  },
   "Remove-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaComputerCertificate.ps1",
