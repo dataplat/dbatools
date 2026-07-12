@@ -28,8 +28,7 @@ jobs:
       - name: Dispatch runner-reconcile
         env:
           GH_TOKEN: ${{ github.token }}
-        # TEMP until PR #10414 merges (then flip back to development): reconcile
-        # does not exist on development right now, and the Azure OIDC federated
-        # credential only trusts specific branch subjects, so every nudge targets
-        # vmssredux -- the one feature branch with a matching credential
-        run: gh workflow run runner-reconcile.yml --ref vmssredux -R "${{ github.repository }}"
+        # PR #10414 has merged, reconcile now lives on development, and the
+        # vmssredux feature branch is deleted -- dispatching the deleted ref
+        # failed every nudge with HTTP 422 "No ref found for: vmssredux".
+        run: gh workflow run runner-reconcile.yml --ref development -R "${{ github.repository }}"
