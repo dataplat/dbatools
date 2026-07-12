@@ -459,6 +459,11 @@
     "retiredPath": "private/retired/New-DbaSqlParameter.ps1",
     "flippedUtc": "2026-07-12T07:51:56Z"
   },
+  "New-DbatoolsSupportPackage": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbatoolsSupportPackage.ps1",
+    "flippedUtc": "2026-07-12T08:13:55Z"
+  },
   "Read-DbaBackupHeader": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
