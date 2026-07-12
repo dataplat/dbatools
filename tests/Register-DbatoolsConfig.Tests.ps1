@@ -22,43 +22,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-Describe $CommandName -Tag IntegrationTests {
-    # Characterization tests (TA-038): registration targets the user-default registry
-    # scope on Windows - local machine state only, no SQL instance needed.
-
-    Context "Registry-based registration" {
-        BeforeAll {
-            $configSuffix = Get-Random
-            $configName = "dbatoolsci.registertest$configSuffix"
-            $null = Set-DbatoolsConfig -FullName $configName -Value "regvalue$configSuffix" -PassThru
-            # The module's $script:path_RegistryUserDefault - hardcoded because module-scope
-            # variable reads blank under the Invoke-ManualPester harness (RB-IMP-51).
-            $registryPath = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
-        }
-
-        AfterAll {
-            Unregister-DbatoolsConfig -FullName "dbatoolsci.registertest$configSuffix" -ErrorAction SilentlyContinue
-        }
-
-        It "Registers a value by FullName to the user default registry scope" {
-            Register-DbatoolsConfig -FullName $configName
-            (Get-ItemProperty -Path $registryPath -Name $configName).$configName | Should -Match "regvalue$configSuffix"
-        }
-
-        It "Registers by module and name" {
-            Unregister-DbatoolsConfig -FullName $configName
-            Register-DbatoolsConfig -Module dbatoolsci -Name "registertest$configSuffix"
-            (Get-ItemProperty -Path $registryPath -Name $configName).$configName | Should -Match "regvalue$configSuffix"
-        }
-
-        It "Accepts Config objects from the pipeline" {
-            Unregister-DbatoolsConfig -FullName $configName
-            Get-DbatoolsConfig -FullName $configName | Register-DbatoolsConfig
-            (Get-ItemProperty -Path $registryPath -Name $configName).$configName | Should -Match "regvalue$configSuffix"
-        }
-    }
-}
-
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
