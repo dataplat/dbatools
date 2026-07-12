@@ -608,5 +608,10 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Update-Dbatools.ps1",
     "flippedUtc": "2026-07-12T23:22:54Z"
+  },
+  "Write-DbaDbTableData": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Write-DbaDbTableData.ps1",
+    "flippedUtc": "2026-07-12T23:53:36Z"
   }
 }

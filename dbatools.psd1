@@ -618,7 +618,6 @@
         'Update-DbaServiceAccount',
         'Watch-DbaDbLogin',
         'Watch-DbaXESession',
-        'Write-DbaDbTableData',
         'Set-DbaAgentOperator',
         'Remove-DbaExtendedProperty',
         'Get-DbaExtendedProperty',
