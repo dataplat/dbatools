@@ -19,8 +19,22 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization tests (TA-050). The command is a deprecation stub: its entire body is
+    # one unconditional Write-Warning (blockless body = END-block semantics; no ShouldProcess
+    # call, so -WhatIf does not suppress it).
+
+    Context "Deprecation warning" {
+        It "Warns to use Install-Module/Update-Module and emits nothing" {
+            $results = @(Update-Dbatools -WarningVariable warn -WarningAction SilentlyContinue)
+            $results.Count | Should -BeExactly 0
+            @($warn).Count | Should -BeExactly 1
+            "$($warn[0])" | Should -Match "deprecated.*Install-Module"
+        }
+
+        It "Warns identically under -WhatIf and with the switches bound" {
+            $null = Update-Dbatools -Development -Cleanup -WhatIf -WarningVariable warn -WarningAction SilentlyContinue
+            @($warn).Count | Should -BeExactly 1
+        }
+    }
+}
