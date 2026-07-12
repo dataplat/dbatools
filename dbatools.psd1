@@ -69,7 +69,6 @@
     FunctionsToExport  = @(
         'Test-DbaAgSpn',
         'Install-DbaAgentAdminAlert',
-        'Set-DbatoolsInsecureConnection',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
         'Add-DbaAgDatabase',
