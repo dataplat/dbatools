@@ -439,6 +439,11 @@
     "retiredPath": "private/retired/New-DbaConnectionString.ps1",
     "flippedUtc": "2026-07-12T07:15:24Z"
   },
+  "New-DbaConnectionStringBuilder": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaConnectionStringBuilder.ps1",
+    "flippedUtc": "2026-07-12T07:31:13Z"
+  },
   "New-DbaFirewallRule": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaFirewallRule.ps1",

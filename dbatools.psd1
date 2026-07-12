@@ -424,7 +424,6 @@
         'New-DbaAgentSchedule',
         'New-DbaAvailabilityGroup',
         'New-DbaCmConnection',
-        'New-DbaConnectionStringBuilder',
         'New-DbaCredential',
         'New-DbaCustomError',
         'New-DbaDacOption',
