@@ -634,7 +634,6 @@
         'Set-DbaDbDataClassification',
         'Remove-DbaDbDataClassification',
         'Get-DbaOleDbProvider',
-        'Set-DbaDefaultPath',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',

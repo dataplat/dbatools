@@ -67,7 +67,8 @@
         'Register-DbatoolsConfig',
         'Remove-DbaClientAlias',
         'Reset-DbatoolsConfig',
-        'Resolve-DbaPath'
+        'Resolve-DbaPath',
+        'Set-DbaDefaultPath'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

@@ -524,6 +524,11 @@
     "retiredPath": "private/retired/Select-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:48Z"
   },
+  "Set-DbaDefaultPath": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaDefaultPath.ps1",
+    "flippedUtc": "2026-07-12T17:25:56Z"
+  },
   "Set-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Set-DbaPowerPlan.ps1",
