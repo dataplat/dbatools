@@ -614,7 +614,6 @@
         'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
-        'Unregister-DbatoolsConfig',
         'Update-DbaBuildReference',
         'Update-DbaServiceAccount',
         'Update-Dbatools',

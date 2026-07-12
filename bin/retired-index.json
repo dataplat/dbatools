@@ -594,6 +594,11 @@
     "retiredPath": "private/retired/Test-DbaSpn.ps1",
     "flippedUtc": "2026-07-09T22:01:50Z"
   },
+  "Unregister-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Unregister-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-12T23:16:27Z"
+  },
   "Update-DbaInstance": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Update-DbaInstance.ps1",
