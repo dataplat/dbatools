@@ -364,6 +364,11 @@
     "retiredPath": "private/retired/Import-DbaCsv.ps1",
     "flippedUtc": "2026-07-12T00:34:41Z"
   },
+  "Import-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Import-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-12T01:04:47Z"
+  },
   "Install-DbaInstance": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Install-DbaInstance.ps1",
