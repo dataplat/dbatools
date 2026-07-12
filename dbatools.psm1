@@ -280,6 +280,64 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
     }
 }
 
+#region Hybrid satellite loader and kill switch (dbatools 3.0 migration)
+# Flipped commands live as binary cmdlets in satellite modules under modules/<name>/; the flip
+# tool (migration/tools/Switch-CommandExport.ps1) maintains bin/retired-index.json. Satellites
+# are imported here BY PATH because channels that import dbatools.psm1 directly bypass the
+# manifest's RequiredModules chain, so the loader cannot rely on it.
+# This block MUST run before the configuration system (and any other import-time code that
+# invokes dbatools commands): pre-flip, every public function was dot-sourced above before
+# configurations executed, so import-time code could call any command. Deferring satellite
+# load past that point makes such calls miss module resolution and trigger PowerShell module
+# auto-loading - on a machine where another module named dbatools (e.g. a Gallery install)
+# sits earlier in PSModulePath, the stale module imports mid-import and its functions shadow
+# every flipped cmdlet (proven live 2026-07-12: paths.ps1's Join-DbaPath calls auto-loaded a
+# Gallery 2.8.2 whose functions then served every flipped command name).
+$script:retiredIndexPath = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\retired-index.json"
+if (Test-Path -Path $script:retiredIndexPath) {
+    $retiredIndex = Get-Content -Path $script:retiredIndexPath -Raw | ConvertFrom-Json
+    $retiredCommands = @($retiredIndex.PSObject.Properties)
+
+    $satelliteNames = @($retiredCommands | ForEach-Object { $_.Value.module } | Sort-Object -Unique)
+    foreach ($satelliteName in $satelliteNames) {
+        if (-not (Get-Module -Name $satelliteName)) {
+            $satelliteManifest = Join-Path -Path $script:PSModuleRoot -ChildPath "modules\$satelliteName\$satelliteName.psd1"
+            if (Test-Path -Path $satelliteManifest) {
+                Import-Module -Name $satelliteManifest -Global
+            } else {
+                Write-Warning -Message "Satellite module $satelliteName is recorded in bin\retired-index.json but $satelliteManifest was not found"
+            }
+        }
+    }
+    Write-ImportTime -Text "Importing satellite modules"
+
+    # Kill switch (migration/specs/modules.md section 6.1): DBATOOLS_LEGACY_FUNCTIONS names
+    # flipped commands (comma-separated, or *) whose retired .ps1 should shadow the satellite
+    # cmdlet. The retired file is dot-sourced into the module scope (so it still sees private
+    # functions like Stop-Function), then re-homed as a global function - its scriptblock stays
+    # module-bound - because the manifest's FunctionsToExport no longer carries the name.
+    # PowerShell command precedence (Function > Cmdlet) does the rest. The env var is read once
+    # at import; changing it requires re-import.
+    if ($env:DBATOOLS_LEGACY_FUNCTIONS) {
+        $legacyRequested = @($env:DBATOOLS_LEGACY_FUNCTIONS -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        foreach ($retired in $retiredCommands) {
+            $legacyCommandName = $retired.Name
+            if (($legacyRequested -contains "*") -or ($legacyRequested -contains $legacyCommandName)) {
+                $retiredScript = Join-Path -Path $script:PSModuleRoot -ChildPath $retired.Value.retiredPath
+                if (Test-Path -Path $retiredScript) {
+                    . $retiredScript
+                    Set-Item -Path "function:global:$legacyCommandName" -Value (Get-Item -Path "function:$legacyCommandName").ScriptBlock
+                    Write-Warning -Message "dbatools kill switch: $legacyCommandName is running as the retired legacy function (DBATOOLS_LEGACY_FUNCTIONS)"
+                } else {
+                    Write-Warning -Message "dbatools kill switch: retired script for $legacyCommandName not found at $retiredScript"
+                }
+            }
+        }
+        Write-ImportTime -Text "Applying DBATOOLS_LEGACY_FUNCTIONS kill switch"
+    }
+}
+#endregion Hybrid satellite loader and kill switch
+
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
 foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/configurations")) {
@@ -290,12 +348,10 @@ foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/confi
 # Not converting the path separators based on OS was also an issue.
 
 if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
-    # Inlined from Join-DbaPath's no-instance branch. This line runs BEFORE the satellite
-    # loader, so now that Join-DbaPath is a satellite cmdlet a bare call here misses module
-    # resolution and triggers PowerShell auto-loading - on any machine where another module
-    # named dbatools (e.g. a Gallery install) sits earlier in PSModulePath, that stale module
-    # gets imported mid-import and its functions shadow every flipped cmdlet. Import-time code
-    # in this file must NEVER bare-invoke a flipped command.
+    # Inlined from Join-DbaPath's no-instance branch (byte-identical output). Join-DbaPath is
+    # a satellite cmdlet now; the satellite loader above makes a bare call resolvable again,
+    # but this fallback stays dependency-free so a missing satellite cannot send this line
+    # into PowerShell module auto-loading (the Gallery-shadow class fixed 2026-07-12).
     [Dataplat.Dbatools.Message.LogHost]::LoggingPath = @($script:AppData) + @("PowerShell", "dbatools") -join
     [IO.Path]::DirectorySeparatorChar -replace
     "\\|/", [IO.Path]::DirectorySeparatorChar
@@ -1170,56 +1226,6 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         Write-ImportTime -Text "Exporting all module members"
     }
 }
-
-#region Hybrid satellite loader and kill switch (dbatools 3.0 migration)
-# Flipped commands live as binary cmdlets in satellite modules under modules/<name>/; the flip
-# tool (migration/tools/Switch-CommandExport.ps1) maintains bin/retired-index.json. Satellites
-# are imported here BY PATH because channels that import dbatools.psm1 directly bypass the
-# manifest's RequiredModules chain, so the loader cannot rely on it.
-$script:retiredIndexPath = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\retired-index.json"
-if (Test-Path -Path $script:retiredIndexPath) {
-    $retiredIndex = Get-Content -Path $script:retiredIndexPath -Raw | ConvertFrom-Json
-    $retiredCommands = @($retiredIndex.PSObject.Properties)
-
-    $satelliteNames = @($retiredCommands | ForEach-Object { $_.Value.module } | Sort-Object -Unique)
-    foreach ($satelliteName in $satelliteNames) {
-        if (-not (Get-Module -Name $satelliteName)) {
-            $satelliteManifest = Join-Path -Path $script:PSModuleRoot -ChildPath "modules\$satelliteName\$satelliteName.psd1"
-            if (Test-Path -Path $satelliteManifest) {
-                Import-Module -Name $satelliteManifest -Global
-            } else {
-                Write-Warning -Message "Satellite module $satelliteName is recorded in bin\retired-index.json but $satelliteManifest was not found"
-            }
-        }
-    }
-    Write-ImportTime -Text "Importing satellite modules"
-
-    # Kill switch (migration/specs/modules.md section 6.1): DBATOOLS_LEGACY_FUNCTIONS names
-    # flipped commands (comma-separated, or *) whose retired .ps1 should shadow the satellite
-    # cmdlet. The retired file is dot-sourced into the module scope (so it still sees private
-    # functions like Stop-Function), then re-homed as a global function - its scriptblock stays
-    # module-bound - because the manifest's FunctionsToExport no longer carries the name.
-    # PowerShell command precedence (Function > Cmdlet) does the rest. The env var is read once
-    # at import; changing it requires re-import.
-    if ($env:DBATOOLS_LEGACY_FUNCTIONS) {
-        $legacyRequested = @($env:DBATOOLS_LEGACY_FUNCTIONS -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-        foreach ($retired in $retiredCommands) {
-            $legacyCommandName = $retired.Name
-            if (($legacyRequested -contains "*") -or ($legacyRequested -contains $legacyCommandName)) {
-                $retiredScript = Join-Path -Path $script:PSModuleRoot -ChildPath $retired.Value.retiredPath
-                if (Test-Path -Path $retiredScript) {
-                    . $retiredScript
-                    Set-Item -Path "function:global:$legacyCommandName" -Value (Get-Item -Path "function:$legacyCommandName").ScriptBlock
-                    Write-Warning -Message "dbatools kill switch: $legacyCommandName is running as the retired legacy function (DBATOOLS_LEGACY_FUNCTIONS)"
-                } else {
-                    Write-Warning -Message "dbatools kill switch: retired script for $legacyCommandName not found at $retiredScript"
-                }
-            }
-        }
-        Write-ImportTime -Text "Applying DBATOOLS_LEGACY_FUNCTIONS kill switch"
-    }
-}
-#endregion Hybrid satellite loader and kill switch
 
 $myInv = $MyInvocation
 if ($option.LoadTypes -or
