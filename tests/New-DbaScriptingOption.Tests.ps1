@@ -14,6 +14,33 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization tests (TA-035): the command news up an SMO ScriptingOptions object
+    # locally - no SQL instance or network needed.
+
+    Context "Scripting options object" {
+        It "Returns a Microsoft.SqlServer.Management.Smo.ScriptingOptions object" {
+            $options = New-DbaScriptingOption
+            $options | Should -BeOfType Microsoft.SqlServer.Management.Smo.ScriptingOptions
+        }
+
+        It "Returns a fresh instance on every call" {
+            $first = New-DbaScriptingOption
+            $second = New-DbaScriptingOption
+            $first.ScriptDrops = $true
+            $second.ScriptDrops | Should -BeFalse
+        }
+
+        It "Carries the SMO defaults for the documented toggles" {
+            $options = New-DbaScriptingOption
+            $options.ScriptDrops | Should -BeFalse
+            $options.WithDependencies | Should -BeFalse
+            $options.IncludeIfNotExists | Should -BeFalse
+            $options.NoCollation | Should -BeFalse
+        }
+    }
+}
+
 <#
     Integration test should appear below and are custom to the command you are writing.
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
