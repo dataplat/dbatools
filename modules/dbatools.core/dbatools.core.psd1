@@ -73,7 +73,8 @@
         'Set-DbatoolsPath',
         'Test-DbaConnection',
         'Test-DbaPath',
-        'Unregister-DbatoolsConfig'
+        'Unregister-DbatoolsConfig',
+        'Update-Dbatools'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
