@@ -21,7 +21,7 @@
         "dbatools.search",
         "streetsidesoftware.code-spell-checker",
         "bedirt.gpt-token-counter-live",
-        "saoudrizwan.claude-dev"
+        "chrissylemaire.fast-filename-search"
       ],
       "settings": {
         "powershell.powerShellAdditionalExePaths": {
