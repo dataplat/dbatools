@@ -93,7 +93,7 @@ jobs:
             sleep 20
           done
 
-# two sweeps: instances that finish provisioning after the first pass would
+          # two sweeps: instances that finish provisioning after the first pass would
           # otherwise wait for the (often tardy) reconcile cron
           for sweep in 1 2; do
             REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
