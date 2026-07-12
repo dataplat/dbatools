@@ -13,7 +13,8 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "SqlInstance",
                 "Path",
-                "Child"
+                "Child",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
