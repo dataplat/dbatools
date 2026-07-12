@@ -513,7 +513,6 @@
         'Repair-DbaInstanceName',
         'Reset-DbaAdmin',
         'Resolve-DbaNetworkName',
-        'Resolve-DbaPath',
         'Restart-DbaService',
         'Restore-DbaDbCertificate',
         'Restore-DbaDbSnapshot',

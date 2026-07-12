@@ -14,7 +14,8 @@ Describe $CommandName -Tag UnitTests {
                 "Path",
                 "Provider",
                 "SingleItem",
-                "NewChild"
+                "NewChild",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }

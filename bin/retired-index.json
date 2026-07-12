@@ -504,6 +504,11 @@
     "retiredPath": "private/retired/Reset-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T17:01:28Z"
   },
+  "Resolve-DbaPath": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Resolve-DbaPath.ps1",
+    "flippedUtc": "2026-07-12T17:15:14Z"
+  },
   "Restore-DbaDatabase": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
