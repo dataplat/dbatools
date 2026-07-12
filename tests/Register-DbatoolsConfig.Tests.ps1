@@ -46,11 +46,19 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Registration under the harness" {
-        It "Warns Failed-to-export when the module path variables are blanked (RB-IMP-51 harness reality)" {
+        It "DIAG harness registration shape" {
             $configName = "dbatoolsci.registertest$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "regvalue"
-            $null = Register-DbatoolsConfig -FullName $configName -WarningVariable warn -WarningAction SilentlyContinue
-            $warn | Should -Match "Failed to export"
+            $err = @()
+            try {
+                $out = @(Register-DbatoolsConfig -FullName $configName -WarningVariable warn -WarningAction SilentlyContinue -ErrorVariable err -ErrorAction SilentlyContinue)
+                $caught = "<none>"
+            } catch {
+                $caught = $PSItem.Exception.GetType().FullName + ":" + $PSItem.Exception.Message
+            }
+            $warnText = @($warn) -join "~"
+            $errText = @($err | ForEach-Object { $PSItem.Exception.GetType().Name }) -join "~"
+            "warnN=$(@($warn).Count) warn=<$warnText> errN=$(@($err).Count) err=<$errText> caught=<$caught> outN=$($out.Count)" | Should -BeExactly "IMPOSSIBLE"
         }
     }
 }
