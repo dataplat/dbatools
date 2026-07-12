@@ -36,6 +36,11 @@ on:
       - ".vscode/**"
       - "en-us/**"
   workflow_dispatch:
+    inputs:
+      message:
+        description: "Commit message the harness sees; the default (no (do ...) scope) runs the full suite"
+        required: false
+        default: "Full-suite validation run"
 
 permissions:
   contents: read
@@ -51,7 +56,7 @@ env:
   APPVEYOR_REPO_BRANCH: ${{ github.base_ref || github.ref_name }}
   APPVEYOR_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
   APPVEYOR_BUILD_VERSION: 2.1.${{ github.run_number }}
-  DBATOOLS_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+  DBATOOLS_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || inputs.message }}
   environment: development
   version: 2.1.${{ github.run_number }}
 
