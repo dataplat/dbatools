@@ -46,9 +46,12 @@ permissions:
   contents: read
   actions: write
 
+# AppVeyor-style build lanes: one matrix build consumes its lane's worker limit
+# while later builds wait in FIFO order. Pool-specific runner labels below prevent
+# an active maintainer or community lane from stealing another lane's workers.
 concurrency:
-  group: ci-azure-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-azure-${{ github.actor == 'potatoqualitee' && 'potatoqualitee' || (github.actor == 'andreasjordan' && 'andreasjordan' || 'community') }}
+  queue: max
 
 env:
   APPVEYOR: "True"
@@ -62,7 +65,10 @@ env:
 
 jobs:
   test:
-    runs-on: [self-hosted, dbatools-modern]
+    runs-on:
+      - self-hosted
+      - dbatools-modern
+      - dbatools-pool-${{ github.actor == 'potatoqualitee' && 'potatoqualitee' || (github.actor == 'andreasjordan' && 'andreasjordan' || 'community') }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -159,30 +165,30 @@ jobs:
             }
           }
 
-  # A single nudge after the whole matrix finishes (not once per job) prompts
-  # runner-reconcile to replace spent VMs promptly. Runs on GitHub-hosted compute
-  # so it never burns a spent self-hosted VM. Always dispatches against development:
-  # reconcile's Azure OIDC federated credential trusts only refs/heads/development,
-  # so a nudge on any other ref (e.g. a PR head branch) would fail at Azure login.
-  # Dispatching development also runs development's canonical reconcile + bootstrap
-  # script (RAW_BASE tracks the dispatched ref), matching how runner-boost nudges.
-  nudge-reconcile:
-    needs: test
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: write
-    steps:
-      - name: Nudge fleet reconcile (prompt spent-VM replacement)
+      # AppVeyor replenishes a worker slot as soon as one matrix job ends. Nudging
+      # per job avoids waiting for the longest matrix row before replacing every VM.
+      - name: Nudge replacement for this worker
+        if: always()
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $splatNudge = @{
-            Method  = "Post"
-            Uri     = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
-            Headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
-            Body    = (ConvertTo-Json -InputObject @{ ref = "development" })
+              Method      = "Post"
+              Uri         = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
+              Headers     = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
+              Body        = (ConvertTo-Json -InputObject @{ ref = "development" })
+              TimeoutSec  = 30
           }
-          try { Invoke-RestMethod @splatNudge } catch { Write-Host "nudge skipped: $($_.Exception.Message)" }
+          foreach ($attempt in 1..3) {
+              try {
+                  $null = Invoke-RestMethod @splatNudge
+                  return
+              } catch {
+                  Write-Warning "Reconcile nudge attempt $attempt of 3 failed. $($PSItem.Exception.Message)"
+                  if ($attempt -lt 3) {
+                      Start-Sleep -Seconds (3 * $attempt)
+                  }
+              }
+          }
+          Write-Warning "Reconcile nudge skipped after bounded retries; the next job completion or hourly reconcile will recover it."
