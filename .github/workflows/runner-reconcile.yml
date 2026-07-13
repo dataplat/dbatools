@@ -250,21 +250,6 @@ jobs:
             gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
           done
 
-          # ---- pass 5: self-tick while the fleet is non-empty --------------------
-          # schedule and workflow_run triggers only fire from the default branch;
-          # until this file merges to development the janitor must keep itself
-          # alive, or boosted runners strand forever once pushes stop. While any
-          # fleet VM remains, sleep and re-dispatch this workflow on the same ref
-          # so the boost window can expire and the trim actually runs. Harmless
-          # after merge: the cron takes over and the concurrency group coalesces
-          # overlapping ticks.
-          REMAINING=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_')])" -o tsv 2>/dev/null || echo 0)
-          if [ "${REMAINING:-0}" -gt 0 ]; then
-            echo "self-tick: $REMAINING VM(s) still up -- re-dispatching in 5 minutes"
-            sleep 300
-            gh workflow run runner-reconcile.yml --ref "$GITHUB_REF_NAME" -R "$REPO" || echo "self-tick dispatch FAILED -- fleet needs a manual nudge"
-          fi
-
   spend-report:
     if: github.event.schedule == '0 7 * * 1'
     runs-on: ubuntu-latest
