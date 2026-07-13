@@ -444,6 +444,11 @@
     "retiredPath": "private/retired/Get-DbaPfDataCollectorSet.ps1",
     "flippedUtc": "2026-07-13T17:19:25Z"
   },
+  "Get-DbaPfDataCollectorSetTemplate": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaPfDataCollectorSetTemplate.ps1",
+    "flippedUtc": "2026-07-13T17:32:58Z"
+  },
   "Get-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaPowerPlan.ps1",

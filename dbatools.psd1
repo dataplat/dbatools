@@ -280,7 +280,6 @@
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
         'Get-DbaPermission',
-        'Get-DbaPfDataCollectorSetTemplate',
         'Get-DbaPlanCache',
         'Get-DbaProcess',
         'Get-DbaQueryExecutionTime',
