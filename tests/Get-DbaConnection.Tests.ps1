@@ -26,8 +26,9 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaConnection -SqlInstance $TestConfig.InstanceSingle
             # Session-less transport connections (for example the AG/HADR endpoint links on
             # an availability group primary) report auth_scheme "(Unknown)"; the auth-scheme
-            # contract only applies to authenticated sessions.
-            $sessionResults = @($results | Where-Object SessionId)
+            # contract only applies to authenticated sessions. The rows are DataRows, so a
+            # missing session_id is DBNull (which is truthy) - filter on the type.
+            $sessionResults = @($results | Where-Object { $PSItem.SessionId -isnot [System.DBNull] })
             $sessionResults.Count | Should -BeGreaterThan 0
             foreach ($result in $sessionResults) {
                 $result.AuthScheme | Should -BeIn "NTLM", "Kerberos", "SQL"
