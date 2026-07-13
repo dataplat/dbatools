@@ -163,7 +163,6 @@
         'Find-DbaBackup',
         'Find-DbaCommand',
         'Find-DbaDatabase',
-        'Find-DbaDbDisabledIndex',
         'Find-DbaDbDuplicateIndex',
         'Find-DbaDbGrowthEvent',
         'Find-DbaDbUnusedIndex',

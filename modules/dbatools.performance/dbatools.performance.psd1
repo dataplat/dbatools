@@ -26,7 +26,8 @@
         'Clear-DbaPlanCache',
         'Clear-DbaWaitStatistics',
         'Export-DbaExecutionPlan',
-        'Export-DbaPfDataCollectorSetTemplate'
+        'Export-DbaPfDataCollectorSetTemplate',
+        'Find-DbaDbDisabledIndex'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

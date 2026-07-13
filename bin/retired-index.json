@@ -89,6 +89,11 @@
     "retiredPath": "private/retired/Export-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-11T13:18:50Z"
   },
+  "Find-DbaDbDisabledIndex": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Find-DbaDbDisabledIndex.ps1",
+    "flippedUtc": "2026-07-13T04:31:03Z"
+  },
   "Find-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Find-DbaInstance.ps1",
