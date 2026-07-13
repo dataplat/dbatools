@@ -1,17 +1,15 @@
-# The single fleet controller: when CI is requested, after CI completes, and every
-# hour it deletes spent and zombie runner instances, enforces the active pool size,
-# self-heals unregistered instances, and tops capacity up.
+# The single VMSS fleet controller. CI requests, per-job completion nudges, maintainer
+# pushes, and the hourly safety tick all reconcile the same desired state.
 #
-# Pool policy: five shared runners stay hot for community CI. Each user in
-# BOOST_USERS with a push in the trailing BOOST_HOURS window contributes
-# BOOST_COUNT runners, so both maintainers active means twenty runners.
+# AppVeyor-style pool policy:
+#   - potatoqualitee: 10 dedicated workers for two hours after activity
+#   - andreasjordan:  10 dedicated workers for two hours after activity
+#   - community:       5 shared workers for two hours after activity
+#   - no activity or queued work: zero workers
 #
-# runner-boost.yml nudges runner-scale-up directly on every qualifying push.
-# Repository events preserve each allocation on later reconcile ticks until its
-# independent window drains.
-#
-# Mondays at 07:00 UTC one extra scheduled tick posts month-to-date spend to the
-# "CI cost tracker" issue.
+# Each Flexible VMSS instance stores its pool in the runnerPool Azure tag and the
+# matching GitHub runner label. Ephemeral agents take one job, unregister, and the
+# controller replaces their VM without letting another pool steal the slot.
 name: runner-reconcile
 
 on:
@@ -21,14 +19,10 @@ on:
   workflow_run:
     workflows: ["ci-azure"]
     types: [requested]
-  # workflow_run:requested is the fast scale-out path. ci-azure also nudges this
-  # workflow via workflow_dispatch when its matrix finishes so spent VMs are replaced
-  # promptly. The hourly cron catches re-runs, which emit no new requested event. A
-  # workflow_run:completed trigger would duplicate the completion nudge one-for-one.
   workflow_dispatch:
     inputs:
       boost_user:
-        description: "Maintainer whose push requested an immediate pool boost"
+        description: "Actor whose activity should heat their pool immediately"
         required: false
         default: ""
 
@@ -38,18 +32,14 @@ permissions:
   issues: write
   id-token: write
 
+# Reconcile is idempotent. Coalescing redundant pending nudges is intentional; the
+# running pass reads the complete GitHub queue rather than relying on one event body.
 concurrency:
   group: runner-fleet
   cancel-in-progress: false
 
 jobs:
   reconcile:
-    # Azure OIDC trusts only refs/heads/development; a run on any other ref would
-    # fail at Azure login. Cron and workflow_run always resolve to the default
-    # branch, so this only skips stray dispatches on feature branches (which could
-    # not do useful work anyway) -- they no-op green instead of failing red.
-    # The second schedule entry is spend-report-only; excluding it keeps fleet
-    # reconciliation to exactly once during Monday's 07:00 UTC hour.
     if: github.ref == 'refs/heads/development' && github.event.schedule != '0 7 * * 1'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -66,6 +56,7 @@ jobs:
       BOOST_TRIGGER: ${{ inputs.boost_user || github.event.workflow_run.actor.login }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
+      BOOTSTRAP_PATH: /tmp/bootstrap-runner.ps1
     steps:
       - name: Azure login (OIDC)
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
@@ -74,217 +65,29 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Reconcile fleet
+      - name: Download fleet controller
+        id: controller
         run: |
           set -euo pipefail
-          NOW=$(date -u +%s)
-
-          gh_api_retry() {
-            local attempt status
-            for attempt in 1 2 3; do
-              if gh api "$@"; then
-                return 0
-              else
-                status=$?
-              fi
-              echo "GitHub API attempt $attempt of 3 failed" >&2
-              if [ "$attempt" -lt 3 ]; then
-                sleep $((attempt * 3))
-              fi
-            done
-            return "$status"
-          }
-
-          # ---- fixed community pool + independent maintainer boosts --------------
-          FLOOR=${COMMUNITY_COUNT:-5}
-          ACTIVE_COUNT=0
-          ACTIVE_USERS=""
-          EVENTS_AVAILABLE=true
-          EVENTS="[]"
-          if [ -n "${BOOST_USERS:-}" ]; then
-            CUTOFF=$(date -u -d "${BOOST_HOURS:-2} hours ago" +%Y-%m-%dT%H:%M:%SZ)
-            if ! EVENTS=$(gh_api_retry --paginate "repos/$REPO/events?per_page=100" 2>/dev/null); then
-              EVENTS_AVAILABLE=false
-            fi
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+              "$RAW_BASE/.github/runners/reconcile-runner-fleet.ps1" \
+              -o /tmp/reconcile-runner-fleet.ps1; then
+            echo "::warning::Fleet controller download exhausted retries; the next nudge or hourly tick will retry."
+            exit 0
           fi
-          if [ "$EVENTS_AVAILABLE" = "true" ]; then
-            for BOOST_USER in $BOOST_USERS; do
-              USER_ACTIVE=false
-              if [ "${BOOST_TRIGGER:-}" = "$BOOST_USER" ]; then
-                USER_ACTIVE=true
-              else
-                RECENT=$(printf '%s' "$EVENTS" | jq -s --arg cutoff "$CUTOFF" --arg user "$BOOST_USER" \
-                  '[.[][] | select(.type == "PushEvent" and .created_at > $cutoff and .actor.login == $user)] | length')
-                [ "${RECENT:-0}" -gt 0 ] && USER_ACTIVE=true
-              fi
-              if [ "$USER_ACTIVE" = "true" ]; then
-                ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
-                ACTIVE_USERS="$ACTIVE_USERS $BOOST_USER"
-              fi
-            done
-            if [ "$ACTIVE_COUNT" -gt 0 ]; then
-              FLOOR=$((ACTIVE_COUNT * ${BOOST_COUNT:-10}))
-            fi
-          else
-            # Do not trim a possibly active maintainer pool when the event feed has
-            # a transient outage. The next hourly or completion nudge will retry.
-            FLOOR=${MAX_RUNNERS:-20}
-            echo "GitHub events unavailable after retries -- preserving the maximum pool for this cycle"
+          if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+              "$RAW_BASE/.github/runners/bootstrap-runner.ps1" \
+              -o "$BOOTSTRAP_PATH"; then
+            echo "::warning::Runner bootstrap download exhausted retries; the next nudge or hourly tick will retry."
+            exit 0
           fi
-          [ "$FLOOR" -gt "${MAX_RUNNERS:-20}" ] && FLOOR=${MAX_RUNNERS:-20}
-          echo "active_maintainers=$ACTIVE_COUNT users=[$ACTIVE_USERS] pool=$FLOOR window=${BOOST_HOURS:-2}h"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
-          # ---- current state ---------------------------------------------------
-          RUNNERS_JSON=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
-            --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
-          VMS_JSON=$(az vm list -g "$RG" --show-details \
-            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
-
-          # count queued JOBS, not queued runs: a matrix run flips to in_progress the
-          # moment one job starts, hiding its other queued jobs from a run-level count
-          QUEUED=0
-          CI_RUN_IDS=$( (gh_api_retry "repos/$REPO/actions/runs?status=queued&per_page=50" \
-              --jq '.workflow_runs[] | select(.name == "ci-azure") | .id'; \
-            gh_api_retry "repos/$REPO/actions/runs?status=in_progress&per_page=50" \
-              --jq '.workflow_runs[] | select(.name == "ci-azure") | .id') 2>/dev/null || true)
-          for CI_RUN_ID in $CI_RUN_IDS; do
-            N=$(gh_api_retry "repos/$REPO/actions/runs/$CI_RUN_ID/jobs?per_page=100" --paginate \
-              --jq "[.jobs[] | select(.status == \"queued\" or .status == \"waiting\") | select((.labels // []) | index(\"$RUNNER_LABEL\"))] | length" 2>/dev/null || echo 0)
-            QUEUED=$((QUEUED + N))
-          done
-
-          echo "pool=$FLOOR queued_jobs=$QUEUED"
-          echo "$VMS_JSON" | jq -r '.[] | "vm: \(.name) \(.power) created \(.created)"'
-          echo "$RUNNERS_JSON" | jq -r '.[] | "runner: \(.name) \(.status) busy=\(.busy)"'
-
-          # ---- registration helper (also detects and deletes spent VMs) ---------
-          curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
-          register_unregistered() {
-            local registered vms vm token
-            registered=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-            vms=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv 2>/dev/null || true)
-            for vm in $vms; do
-              case " $registered " in
-                *" $vm "*) continue ;;
-              esac
-              echo "registering $vm"
-              token=$(gh_api_retry -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
-              (
-                OUT=$(az vm run-command invoke -g "$RG" -n "$vm" --command-id RunPowerShellScript \
-                  --scripts @/tmp/bootstrap-runner.ps1 \
-                  --parameters "Token=$token" "RunnerName=$vm" "Labels=$RUNNER_LABEL" \
-                  --query "value[0].message" -o tsv || true)
-                echo "$OUT" | tail -3
-                if echo "$OUT" | grep -q "SPENT-VM"; then
-                  echo "$vm already served a job -- deleting instead of reusing"
-                  # Wait so VMSS capacity reflects the deletion before pass 3 tops up.
-                  az vm delete -g "$RG" -n "$vm" --yes || true
-                fi
-              ) &
-            done
-            wait
-          }
-
-          # ---- pass 1: try to register BEFORE any deletion decisions ------------
-          # (cron delivery is unreliable; a slow-provisioning instance must get its
-          # registration attempt before the never-registered rule can reap it)
-          register_unregistered
-
-          # refresh state after registration/spent-deletions
-          RUNNERS_JSON=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
-            --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
-          VMS_JSON=$(az vm list -g "$RG" --show-details \
-            --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
-
-          # ---- pass 2: delete spent/zombie instances ----------------------------
-          KEEP=0
-          for VM in $(echo "$VMS_JSON" | jq -r '.[].name'); do
-            CREATED=$(echo "$VMS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .created")
-            AGE_MIN=$(( (NOW - $(date -u -d "$CREATED" +%s)) / 60 ))
-            R_STATUS=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .status")
-            R_BUSY=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .busy")
-            R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .id")
-
-            DELETE=""
-            if [ "$R_BUSY" = "true" ] && [ "$AGE_MIN" -lt 180 ]; then
-              KEEP=$((KEEP + 1)); continue
-            fi
-            if [ -z "$R_STATUS" ] && [ "$AGE_MIN" -gt 45 ]; then
-              DELETE="never registered after ${AGE_MIN}m (registration was attempted this cycle)"
-            elif [ "$R_STATUS" = "offline" ] && [ "$AGE_MIN" -gt 15 ]; then
-              # bootstrap reboots into the interactive session; fresh instances are
-              # briefly offline between config and the post-reboot logon
-              DELETE="runner offline (spent ephemeral or dead)"
-            fi
-
-            if [ -n "$DELETE" ]; then
-              echo "deleting $VM -- $DELETE"
-              [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-              # Wait so the capacity check below can create the replacement now.
-              az vm delete -g "$RG" -n "$VM" --yes || true
-            else
-              KEEP=$((KEEP + 1))
-            fi
-          done
-
-          # ---- pass 3: enforce the active fixed-size pool -------------------------
-          DESIRED=$FLOOR
-          [ "$DESIRED" -gt "${MAX_RUNNERS:-20}" ] && DESIRED=${MAX_RUNNERS:-20}
-          # az vmss scale is bidirectional: pushing a target BELOW the real capacity
-          # scale-INS the newest instances -- which is exactly what happens when the
-          # eventually-consistent vm listing hides fresh VMs from KEEP. Scale-out only
-          # ever raises capacity (sku.capacity is authoritative, listings are not);
-          # scale-in happens exclusively through the explicit per-VM deletes above.
-          CAPACITY=$(az vmss show -g "$RG" -n "$VMSS" --query sku.capacity -o tsv 2>/dev/null || echo 0)
-          echo "keep=$KEEP desired=$DESIRED capacity=$CAPACITY"
-          if [ "$KEEP" -lt "$DESIRED" ] && [ "$DESIRED" -gt "$CAPACITY" ]; then
-            az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$DESIRED" --no-wait || true
-            echo "waiting for new instances to provision"
-            sleep 150
-            register_unregistered
-          elif [ "$KEEP" -lt "$DESIRED" ]; then
-            # capacity is already there; the instances just have not registered yet
-            register_unregistered
-          fi
-
-          # ---- pass 3b: trim surplus idle instances (oldest first) ---------------
-          if [ "$KEEP" -gt "$DESIRED" ]; then
-            # refresh state right before deleting: registration races and az listing
-            # lag make the snapshots minutes old by now, and a "surplus idle" VM may
-            # in fact be freshly registered and about to take a queued job
-            RUNNERS_JSON=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
-              --jq "[.runners[] | select([.labels[].name] | index(\"$RUNNER_LABEL\")) | {name, status, busy, id}]")
-            VMS_JSON=$(az vm list -g "$RG" --show-details \
-              --query "[?starts_with(name, '${VMSS}_')].{name: name, created: timeCreated, power: powerState}" -o json 2>/dev/null || echo "[]")
-            TRIM=$(( KEEP - DESIRED ))
-            echo "trimming $TRIM surplus idle instance(s)"
-            for VM in $(echo "$VMS_JSON" | jq -r 'sort_by(.created) | .[].name'); do
-              [ "$TRIM" -le 0 ] && break
-              R_BUSY=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .busy")
-              [ "$R_BUSY" = "true" ] && continue
-              CREATED=$(echo "$VMS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .created")
-              AGE_MIN=$(( (NOW - $(date -u -d "$CREATED" +%s)) / 60 ))
-              # a young VM is still booting/registering toward queued work, not surplus
-              [ "$AGE_MIN" -lt 20 ] && continue
-              az vm show -g "$RG" -n "$VM" --query name -o tsv >/dev/null 2>&1 || continue
-              R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$VM\") | .id")
-              echo "trim: deleting idle $VM"
-              [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-              az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
-              TRIM=$(( TRIM - 1 ))
-            done
-          fi
-
-          # ---- pass 4: drop runner records with no matching VM -----------------
-          VMS_NOW=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_')].name" -o tsv 2>/dev/null | tr '\n' ' ' || true)
-          for R_NAME in $(echo "$RUNNERS_JSON" | jq -r '.[] | select(.busy != true) | .name'); do
-            case " $VMS_NOW " in
-              *" $R_NAME "*) continue ;;
-            esac
-            R_ID=$(echo "$RUNNERS_JSON" | jq -r ".[] | select(.name == \"$R_NAME\") | .id")
-            echo "removing stale runner record $R_NAME"
-            gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-          done
+      - name: Reconcile AppVeyor-style pools
+        if: steps.controller.outputs.ready == 'true'
+        shell: pwsh
+        run: /tmp/reconcile-runner-fleet.ps1
 
   spend-report:
     if: github.event.schedule == '0 7 * * 1'

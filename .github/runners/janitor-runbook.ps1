@@ -7,19 +7,18 @@
     runbook: Remove-RunawayRunner), entirely independent of GitHub Actions.
     This is the LAST-DITCH kill switch: the GitHub-side janitor
     (runner-reconcile.yml) owns normal fleet lifecycle; this backstop exists so
-    capacity above the intentional five-runner baseline cannot idle all day on
-    a wedged dispatch chain.
+    hot capacity cannot idle all day on a wedged dispatch chain.
 
     The kill rule is keyed to maintainer activity, not the clock:
 
-      - STALE (no push by a maintainer in the last 2 hours, checked through the
-        anonymous GitHub events API): the five newest community-pool runners are
-        preserved and excess runners older than 2 hours are deleted.
-      - ACTIVE (maintainer push within 2 hours): ten runners are preserved for
-        each active maintainer; excess runners older than 2 hours are deleted.
+      - STALE (no push in the last 2 hours, checked through the anonymous GitHub
+        events API): no runner capacity is preserved; runners older than 2 hours
+        are deleted.
+      - ACTIVE: ten runners are preserved for each active maintainer and five
+        for recent non-maintainer activity; excess runners older than 2 hours die.
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
-        apply to capacity above the preserved five-runner community pool -- 3
-        hours on nights and weekends, 13 hours on weekday daytime (06-17 UTC).
+        apply to all capacity -- 3 hours on nights and weekends, 13 hours on
+        weekday daytime (06-17 UTC).
 
     Always, regardless of mode:
       - ps3smoke-* VMs older than 2 hours are deleted (nightly job caps at 55m).
@@ -47,10 +46,11 @@ $communityPoolSize = 5
 $maintainerPoolSize = 10
 $utcNow = (Get-Date).ToUniversalTime()
 
-# ---- how long since the last maintainer push? (anonymous API, public repo) ----
+# ---- recent pool activity (anonymous API, public repo) -------------------------
 $mode = "github-unreachable"
 $lastPushAgeHours = $null
 $activeMaintainers = @( )
+$communityActive = $false
 try {
     $splatEvents = @{
         Uri        = "https://api.github.com/repos/$repo/events?per_page=100"
@@ -70,7 +70,10 @@ try {
             Start-Sleep -Seconds (3 * $attempt)
         }
     }
-    $pushes = @($events | Where-Object { $PSItem.type -eq "PushEvent" -and $PSItem.actor.login -in $maintainers })
+    $pushes = @($events | Where-Object {
+            $PSItem.type -eq "PushEvent" -or
+            ($PSItem.type -eq "PullRequestEvent" -and $PSItem.payload.action -in @("opened", "reopened", "synchronize"))
+        })
     if ($pushes) {
         $lastPush = ($pushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
         $lastPushAgeHours = ($utcNow - $lastPush).TotalHours
@@ -84,28 +87,33 @@ try {
                 $activeMaintainers += $maintainer
             }
         }
-        if ($activeMaintainers.Count -gt 0) {
+        $communityPushes = @($pushes | Where-Object { $PSItem.actor.login -notin $maintainers })
+        if ($communityPushes) {
+            $latestCommunityPush = ($communityPushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
+            $communityActive = ($utcNow - $latestCommunityPush).TotalHours -le $activityWindowHours
+        }
+        if ($activeMaintainers.Count -gt 0 -or $communityActive) {
             $mode = "active"
         } else {
             $mode = "stale"
         }
     } else {
-        # no maintainer push within the last ~100 repo events: definitely stale
+        # no push within the last ~100 repo events: definitely stale
         $mode = "stale"
     }
 } catch {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
 }
 
-$desiredPoolSize = $communityPoolSize
-if ($activeMaintainers.Count -gt 0) {
-    $desiredPoolSize = $activeMaintainers.Count * $maintainerPoolSize
+$desiredPoolSize = ($activeMaintainers.Count * $maintainerPoolSize)
+if ($communityActive) {
+    $desiredPoolSize += $communityPoolSize
 }
 
 switch ($mode) {
     "active" {
         $runnerMaxHours = 2
-        Write-Output "mode=active: $($activeMaintainers.Count) maintainer(s) [$($activeMaintainers -join ', ')] -- preserving $desiredPoolSize runners; excess runners past ${runnerMaxHours}h die"
+        Write-Output "mode=active: maintainers=[$($activeMaintainers -join ', ')] community=$communityActive -- preserving $desiredPoolSize runners; excess runners past ${runnerMaxHours}h die"
     }
     "stale" {
         $runnerMaxHours = 2
@@ -113,7 +121,7 @@ switch ($mode) {
         if ($null -ne $lastPushAgeHours) {
             $ageText = "$([math]::Round($lastPushAgeHours, 1))h ago"
         }
-        Write-Output "mode=stale: last maintainer push $ageText -- excess runners past ${runnerMaxHours}h die; five newest are preserved"
+        Write-Output "mode=stale: last push $ageText -- no capacity preserved; runners past ${runnerMaxHours}h die"
     }
     default {
         $isWeekend = $utcNow.DayOfWeek -in @([DayOfWeek]::Saturday, [DayOfWeek]::Sunday)
@@ -191,8 +199,8 @@ foreach ($pip in Get-AzPublicIpAddress -ResourceGroupName $rg) {
 }
 
 $vmss = Get-AzVmss -ResourceGroupName $rg -VMScaleSetName "dbatools-runners" -ErrorAction SilentlyContinue
-if ($vmss -and $vmss.Sku.Capacity -gt 22) {
-    Write-Warning "VMSS capacity is $($vmss.Sku.Capacity) -- above any sane fleet size (MAX_RUNNERS is 20)"
+if ($vmss -and $vmss.Sku.Capacity -gt 27) {
+    Write-Warning "VMSS capacity is $($vmss.Sku.Capacity) -- above any sane fleet size (MAX_RUNNERS is 25)"
 }
 
 if ($deleted -gt 0) {
