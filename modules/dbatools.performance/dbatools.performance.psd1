@@ -31,7 +31,8 @@
         'Find-DbaDbDuplicateIndex',
         'Find-DbaDbGrowthEvent',
         'Find-DbaDbUnusedIndex',
-        'Get-DbaAvailableCollation'
+        'Get-DbaAvailableCollation',
+        'Get-DbaBuild'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -190,7 +190,6 @@
         'Get-DbaAgReplica',
         'Get-DbaAgRingBuffer',
         'Get-DbaBackupDevice',
-        'Get-DbaBuild',
         'Get-DbaCmConnection',
         'Get-DbaCmObject',
         'Get-DbaConnection',

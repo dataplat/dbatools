@@ -139,6 +139,11 @@
     "retiredPath": "private/retired/Get-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:20Z"
   },
+  "Get-DbaBuild": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaBuild.ps1",
+    "flippedUtc": "2026-07-13T06:01:49Z"
+  },
   "Get-DbaClientAlias": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaClientAlias.ps1",
