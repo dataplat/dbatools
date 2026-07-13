@@ -28,8 +28,12 @@ BeforeDiscovery {
     # engine restart in AfterAll. Skip harness-honestly instead of failing the fixture.
     $script:instanceRestartManageable = $false
     try {
-        $sqlservrProcesses = @(Get-DbaCmObject -ComputerName $TestConfig.InstanceRestart -ClassName win32_process -EnableException | Where-Object ProcessName -eq "sqlservr.exe")
-        $script:instanceRestartManageable = $sqlservrProcesses.Count -gt 0
+        # The fixture spawns its external process through sqlcmd - without it the child
+        # process can never exist, so the test cannot pass.
+        if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
+            $sqlservrProcesses = @(Get-DbaCmObject -ComputerName $TestConfig.InstanceRestart -ClassName win32_process -EnableException | Where-Object ProcessName -eq "sqlservr.exe")
+            $script:instanceRestartManageable = $sqlservrProcesses.Count -gt 0
+        }
     } catch {
         $script:instanceRestartManageable = $false
     }
