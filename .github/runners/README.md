@@ -2,8 +2,9 @@
 
 Replaces AppVeyor with disposable Azure VMs: every job runs on a factory-fresh
 ephemeral VM booted from a golden image with SQL Server preinstalled, registered as a
-single-use GitHub runner, and deleted afterwards. Five shared runners stay hot for
-community CI; each active maintainer gets ten runners for two hours (up to twenty).
+single-use GitHub runner, and deleted afterwards. Activity heats three independent
+AppVeyor-style lanes for two hours: ten runners each for `potatoqualitee` and
+`andreasjordan`, plus five shared community runners. With no activity, capacity is zero.
 
 ```
 GitHub (public repo)                          Azure (eastus)
@@ -18,14 +19,15 @@ GitHub (public repo)                          Azure (eastus)
 
 | Thing | Value |
 |---|---|
-| Runner label | `dbatools-modern` (`runs-on: [self-hosted, dbatools-modern]`) |
+| Runner labels | Base `dbatools-modern` plus exactly one pool label: `dbatools-pool-potatoqualitee`, `dbatools-pool-andreasjordan`, or `dbatools-pool-community` |
 | Golden image | `dbatoolsGallery/dbatools-modern-image` — Server 2022, SQL 2017/2019/2022 Developer (instances `SQL2017/SQL2019/SQL2022`, ports 14334/14335/14336, Manual start, mixed auth sa=AppVeyor convention) |
 | Legacy image | `dbatoolsGallery/dbatools-golden-image` v1.0.0 — Server 2012, PS 3.0, SQL 2008R2/2012/2014/2016/2017 (used by nightly `ps3-smoke.yml`, runnerless); v2.0.0 adds WMF 5.1 (PS 5.1) for a future legacy runner pool |
 | Runner execution | **interactive autologon session** as local admin `appveyor` (AppVeyor parity: BITS transfers, `$env:USERNAME`, `C:\Users\appveyor\Documents\DbatoolsExport`); bootstrap registers the ephemeral runner, arms autologon + a logon task, reboots |
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
-| Scaling controls | fixed five-runner community pool; repo variable `MAX_RUNNERS` remains the hard VMSS ceiling |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` nudges the single reconcile controller so fleet runs cannot cancel a separate scale-up controller |
+| Scaling controls | Each lane heats on a commit or queued build and cools to zero after `BOOST_HOURS`; repo variable `MAX_RUNNERS=25` is the hard VMSS ceiling |
+| Build queue | Workflow concurrency uses `queue: max`: one matrix build per lane consumes that lane's workers while later builds wait FIFO, matching AppVeyor account concurrency |
+| Pool sizes | Repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS`; maintainers receive ten dedicated workers each and non-maintainers share five |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 
@@ -54,8 +56,8 @@ pwsh .github/runners/debug.ps1 -Action tail-runner -InstanceName dbatools-runner
 pwsh .github/runners/debug.ps1 -Action tail-sql    -InstanceName dbatools-runners_xxxxxx
 pwsh .github/runners/debug.ps1 -Action run -InstanceName dbatools-runners_xxxxxx -Script "Get-Service MSSQL*"
 
-# force capacity now (reconcile enforces the floor within 10 minutes anyway)
-gh workflow run runner-scale-up.yml -f ensure=3
+# manually reconcile now, optionally heating one maintainer lane immediately
+gh workflow run runner-scale-up.yml -f boost_user=potatoqualitee
 
 # rebuild the modern golden image (new SQL CU, new tooling, or adding sql2025)
 pwsh .github/runners/build-modern-image.ps1 -ImageVersion 1.0.1 -Branch development
@@ -68,39 +70,41 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 
 ## How a CI run flows
 
-1. Push/PR triggers `ci-azure.yml` → 10 matrix jobs queue on label `dbatools-modern`.
-2. `runner-reconcile.yml` reacts to the requested CI run, raises VMSS capacity (cap
-   `MAX_RUNNERS`), and registers an ephemeral runner on every new instance via
+1. Push/PR triggers `ci-azure.yml`; its build waits in the actor's FIFO concurrency
+   lane, then its matrix queues on that lane's pool-specific runner label.
+2. `runner-reconcile.yml` reacts to the requested CI run, raises that logical pool to
+   five or ten workers (total cap `MAX_RUNNERS=25`), tags each Flexible VMSS instance
+   with its pool, and registers an ephemeral runner on every new instance via
    `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the VM into the
    appveyor autologon session where run.cmd picks up the job). `runner-scale-up.yml`
    remains as a manual recovery tool.
 3. Each job: sync repo at `C:\github\dbatools` → CRLF tests → one PowerShell session
    runs prep → instance setup (`appveyor.SQL*.ps1` set static ports, start services,
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.
-4. After the job the ephemeral runner unregisters; `runner-reconcile.yml` deletes the
-   spent instance and tops the fleet back up to the active pool size (five shared,
-   ten for one active maintainer, or twenty while both are active).
+4. Every matrix job nudges reconcile as it finishes. The ephemeral runner unregisters,
+   its spent VM is deleted, and a pristine replacement restores that lane's hot size.
+   A lane cools to zero two hours after its last commit once no build remains queued.
 
 ## Cost guardrails
 
 - Budget `dbatools-ci-budget`: $600/month on RG `dbatools-ci`, email at 50/80/100%.
 - Dead-runner cleanup: reconcile deletes never-registered and offline instances;
   healthy online hot-pool runners are not evicted merely because of age.
-- Community CI keeps five shared runners hot so jobs do not wait for VM provisioning.
-- Every maintainer has an independent `BOOST_HOURS` window worth `BOOST_COUNT`
-  runners; the pool is ten with one active maintainer and twenty with both.
+- Community activity heats a five-runner shared lane for `BOOST_HOURS`; it is zero
+  during inactive weeks. Each maintainer independently heats ten dedicated runners.
+- Maximum capacity is 25 only when both maintainers and community are active together;
+  otherwise the VMSS scales to the sum of the active lanes, including zero.
 - Weekly month-to-date spend lands on the "CI cost tracker" issue (Mondays).
 - Ephemeral OS disks cost nothing; the only storage bill is the gallery replicas.
 - Dead man's switch (last ditch): Azure Automation account `dbatools-ci-janitor`
   runs the `Remove-RunawayRunner` runbook every 6 hours, entirely independent
   of GitHub Actions (source: `janitor-runbook.ps1`, deployed manually). It always
-  preserves the desired five/ten/twenty-runner pool. Excess runners older than 2h
-  are deleted; if GitHub is unreachable, conservative age caps apply only above
-  the five-runner baseline. ps3smoke VMs past 2h and orphaned CI NICs/public IPs
+  preserves the desired 0/5/10/15/20/25-runner total. Excess runners older than 2h
+  are deleted; if GitHub is unreachable, conservative age caps apply to all capacity.
+  ps3smoke VMs past 2h and orphaned CI NICs/public IPs
   die in every mode. Its managed identity holds
   only the `dbatools-ci-operator` role on RG `dbatools-ci` -- no storage, no
-  other resource groups. The five-runner baseline is intentional all-day spend;
-  the switch caps runaway capacity above it.
+  other resource groups. There is no all-day baseline; the switch caps runaway cost.
 
 ## Phase 0 gate results (2026-07-10)
 
