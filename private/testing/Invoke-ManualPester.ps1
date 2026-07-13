@@ -312,7 +312,7 @@ function Invoke-ManualPester {
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
                 if ($PassThru) {
-                    $pester5config.Run.PassThru = $passThru
+                    $pester5config.Run.PassThru = $true
                 }
                 $pester5config.Output.Verbosity = $show
                 if ($Coverage) {
