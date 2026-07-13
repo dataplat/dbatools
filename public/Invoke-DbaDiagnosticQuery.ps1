@@ -204,7 +204,14 @@ function Invoke-DbaDiagnosticQuery {
         Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
 
         if (!$Path) {
-            $Path = Join-Path -Path "$script:PSModuleRoot" -ChildPath "bin\diagnosticquery"
+            # $script:PSModuleRoot can resolve empty under the Pester harness (Invoke-ManualPester,
+            # the RB-IMP-51 class), which turns the script path rootless. Fall back to the live
+            # module's base path, the same defensive pattern as Import-DbaPfDataCollectorSetTemplate.
+            $moduleRoot = $script:PSModuleRoot
+            if (-not $moduleRoot) {
+                $moduleRoot = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1).ModuleBase
+            }
+            $Path = Join-Path -Path "$moduleRoot" -ChildPath "bin\diagnosticquery"
         }
 
         $scriptversions = @()
