@@ -699,6 +699,11 @@
     "retiredPath": "private/retired/Invoke-DbaAdvancedUpdate.ps1",
     "flippedUtc": "2026-07-10T23:30:06Z"
   },
+  "Invoke-DbaDiagnosticQuery": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Invoke-DbaDiagnosticQuery.ps1",
+    "flippedUtc": "2026-07-13T22:56:48Z"
+  },
   "Invoke-DbaQuery": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Invoke-DbaQuery.ps1",
