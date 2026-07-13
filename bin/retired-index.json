@@ -269,6 +269,11 @@
     "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",
     "flippedUtc": "2026-07-06T10:22:20Z"
   },
+  "Get-DbaDeprecatedFeature": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDeprecatedFeature.ps1",
+    "flippedUtc": "2026-07-13T11:31:10Z"
+  },
   "Get-DbaDiskSpace": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaDiskSpace.ps1",
