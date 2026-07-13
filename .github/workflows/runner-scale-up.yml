@@ -1,21 +1,13 @@
-# Manual recovery workflow that scales the dbatools-runners VMSS and registers an
-# ephemeral runner on every new instance. Normal event-driven scaling lives in
-# runner-reconcile.yml so GitHub concurrency cannot cancel one controller for another.
-#
-# The CI_RUNNER_PAT secret mints single-use registration tokens (GITHUB_TOKEN cannot).
-# Azure access is OIDC (federated credential on the dbatools-ci-github Entra app); no
-# client secrets exist anywhere in this pipeline.
+# Manual recovery entry point for the same idempotent pool controller used by
+# runner-reconcile. Keeping one implementation prevents recovery and normal scaling
+# from making conflicting capacity decisions.
 name: runner-scale-up
 
 on:
   workflow_dispatch:
     inputs:
-      ensure:
-        description: "Minimum instance count to ensure (capped by the active pool policy)"
-        required: false
-        default: ""
       boost_user:
-        description: "Maintainer whose push requested an immediate pool allocation"
+        description: "Actor whose pool should be heated immediately"
         required: false
         default: ""
 
@@ -30,8 +22,9 @@ concurrency:
 
 jobs:
   scale-up:
+    if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ secrets.CI_RUNNER_PAT }}
       REPO: ${{ github.repository }}
@@ -42,9 +35,10 @@ jobs:
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      TRIGGER_ACTOR: ${{ inputs.boost_user || github.actor }}
+      BOOST_TRIGGER: ${{ inputs.boost_user || github.actor }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
+      BOOTSTRAP_PATH: /tmp/bootstrap-runner.ps1
     steps:
       - name: Azure login (OIDC)
         uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
@@ -53,142 +47,26 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Compute demand and scale out
-        id: scale
+      - name: Download fleet controller
+        id: controller
         run: |
           set -euo pipefail
-
-          gh_api_retry() {
-            local attempt status
-            for attempt in 1 2 3; do
-              if gh api "$@"; then
-                return 0
-              else
-                status=$?
-              fi
-              echo "GitHub API attempt $attempt of 3 failed" >&2
-              if [ "$attempt" -lt 3 ]; then
-                sleep $((attempt * 3))
-              fi
-            done
-            return "$status"
-          }
-
-          QUEUED="${{ inputs.ensure }}"
-          QUEUED="${QUEUED:-0}"
-
-          IDLE=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
-            --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")
-
-          # sku.capacity is authoritative; az vm list is eventually consistent and can
-          # hide fresh instances. Basing the target on a stale listing would make the
-          # bidirectional `az vmss scale` DELETE the newest instances (scale-in).
-          CAPACITY=$(az vmss show -g "$RG" -n "$VMSS" --query sku.capacity -o tsv 2>/dev/null || echo 0)
-
-          NEED=$(( QUEUED - IDLE ))
-          [ "$NEED" -lt 0 ] && NEED=0
-          TARGET=$(( CAPACITY + NEED ))
-          POOL_LIMIT=${COMMUNITY_COUNT:-5}
-          ACTIVE_COUNT=0
-          EVENTS_AVAILABLE=true
-          EVENTS="[]"
-          if [ -n "${BOOST_USERS:-}" ]; then
-            CUTOFF=$(date -u -d "${BOOST_HOURS:-2} hours ago" +%Y-%m-%dT%H:%M:%SZ)
-            if ! EVENTS=$(gh_api_retry --paginate "repos/$REPO/events?per_page=100" 2>/dev/null); then
-              EVENTS_AVAILABLE=false
-            fi
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+              "$RAW_BASE/.github/runners/reconcile-runner-fleet.ps1" \
+              -o /tmp/reconcile-runner-fleet.ps1; then
+            echo "::warning::Fleet controller download exhausted retries; run recovery again after the transient clears."
+            exit 0
           fi
-          if [ "$EVENTS_AVAILABLE" = "true" ]; then
-            for BOOST_USER in $BOOST_USERS; do
-              USER_ACTIVE=false
-              if [ "$TRIGGER_ACTOR" = "$BOOST_USER" ]; then
-                USER_ACTIVE=true
-              else
-                RECENT=$(printf '%s' "$EVENTS" | jq -s --arg cutoff "$CUTOFF" --arg user "$BOOST_USER" \
-                  '[.[][] | select(.type == "PushEvent" and .created_at > $cutoff and .actor.login == $user)] | length')
-                [ "${RECENT:-0}" -gt 0 ] && USER_ACTIVE=true
-              fi
-              [ "$USER_ACTIVE" = "true" ] && ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
-            done
-            if [ "$ACTIVE_COUNT" -gt 0 ]; then
-              POOL_LIMIT=$((ACTIVE_COUNT * ${BOOST_COUNT:-10}))
-            fi
-          else
-            # A transient event-feed outage must not make jobs wait or shrink a
-            # possibly active maintainer allocation.
-            POOL_LIMIT=${MAX_RUNNERS:-20}
+          if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+              "$RAW_BASE/.github/runners/bootstrap-runner.ps1" \
+              -o "$BOOTSTRAP_PATH"; then
+            echo "::warning::Runner bootstrap download exhausted retries; run recovery again after the transient clears."
+            exit 0
           fi
-          [ "$POOL_LIMIT" -gt "${MAX_RUNNERS:-20}" ] && POOL_LIMIT=${MAX_RUNNERS:-20}
-          [ "$TARGET" -gt "${MAX_RUNNERS:-20}" ] && TARGET=${MAX_RUNNERS:-20}
-          [ "$TARGET" -gt "$POOL_LIMIT" ] && TARGET=$POOL_LIMIT
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
-          echo "actor=$TRIGGER_ACTOR active_maintainers=$ACTIVE_COUNT queued=$QUEUED idle=$IDLE capacity=$CAPACITY pool_limit=$POOL_LIMIT target=$TARGET"
-          if [ "$TARGET" -gt "$CAPACITY" ]; then
-            az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$TARGET" --no-wait
-            echo "scaled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "scaled=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Register runners on unregistered instances
-        run: |
-          set -euo pipefail
-
-          gh_api_retry() {
-            local attempt status
-            for attempt in 1 2 3; do
-              if gh api "$@"; then
-                return 0
-              else
-                status=$?
-              fi
-              echo "GitHub API attempt $attempt of 3 failed" >&2
-              if [ "$attempt" -lt 3 ]; then
-                sleep $((attempt * 3))
-              fi
-            done
-            return "$status"
-          }
-
-          curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
-
-          # Wait for any scale-out to finish provisioning
-          for attempt in $(seq 1 20); do
-            NOT_READY=$(az vm list -g "$RG" --query "length([?starts_with(name, '${VMSS}_') && provisioningState != 'Succeeded'])" -o tsv 2>/dev/null || echo 0)
-            [ "$NOT_READY" = "0" ] && break
-            echo "waiting: $NOT_READY instance(s) still provisioning"
-            sleep 20
-          done
-
-          # two sweeps: instances that finish provisioning after the first pass would
-          # otherwise wait for the (often tardy) reconcile cron
-          for sweep in 1 2; do
-            REGISTERED=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
-            VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv 2>/dev/null || true)
-
-            MISSED=0
-            for VM in $VMS; do
-              case " $REGISTERED " in
-                *" $VM "*) continue ;;
-              esac
-              MISSED=$((MISSED + 1))
-              echo "registering $VM (sweep $sweep)"
-              TOKEN=$(gh_api_retry -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
-              (
-                OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
-                  --scripts @/tmp/bootstrap-runner.ps1 \
-                  --parameters "Token=$TOKEN" "RunnerName=$VM" "Labels=$RUNNER_LABEL" \
-                  --query "value[0].message" -o tsv || true)
-                echo "$OUT" | tail -5
-                if echo "$OUT" | grep -q "SPENT-VM"; then
-                  echo "$VM already served a job -- deleting instead of reusing"
-                  az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
-                fi
-              ) &
-            done
-            wait
-            echo "registration sweep $sweep complete ($MISSED handled)"
-            if [ "$sweep" = "1" ]; then
-              sleep 90
-            fi
-          done
+      - name: Reconcile AppVeyor-style pools
+        if: steps.controller.outputs.ready == 'true'
+        shell: pwsh
+        run: /tmp/reconcile-runner-fleet.ps1

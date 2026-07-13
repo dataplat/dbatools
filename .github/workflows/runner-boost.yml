@@ -27,11 +27,16 @@ jobs:
           BOOST_USER: ${{ github.actor }}
         run: |
           set -euo pipefail
-          if gh workflow run runner-reconcile.yml --ref development -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
-            exit 0
-          fi
+          for attempt in 1 2 3; do
+            if gh workflow run runner-reconcile.yml --ref development -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 3))
+            fi
+          done
 
-          echo "boost_user input unavailable or transient dispatch failure; retrying a plain reconcile dispatch"
+          echo "boost_user dispatch exhausted retries; trying the backward-compatible plain dispatch"
           for attempt in 1 2 3; do
             if gh workflow run runner-reconcile.yml --ref development -R "${{ github.repository }}"; then
               exit 0
@@ -40,4 +45,4 @@ jobs:
               sleep $((attempt * 3))
             fi
           done
-          exit 1
+          echo "::warning::Reconcile dispatch exhausted retries; workflow_run or the hourly reconcile will recover without a false failure."
