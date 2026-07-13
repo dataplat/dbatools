@@ -1,16 +1,14 @@
 # The fleet janitor: every 30 minutes (and after each CI run) it deletes spent and
-# zombie runner instances, enforces the business-hours standby floor, self-heals
+# zombie runner instances, enforces the active pool size, self-heals
 # unregistered instances, and tops capacity up if the event-driven scale-up missed
 # anything (re-runs of failed jobs do not emit a "requested" event -- this catches them).
 #
-# Standby floor: STANDBY_COUNT instances during STANDBY_HOURS (STANDBY_TZ) Mon-Fri,
-# zero outside them. All three come from repo variables so tuning needs no code change.
+# Pool policy: five shared runners stay hot for community CI. A push by a user in
+# BOOST_USERS raises the pool to BOOST_COUNT for the trailing BOOST_HOURS window.
 #
-# Maintainer boost: once the users in BOOST_USERS have pushed BOOST_COMMITS
-# commits (default 3) to branches other than development/master within the
-# trailing BOOST_HOURS window, the floor is raised to BOOST_COUNT until the
-# window drains (any hour, any day). runner-boost.yml nudges this workflow on
-# those pushes so the boost kicks in without waiting for cron.
+# runner-boost.yml nudges this workflow on every qualifying push and supplies the
+# actor for immediate scale-out; repository events preserve the boost after that
+# dispatch until the window drains.
 #
 # Mondays at 07:00 UTC one extra scheduled tick posts month-to-date spend to the
 # "CI cost tracker" issue.
@@ -26,6 +24,11 @@ on:
   # not emit a scale-up "requested" event). A workflow_run:completed trigger would
   # duplicate the nudge one-for-one, so it is intentionally omitted.
   workflow_dispatch:
+    inputs:
+      boost_user:
+        description: "Maintainer whose push requested an immediate pool boost"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -51,14 +54,11 @@ jobs:
       REPO: ${{ github.repository }}
       RG: ${{ vars.CI_AZURE_RG }}
       VMSS: ${{ vars.CI_VMSS_NAME }}
-      MAX_RUNNERS: ${{ vars.MAX_RUNNERS }}
-      STANDBY_COUNT: ${{ vars.STANDBY_COUNT }}
-      STANDBY_HOURS: ${{ vars.STANDBY_HOURS }}
-      STANDBY_TZ: ${{ vars.STANDBY_TZ }}
+      COMMUNITY_COUNT: 5
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      BOOST_COMMITS: ${{ vars.BOOST_COMMITS }}
+      BOOST_TRIGGER: ${{ inputs.boost_user }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
@@ -74,31 +74,31 @@ jobs:
           set -euo pipefail
           NOW=$(date -u +%s)
 
-          # ---- desired floor from business hours -------------------------------
-          LOCAL_HOUR=$(TZ="$STANDBY_TZ" date +%H | sed 's/^0//')
-          LOCAL_DOW=$(TZ="$STANDBY_TZ" date +%u)
-          START_HOUR=$(echo "$STANDBY_HOURS" | cut -d- -f1 | sed 's/^0//')
-          END_HOUR=$(echo "$STANDBY_HOURS" | cut -d- -f2 | sed 's/^0//')
-          FLOOR=0
-          if [ "$LOCAL_DOW" -le 5 ] && [ "$LOCAL_HOUR" -ge "$START_HOUR" ] && [ "$LOCAL_HOUR" -lt "$END_HOUR" ]; then
-            FLOOR=$STANDBY_COUNT
+          # ---- fixed community pool + two-hour maintainer boost -----------------
+          FLOOR=${COMMUNITY_COUNT:-5}
+          BOOST_ACTIVE=false
+          if [ -n "${BOOST_TRIGGER:-}" ]; then
+            case " $BOOST_USERS " in
+              *" $BOOST_TRIGGER "*) BOOST_ACTIVE=true ;;
+            esac
           fi
 
-          # ---- maintainer boost: recent feature-branch pushes raise the floor ---
-          # (fork pushes do not appear in this repo's event stream, so only pushes
-          # to branches on dataplat/dbatools count)
-          if [ -n "${BOOST_USERS:-}" ] && [ "${BOOST_COUNT:-0}" -gt "$FLOOR" ]; then
+          # Repository events keep the boost active on later reconcile ticks. The
+          # explicit trigger above makes the initial tick immune to event-feed lag.
+          if [ "$BOOST_ACTIVE" != "true" ] && [ -n "${BOOST_USERS:-}" ]; then
             CUTOFF=$(date -u -d "${BOOST_HOURS:-3} hours ago" +%Y-%m-%dT%H:%M:%SZ)
             EVENTS=$(gh api --paginate "repos/$REPO/events?per_page=100" 2>/dev/null || echo "[]")
             RECENT=$(echo "$EVENTS" | jq -s --arg cutoff "$CUTOFF" --arg users "$BOOST_USERS" \
               '[.[][] | select(.type == "PushEvent" and .created_at > $cutoff
-                and (.actor.login | IN($users | split(" ")[]))
-                and ((.payload.ref // "") | test("^refs/heads/(development|master)$") | not))
-                | .payload.size // 1] | add // 0')
-            if [ "${RECENT:-0}" -ge "${BOOST_COMMITS:-3}" ]; then
-              echo "maintainer boost: $RECENT commit(s) to feature branches by [$BOOST_USERS] in the last ${BOOST_HOURS:-3}h (threshold ${BOOST_COMMITS:-3}) -- floor raised to $BOOST_COUNT"
-              FLOOR=$BOOST_COUNT
+                and (.actor.login | IN($users | split(" ")[])))
+                | .payload.size // 0] | add // 0')
+            if [ "${RECENT:-0}" -gt 0 ]; then
+              BOOST_ACTIVE=true
             fi
+          fi
+          if [ "$BOOST_ACTIVE" = "true" ]; then
+            FLOOR=${BOOST_COUNT:-10}
+            echo "maintainer boost active for [$BOOST_USERS] -- pool raised to $FLOOR for ${BOOST_HOURS:-2}h after the latest push"
           fi
 
           # ---- current state ---------------------------------------------------
@@ -120,7 +120,7 @@ jobs:
             QUEUED=$((QUEUED + N))
           done
 
-          echo "floor=$FLOOR queued_runs=$QUEUED"
+          echo "pool=$FLOOR queued_jobs=$QUEUED"
           echo "$VMS_JSON" | jq -r '.[] | "vm: \(.name) \(.power) created \(.created)"'
           echo "$RUNNERS_JSON" | jq -r '.[] | "runner: \(.name) \(.status) busy=\(.busy)"'
 
@@ -144,7 +144,8 @@ jobs:
                 echo "$OUT" | tail -3
                 if echo "$OUT" | grep -q "SPENT-VM"; then
                   echo "$vm already served a job -- deleting instead of reusing"
-                  az vm delete -g "$RG" -n "$vm" --yes --no-wait || true
+                  # Wait so VMSS capacity reflects the deletion before pass 3 tops up.
+                  az vm delete -g "$RG" -n "$vm" --yes || true
                 fi
               ) &
             done
@@ -181,24 +182,20 @@ jobs:
               # bootstrap reboots into the interactive session; fresh instances are
               # briefly offline between config and the post-reboot logon
               DELETE="runner offline (spent ephemeral or dead)"
-            elif [ "$AGE_MIN" -gt 180 ]; then
-              DELETE="zombie: age ${AGE_MIN}m"
             fi
 
             if [ -n "$DELETE" ]; then
               echo "deleting $VM -- $DELETE"
               [ -n "$R_ID" ] && gh api -X DELETE "repos/$REPO/actions/runners/$R_ID" || true
-              az vm delete -g "$RG" -n "$VM" --yes --no-wait || true
+              # Wait so the capacity check below can create the replacement now.
+              az vm delete -g "$RG" -n "$VM" --yes || true
             else
               KEEP=$((KEEP + 1))
             fi
           done
 
-          # ---- pass 3: top up to floor / demand ----------------------------------
-          BUSY=$(echo "$RUNNERS_JSON" | jq '[.[] | select(.busy == true)] | length')
-          DESIRED=$(( BUSY + QUEUED ))
-          [ "$DESIRED" -lt "$FLOOR" ] && DESIRED=$FLOOR
-          [ "$DESIRED" -gt "$MAX_RUNNERS" ] && DESIRED=$MAX_RUNNERS
+          # ---- pass 3: enforce the active fixed-size pool -------------------------
+          DESIRED=$FLOOR
           # az vmss scale is bidirectional: pushing a target BELOW the real capacity
           # scale-INS the newest instances -- which is exactly what happens when the
           # eventually-consistent vm listing hides fresh VMs from KEEP. Scale-out only

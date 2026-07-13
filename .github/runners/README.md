@@ -2,12 +2,12 @@
 
 Replaces AppVeyor with disposable Azure VMs: every job runs on a factory-fresh
 ephemeral VM booted from a golden image with SQL Server preinstalled, registered as a
-single-use GitHub runner, and deleted afterwards. Nights and weekends the fleet scales
-to zero; during Paris business hours a small standby pool keeps queue times low.
+single-use GitHub runner, and deleted afterwards. Five shared runners stay hot for
+community CI; maintainer pushes raise the hot pool to ten for two hours.
 
 ```
 GitHub (public repo)                          Azure (eastus)
-├─ ci-azure.yml           8-job matrix   ──►  VMSS dbatools-runners (Flexible, D4ds_v5)
+├─ ci-azure.yml          10-job matrix   ──►  VMSS dbatools-runners (Flexible, D4ds_v5)
 ├─ runner-scale-up.yml    on demand +1..N     ├─ ephemeral OS disk on local SSD ($0)
 ├─ runner-reconcile.yml   */30 min janitor    ├─ instance public IPs, NSG deny inbound
 └─ ps3-smoke.yml          nightly PS 3.0      └─ image: dbatoolsGallery/dbatools-modern-image
@@ -24,8 +24,8 @@ GitHub (public repo)                          Azure (eastus)
 | Runner execution | **interactive autologon session** as local admin `appveyor` (AppVeyor parity: BITS transfers, `$env:USERNAME`, `C:\Users\appveyor\Documents\DbatoolsExport`); bootstrap registers the ephemeral runner, arms autologon + a logon task, reboots |
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
-| Scaling controls | repo variables `STANDBY_COUNT` / `STANDBY_HOURS` / `STANDBY_TZ` / `MAX_RUNNERS` |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` / `BOOST_COMMITS` — once listed users have pushed `BOOST_COMMITS` commits (default 3) to branches other than development/master within the trailing `BOOST_HOURS` window, the floor rises to `BOOST_COUNT` until the window drains (any hour, any day); `runner-boost.yml` nudges reconcile on those pushes so it applies within ~1 minute |
+| Scaling controls | fixed five-runner community pool; repo variable `MAX_RUNNERS` remains the hard VMSS ceiling |
+| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — every push by a listed user raises the pool to `BOOST_COUNT` until `BOOST_HOURS` after the latest push; `runner-boost.yml` passes the actor directly so the first scale-out does not depend on repository-event timing |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 
@@ -68,7 +68,7 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 
 ## How a CI run flows
 
-1. Push/PR triggers `ci-azure.yml` → 8 matrix jobs queue on label `dbatools-modern`.
+1. Push/PR triggers `ci-azure.yml` → 10 matrix jobs queue on label `dbatools-modern`.
 2. `runner-scale-up.yml` (workflow_run: requested) counts queued jobs, raises VMSS
    capacity (cap `MAX_RUNNERS`), and registers an ephemeral runner on every new
    instance via `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the
@@ -77,29 +77,30 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
    runs prep → instance setup (`appveyor.SQL*.ps1` set static ports, start services,
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.
 4. After the job the ephemeral runner unregisters; `runner-reconcile.yml` deletes the
-   spent instance and tops the fleet back up to the standby floor (or zero off-hours).
+   spent instance and tops the fleet back up to the active pool size (five shared,
+   or ten for two hours after the latest maintainer push).
 
 ## Cost guardrails
 
 - Budget `dbatools-ci-budget`: $600/month on RG `dbatools-ci`, email at 50/80/100%.
-- Zombie kill: reconcile deletes any non-busy instance older than 3h.
-- Scale-to-zero outside `STANDBY_HOURS` (`STANDBY_TZ`, Mon–Fri).
-- Maintainer boost holds `BOOST_COUNT` warm runners once `BOOST_COMMITS` commits
-  land in the window; it self-expires `BOOST_HOURS` after the last qualifying
-  push (worst case ~10 × D4ds_v5 for 3h ≈ $7).
+- Dead-runner cleanup: reconcile deletes never-registered and offline instances;
+  healthy online hot-pool runners are not evicted merely because of age.
+- Community CI keeps five shared runners hot so jobs do not wait for VM provisioning.
+- Every maintainer push holds `BOOST_COUNT` hot runners and refreshes the window; it
+  self-expires `BOOST_HOURS` after the last qualifying push.
 - Weekly month-to-date spend lands on the "CI cost tracker" issue (Mondays).
 - Ephemeral OS disks cost nothing; the only storage bill is the gallery replicas.
 - Dead man's switch (last ditch): Azure Automation account `dbatools-ci-janitor`
   runs the `Remove-RunawayRunner` runbook every 6 hours, entirely independent
-  of GitHub Actions (source: `janitor-runbook.ps1`). The kill rule is keyed to
-  maintainer activity: once no maintainer has pushed for 6 hours, every runner
-  VM older than 2h is deleted no matter what the GitHub-side machinery thinks;
-  within an active window only >14h zombies die (reconcile owns the rest); if
-  GitHub is unreachable, conservative age caps apply. ps3smoke VMs past 2h and
-  orphaned CI NICs/public IPs die in every mode. Its managed identity holds
+  of GitHub Actions (source: `janitor-runbook.ps1`, deployed manually). It always
+  preserves the five newest community-pool runners. After the two-hour maintainer
+  window, excess runners older than 2h are deleted; within the window only >14h
+  zombies die. If GitHub is unreachable, conservative age caps apply only above
+  the preserved baseline. ps3smoke VMs past 2h and orphaned CI NICs/public IPs
+  die in every mode. Its managed identity holds
   only the `dbatools-ci-operator` role on RG `dbatools-ci` -- no storage, no
-  other resource groups. Worst-case wedged-fleet spend is a few hours of VMs
-  (~$30), never an all-day burn.
+  other resource groups. The five-runner baseline is intentional all-day spend;
+  the switch caps runaway capacity above it.
 
 ## Phase 0 gate results (2026-07-10)
 

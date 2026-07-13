@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       ensure:
-        description: "Minimum instance count to ensure (defaults to standby floor logic)"
+        description: "Minimum instance count to ensure (capped by the active pool policy)"
         required: false
         default: ""
 
@@ -37,6 +37,10 @@ jobs:
       RG: ${{ vars.CI_AZURE_RG }}
       VMSS: ${{ vars.CI_VMSS_NAME }}
       MAX_RUNNERS: ${{ vars.MAX_RUNNERS }}
+      COMMUNITY_COUNT: 5
+      BOOST_USERS: ${{ vars.BOOST_USERS }}
+      BOOST_COUNT: ${{ vars.BOOST_COUNT }}
+      TRIGGER_ACTOR: ${{ github.event.workflow_run.actor.login || github.actor }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
@@ -73,9 +77,14 @@ jobs:
           NEED=$(( QUEUED - IDLE ))
           [ "$NEED" -lt 0 ] && NEED=0
           TARGET=$(( CAPACITY + NEED ))
+          POOL_LIMIT=${COMMUNITY_COUNT:-5}
+          case " $BOOST_USERS " in
+            *" $TRIGGER_ACTOR "*) POOL_LIMIT=${BOOST_COUNT:-10} ;;
+          esac
           [ "$TARGET" -gt "$MAX_RUNNERS" ] && TARGET=$MAX_RUNNERS
+          [ "$TARGET" -gt "$POOL_LIMIT" ] && TARGET=$POOL_LIMIT
 
-          echo "queued=$QUEUED idle=$IDLE capacity=$CAPACITY target=$TARGET"
+          echo "actor=$TRIGGER_ACTOR queued=$QUEUED idle=$IDLE capacity=$CAPACITY pool_limit=$POOL_LIMIT target=$TARGET"
           if [ "$TARGET" -gt "$CAPACITY" ]; then
             az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$TARGET" --no-wait
             echo "scaled=true" >> "$GITHUB_OUTPUT"

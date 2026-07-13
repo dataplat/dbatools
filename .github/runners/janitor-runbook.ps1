@@ -7,20 +7,19 @@
     runbook: Remove-RunawayRunner), entirely independent of GitHub Actions.
     This is the LAST-DITCH kill switch: the GitHub-side janitor
     (runner-reconcile.yml) owns normal fleet lifecycle; this backstop exists so
-    the fleet can never idle all day on a wedged dispatch chain.
+    capacity above the intentional five-runner baseline cannot idle all day on
+    a wedged dispatch chain.
 
     The kill rule is keyed to maintainer activity, not the clock:
 
-      - STALE (no push by a maintainer in the last 6 hours, checked through the
-        anonymous GitHub events API): every dbatools-runners_* VM older than
-        2 hours is deleted. The 2-hour grace only spares an in-flight job from
-        a manual dispatch -- jobs time out at 90 minutes, so anything older is
-        by definition runaway.
-      - ACTIVE (maintainer push within 6 hours): reconcile owns the window, so
+      - STALE (no push by a maintainer in the last 2 hours, checked through the
+        anonymous GitHub events API): the five newest community-pool runners are
+        preserved and excess runners older than 2 hours are deleted.
+      - ACTIVE (maintainer push within 2 hours): reconcile owns the window, so
         only true zombies older than 14 hours are deleted here.
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
-        apply -- 3 hours on nights and weekends, 13 hours on weekday daytime
-        (06-17 UTC) so a healthy standby floor is not murdered blind.
+        apply to capacity above the preserved five-runner community pool -- 3
+        hours on nights and weekends, 13 hours on weekday daytime (06-17 UTC).
 
     Always, regardless of mode:
       - ps3smoke-* VMs older than 2 hours are deleted (nightly job caps at 55m).
@@ -43,7 +42,8 @@ $null = Connect-AzAccount -Identity
 $rg = "dbatools-ci"
 $repo = "dataplat/dbatools"
 $maintainers = @("potatoqualitee", "andreasjordan")
-$activityWindowHours = 6
+$activityWindowHours = 2
+$communityPoolSize = 5
 $utcNow = (Get-Date).ToUniversalTime()
 
 # ---- how long since the last maintainer push? (anonymous API, public repo) ----
@@ -84,7 +84,7 @@ switch ($mode) {
         if ($null -ne $lastPushAgeHours) {
             $ageText = "$([math]::Round($lastPushAgeHours, 1))h ago"
         }
-        Write-Output "mode=stale: last maintainer push $ageText -- every runner VM past ${runnerMaxHours}h dies"
+        Write-Output "mode=stale: last maintainer push $ageText -- excess runners past ${runnerMaxHours}h die; five newest are preserved"
     }
     default {
         $isWeekend = $utcNow.DayOfWeek -in @([DayOfWeek]::Saturday, [DayOfWeek]::Sunday)
@@ -100,10 +100,20 @@ switch ($mode) {
 
 $deleted = 0
 $vms = Get-AzVM -ResourceGroupName $rg
+$protectedRunners = @(
+    $vms |
+        Where-Object Name -Like "dbatools-runners_*" |
+        Sort-Object TimeCreated -Descending |
+        Select-Object -First $communityPoolSize -ExpandProperty Name
+)
 Write-Output "found $(@($vms).Count) VM(s) in $rg"
 foreach ($vm in $vms) {
     $cap = $null
     if ($vm.Name -like "dbatools-runners_*") {
+        if ($mode -ne "active" -and $vm.Name -in $protectedRunners) {
+            Write-Output "preserving community-pool runner $($vm.Name)"
+            continue
+        }
         $cap = $runnerMaxHours
     } elseif ($vm.Name -like "ps3smoke*") {
         $cap = 2
