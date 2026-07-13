@@ -21,13 +21,15 @@ Describe $CommandName -Tag UnitTests {
 }
 
 BeforeDiscovery {
-    # The integration fixture needs ADMINISTRATIVE access to InstanceRestart (CIM process
-    # listing, xp_cmdshell setup, an engine restart in AfterAll). Some harness identities
-    # cannot manage that host (the gate harness user has no rights on the lab's restart
-    # instance) - skip harness-honestly instead of failing the fixture.
-    $script:instanceRestartManageable = $true
+    # The integration fixture needs ADMINISTRATIVE access to InstanceRestart: the command
+    # under test enumerates win32_process WITHOUT a credential, so the harness identity
+    # must be able to SEE the remote sqlservr.exe process (an unprivileged CIM view hides
+    # other users' processes and the test can never pass), plus xp_cmdshell setup and an
+    # engine restart in AfterAll. Skip harness-honestly instead of failing the fixture.
+    $script:instanceRestartManageable = $false
     try {
-        $null = Get-DbaCmObject -ComputerName $TestConfig.InstanceRestart -ClassName win32_operatingsystem -EnableException
+        $sqlservrProcesses = @(Get-DbaCmObject -ComputerName $TestConfig.InstanceRestart -ClassName win32_process -EnableException | Where-Object ProcessName -eq "sqlservr.exe")
+        $script:instanceRestartManageable = $sqlservrProcesses.Count -gt 0
     } catch {
         $script:instanceRestartManageable = $false
     }
