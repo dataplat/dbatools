@@ -273,7 +273,6 @@
         'Get-DbaLinkedServer',
         'Get-DbaLogin',
         'Get-DbaMaintenanceSolutionLog',
-        'Get-DbaMemoryUsage',
         'Get-DbaModule',
         'Get-DbaNetworkActivity',
         'Get-DbaOpenTransaction',

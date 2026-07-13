@@ -364,6 +364,11 @@
     "retiredPath": "private/retired/Get-DbaMemoryCondition.ps1",
     "flippedUtc": "2026-07-13T14:18:27Z"
   },
+  "Get-DbaMemoryUsage": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaMemoryUsage.ps1",
+    "flippedUtc": "2026-07-13T14:30:15Z"
+  },
   "Get-DbaMsdtc": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaMsdtc.ps1",
