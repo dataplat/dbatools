@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "JobName",
                 "ExcludeJobName",
                 "StepName",
+                "Pattern",
                 "LastUsed",
                 "IsDisabled",
                 "IsFailed",
@@ -27,6 +28,81 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Wildcard filtering" {
+        InModuleScope dbatools {
+            BeforeAll {
+                $script:agentJobs = @(
+                    [PSCustomObject]@{ Name = "Backup1Nightly"; JobSteps = @([PSCustomObject]@{ Name = "LoadData" }) }
+                    [PSCustomObject]@{ Name = "Backup2Nightly"; JobSteps = @([PSCustomObject]@{ Name = "LoadMeta" }) }
+                    [PSCustomObject]@{ Name = "ETL1"; JobSteps = @([PSCustomObject]@{ Name = "Extract" }) }
+                    [PSCustomObject]@{ Name = "ETL2"; JobSteps = @([PSCustomObject]@{ Name = "LoadData" }) }
+                    [PSCustomObject]@{ Name = "Literal*Job"; JobSteps = @([PSCustomObject]@{ Name = "Literal*Step" }) }
+                    [PSCustomObject]@{ Name = "LiteralXJob"; JobSteps = @([PSCustomObject]@{ Name = "LiteralXStep" }) }
+                )
+                $script:agentServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                    JobServer          = [PSCustomObject]@{ Jobs = $script:agentJobs }
+                }
+                Mock Connect-DbaInstance { $script:agentServer }
+            }
+
+            It "supports question-mark and character-class job wildcards" {
+                (Get-JobList -SqlInstance "sql1" -JobFilter "Backup?Nightly").Name | Should -Be @("Backup1Nightly", "Backup2Nightly")
+                (Get-JobList -SqlInstance "sql1" -JobFilter "ETL[12]").Name | Should -Be @("ETL1", "ETL2")
+            }
+
+            It "supports escaped literal asterisks and step wildcards" {
+                $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Literal*Job")
+
+                (Get-JobList -SqlInstance "sql1" -JobFilter $escapedJobName).Name | Should -Be "Literal*Job"
+                (Get-JobList -SqlInstance "sql1" -StepFilter "Load?ata").Name | Should -Be @("Backup1Nightly", "ETL2")
+            }
+        }
+    }
+
+    Context "Public name filters" {
+        InModuleScope dbatools {
+            BeforeEach {
+                $script:publicAgentJobs = foreach ($publicAgentJobName in "Backup1Nightly", "Backup2Nightly", "ETL1", "ETL2", "Literal*Job", "LiteralXJob") {
+                    $publicAgentJob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job
+                    $publicAgentJob.Name = $publicAgentJobName
+                    $publicAgentJob
+                }
+                $script:publicAgentServer = [DbaInstanceParameter]"sql1"
+                $script:publicAgentServer | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value "sql1"
+                $script:publicAgentServer | Add-Member -Force -MemberType NoteProperty -Name ServiceName -Value "MSSQLSERVER"
+                $script:publicAgentServer | Add-Member -Force -MemberType NoteProperty -Name DomainInstanceName -Value "sql1"
+
+                Mock Connect-DbaInstance { $script:publicAgentServer }
+                Mock Get-JobList { $script:publicAgentJobs }
+                Mock Select-DefaultView { $InputObject }
+            }
+
+            It "marks JobName and StepName as wildcard-capable" {
+                $command = Get-Command Find-DbaAgentJob
+
+                @($command.Parameters["JobName"].Attributes | Where-Object { $PSItem -is [System.Management.Automation.SupportsWildcardsAttribute] }) | Should -HaveCount 1
+                @($command.Parameters["StepName"].Attributes | Where-Object { $PSItem -is [System.Management.Automation.SupportsWildcardsAttribute] }) | Should -HaveCount 1
+            }
+
+            It "matches job names with regex Pattern OR semantics" {
+                $results = Find-DbaAgentJob -SqlInstance "sql1" -Pattern "^Backup\dNightly$", "^ETL2$"
+
+                $results.Name | Should -Be @("Backup1Nightly", "Backup2Nightly", "ETL2")
+            }
+
+            It "narrows JobName results by Pattern and keeps ExcludeJobName exact" {
+                Mock Get-JobList { $script:publicAgentJobs | Where-Object Name -Like "Literal*" }
+
+                $results = Find-DbaAgentJob -SqlInstance "sql1" -JobName "Literal*" -Pattern "^Literal.*Job$" -ExcludeJobName "Literal*Job"
+
+                $results.Name | Should -Be "LiteralXJob"
+            }
         }
     }
 }
