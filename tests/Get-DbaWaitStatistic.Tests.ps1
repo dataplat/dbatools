@@ -27,11 +27,12 @@ Describe $CommandName -Tag UnitTests {
         Context "Wait type filter validation" {
             BeforeAll {
                 $script:lastQuery = $null
-                $script:mockServer = [PSCustomObject]@{
-                    ComputerName       = "sql1"
-                    ServiceName        = "MSSQLSERVER"
-                    DomainInstanceName = "sql1"
-                }
+                # A REAL (disconnected) SMO Server decorated with instance ETS members
+                # rides the typed Connect-DbaInstance seam; a bare PSCustomObject cannot.
+                $script:mockServer = New-Object Microsoft.SqlServer.Management.Smo.Server
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value "sql1"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name ServiceName -Value "MSSQLSERVER"
+                $script:mockServer | Add-Member -Force -MemberType NoteProperty -Name DomainInstanceName -Value "sql1"
                 $script:mockServer | Add-Member -Force -MemberType ScriptMethod -Name Query -Value {
                     param($Sql)
                     $script:lastQuery = $Sql
