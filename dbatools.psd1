@@ -258,7 +258,6 @@
         'Get-DbaEndpoint',
         'Get-DbaErrorLogConfig',
         'Get-DbaExtendedProtection',
-        'Get-DbaExternalProcess',
         'Get-DbaFile',
         'Get-DbaFilestream',
         'Get-DbaHelpIndex',
