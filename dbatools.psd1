@@ -340,7 +340,6 @@
         'Invoke-DbaDbShrink',
         'Invoke-DbaDbTransfer',
         'Invoke-DbaDbUpgrade',
-        'Invoke-DbaPfRelog',
         'Invoke-DbaWhoIsActive',
         'Invoke-DbaXEReplay',
         'Join-DbaAvailabilityGroup',

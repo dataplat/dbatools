@@ -704,6 +704,11 @@
     "retiredPath": "private/retired/Invoke-DbaDiagnosticQuery.ps1",
     "flippedUtc": "2026-07-13T22:56:48Z"
   },
+  "Invoke-DbaPfRelog": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Invoke-DbaPfRelog.ps1",
+    "flippedUtc": "2026-07-13T23:29:43Z"
+  },
   "Invoke-DbaQuery": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Invoke-DbaQuery.ps1",

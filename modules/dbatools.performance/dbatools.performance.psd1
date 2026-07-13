@@ -82,7 +82,8 @@
         'Get-DbaWaitStatistic',
         'Get-DbaWindowsLog',
         'Import-DbaPfDataCollectorSetTemplate',
-        'Invoke-DbaDiagnosticQuery'
+        'Invoke-DbaDiagnosticQuery',
+        'Invoke-DbaPfRelog'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
