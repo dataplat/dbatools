@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaRgResourcePool',
-        'Add-DbaPfDataCollectorCounter'
+        'Add-DbaPfDataCollectorCounter',
+        'Clear-DbaConnectionPool'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -14,6 +14,11 @@
     "retiredPath": "private/retired/Backup-DbaComputerCertificate.ps1",
     "flippedUtc": "2026-07-09T23:36:32Z"
   },
+  "Clear-DbaConnectionPool": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Clear-DbaConnectionPool.ps1",
+    "flippedUtc": "2026-07-13T02:23:40Z"
+  },
   "Connect-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",
