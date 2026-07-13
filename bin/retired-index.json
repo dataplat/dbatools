@@ -19,6 +19,21 @@
     "retiredPath": "private/retired/Clear-DbaConnectionPool.ps1",
     "flippedUtc": "2026-07-13T02:23:40Z"
   },
+  "Clear-DbaLatchStatistics": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Clear-DbaLatchStatistics.ps1",
+    "flippedUtc": "2026-07-13T03:00:51Z"
+  },
+  "Clear-DbaPlanCache": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Clear-DbaPlanCache.ps1",
+    "flippedUtc": "2026-07-13T03:01:05Z"
+  },
+  "Clear-DbaWaitStatistics": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Clear-DbaWaitStatistics.ps1",
+    "flippedUtc": "2026-07-13T03:01:19Z"
+  },
   "Connect-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",

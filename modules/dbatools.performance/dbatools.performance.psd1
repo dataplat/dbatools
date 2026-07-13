@@ -21,7 +21,10 @@
     CmdletsToExport        = @(
         'Get-DbaRgResourcePool',
         'Add-DbaPfDataCollectorCounter',
-        'Clear-DbaConnectionPool'
+        'Clear-DbaConnectionPool',
+        'Clear-DbaLatchStatistics',
+        'Clear-DbaPlanCache',
+        'Clear-DbaWaitStatistics'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
