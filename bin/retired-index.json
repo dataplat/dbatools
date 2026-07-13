@@ -284,6 +284,11 @@
     "retiredPath": "private/retired/Get-DbaDump.ps1",
     "flippedUtc": "2026-07-13T11:41:36Z"
   },
+  "Get-DbaErrorLog": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaErrorLog.ps1",
+    "flippedUtc": "2026-07-13T11:56:26Z"
+  },
   "Get-DbaFeature": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaFeature.ps1",

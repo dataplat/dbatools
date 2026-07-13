@@ -256,7 +256,6 @@
         'Get-DbaDbView',
         'Get-DbaDependency',
         'Get-DbaEndpoint',
-        'Get-DbaErrorLog',
         'Get-DbaErrorLogConfig',
         'Get-DbaEstimatedCompletionTime',
         'Get-DbaExecutionPlan',
