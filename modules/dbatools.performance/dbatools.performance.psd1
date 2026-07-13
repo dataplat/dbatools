@@ -29,7 +29,8 @@
         'Export-DbaPfDataCollectorSetTemplate',
         'Find-DbaDbDisabledIndex',
         'Find-DbaDbDuplicateIndex',
-        'Find-DbaDbGrowthEvent'
+        'Find-DbaDbGrowthEvent',
+        'Find-DbaDbUnusedIndex'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

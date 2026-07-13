@@ -104,6 +104,11 @@
     "retiredPath": "private/retired/Find-DbaDbGrowthEvent.ps1",
     "flippedUtc": "2026-07-13T05:00:27Z"
   },
+  "Find-DbaDbUnusedIndex": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Find-DbaDbUnusedIndex.ps1",
+    "flippedUtc": "2026-07-13T05:17:48Z"
+  },
   "Find-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Find-DbaInstance.ps1",

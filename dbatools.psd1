@@ -163,7 +163,6 @@
         'Find-DbaBackup',
         'Find-DbaCommand',
         'Find-DbaDatabase',
-        'Find-DbaDbUnusedIndex',
         'Find-DbaLoginInGroup',
         'Find-DbaObject',
         'Find-DbaOrphanedFile',
