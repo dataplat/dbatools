@@ -288,6 +288,13 @@ function Get-DbaWindowsLog {
         }
         #endregion Scriptblocks
 
+        # Sever the module-runspace affinity of these scriptblock literals: a runspace-pool
+        # thread invoking an affine scriptblock LOCALLY (the localhost path) marshals the
+        # execution back to the busy home runspace and can deadlock against the
+        # Receive-Runspace wait loop.
+        $scriptBlock_RemoteExecution = [scriptblock]::Create($scriptBlock_RemoteExecution.ToString())
+        $scriptBlock_ParallelRemoting = [scriptblock]::Create($scriptBlock_ParallelRemoting.ToString())
+
         #region Setup Runspace
         [Collections.Arraylist]$RunspaceCollection = @()
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
