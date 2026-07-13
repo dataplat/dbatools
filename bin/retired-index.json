@@ -239,6 +239,11 @@
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
     "flippedUtc": "2026-07-06T09:51:14Z"
   },
+  "Get-DbaDbMemoryUsage": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbMemoryUsage.ps1",
+    "flippedUtc": "2026-07-13T10:01:59Z"
+  },
   "Get-DbaDbState": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaDbState.ps1",

@@ -227,7 +227,6 @@
         'Get-DbaDbMailLog',
         'Get-DbaDbMailServer',
         'Get-DbaDbMasterKey',
-        'Get-DbaDbMemoryUsage',
         'Get-DbaDbMirror',
         'Get-DbaDbMirrorMonitor',
         'Get-DbaDbObjectTrigger',
