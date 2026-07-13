@@ -281,7 +281,6 @@
         'Get-DbaPbmStore',
         'Get-DbaPermission',
         'Get-DbaProcess',
-        'Get-DbaQueryExecutionTime',
         'Get-DbaRandomizedDataset',
         'Get-DbaRandomizedDatasetTemplate',
         'Get-DbaRandomizedType',

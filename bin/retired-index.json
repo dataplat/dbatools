@@ -469,6 +469,11 @@
     "retiredPath": "private/retired/Get-DbaProductKey.ps1",
     "flippedUtc": "2026-07-09T20:06:57Z"
   },
+  "Get-DbaQueryExecutionTime": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaQueryExecutionTime.ps1",
+    "flippedUtc": "2026-07-13T17:57:33Z"
+  },
   "Get-DbaRegistryRoot": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaRegistryRoot.ps1",
