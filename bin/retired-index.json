@@ -504,6 +504,11 @@
     "retiredPath": "private/retired/Get-DbaRgResourcePool.ps1",
     "flippedUtc": "2026-07-06T10:40:40Z"
   },
+  "Get-DbaRgWorkloadGroup": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaRgWorkloadGroup.ps1",
+    "flippedUtc": "2026-07-13T18:32:45Z"
+  },
   "Get-DbaService": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaService.ps1",

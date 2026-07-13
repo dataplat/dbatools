@@ -71,7 +71,8 @@
         'Get-DbaPlanCache',
         'Get-DbaQueryExecutionTime',
         'Get-DbaResourceGovernor',
-        'Get-DbaRgClassifierFunction'
+        'Get-DbaRgClassifierFunction',
+        'Get-DbaRgWorkloadGroup'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

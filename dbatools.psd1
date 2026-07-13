@@ -290,7 +290,6 @@
         'Get-DbaRegServerStore',
         'Get-DbaReplPublication',
         'Get-DbaReplServer',
-        'Get-DbaRgWorkloadGroup',
         'Get-DbaRunningJob',
         'Get-DbaSchemaChangeHistory',
         'Get-DbaServerRole',
