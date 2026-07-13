@@ -61,8 +61,14 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not $script:instanceRestartM
         $sqlFile = "$($TestConfig.Temp)\sleep.sql"
         Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
 
-        # Run sql file to start external process
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+        # Run sql file to start external process. Authenticate with the config's SQL
+        # credential - a harness identity without integrated trust on InstanceRestart
+        # would otherwise fail the sqlcmd connect and never spawn the child process.
+        $sqlCredArgs = ""
+        if ($TestConfig.SqlCred) {
+            $sqlCredArgs = " -U $($TestConfig.SqlCred.UserName) -P $($TestConfig.SqlCred.GetNetworkCredential().Password)"
+        }
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart)$sqlCredArgs -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
