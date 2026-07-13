@@ -386,7 +386,7 @@ function Invoke-DbaAdvancedRestore {
                             $restore.StopAtMarkAfterDate = $StopAfterDate
                         }
                     }
-                } elseif ($RestoreTime -gt (Get-Date) -or $backup.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                } elseif ($backup -ne $backups[-1] -or $RestoreTime -gt (Get-Date) -or $backup.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $restore.ToPointInTime = $null
                 } else {
                     if ($RestoreTime -ne $backup.RestoreTime) {
