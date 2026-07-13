@@ -45,6 +45,7 @@ on:
 permissions:
   contents: read
   actions: write
+  pull-requests: read
 
 # AppVeyor-style build lanes: one matrix build consumes its lane's worker limit
 # while later builds wait in FIFO order. Pool-specific runner labels below prevent
@@ -118,18 +119,57 @@ jobs:
         working-directory: C:\github\dbatools
     steps:
       - name: Sync repo to build commit
-        shell: cmd
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config --global --add safe.directory C:/github/dbatools || exit /b 1
-          git fetch --force origin development || exit /b 1
-          if "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
-            git fetch --force origin "%DBATOOLS_HEAD_REF%" || exit /b 1
-          ) else (
-            git fetch --force "%DBATOOLS_HEAD_REPO%" "%DBATOOLS_HEAD_REF%" || exit /b 1
-          )
-          git checkout --force "%DBATOOLS_BUILD_SHA%" || exit /b 1
-          git clean -xdff || exit /b 1
-          git log -1 --oneline || exit /b 1
+          git config --global --add safe.directory C:/github/dbatools
+          if ($LASTEXITCODE -ne 0) { throw "Failed to configure the Git safe directory." }
+
+          git fetch --force origin development
+          if ($LASTEXITCODE -ne 0) { throw "Failed to fetch development." }
+
+          $checkoutRef = $env:DBATOOLS_BUILD_SHA
+          if ($env:APPVEYOR_PULL_REQUEST_NUMBER) {
+              $pullRequest = $null
+              $splatPullRequest = @{
+                  Headers    = @{
+                      Accept                 = "application/vnd.github+json"
+                      Authorization          = "Bearer $env:GH_TOKEN"
+                      "X-GitHub-Api-Version" = "2022-11-28"
+                  }
+                  TimeoutSec = 30
+                  Uri        = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/pulls/$env:APPVEYOR_PULL_REQUEST_NUMBER"
+              }
+              foreach ($attempt in 1..3) {
+                  try {
+                      $pullRequest = Invoke-RestMethod @splatPullRequest
+                      break
+                  } catch {
+                      Write-Warning "PR state lookup attempt $attempt of 3 failed. $($PSItem.Exception.Message)"
+                      if ($attempt -lt 3) { Start-Sleep -Seconds (3 * $attempt) }
+                  }
+              }
+              if (-not $pullRequest) { throw "Unable to determine the current PR state after three attempts." }
+
+              if ($pullRequest.merged) {
+                  Write-Host "PR #$env:APPVEYOR_PULL_REQUEST_NUMBER has merged; testing current development."
+                  $checkoutRef = "origin/development"
+              } else {
+                  git fetch --force $env:DBATOOLS_HEAD_REPO $env:DBATOOLS_HEAD_REF
+                  if ($LASTEXITCODE -ne 0) { throw "Failed to fetch the open PR head." }
+              }
+          } else {
+              git fetch --force origin $env:DBATOOLS_HEAD_REF
+              if ($LASTEXITCODE -ne 0) { throw "Failed to fetch the push ref." }
+          }
+
+          git checkout --force $checkoutRef
+          if ($LASTEXITCODE -ne 0) { throw "Failed to check out $checkoutRef." }
+          git clean -xdff
+          if ($LASTEXITCODE -ne 0) { throw "Failed to clean the worktree." }
+          git log -1 --oneline
+          if ($LASTEXITCODE -ne 0) { throw "Failed to read the checked-out commit." }
 
       - name: Convert tests to CRLF (unix2dos equivalent)
         shell: powershell

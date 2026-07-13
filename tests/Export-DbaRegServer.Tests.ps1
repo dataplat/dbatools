@@ -25,6 +25,60 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Native local registered-server exports" {
+        BeforeAll {
+            $nativeStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore
+            $nativeRoot = $nativeStore.DatabaseEngineServerGroup
+            $parentA = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($nativeRoot, "ParentA")
+            $parentB = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($nativeRoot, "ParentB")
+            $sharedGroupA = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($parentA, "Shared")
+            $sharedGroupB = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($parentB, "Shared")
+            $localServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($sharedGroupA, "LocalAlias")
+            $localServer.ServerName = "localhost\SQLEXPRESS"
+            $centralServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($sharedGroupA, "CentralAlias")
+            $centralServer.ServerName = "application-sql"
+            $centralServer | Add-Member -Name SqlInstance -MemberType NoteProperty -Value "cms\prod" -Force
+            $script:regServerExportFiles = @()
+        }
+
+        AfterAll {
+            $script:regServerExportFiles | Remove-Item -ErrorAction SilentlyContinue
+        }
+
+        It "exports a local RegisteredServer with a generated name and preserves an explicit FilePath" {
+            $generatedFile = $localServer | Export-DbaRegServer -Path $TestDrive -EnableException
+            $explicitPath = Join-Path $TestDrive "explicit-local.xml"
+            $explicitFile = $localServer | Export-DbaRegServer -FilePath $explicitPath -EnableException
+            $script:regServerExportFiles += $generatedFile, $explicitFile
+
+            $generatedFile.Name | Should -BeLike "localhost`$SQLEXPRESS-regserver-LocalAlias-*.xml"
+            $explicitFile.FullName | Should -Be $explicitPath
+        }
+
+        It "uses the existing SqlInstance prefix for a central registered server" {
+            $centralFile = $centralServer | Export-DbaRegServer -Path $TestDrive -EnableException
+            $script:regServerExportFiles += $centralFile
+
+            $centralFile.Name | Should -BeLike "cms`$prod-regserver-CentralAlias-*.xml"
+        }
+
+        It "exports same-named local groups to collision-free generated and explicit paths" {
+            $generatedFiles = Export-DbaRegServer -InputObject @($sharedGroupA, $sharedGroupB) -Path $TestDrive -EnableException
+            $explicitBase = Join-Path $TestDrive "groups.xml"
+            $explicitFiles = Export-DbaRegServer -InputObject @($sharedGroupA, $sharedGroupB) -FilePath $explicitBase -EnableException
+            $script:regServerExportFiles += $generatedFiles
+            $script:regServerExportFiles += $explicitFiles
+            $script:regServerExportFiles += Get-Item -LiteralPath $explicitBase
+
+            $generatedFiles | Should -HaveCount 2
+            $generatedFiles.FullName | Select-Object -Unique | Should -HaveCount 2
+            $explicitFiles | Should -HaveCount 2
+            $explicitFiles.FullName | Select-Object -Unique | Should -HaveCount 2
+            $generatedFiles.Name -join "," | Should -BeLike "*ParentA`$Shared*"
+            $generatedFiles.Name -join "," | Should -BeLike "*ParentB`$Shared*"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
