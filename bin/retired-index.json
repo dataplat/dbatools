@@ -189,6 +189,11 @@
     "retiredPath": "private/retired/Get-DbaCustomError.ps1",
     "flippedUtc": "2026-07-06T10:22:04Z"
   },
+  "Get-DbaDbccMemoryStatus": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbccMemoryStatus.ps1",
+    "flippedUtc": "2026-07-13T07:43:57Z"
+  },
   "Get-DbaDbccUserOption": {
     "module": "dbatools.maintenance",
     "retiredPath": "private/retired/Get-DbaDbccUserOption.ps1",
