@@ -192,7 +192,6 @@
         'Get-DbaBackupDevice',
         'Get-DbaCmConnection',
         'Get-DbaCmObject',
-        'Get-DbaConnection',
         'Get-DbaCpuRingBuffer',
         'Get-DbaCpuUsage',
         'Get-DbaCredential',

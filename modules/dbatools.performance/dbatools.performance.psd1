@@ -32,7 +32,8 @@
         'Find-DbaDbGrowthEvent',
         'Find-DbaDbUnusedIndex',
         'Get-DbaAvailableCollation',
-        'Get-DbaBuild'
+        'Get-DbaBuild',
+        'Get-DbaConnection'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

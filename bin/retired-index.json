@@ -169,6 +169,11 @@
     "retiredPath": "private/retired/Get-DbaConnectedInstance.ps1",
     "flippedUtc": "2026-07-11T17:51:09Z"
   },
+  "Get-DbaConnection": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaConnection.ps1",
+    "flippedUtc": "2026-07-13T06:32:12Z"
+  },
   "Get-DbaCustomError": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaCustomError.ps1",
