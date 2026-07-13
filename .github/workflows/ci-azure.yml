@@ -60,6 +60,9 @@ env:
   APPVEYOR_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
   APPVEYOR_BUILD_VERSION: 2.1.${{ github.run_number }}
   DBATOOLS_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || inputs.message }}
+  DBATOOLS_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  DBATOOLS_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+  DBATOOLS_HEAD_REPO: ${{ github.event.pull_request.head.repo.clone_url }}
   environment: development
   version: 2.1.${{ github.run_number }}
 
@@ -117,16 +120,16 @@ jobs:
       - name: Sync repo to build commit
         shell: cmd
         run: |
-          git config --global --add safe.directory C:/github/dbatools
-          git fetch --force origin development
+          git config --global --add safe.directory C:/github/dbatools || exit /b 1
+          git fetch --force origin development || exit /b 1
           if "%APPVEYOR_PULL_REQUEST_NUMBER%"=="" (
-            git fetch --force origin %GITHUB_REF_NAME%
+            git fetch --force origin "%DBATOOLS_HEAD_REF%" || exit /b 1
           ) else (
-            git fetch --force origin pull/%APPVEYOR_PULL_REQUEST_NUMBER%/merge
+            git fetch --force "%DBATOOLS_HEAD_REPO%" "%DBATOOLS_HEAD_REF%" || exit /b 1
           )
-          git checkout --force %GITHUB_SHA%
-          git clean -xdff
-          git log -1 --oneline
+          git checkout --force "%DBATOOLS_BUILD_SHA%" || exit /b 1
+          git clean -xdff || exit /b 1
+          git log -1 --oneline || exit /b 1
 
       - name: Convert tests to CRLF (unix2dos equivalent)
         shell: powershell
@@ -169,7 +172,7 @@ jobs:
       # per job avoids waiting for the longest matrix row before replacing every VM.
       - name: Nudge replacement for this worker
         if: always()
-        shell: pwsh
+        shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
