@@ -3,7 +3,7 @@
 Replaces AppVeyor with disposable Azure VMs: every job runs on a factory-fresh
 ephemeral VM booted from a golden image with SQL Server preinstalled, registered as a
 single-use GitHub runner, and deleted afterwards. Five shared runners stay hot for
-community CI; maintainer pushes raise the hot pool to ten for two hours.
+community CI; each active maintainer gets ten runners for two hours (up to twenty).
 
 ```
 GitHub (public repo)                          Azure (eastus)
@@ -25,7 +25,7 @@ GitHub (public repo)                          Azure (eastus)
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
 | Scaling controls | fixed five-runner community pool; repo variable `MAX_RUNNERS` remains the hard VMSS ceiling |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — every push by a listed user raises the pool to `BOOST_COUNT` until `BOOST_HOURS` after the latest push; `runner-boost.yml` passes the actor directly so the first scale-out does not depend on repository-event timing |
+| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` passes the actor directly so the first scale-out does not depend on repository-event timing |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 
@@ -78,7 +78,7 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.
 4. After the job the ephemeral runner unregisters; `runner-reconcile.yml` deletes the
    spent instance and tops the fleet back up to the active pool size (five shared,
-   or ten for two hours after the latest maintainer push).
+   ten for one active maintainer, or twenty while both are active).
 
 ## Cost guardrails
 
@@ -86,17 +86,16 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 - Dead-runner cleanup: reconcile deletes never-registered and offline instances;
   healthy online hot-pool runners are not evicted merely because of age.
 - Community CI keeps five shared runners hot so jobs do not wait for VM provisioning.
-- Every maintainer push holds `BOOST_COUNT` hot runners and refreshes the window; it
-  self-expires `BOOST_HOURS` after the last qualifying push.
+- Every maintainer has an independent `BOOST_HOURS` window worth `BOOST_COUNT`
+  runners; the pool is ten with one active maintainer and twenty with both.
 - Weekly month-to-date spend lands on the "CI cost tracker" issue (Mondays).
 - Ephemeral OS disks cost nothing; the only storage bill is the gallery replicas.
 - Dead man's switch (last ditch): Azure Automation account `dbatools-ci-janitor`
   runs the `Remove-RunawayRunner` runbook every 6 hours, entirely independent
   of GitHub Actions (source: `janitor-runbook.ps1`, deployed manually). It always
-  preserves the five newest community-pool runners. After the two-hour maintainer
-  window, excess runners older than 2h are deleted; within the window only >14h
-  zombies die. If GitHub is unreachable, conservative age caps apply only above
-  the preserved baseline. ps3smoke VMs past 2h and orphaned CI NICs/public IPs
+  preserves the desired five/ten/twenty-runner pool. Excess runners older than 2h
+  are deleted; if GitHub is unreachable, conservative age caps apply only above
+  the five-runner baseline. ps3smoke VMs past 2h and orphaned CI NICs/public IPs
   die in every mode. Its managed identity holds
   only the `dbatools-ci-operator` role on RG `dbatools-ci` -- no storage, no
   other resource groups. The five-runner baseline is intentional all-day spend;

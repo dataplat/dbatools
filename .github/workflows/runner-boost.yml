@@ -1,6 +1,6 @@
 # When a maintainer listed in the BOOST_USERS repo variable pushes to any branch,
-# immediately dispatch runner-reconcile so the BOOST_COUNT runner pool kicks in
-# without waiting for the best-effort cron and remains hot for BOOST_HOURS.
+# immediately dispatch runner-reconcile so that maintainer's BOOST_COUNT allocation
+# kicks in without waiting for the best-effort cron and remains hot for BOOST_HOURS.
 #
 # The boost decision itself lives in runner-reconcile.yml -- this workflow is
 # only a promptness nudge, and only fires from branches that carry this file.

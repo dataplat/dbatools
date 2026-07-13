@@ -40,6 +40,7 @@ jobs:
       COMMUNITY_COUNT: 5
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
+      BOOST_HOURS: ${{ vars.BOOST_HOURS }}
       TRIGGER_ACTOR: ${{ github.event.workflow_run.actor.login || github.actor }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
@@ -56,17 +57,33 @@ jobs:
         run: |
           set -euo pipefail
 
+          gh_api_retry() {
+            local attempt status
+            for attempt in 1 2 3; do
+              if gh api "$@"; then
+                return 0
+              else
+                status=$?
+              fi
+              echo "GitHub API attempt $attempt of 3 failed" >&2
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 3))
+              fi
+            done
+            return "$status"
+          }
+
           # Give the triggering run a moment to materialize its jobs
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             sleep 25
-            QUEUED=$(gh api "repos/$REPO/actions/runs/${{ github.event.workflow_run.id }}/jobs?per_page=100" --paginate \
+            QUEUED=$(gh_api_retry "repos/$REPO/actions/runs/${{ github.event.workflow_run.id }}/jobs?per_page=100" --paginate \
               --jq "[.jobs[] | select(.status == \"queued\" or .status == \"waiting\") | select((.labels // []) | index(\"$RUNNER_LABEL\"))] | length")
           else
             QUEUED="${{ inputs.ensure }}"
             QUEUED="${QUEUED:-0}"
           fi
 
-          IDLE=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate \
+          IDLE=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")
 
           # sku.capacity is authoritative; az vm list is eventually consistent and can
@@ -78,13 +95,40 @@ jobs:
           [ "$NEED" -lt 0 ] && NEED=0
           TARGET=$(( CAPACITY + NEED ))
           POOL_LIMIT=${COMMUNITY_COUNT:-5}
-          case " $BOOST_USERS " in
-            *" $TRIGGER_ACTOR "*) POOL_LIMIT=${BOOST_COUNT:-10} ;;
-          esac
-          [ "$TARGET" -gt "$MAX_RUNNERS" ] && TARGET=$MAX_RUNNERS
+          ACTIVE_COUNT=0
+          EVENTS_AVAILABLE=true
+          EVENTS="[]"
+          if [ -n "${BOOST_USERS:-}" ]; then
+            CUTOFF=$(date -u -d "${BOOST_HOURS:-2} hours ago" +%Y-%m-%dT%H:%M:%SZ)
+            if ! EVENTS=$(gh_api_retry --paginate "repos/$REPO/events?per_page=100" 2>/dev/null); then
+              EVENTS_AVAILABLE=false
+            fi
+          fi
+          if [ "$EVENTS_AVAILABLE" = "true" ]; then
+            for BOOST_USER in $BOOST_USERS; do
+              USER_ACTIVE=false
+              if [ "$TRIGGER_ACTOR" = "$BOOST_USER" ]; then
+                USER_ACTIVE=true
+              else
+                RECENT=$(printf '%s' "$EVENTS" | jq -s --arg cutoff "$CUTOFF" --arg user "$BOOST_USER" \
+                  '[.[][] | select(.type == "PushEvent" and .created_at > $cutoff and .actor.login == $user)] | length')
+                [ "${RECENT:-0}" -gt 0 ] && USER_ACTIVE=true
+              fi
+              [ "$USER_ACTIVE" = "true" ] && ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
+            done
+            if [ "$ACTIVE_COUNT" -gt 0 ]; then
+              POOL_LIMIT=$((ACTIVE_COUNT * ${BOOST_COUNT:-10}))
+            fi
+          else
+            # A transient event-feed outage must not make jobs wait or shrink a
+            # possibly active maintainer allocation.
+            POOL_LIMIT=${MAX_RUNNERS:-20}
+          fi
+          [ "$POOL_LIMIT" -gt "${MAX_RUNNERS:-20}" ] && POOL_LIMIT=${MAX_RUNNERS:-20}
+          [ "$TARGET" -gt "${MAX_RUNNERS:-20}" ] && TARGET=${MAX_RUNNERS:-20}
           [ "$TARGET" -gt "$POOL_LIMIT" ] && TARGET=$POOL_LIMIT
 
-          echo "actor=$TRIGGER_ACTOR queued=$QUEUED idle=$IDLE capacity=$CAPACITY pool_limit=$POOL_LIMIT target=$TARGET"
+          echo "actor=$TRIGGER_ACTOR active_maintainers=$ACTIVE_COUNT queued=$QUEUED idle=$IDLE capacity=$CAPACITY pool_limit=$POOL_LIMIT target=$TARGET"
           if [ "$TARGET" -gt "$CAPACITY" ]; then
             az vmss scale -g "$RG" -n "$VMSS" --new-capacity "$TARGET" --no-wait
             echo "scaled=true" >> "$GITHUB_OUTPUT"
@@ -95,7 +139,24 @@ jobs:
       - name: Register runners on unregistered instances
         run: |
           set -euo pipefail
-          curl -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
+
+          gh_api_retry() {
+            local attempt status
+            for attempt in 1 2 3; do
+              if gh api "$@"; then
+                return 0
+              else
+                status=$?
+              fi
+              echo "GitHub API attempt $attempt of 3 failed" >&2
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 3))
+              fi
+            done
+            return "$status"
+          }
+
+          curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL "$RAW_BASE/.github/runners/bootstrap-runner.ps1" -o /tmp/bootstrap-runner.ps1
 
           # Wait for any scale-out to finish provisioning
           for attempt in $(seq 1 20); do
@@ -108,7 +169,7 @@ jobs:
           # two sweeps: instances that finish provisioning after the first pass would
           # otherwise wait for the (often tardy) reconcile cron
           for sweep in 1 2; do
-            REGISTERED=$(gh api "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
+            REGISTERED=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate --jq '[.runners[].name] | join(" ")')
             VMS=$(az vm list -g "$RG" --query "[?starts_with(name, '${VMSS}_') && provisioningState == 'Succeeded'].name" -o tsv 2>/dev/null || true)
 
             MISSED=0
@@ -118,7 +179,7 @@ jobs:
               esac
               MISSED=$((MISSED + 1))
               echo "registering $VM (sweep $sweep)"
-              TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
+              TOKEN=$(gh_api_retry -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
               (
                 OUT=$(az vm run-command invoke -g "$RG" -n "$VM" --command-id RunPowerShellScript \
                   --scripts @/tmp/bootstrap-runner.ps1 \
