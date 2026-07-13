@@ -4,6 +4,11 @@
     "retiredPath": "private/retired/Add-DbaComputerCertificate.ps1",
     "flippedUtc": "2026-07-09T23:54:46Z"
   },
+  "Add-DbaPfDataCollectorCounter": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Add-DbaPfDataCollectorCounter.ps1",
+    "flippedUtc": "2026-07-13T01:56:02Z"
+  },
   "Backup-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Backup-DbaComputerCertificate.ps1",

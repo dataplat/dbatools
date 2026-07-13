@@ -77,7 +77,6 @@
         'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
         'Add-DbaDbRoleMember',
-        'Add-DbaPfDataCollectorCounter',
         'Add-DbaRegServer',
         'Add-DbaRegServerGroup',
         'Add-DbaServerRoleMember',
