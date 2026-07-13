@@ -39,6 +39,11 @@ concurrency:
 
 jobs:
   reconcile:
+    # Azure OIDC trusts only refs/heads/development; a run on any other ref would
+    # fail at Azure login. Cron and workflow_run always resolve to the default
+    # branch, so this only skips stray dispatches on feature branches (which could
+    # not do useful work anyway) -- they no-op green instead of failing red.
+    if: github.ref == 'refs/heads/development'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
