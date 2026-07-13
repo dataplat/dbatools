@@ -49,7 +49,8 @@
         'Get-DbaDbVirtualLogFile',
         'Get-DbaDeprecatedFeature',
         'Get-DbaDump',
-        'Get-DbaErrorLog'
+        'Get-DbaErrorLog',
+        'Get-DbaEstimatedCompletionTime'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
