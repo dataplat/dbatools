@@ -62,7 +62,8 @@
         'Get-DbaNetworkActivity',
         'Get-DbaOleDbProvider',
         'Get-DbaOpenTransaction',
-        'Get-DbaPfAvailableCounter'
+        'Get-DbaPfAvailableCounter',
+        'Get-DbaPfDataCollector'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

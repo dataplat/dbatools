@@ -424,6 +424,11 @@
     "retiredPath": "private/retired/Get-DbaPfAvailableCounter.ps1",
     "flippedUtc": "2026-07-13T15:39:39Z"
   },
+  "Get-DbaPfDataCollector": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaPfDataCollector.ps1",
+    "flippedUtc": "2026-07-13T15:50:00Z"
+  },
   "Get-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaPowerPlan.ps1",
