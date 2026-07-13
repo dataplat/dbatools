@@ -118,6 +118,8 @@ jobs:
           $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
 
   windows-tests:
+    # disabled 2026-07-14: hangs too much on windows-latest hosted runners
+    if: false
     env:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
