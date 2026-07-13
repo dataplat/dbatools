@@ -23,7 +23,7 @@ Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION B
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'" -EnableException
 
 $loginName = "$env:COMPUTERNAME\$env:USERNAME"
-$login = Get-DbaLogin -SqlInstance $sqlinstance -Login $loginName
+$login = Get-AppveyorLoginWithRetry -SqlInstance $sqlinstance -Login $loginName
 if (-not $login) {
     Write-Host -Object "$indent Creating login $env:COMPUTERNAME\$env:USERNAME on $instance" -ForegroundColor DarkGreen
     $null = New-DbaLogin -SqlInstance $sqlinstance -Name $loginName -EnableException
