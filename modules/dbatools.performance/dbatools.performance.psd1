@@ -69,7 +69,8 @@
         'Get-DbaPfDataCollectorSet',
         'Get-DbaPfDataCollectorSetTemplate',
         'Get-DbaPlanCache',
-        'Get-DbaQueryExecutionTime'
+        'Get-DbaQueryExecutionTime',
+        'Get-DbaResourceGovernor'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

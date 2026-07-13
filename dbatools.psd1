@@ -290,7 +290,6 @@
         'Get-DbaRegServerStore',
         'Get-DbaReplPublication',
         'Get-DbaReplServer',
-        'Get-DbaResourceGovernor',
         'Get-DbaRgClassifierFunction',
         'Get-DbaRgWorkloadGroup',
         'Get-DbaRunningJob',

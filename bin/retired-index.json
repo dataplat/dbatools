@@ -489,6 +489,11 @@
     "retiredPath": "private/retired/Get-DbaReplPublisher.ps1",
     "flippedUtc": "2026-07-06T14:31:03Z"
   },
+  "Get-DbaResourceGovernor": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaResourceGovernor.ps1",
+    "flippedUtc": "2026-07-13T18:09:10Z"
+  },
   "Get-DbaRgResourcePool": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaRgResourcePool.ps1",
