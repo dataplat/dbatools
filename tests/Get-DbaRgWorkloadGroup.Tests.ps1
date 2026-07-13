@@ -20,8 +20,20 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When retrieving workload groups" {
+        It "Returns the built-in default workload group with decorations" {
+            $results = @(Get-DbaRgWorkloadGroup -SqlInstance $TestConfig.InstanceSingle)
+            $results | Should -Not -BeNullOrEmpty
+            $defaultGroup = @($results | Where-Object Name -eq "default")
+            $defaultGroup | Should -Not -BeNullOrEmpty
+            $defaultGroup[0].ComputerName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Accepts resource pools from the pipeline" {
+            $results = @(Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle | Get-DbaRgResourcePool | Get-DbaRgWorkloadGroup)
+            $results | Should -Not -BeNullOrEmpty
+        }
+    }
+}
