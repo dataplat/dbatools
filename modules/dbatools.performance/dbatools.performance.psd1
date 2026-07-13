@@ -43,7 +43,8 @@
         'Get-DbaDbExtentDiff',
         'Get-DbaDbFeatureUsage',
         'Get-DbaDbLogSpace',
-        'Get-DbaDbMemoryUsage'
+        'Get-DbaDbMemoryUsage',
+        'Get-DbaDbPageInfo'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

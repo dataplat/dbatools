@@ -231,7 +231,6 @@
         'Get-DbaDbMirrorMonitor',
         'Get-DbaDbObjectTrigger',
         'Get-DbaDbOrphanUser',
-        'Get-DbaDbPageInfo',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
         'Remove-DbaDbPartitionScheme',
