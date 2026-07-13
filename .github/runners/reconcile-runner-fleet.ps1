@@ -266,9 +266,12 @@ function Register-PoolVms {
     $tasks = @()
     foreach ($vm in $State.Vms) {
         $pool = Get-VmPool -Vm $vm
-        if (-not $pool -or $Desired[$pool] -le 0 -or (Get-RunnerForVm -State $State -VmName $vm.name)) {
+        $runner = Get-RunnerForVm -State $State -VmName $vm.name
+        if (-not $pool -or $Desired[$pool] -le 0 -or ($runner -and $runner.status -ne "offline")) {
             continue
         }
+        # Probe offline ephemeral runners too. The bootstrap distinguishes a VM that
+        # is still starting from one whose runner already served its single job.
         $tokenResponse = Invoke-GhJson -Arguments @(
             "--method", "POST", "repos/$repo/actions/runners/registration-token"
         ) -Operation "mint registration token for $($vm.name)"
@@ -291,14 +294,19 @@ function Register-PoolVms {
                     --parameters "Token=$($PSItem.Token)" "RunnerName=$($PSItem.VmName)" "Labels=$($PSItem.Labels)" `
                     --query "value[0].message" --output tsv --only-show-errors 2>&1)
             $code = $LASTEXITCODE
+            $outputText = $output -join [Environment]::NewLine
+            if ($outputText -match "SPENT-VM") {
+                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Succeeded = $true; Output = $outputText }
+                break
+            }
             if ($code -eq 0) {
-                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Succeeded = $true; Output = ($output -join [Environment]::NewLine) }
+                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Succeeded = $true; Output = $outputText }
                 break
             }
             if ($attempt -lt 3) {
                 Start-Sleep -Seconds (3 * $attempt)
             } else {
-                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Succeeded = $false; Output = ($output -join [Environment]::NewLine) }
+                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Succeeded = $false; Output = $outputText }
             }
         }
         $result
