@@ -1,9 +1,10 @@
 # When a maintainer listed in the BOOST_USERS repo variable pushes to any branch,
-# immediately dispatch runner-reconcile so that maintainer's BOOST_COUNT allocation
-# kicks in without waiting for the best-effort cron and remains hot for BOOST_HOURS.
+# immediately dispatch runner-scale-up so that maintainer's BOOST_COUNT allocation
+# kicks in without competing with a duplicate reconcile run and remains hot for
+# BOOST_HOURS.
 #
-# The boost decision itself lives in runner-reconcile.yml -- this workflow is
-# only a promptness nudge, and only fires from branches that carry this file.
+# The boost decision also lives in runner-scale-up.yml -- this workflow is only a
+# promptness nudge, and only fires from branches that carry this file.
 # Branches created before it merged are still covered by the hourly cron.
 name: runner-boost
 
@@ -25,9 +26,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BOOST_USER: ${{ github.actor }}
+          BOOST_COUNT: ${{ vars.BOOST_COUNT }}
         run: |
           set -euo pipefail
-          if ! gh workflow run runner-reconcile.yml --ref development -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
-            echo "boost_user input unavailable; retrying a plain reconcile dispatch"
-            gh workflow run runner-reconcile.yml --ref development -R "${{ github.repository }}"
+          if gh workflow run runner-scale-up.yml --ref development -f ensure="${BOOST_COUNT:-10}" -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
+            exit 0
           fi
+
+          echo "boost_user input unavailable or transient dispatch failure; retrying with the existing ensure input"
+          for attempt in 1 2 3; do
+            if gh workflow run runner-scale-up.yml --ref development -f ensure="${BOOST_COUNT:-10}" -R "${{ github.repository }}"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 3))
+            fi
+          done
+          exit 1

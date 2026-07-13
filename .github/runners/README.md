@@ -25,7 +25,7 @@ GitHub (public repo)                          Azure (eastus)
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
 | Scaling controls | fixed five-runner community pool; repo variable `MAX_RUNNERS` remains the hard VMSS ceiling |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` passes the actor directly so the first scale-out does not depend on repository-event timing |
+| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` dispatches scale-up directly so it does not race reconcile for the fleet lock |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 

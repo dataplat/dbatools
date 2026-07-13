@@ -7,9 +7,9 @@
 # BOOST_USERS with a push in the trailing BOOST_HOURS window contributes
 # BOOST_COUNT runners, so both maintainers active means twenty runners.
 #
-# runner-boost.yml nudges this workflow on every qualifying push and supplies the
-# actor for immediate scale-out; repository events preserve the boost after that
-# dispatch until the window drains.
+# runner-boost.yml nudges runner-scale-up directly on every qualifying push.
+# Repository events preserve each allocation on later reconcile ticks until its
+# independent window drains.
 #
 # Mondays at 07:00 UTC one extra scheduled tick posts month-to-date spend to the
 # "CI cost tracker" issue.
