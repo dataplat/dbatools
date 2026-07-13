@@ -259,6 +259,11 @@
     "retiredPath": "private/retired/Get-DbaDbState.ps1",
     "flippedUtc": "2026-07-06T10:40:22Z"
   },
+  "Get-DbaDbVirtualLogFile": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbVirtualLogFile.ps1",
+    "flippedUtc": "2026-07-13T11:20:52Z"
+  },
   "Get-DbaDefaultPath": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",

@@ -254,7 +254,6 @@
         'Get-DbaDbUser',
         'Get-DbaDbUserDefinedTableType',
         'Get-DbaDbView',
-        'Get-DbaDbVirtualLogFile',
         'Get-DbaDependency',
         'Get-DbaDeprecatedFeature',
         'Get-DbaDump',

@@ -45,7 +45,8 @@
         'Get-DbaDbLogSpace',
         'Get-DbaDbMemoryUsage',
         'Get-DbaDbPageInfo',
-        'Get-DbaDbSpace'
+        'Get-DbaDbSpace',
+        'Get-DbaDbVirtualLogFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
