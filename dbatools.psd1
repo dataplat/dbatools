@@ -189,7 +189,6 @@
         'Get-DbaAgListener',
         'Get-DbaAgReplica',
         'Get-DbaAgRingBuffer',
-        'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBuild',
         'Get-DbaCmConnection',

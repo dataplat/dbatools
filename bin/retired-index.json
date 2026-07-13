@@ -129,6 +129,11 @@
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
     "flippedUtc": "2026-07-06T09:50:37Z"
   },
+  "Get-DbaAvailableCollation": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaAvailableCollation.ps1",
+    "flippedUtc": "2026-07-13T05:45:43Z"
+  },
   "Get-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaBackupInformation.ps1",
