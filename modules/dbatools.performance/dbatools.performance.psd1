@@ -61,7 +61,8 @@
         'Get-DbaModule',
         'Get-DbaNetworkActivity',
         'Get-DbaOleDbProvider',
-        'Get-DbaOpenTransaction'
+        'Get-DbaOpenTransaction',
+        'Get-DbaPfAvailableCounter'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
