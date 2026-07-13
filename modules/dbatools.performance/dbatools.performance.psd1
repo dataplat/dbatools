@@ -34,7 +34,8 @@
         'Get-DbaAvailableCollation',
         'Get-DbaBuild',
         'Get-DbaConnection',
-        'Get-DbaCpuRingBuffer'
+        'Get-DbaCpuRingBuffer',
+        'Get-DbaCpuUsage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

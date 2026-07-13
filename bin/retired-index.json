@@ -179,6 +179,11 @@
     "retiredPath": "private/retired/Get-DbaCpuRingBuffer.ps1",
     "flippedUtc": "2026-07-13T06:44:21Z"
   },
+  "Get-DbaCpuUsage": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaCpuUsage.ps1",
+    "flippedUtc": "2026-07-13T07:06:06Z"
+  },
   "Get-DbaCustomError": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaCustomError.ps1",
