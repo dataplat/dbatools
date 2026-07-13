@@ -302,7 +302,6 @@
         'Get-DbaSuspectPage',
         'Get-DbaTcpPort',
         'Get-DbaUserPermission',
-        'Get-DbaWindowsLog',
         'Get-DbaXEObject',
         'Get-DbaXESession',
         'Get-DbaXESessionTarget',

@@ -79,7 +79,8 @@
         'Get-DbaUptime',
         'Get-DbaWaitingTask',
         'Get-DbaWaitResource',
-        'Get-DbaWaitStatistic'
+        'Get-DbaWaitStatistic',
+        'Get-DbaWindowsLog'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -604,6 +604,11 @@
     "retiredPath": "private/retired/Get-DbaWaitStatistic.ps1",
     "flippedUtc": "2026-07-13T20:31:41Z"
   },
+  "Get-DbaWindowsLog": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaWindowsLog.ps1",
+    "flippedUtc": "2026-07-13T22:16:57Z"
+  },
   "Get-DbaWsfcAvailableDisk": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcAvailableDisk.ps1",
