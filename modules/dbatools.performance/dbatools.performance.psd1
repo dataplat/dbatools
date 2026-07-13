@@ -73,7 +73,8 @@
         'Get-DbaResourceGovernor',
         'Get-DbaRgClassifierFunction',
         'Get-DbaRgWorkloadGroup',
-        'Get-DbaSpinLockStatistic'
+        'Get-DbaSpinLockStatistic',
+        'Get-DbaTempdbUsage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
