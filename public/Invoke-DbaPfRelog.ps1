@@ -281,7 +281,9 @@ function Invoke-DbaPfRelog {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
 
         if (-not $allpaths) {
-            Stop-Function -Message "Could not find matching .blg files" -Target $file -Continue
+            # -Continue here had no enclosing loop: the flow control leaked out of the
+            # function and TERMINATED THE CALLING SCRIPT. The return alone is correct.
+            Stop-Function -Message "Could not find matching .blg files" -Target $file
             return
         }
 
