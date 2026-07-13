@@ -204,7 +204,6 @@
         'Remove-DbaDbCheckConstraint',
         'Get-DbaDbCompatibility',
         'Get-DbaDbCompression',
-        'Get-DbaDbDbccOpenTran',
         'Get-DbaDbDetachedFileInfo',
         'Get-DbaDbEncryption',
         'Disable-DbaDbEncryption',

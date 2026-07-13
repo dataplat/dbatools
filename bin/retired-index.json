@@ -214,6 +214,11 @@
     "retiredPath": "private/retired/Get-DbaDbCertificate.ps1",
     "flippedUtc": "2026-07-06T09:50:55Z"
   },
+  "Get-DbaDbDbccOpenTran": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbDbccOpenTran.ps1",
+    "flippedUtc": "2026-07-13T08:45:51Z"
+  },
   "Get-DbaDbMailProfile": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
