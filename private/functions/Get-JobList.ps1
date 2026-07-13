@@ -84,7 +84,7 @@ function Get-JobList {
                     } else {
                         $stepFound = $job.JobSteps | Where-Object Name -Like $sFilter
                     }
-                    if ($stepFound.Count -gt 0) {
+                    if ($stepFound) {
                         $job
                     }
                 }
