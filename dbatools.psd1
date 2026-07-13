@@ -148,7 +148,6 @@
         'Import-DbaBinaryFile',
         'Get-DbaBinaryFileTable',
         'Export-DbaDiagnosticQuery',
-        'Export-DbaExecutionPlan',
         'Export-DbaInstance',
         'Export-DbaLinkedServer',
         'Export-DbaLogin',

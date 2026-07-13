@@ -24,7 +24,8 @@
         'Clear-DbaConnectionPool',
         'Clear-DbaLatchStatistics',
         'Clear-DbaPlanCache',
-        'Clear-DbaWaitStatistics'
+        'Clear-DbaWaitStatistics',
+        'Export-DbaExecutionPlan'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

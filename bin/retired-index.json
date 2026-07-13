@@ -69,6 +69,11 @@
     "retiredPath": "private/retired/Export-DbaCsv.ps1",
     "flippedUtc": "2026-07-11T10:11:42Z"
   },
+  "Export-DbaExecutionPlan": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Export-DbaExecutionPlan.ps1",
+    "flippedUtc": "2026-07-13T03:51:49Z"
+  },
   "Export-DbaScript": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Export-DbaScript.ps1",
