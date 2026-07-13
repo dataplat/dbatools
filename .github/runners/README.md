@@ -8,8 +8,8 @@ community CI; each active maintainer gets ten runners for two hours (up to twent
 ```
 GitHub (public repo)                          Azure (eastus)
 ├─ ci-azure.yml          10-job matrix   ──►  VMSS dbatools-runners (Flexible, D4ds_v5)
-├─ runner-scale-up.yml    on demand +1..N     ├─ ephemeral OS disk on local SSD ($0)
-├─ runner-reconcile.yml    hourly janitor     ├─ instance public IPs, NSG deny inbound
+├─ runner-reconcile.yml  event + hourly       ├─ ephemeral OS disk on local SSD ($0)
+├─ runner-scale-up.yml    manual recovery     ├─ instance public IPs, NSG deny inbound
 └─ ps3-smoke.yml          nightly PS 3.0      └─ image: dbatoolsGallery/dbatools-modern-image
                                               RG dbatools-ci, budget $600/mo + alerts
 ```
@@ -25,7 +25,7 @@ GitHub (public repo)                          Azure (eastus)
 | Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
 | Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
 | Scaling controls | fixed five-runner community pool; repo variable `MAX_RUNNERS` remains the hard VMSS ceiling |
-| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` dispatches scale-up directly so it does not race reconcile for the fleet lock |
+| Maintainer boost | repo variables `BOOST_USERS` / `BOOST_COUNT` / `BOOST_HOURS` — each listed user with a push in the trailing window contributes `BOOST_COUNT` runners, so two active maintainers get twenty total; `runner-boost.yml` nudges the single reconcile controller so fleet runs cannot cancel a separate scale-up controller |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 
@@ -69,10 +69,11 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 ## How a CI run flows
 
 1. Push/PR triggers `ci-azure.yml` → 10 matrix jobs queue on label `dbatools-modern`.
-2. `runner-scale-up.yml` (workflow_run: requested) counts queued jobs, raises VMSS
-   capacity (cap `MAX_RUNNERS`), and registers an ephemeral runner on every new
-   instance via `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the
-   VM into the appveyor autologon session where run.cmd picks up the job).
+2. `runner-reconcile.yml` reacts to the requested CI run, raises VMSS capacity (cap
+   `MAX_RUNNERS`), and registers an ephemeral runner on every new instance via
+   `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the VM into the
+   appveyor autologon session where run.cmd picks up the job). `runner-scale-up.yml`
+   remains as a manual recovery tool.
 3. Each job: sync repo at `C:\github\dbatools` → CRLF tests → one PowerShell session
    runs prep → instance setup (`appveyor.SQL*.ps1` set static ports, start services,
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.

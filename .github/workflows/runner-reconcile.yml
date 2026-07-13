@@ -1,7 +1,6 @@
-# The fleet janitor: every hour (and after each CI run) it deletes spent and
-# zombie runner instances, enforces the active pool size, self-heals
-# unregistered instances, and tops capacity up if the event-driven scale-up missed
-# anything (re-runs of failed jobs do not emit a "requested" event -- this catches them).
+# The single fleet controller: when CI is requested, after CI completes, and every
+# hour it deletes spent and zombie runner instances, enforces the active pool size,
+# self-heals unregistered instances, and tops capacity up.
 #
 # Pool policy: five shared runners stay hot for community CI. Each user in
 # BOOST_USERS with a push in the trailing BOOST_HOURS window contributes
@@ -19,11 +18,13 @@ on:
   schedule:
     - cron: "0 * * * *"
     - cron: "0 7 * * 1"
-  # ci-azure nudges this workflow via workflow_dispatch when its matrix finishes, so
-  # spent VMs are replaced promptly. That nudge is the fast path; the hourly cron is a
-  # best-effort backstop for events that never fire (e.g. re-runs of failed jobs do
-  # not emit a scale-up "requested" event). A workflow_run:completed trigger would
-  # duplicate the nudge one-for-one, so it is intentionally omitted.
+  workflow_run:
+    workflows: ["ci-azure"]
+    types: [requested]
+  # workflow_run:requested is the fast scale-out path. ci-azure also nudges this
+  # workflow via workflow_dispatch when its matrix finishes so spent VMs are replaced
+  # promptly. The hourly cron catches re-runs, which emit no new requested event. A
+  # workflow_run:completed trigger would duplicate the completion nudge one-for-one.
   workflow_dispatch:
     inputs:
       boost_user:
@@ -62,7 +63,7 @@ jobs:
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      BOOST_TRIGGER: ${{ inputs.boost_user }}
+      BOOST_TRIGGER: ${{ inputs.boost_user || github.event.workflow_run.actor.login }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
