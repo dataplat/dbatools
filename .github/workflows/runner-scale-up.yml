@@ -17,6 +17,10 @@ on:
         description: "Minimum instance count to ensure (capped by the active pool policy)"
         required: false
         default: ""
+      boost_user:
+        description: "Maintainer whose push requested an immediate pool allocation"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -29,6 +33,10 @@ concurrency:
 
 jobs:
   scale-up:
+    # runner-boost dispatches maintainer pushes with the actor and desired capacity.
+    # Skip the duplicate workflow_run copy so it cannot replace that dispatch in the
+    # shared concurrency group's single pending slot.
+    if: github.event_name != 'workflow_run' || !contains(format(' {0} ', vars.BOOST_USERS), format(' {0} ', github.event.workflow_run.actor.login))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -41,7 +49,7 @@ jobs:
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      TRIGGER_ACTOR: ${{ github.event.workflow_run.actor.login || github.actor }}
+      TRIGGER_ACTOR: ${{ inputs.boost_user || github.event.workflow_run.actor.login || github.actor }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
