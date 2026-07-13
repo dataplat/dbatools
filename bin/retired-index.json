@@ -94,6 +94,11 @@
     "retiredPath": "private/retired/Find-DbaDbDisabledIndex.ps1",
     "flippedUtc": "2026-07-13T04:31:03Z"
   },
+  "Find-DbaDbDuplicateIndex": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Find-DbaDbDuplicateIndex.ps1",
+    "flippedUtc": "2026-07-13T04:43:44Z"
+  },
   "Find-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Find-DbaInstance.ps1",
