@@ -194,6 +194,11 @@
     "retiredPath": "private/retired/Get-DbaDbccMemoryStatus.ps1",
     "flippedUtc": "2026-07-13T07:43:57Z"
   },
+  "Get-DbaDbccProcCache": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbccProcCache.ps1",
+    "flippedUtc": "2026-07-13T08:03:31Z"
+  },
   "Get-DbaDbccUserOption": {
     "module": "dbatools.maintenance",
     "retiredPath": "private/retired/Get-DbaDbccUserOption.ps1",

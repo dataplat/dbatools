@@ -198,7 +198,6 @@
         'Get-DbaDbAsymmetricKey',
         'Get-DbaDbBackupHistory',
         'Get-DbaDbccHelp',
-        'Get-DbaDbccProcCache',
         'Get-DbaDbccSessionBuffer',
         'Get-DbaDbccStatistic',
         'Copy-DbaDbCertificate',
