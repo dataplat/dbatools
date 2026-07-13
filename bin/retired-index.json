@@ -329,6 +329,11 @@
     "retiredPath": "private/retired/Get-DbaInstanceProperty.ps1",
     "flippedUtc": "2026-07-06T10:33:23Z"
   },
+  "Get-DbaIoLatency": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaIoLatency.ps1",
+    "flippedUtc": "2026-07-13T13:31:59Z"
+  },
   "Get-DbaKbUpdate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaKbUpdate.ps1",

@@ -268,7 +268,6 @@
         'Get-DbaInstanceProtocol',
         'Get-DbaInstanceTrigger',
         'Get-DbaInstanceUserOption',
-        'Get-DbaIoLatency',
         'Get-DbaLastBackup',
         'Get-DbaLastGoodCheckDb',
         'Get-DbaLatchStatistic',
