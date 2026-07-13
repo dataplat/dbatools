@@ -109,18 +109,49 @@ Describe $CommandName -Tag UnitTests {
                 }
             }
 
-            It "selects terminal log <ExpectedLogID> once for restore time <RestoreTime>" -ForEach @(
-                @{ RestoreTime = Get-Date "2025-01-01 01:30:00"; ExpectedLogID = 3 }
-                @{ RestoreTime = Get-Date "2025-01-01 02:00:00"; ExpectedLogID = 3 }
-                @{ RestoreTime = Get-Date "2025-01-01 02:02:00"; ExpectedLogID = 3 }
-                @{ RestoreTime = Get-Date "2025-01-01 02:05:00"; ExpectedLogID = 3 }
-                @{ RestoreTime = Get-Date "2025-01-01 02:30:00"; ExpectedLogID = 4 }
-            ) {
-                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -EnableException)
+            It "selects terminal log 3 once when the restore time is before the first log starts" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime (Get-Date "2025-01-01 01:30:00") -EnableException)
                 $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
 
                 $output[0].BackupSetID | Should -Be 2
-                @($selectedLogIDs | Where-Object { $PSItem -eq $ExpectedLogID }).Count | Should -Be 1
+                @($selectedLogIDs | Where-Object { $PSItem -eq 3 }).Count | Should -Be 1
+                $selectedLogIDs | Should -Not -Contain 5
+            }
+
+            It "selects terminal log 3 once when the restore time equals the log start" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime (Get-Date "2025-01-01 02:00:00") -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                @($selectedLogIDs | Where-Object { $PSItem -eq 3 }).Count | Should -Be 1
+                $selectedLogIDs | Should -Not -Contain 5
+            }
+
+            It "selects terminal log 3 once when the restore time is inside the log" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime (Get-Date "2025-01-01 02:02:00") -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                @($selectedLogIDs | Where-Object { $PSItem -eq 3 }).Count | Should -Be 1
+                $selectedLogIDs | Should -Not -Contain 5
+            }
+
+            It "selects terminal log 3 once when the restore time equals the log end" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime (Get-Date "2025-01-01 02:05:00") -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                @($selectedLogIDs | Where-Object { $PSItem -eq 3 }).Count | Should -Be 1
+                $selectedLogIDs | Should -Not -Contain 5
+            }
+
+            It "selects terminal log 4 once when the restore time falls between logs" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime (Get-Date "2025-01-01 02:30:00") -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                @($selectedLogIDs | Where-Object { $PSItem -eq 3 }).Count | Should -Be 1
+                @($selectedLogIDs | Where-Object { $PSItem -eq 4 }).Count | Should -Be 1
                 $selectedLogIDs | Should -Not -Contain 5
             }
 
