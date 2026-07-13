@@ -19,8 +19,15 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When retrieving the resource governor" {
+        It "Returns the decorated resource governor object" {
+            $results = @(Get-DbaResourceGovernor -SqlInstance $TestConfig.InstanceSingle)
+            $results.Count | Should -BeExactly 1
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].Enabled | Should -BeIn $true, $false
+            $results[0].ResourcePools | Should -Not -BeNullOrEmpty
+        }
+    }
+}
