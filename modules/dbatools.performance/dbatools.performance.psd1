@@ -39,7 +39,8 @@
         'Get-DbaDbccMemoryStatus',
         'Get-DbaDbccProcCache',
         'Get-DbaDbccSessionBuffer',
-        'Get-DbaDbDbccOpenTran'
+        'Get-DbaDbDbccOpenTran',
+        'Get-DbaDbExtentDiff'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
