@@ -404,6 +404,11 @@
     "retiredPath": "private/retired/Get-DbaOleDbProvider.ps1",
     "flippedUtc": "2026-07-13T15:18:02Z"
   },
+  "Get-DbaOpenTransaction": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaOpenTransaction.ps1",
+    "flippedUtc": "2026-07-13T15:29:35Z"
+  },
   "Get-DbaOperatingSystem": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaOperatingSystem.ps1",

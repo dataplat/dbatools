@@ -273,7 +273,6 @@
         'Get-DbaLinkedServer',
         'Get-DbaLogin',
         'Get-DbaMaintenanceSolutionLog',
-        'Get-DbaOpenTransaction',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',
         'Get-DbaPbmCondition',
