@@ -33,8 +33,8 @@ function Update-DbaMaintenanceSolution {
         Use this in environments without internet access or when you need to deploy a specific version that differs from the latest release.
 
     .PARAMETER Force
-        Forces download of the latest maintenance solution from GitHub even if a cached version exists locally.
-        Use this when you want to ensure you're getting the absolute latest version or if the cached version is corrupted.
+        Suppresses confirmation prompts for compatibility with earlier versions.
+        The maintenance solution source is refreshed on every invocation, so Force is no longer required to bypass a cached copy.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -94,7 +94,10 @@ function Update-DbaMaintenanceSolution {
         [switch]$EnableException
     )
     begin {
-        if ($Force) { $ConfirmPreference = 'none' }
+        if ($Force) {
+            $ConfirmPreference = "none"
+            Write-Message -Level Warning -Message "Force is no longer required because Update-DbaMaintenanceSolution refreshes its source on every invocation."
+        }
 
         if ($Solution -contains 'All') {
             $Solution = @('CommandExecute', 'Backup', 'IntegrityCheck', 'IndexOptimize');
@@ -106,12 +109,14 @@ function Update-DbaMaintenanceSolution {
         # Do we need a new local cached version of the software?
         $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
         $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-main'
-        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
-            if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
-                try {
-                    Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
-                } catch {
-                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
+        if ($PSCmdlet.ShouldProcess("MaintenanceSolution", "Update local cached copy of the software")) {
+            try {
+                Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
+            } catch {
+                if ($LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+                    Stop-Function -Message "Failed to update local cached copy" -ErrorRecord $PSItem
+                } else {
+                    Write-Message -Level Warning -Message "Failed to refresh the Maintenance Solution source. Using existing cached copy."
                 }
             }
         }
