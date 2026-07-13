@@ -99,6 +99,11 @@
     "retiredPath": "private/retired/Find-DbaDbDuplicateIndex.ps1",
     "flippedUtc": "2026-07-13T04:43:44Z"
   },
+  "Find-DbaDbGrowthEvent": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Find-DbaDbGrowthEvent.ps1",
+    "flippedUtc": "2026-07-13T05:00:27Z"
+  },
   "Find-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Find-DbaInstance.ps1",
