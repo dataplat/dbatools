@@ -41,8 +41,11 @@ Describe $CommandName -Tag IntegrationTests {
         $exportPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $exportPath -ItemType Directory
 
-        $sinceCreation = (Get-Date).AddSeconds(-2)
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT TOP 3 name FROM sys.databases"
+        # The query text must be UNIQUE per run: an identical text reuses the cached plan
+        # and keeps its ORIGINAL creation_time, which the SinceCreation filter then drops.
+        # The window also absorbs modest workstation-vs-instance clock skew.
+        $sinceCreation = (Get-Date).AddMinutes(-1)
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT TOP 3 name FROM sys.databases /* TA-096 seed $(Get-Random) */"
 
         $splatExport = @{
             SqlInstance   = $TestConfig.InstanceSingle
