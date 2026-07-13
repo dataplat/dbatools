@@ -80,7 +80,8 @@
         'Get-DbaWaitingTask',
         'Get-DbaWaitResource',
         'Get-DbaWaitStatistic',
-        'Get-DbaWindowsLog'
+        'Get-DbaWindowsLog',
+        'Import-DbaPfDataCollectorSetTemplate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

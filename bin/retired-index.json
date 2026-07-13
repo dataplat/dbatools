@@ -669,6 +669,11 @@
     "retiredPath": "private/retired/Import-DbaCsv.ps1",
     "flippedUtc": "2026-07-12T00:34:41Z"
   },
+  "Import-DbaPfDataCollectorSetTemplate": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Import-DbaPfDataCollectorSetTemplate.ps1",
+    "flippedUtc": "2026-07-13T22:32:58Z"
+  },
   "Import-DbatoolsConfig": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Import-DbatoolsConfig.ps1",
