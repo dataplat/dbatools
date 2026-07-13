@@ -257,7 +257,6 @@
         'Get-DbaDependency',
         'Get-DbaEndpoint',
         'Get-DbaErrorLogConfig',
-        'Get-DbaExecutionPlan',
         'Get-DbaExtendedProtection',
         'Get-DbaExternalProcess',
         'Get-DbaFile',

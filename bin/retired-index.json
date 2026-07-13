@@ -294,6 +294,11 @@
     "retiredPath": "private/retired/Get-DbaEstimatedCompletionTime.ps1",
     "flippedUtc": "2026-07-13T12:12:37Z"
   },
+  "Get-DbaExecutionPlan": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaExecutionPlan.ps1",
+    "flippedUtc": "2026-07-13T12:35:25Z"
+  },
   "Get-DbaFeature": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaFeature.ps1",

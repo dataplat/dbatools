@@ -50,7 +50,8 @@
         'Get-DbaDeprecatedFeature',
         'Get-DbaDump',
         'Get-DbaErrorLog',
-        'Get-DbaEstimatedCompletionTime'
+        'Get-DbaEstimatedCompletionTime',
+        'Get-DbaExecutionPlan'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
