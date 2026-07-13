@@ -1,6 +1,6 @@
-# Scales the dbatools-runners VMSS up when CI jobs queue, and registers an ephemeral
-# runner on every new instance. Runs on free GitHub-hosted compute in default-branch
-# context only -- runner VMs themselves never hold Azure credentials or the PAT.
+# Manual recovery workflow that scales the dbatools-runners VMSS and registers an
+# ephemeral runner on every new instance. Normal event-driven scaling lives in
+# runner-reconcile.yml so GitHub concurrency cannot cancel one controller for another.
 #
 # The CI_RUNNER_PAT secret mints single-use registration tokens (GITHUB_TOKEN cannot).
 # Azure access is OIDC (federated credential on the dbatools-ci-github Entra app); no
@@ -8,9 +8,6 @@
 name: runner-scale-up
 
 on:
-  workflow_run:
-    workflows: ["ci-azure"]
-    types: [requested]
   workflow_dispatch:
     inputs:
       ensure:
@@ -33,10 +30,6 @@ concurrency:
 
 jobs:
   scale-up:
-    # runner-boost dispatches maintainer pushes with the actor and desired capacity.
-    # Skip the duplicate workflow_run copy so it cannot replace that dispatch in the
-    # shared concurrency group's single pending slot.
-    if: github.event_name != 'workflow_run' || !contains(format(' {0} ', vars.BOOST_USERS), format(' {0} ', github.event.workflow_run.actor.login))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -49,7 +42,7 @@ jobs:
       BOOST_USERS: ${{ vars.BOOST_USERS }}
       BOOST_COUNT: ${{ vars.BOOST_COUNT }}
       BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      TRIGGER_ACTOR: ${{ inputs.boost_user || github.event.workflow_run.actor.login || github.actor }}
+      TRIGGER_ACTOR: ${{ inputs.boost_user || github.actor }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
     steps:
@@ -81,15 +74,8 @@ jobs:
             return "$status"
           }
 
-          # Give the triggering run a moment to materialize its jobs
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            sleep 25
-            QUEUED=$(gh_api_retry "repos/$REPO/actions/runs/${{ github.event.workflow_run.id }}/jobs?per_page=100" --paginate \
-              --jq "[.jobs[] | select(.status == \"queued\" or .status == \"waiting\") | select((.labels // []) | index(\"$RUNNER_LABEL\"))] | length")
-          else
-            QUEUED="${{ inputs.ensure }}"
-            QUEUED="${QUEUED:-0}"
-          fi
+          QUEUED="${{ inputs.ensure }}"
+          QUEUED="${QUEUED:-0}"
 
           IDLE=$(gh_api_retry "repos/$REPO/actions/runners?per_page=100" --paginate \
             --jq "[.runners[] | select(.status == \"online\" and .busy == false) | select([.labels[].name] | index(\"$RUNNER_LABEL\"))] | length")

@@ -1,10 +1,9 @@
 # When a maintainer listed in the BOOST_USERS repo variable pushes to any branch,
-# immediately dispatch runner-scale-up so that maintainer's BOOST_COUNT allocation
-# kicks in without competing with a duplicate reconcile run and remains hot for
-# BOOST_HOURS.
+# immediately dispatch runner-reconcile so that maintainer's BOOST_COUNT allocation
+# kicks in and remains hot for BOOST_HOURS.
 #
-# The boost decision also lives in runner-scale-up.yml -- this workflow is only a
-# promptness nudge, and only fires from branches that carry this file.
+# Reconcile is the single event-driven fleet controller; using one workflow prevents
+# GitHub's concurrency queue from cancelling scale-up in favor of a janitor run.
 # Branches created before it merged are still covered by the hourly cron.
 name: runner-boost
 
@@ -26,16 +25,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BOOST_USER: ${{ github.actor }}
-          BOOST_COUNT: ${{ vars.BOOST_COUNT }}
         run: |
           set -euo pipefail
-          if gh workflow run runner-scale-up.yml --ref development -f ensure="${BOOST_COUNT:-10}" -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
+          if gh workflow run runner-reconcile.yml --ref development -f boost_user="$BOOST_USER" -R "${{ github.repository }}"; then
             exit 0
           fi
 
-          echo "boost_user input unavailable or transient dispatch failure; retrying with the existing ensure input"
+          echo "boost_user input unavailable or transient dispatch failure; retrying a plain reconcile dispatch"
           for attempt in 1 2 3; do
-            if gh workflow run runner-scale-up.yml --ref development -f ensure="${BOOST_COUNT:-10}" -R "${{ github.repository }}"; then
+            if gh workflow run runner-reconcile.yml --ref development -R "${{ github.repository }}"; then
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
