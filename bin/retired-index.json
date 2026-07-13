@@ -339,6 +339,11 @@
     "retiredPath": "private/retired/Get-DbaKbUpdate.ps1",
     "flippedUtc": "2026-07-10T21:47:00Z"
   },
+  "Get-DbaLatchStatistic": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaLatchStatistic.ps1",
+    "flippedUtc": "2026-07-13T13:41:37Z"
+  },
   "Get-DbaLocaleSetting": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaLocaleSetting.ps1",

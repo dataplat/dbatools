@@ -53,7 +53,8 @@
         'Get-DbaEstimatedCompletionTime',
         'Get-DbaExecutionPlan',
         'Get-DbaExternalProcess',
-        'Get-DbaIoLatency'
+        'Get-DbaIoLatency',
+        'Get-DbaLatchStatistic'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

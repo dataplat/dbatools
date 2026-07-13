@@ -270,7 +270,6 @@
         'Get-DbaInstanceUserOption',
         'Get-DbaLastBackup',
         'Get-DbaLastGoodCheckDb',
-        'Get-DbaLatchStatistic',
         'Get-DbaLinkedServer',
         'Get-DbaLogin',
         'Get-DbaMaintenanceSolutionLog',
