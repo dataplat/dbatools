@@ -40,7 +40,8 @@
         'Get-DbaDbccProcCache',
         'Get-DbaDbccSessionBuffer',
         'Get-DbaDbDbccOpenTran',
-        'Get-DbaDbExtentDiff'
+        'Get-DbaDbExtentDiff',
+        'Get-DbaDbFeatureUsage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

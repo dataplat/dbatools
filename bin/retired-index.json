@@ -224,6 +224,11 @@
     "retiredPath": "private/retired/Get-DbaDbExtentDiff.ps1",
     "flippedUtc": "2026-07-13T09:01:48Z"
   },
+  "Get-DbaDbFeatureUsage": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbFeatureUsage.ps1",
+    "flippedUtc": "2026-07-13T09:34:38Z"
+  },
   "Get-DbaDbMailProfile": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",

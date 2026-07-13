@@ -213,7 +213,6 @@
         'Remove-DbaDbEncryptionKey',
         'Start-DbaDbEncryption',
         'Stop-DbaDbEncryption',
-        'Get-DbaDbFeatureUsage',
         'Get-DbaDbFile',
         'Get-DbaDbFileGroup',
         'Get-DbaDbFileGrowth',
