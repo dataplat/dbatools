@@ -301,7 +301,6 @@
         'Get-DbaStartupProcedure',
         'Get-DbaSuspectPage',
         'Get-DbaTcpPort',
-        'Get-DbaTopResourceUsage',
         'Get-DbaUptime',
         'Get-DbaUserPermission',
         'Get-DbaWaitingTask',

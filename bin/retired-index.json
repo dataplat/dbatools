@@ -569,6 +569,11 @@
     "retiredPath": "private/retired/Get-DbatoolsPath.ps1",
     "flippedUtc": "2026-07-11T19:49:47Z"
   },
+  "Get-DbaTopResourceUsage": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaTopResourceUsage.ps1",
+    "flippedUtc": "2026-07-13T19:08:58Z"
+  },
   "Get-DbaTrace": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaTrace.ps1",
