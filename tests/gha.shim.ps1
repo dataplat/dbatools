@@ -186,6 +186,9 @@ function Invoke-GhaStage {
         exit 1
     }
     $stageWatch.Stop()
+    # GitHub's PowerShell wrapper exits with a stale native command status even
+    # after the AppVeyor stage itself succeeds. A thrown stage still exits above.
+    $global:LASTEXITCODE = 0
     Write-Host -Object "===== stage done: $Script ($([int]$stageWatch.Elapsed.TotalSeconds)s) =====" -ForegroundColor Green
 }
 
