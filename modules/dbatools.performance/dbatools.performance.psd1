@@ -77,7 +77,8 @@
         'Get-DbaTempdbUsage',
         'Get-DbaTopResourceUsage',
         'Get-DbaUptime',
-        'Get-DbaWaitingTask'
+        'Get-DbaWaitingTask',
+        'Get-DbaWaitResource'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

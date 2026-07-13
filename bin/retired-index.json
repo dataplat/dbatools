@@ -594,6 +594,11 @@
     "retiredPath": "private/retired/Get-DbaWaitingTask.ps1",
     "flippedUtc": "2026-07-13T20:03:38Z"
   },
+  "Get-DbaWaitResource": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaWaitResource.ps1",
+    "flippedUtc": "2026-07-13T20:17:51Z"
+  },
   "Get-DbaWsfcAvailableDisk": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcAvailableDisk.ps1",
