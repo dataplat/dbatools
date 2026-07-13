@@ -249,6 +249,11 @@
     "retiredPath": "private/retired/Get-DbaDbPageInfo.ps1",
     "flippedUtc": "2026-07-13T10:26:18Z"
   },
+  "Get-DbaDbSpace": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbSpace.ps1",
+    "flippedUtc": "2026-07-13T10:54:36Z"
+  },
   "Get-DbaDbState": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaDbState.ps1",

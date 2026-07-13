@@ -245,7 +245,6 @@
         'Get-DbaDbServiceBrokerService',
         'Get-DbaDbSharePoint',
         'Get-DbaDbSnapshot',
-        'Get-DbaDbSpace',
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
         'Get-DbaDbTable',
