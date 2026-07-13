@@ -589,6 +589,11 @@
     "retiredPath": "private/retired/Get-DbaUptime.ps1",
     "flippedUtc": "2026-07-13T19:44:44Z"
   },
+  "Get-DbaWaitingTask": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaWaitingTask.ps1",
+    "flippedUtc": "2026-07-13T20:03:38Z"
+  },
   "Get-DbaWsfcAvailableDisk": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcAvailableDisk.ps1",

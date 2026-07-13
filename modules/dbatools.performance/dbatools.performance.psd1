@@ -76,7 +76,8 @@
         'Get-DbaSpinLockStatistic',
         'Get-DbaTempdbUsage',
         'Get-DbaTopResourceUsage',
-        'Get-DbaUptime'
+        'Get-DbaUptime',
+        'Get-DbaWaitingTask'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
