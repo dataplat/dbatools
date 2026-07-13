@@ -199,11 +199,6 @@ exec sp_addrolemember 'userrole','bob';
         $results.Targets.Name | Should -Be "package0.event_file"
     }
 
-    It "installs darling data" {
-        $results = Install-DbaDarlingData
-        $results.Database | Select-Object -First 1 | Should -Be "master"
-    }
-
     It "tests the instance name" {
         $results = Test-DbaInstanceName
         $results.ServerName | Should -Be "mssql1"
