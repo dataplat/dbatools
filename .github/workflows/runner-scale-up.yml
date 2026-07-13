@@ -124,5 +124,7 @@ jobs:
             done
             wait
             echo "registration sweep $sweep complete ($MISSED handled)"
-            [ "$sweep" = "1" ] && sleep 90
+            if [ "$sweep" = "1" ]; then
+              sleep 90
+            fi
           done
