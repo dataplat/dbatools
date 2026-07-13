@@ -47,7 +47,8 @@
         'Get-DbaDbPageInfo',
         'Get-DbaDbSpace',
         'Get-DbaDbVirtualLogFile',
-        'Get-DbaDeprecatedFeature'
+        'Get-DbaDeprecatedFeature',
+        'Get-DbaDump'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

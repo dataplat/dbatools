@@ -279,6 +279,11 @@
     "retiredPath": "private/retired/Get-DbaDiskSpace.ps1",
     "flippedUtc": "2026-07-06T14:30:26Z"
   },
+  "Get-DbaDump": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDump.ps1",
+    "flippedUtc": "2026-07-13T11:41:36Z"
+  },
   "Get-DbaFeature": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaFeature.ps1",
