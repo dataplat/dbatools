@@ -160,9 +160,14 @@ function Get-RunnerForVm {
 
 function Set-VmPool {
     param([string]$VmName, [string]$Pool)
+    # Use the dedicated tag API. `az vm update --set tags.*` can invoke Azure's
+    # unrelated zone-movement validation and reject otherwise valid VM tag changes.
+    $vmId = Invoke-AzJson -Arguments @(
+        "vm", "show", "--resource-group", $resourceGroup, "--name", $VmName, "--query", "id"
+    ) -Operation "read resource ID for $VmName"
     $null = Invoke-NativeText -Tool "az" -Arguments @(
-        "vm", "update", "--resource-group", $resourceGroup, "--name", $VmName,
-        "--set", "tags.runnerPool=$Pool", "--only-show-errors", "--output", "none"
+        "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
+        "--tags", "runnerPool=$Pool", "--only-show-errors", "--output", "none"
     ) -Operation "tag $VmName for pool $Pool"
     Write-Host "assigned $VmName to pool $Pool"
 }
