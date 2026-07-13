@@ -75,7 +75,17 @@ function Get-DbaPfDataCollectorSetTemplate {
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
+        # $script:PSModuleRoot can resolve empty under the Pester harness (Invoke-ManualPester,
+        # the RB-IMP-51 class), which turns the template paths into rootless C:\bin\... paths.
+        # Fall back to the live module's base path, the same defensive pattern as Get-DbaBuild.
+        $moduleRoot = $script:PSModuleRoot
+        if (-not $moduleRoot) {
+            $moduleRoot = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1).ModuleBase
+        }
+        if (Test-Bound -ParameterName Path -Not) {
+            $Path = "$moduleRoot\bin\perfmontemplates\collectorsets"
+        }
+        $metadata = Import-Clixml "$moduleRoot\bin\perfmontemplates\collectorsets.xml"
         # In case people really want a "like" search, which is slower
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
