@@ -349,6 +349,11 @@
     "retiredPath": "private/retired/Get-DbaLocaleSetting.ps1",
     "flippedUtc": "2026-07-07T22:35:38Z"
   },
+  "Get-DbaManagementObject": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaManagementObject.ps1",
+    "flippedUtc": "2026-07-13T13:55:26Z"
+  },
   "Get-DbaMaxMemory": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaMaxMemory.ps1",

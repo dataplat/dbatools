@@ -54,7 +54,8 @@
         'Get-DbaExecutionPlan',
         'Get-DbaExternalProcess',
         'Get-DbaIoLatency',
-        'Get-DbaLatchStatistic'
+        'Get-DbaLatchStatistic',
+        'Get-DbaManagementObject'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
