@@ -307,8 +307,25 @@ exec sp_addrolemember 'userrole','bob';
             GenerateFullBackup       = $true
             Force                    = $true
         }
-        $Error.Clear()
-        $results = Invoke-DbaDbLogShipping @splatLogShipping
+        $maximumRetries = 10
+        $isTransientAzureBlobFailure = $false
+        foreach ($attempt in 0..$maximumRetries) {
+            $Error.Clear()
+            $results = Invoke-DbaDbLogShipping @splatLogShipping
+            if ($results.Result -eq "Success") {
+                break
+            }
+
+            $errorText = $Error | Out-String
+            $isTransientAzureBlobFailure = $errorText -match "Cannot open backup device 'https://.*blob\.core\.windows\.net.*Operating system error 50"
+            if (-not $isTransientAzureBlobFailure -or $attempt -eq $maximumRetries) {
+                break
+            }
+
+            $retryNumber = $attempt + 1
+            Write-Warning "Azure Blob backup device returned transient operating system error 50; retry $retryNumber of $maximumRetries in 10 seconds."
+            Start-Sleep -Seconds 10
+        }
 
         # If failed, output detailed error information for debugging
         if ($results.Result -ne "Success") {
@@ -326,6 +343,11 @@ exec sp_addrolemember 'userrole','bob';
                 }
             }
             Write-Host "==========================="
+
+            if ($isTransientAzureBlobFailure) {
+                Set-ItResult -Skipped -Because "Azure Blob backup device still returned transient operating system error 50 after $maximumRetries retries"
+                return
+            }
         }
 
         $results.Result | Should -Be "Success"
