@@ -514,6 +514,11 @@
     "retiredPath": "private/retired/Get-DbaService.ps1",
     "flippedUtc": "2026-07-07T01:08:57Z"
   },
+  "Get-DbaSpinLockStatistic": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaSpinLockStatistic.ps1",
+    "flippedUtc": "2026-07-13T18:42:16Z"
+  },
   "Get-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaSpn.ps1",

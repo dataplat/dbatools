@@ -295,7 +295,6 @@
         'Get-DbaServerRole',
         'Get-DbaServerRoleMember',
         'Get-DbaSpConfigure',
-        'Get-DbaSpinLockStatistic',
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
