@@ -1,4 +1,34 @@
 Write-Host -Object "appveyor.sqlserver: Setting up instances for scenario $($env:SCENARIO)" -ForegroundColor DarkGreen
+
+function Get-AppveyorLoginWithRetry {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$SqlInstance,
+        [Parameter(Mandatory)]
+        [string]$Login,
+        [ValidateRange(1, 10)]
+        [int]$MaxAttempts = 3
+    )
+
+    $loginParams = @{
+        SqlInstance     = $SqlInstance
+        Login           = $Login
+        EnableException = $true
+    }
+    foreach ($attempt in 1..$MaxAttempts) {
+        try {
+            return Get-DbaLogin @loginParams
+        } catch {
+            if ($attempt -eq $MaxAttempts) {
+                throw
+            }
+            Write-Warning "Get-DbaLogin attempt $attempt of $MaxAttempts failed for $SqlInstance; retrying. $($PSItem.Exception.Message)"
+            Start-Sleep -Seconds (5 * $attempt)
+        }
+    }
+}
+
 $instances = @( )
 if ($env:InstanceSingle) {
     $instances += $env:InstanceSingle
