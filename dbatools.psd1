@@ -151,7 +151,6 @@
         'Export-DbaInstance',
         'Export-DbaLinkedServer',
         'Export-DbaLogin',
-        'Export-DbaPfDataCollectorSetTemplate',
         'Export-DbaRegServer',
         'Export-DbaReplServerSetting',
         'Export-DbaServerRole',

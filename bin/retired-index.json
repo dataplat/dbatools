@@ -74,6 +74,11 @@
     "retiredPath": "private/retired/Export-DbaExecutionPlan.ps1",
     "flippedUtc": "2026-07-13T03:51:49Z"
   },
+  "Export-DbaPfDataCollectorSetTemplate": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Export-DbaPfDataCollectorSetTemplate.ps1",
+    "flippedUtc": "2026-07-13T04:11:31Z"
+  },
   "Export-DbaScript": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Export-DbaScript.ps1",
