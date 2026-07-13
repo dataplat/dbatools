@@ -494,6 +494,11 @@
     "retiredPath": "private/retired/Get-DbaResourceGovernor.ps1",
     "flippedUtc": "2026-07-13T18:09:10Z"
   },
+  "Get-DbaRgClassifierFunction": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaRgClassifierFunction.ps1",
+    "flippedUtc": "2026-07-13T18:21:54Z"
+  },
   "Get-DbaRgResourcePool": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaRgResourcePool.ps1",
