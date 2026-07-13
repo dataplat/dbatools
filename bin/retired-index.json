@@ -399,6 +399,11 @@
     "retiredPath": "private/retired/Get-DbaNetworkEncryption.ps1",
     "flippedUtc": "2026-07-09T20:55:01Z"
   },
+  "Get-DbaOleDbProvider": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaOleDbProvider.ps1",
+    "flippedUtc": "2026-07-13T15:18:02Z"
+  },
   "Get-DbaOperatingSystem": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaOperatingSystem.ps1",

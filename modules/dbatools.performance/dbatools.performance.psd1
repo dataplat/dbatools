@@ -59,7 +59,8 @@
         'Get-DbaMemoryCondition',
         'Get-DbaMemoryUsage',
         'Get-DbaModule',
-        'Get-DbaNetworkActivity'
+        'Get-DbaNetworkActivity',
+        'Get-DbaOleDbProvider'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

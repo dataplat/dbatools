@@ -586,7 +586,6 @@
         'Get-DbaDbDataClassification',
         'Set-DbaDbDataClassification',
         'Remove-DbaDbDataClassification',
-        'Get-DbaOleDbProvider',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
