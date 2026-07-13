@@ -33,7 +33,8 @@
         'Find-DbaDbUnusedIndex',
         'Get-DbaAvailableCollation',
         'Get-DbaBuild',
-        'Get-DbaConnection'
+        'Get-DbaConnection',
+        'Get-DbaCpuRingBuffer'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
