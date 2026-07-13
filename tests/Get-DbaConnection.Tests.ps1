@@ -24,7 +24,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "returns the proper transport" {
         It "returns a valid AuthScheme" {
             $results = Get-DbaConnection -SqlInstance $TestConfig.InstanceSingle
-            foreach ($result in $results) {
+            # Session-less transport connections (for example the AG/HADR endpoint links on
+            # an availability group primary) report auth_scheme "(Unknown)"; the auth-scheme
+            # contract only applies to authenticated sessions.
+            $sessionResults = @($results | Where-Object SessionId)
+            $sessionResults.Count | Should -BeGreaterThan 0
+            foreach ($result in $sessionResults) {
                 $result.AuthScheme | Should -BeIn "NTLM", "Kerberos", "SQL"
             }
         }
