@@ -37,7 +37,8 @@
         'Get-DbaCpuRingBuffer',
         'Get-DbaCpuUsage',
         'Get-DbaDbccMemoryStatus',
-        'Get-DbaDbccProcCache'
+        'Get-DbaDbccProcCache',
+        'Get-DbaDbccSessionBuffer'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
