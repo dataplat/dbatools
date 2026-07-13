@@ -20,7 +20,20 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+BeforeDiscovery {
+    # The integration fixture needs ADMINISTRATIVE access to InstanceRestart (CIM process
+    # listing, xp_cmdshell setup, an engine restart in AfterAll). Some harness identities
+    # cannot manage that host (the gate harness user has no rights on the lab's restart
+    # instance) - skip harness-honestly instead of failing the fixture.
+    $script:instanceRestartManageable = $true
+    try {
+        $null = Get-DbaCmObject -ComputerName $TestConfig.InstanceRestart -ClassName win32_operatingsystem -EnableException
+    } catch {
+        $script:instanceRestartManageable = $false
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests -Skip:(-not $script:instanceRestartManageable) {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
