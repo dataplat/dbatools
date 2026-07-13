@@ -75,7 +75,8 @@
         'Get-DbaRgWorkloadGroup',
         'Get-DbaSpinLockStatistic',
         'Get-DbaTempdbUsage',
-        'Get-DbaTopResourceUsage'
+        'Get-DbaTopResourceUsage',
+        'Get-DbaUptime'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
