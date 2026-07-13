@@ -5,7 +5,7 @@
 #
 # The boost decision itself lives in runner-reconcile.yml -- this workflow is
 # only a promptness nudge, and only fires from branches that carry this file.
-# Branches created before it merged are still covered by the */10 cron.
+# Branches created before it merged are still covered by the */30 cron.
 name: runner-boost
 
 on:

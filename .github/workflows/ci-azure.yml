@@ -159,23 +159,30 @@ jobs:
             }
           }
 
+  # A single nudge after the whole matrix finishes (not once per job) prompts
+  # runner-reconcile to replace spent VMs promptly. Runs on GitHub-hosted compute
+  # so it never burns a spent self-hosted VM. Always dispatches against development:
+  # reconcile's Azure OIDC federated credential trusts only refs/heads/development,
+  # so a nudge on any other ref (e.g. a PR head branch) would fail at Azure login.
+  # Dispatching development also runs development's canonical reconcile + bootstrap
+  # script (RAW_BASE tracks the dispatched ref), matching how runner-boost nudges.
+  nudge-reconcile:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
       - name: Nudge fleet reconcile (prompt spent-VM replacement)
-        if: always()
-        shell: powershell
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # dispatch against the ref that actually carries runner-reconcile.yml: the
-          # PR head branch for pull_request runs, the pushed/dispatched ref otherwise.
-          # Refs without the workflow file fail soft into the catch below.
-          $nudgeRef = $env:GITHUB_HEAD_REF
-          if (-not $nudgeRef) {
-            $nudgeRef = $env:GITHUB_REF_NAME
-          }
           $splatNudge = @{
             Method  = "Post"
             Uri     = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
             Headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
-            Body    = (ConvertTo-Json -InputObject @{ ref = $nudgeRef })
+            Body    = (ConvertTo-Json -InputObject @{ ref = "development" })
           }
           try { Invoke-RestMethod @splatNudge } catch { Write-Host "nudge skipped: $($_.Exception.Message)" }
