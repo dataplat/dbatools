@@ -24,6 +24,116 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Copy-only full point-in-time restore chains" {
+            BeforeAll {
+                function New-CopyOnlyBackupHistory {
+                    @(
+                        [PSCustomObject]@{
+                            Database                  = "CopyOnlyRestore"
+                            Type                      = "Database"
+                            BackupTypeDescription     = "Database"
+                            BackupSetID               = 1
+                            Start                     = Get-Date "2025-01-01 00:00:00"
+                            End                       = Get-Date "2025-01-01 00:10:00"
+                            FirstLSN                  = [bigint]50
+                            LastLSN                   = [bigint]200
+                            CheckpointLSN             = [bigint]100
+                            DatabaseBackupLSN         = [bigint]100
+                            FirstRecoveryForkID       = "fork-a"
+                            IsCopyOnly                = $false
+                            FullName                  = "C:\backups\conventional-full.bak"
+                        }
+                        [PSCustomObject]@{
+                            Database                  = "CopyOnlyRestore"
+                            Type                      = "Database"
+                            BackupTypeDescription     = "Database"
+                            BackupSetID               = 2
+                            Start                     = Get-Date "2025-01-01 01:00:00"
+                            End                       = Get-Date "2025-01-01 01:10:00"
+                            FirstLSN                  = [bigint]250
+                            LastLSN                   = [bigint]400
+                            CheckpointLSN             = [bigint]300
+                            DatabaseBackupLSN         = [bigint]100
+                            FirstRecoveryForkID       = "fork-a"
+                            IsCopyOnly                = $true
+                            FullName                  = "C:\backups\copy-only-full.bak"
+                        }
+                        [PSCustomObject]@{
+                            Database                  = "CopyOnlyRestore"
+                            Type                      = "Transaction Log"
+                            BackupTypeDescription     = "Transaction Log"
+                            BackupSetID               = 5
+                            Start                     = Get-Date "2025-01-01 01:45:00"
+                            End                       = Get-Date "2025-01-01 01:50:00"
+                            FirstLSN                  = [bigint]350
+                            LastLSN                   = [bigint]425
+                            CheckpointLSN             = [bigint]0
+                            DatabaseBackupLSN         = [bigint]100
+                            FirstRecoveryForkID       = "fork-b"
+                            IsCopyOnly                = $false
+                            FullName                  = "C:\backups\wrong-fork-log.trn"
+                        }
+                        [PSCustomObject]@{
+                            Database                  = "CopyOnlyRestore"
+                            Type                      = "Transaction Log"
+                            BackupTypeDescription     = "Transaction Log"
+                            BackupSetID               = 3
+                            Start                     = Get-Date "2025-01-01 02:00:00"
+                            End                       = Get-Date "2025-01-01 02:05:00"
+                            FirstLSN                  = [bigint]350
+                            LastLSN                   = [bigint]450
+                            CheckpointLSN             = [bigint]0
+                            DatabaseBackupLSN         = [bigint]100
+                            FirstRecoveryForkID       = "fork-a"
+                            IsCopyOnly                = $false
+                            FullName                  = "C:\backups\log-1.trn"
+                        }
+                        [PSCustomObject]@{
+                            Database                  = "CopyOnlyRestore"
+                            Type                      = "Transaction Log"
+                            BackupTypeDescription     = "Transaction Log"
+                            BackupSetID               = 4
+                            Start                     = Get-Date "2025-01-01 03:00:00"
+                            End                       = Get-Date "2025-01-01 03:05:00"
+                            FirstLSN                  = [bigint]451
+                            LastLSN                   = [bigint]550
+                            CheckpointLSN             = [bigint]0
+                            DatabaseBackupLSN         = [bigint]100
+                            FirstRecoveryForkID       = "fork-a"
+                            IsCopyOnly                = $false
+                            FullName                  = "C:\backups\log-2.trn"
+                        }
+                    )
+                }
+            }
+
+            It "selects terminal log <ExpectedLogID> once for restore time <RestoreTime>" -ForEach @(
+                @{ RestoreTime = Get-Date "2025-01-01 01:30:00"; ExpectedLogID = 3 }
+                @{ RestoreTime = Get-Date "2025-01-01 02:00:00"; ExpectedLogID = 3 }
+                @{ RestoreTime = Get-Date "2025-01-01 02:02:00"; ExpectedLogID = 3 }
+                @{ RestoreTime = Get-Date "2025-01-01 02:05:00"; ExpectedLogID = 3 }
+                @{ RestoreTime = Get-Date "2025-01-01 02:30:00"; ExpectedLogID = 4 }
+            ) {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                @($selectedLogIDs | Where-Object { $PSItem -eq $ExpectedLogID }).Count | Should -Be 1
+                $selectedLogIDs | Should -Not -Contain 5
+            }
+
+            It "selects each applicable log once when RestoreTime is not specified" {
+                $output = @(New-CopyOnlyBackupHistory | Select-DbaBackupInformation -EnableException)
+                $selectedLogIDs = @($output | Where-Object Type -eq "Transaction Log" | ForEach-Object BackupSetID)
+
+                $output[0].BackupSetID | Should -Be 2
+                $selectedLogIDs | Should -Be @(3, 4)
+                @($selectedLogIDs | Select-Object -Unique).Count | Should -Be $selectedLogIDs.Count
+            }
+        }
+    }
 }
 Describe $CommandName -Tag IntegrationTests {
     InModuleScope dbatools {
