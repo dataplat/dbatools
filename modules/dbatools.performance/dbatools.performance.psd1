@@ -57,7 +57,8 @@
         'Get-DbaLatchStatistic',
         'Get-DbaManagementObject',
         'Get-DbaMemoryCondition',
-        'Get-DbaMemoryUsage'
+        'Get-DbaMemoryUsage',
+        'Get-DbaModule'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
