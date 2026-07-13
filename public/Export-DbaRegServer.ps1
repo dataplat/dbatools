@@ -170,12 +170,38 @@ function Export-DbaRegServer {
                 }
 
                 if (($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) -or ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup])) {
-                    $regname = $object.Name.Replace('\', '$')
+                    $regname = $object.Name.Replace("\", "$")
+                    $sourceName = [string]$object.SqlInstance
+
+                    if ([string]::IsNullOrWhiteSpace($sourceName)) {
+                        if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
+                            $sourceName = [string]$object.ServerName
+                        } else {
+                            $groupNames = @($object.Name)
+                            $parentGroup = $object.Parent
+                            while ($null -ne $parentGroup -and $parentGroup.Name -ne "DatabaseEngineServerGroup") {
+                                $groupNames = @($parentGroup.Name) + $groupNames
+                                $parentGroup = $parentGroup.Parent
+                            }
+                            $regname = ($groupNames -join "\").Replace("\", "$")
+                            $sourceName = [string]$object.Source
+                            if ([string]::IsNullOrWhiteSpace($sourceName)) {
+                                $sourceName = [string]$object.ParentServer
+                            }
+                        }
+                    }
+
+                    if ([string]::IsNullOrWhiteSpace($sourceName)) {
+                        $sourceName = [string]$object.Source
+                    }
+                    if ([string]::IsNullOrWhiteSpace($sourceName)) {
+                        $sourceName = "Local"
+                    }
                     $OutputFilePath = $null
 
                     if (-not $PSBoundParameters.ContainsKey("FilePath")) {
                         $ExportFileName = $null
-                        $serverName = $object.SqlInstance.Replace('\', '$')
+                        $serverName = $sourceName.Replace("\", "$")
 
                         if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                             $ExportFileName = "$serverName-regserver-$regname-$timeNow.xml"
