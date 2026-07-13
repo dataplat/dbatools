@@ -1,4 +1,4 @@
-# The fleet janitor: every 30 minutes (and after each CI run) it deletes spent and
+# The fleet janitor: every hour (and after each CI run) it deletes spent and
 # zombie runner instances, enforces the active pool size, self-heals
 # unregistered instances, and tops capacity up if the event-driven scale-up missed
 # anything (re-runs of failed jobs do not emit a "requested" event -- this catches them).
@@ -16,10 +16,10 @@ name: runner-reconcile
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 * * * *"
     - cron: "0 7 * * 1"
   # ci-azure nudges this workflow via workflow_dispatch when its matrix finishes, so
-  # spent VMs are replaced promptly. That nudge is the fast path; the */30 cron is a
+  # spent VMs are replaced promptly. That nudge is the fast path; the hourly cron is a
   # best-effort backstop for events that never fire (e.g. re-runs of failed jobs do
   # not emit a scale-up "requested" event). A workflow_run:completed trigger would
   # duplicate the nudge one-for-one, so it is intentionally omitted.
@@ -46,7 +46,9 @@ jobs:
     # fail at Azure login. Cron and workflow_run always resolve to the default
     # branch, so this only skips stray dispatches on feature branches (which could
     # not do useful work anyway) -- they no-op green instead of failing red.
-    if: github.ref == 'refs/heads/development'
+    # The second schedule entry is spend-report-only; excluding it keeps fleet
+    # reconciliation to exactly once during Monday's 07:00 UTC hour.
+    if: github.ref == 'refs/heads/development' && github.event.schedule != '0 7 * * 1'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

@@ -9,7 +9,7 @@ community CI; maintainer pushes raise the hot pool to ten for two hours.
 GitHub (public repo)                          Azure (eastus)
 ├─ ci-azure.yml          10-job matrix   ──►  VMSS dbatools-runners (Flexible, D4ds_v5)
 ├─ runner-scale-up.yml    on demand +1..N     ├─ ephemeral OS disk on local SSD ($0)
-├─ runner-reconcile.yml   */30 min janitor    ├─ instance public IPs, NSG deny inbound
+├─ runner-reconcile.yml    hourly janitor     ├─ instance public IPs, NSG deny inbound
 └─ ps3-smoke.yml          nightly PS 3.0      └─ image: dbatoolsGallery/dbatools-modern-image
                                               RG dbatools-ci, budget $600/mo + alerts
 ```
