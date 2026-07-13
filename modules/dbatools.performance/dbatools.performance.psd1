@@ -64,7 +64,8 @@
         'Get-DbaOpenTransaction',
         'Get-DbaPfAvailableCounter',
         'Get-DbaPfDataCollector',
-        'Get-DbaPfDataCollectorCounter'
+        'Get-DbaPfDataCollectorCounter',
+        'Get-DbaPfDataCollectorCounterSample'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

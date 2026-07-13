@@ -280,7 +280,6 @@
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
         'Get-DbaPermission',
-        'Get-DbaPfDataCollectorCounterSample',
         'Get-DbaPfDataCollectorSet',
         'Get-DbaPfDataCollectorSetTemplate',
         'Get-DbaPlanCache',
