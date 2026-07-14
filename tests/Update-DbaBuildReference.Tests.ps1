@@ -21,17 +21,19 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Deterministic local-file update flow" {
-        InModuleScope dbatools {
+        InModuleScope dbatools -Parameters @{ TestDataRoot = $TestDrive } {
+            param($TestDataRoot)
+
             BeforeEach {
                 $script:testOriginal = "C:\mockmodule\bin\dbatools-buildref-index.json"
-                $script:testDataRoot = "C:\mockdata"
-                $script:testWritable = "C:\mockdata\dbatools-buildref-index.json"
+                $script:testDataRoot = $TestDataRoot
+                $script:testWritable = Join-Path $TestDataRoot "dbatools-buildref-index.json"
                 $script:testLocal = "C:\incoming\dbatools-buildref-index.json"
+                [IO.File]::Delete($script:testWritable)
 
                 Mock Resolve-Path { $script:testOriginal }
                 Mock Get-DbatoolsConfigValue { $script:testDataRoot } -ParameterFilter { $Name -eq "Path.DbatoolsData" }
                 Mock Copy-Item { }
-                Mock Out-File { }
                 Mock Write-Message { }
             }
 
@@ -52,9 +54,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Should -Invoke Copy-Item -Times 1 -Exactly -ParameterFilter {
                     "$Path" -eq $script:testOriginal -and "$Destination" -eq $script:testWritable -and $Force -and "$ErrorAction" -eq "Stop"
                 }
-                Should -Invoke Out-File -Times 1 -Exactly -ParameterFilter {
-                    "$FilePath" -eq $script:testWritable -and "$Encoding" -eq "utf8" -and "$ErrorAction" -eq "Stop"
-                }
+                [IO.File]::Exists($script:testWritable) | Should -BeTrue
+                ([IO.File]::ReadAllText($script:testWritable) | ConvertFrom-Json).LastUpdated | Should -Be "2025-01-01T00:00:00"
                 Should -Invoke Write-Message -Times 1 -Exactly -ParameterFilter {
                     "$Level" -eq "Output" -and $Message -like "Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
                 }
@@ -75,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Update-DbaBuildReference -LocalFile $script:testLocal -EnableException
 
                 Should -Invoke Copy-Item -Times 0 -Exactly
-                Should -Invoke Out-File -Times 0 -Exactly
+                [IO.File]::Exists($script:testWritable) | Should -BeFalse
                 Should -Invoke Write-Message -Times 0 -Exactly -ParameterFilter { "$Level" -eq "Output" }
             }
         }
