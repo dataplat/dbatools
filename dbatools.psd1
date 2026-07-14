@@ -344,7 +344,6 @@
         'Invoke-DbaXEReplay',
         'Join-DbaAvailabilityGroup',
         'Measure-DbaBackupThroughput',
-        'Measure-DbaDbVirtualLogFile',
         'Measure-DbaDiskSpaceRequirement',
         'Mount-DbaDatabase',
         'Move-DbaDbFile',

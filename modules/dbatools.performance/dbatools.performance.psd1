@@ -83,7 +83,8 @@
         'Get-DbaWindowsLog',
         'Import-DbaPfDataCollectorSetTemplate',
         'Invoke-DbaDiagnosticQuery',
-        'Invoke-DbaPfRelog'
+        'Invoke-DbaPfRelog',
+        'Measure-DbaDbVirtualLogFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

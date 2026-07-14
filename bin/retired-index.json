@@ -729,6 +729,11 @@
     "retiredPath": "private/retired/Join-DbaPath.ps1",
     "flippedUtc": "2026-07-12T03:26:28Z"
   },
+  "Measure-DbaDbVirtualLogFile": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Measure-DbaDbVirtualLogFile.ps1",
+    "flippedUtc": "2026-07-14T07:19:21Z"
+  },
   "Measure-DbatoolsImport": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Measure-DbatoolsImport.ps1",
