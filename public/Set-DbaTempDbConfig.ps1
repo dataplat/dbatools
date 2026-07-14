@@ -6,9 +6,9 @@ function Set-DbaTempDbConfig {
     .DESCRIPTION
         Configures tempdb database files to follow Microsoft's recommended best practices for performance optimization. This function calculates the optimal number of data files based on logical CPU cores (capped at 8) and distributes the specified total data file size evenly across those files. You must specify the target SQL Server instance and total data file size as mandatory parameters.
 
-        The function automatically determines the appropriate number of data files based on your server's logical cores, but you can override this behavior. It validates the current tempdb configuration to ensure it won't conflict with your desired settings - existing files must be smaller than the calculated target size and you cannot have more existing files than the target configuration.
+        The function automatically determines the appropriate number of data files based on your server's logical cores, but you can override this behavior. It validates the current tempdb configuration to ensure it won't conflict with your desired settings. Existing files must be smaller than the calculated target size, and by default you cannot have more existing files than the target configuration.
 
-        Additional parameters let you customize file paths, log file size, and growth settings. The function generates ALTER DATABASE statements but does not shrink or delete existing files. If your current tempdb is larger than your target configuration, you'll need to shrink it manually before running this function. A SQL Server restart is required for tempdb changes to take effect.
+        Additional parameters let you customize file paths, log file size, and growth settings. Use Force to reduce the number of data files by emptying and removing the highest-numbered secondary files when the requested total size can hold all currently used space. Without Force, the function does not shrink or delete existing files. A SQL Server restart is required for tempdb changes to take effect.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -60,6 +60,10 @@ function Set-DbaTempDbConfig {
         Prevents tempdb files from auto-growing by setting growth to 0. Overrides any values specified for -DataFileGrowth and -LogFileGrowth.
         Use this when you want to pre-size tempdb files appropriately and prevent unexpected growth during production workloads.
 
+    .PARAMETER Force
+        Allows the command to reduce the number of tempdb data files. The highest-numbered secondary data files are emptied and removed first, and the primary data file is never selected for removal.
+        The command refuses the reduction when current used space exceeds the requested total data file size. Use OutputScriptOnly to review the generated DBCC SHRINKFILE and ALTER DATABASE statements before execution.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -98,7 +102,7 @@ function Set-DbaTempDbConfig {
 
         System.String[] (when -OutputScriptOnly is specified)
 
-        Returns array of T-SQL ALTER DATABASE statements that would configure tempdb without executing them.
+        Returns an array of T-SQL statements that would configure tempdb without executing them. Forced file-count reductions also include DBCC SHRINKFILE and ALTER DATABASE REMOVE FILE statements.
 
         System.Void (when -OutFile is specified)
 
@@ -132,6 +136,11 @@ function Set-DbaTempDbConfig {
 
         Returns the T-SQL script representing tempdb configuration.
 
+    .EXAMPLE
+        PS C:\> Set-DbaTempDbConfig -SqlInstance localhost -DataFileCount 4 -DataFileSize 2048 -Force -OutputScriptOnly
+
+        Returns a script that empties and removes the highest-numbered secondary data files when tempdb currently has more than four data files, then configures the four retained files.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -150,6 +159,7 @@ function Set-DbaTempDbConfig {
         [string]$OutFile,
         [switch]$OutputScriptOnly,
         [switch]$DisableGrowth,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -214,20 +224,65 @@ function Set-DbaTempDbConfig {
             }
 
             # Check current tempdb. Throw an error if current tempdb is larger than config.
-            $CurrentFileCount = $server.Databases['tempdb'].Query('SELECT COUNT(1) AS FileCount FROM sys.database_files WHERE type=0').FileCount
-            $TooBigCount = $server.Databases['tempdb'].Query("SELECT TOP 1 (size/128) AS Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingle AND type = 0").Size
+            $tempdbFiles = @($server.Databases["tempdb"].Query(@"
+SELECT
+    file_id AS FileId,
+    name AS LogicalName,
+    physical_name AS PhysicalName,
+    size / 128.0 AS SizeMb,
+    FILEPROPERTY(name, 'SpaceUsed') / 128.0 AS UsedMb
+FROM sys.database_files
+WHERE type = 0
+ORDER BY file_id;
+"@))
+            $CurrentFileCount = $tempdbFiles.Count
+            $filesToRemove = @()
+            $filesToKeep = @($tempdbFiles)
 
             if ($CurrentFileCount -gt $DataFileCount) {
-                Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue
+                if (-not $Force) {
+                    Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue
+                }
+
+                $removeCount = $CurrentFileCount - $DataFileCount
+                $filesToRemove = @(
+                    $tempdbFiles |
+                        Where-Object { $PSItem.FileId -ne 1 } |
+                        Sort-Object FileId -Descending |
+                        Select-Object -First $removeCount
+                )
+
+                if ($filesToRemove.Count -ne $removeCount) {
+                    Stop-Function -Message "Current tempdb in $instance cannot be reduced to $DataFileCount data files without removing the primary data file." -Continue
+                }
+
+                $usedMb = ($tempdbFiles | Measure-Object -Property UsedMb -Sum).Sum
+                if ($usedMb -gt $DataFileSize) {
+                    Stop-Function -Message "Current tempdb uses $usedMb MB, which exceeds the requested target capacity of $DataFileSize MB." -Continue
+                }
+
+                $removalFileIds = @($filesToRemove.FileId)
+                $filesToKeep = @($tempdbFiles | Where-Object { $removalFileIds -notcontains $PSItem.FileId } | Sort-Object FileId)
             }
 
+            $TooBigCount = ($filesToKeep | Where-Object { $PSItem.SizeMb -gt $DataFilesizeSingle } | Select-Object -First 1).SizeMb
             if ($TooBigCount) {
                 Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has files with a size ($TooBigCount MB) larger than the calculated individual file configuration ($DataFilesizeSingle MB)." -Continue
             }
 
             Write-Message -Message "tempdb configuration validated." -Level Verbose
 
-            $DataFiles = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 0 | Select-Object LogicalName, PhysicalName
+            $sql = @()
+            $removalSql = @()
+            foreach ($fileToRemove in $filesToRemove) {
+                $escapedLogicalName = $fileToRemove.LogicalName.Replace("'", "''")
+                $escapedIdentifier = $fileToRemove.LogicalName.Replace("]", "]]")
+                $escapedMessageName = $escapedLogicalName.Replace("%", "%%")
+                $removalSql += "USE [tempdb]; DBCC SHRINKFILE (N'$escapedLogicalName', EMPTYFILE);"
+                $removalSql += "USE [tempdb]; IF FILEPROPERTY(N'$escapedLogicalName', 'SpaceUsed') = 0 BEGIN ALTER DATABASE tempdb REMOVE FILE [$escapedIdentifier]; END ELSE BEGIN RAISERROR('Unable to empty tempdb file $escapedMessageName.', 16, 1); END;"
+            }
+
+            $DataFiles = @($filesToKeep | Sort-Object FileId | Select-Object LogicalName, PhysicalName)
 
             # Used to round-robin the placement of tempdb data files if more than one value for $DataPath was passed in.
             $dataPathIndexToUse = 0
@@ -260,6 +315,9 @@ function Set-DbaTempDbConfig {
                     $sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 }
             }
+
+            # Grow retained files before EMPTYFILE so forced reduction does not depend on autogrowth.
+            $sql += $removalSql
 
             $logfile = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 1 | Select-Object LogicalName, PhysicalName, @{L = "SizeMb"; E = { $_.Size.Megabyte } }
 
