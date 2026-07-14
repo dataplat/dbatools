@@ -101,7 +101,8 @@
         'Test-DbaBuild',
         'Test-DbaConnectionAuthScheme',
         'Test-DbaDbCompression',
-        'Test-DbaDiskAlignment'
+        'Test-DbaDiskAlignment',
+        'Test-DbaDiskAllocation'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

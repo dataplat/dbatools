@@ -517,7 +517,6 @@
         'Test-DbaDbOwner',
         'Test-DbaDbQueryStore',
         'Test-DbaDbRecoveryModel',
-        'Test-DbaDiskAllocation',
         'Test-DbaDiskSpeed',
         'Test-DbaEndpoint',
         'Test-DbaIdentityUsage',
