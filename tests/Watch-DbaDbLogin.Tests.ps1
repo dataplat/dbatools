@@ -73,5 +73,16 @@ Describe $CommandName -Tag IntegrationTests {
             Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -SqlCms $TestConfig.InstanceMulti1
             $WarnVar | Should -BeNullOrEmpty
         }
+
+        It "preserves the validation warning before an EnableException error" {
+            $validationWarnings = @()
+            $expectedMessage = "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
+
+            { Watch-DbaDbLogin -EnableException -ErrorAction Stop -WarningVariable validationWarnings } |
+                Should -Throw -ExpectedMessage $expectedMessage
+
+            $validationWarnings.Count | Should -Be 1
+            $validationWarnings[0].ToString() | Should -BeLike "*[Watch-DbaDbLogin] $expectedMessage"
+        }
     }
 }
