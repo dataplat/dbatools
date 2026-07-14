@@ -482,7 +482,6 @@
         'Set-DbaMaxMemory',
         'Set-DbaNetworkCertificate',
         'Set-DbaNetworkConfiguration',
-        'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
         'Set-DbaSpConfigure',
         'Set-DbaStartupParameter',

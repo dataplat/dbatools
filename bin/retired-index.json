@@ -904,6 +904,11 @@
     "retiredPath": "private/retired/Set-DbaPrivilege.ps1",
     "flippedUtc": "2026-07-10T19:40:44Z"
   },
+  "Set-DbaResourceGovernor": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Set-DbaResourceGovernor.ps1",
+    "flippedUtc": "2026-07-14T17:55:32Z"
+  },
   "Set-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Set-DbaSpn.ps1",
