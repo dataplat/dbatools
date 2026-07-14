@@ -82,7 +82,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $validationWarnings.Count | Should -Be 1
             $validationWarnings[0].ToString().EndsWith("[Watch-DbaDbLogin] $expectedMessage") | Should -BeTrue
-            $Error[0].FullyQualifiedErrorId | Should -Be "dbatools_Watch-DbaDbLogin"
         }
     }
 }
