@@ -21,20 +21,24 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Deterministic local-file update flow" {
-        InModuleScope dbatools -Parameters @{ TestDataRoot = $TestDrive } {
-            param($TestDataRoot)
-
+        InModuleScope dbatools {
             BeforeEach {
                 $script:testOriginal = "C:\mockmodule\bin\dbatools-buildref-index.json"
-                $script:testDataRoot = $TestDataRoot
-                $script:testWritable = Join-Path $TestDataRoot "dbatools-buildref-index.json"
+                $script:testDataRoot = Join-Path ([IO.Path]::GetTempPath()) ("dbatools-buildref-test-" + [guid]::NewGuid().ToString("N"))
+                $null = [IO.Directory]::CreateDirectory($script:testDataRoot)
+                $script:testWritable = Join-Path $script:testDataRoot "dbatools-buildref-index.json"
                 $script:testLocal = "C:\incoming\dbatools-buildref-index.json"
-                [IO.File]::Delete($script:testWritable)
 
                 Mock Resolve-Path { $script:testOriginal }
                 Mock Get-DbatoolsConfigValue { $script:testDataRoot } -ParameterFilter { $Name -eq "Path.DbatoolsData" }
                 Mock Copy-Item { }
                 Mock Write-Message { }
+            }
+
+            AfterEach {
+                if ($script:testDataRoot -and [IO.Directory]::Exists($script:testDataRoot)) {
+                    [IO.Directory]::Delete($script:testDataRoot, $true)
+                }
             }
 
             It "seeds a missing writable copy and writes a newer local index" {
