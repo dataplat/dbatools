@@ -530,7 +530,6 @@
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
         'Update-DbaServiceAccount',
-        'Watch-DbaDbLogin',
         'Watch-DbaXESession',
         'Set-DbaAgentOperator',
         'Remove-DbaExtendedProperty',

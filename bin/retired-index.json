@@ -1059,6 +1059,11 @@
     "retiredPath": "private/retired/Update-Dbatools.ps1",
     "flippedUtc": "2026-07-12T23:22:54Z"
   },
+  "Watch-DbaDbLogin": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Watch-DbaDbLogin.ps1",
+    "flippedUtc": "2026-07-14T22:22:28Z"
+  },
   "Write-DbaDbTableData": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Write-DbaDbTableData.ps1",
