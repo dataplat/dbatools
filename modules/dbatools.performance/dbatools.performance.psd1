@@ -108,7 +108,8 @@
         'Test-DbaManagementObject',
         'Test-DbaNetworkLatency',
         'Test-DbaOptimizeForAdHoc',
-        'Test-DbaTempDbConfig'
+        'Test-DbaTempDbConfig',
+        'Update-DbaBuildReference'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

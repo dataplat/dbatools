@@ -529,7 +529,6 @@
         'Test-DbaReplLatency',
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
-        'Update-DbaBuildReference',
         'Update-DbaServiceAccount',
         'Watch-DbaDbLogin',
         'Watch-DbaXESession',

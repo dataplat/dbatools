@@ -1044,6 +1044,11 @@
     "retiredPath": "private/retired/Unregister-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T23:16:27Z"
   },
+  "Update-DbaBuildReference": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Update-DbaBuildReference.ps1",
+    "flippedUtc": "2026-07-14T21:47:53Z"
+  },
   "Update-DbaInstance": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Update-DbaInstance.ps1",
