@@ -99,7 +99,8 @@
         'Start-DbaPfDataCollectorSet',
         'Stop-DbaPfDataCollectorSet',
         'Test-DbaBuild',
-        'Test-DbaConnectionAuthScheme'
+        'Test-DbaConnectionAuthScheme',
+        'Test-DbaDbCompression'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

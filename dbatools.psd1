@@ -511,7 +511,6 @@
         'Test-DbaCmConnection',
         'Test-DbaDbCollation',
         'Test-DbaDbCompatibility',
-        'Test-DbaDbCompression',
         'Test-DbaDbDataGeneratorConfig',
         'Test-DbaDbDataMaskingConfig',
         'Test-DbaDbLogShipStatus',
