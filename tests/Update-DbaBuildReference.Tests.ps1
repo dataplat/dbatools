@@ -18,3 +18,66 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Deterministic local-file update flow" {
+        InModuleScope dbatools {
+            BeforeEach {
+                $script:testOriginal = "C:\mockmodule\bin\dbatools-buildref-index.json"
+                $script:testDataRoot = "C:\mockdata"
+                $script:testWritable = "C:\mockdata\dbatools-buildref-index.json"
+                $script:testLocal = "C:\incoming\dbatools-buildref-index.json"
+
+                Mock Resolve-Path { $script:testOriginal }
+                Mock Get-DbatoolsConfigValue { $script:testDataRoot } -ParameterFilter { $Name -eq "Path.DbatoolsData" }
+                Mock Copy-Item { }
+                Mock Out-File { }
+                Mock Write-Message { }
+            }
+
+            It "seeds a missing writable copy and writes a newer local index" {
+                Mock Test-Path {
+                    if ("$Path" -eq $script:testOriginal) { return $true }
+                    if ("$Path" -eq $script:testWritable) { return $false }
+                    $false
+                }
+                Mock Get-Content {
+                    if ("$Path" -eq $script:testOriginal) { return '{"LastUpdated":"2024-01-01T00:00:00"}' }
+                    if ("$Path" -eq $script:testLocal) { return '{"LastUpdated":"2025-01-01T00:00:00"}' }
+                    throw "unexpected path $Path"
+                }
+
+                Update-DbaBuildReference -LocalFile $script:testLocal -EnableException
+
+                Should -Invoke Copy-Item -Times 1 -Exactly -ParameterFilter {
+                    "$Path" -eq $script:testOriginal -and "$Destination" -eq $script:testWritable -and $Force -and "$ErrorAction" -eq "Stop"
+                }
+                Should -Invoke Out-File -Times 1 -Exactly -ParameterFilter {
+                    "$FilePath" -eq $script:testWritable -and "$Encoding" -eq "utf8" -and "$ErrorAction" -eq "Stop"
+                }
+                Should -Invoke Write-Message -Times 1 -Exactly -ParameterFilter {
+                    "$Level" -eq "Output" -and $Message -like "Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
+                }
+            }
+
+            It "keeps a newer writable index when the supplied local index is older" {
+                Mock Test-Path {
+                    if ("$Path" -eq $script:testOriginal -or "$Path" -eq $script:testWritable) { return $true }
+                    $false
+                }
+                Mock Get-Content {
+                    if ("$Path" -eq $script:testOriginal) { return '{"LastUpdated":"2024-01-01T00:00:00"}' }
+                    if ("$Path" -eq $script:testWritable) { return '{"LastUpdated":"2026-01-01T00:00:00"}' }
+                    if ("$Path" -eq $script:testLocal) { return '{"LastUpdated":"2025-01-01T00:00:00"}' }
+                    throw "unexpected path $Path"
+                }
+
+                Update-DbaBuildReference -LocalFile $script:testLocal -EnableException
+
+                Should -Invoke Copy-Item -Times 0 -Exactly
+                Should -Invoke Out-File -Times 0 -Exactly
+                Should -Invoke Write-Message -Times 0 -Exactly -ParameterFilter { "$Level" -eq "Output" }
+            }
+        }
+    }
+}
