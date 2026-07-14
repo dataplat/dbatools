@@ -86,7 +86,8 @@
         'Invoke-DbaPfRelog',
         'Measure-DbaDbVirtualLogFile',
         'New-DbaDiagnosticAdsNotebook',
-        'New-DbaRgResourcePool'
+        'New-DbaRgResourcePool',
+        'New-DbaRgWorkloadGroup'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
