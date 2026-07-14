@@ -20,6 +20,10 @@ function ConvertTo-DbaTimeline {
         Use this when you need to maximize chart space for better visualization of timeline data, especially with long instance or job names.
         All label information remains available in the hover tooltips when you mouse over timeline bars.
 
+    .PARAMETER DateFormat
+        Specifies the Google Charts date pattern used for tooltip dates and the horizontal timeline axis. If the pattern does not include a year, /yy is appended to tooltip dates. Defaults to dd/MM to preserve the existing output.
+        Use MM/dd for month-first dates or yyyy-MM-dd for an ISO-style date. The pattern accepts Google Charts day, month, year, and weekday tokens with common separators.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,6 +71,11 @@ function ConvertTo-DbaTimeline {
         Creates an output file containing a timeline of all database auto-growth and auto-shrink events for sql-1.
 
     .EXAMPLE
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -ExcludeJobSteps | ConvertTo-DbaTimeline -DateFormat "MM/dd" | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+
+        Creates a timeline that displays month-first dates in tooltips and on the horizontal axis.
+
+    .EXAMPLE
         PS C:\> $messageParameters = @{
         >> Subject = "Backup history for sql2017 and sql2016"
         >> Body = Get-DbaDbBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-String
@@ -86,10 +95,13 @@ function ConvertTo-DbaTimeline {
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$ExcludeRowLabel,
+        [ValidatePattern("\A[dMyE,./ -]+\z")]
+        [string]$DateFormat = "dd/MM",
         [switch]$EnableException
     )
     begin {
         $body = $servers = @()
+        $tooltipDateFormat = if ($DateFormat -match "y") { $DateFormat } else { "$DateFormat/yy" }
         $begin = @"
 <html>
 <head>
@@ -192,7 +204,7 @@ function ConvertTo-DbaTimeline {
         var chartHeight = rowHeight + paddingHeight;
         dataTable.insertColumn(2, {type: 'string', role: 'tooltip', p: {html: true}});
         var dateFormat = new google.visualization.DateFormat({
-          pattern: 'dd/MM/yy HH:mm:ss'
+          pattern: '$tooltipDateFormat HH:mm:ss'
         });
         for (var i = 0; i < dataTable.getNumberOfRows(); i++) {
           var duration = (dataTable.getValue(i, 5).getTime() - dataTable.getValue(i, 4).getTime()) / 1000;
@@ -215,7 +227,7 @@ function ConvertTo-DbaTimeline {
                 showRowLabels: $(if($ExcludeRowLabel){'false'} else {'true'})
             },
             hAxis: {
-                format: 'dd/MM HH:mm',
+                format: '$DateFormat HH:mm',
             },
         }
         // Autosize chart. It would not be enough to just count rows and expand based on row height as there can be overlapping rows.
