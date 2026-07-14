@@ -508,7 +508,6 @@
         'Test-DbaAgentJobOwner',
         'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
-        'Test-DbaBuild',
         'Test-DbaCmConnection',
         'Test-DbaConnectionAuthScheme',
         'Test-DbaDbCollation',

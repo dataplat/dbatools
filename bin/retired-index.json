@@ -949,6 +949,11 @@
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:21:01Z"
   },
+  "Test-DbaBuild": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaBuild.ps1",
+    "flippedUtc": "2026-07-14T18:50:34Z"
+  },
   "Test-DbaComputerCertificateExpiration": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaComputerCertificateExpiration.ps1",
