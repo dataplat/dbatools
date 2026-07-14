@@ -89,7 +89,8 @@
         'New-DbaRgResourcePool',
         'New-DbaRgWorkloadGroup',
         'Remove-DbaPfDataCollectorCounter',
-        'Remove-DbaPfDataCollectorSet'
+        'Remove-DbaPfDataCollectorSet',
+        'Remove-DbaRgResourcePool'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

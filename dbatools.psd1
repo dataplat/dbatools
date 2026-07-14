@@ -433,7 +433,6 @@
         'Remove-DbaLogin',
         'Remove-DbaRegServer',
         'Remove-DbaRegServerGroup',
-        'Remove-DbaRgResourcePool',
         'Remove-DbaServerRole',
         'Remove-DbaTrace',
         'Remove-DbaXESession',
