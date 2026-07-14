@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Database",
                 "ExcludeDatabase",
                 "Table",
+                "View",
                 "CompressionType",
                 "MaxRunTime",
                 "PercentCompression",
@@ -65,6 +66,7 @@ namespace SetDbaDbCompressionTest {
         public string Status { get; set; }
         public string CompatibilityLevel { get; set; }
         public object[] Tables { get; set; }
+        public object[] Views { get; set; }
 
         public override string ToString() {
             return Name;
@@ -103,6 +105,70 @@ namespace SetDbaDbCompressionTest {
 
                     $table
                 }
+
+                function New-MockCompressionView {
+                    param(
+                        [string]$Schema,
+                        [string]$Name
+                    )
+
+                    $view = [PSCustomObject]@{
+                        Name    = $Name
+                        Schema  = $Schema
+                        Indexes = @()
+                    }
+                    $index = [PSCustomObject]@{
+                        Name                     = "CX_$Name"
+                        Parent                   = $view
+                        IsMemoryOptimized        = $false
+                        IndexType                = "ClusteredIndex"
+                        IsOnlineRebuildSupported = $false
+                        OnlineIndexOperation     = $false
+                        SortInTempdb             = $false
+                        Id                       = 1
+                        PhysicalPartitions       = @(
+                            [PSCustomObject]@{
+                                PartitionNumber = 1
+                                DataCompression = "NONE"
+                            }
+                        )
+                    }
+                    $index | Add-Member -Force -MemberType ScriptMethod -Name Rebuild -Value {
+                        $script:rebuiltViews += $this.Parent.Schema
+                    }
+                    $view.Indexes = @($index)
+
+                    $view
+                }
+
+                function New-MockCompressionFixture {
+                    param(
+                        [object[]]$Tables,
+                        [object[]]$Views
+                    )
+
+                    $mockDatabase = New-Object "SetDbaDbCompressionTest.MockDatabase"
+                    $mockDatabase.Name = "db1"
+                    $mockDatabase.IsAccessible = $true
+                    $mockDatabase.IsSystemObject = 0
+                    $mockDatabase.Status = "Normal"
+                    $mockDatabase.CompatibilityLevel = "Version160"
+                    $mockDatabase.Tables = $Tables
+                    $mockDatabase.Views = $Views
+
+                    $mockDatabases = New-Object "SetDbaDbCompressionTest.MockCollection[System.Object]"
+                    $mockDatabases.Add("db1", $mockDatabase)
+
+                    [PSCustomObject]@{
+                        ComputerName       = "sql1"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "sql1"
+                        EngineEdition      = "Enterprise"
+                        VersionMajor       = 16
+                        isAzure            = $false
+                        Databases          = $mockDatabases
+                    }
+                }
             }
 
             It "honors schema-qualified -Table input" {
@@ -139,6 +205,73 @@ namespace SetDbaDbCompressionTest {
                 $results.Count | Should -Be 1
                 $results[0].Schema | Should -Be "sales"
                 $script:rebuiltSchemas | Should -Be @("sales")
+            }
+
+            It "does not process indexed views when Table is specified" {
+                $script:rebuiltSchemas = @()
+                $script:rebuiltViews = @()
+                $mockServer = New-MockCompressionFixture -Tables @(
+                    (New-MockCompressionTable -Schema "dbo" -Name "Customer"),
+                    (New-MockCompressionTable -Schema "sales" -Name "Customer")
+                ) -Views @(
+                    (New-MockCompressionView -Schema "dbo" -Name "CustomerView")
+                )
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Stop-Function { throw $Message }
+
+                $results = @(Set-DbaDbCompression -SqlInstance "sql1" -Database "db1" -Table "sales.Customer" -CompressionType Row)
+
+                $results | Should -HaveCount 1
+                $results[0].Schema | Should -Be "sales"
+                $script:rebuiltViews | Should -BeNullOrEmpty
+            }
+
+            It "processes only the requested schema-qualified indexed view" {
+                $script:rebuiltSchemas = @()
+                $script:rebuiltViews = @()
+                $mockServer = New-MockCompressionFixture -Tables @(
+                    (New-MockCompressionTable -Schema "dbo" -Name "Customer")
+                ) -Views @(
+                    (New-MockCompressionView -Schema "dbo" -Name "CustomerView"),
+                    (New-MockCompressionView -Schema "sales" -Name "CustomerView")
+                )
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Stop-Function { throw $Message }
+
+                $results = @(Set-DbaDbCompression -SqlInstance "sql1" -Database "db1" -View "sales.CustomerView" -CompressionType Row)
+
+                $results | Should -HaveCount 1
+                $results[0].Schema | Should -Be "sales"
+                $results[0].TableName | Should -Be "CustomerView"
+                $script:rebuiltSchemas | Should -BeNullOrEmpty
+                $script:rebuiltViews | Should -Be @("sales")
+            }
+
+            It "continues to process tables and indexed views when neither filter is specified" {
+                $script:rebuiltSchemas = @()
+                $script:rebuiltViews = @()
+                $mockServer = New-MockCompressionFixture -Tables @(
+                    (New-MockCompressionTable -Schema "dbo" -Name "Customer")
+                ) -Views @(
+                    (New-MockCompressionView -Schema "dbo" -Name "CustomerView")
+                )
+
+                Mock Connect-DbaInstance { $mockServer }
+                Mock Stop-Function { throw $Message }
+
+                $results = @(Set-DbaDbCompression -SqlInstance "sql1" -Database "db1" -CompressionType Row)
+
+                $results | Should -HaveCount 2
+                $script:rebuiltSchemas | Should -Be @("dbo")
+                $script:rebuiltViews | Should -Be @("dbo")
+            }
+
+            It "rejects View with Recommended compression" {
+                Mock Stop-Function { throw $Message }
+
+                { Set-DbaDbCompression -SqlInstance "sql1" -View "dbo.CustomerView" } | Should -Throw "*explicit CompressionType*"
             }
         }
     }
