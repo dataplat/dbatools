@@ -526,7 +526,6 @@
         'Test-DbaMaxDop',
         'Test-DbaMaxMemory',
         'Test-DbaMigrationConstraint',
-        'Test-DbaOptimizeForAdHoc',
         'Test-DbaReplLatency',
         'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',

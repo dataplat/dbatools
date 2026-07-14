@@ -1014,6 +1014,11 @@
     "retiredPath": "private/retired/Test-DbaNetworkLatency.ps1",
     "flippedUtc": "2026-07-14T20:50:50Z"
   },
+  "Test-DbaOptimizeForAdHoc": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaOptimizeForAdHoc.ps1",
+    "flippedUtc": "2026-07-14T21:07:05Z"
+  },
   "Test-DbaPath": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaPath.ps1",
