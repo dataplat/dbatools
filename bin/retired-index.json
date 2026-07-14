@@ -779,6 +779,11 @@
     "retiredPath": "private/retired/New-DbaFirewallRule.ps1",
     "flippedUtc": "2026-07-10T11:03:00Z"
   },
+  "New-DbaRgResourcePool": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/New-DbaRgResourcePool.ps1",
+    "flippedUtc": "2026-07-14T08:29:46Z"
+  },
   "New-DbaScriptingOption": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaScriptingOption.ps1",

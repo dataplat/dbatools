@@ -384,7 +384,6 @@
         'New-DbaDirectory',
         'New-DbaEndpoint',
         'New-DbaLogin',
-        'New-DbaRgResourcePool',
         'New-DbaServerRole',
         'New-DbaServiceMasterKey',
         'New-DbaXESession',
