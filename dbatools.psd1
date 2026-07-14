@@ -560,7 +560,6 @@
         'Remove-DbaServerRoleMember',
         'Remove-DbaDbMailProfile',
         'Remove-DbaDbMailAccount',
-        'Set-DbaRgWorkloadGroup',
         'Get-DbaLinkedServerLogin',
         'New-DbaLinkedServerLogin',
         'Remove-DbaLinkedServerLogin',
