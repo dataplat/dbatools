@@ -88,7 +88,8 @@
         'New-DbaDiagnosticAdsNotebook',
         'New-DbaRgResourcePool',
         'New-DbaRgWorkloadGroup',
-        'Remove-DbaPfDataCollectorCounter'
+        'Remove-DbaPfDataCollectorCounter',
+        'Remove-DbaPfDataCollectorSet'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

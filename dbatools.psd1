@@ -431,7 +431,6 @@
         'Remove-DbaEndpoint',
         'Remove-DbaLinkedServer',
         'Remove-DbaLogin',
-        'Remove-DbaPfDataCollectorSet',
         'Remove-DbaRegServer',
         'Remove-DbaRegServerGroup',
         'Remove-DbaRgResourcePool',
