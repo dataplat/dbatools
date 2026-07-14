@@ -24,6 +24,46 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "Deterministic start flow" {
+        InModuleScope dbatools {
+            BeforeEach {
+                Mock Invoke-Command2 { }
+                Mock Get-DbaPfDataCollectorSet {
+                    [PSCustomObject]@{
+                        ComputerName           = "mockhost"
+                        State                  = "Running"
+                        Name                   = "Mock Collector Set"
+                        DataCollectorSetObject = [PSCustomObject]@{}
+                    }
+                }
+            }
+
+            It "starts a stopped piped collector set and carries NoWait to PLA" {
+                $inputSet = [PSCustomObject]@{
+                    ComputerName           = "mockhost"
+                    State                  = "Stopped"
+                    Name                   = "Mock Collector Set"
+                    DataCollectorSetObject = [PSCustomObject]@{}
+                }
+
+                $result = $inputSet | Start-DbaPfDataCollectorSet -NoWait -Confirm:$false
+
+                $result.ComputerName | Should -Be "mockhost"
+                $result.Name | Should -Be "Mock Collector Set"
+                Should -Invoke Invoke-Command2 -Times 1 -Exactly -ParameterFilter {
+                    "$ComputerName" -eq "mockhost" -and
+                    $ArgumentList.Count -eq 2 -and
+                    $ArgumentList[0] -eq "Mock Collector Set" -and
+                    $ArgumentList[1] -eq $false -and
+                    $ErrorAction -eq "Stop"
+                }
+                Should -Invoke Get-DbaPfDataCollectorSet -Times 1 -Exactly -ParameterFilter {
+                    "$ComputerName" -eq "mockhost" -and $CollectorSet -eq "Mock Collector Set"
+                }
+            }
+        }
+    }
+
     Context -Skip:(-not (Get-DbaPfDataCollectorSet -CollectorSet RTEvents)) "Verifying command works" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
