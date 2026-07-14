@@ -75,6 +75,10 @@ function Invoke-DbaDbShrink {
         Determines which database files to target for shrinking: All (data and log files), Data (only data files), or Log (only log files). Defaults to All.
         Use Data when you only need to reclaim space from data files after large deletions. Use Log to specifically target transaction log files after maintenance operations.
 
+    .PARAMETER FileName
+        Specifies one or more logical database file names to shrink. The filter is applied after FileType, so the requested files must also match the selected file type.
+        Use this when a database has multiple data or log files and only specific files should be shrunk. If omitted, all files matching FileType are processed.
+
     .PARAMETER StepSize
         Breaks large shrink operations into smaller chunks of the specified size. Use PowerShell size notation like 100MB or 1GB.
         Chunked shrinks reduce resource contention and allow for better progress monitoring during large shrink operations. Recommended for databases being shrunk by several gigabytes.
@@ -166,6 +170,11 @@ function Invoke-DbaDbShrink {
         Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
 
     .EXAMPLE
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -FileName "AdventureWorks2014_Data2" -PercentFreeSpace 10 -FileType Data -StepSize 25MB
+
+        Shrinks only the AdventureWorks2014_Data2 logical data file, running shrinks in 25MB chunks.
+
+    .EXAMPLE
         PS C:\> Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
 
         Shrinks all user databases on SQL2012 (not ideal for production)
@@ -196,6 +205,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = 'Default',
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = 'All',
+        [string[]]$FileName,
         [int64]$StepSize,
         [int]$StatementTimeout = 0,
         [switch]$WaitAtLowPriority,
@@ -290,6 +300,12 @@ function Invoke-DbaDbShrink {
                 $files += $db.FileGroups.Files
             }
 
+            if ($FileName) {
+                $files = @($files | Where-Object { $PSItem.Name -in $FileName })
+                if (-not $files) {
+                    Write-Message -Level Warning -Message "None of the requested logical file names matched FileType $FileType in database $($db.Name) on $instance."
+                }
+            }
 
             foreach ($file in $files) {
                 # $file.Size and $file.UsedSpace are in KB and translated here to bytes as the dbasize type requires

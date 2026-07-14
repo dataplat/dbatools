@@ -19,6 +19,7 @@ Describe $CommandName -Tag UnitTests {
                 "PercentFreeSpace",
                 "ShrinkMethod",
                 "FileType",
+                "FileName",
                 "StepSize",
                 "StatementTimeout",
                 "WaitAtLowPriority",
@@ -134,6 +135,31 @@ Describe $CommandName -Tag UnitTests {
                 } | Should -Throw "*Shrink operation failed for file testdb:*simulated shrink failure*"
 
                 Should -Invoke -CommandName Stop-Function -Exactly 1 -Scope It
+            }
+
+            It "processes only the requested logical file name" {
+                $mockDatabase = New-MockShrinkDatabase
+                $otherFile = [PSCustomObject]@{
+                    Name      = "otherfile"
+                    Size      = 1024
+                    UsedSpace = 512
+                }
+                $otherFile | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
+                $mockDatabase.FileGroups.Files += $otherFile
+
+                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -FileName "testdb" -ExcludeIndexStats)
+
+                $results | Should -HaveCount 1
+                $results[0].File | Should -Be "testdb"
+            }
+
+            It "warns when no logical file name matches the selected file type" {
+                $mockDatabase = New-MockShrinkDatabase
+
+                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -FileName "missing" -ExcludeIndexStats)
+
+                $results | Should -BeNullOrEmpty
+                ($script:warningMessages -join " ") | Should -Match "None of the requested logical file names matched FileType Data"
             }
         }
     }
