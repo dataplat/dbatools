@@ -87,7 +87,8 @@
         'Measure-DbaDbVirtualLogFile',
         'New-DbaDiagnosticAdsNotebook',
         'New-DbaRgResourcePool',
-        'New-DbaRgWorkloadGroup'
+        'New-DbaRgWorkloadGroup',
+        'Remove-DbaPfDataCollectorCounter'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

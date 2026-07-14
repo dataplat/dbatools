@@ -834,6 +834,11 @@
     "retiredPath": "private/retired/Remove-DbaNetworkCertificate.ps1",
     "flippedUtc": "2026-07-10T02:51:35Z"
   },
+  "Remove-DbaPfDataCollectorCounter": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Remove-DbaPfDataCollectorCounter.ps1",
+    "flippedUtc": "2026-07-14T16:55:25Z"
+  },
   "Remove-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaSpn.ps1",
