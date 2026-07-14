@@ -95,7 +95,8 @@
         'Save-DbaDiagnosticQueryScript',
         'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
-        'Set-DbaRgWorkloadGroup'
+        'Set-DbaRgWorkloadGroup',
+        'Start-DbaPfDataCollectorSet'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

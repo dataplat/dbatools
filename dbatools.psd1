@@ -491,7 +491,6 @@
         'Start-DbaAgentJob',
         'Start-DbaEndpoint',
         'Start-DbaMigration',
-        'Start-DbaPfDataCollectorSet',
         'Start-DbaService',
         'Start-DbaTrace',
         'Start-DbaXESession',
