@@ -33,7 +33,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Mock Resolve-Path { $script:testOriginal }
                 Mock Get-DbatoolsConfigValue { $script:testDataRoot } -ParameterFilter { $Name -eq "Path.DbatoolsData" }
                 Mock Copy-Item { }
-                Mock Write-Message { $script:testOutputMessage = "$Level|$Message" }
+                Mock Write-Message { $script:testOutputMessage = $Message }
             }
 
             AfterEach {
@@ -61,7 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 [IO.File]::Exists($script:testWritable) | Should -BeTrue
                 ([datetime]([IO.File]::ReadAllText($script:testWritable) | ConvertFrom-Json).LastUpdated).ToString("s") | Should -Be "2025-01-01T00:00:00"
-                $script:testOutputMessage | Should -Be "Output|Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
+                $script:testOutputMessage | Should -Be "Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
             }
 
             It "keeps a newer writable index when the supplied local index is older" {
