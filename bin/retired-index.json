@@ -974,6 +974,11 @@
     "retiredPath": "private/retired/Test-DbaDbCompression.ps1",
     "flippedUtc": "2026-07-14T19:19:55Z"
   },
+  "Test-DbaDiskAlignment": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaDiskAlignment.ps1",
+    "flippedUtc": "2026-07-14T19:31:30Z"
+  },
   "Test-DbaKerberos": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",
