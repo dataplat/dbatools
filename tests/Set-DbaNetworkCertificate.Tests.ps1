@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Certificate",
                 "Thumbprint",
                 "UnsetCertificate",
+                "Force",
                 "RestartService",
                 "EnableException"
             )
@@ -75,6 +76,65 @@ Describe $CommandName -Tag UnitTests {
                     $Force -and
                     $EnableException
                 }
+            }
+        }
+
+        Context "Force" {
+            BeforeEach {
+                $script:certificateThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
+
+                Mock Test-FunctionInterrupt { $false }
+                Mock Test-DbaNetworkCertificate {
+                    if ($Thumbprint) {
+                        [PSCustomObject]@{
+                            CertificateFound        = $true
+                            KeyUsagesValid          = $true
+                            DnsNamesValid           = $false
+                            PrivateKeyValid         = $true
+                            PublicKeyValid          = $true
+                            SignatureAlgorithmValid = $false
+                            EnhancedKeyUsageValid   = $true
+                            ValidityPeriodOk        = $true
+                        }
+                    } else {
+                        [PSCustomObject]@{
+                            ComputerName                    = "sql1"
+                            InstanceName                    = "MSSQLSERVER"
+                            SqlInstance                     = "sql1"
+                            ConfiguredCertificateThumbprint = $null
+                            ConfiguredCertificateValid      = $false
+                            SuitableCertificateAvailable    = $false
+                            SuitableCertificateCount        = 0
+                            SuitableCertificates            = @()
+                        }
+                    }
+                }
+                Mock Invoke-Command2 {
+                    [PSCustomObject]@{
+                        Verbose        = @()
+                        Exception      = $null
+                        ServiceAccount = "sql1\svc-sql"
+                    }
+                }
+                Mock Write-Message { }
+            }
+
+            It "configures an existing certificate when suitability checks fail and Force is used" {
+                $splatSetNetworkCertificate = @{
+                    SqlInstance = "sql1"
+                    Thumbprint  = $script:certificateThumbprint
+                    Force       = $true
+                    Confirm     = $false
+                }
+
+                $result = Set-DbaNetworkCertificate @splatSetNetworkCertificate
+
+                $result.CertificateThumbprint | Should -Be $script:certificateThumbprint
+                Should -Invoke -CommandName Write-Message -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                    $Level -eq "Warning" -and
+                    $Message -match "DnsNamesInvalid, SignatureAlgorithmInvalid"
+                }
+                Should -Invoke -CommandName Invoke-Command2 -Exactly 1 -Scope It -ModuleName dbatools
             }
         }
     }
