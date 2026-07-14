@@ -381,7 +381,6 @@
         'New-DbaDbTable',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
-        'New-DbaDiagnosticAdsNotebook',
         'New-DbaDirectory',
         'New-DbaEndpoint',
         'New-DbaLogin',

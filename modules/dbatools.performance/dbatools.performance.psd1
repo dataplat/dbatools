@@ -84,7 +84,8 @@
         'Import-DbaPfDataCollectorSetTemplate',
         'Invoke-DbaDiagnosticQuery',
         'Invoke-DbaPfRelog',
-        'Measure-DbaDbVirtualLogFile'
+        'Measure-DbaDbVirtualLogFile',
+        'New-DbaDiagnosticAdsNotebook'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
