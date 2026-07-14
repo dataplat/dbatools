@@ -93,7 +93,8 @@
         'Remove-DbaRgResourcePool',
         'Remove-DbaRgWorkloadGroup',
         'Save-DbaDiagnosticQueryScript',
-        'Set-DbaResourceGovernor'
+        'Set-DbaResourceGovernor',
+        'Set-DbaRgResourcePool'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
