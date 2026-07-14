@@ -18,8 +18,31 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "Downloaded script handling" {
+        BeforeEach {
+            Mock Invoke-TlsWebRequest -ModuleName dbatools {
+                param($Uri, $UseBasicParsing, $OutFile)
+
+                if ($OutFile) {
+                    [System.IO.File]::WriteAllText($OutFile, "SELECT 1;")
+                    return
+                }
+
+                [pscustomobject]@{
+                    Content = '<a href="https://www.dropbox.com/scl/fi/abc123/SQL-Server-2022-Diagnostic-Information-Queries.sql?rlkey=test&amp;dl=0">SQL Server 2022</a>'
+                }
+            }
+        }
+
+        It "discovers, downloads, names, and returns a diagnostic query file" {
+            $result = Save-DbaDiagnosticQueryScript -Path $TestDrive
+
+            $result | Should -BeOfType System.IO.FileInfo
+            $result.Name | Should -Be "SQLServerDiagnosticQueries_2022.sql"
+            $result.FullName | Should -Be (Join-Path $TestDrive "SQLServerDiagnosticQueries_2022.sql")
+            [System.IO.File]::ReadAllText($result.FullName) | Should -Be "SELECT 1;"
+            Should -Invoke Invoke-TlsWebRequest -ModuleName dbatools -Times 2 -Exactly
+        }
+    }
+}
