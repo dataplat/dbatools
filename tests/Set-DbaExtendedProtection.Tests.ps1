@@ -14,9 +14,80 @@ Describe $CommandName -Tag UnitTests {
                 "SqlInstance",
                 "Credential",
                 "Value",
+                "AcceptedSpn",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Accepted SPNs" {
+            BeforeEach {
+                $script:acceptedSpnValue = "existing"
+                $script:extendedProtectionValue = 1
+                Mock Resolve-DbaNetworkName {
+                    [PSCustomObject]@{ FullComputerName = "sql1" }
+                }
+                Mock Invoke-ManagedComputerCommand {
+                    [PSCustomObject]@{
+                        DisplayName        = "SQL Server (MSSQLSERVER)"
+                        ServiceAccount     = "NT Service\MSSQLSERVER"
+                        AdvancedProperties = @(
+                            [PSCustomObject]@{ Name = "REGROOT"; Value = "Software\Microsoft\Microsoft SQL Server\MSSQL16.MSSQLSERVER" },
+                            [PSCustomObject]@{ Name = "VSNAME"; Value = "sql1" }
+                        )
+                    }
+                }
+                Mock Set-ItemProperty {
+                    if ($Name -eq "AcceptedSPNs") {
+                        $script:acceptedSpnValue = $Value
+                    }
+                    if ($Name -eq "ExtendedProtection") {
+                        $script:extendedProtectionValue = $Value
+                    }
+                }
+                Mock Get-ItemProperty {
+                    [PSCustomObject]@{
+                        ExtendedProtection = $script:extendedProtectionValue
+                        AcceptedSPNs       = $script:acceptedSpnValue
+                    }
+                }
+                Mock Invoke-Command2 {
+                    & $ScriptBlock @ArgumentList
+                }
+                Mock Test-ShouldProcess { $true }
+                Mock Stop-Function { throw $Message }
+            }
+
+            It "writes accepted SPNs as a semicolon-delimited registry value" {
+                $acceptedSpns = @("MSSQLSvc/sql1.domain.local:1433", "MSSQLSvc/sql1:1433")
+
+                $result = Set-DbaExtendedProtection -SqlInstance "sql1" -Value Required -AcceptedSpn $acceptedSpns -Confirm:$false
+
+                $script:acceptedSpnValue | Should -Be ($acceptedSpns -join ";")
+                $result.AcceptedSpns | Should -Be $acceptedSpns
+            }
+
+            It "leaves accepted SPNs unchanged when AcceptedSpn is omitted" {
+                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -Value Required -Confirm:$false
+
+                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "AcceptedSPNs" } -Exactly 0 -Scope It
+            }
+
+            It "leaves Extended Protection unchanged when only AcceptedSpn is supplied" {
+                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -AcceptedSpn "MSSQLSvc/sql1:1433" -Confirm:$false
+
+                $script:extendedProtectionValue | Should -Be 1
+                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "ExtendedProtection" } -Exactly 0 -Scope It
+            }
+
+            It "clears accepted SPNs when an empty string is supplied" {
+                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -AcceptedSpn "" -Confirm:$false
+
+                $script:acceptedSpnValue | Should -Be ""
+                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "AcceptedSPNs" -and $Value -eq "" } -Exactly 1 -Scope It
+            }
         }
     }
 }
