@@ -23,4 +23,15 @@ Describe $CommandName -Tag UnitTests {
             Get-FunctionNameFromTestFile $testPath | Should -Be "Get-DbaBuild"
         }
     }
+
+    Context "Get-AllTestsIndications" {
+        It "always includes the repository-wide general test file" {
+            $moduleBase = Split-Path $PSScriptRoot -Parent
+            $testPath = Join-Path $PSScriptRoot "Get-DbaBuild.Tests.ps1"
+
+            $result = Get-AllTestsIndications -Path $testPath -ModuleBase $moduleBase
+
+            $result.FullName | Should -Contain (Join-Path $PSScriptRoot "dbatools.Tests.ps1")
+        }
+    }
 }
