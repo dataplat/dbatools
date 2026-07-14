@@ -874,6 +874,11 @@
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
     "flippedUtc": "2026-07-07T10:21:29Z"
   },
+  "Save-DbaDiagnosticQueryScript": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Save-DbaDiagnosticQueryScript.ps1",
+    "flippedUtc": "2026-07-14T17:42:34Z"
+  },
   "Save-DbaKbUpdate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Save-DbaKbUpdate.ps1",

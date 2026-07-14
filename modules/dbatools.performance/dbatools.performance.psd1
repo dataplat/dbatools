@@ -91,7 +91,8 @@
         'Remove-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorSet',
         'Remove-DbaRgResourcePool',
-        'Remove-DbaRgWorkloadGroup'
+        'Remove-DbaRgWorkloadGroup',
+        'Save-DbaDiagnosticQueryScript'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

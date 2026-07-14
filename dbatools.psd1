@@ -448,7 +448,6 @@
         'Restore-DbaDbSnapshot',
         'Resume-DbaAgDbDataMovement',
         'Revoke-DbaAgPermission',
-        'Save-DbaDiagnosticQueryScript',
         'Select-DbaDbSequenceNextValue',
         'Set-DbaAgentAlert',
         'Set-DbaAgentJob',
