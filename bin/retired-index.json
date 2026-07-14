@@ -1009,6 +1009,11 @@
     "retiredPath": "private/retired/Test-DbaNetworkCertificate.ps1",
     "flippedUtc": "2026-07-10T02:43:36Z"
   },
+  "Test-DbaNetworkLatency": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaNetworkLatency.ps1",
+    "flippedUtc": "2026-07-14T20:50:50Z"
+  },
   "Test-DbaPath": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaPath.ps1",
