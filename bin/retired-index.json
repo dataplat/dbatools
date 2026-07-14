@@ -849,6 +849,11 @@
     "retiredPath": "private/retired/Remove-DbaRgResourcePool.ps1",
     "flippedUtc": "2026-07-14T17:15:40Z"
   },
+  "Remove-DbaRgWorkloadGroup": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Remove-DbaRgWorkloadGroup.ps1",
+    "flippedUtc": "2026-07-14T17:26:21Z"
+  },
   "Remove-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaSpn.ps1",

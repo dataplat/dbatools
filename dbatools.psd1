@@ -564,7 +564,6 @@
         'Remove-DbaDbMailProfile',
         'Remove-DbaDbMailAccount',
         'Set-DbaRgWorkloadGroup',
-        'Remove-DbaRgWorkloadGroup',
         'Get-DbaLinkedServerLogin',
         'New-DbaLinkedServerLogin',
         'Remove-DbaLinkedServerLogin',
