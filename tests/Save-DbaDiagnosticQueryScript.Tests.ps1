@@ -22,10 +22,11 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Downloaded script handling" {
         BeforeEach {
             Mock Invoke-TlsWebRequest -ModuleName dbatools {
-                param($Uri, $UseBasicParsing, $OutFile)
+                $arguments = @($args)
+                $outFileIndex = [Array]::IndexOf($arguments, "-OutFile")
 
-                if ($OutFile) {
-                    [System.IO.File]::WriteAllText($OutFile, "SELECT 1;")
+                if ($outFileIndex -ge 0) {
+                    [System.IO.File]::WriteAllText($arguments[$outFileIndex + 1], "SELECT 1;")
                     return
                 }
 
