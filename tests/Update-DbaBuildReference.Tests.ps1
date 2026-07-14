@@ -28,11 +28,12 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = [IO.Directory]::CreateDirectory($script:testDataRoot)
                 $script:testWritable = Join-Path $script:testDataRoot "dbatools-buildref-index.json"
                 $script:testLocal = "C:\incoming\dbatools-buildref-index.json"
+                $script:testOutputMessage = $null
 
                 Mock Resolve-Path { $script:testOriginal }
                 Mock Get-DbatoolsConfigValue { $script:testDataRoot } -ParameterFilter { $Name -eq "Path.DbatoolsData" }
                 Mock Copy-Item { }
-                Mock Write-Message { }
+                Mock Write-Message { $script:testOutputMessage = "$Level|$Message" }
             }
 
             AfterEach {
@@ -60,9 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 [IO.File]::Exists($script:testWritable) | Should -BeTrue
                 ([datetime]([IO.File]::ReadAllText($script:testWritable) | ConvertFrom-Json).LastUpdated).ToString("s") | Should -Be "2025-01-01T00:00:00"
-                Should -Invoke Write-Message -Times 1 -Exactly -ParameterFilter {
-                    "$Level" -eq "Output" -and $Message -like "Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
-                }
+                $script:testOutputMessage | Should -Be "Output|Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
             }
 
             It "keeps a newer writable index when the supplied local index is older" {
@@ -81,7 +80,7 @@ Describe $CommandName -Tag IntegrationTests {
 
                 Should -Invoke Copy-Item -Times 0 -Exactly
                 [IO.File]::Exists($script:testWritable) | Should -BeFalse
-                Should -Invoke Write-Message -Times 0 -Exactly -ParameterFilter { "$Level" -eq "Output" }
+                $script:testOutputMessage | Should -BeNullOrEmpty
             }
         }
     }
