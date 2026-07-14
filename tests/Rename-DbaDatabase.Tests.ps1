@@ -19,7 +19,11 @@ Describe $CommandName -Tag UnitTests {
                 "DatabaseName",
                 "FileGroupName",
                 "LogicalName",
+                "LogicalNameRows",
+                "LogicalNameLog",
                 "FileName",
+                "FileNameRows",
+                "FileNameLog",
                 "ReplaceBefore",
                 "Force",
                 "Move",
@@ -29,6 +33,85 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Type-specific file templates" {
+            BeforeEach {
+                function New-MockRenameDatabase {
+                    $server = [PSCustomObject]@{
+                        ComputerName       = "localhost"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "localhost"
+                        Name               = "localhost"
+                        Databases          = @([PSCustomObject]@{ Name = "testdb" })
+                    }
+                    $server.PSObject.TypeNames.Insert(0, "Microsoft.SqlServer.Management.Smo.Server")
+                    $dataFile = [PSCustomObject]@{
+                        Name     = "olddata"
+                        FileName = "C:\data\olddata.mdf"
+                    }
+                    $logFile = [PSCustomObject]@{
+                        Name     = "oldlog"
+                        FileName = "C:\data\oldlog.ldf"
+                    }
+                    $fileGroup = [PSCustomObject]@{
+                        Name          = "PRIMARY"
+                        FileGroupType = "RowsFileGroup"
+                        Files         = @($dataFile)
+                    }
+
+                    $database = New-Object Microsoft.SqlServer.Management.Smo.Database
+                    $database.Name = "testdb"
+                    $database | Add-Member -Force -NotePropertyName Parent -NotePropertyValue $server
+                    $database | Add-Member -Force -NotePropertyName IsAccessible -NotePropertyValue $true
+                    $database | Add-Member -Force -NotePropertyName IsMirroringEnabled -NotePropertyValue $false
+                    $database | Add-Member -Force -NotePropertyName AvailabilityGroupName -NotePropertyValue ""
+                    $database | Add-Member -Force -NotePropertyName FileGroups -NotePropertyValue @($fileGroup)
+                    $database | Add-Member -Force -NotePropertyName LogFiles -NotePropertyValue @($logFile)
+
+                    $database
+                }
+
+                Mock Get-DbaFile { @() }
+            }
+
+            It "uses row and log overrides for logical names" {
+                $database = New-MockRenameDatabase
+
+                $result = Rename-DbaDatabase -InputObject $database -LogicalNameRows "<DBN>_data" -LogicalNameLog "<DBN>_log" -Preview -Confirm:$false
+
+                $result.LGN["olddata"] | Should -Be "testdb_data"
+                $result.LGN["oldlog"] | Should -Be "testdb_log"
+            }
+
+            It "uses the default logical template when no row override is supplied" {
+                $database = New-MockRenameDatabase
+
+                $result = Rename-DbaDatabase -InputObject $database -LogicalName "<DBN>_<FT>" -LogicalNameLog "<DBN>_journal" -Preview -Confirm:$false
+
+                $result.LGN["olddata"] | Should -Be "testdb_ROWS"
+                $result.LGN["oldlog"] | Should -Be "testdb_journal"
+            }
+
+            It "uses row and log overrides for physical file names" {
+                $database = New-MockRenameDatabase
+
+                $result = Rename-DbaDatabase -InputObject $database -FileNameRows "<DBN>_data" -FileNameLog "<DBN>_log" -Preview -Confirm:$false
+
+                $result.FNN["C:\data\olddata.mdf"] | Should -Be "C:\data\testdb_data.mdf"
+                $result.FNN["C:\data\oldlog.ldf"] | Should -Be "C:\data\testdb_log.ldf"
+            }
+
+            It "uses the default physical template when no row override is supplied" {
+                $database = New-MockRenameDatabase
+
+                $result = Rename-DbaDatabase -InputObject $database -FileName "<DBN>_<FT>" -FileNameLog "<DBN>_journal" -Preview -Confirm:$false
+
+                $result.FNN["C:\data\olddata.mdf"] | Should -Be "C:\data\testdb_ROWS.mdf"
+                $result.FNN["C:\data\oldlog.ldf"] | Should -Be "C:\data\testdb_journal.ldf"
+            }
         }
     }
 }
