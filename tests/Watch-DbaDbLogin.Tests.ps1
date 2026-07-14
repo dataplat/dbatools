@@ -74,15 +74,15 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeNullOrEmpty
         }
 
-        It "preserves the validation warning before an EnableException error" {
+        It "preserves the validation warning and silent error" {
             $validationWarnings = @()
             $expectedMessage = "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
 
-            { Watch-DbaDbLogin -EnableException -ErrorAction Stop -WarningVariable validationWarnings } |
-                Should -Throw -ExpectedMessage $expectedMessage
+            Watch-DbaDbLogin -WarningVariable validationWarnings
 
             $validationWarnings.Count | Should -Be 1
             $validationWarnings[0].ToString() | Should -BeLike "*[Watch-DbaDbLogin] $expectedMessage"
+            $Error[0].FullyQualifiedErrorId | Should -Be "dbatools_Watch-DbaDbLogin"
         }
     }
 }
