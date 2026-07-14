@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "Collation",
                 "Recoverymodel",
+                "ContainmentType",
                 "Owner",
                 "DataFilePath",
                 "LogFilePath",
@@ -174,6 +175,24 @@ Describe $CommandName -Tag UnitTests {
                 $script:executedPathQueries | Should -BeNullOrEmpty
                 $script:createdDataFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/data/db1.mdf"
                 $script:createdLogFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/log/db1_log.ldf"
+            }
+
+            It "sets containment type before database creation" {
+                Mock New-Object {
+                    $script:createdDatabase = [PSCustomObject]@{
+                        Name            = $ArgumentList[1]
+                        ContainmentType = $null
+                        Filegroups      = New-MockCollection
+                        LogFiles        = New-MockCollection
+                    }
+                    $script:createdDatabase
+                } -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.Smo.Database"
+                } -ModuleName dbatools
+
+                $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -ContainmentType "Partial" -DataFilePath "C:\" -LogFilePath "L:\" -WhatIf
+
+                $script:createdDatabase.ContainmentType | Should -Be "Partial"
             }
         }
     }
