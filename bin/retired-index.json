@@ -964,6 +964,11 @@
     "retiredPath": "private/retired/Test-DbaConnection.ps1",
     "flippedUtc": "2026-07-12T18:13:26Z"
   },
+  "Test-DbaConnectionAuthScheme": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaConnectionAuthScheme.ps1",
+    "flippedUtc": "2026-07-14T19:06:32Z"
+  },
   "Test-DbaKerberos": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",

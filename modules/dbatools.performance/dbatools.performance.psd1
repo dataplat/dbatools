@@ -98,7 +98,8 @@
         'Set-DbaRgWorkloadGroup',
         'Start-DbaPfDataCollectorSet',
         'Stop-DbaPfDataCollectorSet',
-        'Test-DbaBuild'
+        'Test-DbaBuild',
+        'Test-DbaConnectionAuthScheme'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

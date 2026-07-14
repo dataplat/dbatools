@@ -509,7 +509,6 @@
         'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaCmConnection',
-        'Test-DbaConnectionAuthScheme',
         'Test-DbaDbCollation',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCompression',
