@@ -1034,6 +1034,11 @@
     "retiredPath": "private/retired/Test-DbaSpn.ps1",
     "flippedUtc": "2026-07-09T22:01:50Z"
   },
+  "Test-DbaTempDbConfig": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaTempDbConfig.ps1",
+    "flippedUtc": "2026-07-14T21:16:41Z"
+  },
   "Unregister-DbatoolsConfig": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Unregister-DbatoolsConfig.ps1",

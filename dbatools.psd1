@@ -527,7 +527,6 @@
         'Test-DbaMaxMemory',
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',
-        'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
         'Update-DbaBuildReference',

@@ -107,7 +107,8 @@
         'Test-DbaInstantFileInitialization',
         'Test-DbaManagementObject',
         'Test-DbaNetworkLatency',
-        'Test-DbaOptimizeForAdHoc'
+        'Test-DbaOptimizeForAdHoc',
+        'Test-DbaTempDbConfig'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
