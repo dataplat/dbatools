@@ -160,6 +160,8 @@ function Test-DbaBackupInformation {
                 $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
                 $pathSep = Get-DbaPathSep -Server $RestoreInstance
                 foreach ($path in $DBHistoryPhysicalPaths) {
+                    # Managed Instance assigns a new path to orphaned memory-optimized containers during restore.
+                    $isManagedInstanceXtpContainer = $RestoreInstance.DatabaseEngineEdition -eq "SqlManagedInstance" -and $path -like "*.xtp"
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
                         if ($path -in $DBFileCheck) {
                             #If the Files are owned by the db we're restoring check for Continue or WithReplace. If not, then report error otherwise just carry on
@@ -170,7 +172,7 @@ function Test-DbaBackupInformation {
                         } elseif ($path -in $OtherFileCheck) {
                             Write-Message -Message "File $path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                             $VerificationErrors++
-                        } elseif ($path -in $DBHistoryPhysicalPathsExists -and $RestoreInstance.VersionMajor -gt 8) {
+                        } elseif ($path -in $DBHistoryPhysicalPathsExists -and $RestoreInstance.VersionMajor -gt 8 -and -not $isManagedInstanceXtpContainer) {
                             Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
                             $VerificationErrors++
                         }

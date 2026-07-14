@@ -23,6 +23,67 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Azure SQL Managed Instance file validation" {
+            BeforeEach {
+                $script:mockServer = [PSCustomObject]@{
+                    Name                  = "sqlmi"
+                    ComputerName          = "sqlmi"
+                    VersionMajor          = 12
+                    DatabaseEngineEdition = "SqlManagedInstance"
+                    ServiceAccount        = ""
+                }
+                $script:mockServer.PSObject.TypeNames.Insert(0, "Microsoft.SqlServer.Management.Smo.Server")
+                $script:backupHistory = [PSCustomObject]@{
+                    Database         = "testdb"
+                    OriginalDatabase = "testdb"
+                    FileList         = @(
+                        [PSCustomObject]@{
+                            PhysicalName = "C:\data\orphan.xtp"
+                        }
+                    )
+                    FullName         = "https://storage/backups/testdb.bak"
+                }
+
+                Mock Connect-DbaInstance { $script:mockServer }
+                Mock Get-DbaDbPhysicalFile { @() }
+                Mock Get-DbaDatabase { $null }
+                Mock Get-DbaPathSep { "\" }
+                Mock Test-DbaLsnChain { $true }
+                Mock Test-DbaPath {
+                    $Path | ForEach-Object {
+                        [PSCustomObject]@{
+                            FilePath   = $PSItem
+                            FileExists = $true
+                        }
+                    }
+                }
+            }
+
+            It "allows an orphaned XTP container because Managed Instance assigns a new path" {
+                $output = $script:backupHistory | Test-DbaBackupInformation -SqlInstance "sqlmi" -WarningAction SilentlyContinue
+
+                $output.IsVerified | Should -BeTrue
+            }
+
+            It "continues to reject other orphaned files on Managed Instance" {
+                $script:backupHistory.FileList[0].PhysicalName = "C:\data\orphan.mdf"
+
+                $output = $script:backupHistory | Test-DbaBackupInformation -SqlInstance "sqlmi" -WarningAction SilentlyContinue
+
+                $output.IsVerified | Should -BeFalse
+            }
+
+            It "continues to reject orphaned XTP containers outside Managed Instance" {
+                $script:mockServer.DatabaseEngineEdition = "Enterprise"
+
+                $output = $script:backupHistory | Test-DbaBackupInformation -SqlInstance "sql1" -WarningAction SilentlyContinue
+
+                $output.IsVerified | Should -BeFalse
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
