@@ -939,6 +939,11 @@
     "retiredPath": "private/retired/Start-DbaPfDataCollectorSet.ps1",
     "flippedUtc": "2026-07-14T18:23:28Z"
   },
+  "Stop-DbaPfDataCollectorSet": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Stop-DbaPfDataCollectorSet.ps1",
+    "flippedUtc": "2026-07-14T18:38:10Z"
+  },
   "Test-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",

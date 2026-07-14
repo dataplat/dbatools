@@ -497,7 +497,6 @@
         'Stop-DbaAgentJob',
         'Stop-DbaEndpoint',
         'Stop-DbaExternalProcess',
-        'Stop-DbaPfDataCollectorSet',
         'Stop-DbaProcess',
         'Stop-DbaService',
         'Stop-DbaTrace',

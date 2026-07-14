@@ -96,7 +96,8 @@
         'Set-DbaResourceGovernor',
         'Set-DbaRgResourcePool',
         'Set-DbaRgWorkloadGroup',
-        'Start-DbaPfDataCollectorSet'
+        'Start-DbaPfDataCollectorSet',
+        'Stop-DbaPfDataCollectorSet'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
