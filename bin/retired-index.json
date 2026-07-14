@@ -989,6 +989,11 @@
     "retiredPath": "private/retired/Test-DbaDiskSpeed.ps1",
     "flippedUtc": "2026-07-14T19:58:10Z"
   },
+  "Test-DbaInstantFileInitialization": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaInstantFileInitialization.ps1",
+    "flippedUtc": "2026-07-14T20:23:00Z"
+  },
   "Test-DbaKerberos": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",

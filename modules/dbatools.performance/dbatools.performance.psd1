@@ -103,7 +103,8 @@
         'Test-DbaDbCompression',
         'Test-DbaDiskAlignment',
         'Test-DbaDiskAllocation',
-        'Test-DbaDiskSpeed'
+        'Test-DbaDiskSpeed',
+        'Test-DbaInstantFileInitialization'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
