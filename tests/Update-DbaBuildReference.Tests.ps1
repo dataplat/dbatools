@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
                     "$Path" -eq $script:testOriginal -and "$Destination" -eq $script:testWritable -and $Force -and "$ErrorAction" -eq "Stop"
                 }
                 [IO.File]::Exists($script:testWritable) | Should -BeTrue
-                ([IO.File]::ReadAllText($script:testWritable) | ConvertFrom-Json).LastUpdated | Should -Be "2025-01-01T00:00:00"
+                ([datetime]([IO.File]::ReadAllText($script:testWritable) | ConvertFrom-Json).LastUpdated).ToString("s") | Should -Be "2025-01-01T00:00:00"
                 Should -Invoke Write-Message -Times 1 -Exactly -ParameterFilter {
                     "$Level" -eq "Output" -and $Message -like "Index updated correctly, last update on: 2025-01-01T00:00:00, was 2024-01-01T00:00:00"
                 }
