@@ -999,6 +999,11 @@
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",
     "flippedUtc": "2026-07-10T22:57:02Z"
   },
+  "Test-DbaManagementObject": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Test-DbaManagementObject.ps1",
+    "flippedUtc": "2026-07-14T20:33:14Z"
+  },
   "Test-DbaNetworkCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaNetworkCertificate.ps1",

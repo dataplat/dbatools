@@ -523,7 +523,6 @@
         'Test-DbaLastBackup',
         'Test-DbaLinkedServerConnection',
         'Test-DbaLoginPassword',
-        'Test-DbaManagementObject',
         'Test-DbaMaxDop',
         'Test-DbaMaxMemory',
         'Test-DbaMigrationConstraint',
