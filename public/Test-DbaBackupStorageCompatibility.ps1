@@ -176,51 +176,13 @@ function Test-DbaBackupStorageCompatibility {
                     $effectiveBackupSizeBytes = $backupSizeBytes
                 }
 
-                $estimatedPartsPerFile = [long][Math]::Ceiling($effectiveBackupSizeBytes / $backupFileCount / $MaxTransferSize)
-                $percentOfLimit = [Math]::Round(($estimatedPartsPerFile / [decimal]10000) * 100, 2)
-                $partLimitExceeded = $estimatedPartsPerFile -gt 10000
-                $fileLimitExceeded = $backupFileCount -gt 64
-                $isCompatible = -not ($partLimitExceeded -or $fileLimitExceeded)
-
-                if ($partLimitExceeded -and $fileLimitExceeded) {
-                    $status = "ExceedsLimits"
-                } elseif ($partLimitExceeded) {
-                    $status = "ExceedsPartLimit"
-                } elseif ($fileLimitExceeded) {
-                    $status = "ExceedsFileLimit"
-                } elseif ($percentOfLimit -ge $Threshold) {
-                    $status = "Warning"
-                } else {
-                    $status = "Compatible"
+                $splatEstimate = @{
+                    EffectiveBackupSizeBytes = $effectiveBackupSizeBytes
+                    BackupFileCount          = $backupFileCount
+                    MaxTransferSize          = $MaxTransferSize
+                    Threshold                = $Threshold
                 }
-
-                $recommendedFileCount = $null
-                $recommendedMaxTransferSize = $null
-                $recommendation = $null
-                if ($fileLimitExceeded) {
-                    $recommendedFileCount = 64
-                    $recommendation = "S3-compatible backups support at most 64 URLs. Reduce the backup file count and recalculate the estimated parts per file."
-                }
-                if ($partLimitExceeded) {
-                    $requiredFiles = [int][Math]::Ceiling($effectiveBackupSizeBytes / ([decimal]10000 * $MaxTransferSize))
-                    if ($requiredFiles -le 64) {
-                        $recommendedFileCount = $requiredFiles
-                        $recommendation = "Use at least $requiredFiles S3 URLs at the current MAXTRANSFERSIZE."
-                    } elseif ($MaxTransferSize -lt 20971520) {
-                        $requiredFilesAtMaximum = [int][Math]::Ceiling($effectiveBackupSizeBytes / ([decimal]10000 * 20971520))
-                        if ($requiredFilesAtMaximum -le 64) {
-                            $recommendedFileCount = $requiredFilesAtMaximum
-                            $recommendedMaxTransferSize = 20971520
-                            $recommendation = "Use MAXTRANSFERSIZE 20971520 with backup compression and at least $requiredFilesAtMaximum S3 URLs."
-                        } else {
-                            $recommendation = "The current effective backup size exceeds the S3 multipart limit even at 20 MiB and 64 URLs. Reduce backup size with compression or change the backup design."
-                        }
-                    } else {
-                        $recommendation = "The current effective backup size exceeds the S3 multipart limit at the selected MAXTRANSFERSIZE. Reduce backup size with compression or change the backup design."
-                    }
-                } elseif ($status -eq "Warning") {
-                    $recommendation = "The estimate is approaching the 10,000-part limit. Monitor backup growth or increase the file count before moving this backup to S3-compatible storage."
-                }
+                $estimate = Get-DbaS3BackupStorageEstimate @splatEstimate
 
                 $result = [PSCustomObject]@{
                     ComputerName                    = $server.ComputerName
@@ -234,17 +196,17 @@ function Test-DbaBackupStorageCompatibility {
                     EffectiveBackupSizeBytes        = $effectiveBackupSizeBytes
                     BackupFileCount                 = $backupFileCount
                     MaxTransferSize                 = $MaxTransferSize
-                    EstimatedPartsPerFile           = $estimatedPartsPerFile
-                    PercentOfLimit                  = $percentOfLimit
-                    IsCompatible                    = $isCompatible
-                    Status                          = $status
-                    RecommendedFileCount            = $recommendedFileCount
-                    RecommendedMaxTransferSizeBytes = $recommendedMaxTransferSize
-                    Recommendation                  = $recommendation
+                    EstimatedPartsPerFile           = $estimate.EstimatedPartsPerFile
+                    PercentOfLimit                  = $estimate.PercentOfLimit
+                    IsCompatible                    = $estimate.IsCompatible
+                    Status                          = $estimate.Status
+                    RecommendedFileCount            = $estimate.RecommendedFileCount
+                    RecommendedMaxTransferSizeBytes = $estimate.RecommendedMaxTransferSizeBytes
+                    Recommendation                  = $estimate.Recommendation
                 }
 
                 if ($Monitor) {
-                    if ($status -ne "Compatible") {
+                    if ($estimate.Status -ne "Compatible") {
                         $monitorProblemCount++
                         $result
                     }
