@@ -599,9 +599,8 @@ GROUP BY sd.secondary_database, ls.restore_job_id, sj.name, sj.enabled;
             $firstDatabaseState.State | Should -Be "RESTORING"
             $secondDatabaseState.State | Should -Be "RESTORING"
 
-            $duplicateResult = Invoke-DbaDbLogShipping @splatAddSecondary
-            $duplicateResult.Result | Should -Be "Failed"
-            $duplicateResult.Comment | Should -BeLike "*already associated*"
+            $splatAddSecondary.EnableException = $true
+            { Invoke-DbaDbLogShipping @splatAddSecondary } | Should -Throw "*already associated*"
             $associationsAfterDuplicate = @(Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $associationQuery -EnableException)
             $associationsAfterDuplicate.Count | Should -Be 2
 
@@ -624,9 +623,9 @@ GROUP BY sd.secondary_database, ls.restore_job_id, sj.name, sj.enabled;
                     foreach ($association in $cleanupAssociations) {
                         $escapedSecondaryServer = "$($association.SecondaryServer)".Replace("'", "''")
                         $escapedSecondaryDatabase = "$($association.SecondaryDatabase)".Replace("'", "''")
-                        $primaryServer.Query("USE [master]; EXEC msdb.dbo.sp_delete_log_shipping_primary_secondary @primary_database = N'$escapedDbName', @secondary_server = N'$escapedSecondaryServer', @secondary_database = N'$escapedSecondaryDatabase'")
+                        $primaryServer.Databases["master"].Query("EXEC dbo.sp_delete_log_shipping_primary_secondary @primary_database = N'$escapedDbName', @secondary_server = N'$escapedSecondaryServer', @secondary_database = N'$escapedSecondaryDatabase'")
                     }
-                    $primaryServer.Query("USE [master]; IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = N'$escapedDbName') EXEC msdb.dbo.sp_delete_log_shipping_primary_database @database = N'$escapedDbName'")
+                    $primaryServer.Databases["master"].Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = N'$escapedDbName') EXEC dbo.sp_delete_log_shipping_primary_database @database = N'$escapedDbName'")
                 } catch {
                     Write-Warning "Unable to remove primary log-shipping metadata for ${dbName}: $($_.Exception.Message)"
                 }
@@ -641,7 +640,7 @@ GROUP BY sd.secondary_database, ls.restore_job_id, sj.name, sj.enabled;
                 }
 
                 try {
-                    $secondary.Server.Query("USE [master]; IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = N'$($secondary.EscapedDatabase)') EXEC msdb.dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($secondary.EscapedDatabase)'")
+                    $secondary.Server.Databases["master"].Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = N'$($secondary.EscapedDatabase)') EXEC dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($secondary.EscapedDatabase)'")
                 } catch {
                     Write-Warning "Unable to remove secondary log-shipping metadata for $($secondary.Database): $($_.Exception.Message)"
                 }
