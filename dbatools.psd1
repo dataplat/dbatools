@@ -165,7 +165,6 @@
         'Get-DbaAgBackupHistory',
         'Get-DbaAgDatabase',
         'Get-DbaAgDatabaseReplicaState',
-        'Get-DbaAgentJobCategory',
         'Get-DbaAgentJobHistory',
         'Get-DbaAgentJobOutputFile',
         'Get-DbaAgentJobStep',
