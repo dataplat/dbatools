@@ -107,10 +107,12 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Force
 
             # Both jobs should be copied
-            $results.Name | Should -Contain "dbatoolsci_copyjob"
-            $results.Name | Should -Contain "dbatoolsci_copyjob_disabled"
-            $results.Status | Should -Not -Contain "Skipped"
-            $results.Status | Should -Not -Contain "Failed"
+            $fixtureResults = @($results | Where-Object Name -in "dbatoolsci_copyjob", "dbatoolsci_copyjob_disabled")
+            $fixtureResults.Name | Should -Contain "dbatoolsci_copyjob"
+            $fixtureResults.Name | Should -Contain "dbatoolsci_copyjob_disabled"
+            $fixtureResults.Count | Should -Be 2
+            $fixtureResults.Status | Should -Not -Contain "Skipped"
+            $fixtureResults.Status | Should -Not -Contain "Failed"
 
             # Verify jobs exist on destination
             $destJobsCopied = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
