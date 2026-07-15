@@ -67,6 +67,7 @@ function Copy-DbaDbTableData {
     .PARAMETER AutoCreateTable
         Automatically creates the destination table if it doesn't exist, using the same structure as the source table.
         Essential for initial data migrations or when copying to new environments where destination tables haven't been created yet.
+        Azure external source tables are created as ordinary destination tables containing only the source column names, data types, collations, and nullability.
 
     .PARAMETER BatchSize
         Number of rows to process in each bulk copy batch. Defaults to 50000 rows.
@@ -412,6 +413,15 @@ function Copy-DbaDbTableData {
                         $tablescript = $null
                         $schemaNameToReplace = $null
                         $tableNameToReplace = $null
+                        $isExternalTableScript = $false
+                        $isExternalTable = $false
+                        if (Test-Bound -Not -ParameterName View) {
+                            try {
+                                $isExternalTable = $sqlObject.IsExternal
+                            } catch {
+                                Write-Message -Level Debug -Message "Unable to retrieve IsExternal for $sqlObject; using standard table scripting. Error: $_"
+                            }
+                        }
                         if ( Test-Bound -ParameterName View ) {
                             #select view into tempdb to generate script
                             $tempTableName = "$($sqlObject.Name)_table"
@@ -428,6 +438,103 @@ function Copy-DbaDbTableData {
                                 Out-String
                             # cleanup
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
+                        } elseif ($isExternalTable) {
+                            $columnDefinitions = foreach ($column in $sqlObject.Columns) {
+                                $columnName = $column.Name.Replace("]", "]]")
+                                $dataType = $column.DataType
+                                $dataTypeName = $dataType.Name
+                                $sqlDataType = $dataType.SqlDataType.ToString()
+
+                                if ([string]::IsNullOrEmpty($dataTypeName) -or [string]::IsNullOrEmpty($sqlDataType)) {
+                                    throw "Unable to render data type for external table column $($column.Name)."
+                                }
+
+                                switch -Regex ($sqlDataType) {
+                                    "^(Binary|Char|NChar|NVarChar|VarBinary|VarChar)$" {
+                                        if ($dataType.MaximumLength -lt 0) {
+                                            $dataTypeDeclaration = "$dataTypeName(max)"
+                                        } else {
+                                            $dataTypeDeclaration = "$dataTypeName($($dataType.MaximumLength))"
+                                        }
+                                        break
+                                    }
+                                    "^(NVarCharMax|VarBinaryMax|VarCharMax)$" {
+                                        $dataTypeDeclaration = "$dataTypeName(max)"
+                                        break
+                                    }
+                                    "^(Decimal|Numeric)$" {
+                                        $dataTypeDeclaration = "$dataTypeName($($dataType.NumericPrecision),$($dataType.NumericScale))"
+                                        break
+                                    }
+                                    "^(DateTime2|DateTimeOffset|Time)$" {
+                                        $dataTypeDeclaration = "$dataTypeName($($dataType.NumericScale))"
+                                        break
+                                    }
+                                    "Float" {
+                                        if ($dataType.NumericPrecision -gt 0) {
+                                            $dataTypeDeclaration = "$dataTypeName($($dataType.NumericPrecision))"
+                                        } else {
+                                            $dataTypeDeclaration = $dataTypeName
+                                        }
+                                        break
+                                    }
+                                    "^(UserDefinedDataType|UserDefinedType)$" {
+                                        $escapedTypeName = $dataTypeName.Replace("]", "]]")
+                                        if ($dataType.Schema) {
+                                            $escapedTypeSchema = $dataType.Schema.Replace("]", "]]")
+                                            $dataTypeDeclaration = "[$escapedTypeSchema].[$escapedTypeName]"
+                                        } else {
+                                            $dataTypeDeclaration = "[$escapedTypeName]"
+                                        }
+                                        break
+                                    }
+                                    "Vector" {
+                                        if ($dataType.VectorDimensions -le 0) {
+                                            throw "Unable to render vector dimensions for external table column $($column.Name)."
+                                        }
+                                        if ($dataType.VectorBaseType) {
+                                            $dataTypeDeclaration = "$dataTypeName($($dataType.VectorDimensions), $($dataType.VectorBaseType))"
+                                        } else {
+                                            $dataTypeDeclaration = "$dataTypeName($($dataType.VectorDimensions))"
+                                        }
+                                        break
+                                    }
+                                    default {
+                                        $dataTypeDeclaration = $dataTypeName
+                                    }
+                                }
+
+                                if ($column.Collation) {
+                                    $collationClause = " COLLATE $($column.Collation)"
+                                } else {
+                                    $collationClause = ""
+                                }
+                                if ($column.Nullable) {
+                                    $nullability = "NULL"
+                                } else {
+                                    $nullability = "NOT NULL"
+                                }
+                                "    [$columnName] $dataTypeDeclaration$collationClause $nullability"
+                            }
+
+                            if (-not $columnDefinitions) {
+                                throw "Unable to render external table $sqlObject because it has no columns."
+                            }
+
+                            if ($newTableParts.Schema) {
+                                $targetSchema = $newTableParts.Schema
+                            } else {
+                                $targetSchema = $sqlObject.Schema
+                            }
+                            if ($newTableParts.Name) {
+                                $targetName = $newTableParts.Name
+                            } else {
+                                $targetName = $sqlObject.Name
+                            }
+                            $escapedSchema = $targetSchema.Replace("]", "]]")
+                            $escapedName = $targetName.Replace("]", "]]")
+                            $tablescript = "CREATE TABLE [$escapedSchema].[$escapedName] (`n$($columnDefinitions -join ",`n")`n);"
+                            $isExternalTableScript = $true
                         } else {
                             $tablescript = $sqlObject |
                                 Export-DbaScript @defaultFGScriptingOption -Passthru |
@@ -436,15 +543,17 @@ function Copy-DbaDbTableData {
                             $tableNameToReplace = $sqlObject.Name
                         }
 
-                        #replacing table name
-                        if ($newTableParts.Name) {
-                            $rX = "(CREATE|ALTER)( TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\])"
-                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Name)`${3}"
-                        }
-                        #replacing table schema
-                        if ($newTableParts.Schema) {
-                            $rX = "(CREATE|ALTER)( TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\])"
-                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Schema)`${3}"
+                        if (-not $isExternalTableScript) {
+                            #replacing table name
+                            if ($newTableParts.Name) {
+                                $rX = "(CREATE|ALTER)( TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\])"
+                                $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Name)`${3}"
+                            }
+                            #replacing table schema
+                            if ($newTableParts.Schema) {
+                                $rX = "(CREATE|ALTER)( TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\])"
+                                $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Schema)`${3}"
+                            }
                         }
 
                         if ($PSCmdlet.ShouldProcess($destServer, "Creating new table: $DestinationTable")) {
