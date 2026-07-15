@@ -277,9 +277,8 @@ ORDER BY file_id;
             foreach ($fileToRemove in $filesToRemove) {
                 $escapedLogicalName = $fileToRemove.LogicalName.Replace("'", "''")
                 $escapedIdentifier = $fileToRemove.LogicalName.Replace("]", "]]")
-                $escapedMessageName = $escapedLogicalName.Replace("%", "%%")
                 $removalSql += "USE [tempdb]; DBCC SHRINKFILE (N'$escapedLogicalName', EMPTYFILE);"
-                $removalSql += "USE [tempdb]; IF FILEPROPERTY(N'$escapedLogicalName', 'SpaceUsed') = 0 BEGIN ALTER DATABASE tempdb REMOVE FILE [$escapedIdentifier]; END ELSE BEGIN RAISERROR('Unable to empty tempdb file $escapedMessageName.', 16, 1); END;"
+                $removalSql += "USE [tempdb]; ALTER DATABASE tempdb REMOVE FILE [$escapedIdentifier];"
             }
 
             $DataFiles = @($filesToKeep | Sort-Object FileId | Select-Object LogicalName, PhysicalName)
