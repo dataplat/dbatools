@@ -148,10 +148,10 @@ $result.Notes | Should -Not -BeNullOrEmpty
 - `$TestConfig.InstanceRestart`
 - Windows LocalMachine certificate store and SQL Server instance registry configuration
 
-- [ ] Remove the mock-backed `RestartService` and `Force` contexts from `Set-DbaNetworkCertificate.Tests.ps1`; retain the existing real certificate lifecycle fixture.
-- [ ] Add a real `Force` case that creates a self-signed LocalMachine certificate whose DNS name does not match the restart instance, verifies `Test-DbaNetworkCertificate` reports it unsuitable, applies it by thumbprint with `-Force`, and verifies the configured thumbprint through `Test-DbaNetworkCertificate`.
-- [ ] Use the existing suitable-certificate pipeline/restart case to cover service restart behavior; do not assert an internal command invocation.
-- [ ] Unset the configured certificate and remove all created certificates in `AfterAll`.
+- [x] Remove the mock-backed `RestartService` and `Force` contexts from `Set-DbaNetworkCertificate.Tests.ps1`; retain the existing real certificate lifecycle fixture.
+- [x] Add a real `Force` case that creates a self-signed LocalMachine document-encryption certificate without the required Server Authentication EKU, verifies `Test-DbaNetworkCertificate` reports it unsuitable, applies it by thumbprint with `-Force`, and verifies the configured thumbprint through `Test-DbaNetworkCertificate`.
+- [x] Use the existing suitable-certificate pipeline/restart case to cover service restart behavior; do not assert an internal command invocation.
+- [x] Unset the configured certificate and remove all created certificates in `AfterAll`.
 
 ```powershell
 $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $unsuitableCertificate.Thumbprint -Force -Confirm:$false -EnableException
@@ -160,11 +160,12 @@ $result.CertificateThumbprint | Should -Be $unsuitableCertificate.Thumbprint
     Should -Be $unsuitableCertificate.Thumbprint
 ```
 
-- [ ] Remove the accepted-SPN mocks from both Extended Protection test files and remove the older mocked `IntegrationTests` context in the setter while the file is being repaired.
-- [ ] In each real fixture, capture the original Extended Protection value and accepted SPNs from `$TestConfig.InstanceRestart` and restore both in `AfterAll`.
-- [ ] In `Get-DbaExtendedProtection.Tests.ps1`, write two accepted SPNs with the real setter and assert the getter returns two individual values.
-- [ ] In `Set-DbaExtendedProtection.Tests.ps1`, assert writing `Required` plus two SPNs round-trips through the getter; changing only `Value` preserves SPNs; changing only `AcceptedSpn` preserves the Extended Protection value; and an empty string clears the registry value.
+- [x] Remove the accepted-SPN mocks from both Extended Protection test files and remove the older mocked `IntegrationTests` context in the setter while the file is being repaired.
+- [x] In each real fixture, capture the original Extended Protection value and accepted SPNs from `$TestConfig.InstanceRestart` and restore both in `AfterAll`.
+- [x] In `Get-DbaExtendedProtection.Tests.ps1`, write two accepted SPNs with the real setter and assert the getter returns two individual values.
+- [x] In `Set-DbaExtendedProtection.Tests.ps1`, assert writing `Required` plus two SPNs round-trips through the getter; changing only `Value` preserves SPNs; changing only `AcceptedSpn` preserves the Extended Protection value; and an empty string clears the registry value.
 - [ ] Run all three focused files on the `RESTART` runner; expect zero failed tests and confirm original registry/certificate state is restored.
+  - [x] Parse and forbidden-construct scans pass locally. A real local Extended Protection run reached the registry boundary and failed because the desktop console is not UAC-elevated; final execution remains assigned to the elevated `RESTART` runner.
 - [ ] Commit: `Tests - Use real certificate and registry boundaries` with body `(do none)`.
 
 ---

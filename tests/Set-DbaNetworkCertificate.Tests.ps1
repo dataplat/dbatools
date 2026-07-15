@@ -24,120 +24,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    InModuleScope dbatools {
-        Context "RestartService" {
-            BeforeEach {
-                $script:serviceCredential = New-Object System.Management.Automation.PSCredential(
-                    "sql1\svc-sql",
-                    (ConvertTo-SecureString "Password123!" -AsPlainText -Force)
-                )
-                $script:certificateThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
-
-                Mock Test-FunctionInterrupt { $false }
-                Mock Test-DbaNetworkCertificate {
-                    [PSCustomObject]@{
-                        ComputerName                    = "sql1"
-                        InstanceName                    = "MSSQLSERVER"
-                        SqlInstance                     = "sql1"
-                        ConfiguredCertificateThumbprint = $null
-                        ConfiguredCertificateValid      = $false
-                        SuitableCertificateAvailable    = $true
-                        SuitableCertificateCount        = 1
-                        SuitableCertificates            = [PSCustomObject]@{
-                            Thumbprint = $script:certificateThumbprint
-                        }
-                    }
-                }
-                Mock Invoke-Command2 {
-                    [PSCustomObject]@{
-                        Verbose        = @()
-                        Exception      = $null
-                        ServiceAccount = "sql1\svc-sql"
-                    }
-                }
-                Mock Restart-DbaService { }
-            }
-
-            It "passes Credential to Restart-DbaService when RestartService is used" {
-                $splatSetNetworkCertificate = @{
-                    SqlInstance    = "sql1"
-                    Credential     = $script:serviceCredential
-                    RestartService = $true
-                    Confirm        = $false
-                }
-
-                $result = Set-DbaNetworkCertificate @splatSetNetworkCertificate
-
-                $result.CertificateThumbprint | Should -Be $script:certificateThumbprint
-                Should -Invoke -CommandName Restart-DbaService -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                    $SqlInstance.FullName -eq "sql1" -and
-                    $Credential -eq $script:serviceCredential -and
-                    $Type -eq "Engine" -and
-                    $Force -and
-                    $EnableException
-                }
-            }
-        }
-
-        Context "Force" {
-            BeforeEach {
-                $script:certificateThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
-
-                Mock Test-FunctionInterrupt { $false }
-                Mock Test-DbaNetworkCertificate {
-                    if ($Thumbprint) {
-                        [PSCustomObject]@{
-                            CertificateFound        = $true
-                            KeyUsagesValid          = $true
-                            DnsNamesValid           = $false
-                            PrivateKeyValid         = $true
-                            PublicKeyValid          = $true
-                            SignatureAlgorithmValid = $false
-                            EnhancedKeyUsageValid   = $true
-                            ValidityPeriodOk        = $true
-                        }
-                    } else {
-                        [PSCustomObject]@{
-                            ComputerName                    = "sql1"
-                            InstanceName                    = "MSSQLSERVER"
-                            SqlInstance                     = "sql1"
-                            ConfiguredCertificateThumbprint = $null
-                            ConfiguredCertificateValid      = $false
-                            SuitableCertificateAvailable    = $false
-                            SuitableCertificateCount        = 0
-                            SuitableCertificates            = @()
-                        }
-                    }
-                }
-                Mock Invoke-Command2 {
-                    [PSCustomObject]@{
-                        Verbose        = @()
-                        Exception      = $null
-                        ServiceAccount = "sql1\svc-sql"
-                    }
-                }
-                Mock Write-Message { }
-            }
-
-            It "configures an existing certificate when suitability checks fail and Force is used" {
-                $splatSetNetworkCertificate = @{
-                    SqlInstance = "sql1"
-                    Thumbprint  = $script:certificateThumbprint
-                    Force       = $true
-                    Confirm     = $false
-                }
-
-                $result = Set-DbaNetworkCertificate @splatSetNetworkCertificate
-
-                $result.CertificateThumbprint | Should -Be $script:certificateThumbprint
-                Should -Invoke -CommandName Write-Message -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                    $Level -eq "Warning" -and
-                    $Message -match "DnsNamesInvalid, SignatureAlgorithmInvalid"
-                }
-                Should -Invoke -CommandName Invoke-Command2 -Exactly 1 -Scope It -ModuleName dbatools
-            }
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -146,6 +32,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
+        $script:createdNetworkCertificateThumbprints = @()
         $null = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -UnsetCertificate -RestartService
         $test = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart
         foreach ($cert in $test.SuitableCertificates) {
@@ -160,10 +47,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $null = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -UnsetCertificate -RestartService
         $test = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart
         foreach ($cert in $test.SuitableCertificates) {
             $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $cert.Thumbprint
         }
+        foreach ($thumbprint in $script:createdNetworkCertificateThumbprints) {
+            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $thumbprint
+        }
+        Remove-Variable -Name createdNetworkCertificateThumbprints -Scope Script -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -171,6 +63,32 @@ Describe $CommandName -Tag IntegrationTests {
         $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService -WarningAction SilentlyContinue
         $result | Should -BeNullOrEmpty
         $WarnVar | Should -Match "No suitable certificate found"
+    }
+
+    It "applies an unsuitable certificate when Force is used" {
+        $splatNewUnsuitableCertificate = @{
+            ComputerName           = $computerName
+            SelfSigned             = $true
+            DocumentEncryptionCert = $true
+            EnableException        = $true
+        }
+        $unsuitableCertificate = New-DbaComputerCertificate @splatNewUnsuitableCertificate
+        $script:createdNetworkCertificateThumbprints += $unsuitableCertificate.Thumbprint
+        $suitability = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $unsuitableCertificate.Thumbprint -EnableException
+        $suitability.EnhancedKeyUsageValid | Should -BeFalse
+
+        $splatSetUnsuitableCertificate = @{
+            SqlInstance     = $TestConfig.InstanceRestart
+            Thumbprint      = $unsuitableCertificate.Thumbprint
+            Force           = $true
+            Confirm         = $false
+            EnableException = $true
+        }
+        $result = Set-DbaNetworkCertificate @splatSetUnsuitableCertificate
+        $configuredCertificate = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -EnableException
+
+        $result.CertificateThumbprint | Should -Be $unsuitableCertificate.Thumbprint
+        $configuredCertificate.ConfiguredCertificateThumbprint | Should -Be $unsuitableCertificate.Thumbprint
     }
 
     It "Creates a first self-signed certificate and applies it" {
