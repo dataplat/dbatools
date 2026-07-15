@@ -129,6 +129,11 @@
     "retiredPath": "private/retired/Export-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-11T13:18:50Z"
   },
+  "Find-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Find-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-15T04:08:02Z"
+  },
   "Find-DbaDbDisabledIndex": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Find-DbaDbDisabledIndex.ps1",
