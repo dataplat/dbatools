@@ -419,6 +419,7 @@ function Copy-DbaDbTableData {
                             try {
                                 $isExternalTable = $sqlObject.IsExternal
                             } catch {
+                                # Older SMO builds can throw while retrieving IsExternal, so preserve the standard scripting path.
                                 Write-Message -Level Debug -Message "Unable to retrieve IsExternal for $sqlObject; using standard table scripting. Error: $_"
                             }
                         }

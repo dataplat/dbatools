@@ -1,0 +1,175 @@
+name: Run External Table Integration Tests
+
+on:
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - "**"
+    paths:
+      - "public/Copy-DbaDbTableData.ps1"
+      - "tests/Copy-DbaDbTableData.Tests.ps1"
+      - ".github/scripts/gh-external-table-actions.ps1"
+      - ".github/workflows/integration-tests-external-table.yml"
+  pull_request:
+    paths:
+      - "public/Copy-DbaDbTableData.ps1"
+      - "tests/Copy-DbaDbTableData.Tests.ps1"
+      - ".github/scripts/gh-external-table-actions.ps1"
+      - ".github/workflows/integration-tests-external-table.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-tests-external-table-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  external-table-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Read dbatools.library version
+        id: get-version
+        run: |
+          $versionConfig = Get-Content ".github/dbatools-library-version.json" | ConvertFrom-Json
+          $version = $versionConfig.version
+          $isPreview = $version -like "*preview*"
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "is_preview=$isPreview" >> $env:GITHUB_OUTPUT
+
+      - name: Install and cache dbatools.library
+        if: steps.get-version.outputs.is_preview == 'False'
+        uses: potatoqualitee/psmodulecache@9e4b63833c22c1768d648e115a9c849afdda22a5 # v6.3
+        with:
+          modules-to-cache: dbatools.library:${{ steps.get-version.outputs.version }}
+
+      - name: Install dbatools.library preview
+        if: steps.get-version.outputs.is_preview == 'True'
+        run: ./.github/scripts/install-dbatools-library.ps1
+
+      - name: Install Pester 6
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+
+      - name: Configure dbatools connections
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
+
+      - name: Create TLS certificate and Docker network
+        shell: bash
+        run: |
+          docker network create localnet
+          mkdir -p $HOME/.minio/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout $HOME/.minio/certs/private.key \
+            -out $HOME/.minio/certs/public.crt \
+            -subj "/CN=minio" \
+            -addext "subjectAltName=DNS:minio,DNS:localhost,IP:127.0.0.1"
+          chmod 600 $HOME/.minio/certs/private.key
+          chmod 644 $HOME/.minio/certs/public.crt
+
+      - name: Start MinIO and seed external data
+        shell: bash
+        run: |
+          docker run -d \
+            --name minio \
+            --hostname minio \
+            --network localnet \
+            -p 9000:9000 \
+            -v $HOME/.minio/certs:/root/.minio/certs:ro \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+
+          minio_ready=false
+          for i in {1..30}; do
+            if curl -sk https://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              minio_ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$minio_ready" != true ]; then
+            docker logs minio
+            exit 1
+          fi
+
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
+          chmod +x $HOME/mc
+          $HOME/mc alias set dbatoolsci https://localhost:9000 minioadmin minioadmin --insecure
+          $HOME/mc mb dbatoolsci/sqlbackups --insecure
+          printf '1|First order|12.3400\n2|Second order|56.7800\n' > /tmp/orders.csv
+          $HOME/mc cp /tmp/orders.csv dbatoolsci/sqlbackups/external/orders.csv --insecure
+          $HOME/mc stat dbatoolsci/sqlbackups/external/orders.csv --insecure
+
+      - name: Start SQL Server 2025 with MinIO trust
+        shell: bash
+        run: |
+          docker run -d \
+            --name mssql1 \
+            --hostname mssql1 \
+            --network localnet \
+            -p 1433:1433 \
+            -e ACCEPT_EULA=Y \
+            -e MSSQL_SA_PASSWORD=dbatools.IO \
+            mcr.microsoft.com/mssql/server:2025-latest
+
+          sql_ready=false
+          for i in {1..60}; do
+            if docker logs mssql1 2>&1 | grep -q "SQL Server is now ready for client connections"; then
+              sql_ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$sql_ready" != true ]; then
+            docker logs mssql1
+            exit 1
+          fi
+
+          docker cp $HOME/.minio/certs/public.crt mssql1:/tmp/minio.crt
+          docker exec --user root mssql1 bash -c "mkdir -p /var/opt/mssql/security/ca-certificates && cp /tmp/minio.crt /var/opt/mssql/security/ca-certificates/minio.crt && chown -R mssql:mssql /var/opt/mssql/security"
+          docker restart mssql1
+
+      - name: Wait for SQL Server
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+          for ($attempt = 1; $attempt -le 30; $attempt++) {
+              try {
+                  $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred -ErrorAction Stop
+                  if ($server.VersionMajor -ge 17) {
+                      Write-Host "Connected to SQL Server $($server.Version)"
+                      return
+                  }
+                  throw "SQL Server 2025 or later is required. Found $($server.Version)."
+              } catch {
+                  if ($attempt -eq 30) {
+                      throw
+                  }
+                  Start-Sleep -Seconds 5
+              }
+          }
+
+      - name: Run real external table tests
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          $result = Invoke-Pester .github/scripts/gh-external-table-actions.ps1 -Output Detailed -PassThru
+          if ($result.Result -ne "Passed" -or $result.FailedCount -gt 0) {
+              throw "External table integration failed with result $($result.Result) and $($result.FailedCount) failed test(s)."
+          }
