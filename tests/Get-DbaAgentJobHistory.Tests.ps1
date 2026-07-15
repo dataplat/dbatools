@@ -28,6 +28,13 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
+Describe $CommandName -Tag IntegrationTests {
+    It "Returns only job-level records from a live instance when job steps are excluded" {
+        $results = @(Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -ExcludeJobSteps -EnableException)
+        @($results | Where-Object StepID -ne 0).Count | Should -Be 0
+    }
+}
+
 Describe $CommandName -Tag UnitTests {
     InModuleScope "dbatools" {
         BeforeAll {
