@@ -31,6 +31,13 @@ Describe $CommandName -Tag UnitTests {
                     LoginType = "SqlLogin"
                     Name      = "sql_orphan"
                 }
+                $script:certificateUser = [PSCustomObject]@{
+                    Login     = ""
+                    ID        = 7
+                    Sid       = [byte[]](1..16)
+                    LoginType = "Certificate"
+                    Name      = "dbm_monitor"
+                }
                 $script:windowsOrphanUser = [PSCustomObject]@{
                     Login     = "CONTOSO\win_orphan"
                     ID        = 6
@@ -51,7 +58,7 @@ Describe $CommandName -Tag UnitTests {
                     Name            = "containeddb"
                     IsAccessible    = $true
                     ContainmentType = [Microsoft.SqlServer.Management.Smo.ContainmentType]::Partial
-                    Users           = @($script:sqlOrphanUser, $script:windowsOrphanUser)
+                    Users           = @($script:sqlOrphanUser, $script:certificateUser, $script:windowsOrphanUser)
                 }
                 $server = $script:baseServer | Select-Object *
                 $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 11 -Force
@@ -67,6 +74,7 @@ Describe $CommandName -Tag UnitTests {
                 $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2012")
 
                 $results.Count | Should -Be 1
+                $results.User | Should -Not -Contain "dbm_monitor"
                 $results[0].User | Should -Be "CONTOSO\win_orphan"
             }
 
@@ -91,6 +99,30 @@ Describe $CommandName -Tag UnitTests {
 
                 $results.Count | Should -Be 1
                 $results[0].User | Should -Be "sql_orphan"
+            }
+
+            It "reports certificate users as orphans in non-contained databases" {
+                $database = [PSCustomObject]@{
+                    Name            = "regularDb"
+                    IsAccessible    = $true
+                    ContainmentType = [Microsoft.SqlServer.Management.Smo.ContainmentType]::None
+                    Users           = @($script:certificateUser)
+                }
+                $server = $script:baseServer | Select-Object *
+                $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 11 -Force
+                $server | Add-Member -NotePropertyName Databases -NotePropertyValue @($database) -Force
+
+                Mock Connect-DbaInstance {
+                    $server
+                }
+                Mock Stop-Function {
+                    throw "Stop-Function called"
+                }
+
+                $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2012")
+
+                $results.Count | Should -Be 1
+                $results[0].User | Should -Be "dbm_monitor"
             }
         }
     }
