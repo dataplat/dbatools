@@ -96,7 +96,7 @@ function Update-DbaMaintenanceSolution {
     begin {
         if ($Force) {
             $ConfirmPreference = "none"
-            Write-Message -Level Warning -Message "Force is no longer required because Update-DbaMaintenanceSolution refreshes its source on every invocation."
+            Write-Message -Level Warning -Message "Force is no longer required to bypass the cached copy because Update-DbaMaintenanceSolution refreshes its source on every invocation. Force still suppresses confirmation prompts."
         }
 
         if ($Solution -contains 'All') {

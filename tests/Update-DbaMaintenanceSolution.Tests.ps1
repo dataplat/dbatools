@@ -93,6 +93,14 @@ Describe $CommandName -Tag UnitTests {
                     $Level -eq "Warning" -and $Message -like "*Force*refresh*every invocation*"
                 }
             }
+
+            It "explains that Force still suppresses confirmation prompts" {
+                $null = Update-DbaMaintenanceSolution -SqlInstance "sql1" -Force -Confirm:$false
+
+                Should -Invoke Write-Message -Times 1 -Exactly -ParameterFilter {
+                    $Level -eq "Warning" -and $Message -like "*Force*still suppresses confirmation prompts*"
+                }
+            }
         }
     }
 }
