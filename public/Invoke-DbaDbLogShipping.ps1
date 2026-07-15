@@ -370,6 +370,10 @@ function Invoke-DbaDbLogShipping {
         Skips path validation checks before backup operations. Use this when SQL Server cannot verify that the backup path exists,
         for example when the network share is created just before the backup and there is latency in the path becoming visible to SQL Server.
 
+    .PARAMETER AddSecondary
+        Adds a new secondary to a database that is already configured as a log shipping primary.
+        The command reuses the existing primary backup directory, share, and backup job from msdb. It does not recreate or modify the primary backup configuration, job, or schedule, and it refuses duplicate primary-secondary associations.
+
     .PARAMETER Force
         Bypasses confirmations and applies default values for missing parameters like copy destination folder.
         Also removes existing schedules with the same name and sets automatic database suffix when source and destination instances are identical.
@@ -438,6 +442,20 @@ function Invoke-DbaDbLogShipping {
 
         Sets up log shipping with all defaults except that a backup file is generated.
         The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
+
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SourceSqlInstance      = "sql1"
+        >> DestinationSqlInstance = "sql3"
+        >> Database               = "db1"
+        >> CopyDestinationFolder  = "D:\LogShipping"
+        >> NoInitialization       = $true
+        >> AddSecondary           = $true
+        >> Force                  = $true
+        >> }
+        PS C:\> Invoke-DbaDbLogShipping @params
+
+        Adds sql3 as another secondary for the existing log shipping primary db1. The secondary database must already be initialized because NoInitialization is specified.
 
     .EXAMPLE
         PS C:\> # First, create the SAS credential on both instances
@@ -580,6 +598,7 @@ function Invoke-DbaDbLogShipping {
         [switch]$UseExistingFullBackup,
         [string]$UseBackupFolder,
         [switch]$IgnoreFileChecks,
+        [switch]$AddSecondary,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -612,7 +631,7 @@ function Invoke-DbaDbLogShipping {
         $RegexAzureUrl = '^https?://[a-z0-9]{3,24}\.blob\.core\.windows\.net/[a-z0-9]([a-z0-9\-]*[a-z0-9])?/?'
 
         # Validate mutually exclusive parameters for backup destination
-        if (-not (Test-Bound -ParameterName "SharedPath", "AzureBaseUrl" -Min 1 -Max 1)) {
+        if (-not $AddSecondary -and -not (Test-Bound -ParameterName "SharedPath", "AzureBaseUrl" -Min 1 -Max 1)) {
             Stop-Function -Message "You must specify either -SharedPath (for traditional file share log shipping) or -AzureBaseUrl (for Azure blob storage log shipping), but not both." -Target $SourceSqlInstance
             return
         }
@@ -626,7 +645,9 @@ function Invoke-DbaDbLogShipping {
         # Check if using Azure blob storage or traditional file share
         $UseAzure = $PSBoundParameters.ContainsKey("AzureBaseUrl")
 
-        if ($UseAzure) {
+        if ($AddSecondary) {
+            $UseAzure = $false
+        } elseif ($UseAzure) {
             # Validate Azure URL format
             Write-Message -Message "Using Azure blob storage: $AzureBaseUrl" -Level Verbose
 
@@ -690,6 +711,59 @@ function Invoke-DbaDbLogShipping {
             }
         } else {
             Stop-Function -Message "Please supply a database to set up log shipping for" -Target $SourceSqlInstance -Continue
+        }
+
+        $existingPrimaryConfigurations = @{ }
+        if ($AddSecondary) {
+            foreach ($db in $DatabaseCollection) {
+                $escapedDatabaseName = $db.Name.Replace("'", "''")
+                $primaryConfigurationQuery = @"
+SELECT
+    pd.backup_directory AS BackupDirectory,
+    pd.backup_share AS BackupShare,
+    sj.name AS BackupJob
+FROM msdb.dbo.log_shipping_primary_databases AS pd
+LEFT JOIN msdb.dbo.sysjobs AS sj ON pd.backup_job_id = sj.job_id
+WHERE pd.primary_database = N'$escapedDatabaseName';
+"@
+                $splatPrimaryConfigurationQuery = @{
+                    SqlInstance     = $SourceServer
+                    Database        = "msdb"
+                    Query           = $primaryConfigurationQuery
+                    EnableException = $true
+                }
+
+                try {
+                    $primaryConfiguration = @(Invoke-DbaQuery @splatPrimaryConfigurationQuery | Select-Object -First 1)
+                } catch {
+                    Stop-Function -Message "Unable to read the existing log shipping primary configuration for database $($db.Name)." -ErrorRecord $_ -Target $SourceSqlInstance
+                    return
+                }
+
+                if ($primaryConfiguration.Count -eq 0) {
+                    Stop-Function -Message "Database $($db.Name) is not configured as a log shipping primary on $SourceSqlInstance." -Target $SourceSqlInstance
+                    return
+                }
+
+                $primaryConfiguration = $primaryConfiguration[0]
+                if ([string]::IsNullOrEmpty("$($primaryConfiguration.BackupDirectory)") -or
+                    [string]::IsNullOrEmpty("$($primaryConfiguration.BackupShare)") -or
+                    [string]::IsNullOrEmpty("$($primaryConfiguration.BackupJob)")) {
+                    Stop-Function -Message "The existing log shipping primary configuration for database $($db.Name) is missing its backup directory, share, or backup job." -Target $SourceSqlInstance
+                    return
+                }
+                $existingPrimaryConfigurations[$db.Name] = $primaryConfiguration
+            }
+
+            $azurePrimaryConfigurations = @($existingPrimaryConfigurations.Values | Where-Object { $PSItem.BackupShare -match "^https?://" })
+            if ($azurePrimaryConfigurations.Count -gt 0 -and $azurePrimaryConfigurations.Count -ne $existingPrimaryConfigurations.Count) {
+                Stop-Function -Message "AddSecondary cannot process file-share and Azure log shipping primaries in the same invocation." -Target $SourceSqlInstance
+                return
+            }
+            $UseAzure = $azurePrimaryConfigurations.Count -gt 0
+            if ($UseAzure) {
+                $AzureBaseUrl = $azurePrimaryConfigurations[0].BackupShare.TrimEnd("/")
+            }
         }
 
         # Set the database mode
@@ -1142,6 +1216,10 @@ function Invoke-DbaDbLogShipping {
 
             # Loop through each of the databases
             foreach ($db in $DatabaseCollection) {
+                if ($AddSecondary) {
+                    $setupResult = "Success"
+                    $comment = ""
+                }
 
                 # Check the status of the database
                 if ($db.RecoveryModel -ne 'Full') {
@@ -1164,6 +1242,48 @@ function Invoke-DbaDbLogShipping {
                     $SecondaryDatabase += $SecondaryDatabaseSuffix
                 }
 
+                if ($AddSecondary) {
+                    $escapedPrimaryDatabase = $db.Name.Replace("'", "''")
+                    $secondaryServerNames = @(
+                        "$destInstance",
+                        "$($DestinationServer.DomainInstanceName)",
+                        "$($DestinationServer.Name)"
+                    ) | Where-Object { -not [string]::IsNullOrEmpty($PSItem) } | Select-Object -Unique
+                    $escapedSecondaryServerNames = foreach ($secondaryServerName in $secondaryServerNames) {
+                        "N'$($secondaryServerName.Replace("'", "''"))'"
+                    }
+                    $escapedSecondaryDatabase = $SecondaryDatabase.Replace("'", "''")
+                    $existingAssociationQuery = @"
+SELECT TOP (1)
+    1 AS AssociationExists
+FROM msdb.dbo.log_shipping_primary_databases AS pd
+INNER JOIN msdb.dbo.log_shipping_primary_secondaries AS ps ON pd.primary_id = ps.primary_id
+WHERE pd.primary_database = N'$escapedPrimaryDatabase'
+  AND ps.secondary_server IN ($($escapedSecondaryServerNames -join ", "))
+  AND ps.secondary_database = N'$escapedSecondaryDatabase';
+"@
+                    $splatExistingAssociationQuery = @{
+                        SqlInstance     = $SourceServer
+                        Database        = "msdb"
+                        Query           = $existingAssociationQuery
+                        EnableException = $true
+                    }
+
+                    try {
+                        $existingAssociation = @(Invoke-DbaQuery @splatExistingAssociationQuery | Select-Object -First 1)
+                    } catch {
+                        $setupResult = "Failed"
+                        $comment = "Unable to check existing log shipping secondary associations"
+                        Stop-Function -Message $comment -ErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    }
+
+                    if ($existingAssociation.Count -gt 0) {
+                        $setupResult = "Failed"
+                        $comment = "Secondary database $SecondaryDatabase on $destInstance is already associated with primary database $($db.Name)"
+                        Stop-Function -Message $comment -Target $destInstance -Continue
+                    }
+                }
+
                 # Check is the database is already initialized a check if the database exists on the secondary instance
                 if ($NoInitialization -and ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase)) {
                     $setupResult = "Failed"
@@ -1172,37 +1292,47 @@ function Invoke-DbaDbLogShipping {
                     Stop-Function -Message "Database $SecondaryDatabase needs to be initialized before log shipping setting can continue." -Target $SourceSqlInstance -Continue
                 }
 
-                # Check the local backup path
-                if ($LocalPath) {
-                    if ($LocalPath.EndsWith("\")) {
-                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
-                    } else {
-                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
-                    }
+                if ($AddSecondary) {
+                    $primaryConfiguration = $existingPrimaryConfigurations[$db.Name]
+                    $DatabaseLocalPath = $primaryConfiguration.BackupDirectory
+                    $DatabaseSharedPath = $primaryConfiguration.BackupShare
+                    $LocalPath = $DatabaseLocalPath
+                    $SharedPath = $DatabaseSharedPath
+                    Write-Message -Message "Using existing primary backup local path $DatabaseLocalPath." -Level Verbose
+                    Write-Message -Message "Using existing primary backup share $DatabaseSharedPath." -Level Verbose
                 } else {
-                    $LocalPath = $SharedPath
-
-                    if ($LocalPath.EndsWith("\")) {
-                        $DatabaseLocalPath = "$LocalPath$($db.Name)"
+                    # Check the local backup path
+                    if ($LocalPath) {
+                        if ($LocalPath.EndsWith("\")) {
+                            $DatabaseLocalPath = "$LocalPath$($db.Name)"
+                        } else {
+                            $DatabaseLocalPath = "$LocalPath\$($db.Name)"
+                        }
                     } else {
-                        $DatabaseLocalPath = "$LocalPath\$($db.Name)"
-                    }
-                }
-                Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
+                        $LocalPath = $SharedPath
 
-                # Setting the backup network path for the database
-                if ($UseAzure) {
-                    # For Azure, append database name to URL path
-                    $DatabaseSharedPath = "$SharedPath/$($db.Name)"
-                    $DatabaseLocalPath = $DatabaseSharedPath
-                    Write-Message -Message "Azure backup URL set to $DatabaseSharedPath." -Level Verbose
-                } else {
-                    if ($SharedPath.EndsWith("\")) {
-                        $DatabaseSharedPath = "$SharedPath$($db.Name)"
-                    } else {
-                        $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                        if ($LocalPath.EndsWith("\")) {
+                            $DatabaseLocalPath = "$LocalPath$($db.Name)"
+                        } else {
+                            $DatabaseLocalPath = "$LocalPath\$($db.Name)"
+                        }
                     }
-                    Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
+                    Write-Message -Message "Backup local path set to $DatabaseLocalPath." -Level Verbose
+
+                    # Setting the backup network path for the database
+                    if ($UseAzure) {
+                        # For Azure, append database name to URL path
+                        $DatabaseSharedPath = "$SharedPath/$($db.Name)"
+                        $DatabaseLocalPath = $DatabaseSharedPath
+                        Write-Message -Message "Azure backup URL set to $DatabaseSharedPath." -Level Verbose
+                    } else {
+                        if ($SharedPath.EndsWith("\")) {
+                            $DatabaseSharedPath = "$SharedPath$($db.Name)"
+                        } else {
+                            $DatabaseSharedPath = "$SharedPath\$($db.Name)"
+                        }
+                        Write-Message -Message "Backup network path set to $DatabaseSharedPath." -Level Verbose
+                    }
                 }
 
 
@@ -1210,28 +1340,38 @@ function Invoke-DbaDbLogShipping {
                 if ($setupResult -ne 'Failed' -and -not $UseAzure) {
                     Write-Message -Message "Testing database backup network path $DatabaseSharedPath" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseSharedPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential) -ne $true) {
-                        # To to create the backup directory for the database
-                        try {
-                            Write-Message -Message "Database backup network path $DatabaseSharedPath not found. Trying to create it.." -Level Verbose
-
-                            Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
-                                Write-Message -Message "Creating backup folder $DatabaseSharedPath" -Level Verbose
-                                $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Force:$Force
-                            }
-                        } catch {
+                        if ($AddSecondary) {
                             $setupResult = "Failed"
-                            $comment = "Something went wrong creating the backup directory"
+                            $comment = "Existing primary backup network path $DatabaseSharedPath is not valid or cannot be reached"
+                            Stop-Function -Message $comment -Target $SourceSqlInstance -Continue
+                        } else {
+                            # To to create the backup directory for the database
+                            try {
+                                Write-Message -Message "Database backup network path $DatabaseSharedPath not found. Trying to create it.." -Level Verbose
 
-                            Stop-Function -Message "Something went wrong creating the backup directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
+                                Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
+                                    Write-Message -Message "Creating backup folder $DatabaseSharedPath" -Level Verbose
+                                    $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Force:$Force
+                                }
+                            } catch {
+                                $setupResult = "Failed"
+                                $comment = "Something went wrong creating the backup directory"
+
+                                Stop-Function -Message "Something went wrong creating the backup directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
+                            }
                         }
                     }
                 }
 
                 # Check if the backup job name is set
-                if ($BackupJob) {
-                    $DatabaseBackupJob = "$($BackupJob)$($db.Name)"
+                if ($AddSecondary) {
+                    $DatabaseBackupJob = $existingPrimaryConfigurations[$db.Name].BackupJob
                 } else {
-                    $DatabaseBackupJob = "LSBackup_$($db.Name)"
+                    if ($BackupJob) {
+                        $DatabaseBackupJob = "$($BackupJob)$($db.Name)"
+                    } else {
+                        $DatabaseBackupJob = "LSBackup_$($db.Name)"
+                    }
                 }
                 Write-Message -Message "Backup job name set to $DatabaseBackupJob" -Level Verbose
 
@@ -1419,8 +1559,12 @@ function Invoke-DbaDbLogShipping {
 
                 # Set the copy destination folder to include the database name
                 if ($UseAzure) {
-                    # For Azure, append database name to URL path
-                    $DatabaseCopyDestinationFolder = "$CopyDestinationFolder/$($db.Name)"
+                    if ($AddSecondary) {
+                        $DatabaseCopyDestinationFolder = $DatabaseSharedPath
+                    } else {
+                        # For Azure, append database name to URL path
+                        $DatabaseCopyDestinationFolder = "$CopyDestinationFolder/$($db.Name)"
+                    }
                     Write-Message -Message "Copy destination URL set to $DatabaseCopyDestinationFolder (Azure - no local copy)." -Level Verbose
                 } else {
                     if ($CopyDestinationFolder.EndsWith("\")) {
@@ -1703,7 +1847,9 @@ function Invoke-DbaDbLogShipping {
                     if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Configuring logshipping for primary database $db on $SourceSqlInstance")) {
                         try {
 
-                            Write-Message -Message "Configuring logshipping for primary database" -Level Verbose
+                            if (-not $AddSecondary) {
+                                Write-Message -Message "Configuring logshipping for primary database" -Level Verbose
+                            }
 
                             $splatPrimary = @{
                                 SqlInstance               = $SourceSqlInstance
@@ -1727,18 +1873,24 @@ function Invoke-DbaDbLogShipping {
                             if ($AzureCredential) {
                                 $splatPrimary.AzureCredential = $AzureCredential
                             }
-                            New-DbaLogShippingPrimaryDatabase @splatPrimary
-
-                            # Check if the backup job needs to be enabled or disabled
-                            if ($BackupScheduleDisabled) {
-                                $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
-                                Write-Message -Message "Disabling backup job $DatabaseBackupJob" -Level Verbose
-                            } else {
-                                $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
-                                Write-Message -Message "Enabling backup job $DatabaseBackupJob" -Level Verbose
+                            if (-not $AddSecondary) {
+                                New-DbaLogShippingPrimaryDatabase @splatPrimary
                             }
 
-                            Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Verbose
+                            # Check if the backup job needs to be enabled or disabled
+                            if (-not $AddSecondary) {
+                                if ($BackupScheduleDisabled) {
+                                    $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
+                                    Write-Message -Message "Disabling backup job $DatabaseBackupJob" -Level Verbose
+                                } else {
+                                    $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
+                                    Write-Message -Message "Enabling backup job $DatabaseBackupJob" -Level Verbose
+                                }
+                            }
+
+                            if (-not $AddSecondary) {
+                                Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Verbose
+                            }
 
                             #Variable $BackupJobSchedule marked as unused by PSScriptAnalyzer replaced with $null for catching output
                             $splatBackupSchedule = @{
@@ -1758,7 +1910,9 @@ function Invoke-DbaDbLogShipping {
                                 EndTime                   = $BackupScheduleEndTime
                                 Force                     = $Force
                             }
-                            $null = New-DbaAgentSchedule @splatBackupSchedule
+                            if (-not $AddSecondary) {
+                                $null = New-DbaAgentSchedule @splatBackupSchedule
+                            }
 
                             Write-Message -Message "Configuring logshipping from primary to secondary database." -Level Verbose
 
