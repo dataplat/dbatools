@@ -236,14 +236,16 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "adds real files and safely force-removes the highest file ids" {
             $splatExpand = @{
-                SqlInstance   = $tempdbReductionServer
-                DataFileCount = $expandedDataFileCount
-                DataFileSize  = $expandedTotalDataFileSize
-                DataPath      = $tempdbReductionDataPath
-                Confirm       = $false
-                WarningAction = "SilentlyContinue"
+                SqlInstance     = $tempdbReductionServer
+                DataFileCount   = $expandedDataFileCount
+                DataFileSize    = $expandedTotalDataFileSize
+                DataPath        = $tempdbReductionDataPath
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
             }
-            $null = Set-DbaTempDbConfig @splatExpand
+            $expandResult = Set-DbaTempDbConfig @splatExpand
+            $expandResult.DataFileCount | Should -Be $expandedDataFileCount
 
             $expandedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
             $expandedFiles.Count | Should -Be $expandedDataFileCount
@@ -283,15 +285,17 @@ CROSS JOIN sys.all_objects AS second_source;
             ($capacityWarning -join " ") | Should -Match "exceeds the requested target capacity"
 
             $splatReduce = @{
-                SqlInstance   = $tempdbReductionServer
-                DataFileCount = $originalDataFileCount
-                DataFileSize  = $expandedTotalDataFileSize
-                DataPath      = $tempdbReductionDataPath
-                Force         = $true
-                Confirm       = $false
-                WarningAction = "SilentlyContinue"
+                SqlInstance     = $tempdbReductionServer
+                DataFileCount   = $originalDataFileCount
+                DataFileSize    = $expandedTotalDataFileSize
+                DataPath        = $tempdbReductionDataPath
+                Force           = $true
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
             }
-            $null = Set-DbaTempDbConfig @splatReduce
+            $reduceResult = Set-DbaTempDbConfig @splatReduce
+            $reduceResult.DataFileCount | Should -Be $originalDataFileCount
 
             $reducedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
             $reducedFiles.Count | Should -Be $originalDataFileCount

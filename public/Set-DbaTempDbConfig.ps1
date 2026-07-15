@@ -283,6 +283,8 @@ ORDER BY file_id;
             }
 
             $DataFiles = @($filesToKeep | Sort-Object FileId | Select-Object LogicalName, PhysicalName)
+            $reservedLogicalNames = @($tempdbFiles.LogicalName)
+            $reservedPhysicalNames = @($tempdbFiles.PhysicalName)
 
             # Used to round-robin the placement of tempdb data files if more than one value for $DataPath was passed in.
             $dataPathIndexToUse = 0
@@ -310,9 +312,18 @@ ORDER BY file_id;
                     $NewPath = "$newDataDirPath\$Filename"
                     $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 } else {
-                    $NewName = "tempdev$i.ndf"
-                    $NewPath = "$newDataDirPath\$NewName"
-                    $sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
+                    $newFileIndex = $i
+                    do {
+                        $newLogicalName = "tempdev$newFileIndex"
+                        $NewName = "$newLogicalName.ndf"
+                        $NewPath = "$newDataDirPath\$NewName"
+                        $candidateExists = $newLogicalName -in $reservedLogicalNames -or $NewPath -in $reservedPhysicalNames -or (Test-DbaPath -SqlInstance $server -Path $NewPath -WarningAction SilentlyContinue)
+                        $newFileIndex += 1
+                    } while ($candidateExists)
+
+                    $reservedLogicalNames += $newLogicalName
+                    $reservedPhysicalNames += $NewPath
+                    $sql += "ALTER DATABASE tempdb ADD FILE(name=$newLogicalName,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 }
             }
 
