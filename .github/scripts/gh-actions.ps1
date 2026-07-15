@@ -514,8 +514,7 @@ WHERE pd.primary_database = N'$escapedDbName';
             }
             $initialAttempt = Invoke-AzureLogShippingWithRetry -Parameters $splatInitialLogShipping
             if ($initialAttempt.PersistentTransientFailure) {
-                Set-ItResult -Skipped -Because "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
-                return
+                throw "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
             }
             $initialResult = $initialAttempt.CommandResult
             $initialResult.Result | Should -Be "Success"
@@ -537,15 +536,16 @@ GROUP BY pd.backup_directory, pd.backup_share, pd.backup_job_id, sj.name, sj.ena
             $secondaryMetadataQuery = @"
 SELECT
     sd.secondary_database AS SecondaryDatabase,
-    CONVERT(varchar(36), sd.restore_job_id) AS RestoreJobId,
+    CONVERT(varchar(36), ls.restore_job_id) AS RestoreJobId,
     sj.name AS RestoreJob,
     sj.enabled AS RestoreJobEnabled,
     COUNT(sjs.schedule_id) AS RestoreScheduleCount
 FROM msdb.dbo.log_shipping_secondary_databases AS sd
-INNER JOIN msdb.dbo.sysjobs AS sj ON sd.restore_job_id = sj.job_id
+INNER JOIN msdb.dbo.log_shipping_secondary AS ls ON sd.secondary_id = ls.secondary_id
+INNER JOIN msdb.dbo.sysjobs AS sj ON ls.restore_job_id = sj.job_id
 LEFT JOIN msdb.dbo.sysjobschedules AS sjs ON sj.job_id = sjs.job_id
 WHERE sd.secondary_database = N'$escapedDbName'
-GROUP BY sd.secondary_database, sd.restore_job_id, sj.name, sj.enabled;
+GROUP BY sd.secondary_database, ls.restore_job_id, sj.name, sj.enabled;
 "@
             $primaryBefore = Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $primaryMetadataQuery -EnableException
             $firstSecondaryBefore = Invoke-DbaQuery -SqlInstance $firstSecondaryServer -Database msdb -Query $secondaryMetadataQuery -EnableException
@@ -563,8 +563,7 @@ GROUP BY sd.secondary_database, sd.restore_job_id, sj.name, sj.enabled;
             }
             $addSecondaryAttempt = Invoke-AzureLogShippingWithRetry -Parameters $splatAddSecondary
             if ($addSecondaryAttempt.PersistentTransientFailure) {
-                Set-ItResult -Skipped -Because "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
-                return
+                throw "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
             }
             $addSecondaryResult = $addSecondaryAttempt.CommandResult
             $addSecondaryResult.Result | Should -Be "Success"
@@ -625,9 +624,9 @@ GROUP BY sd.secondary_database, sd.restore_job_id, sj.name, sj.enabled;
                     foreach ($association in $cleanupAssociations) {
                         $escapedSecondaryServer = "$($association.SecondaryServer)".Replace("'", "''")
                         $escapedSecondaryDatabase = "$($association.SecondaryDatabase)".Replace("'", "''")
-                        $primaryServer.Query("EXEC msdb.dbo.sp_delete_log_shipping_primary_secondary @primary_database = N'$escapedDbName', @secondary_server = N'$escapedSecondaryServer', @secondary_database = N'$escapedSecondaryDatabase'")
+                        $primaryServer.Query("USE [master]; EXEC msdb.dbo.sp_delete_log_shipping_primary_secondary @primary_database = N'$escapedDbName', @secondary_server = N'$escapedSecondaryServer', @secondary_database = N'$escapedSecondaryDatabase'")
                     }
-                    $primaryServer.Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = N'$escapedDbName') EXEC msdb.dbo.sp_delete_log_shipping_primary_database @database = N'$escapedDbName'")
+                    $primaryServer.Query("USE [master]; IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = N'$escapedDbName') EXEC msdb.dbo.sp_delete_log_shipping_primary_database @database = N'$escapedDbName'")
                 } catch {
                     Write-Warning "Unable to remove primary log-shipping metadata for ${dbName}: $($_.Exception.Message)"
                 }
@@ -642,7 +641,7 @@ GROUP BY sd.secondary_database, sd.restore_job_id, sj.name, sj.enabled;
                 }
 
                 try {
-                    $secondary.Server.Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = N'$($secondary.EscapedDatabase)') EXEC msdb.dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($secondary.EscapedDatabase)'")
+                    $secondary.Server.Query("USE [master]; IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = N'$($secondary.EscapedDatabase)') EXEC msdb.dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($secondary.EscapedDatabase)'")
                 } catch {
                     Write-Warning "Unable to remove secondary log-shipping metadata for $($secondary.Database): $($_.Exception.Message)"
                 }
