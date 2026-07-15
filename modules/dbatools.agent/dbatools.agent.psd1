@@ -37,7 +37,8 @@
         'Get-DbaAgentJobOutputFile',
         'Get-DbaAgentJobStep',
         'Get-DbaAgentLog',
-        'Get-DbaAgentOperator'
+        'Get-DbaAgentOperator',
+        'Get-DbaAgentProxy'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
