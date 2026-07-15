@@ -50,6 +50,10 @@ function Set-DbaNetworkCertificate {
         Unsets the currently configured network certificate for the SQL Server instance.
         This will remove the certificate configuration, and SQL Server will not use any certificate for SSL connections.
 
+    .PARAMETER Force
+        Configures the specified certificate even when suitability checks fail.
+        The certificate must still exist in the LocalMachine certificate store. Failed checks are reported as a warning.
+
     .PARAMETER RestartService
         Forces an automatic restart of the SQL Server service after setting the network certificate.
         Certificate changes require a service restart to take effect - without this switch you'll need to manually restart SQL Server.
@@ -105,6 +109,11 @@ function Set-DbaNetworkCertificate {
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
 
     .EXAMPLE
+        PS C:\> Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 -Force
+
+        Sets the network certificate even when the certificate fails one or more suitability checks. Failed checks are reported as a warning.
+
+    .EXAMPLE
         PS C:\> Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -UnsetCertificate -RestartService
 
         Unsets the network certificate for the SQL2008R2SP2 instance and restarts the SQL Server service.
@@ -122,6 +131,7 @@ function Set-DbaNetworkCertificate {
         [Parameter(ValueFromPipelineByPropertyName)]
         [string]$Thumbprint,
         [switch]$UnsetCertificate,
+        [switch]$Force,
         [switch]$RestartService,
         [switch]$EnableException
     )
@@ -304,7 +314,14 @@ function Set-DbaNetworkCertificate {
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.ValidityPeriodOk) { $failedChecks += "ValidityPeriodExpiredOrInsufficient" }
-                    Stop-Function -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance. Failed checks: $($failedChecks -join ', ')." -Target $instance -Continue
+                    if ($failedChecks.Count -eq 0) {
+                        $newThumbprint = $Thumbprint
+                    } elseif ($Force -and $detailedCertTest.CertificateFound) {
+                        Write-Message -Level Warning -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance, but Force was specified. Failed checks: $($failedChecks -join ', ')." -Target $instance
+                        $newThumbprint = $Thumbprint
+                    } else {
+                        Stop-Function -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance. Failed checks: $($failedChecks -join ', ')." -Target $instance -Continue
+                    }
                 }
             } else {
                 if ($certTest.ConfiguredCertificateValid) {
