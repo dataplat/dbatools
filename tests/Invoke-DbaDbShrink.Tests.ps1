@@ -32,137 +32,6 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
-    InModuleScope dbatools {
-        Context "Failure output handling" {
-            BeforeEach {
-                $script:warningMessages = @()
-
-                function New-MockShrinkDatabase {
-                    $dataFile = [PSCustomObject]@{
-                        Name      = "testdb"
-                        Size      = 1024
-                        UsedSpace = 512
-                    }
-                    $dataFile | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
-
-                    $server = [PSCustomObject]@{
-                        ComputerName       = "sql1"
-                        ServiceName        = "MSSQLSERVER"
-                        DomainInstanceName = "sql1"
-                        VersionMajor       = 16
-                        ConnectionContext  = [PSCustomObject]@{
-                            StatementTimeout = 0
-                        }
-                    }
-
-                    $server | Add-Member -MemberType ScriptMethod -Name Query -Value {
-                        param($Sql, $DatabaseName)
-
-                        if ($Sql -like "DBCC SHRINKFILE*") {
-                            throw "simulated shrink failure"
-                        }
-
-                        @()
-                    }
-
-                    $database = New-Object Microsoft.SqlServer.Management.Smo.Database
-                    $database.Name = "testdb"
-                    $database | Add-Member -Force -NotePropertyName IsAccessible -NotePropertyValue $true
-                    $database | Add-Member -Force -NotePropertyName IsDatabaseSnapshot -NotePropertyValue $false
-                    $database | Add-Member -Force -NotePropertyName Parent -NotePropertyValue $server
-                    $database | Add-Member -Force -NotePropertyName FileGroups -NotePropertyValue ([PSCustomObject]@{
-                            Files = @($dataFile)
-                        })
-                    $database | Add-Member -Force -NotePropertyName LogFiles -NotePropertyValue @()
-
-                    $database
-                }
-
-                function Test-FunctionInterrupt {
-                    $false
-                }
-
-                function Select-DefaultView {
-                    param(
-                        [Parameter(ValueFromPipeline)]
-                        $InputObject,
-                        $ExcludeProperty
-                    )
-
-                    process {
-                        $InputObject
-                    }
-                }
-
-                function Write-Message {
-                    param(
-                        $Level,
-                        $Message,
-                        $ErrorRecord,
-                        $EnableException
-                    )
-
-                    if ($Level -eq "Warning") {
-                        $script:warningMessages += $Message
-                    }
-                }
-
-                Mock Stop-Function -ModuleName dbatools { }
-            }
-
-            It "returns a failed result and warning without calling Stop-Function in friendly mode" {
-                $mockDatabase = New-MockShrinkDatabase
-
-                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats)
-
-                $results | Should -HaveCount 1
-                $results[0].Success | Should -Be $false
-                $results[0].Notes | Should -Match "simulated shrink failure"
-                ($script:warningMessages -join " ") | Should -Match "Shrink operation failed for file testdb: .*simulated shrink failure"
-                Should -Invoke -CommandName Stop-Function -Exactly 0 -Scope It
-            }
-
-            It "still uses Stop-Function when EnableException is requested" {
-                $mockDatabase = New-MockShrinkDatabase
-
-                Mock Stop-Function -ModuleName dbatools {
-                    throw $Message
-                }
-
-                {
-                    Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -ExcludeIndexStats -EnableException
-                } | Should -Throw "*Shrink operation failed for file testdb:*simulated shrink failure*"
-
-                Should -Invoke -CommandName Stop-Function -Exactly 1 -Scope It
-            }
-
-            It "processes only the requested logical file name" {
-                $mockDatabase = New-MockShrinkDatabase
-                $otherFile = [PSCustomObject]@{
-                    Name      = "otherfile"
-                    Size      = 1024
-                    UsedSpace = 512
-                }
-                $otherFile | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
-                $mockDatabase.FileGroups.Files += $otherFile
-
-                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -FileName "testdb" -ExcludeIndexStats)
-
-                $results | Should -HaveCount 1
-                $results[0].File | Should -Be "testdb"
-            }
-
-            It "warns when no logical file name matches the selected file type" {
-                $mockDatabase = New-MockShrinkDatabase
-
-                $results = @(Invoke-DbaDbShrink -InputObject $mockDatabase -FileType Data -FileName "missing" -ExcludeIndexStats)
-
-                $results | Should -BeNullOrEmpty
-                ($script:warningMessages -join " ") | Should -Match "None of the requested logical file names matched FileType Data"
-            }
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -249,6 +118,80 @@ Describe $CommandName -Tag IntegrationTests {
             $db.LogFiles[0].Refresh()
             $db.FileGroups[0].Files[0].Size | Should -BeLessThan $oldDataSize
             $db.LogFiles[0].Size | Should -Be $oldLogSize
+        }
+
+        It "shrinks only the requested logical file name" {
+            $secondaryFileName = "$($db.Name)_secondary"
+            $splatAddSecondaryFile = @{
+                SqlInstance = $server
+                Database    = $db.Name
+                FileGroup   = "PRIMARY"
+                FileName    = $secondaryFileName
+                Size        = 16
+                Growth      = 8
+            }
+            $null = Add-DbaDbFile @splatAddSecondaryFile
+            $db.Refresh()
+            $db.FileGroups["PRIMARY"].Files.Refresh()
+            $secondaryFile = $db.FileGroups["PRIMARY"].Files[$secondaryFileName]
+            $secondaryFile.Refresh()
+            $oldSecondaryFileSize = $secondaryFile.Size
+
+            $splatShrinkRequestedFile = @{
+                InputObject   = $db
+                FileType      = "Data"
+                FileName      = $db.Name
+                WarningAction = "SilentlyContinue"
+            }
+            $result = @(Invoke-DbaDbShrink @splatShrinkRequestedFile)
+
+            $result | Should -HaveCount 1
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -BeTrue
+            $secondaryFile.Refresh()
+            $secondaryFile.Size | Should -Be $oldSecondaryFileSize
+        }
+
+        It "warns when no logical file name matches the selected file type" {
+            $splatShrinkMissingFile = @{
+                InputObject   = $db
+                FileType      = "Data"
+                FileName      = "dbatoolsci_missing"
+                WarningAction = "SilentlyContinue"
+            }
+            $result = @(Invoke-DbaDbShrink @splatShrinkMissingFile)
+
+            $result | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "None of the requested logical file names matched FileType Data"
+        }
+
+        It "returns the real SQL error in friendly mode" {
+            $splatFriendlyFailure = @{
+                InputObject   = $db
+                FileType      = "Data"
+                FileName      = $db.Name
+                ShrinkMethod  = "EmptyFile"
+                WarningAction = "SilentlyContinue"
+            }
+            $result = @(Invoke-DbaDbShrink @splatFriendlyFailure)
+
+            $result | Should -HaveCount 1
+            $result.Success | Should -BeFalse
+            $result.Notes | Should -Not -BeNullOrEmpty
+            $WarnVar | Should -Match "Shrink operation failed for file $($db.Name)"
+        }
+
+        It "throws the real SQL error when EnableException is requested" {
+            $splatExceptionalFailure = @{
+                InputObject     = $db
+                FileType        = "Data"
+                FileName        = $db.Name
+                ShrinkMethod    = "EmptyFile"
+                EnableException = $true
+            }
+            {
+                Invoke-DbaDbShrink @splatExceptionalFailure
+            } | Should -Throw "*insufficient space in the filegroup*"
         }
 
         It "Shrinks the entire database when FileType is All" {

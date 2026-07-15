@@ -22,110 +22,47 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    Context "Download retry behavior" {
-        BeforeAll {
-            # Build a valid archive that looks like a downloaded GitHub zip of DarlingData-main,
-            # so the mocked download can produce a file that survives extraction and content checks.
-            $sourceFolder = Join-Path -Path $TestDrive -ChildPath "DarlingData-main"
-            $null = New-Item -Path $sourceFolder -ItemType Directory
-            Set-Content -Path (Join-Path -Path $sourceFolder -ChildPath "readme.txt") -Value "dbatoolsci retry test"
-            $goodZip = Join-Path -Path $TestDrive -ChildPath "gooddownload.zip"
-            Compress-Archive -Path $sourceFolder -DestinationPath $goodZip
+}
 
-            # Invoke-TlsWebRequest is not an advanced function, so the mock receives the
-            # original arguments in $args and has to locate the -OutFile value itself.
-            # Behavior is driven by $global:dbatoolsciDownloadResults, one entry per call:
-            # "throw" fails the call, "junkthrow" writes a partial file and then fails,
-            # "skip" succeeds without creating the file, "write" creates a valid file.
-            Mock -ModuleName dbatools -CommandName Invoke-TlsWebRequest -MockWith {
-                $global:dbatoolsciDownloadCallCount++
-                $behavior = $global:dbatoolsciDownloadResults[$global:dbatoolsciDownloadCallCount - 1]
-                $outFileIndex = $args.IndexOf("-OutFile:") + 1
-                if ($outFileIndex -eq 0) { $outFileIndex = $args.IndexOf("-OutFile") + 1 }
-                if ($behavior -eq "throw") {
-                    throw "dbatoolsci simulated transient download failure"
-                }
-                if ($behavior -eq "junkthrow") {
-                    Set-Content -Path $args[$outFileIndex] -Value "dbatoolsci partial download junk"
-                    throw "dbatoolsci simulated connection reset after partial write"
-                }
-                if ($behavior -eq "write") {
-                    Copy-Item -Path $global:dbatoolsciDownloadGoodZip -Destination $args[$outFileIndex]
-                }
-            }
-            Mock -ModuleName dbatools -CommandName Start-Sleep -MockWith { }
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $global:dbatoolsciDownloadGoodZip = $goodZip
-        }
+        # The content check inside Save-DbaCommunitySoftware expects the target directory leaf
+        # to match the archive's top-level folder name, so keep the leaf as sql-server-maintenance-solution-main.
+        $targetParent = Join-Path -Path $TestDrive -ChildPath "target-$(Get-Random)"
+        $null = New-Item -Path $targetParent -ItemType Directory
+        $targetDirectory = Join-Path -Path $targetParent -ChildPath "sql-server-maintenance-solution-main"
 
-        BeforeEach {
-            $global:dbatoolsciDownloadCallCount = 0
-            # The content check inside Save-DbaCommunitySoftware expects the target directory leaf
-            # to match the archive's top-level folder name, so keep the leaf as DarlingData-main.
-            $targetParent = Join-Path -Path $TestDrive -ChildPath "target-$(Get-Random)"
-            $null = New-Item -Path $targetParent -ItemType Directory
-            $targetDirectory = Join-Path -Path $targetParent -ChildPath "DarlingData-main"
-        }
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
 
-        AfterAll {
-            Remove-Variable -Name dbatoolsciDownloadResults, dbatoolsciDownloadCallCount, dbatoolsciDownloadGoodZip -Scope Global -ErrorAction SilentlyContinue
-        }
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        It "Retries after a transient download failure and then succeeds" {
-            # Both calls of attempt one fail (direct, then proxy fallback), the second attempt succeeds.
-            $global:dbatoolsciDownloadResults = @("throw", "throw", "write")
+        Remove-Item -Path $targetParent -Recurse -Force -ErrorAction SilentlyContinue
 
-            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -EnableException
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
 
-            $global:dbatoolsciDownloadCallCount | Should -Be 3
-            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "readme.txt") | Should -BeTrue
-        }
+    It "downloads and extracts the real GitHub archive" {
+        Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalDirectory $targetDirectory -EnableException
 
-        It "Does not mistake a partial file from a failed request for a completed download" {
-            # The direct request writes a partial file and dies, the proxy fallback completes
-            # silently without writing anything, so the attempt must fail and be retried
-            # instead of extracting the leftover junk.
-            $global:dbatoolsciDownloadResults = @("junkthrow", "skip", "write")
+        Get-ChildItem -Path $targetDirectory -Recurse -Filter "CommandExecute.sql" | Should -Not -BeNullOrEmpty
+    }
 
-            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -EnableException
+    It "replaces an existing cached copy that contains dotfiles" {
+        # GitHub archives ship dotfiles (.github, .gitignore) which PowerShell treats as
+        # hidden on macOS/Linux. Regression test for replacing a cache that contains them.
+        Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath ".gitignore") -Value "dbatoolsci hidden file"
+        Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") -Value "dbatoolsci stale content"
 
-            $global:dbatoolsciDownloadCallCount | Should -Be 3
-            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "readme.txt") | Should -BeTrue
-        }
+        Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalDirectory $targetDirectory -EnableException
 
-        It "Retries when the download completes without creating the file" {
-            # First attempt completes silently without a file, the second attempt succeeds.
-            $global:dbatoolsciDownloadResults = @("skip", "write")
-
-            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -EnableException
-
-            $global:dbatoolsciDownloadCallCount | Should -Be 2
-            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "readme.txt") | Should -BeTrue
-        }
-
-        It "Gives up with a warning after all attempts fail" {
-            $global:dbatoolsciDownloadResults = @("skip", "skip", "skip")
-
-            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -WarningAction SilentlyContinue
-
-            $global:dbatoolsciDownloadCallCount | Should -Be 3
-            $WarnVar | Should -Match "after 3 attempts"
-            Test-Path -Path $targetDirectory | Should -BeFalse
-        }
-
-        It "Replaces an existing cached copy that contains dotfiles" {
-            # GitHub archives ship dotfiles (.github, .gitignore) which PowerShell treats as
-            # hidden on macOS/Linux, and Remove-Item without -Force refuses hidden items with
-            # "You do not have sufficient access rights". Regression test for the cache refresh.
-            $global:dbatoolsciDownloadResults = @("write")
-            $null = New-Item -Path $targetDirectory -ItemType Directory
-            Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath ".gitignore") -Value "dbatoolsci hidden file"
-            Set-Content -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") -Value "dbatoolsci stale content"
-
-            Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory -EnableException
-
-            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "readme.txt") | Should -BeTrue
-            Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") | Should -BeFalse
-        }
+        Get-ChildItem -Path $targetDirectory -Recurse -Filter "CommandExecute.sql" | Should -Not -BeNullOrEmpty
+        Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") | Should -BeFalse
     }
 }

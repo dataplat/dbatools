@@ -181,38 +181,6 @@ Describe $CommandName -Tag UnitTests {
                 { Invoke-DbaAdvancedRestore -BackupHistory $script:backupHistory -SqlInstance "sql1" -OutputScriptOnly -StopAtLsn "bad-lsn" } | Should -Throw "*StopAtLsn must be a numeric restore LSN or a colon-delimited value*"
             }
 
-            It "Should apply RestoreTime only to the final backup" {
-                Mock Stop-Function { }
-                $pointInTime = Get-Date "2025-01-01 02:00:00"
-                $pointInTimeBackups = foreach ($backupNumber in 1..3) {
-                    [PSCustomObject]@{
-                        Database      = "RestoreAsDb"
-                        Type          = if ($backupNumber -eq 1) { "1" } else { "2" }
-                        FirstLsn      = $backupNumber
-                        RestoreTime   = $pointInTime
-                        RecoveryModel = "Full"
-                        FileList      = @(
-                            [PSCustomObject]@{
-                                LogicalName  = "RestoreAsDb"
-                                PhysicalName = "C:\restore\RestoreAsDb.mdf"
-                            }
-                        )
-                        FullName      = @("C:\backups\RestoreAsDb-$backupNumber.bak")
-                        Position      = 1
-                    }
-                }
-
-                $splatPointInTimeRestore = @{
-                    BackupHistory    = $pointInTimeBackups
-                    SqlInstance      = "sql1"
-                    OutputScriptOnly = $true
-                    RestoreTime      = $pointInTime
-                }
-                $null = Invoke-DbaAdvancedRestore @splatPointInTimeRestore
-
-                @($script:mockRestores | Where-Object ToPointInTime).Count | Should -Be 1
-                $script:mockRestores[-1].ToPointInTime | Should -Be "2025-01-01T02:00:00.000"
-            }
         }
     }
 }

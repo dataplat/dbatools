@@ -21,131 +21,96 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    InModuleScope dbatools {
-        Context "Accepted SPNs" {
-            BeforeEach {
-                $script:acceptedSpnValue = "existing"
-                $script:extendedProtectionValue = 1
-                Mock Resolve-DbaNetworkName {
-                    [PSCustomObject]@{ FullComputerName = "sql1" }
-                }
-                Mock Invoke-ManagedComputerCommand {
-                    [PSCustomObject]@{
-                        DisplayName        = "SQL Server (MSSQLSERVER)"
-                        ServiceAccount     = "NT Service\MSSQLSERVER"
-                        AdvancedProperties = @(
-                            [PSCustomObject]@{ Name = "REGROOT"; Value = "Software\Microsoft\Microsoft SQL Server\MSSQL16.MSSQLSERVER" },
-                            [PSCustomObject]@{ Name = "VSNAME"; Value = "sql1" }
-                        )
-                    }
-                }
-                Mock Set-ItemProperty {
-                    if ($Name -eq "AcceptedSPNs") {
-                        $script:acceptedSpnValue = $Value
-                    }
-                    if ($Name -eq "ExtendedProtection") {
-                        $script:extendedProtectionValue = $Value
-                    }
-                }
-                Mock Get-ItemProperty {
-                    [PSCustomObject]@{
-                        ExtendedProtection = $script:extendedProtectionValue
-                        AcceptedSPNs       = $script:acceptedSpnValue
-                    }
-                }
-                Mock Invoke-Command2 {
-                    & $ScriptBlock @ArgumentList
-                }
-                Mock Test-ShouldProcess { $true }
-                Mock Stop-Function { throw $Message }
-            }
-
-            It "writes accepted SPNs as a semicolon-delimited registry value" {
-                $acceptedSpns = @("MSSQLSvc/sql1.domain.local:1433", "MSSQLSvc/sql1:1433")
-
-                $result = Set-DbaExtendedProtection -SqlInstance "sql1" -Value Required -AcceptedSpn $acceptedSpns -Confirm:$false
-
-                $script:acceptedSpnValue | Should -Be ($acceptedSpns -join ";")
-                $result.AcceptedSpns | Should -Be $acceptedSpns
-            }
-
-            It "leaves accepted SPNs unchanged when AcceptedSpn is omitted" {
-                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -Value Required -Confirm:$false
-
-                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "AcceptedSPNs" } -Exactly 0 -Scope It
-            }
-
-            It "leaves Extended Protection unchanged when only AcceptedSpn is supplied" {
-                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -AcceptedSpn "MSSQLSvc/sql1:1433" -Confirm:$false
-
-                $script:extendedProtectionValue | Should -Be 1
-                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "ExtendedProtection" } -Exactly 0 -Scope It
-            }
-
-            It "clears accepted SPNs when an empty string is supplied" {
-                $null = Set-DbaExtendedProtection -SqlInstance "sql1" -AcceptedSpn "" -Confirm:$false
-
-                $script:acceptedSpnValue | Should -Be ""
-                Should -Invoke Set-ItemProperty -ParameterFilter { $Name -eq "AcceptedSPNs" -and $Value -eq "" } -Exactly 1 -Scope It
-            }
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    Context "Command actually works" {
-        It "Default set and returns '0 - Off'" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -EnableException
-            $results.ExtendedProtection | Should -Be "0 - Off"
-        }
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $originalExtendedProtection = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceRestart
+        $originalValue = [int](($originalExtendedProtection.ExtendedProtection -split " ")[0])
+        $originalAcceptedSpns = @($originalExtendedProtection.AcceptedSpns)
+        $acceptedSpns = @("MSSQLSvc/dbatoolsci.domain.local:1433", "MSSQLSvc/dbatoolsci:1433")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
-    Context "Command works when passed different values" {
-        BeforeAll {
-            Mock Test-ShouldProcess { $false } -ModuleName dbatools
-            Mock Invoke-ManagedComputerCommand -MockWith {
-                param (
-                    $ComputerName,
-                    $Credential,
-                    $ScriptBlock,
-                    $EnableException
-                )
-                $server = [DbaInstanceParameter[]]$TestConfig.InstanceSingle
-                @{
-                    DisplayName        = "SQL Server ($($server.InstanceName))"
-                    AdvancedProperties = @(
-                        @{
-                            Name  = "REGROOT"
-                            Value = "Software\Microsoft\Microsoft SQL Server\MSSQL10_50.SQL2008R2SP2"
-                        }
-                    )
-                }
-            } -ModuleName dbatools
-        }
-        It "Set explicitly to '0 - Off' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value Off -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 0"
-        }
-        It "Set explicitly to '0 - Off' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value 0 -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 0"
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        if ($null -ne $originalValue) {
+            $restoreAcceptedSpns = if ($originalAcceptedSpns.Count -gt 0) { $originalAcceptedSpns } else { "" }
+            $splatRestoreExtendedProtection = @{
+                SqlInstance     = $TestConfig.InstanceRestart
+                Value           = $originalValue
+                AcceptedSpn     = $restoreAcceptedSpns
+                Confirm         = $false
+                EnableException = $true
+            }
+            $null = Set-DbaExtendedProtection @splatRestoreExtendedProtection
         }
 
-        It "Set explicitly to '1 - Allowed' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value Allowed -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 1"
-        }
-        It "Set explicitly to '1 - Allowed' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value 1 -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 1"
-        }
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
 
-        It "Set explicitly to '2 - Required' using text" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value Required -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 2"
+    It "writes accepted SPNs and the requested protection level" {
+        $splatSetExtendedProtection = @{
+            SqlInstance     = $TestConfig.InstanceRestart
+            Value           = "Required"
+            AcceptedSpn     = $acceptedSpns
+            Confirm         = $false
+            EnableException = $true
         }
-        It "Set explicitly to '2 - Required' using number" {
-            $results = Set-DbaExtendedProtection -SqlInstance $TestConfig.InstanceSingle -Value 2 -EnableException -Verbose 4>&1
-            $results[-1] | Should -BeLike "*Value: 2"
+        $results = Set-DbaExtendedProtection @splatSetExtendedProtection
+        $readBack = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceRestart -EnableException
+
+        $results.ExtendedProtection | Should -Be "2 - Required"
+        $readBack.ExtendedProtection | Should -Be "2 - Required"
+        $readBack.AcceptedSpns | Should -Be $acceptedSpns
+    }
+
+    It "leaves accepted SPNs unchanged when AcceptedSpn is omitted" {
+        $splatSetProtectionOnly = @{
+            SqlInstance     = $TestConfig.InstanceRestart
+            Value           = "Off"
+            Confirm         = $false
+            EnableException = $true
         }
+        $null = Set-DbaExtendedProtection @splatSetProtectionOnly
+        $readBack = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceRestart -EnableException
+
+        $readBack.ExtendedProtection | Should -Be "0 - Off"
+        $readBack.AcceptedSpns | Should -Be $acceptedSpns
+    }
+
+    It "leaves Extended Protection unchanged when only AcceptedSpn is supplied" {
+        $replacementSpn = "MSSQLSvc/dbatoolsci-replacement:1433"
+        $splatSetAcceptedSpnOnly = @{
+            SqlInstance     = $TestConfig.InstanceRestart
+            AcceptedSpn     = $replacementSpn
+            Confirm         = $false
+            EnableException = $true
+        }
+        $null = Set-DbaExtendedProtection @splatSetAcceptedSpnOnly
+        $readBack = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceRestart -EnableException
+
+        $readBack.ExtendedProtection | Should -Be "0 - Off"
+        $readBack.AcceptedSpns | Should -Be $replacementSpn
+    }
+
+    It "clears accepted SPNs when an empty string is supplied" {
+        $splatClearAcceptedSpns = @{
+            SqlInstance     = $TestConfig.InstanceRestart
+            AcceptedSpn     = ""
+            Confirm         = $false
+            EnableException = $true
+        }
+        $null = Set-DbaExtendedProtection @splatClearAcceptedSpns
+        $readBack = Get-DbaExtendedProtection -SqlInstance $TestConfig.InstanceRestart -EnableException
+
+        $readBack.AcceptedSpns | Should -BeNullOrEmpty
     }
 }
