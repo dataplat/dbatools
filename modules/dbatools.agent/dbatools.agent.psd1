@@ -24,7 +24,8 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
-        'Copy-DbaAgentJobStep'
+        'Copy-DbaAgentJobStep',
+        'Copy-DbaAgentOperator'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
