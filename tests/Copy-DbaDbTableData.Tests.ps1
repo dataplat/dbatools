@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "Copy-DbaDbTableData",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -41,6 +41,7 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
 }
 
 Describe $CommandName -Tag IntegrationTests {
