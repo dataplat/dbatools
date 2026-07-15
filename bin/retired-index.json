@@ -344,6 +344,11 @@
     "retiredPath": "private/retired/Get-DbaDbMailAccount.ps1",
     "flippedUtc": "2026-07-15T12:15:47Z"
   },
+  "Get-DbaDbMailConfig": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaDbMailConfig.ps1",
+    "flippedUtc": "2026-07-15T12:39:59Z"
+  },
   "Get-DbaDbMailProfile": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
