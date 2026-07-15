@@ -40,7 +40,8 @@
         'Get-DbaAgentOperator',
         'Get-DbaAgentProxy',
         'Get-DbaAgentSchedule',
-        'Get-DbaAgentServer'
+        'Get-DbaAgentServer',
+        'Get-DbaDbMail'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
