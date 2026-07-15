@@ -94,7 +94,6 @@
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'ConvertTo-DbaXESession',
-        'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
         'Copy-DbaAgentJobStep',

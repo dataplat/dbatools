@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaAgentJob',
-        'Get-DbaDbMailProfile'
+        'Get-DbaDbMailProfile',
+        'Copy-DbaAgentAlert'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

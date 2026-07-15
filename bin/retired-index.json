@@ -49,6 +49,11 @@
     "retiredPath": "private/retired/ConvertTo-DbaTimeline.ps1",
     "flippedUtc": "2026-07-11T08:56:30Z"
   },
+  "Copy-DbaAgentAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Copy-DbaAgentAlert.ps1",
+    "flippedUtc": "2026-07-15T00:42:03Z"
+  },
   "Disable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Disable-DbaForceNetworkEncryption.ps1",
