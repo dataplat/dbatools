@@ -200,7 +200,6 @@
         'Get-DbaDbForeignKey',
         'Get-DbaDbIdentity',
         'Get-DbaDbLogShipError',
-        'Get-DbaDbMailAccount',
         'Get-DbaDbMailConfig',
         'Get-DbaDbMailHistory',
         'Get-DbaDbMailLog',
