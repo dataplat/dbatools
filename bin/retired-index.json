@@ -194,6 +194,11 @@
     "retiredPath": "private/retired/Get-DbaAgentJobOutputFile.ps1",
     "flippedUtc": "2026-07-15T08:23:23Z"
   },
+  "Get-DbaAgentJobStep": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaAgentJobStep.ps1",
+    "flippedUtc": "2026-07-15T08:55:23Z"
+  },
   "Get-DbaAvailabilityGroup": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
