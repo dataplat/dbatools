@@ -89,7 +89,7 @@ $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Litera
 ```
 
 - [x] Run the replacement contexts against the persisted local SSMS store and real SQL Agent metadata in `msdb`: 2 registered-server tests and 3 Agent job/step tests pass with zero failures, and no prefixed jobs remain after cleanup.
-- [ ] Commit: `Tests - Use real registered servers and Agent jobs` with body `(do none)`.
+- [x] Commit: `Tests - Use real registered servers and Agent jobs` with body `(do none)`.
 
 ---
 
@@ -166,7 +166,7 @@ $result.CertificateThumbprint | Should -Be $unsuitableCertificate.Thumbprint
 - [x] In `Set-DbaExtendedProtection.Tests.ps1`, assert writing `Required` plus two SPNs round-trips through the getter; changing only `Value` preserves SPNs; changing only `AcceptedSpn` preserves the Extended Protection value; and an empty string clears the registry value.
 - [ ] Run all three focused files on the `RESTART` runner; expect zero failed tests and confirm original registry/certificate state is restored.
   - [x] Parse and forbidden-construct scans pass locally. A real local Extended Protection run reached the registry boundary and failed because the desktop console is not UAC-elevated; final execution remains assigned to the elevated `RESTART` runner.
-- [ ] Commit: `Tests - Use real certificate and registry boundaries` with body `(do none)`.
+- [x] Commit: `Tests - Use real certificate and registry boundaries` with body `(do none)`.
 
 ---
 
@@ -175,8 +175,8 @@ $result.CertificateThumbprint | Should -Be $unsuitableCertificate.Thumbprint
 **Files:**
 - Verify all files modified in Tasks 1-4
 
-- [ ] Compare the patch against the audited PR list: #10415, #10424, #10425, #10426, #10428, #10434, #10435, #10437, #10440, #10441, #10442, #10443, and #10444 are addressed; #10438 remains unchanged; #10451 remains superseded by #10453.
-- [ ] Scan added lines and affected replacement contexts for forbidden constructs:
+- [x] Compare the patch against the audited PR list: #10415, #10424, #10425, #10426, #10428, #10434, #10435, #10437, #10440, #10441, #10442, #10443, and #10444 are addressed; #10438 remains unchanged; #10451 remains superseded by #10453.
+- [x] Scan added lines and affected replacement contexts for forbidden constructs:
 
 ```powershell
 git diff --unified=0 development...HEAD -- tests | rg "^\+.*\b(Mock|Should\s+-Invoke|InModuleScope)\b|^\+.*New-Object\s+Microsoft\.SqlServer\.Management\.Smo"
@@ -184,8 +184,8 @@ git diff --unified=0 development...HEAD -- tests | rg "^\+.*\b(Mock|Should\s+-In
 
 Expected: no matches in replacement coverage. Any unrelated retained pre-existing match must be identified by `git blame` and must not be part of the new patch.
 
-- [ ] Parse every changed PowerShell test file with `[System.Management.Automation.Language.Parser]::ParseFile`; expect zero parse errors.
-- [ ] Run PSScriptAnalyzer on every changed PowerShell test file using the repository settings; expect zero new diagnostics.
-- [ ] Run the focused unit tests locally where no external boundary is required, then rely on the existing Azure/AppVeyor scenario matrix for `SINGLE`, `MULTI`, and `RESTART` integration execution.
-- [ ] Review `git diff --check`, `git status --short`, and the final diff. Confirm cleanup is symmetrical, no unrelated user changes were touched, and no skipped placeholder replaces a missing dependency.
+- [x] Parse every changed PowerShell test file with `[System.Management.Automation.Language.Parser]::ParseFile`; 14 changed PowerShell files parse with zero errors.
+- [x] Run PSScriptAnalyzer using the repository's `-Severity Error` gate; 14 changed PowerShell files return zero error diagnostics.
+- [x] Run the focused unit tests locally where no external boundary is required; 21 tests pass with zero failures. Use the existing Azure/AppVeyor scenario matrix for final `SINGLE`, `MULTI`, and elevated `RESTART` integration execution.
+- [x] Review `git diff --check`, `git status --short`, and the final diff. Cleanup is symmetrical, no skip placeholder was added, and the only unstaged path is the user's pre-existing `.gitignore` change, which remains untouched.
 - [ ] Commit any verification-only corrections with a scoped `Tests - ...` subject and `(do none)` body. Do not publish or merge unless separately requested.
