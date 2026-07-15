@@ -84,6 +84,11 @@
     "retiredPath": "private/retired/Copy-DbaAgentSchedule.ps1",
     "flippedUtc": "2026-07-15T03:19:07Z"
   },
+  "Copy-DbaAgentServer": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Copy-DbaAgentServer.ps1",
+    "flippedUtc": "2026-07-15T03:43:35Z"
+  },
   "Disable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Disable-DbaForceNetworkEncryption.ps1",
