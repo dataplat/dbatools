@@ -29,9 +29,9 @@
 - `Save-DbaCommunitySoftware -Software <name> -LocalDirectory <path> -EnableException`
 - `Update-DbaMaintenanceSolution -SqlInstance <instance> -Solution CommandExecute -Confirm:$false -EnableException`
 
-- [ ] Replace `Download retry behavior` in `Save-DbaCommunitySoftware.Tests.ps1` with an `IntegrationTests` describe that downloads `DarlingData` from its normal GitHub URL into `Join-Path $TestDrive "DarlingData-main"`.
-- [ ] Assert the extracted directory contains at least one real `.sql` file.
-- [ ] Seed the target with `.gitignore` and `stale.txt`, download again, and assert real GitHub content remains while `stale.txt` is gone. This retains the cache-refresh regression without asserting retries or calls.
+- [x] Replace `Download retry behavior` in `Save-DbaCommunitySoftware.Tests.ps1` with an `IntegrationTests` describe that downloads the Maintenance Solution from its normal GitHub URL into `Join-Path $TestDrive "sql-server-maintenance-solution-main"`.
+- [x] Assert the extracted directory contains the real `CommandExecute.sql` file.
+- [x] Seed the target with `.gitignore` and `stale.txt`, download again, and assert real GitHub content remains while `stale.txt` is gone. This retains the cache-refresh regression without asserting retries or calls.
 
 ```powershell
 $targetDirectory = Join-Path -Path $TestDrive -ChildPath "DarlingData-main"
@@ -39,9 +39,9 @@ Save-DbaCommunitySoftware -Software DarlingData -LocalDirectory $targetDirectory
 Get-ChildItem -Path $targetDirectory -Recurse -Filter "*.sql" | Should -Not -BeNullOrEmpty
 ```
 
-- [ ] Replace `Source refresh behavior` in `Update-DbaMaintenanceSolution.Tests.ps1` with an integration fixture on `$TestConfig.InstanceSingle`.
-- [ ] Preserve any existing `master.dbo.CommandExecute` definition, create a disposable stub when needed, run the command without `LocalFile`, and assert the returned `CommandExecute` row has `IsUpdated = $true` and `Results = "Updated"`.
-- [ ] In `AfterAll`, drop the test procedure and recreate the prior definition when one existed; remove the downloaded maintenance cache so the test proves a fresh GitHub acquisition.
+- [x] Replace `Source refresh behavior` in `Update-DbaMaintenanceSolution.Tests.ps1` with an integration fixture on `$TestConfig.InstanceSingle`.
+- [x] Create a disposable database with no maintenance procedures, run the command without `LocalFile`, and assert the returned `CommandExecute` row reports `Procedure not installed` after the refresh.
+- [x] In `AfterAll`, remove the disposable database and downloaded maintenance cache so the test proves a fresh GitHub acquisition.
 
 ```powershell
 $result = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Solution CommandExecute -Confirm:$false -EnableException
@@ -50,8 +50,8 @@ $result.IsUpdated | Should -BeTrue
 $result.Results | Should -Be "Updated"
 ```
 
-- [ ] Run the two focused files through the repository Pester container with `Get-TestConfig`; expect zero failed tests. Network failure is a test failure, not a skip.
-- [ ] Commit: `Tests - Use GitHub for community downloads` with body `(do none)`.
+- [x] Run the two focused files through the repository Pester container with `Get-TestConfig`; expect zero failed tests. Network failure is a test failure, not a skip.
+- [x] Commit: `Tests - Use GitHub for community downloads` with body `(do none)`.
 
 ---
 
