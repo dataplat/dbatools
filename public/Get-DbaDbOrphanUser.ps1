@@ -118,7 +118,14 @@ function Get-DbaDbOrphanUser {
                             $db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None
                         )
                         if (-not $isContainedDatabase) {
-                            $UsersToWork += $db.Users | Where-Object { ($_.Login -eq "") -and ($_.ID -gt 4) -and ($_.Sid.Length -eq 16) -and ($_.LoginType -in "SqlLogin", "Certificate") }
+                            $UsersToWork += $db.Users | Where-Object {
+                                ($_.Login -eq "") -and
+                                ($_.ID -gt 4) -and
+                                (
+                                    (($_.LoginType -eq "SqlLogin") -and ($_.Sid.Length -eq 16)) -or
+                                    ($_.LoginType -eq "Certificate")
+                                )
+                            }
                         } else {
                             Write-Message -Level Verbose -Message "Skipping SQL login orphan check on contained database '$db' (ContainmentType: $($db.ContainmentType))."
                         }

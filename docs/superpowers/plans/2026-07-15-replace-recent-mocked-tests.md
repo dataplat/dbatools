@@ -65,10 +65,10 @@ $result.Results | Should -Be "Updated"
 - Local `Add/Get/Remove-DbaRegServer` and `Add/Get/Remove-DbaRegServerGroup` calls with no `SqlInstance`
 - `Find-DbaAgentJob` against `$TestConfig.InstanceSingle`
 
-- [ ] Move the native local registered-server cases into the integration describe and create `ParentA\Shared` and `ParentB\Shared` through `Add-DbaRegServerGroup` with no `SqlInstance`.
-- [ ] Add real local registered servers through `Add-DbaRegServer`, export a server to a generated and explicit path, and assert the resulting files exist with the expected local instance/name components.
-- [ ] Export the two persisted same-leaf groups to generated and explicit paths and assert two unique files whose names contain `ParentA$Shared` and `ParentB$Shared`.
-- [ ] Remove the local registered servers and parent groups in `AfterAll`, and remove every output file created under `TestDrive`.
+- [x] Move the native local registered-server cases into the integration describe and create two random parent paths ending in `Shared` through `Add-DbaRegServerGroup` with no `SqlInstance`.
+- [x] Add real local registered servers through `Add-DbaRegServer`, export a server to a generated and explicit path, and assert the resulting files exist with the expected local instance/name components.
+- [x] Export the two persisted same-leaf groups to generated and explicit paths and assert two unique files whose names contain each parent plus `Shared`.
+- [x] Remove the local registered servers and parent groups in `AfterAll`, and remove every output file created under `TestDrive`.
 
 ```powershell
 $parentAGroup = Add-DbaRegServerGroup -Name "ParentA\Shared"
@@ -77,9 +77,9 @@ $generatedFile = $localServer | Export-DbaRegServer -Path $TestDrive -EnableExce
 $generatedFile.Exists | Should -BeTrue
 ```
 
-- [ ] Remove the two fabricated `Find-DbaAgentJob` contexts and extend the existing SQL Agent fixture with real jobs named `Backup1Nightly`, `Backup2Nightly`, `ETL1`, `ETL2`, `Literal*Job`, and `LiteralXJob`, including real steps for step-name wildcard coverage.
-- [ ] Add integration assertions for question-mark/character-class `JobName` wildcards, an escaped literal asterisk plus step wildcard, and regex `Pattern` OR semantics combined with exact `ExcludeJobName` behavior.
-- [ ] Extend the existing `AfterAll` job cleanup list to remove every new job.
+- [x] Remove the two fabricated `Find-DbaAgentJob` contexts and extend the existing SQL Agent fixture with real prefixed wildcard jobs, including real steps for step-name wildcard coverage.
+- [x] Add integration assertions for question-mark/character-class `JobName` wildcards, an escaped literal asterisk plus step wildcard, and regex `Pattern` OR semantics combined with exact `ExcludeJobName` behavior.
+- [x] Extend the existing `AfterAll` job cleanup list to remove every new job.
 
 ```powershell
 $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Literal*Job")
@@ -106,8 +106,8 @@ $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Litera
 **Interfaces:**
 - Existing `SINGLE`/`MULTI` SQL Server instances and current integration fixtures
 
-- [ ] Delete only `Should apply RestoreTime only to the final backup` from `Invoke-DbaAdvancedRestore.Tests.ps1`; `Restore-DbaDatabase.Tests.ps1` already performs real full/log restores and asserts exactly one `STOPAT`, on the final log script.
-- [ ] Delete the fabricated containment test in `New-DbaDatabase.Tests.ps1`, add a random containment database name to the existing integration fixture, create it with `-ContainmentType Partial`, and assert the refreshed SMO database reports `Partial`.
+- [x] Delete only `Should apply RestoreTime only to the final backup` from `Invoke-DbaAdvancedRestore.Tests.ps1`; `Restore-DbaDatabase.Tests.ps1` already performs real full/log restores and asserts exactly one `STOPAT`, on the final log script.
+- [x] Delete the fabricated containment test in `New-DbaDatabase.Tests.ps1`, create a random contained database in an isolated `InstanceSingle` integration fixture, and assert the refreshed SMO database reports `Partial`; capture and restore the contained-authentication prerequisite.
 
 ```powershell
 $containedDatabase = New-DbaDatabase -SqlInstance $InstanceSingle -Name $containmentDbName -ContainmentType Partial
@@ -115,9 +115,9 @@ $containedDatabase.Refresh()
 $containedDatabase.ContainmentType | Should -Be "Partial"
 ```
 
-- [ ] Remove `New-MockShrinkDatabase` and all mock/call-count assertions from `Invoke-DbaDbShrink.Tests.ps1`.
-- [ ] Extend the real shrink database fixture with a second data file. Assert `-FileName` shrinks only the requested logical file and a missing logical name returns no result plus the real warning.
-- [ ] Exercise the friendly/exception failure paths against the real primary file with `-ShrinkMethod EmptyFile`: friendly mode returns `Success = $false` with SQL error details; `-EnableException` throws. Do not assert internal `Stop-Function` usage.
+- [x] Remove `New-MockShrinkDatabase` and all mock/call-count assertions from `Invoke-DbaDbShrink.Tests.ps1`.
+- [x] Add a second real data file in the focused case. Assert `-FileName` shrinks only the requested logical file and a missing logical name returns no result plus the real warning.
+- [x] Exercise the friendly/exception failure paths against the only real primary data file with `-ShrinkMethod EmptyFile`: friendly mode returns `Success = $false` with SQL error details; `-EnableException` rethrows the original SQL error. Do not assert internal `Stop-Function` usage.
 
 ```powershell
 $result = @(Invoke-DbaDbShrink -InputObject $db -FileType Data -FileName $db.Name -ShrinkMethod EmptyFile -WarningAction SilentlyContinue)
@@ -125,14 +125,15 @@ $result.Success | Should -BeFalse
 $result.Notes | Should -Not -BeNullOrEmpty
 ```
 
-- [ ] Delete `New-MockRenameDatabase` and its `Get-DbaFile` mock. Add two preview cases to the existing `dbatoolsci_filemove` database: one for row/log logical overrides and one for row/log physical overrides/default `<FT>` behavior, asserting `LGN`/`FNN` mappings from the real database files.
-- [ ] Delete the fabricated compression fixture and mock-backed table/view selection context.
-- [ ] Extend the existing compression database with real `dbo` and `sales` tables plus schema-bound indexed views. Assert `-Table "sales.Customer"` returns only the sales table, `-View "sales.CustomerView"` returns only that indexed view, and `-View` without explicit `CompressionType` throws with `-EnableException`.
-- [ ] Retain the existing all-object and indexed-view integration cases as the replacement for the redundant mocked no-filter case.
-- [ ] Delete the fabricated orphan-user context. Extend the existing real fixture with a partial-contained database and contained SQL user, plus a certificate and certificate user in the ordinary database. Assert the contained SQL user is not returned and the non-contained certificate user is returned.
-- [ ] Clean up both databases, certificates/users through database removal, and all server logins with `EnableException`.
-- [ ] Run the six focused command files plus `tests/Restore-DbaDatabase.Tests.ps1`; expect zero failed tests on the required SQL versions.
-- [ ] Commit: `Tests - Use disposable SQL objects for regressions` with body `(do none)`.
+- [x] Delete `New-MockRenameDatabase` and its `Get-DbaFile` mock. Add two preview cases to the existing `dbatoolsci_filemove` database: one for row/log logical overrides and one for row/log physical overrides/default `<FT>` behavior, asserting `LGN`/`FNN` mappings from the real database files.
+- [x] Delete the fabricated compression fixture and mock-backed table/view selection context.
+- [x] Extend the existing compression database with real `dbo` and `sales` tables plus schema-bound indexed views. Assert schema-qualified `-Table` and `-View` select only the requested object, and `-View` without explicit `CompressionType` throws with `-EnableException`.
+- [x] Retain the existing all-object and indexed-view integration cases as the replacement for the redundant mocked no-filter case.
+- [x] Delete the fabricated orphan-user context. Extend the existing real fixture with a partial-contained database and contained SQL user, plus a certificate and certificate user in the ordinary database. Assert the contained SQL user is not returned and the non-contained certificate user is returned.
+- [x] Fix the production certificate-user predicate exposed by the real test: SQL-login users retain the 16-byte SID requirement while certificate-mapped users are classified by their real 32-byte SID/login type.
+- [x] Clean up both databases, certificates/users through database removal, and all server logins with `EnableException`; restore contained authentication.
+- [x] Run all 12 new SQL-backed assertions available on `InstanceSingle`; expect zero failures. Confirm the redundant restore case maps to the existing real `STOPAT` assertion and leave the full scenario matrix to final CI verification.
+- [x] Commit: `Tests - Use disposable SQL objects for regressions` with body `(do none)`.
 
 ---
 

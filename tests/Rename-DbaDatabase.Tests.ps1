@@ -36,84 +36,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    InModuleScope dbatools {
-        Context "Type-specific file templates" {
-            BeforeEach {
-                function New-MockRenameDatabase {
-                    $server = [PSCustomObject]@{
-                        ComputerName       = "localhost"
-                        ServiceName        = "MSSQLSERVER"
-                        DomainInstanceName = "localhost"
-                        Name               = "localhost"
-                        Databases          = @([PSCustomObject]@{ Name = "testdb" })
-                    }
-                    $server.PSObject.TypeNames.Insert(0, "Microsoft.SqlServer.Management.Smo.Server")
-                    $dataFile = [PSCustomObject]@{
-                        Name     = "olddata"
-                        FileName = "C:\data\olddata.mdf"
-                    }
-                    $logFile = [PSCustomObject]@{
-                        Name     = "oldlog"
-                        FileName = "C:\data\oldlog.ldf"
-                    }
-                    $fileGroup = [PSCustomObject]@{
-                        Name          = "PRIMARY"
-                        FileGroupType = "RowsFileGroup"
-                        Files         = @($dataFile)
-                    }
-
-                    $database = New-Object Microsoft.SqlServer.Management.Smo.Database
-                    $database.Name = "testdb"
-                    $database | Add-Member -Force -NotePropertyName Parent -NotePropertyValue $server
-                    $database | Add-Member -Force -NotePropertyName IsAccessible -NotePropertyValue $true
-                    $database | Add-Member -Force -NotePropertyName IsMirroringEnabled -NotePropertyValue $false
-                    $database | Add-Member -Force -NotePropertyName AvailabilityGroupName -NotePropertyValue ""
-                    $database | Add-Member -Force -NotePropertyName FileGroups -NotePropertyValue @($fileGroup)
-                    $database | Add-Member -Force -NotePropertyName LogFiles -NotePropertyValue @($logFile)
-
-                    $database
-                }
-
-                Mock Get-DbaFile { @() }
-            }
-
-            It "uses row and log overrides for logical names" {
-                $database = New-MockRenameDatabase
-
-                $result = Rename-DbaDatabase -InputObject $database -LogicalNameRows "<DBN>_data" -LogicalNameLog "<DBN>_log" -Preview -Confirm:$false
-
-                $result.LGN["olddata"] | Should -Be "testdb_data"
-                $result.LGN["oldlog"] | Should -Be "testdb_log"
-            }
-
-            It "uses the default logical template when no row override is supplied" {
-                $database = New-MockRenameDatabase
-
-                $result = Rename-DbaDatabase -InputObject $database -LogicalName "<DBN>_<FT>" -LogicalNameLog "<DBN>_journal" -Preview -Confirm:$false
-
-                $result.LGN["olddata"] | Should -Be "testdb_ROWS"
-                $result.LGN["oldlog"] | Should -Be "testdb_journal"
-            }
-
-            It "uses row and log overrides for physical file names" {
-                $database = New-MockRenameDatabase
-
-                $result = Rename-DbaDatabase -InputObject $database -FileNameRows "<DBN>_data" -FileNameLog "<DBN>_log" -Preview -Confirm:$false
-
-                $result.FNN["C:\data\olddata.mdf"] | Should -Be "C:\data\testdb_data.mdf"
-                $result.FNN["C:\data\oldlog.ldf"] | Should -Be "C:\data\testdb_log.ldf"
-            }
-
-            It "uses the default physical template when no row override is supplied" {
-                $database = New-MockRenameDatabase
-
-                $result = Rename-DbaDatabase -InputObject $database -FileName "<DBN>_<FT>" -FileNameLog "<DBN>_journal" -Preview -Confirm:$false
-
-                $result.FNN["C:\data\olddata.mdf"] | Should -Be "C:\data\testdb_ROWS.mdf"
-                $result.FNN["C:\data\oldlog.ldf"] | Should -Be "C:\data\testdb_journal.ldf"
-            }
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -250,6 +172,46 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $filePreviewResults = Rename-DbaDatabase @splatFilePreview
+
+            $previewDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_filemove"
+            $previewDataFile = $previewDatabase.FileGroups["PRIMARY"].Files[0]
+            $previewLogFile = $previewDatabase.LogFiles[0]
+
+            $splatLogicalOverrides = @{
+                InputObject     = $previewDatabase
+                LogicalNameRows = "<DBN>_data_override"
+                LogicalNameLog  = "<DBN>_log_override"
+                Preview         = $true
+                Confirm         = $false
+            }
+            $logicalOverrideResults = Rename-DbaDatabase @splatLogicalOverrides
+
+            $splatLogicalDefaults = @{
+                InputObject    = $previewDatabase
+                LogicalName   = "<DBN>_<FT>"
+                LogicalNameLog = "<DBN>_journal"
+                Preview        = $true
+                Confirm        = $false
+            }
+            $logicalDefaultResults = Rename-DbaDatabase @splatLogicalDefaults
+
+            $splatFileOverrides = @{
+                InputObject  = $previewDatabase
+                FileNameRows = "<DBN>_data_override"
+                FileNameLog  = "<DBN>_log_override"
+                Preview      = $true
+                Confirm      = $false
+            }
+            $fileOverrideResults = Rename-DbaDatabase @splatFileOverrides
+
+            $splatFileDefaults = @{
+                InputObject = $previewDatabase
+                FileName    = "<DBN>_<FT>"
+                FileNameLog = "<DBN>_journal"
+                Preview     = $true
+                Confirm     = $false
+            }
+            $fileDefaultResults = Rename-DbaDatabase @splatFileDefaults
         }
 
         It "Should have Results" {
@@ -263,6 +225,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have a Status of Partial" {
             $filePreviewResults.Status | Should -Be "Partial"
+        }
+
+        It "uses row and log logical-name templates on real database files" {
+            $logicalOverrideResults.LGN[$previewDataFile.Name] | Should -Be "dbatoolsci_filemove_data_override"
+            $logicalOverrideResults.LGN[$previewLogFile.Name] | Should -Be "dbatoolsci_filemove_log_override"
+            $logicalDefaultResults.LGN[$previewDataFile.Name] | Should -Be "dbatoolsci_filemove_ROWS"
+            $logicalDefaultResults.LGN[$previewLogFile.Name] | Should -Be "dbatoolsci_filemove_journal"
+        }
+
+        It "uses row and log physical-name templates on real database files" {
+            $dataDirectory = Split-Path -Path $previewDataFile.FileName -Parent
+            $logDirectory = Split-Path -Path $previewLogFile.FileName -Parent
+            $dataExtension = [System.IO.Path]::GetExtension($previewDataFile.FileName)
+            $logExtension = [System.IO.Path]::GetExtension($previewLogFile.FileName)
+
+            $fileOverrideResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_data_override$dataExtension")
+            $fileOverrideResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_log_override$logExtension")
+            $fileDefaultResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_ROWS$dataExtension")
+            $fileDefaultResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_journal$logExtension")
         }
     }
 
