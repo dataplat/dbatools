@@ -77,9 +77,9 @@ $generatedFile = $localServer | Export-DbaRegServer -Path $TestDrive -EnableExce
 $generatedFile.Exists | Should -BeTrue
 ```
 
-- [x] Remove the two fabricated `Find-DbaAgentJob` contexts and extend the existing SQL Agent fixture with real prefixed wildcard jobs, including real steps for step-name wildcard coverage.
+- [x] Remove the two fabricated `Find-DbaAgentJob` contexts and add an isolated SQL Agent metadata fixture with real prefixed wildcard jobs, including real steps for step-name wildcard coverage.
 - [x] Add integration assertions for question-mark/character-class `JobName` wildcards, an escaped literal asterisk plus step wildcard, and regex `Pattern` OR semantics combined with exact `ExcludeJobName` behavior.
-- [x] Extend the existing `AfterAll` job cleanup list to remove every new job.
+- [x] Remove every new job in the isolated fixture's `AfterAll` block.
 
 ```powershell
 $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Literal*Job")
@@ -88,7 +88,7 @@ $escapedJobName = [System.Management.Automation.WildcardPattern]::Escape("Litera
     Should -Be @("Backup1Nightly", "Backup2Nightly", "ETL2")
 ```
 
-- [ ] Run both focused files on a host with the local SSMS store and SQL Agent available; expect zero failed tests.
+- [x] Run the replacement contexts against the persisted local SSMS store and real SQL Agent metadata in `msdb`: 2 registered-server tests and 3 Agent job/step tests pass with zero failures, and no prefixed jobs remain after cleanup.
 - [ ] Commit: `Tests - Use real registered servers and Agent jobs` with body `(do none)`.
 
 ---
