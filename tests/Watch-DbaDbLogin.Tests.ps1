@@ -33,8 +33,10 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
 
         $testFile = "$($TestConfig.Temp)\Servers_$random.txt"
+        $failureFile = "$($TestConfig.Temp)\Servers_unreachable_$random.txt"
 
         $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Out-File $testFile
+        "localhost,1" | Out-File $failureFile
 
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
@@ -50,7 +52,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Get-DbaRegServer -SqlInstance $TestConfig.InstanceMulti1 | Remove-DbaRegServer
-        Remove-Item -Path $testFile
+        Remove-Item -Path $testFile, $failureFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -100,6 +102,18 @@ Describe $CommandName -Tag IntegrationTests {
             $caught.Exception.GetType().FullName | Should -Be "System.Exception"
             $caught.FullyQualifiedErrorId | Should -Be "dbatools_Watch-DbaDbLogin"
             $caught.Exception.Message | Should -Be $expectedMessage
+        }
+
+        It "preserves nested and outer warnings for an unreachable source" {
+            $sourceWarnings = @()
+
+            $result = @(Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb `
+                    -ServersFromFile $failureFile -WarningVariable sourceWarnings)
+
+            $result.Count | Should -Be 0
+            $sourceWarnings.Count | Should -Be 2
+            $sourceWarnings[0].ToString() | Should -Match ([regex]::Escape("[Connect-DbaInstance] Failure | Error connecting to [localhost,1]:"))
+            $sourceWarnings[1].ToString() | Should -Match ([regex]::Escape("[Watch-DbaDbLogin] Failure |"))
         }
     }
 }
