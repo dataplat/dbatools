@@ -30,7 +30,8 @@
         'Copy-DbaAgentSchedule',
         'Copy-DbaAgentServer',
         'Find-DbaAgentJob',
-        'Get-DbaAgentAlert'
+        'Get-DbaAgentAlert',
+        'Get-DbaAgentAlertCategory'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
