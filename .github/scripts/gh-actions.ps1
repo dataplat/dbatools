@@ -426,6 +426,284 @@ exec sp_addrolemember 'userrole','bob';
         }
     }
 
+    It -Skip:(-not $env:azurepasswd) "adds a second live secondary without replacing the Azure primary configuration" {
+        $PSDefaultParameterValues.Clear()
+        $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
+        $dbName = "dbatoolsci_logship_addsecondary"
+        $secondDbName = "${dbName}_second"
+        $missingPrimaryDbName = "${dbName}_missing"
+        $sasToken = $env:azurepasswd.TrimStart("?")
+        $escapedSasToken = $sasToken.Replace("'", "''")
+        $escapedDbName = $dbName.Replace("'", "''")
+        $escapedSecondDbName = $secondDbName.Replace("'", "''")
+        $primaryServer = $null
+        $firstSecondaryServer = $null
+        $secondSecondaryServer = $null
+        $associationQuery = @"
+SELECT
+    ps.secondary_server AS SecondaryServer,
+    ps.secondary_database AS SecondaryDatabase
+FROM msdb.dbo.log_shipping_primary_databases AS pd
+INNER JOIN msdb.dbo.log_shipping_primary_secondaries AS ps ON pd.primary_id = ps.primary_id
+WHERE pd.primary_database = N'$escapedDbName';
+"@
+
+        function Invoke-AzureLogShippingWithRetry {
+            [CmdletBinding()]
+            param (
+                [Parameter(Mandatory)]
+                [hashtable]$Parameters
+            )
+
+            $maximumRetries = 10
+            foreach ($attempt in 0..$maximumRetries) {
+                $Error.Clear()
+                $result = Invoke-DbaDbLogShipping @Parameters
+                if ($result.Result -eq "Success") {
+                    return [PSCustomObject]@{
+                        CommandResult              = $result
+                        PersistentTransientFailure = $false
+                    }
+                }
+
+                $errorText = $Error | Out-String
+                $isTransientAzureBlobFailure = $errorText -match "Cannot open backup device 'https://.*blob\.core\.windows\.net.*Operating system error 50"
+                if (-not $isTransientAzureBlobFailure -or $attempt -eq $maximumRetries) {
+                    return [PSCustomObject]@{
+                        CommandResult              = $result
+                        PersistentTransientFailure = $isTransientAzureBlobFailure
+                    }
+                }
+
+                $retryNumber = $attempt + 1
+                Write-Warning "Azure Blob backup device returned transient operating system error 50; retry $retryNumber of $maximumRetries in 10 seconds."
+                Start-Sleep -Seconds 10
+            }
+        }
+
+        try {
+            $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+            $firstSecondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
+            foreach ($connectionAttempt in 1..12) {
+                try {
+                    $secondSecondaryServer = Connect-DbaInstance -SqlInstance localhost:14334 -SqlCredential $cred -ErrorAction Stop
+                    break
+                } catch {
+                    if ($connectionAttempt -eq 12) {
+                        throw
+                    }
+                    Start-Sleep -Seconds 5
+                }
+            }
+
+            $createCredentialSql = "CREATE CREDENTIAL [$azureUrl] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$escapedSasToken'"
+            foreach ($server in @($primaryServer, $firstSecondaryServer, $secondSecondaryServer)) {
+                $server.Query("IF EXISTS (SELECT 1 FROM sys.credentials WHERE name = N'$azureUrl') DROP CREDENTIAL [$azureUrl]")
+                $server.Query($createCredentialSql)
+            }
+
+            $null = New-DbaDatabase -SqlInstance $primaryServer -Name $dbName
+
+            $splatInitialLogShipping = @{
+                SourceSqlInstance        = $primaryServer
+                DestinationSqlInstance   = $firstSecondaryServer
+                Database                 = $dbName
+                AzureBaseUrl             = $azureUrl
+                GenerateFullBackup       = $true
+                Force                    = $true
+            }
+            $initialAttempt = Invoke-AzureLogShippingWithRetry -Parameters $splatInitialLogShipping
+            if ($initialAttempt.PersistentTransientFailure) {
+                throw "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
+            }
+            $initialResult = $initialAttempt.CommandResult
+            $initialResult.Result | Should -Be "Success"
+
+            $primaryMetadataQuery = @"
+SELECT
+    pd.backup_directory AS BackupDirectory,
+    pd.backup_share AS BackupShare,
+    CONVERT(varchar(36), pd.backup_job_id) AS BackupJobId,
+    sj.name AS BackupJob,
+    sj.enabled AS BackupJobEnabled,
+    COUNT(sjs.schedule_id) AS BackupScheduleCount
+FROM msdb.dbo.log_shipping_primary_databases AS pd
+INNER JOIN msdb.dbo.sysjobs AS sj ON pd.backup_job_id = sj.job_id
+LEFT JOIN msdb.dbo.sysjobschedules AS sjs ON sj.job_id = sjs.job_id
+WHERE pd.primary_database = N'$escapedDbName'
+GROUP BY pd.backup_directory, pd.backup_share, pd.backup_job_id, sj.name, sj.enabled;
+"@
+            $secondaryMetadataQuery = @"
+SELECT
+    sd.secondary_database AS SecondaryDatabase,
+    CONVERT(varchar(36), ls.restore_job_id) AS RestoreJobId,
+    sj.name AS RestoreJob,
+    sj.enabled AS RestoreJobEnabled,
+    COUNT(sjs.schedule_id) AS RestoreScheduleCount
+FROM msdb.dbo.log_shipping_secondary_databases AS sd
+INNER JOIN msdb.dbo.log_shipping_secondary AS ls ON sd.secondary_id = ls.secondary_id
+INNER JOIN msdb.dbo.sysjobs AS sj ON ls.restore_job_id = sj.job_id
+LEFT JOIN msdb.dbo.sysjobschedules AS sjs ON sj.job_id = sjs.job_id
+WHERE sd.secondary_database = N'$escapedDbName'
+GROUP BY sd.secondary_database, ls.restore_job_id, sj.name, sj.enabled;
+"@
+            $primaryBefore = Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $primaryMetadataQuery -EnableException
+            $firstSecondaryBefore = Invoke-DbaQuery -SqlInstance $firstSecondaryServer -Database msdb -Query $secondaryMetadataQuery -EnableException
+            $primaryBefore | Should -Not -BeNullOrEmpty
+            $firstSecondaryBefore | Should -Not -BeNullOrEmpty
+
+            $splatAddSecondary = @{
+                SourceSqlInstance        = $primaryServer
+                DestinationSqlInstance   = $secondSecondaryServer
+                Database                 = $dbName
+                AddSecondary             = $true
+                GenerateFullBackup       = $true
+                SecondaryDatabaseSuffix = "_second"
+                Force                    = $true
+            }
+            $addSecondaryAttempt = Invoke-AzureLogShippingWithRetry -Parameters $splatAddSecondary
+            if ($addSecondaryAttempt.PersistentTransientFailure) {
+                throw "Azure Blob backup device still returned transient operating system error 50 after 10 retries"
+            }
+            $addSecondaryResult = $addSecondaryAttempt.CommandResult
+            $addSecondaryResult.Result | Should -Be "Success"
+            $addSecondaryResult.SecondaryDatabase | Should -Be $secondDbName
+
+            $primaryAfter = Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $primaryMetadataQuery -EnableException
+            $primaryAfter.BackupDirectory | Should -Be $primaryBefore.BackupDirectory
+            $primaryAfter.BackupShare | Should -Be $primaryBefore.BackupShare
+            $primaryAfter.BackupJobId | Should -Be $primaryBefore.BackupJobId
+            $primaryAfter.BackupJob | Should -Be $primaryBefore.BackupJob
+            $primaryAfter.BackupJobEnabled | Should -Be $primaryBefore.BackupJobEnabled
+            $primaryAfter.BackupScheduleCount | Should -Be $primaryBefore.BackupScheduleCount
+
+            $associations = @(Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $associationQuery -EnableException)
+            $associations.Count | Should -Be 2
+            $associations.SecondaryDatabase | Should -Contain $dbName
+            $associations.SecondaryDatabase | Should -Contain $secondDbName
+            @($associations.SecondaryServer | Select-Object -Unique).Count | Should -Be 2
+
+            $firstSecondaryAfter = Invoke-DbaQuery -SqlInstance $firstSecondaryServer -Database msdb -Query $secondaryMetadataQuery -EnableException
+            $firstSecondaryAfter.RestoreJobId | Should -Be $firstSecondaryBefore.RestoreJobId
+            $firstSecondaryAfter.RestoreJob | Should -Be $firstSecondaryBefore.RestoreJob
+            $firstSecondaryAfter.RestoreJobEnabled | Should -Be $firstSecondaryBefore.RestoreJobEnabled
+            $firstSecondaryAfter.RestoreScheduleCount | Should -Be $firstSecondaryBefore.RestoreScheduleCount
+
+            $secondSecondaryMetadataQuery = $secondaryMetadataQuery.Replace("N'$escapedDbName'", "N'$escapedSecondDbName'")
+            $secondSecondaryMetadata = Invoke-DbaQuery -SqlInstance $secondSecondaryServer -Database msdb -Query $secondSecondaryMetadataQuery -EnableException
+            $secondSecondaryMetadata.SecondaryDatabase | Should -Be $secondDbName
+            $secondSecondaryMetadata.RestoreJob | Should -BeLike "*LSRestore*$dbName*"
+
+            $firstDatabaseState = Invoke-DbaQuery -SqlInstance $firstSecondaryServer -Database master -Query "SELECT state_desc AS State FROM sys.databases WHERE name = N'$escapedDbName'" -EnableException
+            $secondDatabaseState = Invoke-DbaQuery -SqlInstance $secondSecondaryServer -Database master -Query "SELECT state_desc AS State FROM sys.databases WHERE name = N'$escapedSecondDbName'" -EnableException
+            $firstDatabaseState.State | Should -Be "RESTORING"
+            $secondDatabaseState.State | Should -Be "RESTORING"
+
+            $splatAddSecondary.EnableException = $true
+            { Invoke-DbaDbLogShipping @splatAddSecondary } | Should -Throw "*already associated*"
+            $associationsAfterDuplicate = @(Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $associationQuery -EnableException)
+            $associationsAfterDuplicate.Count | Should -Be 2
+
+            $null = New-DbaDatabase -SqlInstance $primaryServer -Name $missingPrimaryDbName
+            $splatMissingPrimary = @{
+                SourceSqlInstance        = $primaryServer
+                DestinationSqlInstance   = $secondSecondaryServer
+                Database                 = $missingPrimaryDbName
+                AddSecondary             = $true
+                GenerateFullBackup       = $true
+                SecondaryDatabaseSuffix = "_second"
+                Force                    = $true
+                EnableException          = $true
+            }
+            { Invoke-DbaDbLogShipping @splatMissingPrimary } | Should -Throw "*not configured as a log shipping primary*"
+        } finally {
+            if ($primaryServer) {
+                try {
+                    $cleanupAssociations = @(Invoke-DbaQuery -SqlInstance $primaryServer -Database msdb -Query $associationQuery -EnableException)
+                    foreach ($association in $cleanupAssociations) {
+                        $escapedSecondaryServer = "$($association.SecondaryServer)".Replace("'", "''")
+                        $escapedSecondaryDatabase = "$($association.SecondaryDatabase)".Replace("'", "''")
+                        $primaryServer.Databases["master"].Query("EXEC dbo.sp_delete_log_shipping_primary_secondary @primary_database = N'$escapedDbName', @secondary_server = N'$escapedSecondaryServer', @secondary_database = N'$escapedSecondaryDatabase'")
+                    }
+                    $primaryServer.Databases["master"].Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = N'$escapedDbName') EXEC dbo.sp_delete_log_shipping_primary_database @database = N'$escapedDbName'")
+                } catch {
+                    Write-Warning "Unable to remove primary log-shipping metadata for ${dbName}: $($_.Exception.Message)"
+                }
+            }
+
+            foreach ($secondary in @(
+                    [PSCustomObject]@{ Server = $firstSecondaryServer; Database = $dbName; EscapedDatabase = $escapedDbName }
+                    [PSCustomObject]@{ Server = $secondSecondaryServer; Database = $secondDbName; EscapedDatabase = $escapedSecondDbName }
+                )) {
+                if (-not $secondary.Server) {
+                    continue
+                }
+
+                try {
+                    $secondary.Server.Databases["master"].Query("IF EXISTS (SELECT 1 FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = N'$($secondary.EscapedDatabase)') EXEC dbo.sp_delete_log_shipping_secondary_database @secondary_database = N'$($secondary.EscapedDatabase)'")
+                } catch {
+                    Write-Warning "Unable to remove secondary log-shipping metadata for $($secondary.Database): $($_.Exception.Message)"
+                }
+
+                try {
+                    $null = Remove-DbaDatabase -SqlInstance $secondary.Server -Database $secondary.Database -Confirm:$false -EnableException
+                } catch {
+                    Write-Warning "Unable to remove secondary database $($secondary.Database): $($_.Exception.Message)"
+                }
+            }
+
+            if ($primaryServer) {
+                foreach ($database in @($dbName, $missingPrimaryDbName)) {
+                    try {
+                        $null = Remove-DbaDatabase -SqlInstance $primaryServer -Database $database -Confirm:$false -EnableException
+                    } catch {
+                        Write-Warning "Unable to remove primary database ${database}: $($_.Exception.Message)"
+                    }
+                }
+            }
+
+            foreach ($server in @($primaryServer, $firstSecondaryServer, $secondSecondaryServer)) {
+                if (-not $server) {
+                    continue
+                }
+
+                try {
+                    $server.Query("IF EXISTS (SELECT 1 FROM sys.credentials WHERE name = N'$azureUrl') DROP CREDENTIAL [$azureUrl]")
+                } catch {
+                    Write-Warning "Unable to remove the Azure credential from ${server}: $($_.Exception.Message)"
+                }
+            }
+
+            try {
+                $splatAzList = @(
+                    "storage", "blob", "list"
+                    "--account-name", "dbatools"
+                    "--container-name", "dbatools"
+                    "--prefix", $dbName
+                    "--sas-token", $sasToken
+                    "--query", "[].name"
+                    "--output", "tsv"
+                )
+                $blobs = & az @splatAzList 2>$null
+                if ($blobs) {
+                    $blobs -split "`n" | Where-Object { $PSItem } | ForEach-Object {
+                        $splatAzDelete = @(
+                            "storage", "blob", "delete"
+                            "--account-name", "dbatools"
+                            "--container-name", "dbatools"
+                            "--name", $PSItem
+                            "--sas-token", $sasToken
+                            "--output", "none"
+                        )
+                        $null = & az @splatAzDelete 2>$null
+                    }
+                }
+            } catch {
+                Write-Warning "Unable to remove Azure test blobs for ${dbName}: $($_.Exception.Message)"
+            }
+        }
+    }
+
     # Storage account key test removed - deprecated authentication method
     # - Storage account keys create page blobs (limited to 1 TB, more expensive)
     # - Microsoft recommends SAS tokens for SQL Server 2016+ (creates block blobs, up to 12.8 TB striped)
