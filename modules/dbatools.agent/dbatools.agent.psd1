@@ -23,7 +23,8 @@
         'Get-DbaDbMailProfile',
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
-        'Copy-DbaAgentJobCategory'
+        'Copy-DbaAgentJobCategory',
+        'Copy-DbaAgentJobStep'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

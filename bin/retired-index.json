@@ -64,6 +64,11 @@
     "retiredPath": "private/retired/Copy-DbaAgentJobCategory.ps1",
     "flippedUtc": "2026-07-15T01:45:04Z"
   },
+  "Copy-DbaAgentJobStep": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Copy-DbaAgentJobStep.ps1",
+    "flippedUtc": "2026-07-15T02:14:28Z"
+  },
   "Disable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Disable-DbaForceNetworkEncryption.ps1",
