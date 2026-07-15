@@ -21,6 +21,10 @@ function Set-DbaExtendedProtection {
         Use "Off" to disable Extended Protection, "Allowed" to accept both protected and unprotected connections, or "Required" to enforce Extended Protection for all client connections.
         Defaults to "Off" when not specified. Setting to "Required" may prevent older applications from connecting unless they support Extended Protection authentication.
 
+    .PARAMETER AcceptedSpn
+        Specifies the service principal names SQL Server accepts for Extended Protection service binding. Multiple values are stored as a semicolon-delimited registry value.
+        When this parameter is supplied without Value, the current Extended Protection level is left unchanged. Pass an empty string to clear the accepted SPN list.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -53,6 +57,7 @@ function Set-DbaExtendedProtection {
         - InstanceName: The SQL Server instance name (e.g., MSSQLSERVER, SQL2019)
         - SqlInstance: The full SQL Server instance name in computer\instance format
         - ExtendedProtection: The Extended Protection setting value with human-readable description (e.g., "0 - Off", "1 - Allowed", "2 - Required")
+        - AcceptedSpns: The accepted service principal names configured for Extended Protection, returned as individual strings
 
     .EXAMPLE
         PS C:\> Set-DbaExtendedProtection
@@ -75,6 +80,11 @@ function Set-DbaExtendedProtection {
         Set Extended Protection of SQL Engine for the SQL2008R2SP2 on sql01 to "Allowed". Uses Windows Credentials to both connect and modify the registry.
 
     .EXAMPLE
+        PS C:\> Set-DbaExtendedProtection -SqlInstance sql01 -AcceptedSpn "MSSQLSvc/sql01.domain.local:1433", "MSSQLSvc/sql01:1433"
+
+        Sets the accepted SPNs for Extended Protection without changing the current Extended Protection level.
+
+    .EXAMPLE
         PS C:\> Set-DbaExtendedProtection -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
         Shows what would happen if the command were executed.
@@ -87,9 +97,15 @@ function Set-DbaExtendedProtection {
         [PSCredential]$Credential,
         [ValidateSet(0, "Off", 1, "Allowed", 2, "Required")]
         [object]$Value = "Off",
+        [AllowEmptyString()]
+        [string[]]$AcceptedSpn,
         [switch]$EnableException
     )
     begin {
+        $setAcceptedSpn = Test-Bound -ParameterName AcceptedSpn
+        $setExtendedProtection = (Test-Bound -ParameterName Value) -or -not $setAcceptedSpn
+        $acceptedSpnValue = $AcceptedSpn -join ";"
+
         # Check value and set the integer value
         if (($Value -notin 0, 1, 2) -and ($null -ne $Value)) {
             $Value = switch ($Value) { "Off" { 0 } "Allowed" { 1 } "Required" { 2 } }
@@ -147,23 +163,34 @@ function Set-DbaExtendedProtection {
             Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
             Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
             Write-Message -Level Verbose -Message "Value: $Value" -Target $instance
+            if ($setAcceptedSpn) {
+                Write-Message -Level Verbose -Message "Accepted SPNs: $acceptedSpnValue" -Target $instance
+            }
 
             $scriptblock = {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                Set-ItemProperty -Path $regPath -Name ExtendedProtection -Value $args[3]
-                $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
+                if ($args[4]) {
+                    Set-ItemProperty -Path $regPath -Name ExtendedProtection -Value $args[3]
+                }
+                if ($args[5]) {
+                    Set-ItemProperty -Path $regPath -Name AcceptedSPNs -Value $args[6]
+                }
+                $settings = Get-ItemProperty -Path $regPath
+                $extendedProtection = $settings.ExtendedProtection
+                $acceptedSpns = @($settings.AcceptedSPNs -split ";" | Where-Object { -not [string]::IsNullOrWhiteSpace($PSItem) })
 
                 [PSCustomObject]@{
                     ComputerName       = $env:COMPUTERNAME
                     InstanceName       = $args[2]
                     SqlInstance        = $args[1]
                     ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
+                    AcceptedSpns       = $acceptedSpns
                 }
             }
-            if (Test-ShouldProcess -Context $PSCmdlet -Target "local" -Action "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)") {
+            if (Test-ShouldProcess -Context $PSCmdlet -Target "local" -Action "Connecting to $instance to modify Extended Protection settings in $regRoot for $($instance.InstanceName)") {
                 try {
-                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instancename, $Value -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
-                    Write-Message -Level Critical -Message "ExtendedProtection was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
+                    Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instancename, $Value, $setExtendedProtection, $setAcceptedSpn, $acceptedSpnValue -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+                    Write-Message -Level Critical -Message "Extended Protection settings were successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue
                 }
