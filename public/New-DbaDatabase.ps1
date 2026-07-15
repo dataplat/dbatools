@@ -35,6 +35,9 @@ function New-DbaDatabase {
     .PARAMETER RecoveryModel
         Sets the recovery model which determines how transaction log backups work and how much data loss is acceptable. Simple recovery model doesn't require log backups but limits point-in-time recovery, Full enables complete point-in-time recovery with log backups, BulkLogged offers a compromise for bulk operations. If not specified, inherits from the model database.
 
+    .PARAMETER ContainmentType
+        Sets the containment type for the new database. Use Partial to create a partially contained database, or None to create a non-contained database. Database containment requires SQL Server 2012 or later. If not specified, inherits from the model database.
+
     .PARAMETER Owner
         Specifies which SQL Server login will be assigned as the database owner (dbo). Use this to assign ownership to a specific service account or administrator instead of the default creator. The login must already exist on the SQL Server instance. If not specified, the connecting user becomes the database owner.
 
@@ -115,6 +118,7 @@ function New-DbaDatabase {
         - Status: Current database status (Normal for a new database)
         - IsAccessible: Boolean indicating if the database is currently accessible
         - RecoveryModel: Database recovery model (Simple, Full, or BulkLogged as specified)
+        - ContainmentType: Database containment type (None or Partial as specified)
         - LogReuseWaitStatus: Status of transaction log reuse
         - Size: Database size in megabytes (MB)
         - Compatibility: Database compatibility level
@@ -136,6 +140,11 @@ function New-DbaDatabase {
         New-DbaDatabase -SqlInstance sql1 -Name dbatools, dbachecks
 
         Creates a database named dbatools and a database named dbachecks on sql1
+
+    .EXAMPLE
+        New-DbaDatabase -SqlInstance sql1 -Name containeddb -ContainmentType Partial
+
+        Creates a partially contained database named containeddb on sql1
 
     .EXAMPLE
         New-DbaDatabase -SqlInstance sql1, sql2, sql3 -Name multidb, multidb2 -SecondaryFilesize 20 -SecondaryFileGrowth 20 -LogSize 20 -LogGrowth 20
@@ -186,6 +195,8 @@ function New-DbaDatabase {
         [string]$Collation,
         [ValidateSet('Simple', 'Full', 'BulkLogged')]
         [string]$RecoveryModel,
+        [ValidateSet("None", "Partial")]
+        [string]$ContainmentType,
         [string]$Owner,
         [string]$DataFilePath,
         [string]$LogFilePath,
@@ -229,6 +240,10 @@ function New-DbaDatabase {
 
             if ($advancedconfig -and $server.VersionMajor -eq 8) {
                 Stop-Function -Message "Advanced configuration options are not available to SQL Server 2000. Aborting creation of database on $instance" -Target $instance -Continue
+            }
+
+            if ($ContainmentType -and $server.VersionMajor -lt 11) {
+                Stop-Function -Message "Database containment is not available before SQL Server 2012. Aborting creation of database on $instance" -Target $instance -Continue
             }
 
             # validate the collation
@@ -307,6 +322,11 @@ function New-DbaDatabase {
                 if ($RecoveryModel) {
                     Write-Message -Message "Setting recovery model to $RecoveryModel" -Level Verbose
                     $newdb.RecoveryModel = $RecoveryModel
+                }
+
+                if ($ContainmentType) {
+                    Write-Message -Message "Setting containment type to $ContainmentType" -Level Verbose
+                    $newdb.ContainmentType = $ContainmentType
                 }
 
                 if ($advancedconfig) {
