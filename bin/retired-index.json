@@ -164,6 +164,11 @@
     "retiredPath": "private/retired/Format-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:34Z"
   },
+  "Get-DbaAgentAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaAgentAlert.ps1",
+    "flippedUtc": "2026-07-15T04:34:47Z"
+  },
   "Get-DbaAgentJob": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaAgentJob.ps1",
