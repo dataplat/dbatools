@@ -74,3 +74,4 @@ modules/**/*.dll
 .claude/codex-review-dispositions.jsonl
 prompt.md
 .worktrees/
+/docs
