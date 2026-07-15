@@ -204,6 +204,11 @@
     "retiredPath": "private/retired/Get-DbaAgentLog.ps1",
     "flippedUtc": "2026-07-15T09:20:38Z"
   },
+  "Get-DbaAgentOperator": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaAgentOperator.ps1",
+    "flippedUtc": "2026-07-15T09:47:52Z"
+  },
   "Get-DbaAvailabilityGroup": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
