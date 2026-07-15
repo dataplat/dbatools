@@ -32,7 +32,8 @@
         'Find-DbaAgentJob',
         'Get-DbaAgentAlert',
         'Get-DbaAgentAlertCategory',
-        'Get-DbaAgentJobCategory'
+        'Get-DbaAgentJobCategory',
+        'Get-DbaAgentJobHistory'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
