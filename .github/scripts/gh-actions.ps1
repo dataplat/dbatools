@@ -486,7 +486,7 @@ WHERE pd.primary_database = N'$escapedDbName';
             $firstSecondaryServer = Connect-DbaInstance -SqlInstance localhost:14333 -SqlCredential $cred
             foreach ($connectionAttempt in 1..12) {
                 try {
-                    $secondSecondaryServer = Connect-DbaInstance -SqlInstance localhost:14334 -SqlCredential $cred -EnableException
+                    $secondSecondaryServer = Connect-DbaInstance -SqlInstance localhost:14334 -SqlCredential $cred -ErrorAction Stop
                     break
                 } catch {
                     if ($connectionAttempt -eq 12) {
