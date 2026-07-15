@@ -22,6 +22,59 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $jobName = "dbatoolsci_joboutputfile_$(Get-Random)"
+        $outputPath = "C:\temp\$jobName.log"
+        $splatJob = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Job         = $jobName
+        }
+        $null = New-DbaAgentJob @splatJob
+        $splatOutputStep = @{
+            SqlInstance   = $TestConfig.InstanceSingle
+            Job           = $jobName
+            StepName      = "output"
+            StepId        = 1
+            Subsystem     = "TransactSql"
+            Command       = "SELECT 1;"
+            OutputFileName = $outputPath
+        }
+        $null = New-DbaAgentJobStep @splatOutputStep
+        $splatSilentStep = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Job         = $jobName
+            StepName    = "silent"
+            StepId      = 2
+            Subsystem   = "TransactSql"
+            Command     = "SELECT 2;"
+        }
+        $null = New-DbaAgentJobStep @splatSilentStep
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    It "Returns only the live step with a configured output file" {
+        $results = @(Get-DbaAgentJobOutputFile -SqlInstance $TestConfig.InstanceSingle -Job $jobName -EnableException)
+        $results.Count | Should -BeExactly 1
+        $results[0].Job | Should -BeExactly $jobName
+        $results[0].JobStep | Should -BeExactly "output"
+        $results[0].OutputFileName | Should -BeExactly $outputPath
+        $results[0].StepId | Should -BeExactly 1
+        $results[0].RemoteOutputFileName | Should -Match "^\\\\"
+    }
+}
+
 Describe $CommandName -Tag UnitTests {
     Context "Return values" {
         BeforeAll {
