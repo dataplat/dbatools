@@ -79,11 +79,21 @@ Describe $CommandName -Tag IntegrationTests {
         It "preserves the validation warning and silent error" {
             $validationWarnings = @()
             $expectedMessage = "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
+            $errorCountBefore = $Error.Count
 
             Watch-DbaDbLogin -WarningVariable validationWarnings
 
             $validationWarnings.Count | Should -Be 1
             $validationWarnings[0].ToString().EndsWith("[Watch-DbaDbLogin] $expectedMessage") | Should -BeTrue
+            # Characterization (compiled cmdlet, accepted divergence): the legacy function left its
+            # self-swallowed Stop-Function record (FQID dbatools_Watch-DbaDbLogin) in the caller's
+            # $Error; under the test harness defaults the compiled cmdlet's hop bookkeeping removes
+            # it, so no new record survives here (ruled permissible engine leakage by the opus
+            # review, migration/logs/opus-review-20260715-watch-dbadblogin). Outside the harness
+            # the record IS present with the compiled FQID "dbatools_Watch-DbaDbLogin,Stop-Function"
+            # (probe: migration/tools/Probe-WatchDbaDbLoginErrorState.ps1). Pin the harness contract
+            # so the $Error surface is asserted rather than ignored.
+            $Error.Count | Should -Be $errorCountBefore
         }
 
         It "preserves the validation warning before an EnableException error" {
@@ -107,8 +117,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "preserves nested and outer warnings for an unreachable source" {
             $sourceWarnings = @()
 
-            $result = @(Watch-DbaDbLogin -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb `
-                    -ServersFromFile $failureFile -WarningVariable sourceWarnings)
+            $splatWatchFailure = @{
+                SqlInstance     = $TestConfig.InstanceMulti1
+                Database        = "tempdb"
+                ServersFromFile = $failureFile
+                WarningVariable = "sourceWarnings"
+            }
+            $result = @(Watch-DbaDbLogin @splatWatchFailure)
 
             $result.Count | Should -Be 0
             $sourceWarnings.Count | Should -Be 2

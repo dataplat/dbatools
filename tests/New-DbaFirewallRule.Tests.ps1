@@ -26,17 +26,17 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
+        # SqlInstance is LOCALHOST so RemoteExecutionService takes its in-process path (a local
+        # Invoke-Command with no -Session, in the current runspace) where the New-NetFirewallRule
+        # mock IS visible - so no real firewall rule is ever created; each test asserts the mock
+        # was actually invoked to prove it. The former Mock Invoke-Command2 was dead against the
+        # compiled cmdlet (it calls RemoteExecutionService directly) and let these tests create
+        # REAL rules on the remote lab host.
         Context "Program path extraction" {
             BeforeEach {
-                Mock Invoke-Command2 {
+                Mock New-NetFirewallRule {
                     [PSCustomObject]@{
-                        Successful  = $true
-                        CimInstance = [PSCustomObject]@{
-                            Status = "The rule was parsed successfully from the store"
-                        }
-                        Warning     = $null
-                        Error       = $null
-                        Exception   = $null
+                        Status = "The rule was parsed successfully from the store"
                     }
                 }
             }
@@ -54,8 +54,16 @@ Describe $CommandName -Tag UnitTests {
                     }
                 }
 
-                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Engine -RuleType Program -Confirm:$false -WarningAction SilentlyContinue
+                $splatEngineRule = @{
+                    SqlInstance   = "localhost\test"
+                    Type          = "Engine"
+                    RuleType      = "Program"
+                    Confirm       = $false
+                    WarningAction = "SilentlyContinue"
+                }
+                $result = New-DbaFirewallRule @splatEngineRule
 
+                Should -Invoke New-NetFirewallRule -Scope It
                 $result.Type | Should -Be "Engine"
                 $result.Program | Should -BeNullOrEmpty
                 $result.LocalPort | Should -Be "1433"
@@ -68,8 +76,16 @@ Describe $CommandName -Tag UnitTests {
                     }
                 }
 
-                $result = New-DbaFirewallRule -SqlInstance "sql01\test" -Type Browser -RuleType Program -Confirm:$false -WarningAction SilentlyContinue
+                $splatBrowserRule = @{
+                    SqlInstance   = "localhost\test"
+                    Type          = "Browser"
+                    RuleType      = "Program"
+                    Confirm       = $false
+                    WarningAction = "SilentlyContinue"
+                }
+                $result = New-DbaFirewallRule @splatBrowserRule
 
+                Should -Invoke New-NetFirewallRule -Scope It
                 $result.Type | Should -Be "Browser"
                 $result.Program | Should -BeNullOrEmpty
                 $result.Protocol | Should -Be "UDP"
