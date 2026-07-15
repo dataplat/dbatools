@@ -94,7 +94,6 @@
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'ConvertTo-DbaXESession',
-        'Copy-DbaAgentSchedule',
         'Copy-DbaAgentServer',
         'Copy-DbaBackupDevice',
         'Copy-DbaCredential',

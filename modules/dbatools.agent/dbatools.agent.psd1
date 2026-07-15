@@ -26,7 +26,8 @@
         'Copy-DbaAgentJobCategory',
         'Copy-DbaAgentJobStep',
         'Copy-DbaAgentOperator',
-        'Copy-DbaAgentProxy'
+        'Copy-DbaAgentProxy',
+        'Copy-DbaAgentSchedule'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
