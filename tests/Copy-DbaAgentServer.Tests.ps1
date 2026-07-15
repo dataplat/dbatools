@@ -25,3 +25,37 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    It "Runs the full live WhatIf orchestration without changing Agent inventories" {
+        $destination = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -EnableException
+        $getInventory = {
+            $destination.JobServer.Refresh()
+            $destination.JobServer.JobCategories.Refresh()
+            $destination.JobServer.OperatorCategories.Refresh()
+            $destination.JobServer.AlertCategories.Refresh()
+            $destination.JobServer.Operators.Refresh()
+            $destination.JobServer.ProxyAccounts.Refresh()
+            $destination.JobServer.SharedSchedules.Refresh()
+            $destination.JobServer.Jobs.Refresh()
+            $destination.JobServer.Alerts.Refresh()
+            [ordered]@{
+                JobCategories      = @($destination.JobServer.JobCategories.Name)
+                OperatorCategories = @($destination.JobServer.OperatorCategories.Name)
+                AlertCategories    = @($destination.JobServer.AlertCategories.Name)
+                Operators          = @($destination.JobServer.Operators.Name)
+                Proxies            = @($destination.JobServer.ProxyAccounts.Name)
+                Schedules          = @($destination.JobServer.SharedSchedules.Name)
+                Jobs               = @($destination.JobServer.Jobs.Name)
+                Alerts             = @($destination.JobServer.Alerts.Name)
+            } | ConvertTo-Json -Compress
+        }
+
+        $before = & $getInventory
+        {
+            Copy-DbaAgentServer -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -ExcludeServerProperties -WhatIf -EnableException
+        } | Should -Not -Throw
+        $after = & $getInventory
+        $after | Should -BeExactly $before
+    }
+}
