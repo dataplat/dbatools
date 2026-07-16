@@ -1174,6 +1174,11 @@
     "retiredPath": "private/retired/Set-DbaErrorLogConfig.ps1",
     "flippedUtc": "2026-07-16T19:49:23Z"
   },
+  "Set-DbaExtendedProtection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaExtendedProtection.ps1",
+    "flippedUtc": "2026-07-16T20:08:17Z"
+  },
   "Set-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Set-DbaPowerPlan.ps1",

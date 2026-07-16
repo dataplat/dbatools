@@ -107,7 +107,8 @@
         'Set-DbaDbOwner',
         'Set-DbaDbRecoveryModel',
         'Set-DbaDbState',
-        'Set-DbaErrorLogConfig'
+        'Set-DbaErrorLogConfig',
+        'Set-DbaExtendedProtection'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

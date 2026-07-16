@@ -425,7 +425,6 @@
         'Set-DbaDbSchema',
         'Set-DbaDbSequence',
         'Set-DbaEndpoint',
-        'Set-DbaExtendedProtection',
         'Set-DbaLogin',
         'Set-DbaMaxDop',
         'Set-DbaMaxMemory',
