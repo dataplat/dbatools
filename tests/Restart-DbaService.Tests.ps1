@@ -45,7 +45,12 @@ Describe $CommandName -Tag IntegrationTests {
             $skipRestart = ($restartServices.Count -eq 0)
         }
 
-        It "restarts some services" -Skip:$skipRestart {
+        It "restarts some services" {
+            if ($skipRestart) {
+                # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
+                Set-ItResult -Skipped -Because "WMI service channel to InstanceRestart is unavailable from this runner"
+                return
+            }
             $services = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
@@ -54,7 +59,11 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "restarts some services through pipeline" -Skip:$skipRestart {
+        It "restarts some services through pipeline" {
+            if ($skipRestart) {
+                Set-ItResult -Skipped -Because "WMI service channel to InstanceRestart is unavailable from this runner"
+                return
+            }
             $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
