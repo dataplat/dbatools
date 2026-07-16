@@ -5394,6 +5394,7 @@
             "ReleaseDate": "2026-07-14"
         },
         {
+            "CU": "CU26",
             "Version": "16.0.4265",
             "KBList": "5093420",
             "ReleaseDate": "2026-07-16"
