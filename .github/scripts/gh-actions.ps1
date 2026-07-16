@@ -269,7 +269,7 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
-    It "copies table data to Azure SQL using an access token" {
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "copies table data to Azure SQL using an access token" {
         $PSDefaultParameterValues.Clear()
         $sourceInstance = if ($env:DBATOOLS_SQL_SOURCE) { $env:DBATOOLS_SQL_SOURCE } else { "localhost" }
         $tableName = "dbatools_copy_access_token_$([guid]::NewGuid().ToString('N'))"
@@ -277,7 +277,7 @@ exec sp_addrolemember 'userrole','bob';
 
         if ($env:AZURE_SQL_ACCESS_TOKEN) {
             $destinationServer = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -Database test -AccessToken $env:AZURE_SQL_ACCESS_TOKEN
-        } elseif ($hasAzureServicePrincipal) {
+        } elseif ($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET) {
             $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
             $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
             $destinationServer = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -Database test -SqlCredential $azurecred -Tenant $env:TENANTID
