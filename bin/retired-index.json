@@ -1154,10 +1154,25 @@
     "retiredPath": "private/retired/Set-DbaDbOwner.ps1",
     "flippedUtc": "2026-07-16T18:41:59Z"
   },
+  "Set-DbaDbRecoveryModel": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaDbRecoveryModel.ps1",
+    "flippedUtc": "2026-07-16T19:26:25Z"
+  },
+  "Set-DbaDbState": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaDbState.ps1",
+    "flippedUtc": "2026-07-16T19:45:45Z"
+  },
   "Set-DbaDefaultPath": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaDefaultPath.ps1",
     "flippedUtc": "2026-07-12T17:25:56Z"
+  },
+  "Set-DbaErrorLogConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaErrorLogConfig.ps1",
+    "flippedUtc": "2026-07-16T19:49:23Z"
   },
   "Set-DbaPowerPlan": {
     "module": "dbatools.computer",
