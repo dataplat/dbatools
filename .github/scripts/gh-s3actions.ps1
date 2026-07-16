@@ -100,6 +100,43 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
             $result.BackupPath | Should -BeLike "s3://*"
         }
 
+        It "Should assess the real S3 backup history" {
+            $backupHistory = Get-DbaDbBackupHistory -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName -LastFull
+            $backupHistory.Path | Should -BeLike "$($script:S3BaseUrl)/*"
+
+            $result = Test-DbaBackupStorageCompatibility -SqlInstance localhost -SqlCredential $cred -Database $script:TestDbName
+
+            $result.Database | Should -Be $script:TestDbName
+            $result.Type | Should -Be "S3"
+            $result.BackupFileCount | Should -Be 1
+            $result.EffectiveBackupSizeBytes | Should -BeGreaterThan 0
+            $result.EstimatedPartsPerFile | Should -BeGreaterThan 0
+            $result.IsCompatible | Should -BeTrue
+            $result.Status | Should -Be "Compatible"
+
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "Type",
+                "LastFullBackup",
+                "BackupSizeBytes",
+                "CompressedBackupSizeBytes",
+                "EffectiveBackupSizeBytes",
+                "BackupFileCount",
+                "MaxTransferSize",
+                "EstimatedPartsPerFile",
+                "PercentOfLimit",
+                "IsCompatible",
+                "Status",
+                "RecommendedFileCount",
+                "RecommendedMaxTransferSizeBytes",
+                "Recommendation"
+            )
+            $result.PSObject.Properties.Name | Should -Be $expectedProperties
+        }
+
         It "Should backup database to S3 using AzureBaseUrl alias for backward compatibility" {
             $backupFile = "$($script:TestDbName)_full_alias.bak"
 
@@ -558,6 +595,76 @@ Describe "S3 Backup Integration Tests" -Tag "IntegrationTests", "S3" {
     #        # S3 URLs should pass validation - they are skipped for cloud paths
     #    }
     #}
+
+    Context "Test-DbaBackupStorageCompatibility multipart monitoring" {
+        BeforeAll {
+            $script:S3RiskDbName = "dbatoolsci_s3risk"
+            $script:S3RiskBackupFile = "$($script:S3RiskDbName)_full.bak"
+
+            $null = New-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Name $script:S3RiskDbName -RecoveryModel Simple
+
+            $server = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
+            $server.Query("
+                CREATE TABLE dbo.MultipartRiskData
+                (
+                    Id INT IDENTITY(1, 1) NOT NULL,
+                    Payload BINARY(8000) NOT NULL
+                );
+
+                INSERT dbo.MultipartRiskData (Payload)
+                SELECT TOP (70000) CRYPT_GEN_RANDOM(8000)
+                FROM sys.all_objects AS first_source
+                CROSS JOIN sys.all_objects AS second_source;
+
+                CHECKPOINT;
+            ", $script:S3RiskDbName)
+
+            $splatBackup = @{
+                SqlInstance       = "localhost"
+                SqlCredential     = $cred
+                Database          = $script:S3RiskDbName
+                StorageBaseUrl    = $script:S3BaseUrl
+                StorageCredential = $script:S3CredentialName
+                FilePath          = $script:S3RiskBackupFile
+                Type              = "Full"
+                CompressBackup    = $false
+            }
+            $script:S3RiskBackupResult = Backup-DbaDatabase @splatBackup
+        }
+
+        AfterAll {
+            $null = Remove-DbaDatabase -SqlInstance localhost -SqlCredential $cred -Database $script:S3RiskDbName -Confirm:$false
+        }
+
+        It "Should report a real S3 multipart warning in monitor mode" {
+            $script:S3RiskBackupResult.BackupComplete | Should -BeTrue
+
+            $backupHistory = Get-DbaDbBackupHistory -SqlInstance localhost -SqlCredential $cred -Database $script:S3RiskDbName -LastFull
+            $backupHistory.Path | Should -BeLike "$($script:S3BaseUrl)/*"
+
+            $monitorWarnings = @()
+            $splatTest = @{
+                SqlInstance     = "localhost"
+                SqlCredential   = $cred
+                Database        = $script:S3RiskDbName
+                MaxTransferSize = 5242880
+                Threshold       = 1
+                Monitor         = $true
+                WarningVariable = "+monitorWarnings"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Test-DbaBackupStorageCompatibility @splatTest
+
+            $result.Database | Should -Be $script:S3RiskDbName
+            $result.Type | Should -Be "S3"
+            $result.EffectiveBackupSizeBytes | Should -BeGreaterOrEqual 524288000
+            $result.EstimatedPartsPerFile | Should -BeGreaterOrEqual 100
+            $result.PercentOfLimit | Should -BeGreaterOrEqual 1
+            $result.IsCompatible | Should -BeTrue
+            $result.Status | Should -Be "Warning"
+            $monitorWarnings.Message -join "`n" | Should -Match "compatibility risks found for 1 database"
+        }
+    }
 
     Context "Cleanup" {
         It "Should remove the S3 credential" {

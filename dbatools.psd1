@@ -680,6 +680,7 @@
         'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaBackupInformation',
+        'Test-DbaBackupStorageCompatibility',
         'Test-DbaBuild',
         'Test-DbaCmConnection',
         'Test-DbaComputerCertificateExpiration',

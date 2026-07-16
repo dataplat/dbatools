@@ -11,10 +11,13 @@ on:
       - "public/Get-DbaBackupInformation.ps1"
       - "public/Test-DbaLastBackup.ps1"
       - "public/Test-DbaBackupInformation.ps1"
+      - "public/Test-DbaBackupStorageCompatibility.ps1"
+      - "private/functions/Get-DbaS3BackupStorageEstimate.ps1"
       - "private/functions/Read-DbaBackupHeader.ps1"
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   pull_request:
     paths:
       - "public/Backup-DbaDatabase.ps1"
@@ -22,10 +25,13 @@ on:
       - "public/Get-DbaBackupInformation.ps1"
       - "public/Test-DbaLastBackup.ps1"
       - "public/Test-DbaBackupInformation.ps1"
+      - "public/Test-DbaBackupStorageCompatibility.ps1"
+      - "private/functions/Get-DbaS3BackupStorageEstimate.ps1"
       - "private/functions/Read-DbaBackupHeader.ps1"
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   workflow_dispatch:
 
 defaults:

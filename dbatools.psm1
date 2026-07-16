@@ -654,6 +654,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Format-DbaBackupInformation',
         'Get-DbaAgentJobStep',
         'Test-DbaBackupInformation',
+        'Test-DbaBackupStorageCompatibility',
         'Invoke-DbaBalanceDataFiles',
         'Select-DbaBackupInformation',
         'New-DbaDacPackage',
