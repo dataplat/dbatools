@@ -542,7 +542,6 @@
         'Remove-DbaReplSubscription',
         'New-DbaReplCreationScriptOptions',
         'Get-DbaReplSubscription',
-        'Add-DbaInstanceList',
         'Get-DbaInstanceList',
         'Remove-DbaInstanceList'
     )
