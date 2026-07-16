@@ -89,7 +89,22 @@
         'New-DbaLinkedServer',
         'New-DbaLinkedServerLogin',
         'Remove-DbaBackup',
-        'Remove-DbaCmConnection'
+        'Remove-DbaCmConnection',
+        'Remove-DbaCredential',
+        'Remove-DbaCustomError',
+        'Remove-DbaDatabase',
+        'Remove-DbaInstanceList',
+        'Remove-DbaDbBackupRestoreHistory',
+        'Remove-DbaLinkedServer',
+        'Remove-DbaLinkedServerLogin',
+        'Remove-DbaRegServer',
+        'Remove-DbaRegServerGroup',
+        'Rename-DbaDatabase',
+        'Repair-DbaInstanceName',
+        'Resolve-DbaNetworkName',
+        'Restart-DbaService',
+        'Set-DbaCmConnection',
+        'Set-DbaDbOwner'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

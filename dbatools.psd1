@@ -370,11 +370,8 @@
         'Remove-DbaAgListener',
         'Remove-DbaAgReplica',
         'Remove-DbaAvailabilityGroup',
-        'Remove-DbaCustomError',
-        'Remove-DbaDatabase',
         'Remove-DbaDatabaseSafely',
         'Remove-DbaDbAsymmetricKey',
-        'Remove-DbaDbBackupRestoreHistory',
         'Remove-DbaDbCertificate',
         'Remove-DbaDbData',
         'Remove-DbaDbFileGroup',
@@ -393,21 +390,14 @@
         'Remove-DbaDbUser',
         'Remove-DbaDbView',
         'Remove-DbaEndpoint',
-        'Remove-DbaLinkedServer',
         'Remove-DbaLogin',
-        'Remove-DbaRegServer',
-        'Remove-DbaRegServerGroup',
         'Remove-DbaServerRole',
         'Remove-DbaTrace',
         'Remove-DbaXESession',
-        'Rename-DbaDatabase',
         'Rename-DbaLogin',
         'Repair-DbaDbMirror',
         'Repair-DbaDbOrphanUser',
-        'Repair-DbaInstanceName',
         'Reset-DbaAdmin',
-        'Resolve-DbaNetworkName',
-        'Restart-DbaService',
         'Restore-DbaDbCertificate',
         'Restore-DbaDbSnapshot',
         'Resume-DbaAgDbDataMovement',
@@ -424,7 +414,6 @@
         'Set-DbaAgListener',
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
-        'Set-DbaCmConnection',
         'Set-DbaDbCompatibility',
         'Set-DbaDbCompression',
         'Set-DbaDbFileGroup',
@@ -432,7 +421,6 @@
         'Set-DbaDbIdentity',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
-        'Set-DbaDbOwner',
         'Set-DbaDbQueryStoreOption',
         'Set-DbaDbRecoveryModel',
         'Set-DbaDbSchema',
@@ -510,8 +498,6 @@
         'Remove-DbaDbMailProfile',
         'Remove-DbaDbMailAccount',
         'Get-DbaLinkedServerLogin',
-        'Remove-DbaLinkedServerLogin',
-        'Remove-DbaCredential',
         'Remove-DbaAgentProxy',
 
         # NEW REPLICATION STUFF
@@ -529,8 +515,7 @@
         'Remove-DbaReplSubscription',
         'New-DbaReplCreationScriptOptions',
         'Get-DbaReplSubscription',
-        'Get-DbaInstanceList',
-        'Remove-DbaInstanceList'
+        'Get-DbaInstanceList'
     )
 
     # Cmdlets to export from this module
