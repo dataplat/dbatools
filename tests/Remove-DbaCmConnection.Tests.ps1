@@ -23,3 +23,21 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization context (W1-094 law: an empty run is never green). The CIM connection
+    # cache is process-local state - no lab instance required.
+    Context "When removing a registered connection" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = New-DbaCmConnection -ComputerName dbatoolsci-w3071
+            $results = Remove-DbaCmConnection -ComputerName dbatoolsci-w3071 -Confirm:$false
+            $remaining = @(Get-DbaCmConnection -ComputerName dbatoolsci-w3071)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Removes the registered connection" {
+            $remaining.Count | Should -Be 0
+        }
+    }
+}
