@@ -29,6 +29,21 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
     # Skip IntegrationTests on AppVeyor because tests take too long
 
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # A poisoned cached plan (illegal XML in query_plan) faults every dm_exec_query_plan
+        # read until it evicts, emptying all results nondeterministically. Flush the cache and
+        # seed known plans so the assertions below never depend on cache luck.
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DBCC FREEPROCCACHE"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT TOP 10 name FROM sys.objects ORDER BY name"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT TOP 10 name FROM sys.objects ORDER BY name"
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
     Context "Gets Execution Plan" {
         BeforeAll {
             $allResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle | Where-Object statementtype -eq "SELECT" | Select-Object -First 1)
