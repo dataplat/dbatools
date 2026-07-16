@@ -22,6 +22,13 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # Fixture hygiene (lane-D scrub caveat, coordinator 22:30 ruling): the persisted
+        # TabExpansion.KnownInstances store self-perpetuates corruption from historical red
+        # runs across processes - start every run from a clean, correctly-typed store so a
+        # red here always means THIS build, never inherited junk.
+        Set-DbatoolsConfig -FullName TabExpansion.KnownInstances -Value @([string[]]@())
+        Register-DbatoolsConfig -FullName TabExpansion.KnownInstances
+
         $instanceName = "dbatoolsci_testinstance_$(Get-Random)"
         Add-DbaInstanceList -SqlInstance $instanceName
     }
