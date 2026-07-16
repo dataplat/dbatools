@@ -867,6 +867,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Set-DbaDbIdentity',
         'Get-DbaRegServer',
         'Get-DbaRegServerStore',
+        'Add-DbaRegServer',
         'Add-DbaRegServerGroup',
         'Export-DbaRegServer',
         'Import-DbaRegServer',
