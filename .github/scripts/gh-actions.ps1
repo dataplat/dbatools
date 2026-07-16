@@ -269,6 +269,49 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "copies table data to Azure SQL using an access token" {
+        $PSDefaultParameterValues.Clear()
+        $sourceInstance = if ($env:DBATOOLS_SQL_SOURCE) { $env:DBATOOLS_SQL_SOURCE } else { "localhost" }
+        $sourceTableName = "dbatools_copy_access_token_$([guid]::NewGuid().ToString('N'))"
+        $destinationTableName = "dbatoolsci_copy_access_token"
+        $runId = [guid]::NewGuid()
+        $sourceServer = Connect-DbaInstance -SqlInstance $sourceInstance -SqlCredential $cred -Database tempdb
+
+        if ($env:AZURE_SQL_ACCESS_TOKEN) {
+            $destinationServer = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -Database test -AccessToken $env:AZURE_SQL_ACCESS_TOKEN
+        } elseif ($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET) {
+            $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+            $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+            $destinationServer = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -Database test -SqlCredential $azurecred -Tenant $env:TENANTID
+        } else {
+            throw "The Azure SQL access-token integration test requires AZURE_SQL_ACCESS_TOKEN or TENANTID, CLIENTID, and CLIENTSECRET."
+        }
+
+        try {
+            $sourceServer.Query("CREATE TABLE dbo.[$sourceTableName] (RunId uniqueidentifier NOT NULL, Id int NOT NULL, Value int NOT NULL); INSERT dbo.[$sourceTableName] (RunId, Id, Value) VALUES ('$runId', 1, 10), ('$runId', 2, 20), ('$runId', 3, 30)", "tempdb")
+
+            $splatCopy = @{
+                SqlInstance         = $sourceServer
+                Destination         = $destinationServer
+                Database            = "tempdb"
+                DestinationDatabase = "test"
+                Table               = "dbo.$sourceTableName"
+                DestinationTable    = "dbo.$destinationTableName"
+                EnableException     = $true
+            }
+            $result = Copy-DbaDbTableData @splatCopy
+            $destinationRows = $destinationServer.Query("SELECT COUNT(*) AS CopiedRowCount, SUM(Value) AS TotalValue FROM dbo.[$destinationTableName] WHERE RunId = '$runId'", "test")
+
+            $result.RowsCopied | Should -Be 3
+            $destinationRows.CopiedRowCount | Should -Be 3
+            $destinationRows.TotalValue | Should -Be 60
+        } finally {
+            $sourceServer.ConnectionContext.SqlConnectionObject.Close()
+            $sourceServer.Query("DROP TABLE IF EXISTS dbo.[$sourceTableName]", "tempdb")
+            $destinationServer.Query("DELETE FROM dbo.[$destinationTableName] WHERE RunId = '$runId'", "test")
+        }
+    }
+
     It -Skip:(-not $env:azurepasswd) "sets up log shipping to Azure blob storage using SAS token" {
         # Restore credentials after Azure tests cleared PSDefaultParameterValues
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force

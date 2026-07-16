@@ -106,6 +106,7 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
+          DBATOOLS_GALLERY_TEST: "true"
         run: |
           Import-Module dbatools -Force
           $result = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
