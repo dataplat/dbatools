@@ -110,7 +110,6 @@
         'Copy-DbaLinkedServer',
         'Copy-DbaLogin',
         'Copy-DbaPolicyManagement',
-        'Copy-DbaRegServer',
         'Copy-DbaResourceGovernor',
         'Copy-DbaServerRole',
         'Copy-DbaSpConfigure',
