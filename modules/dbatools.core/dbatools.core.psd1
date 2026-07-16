@@ -76,7 +76,8 @@
         'Unregister-DbatoolsConfig',
         'Update-Dbatools',
         'Write-DbaDbTableData',
-        'Add-DbaInstanceList'
+        'Add-DbaInstanceList',
+        'Add-DbaRegServer'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

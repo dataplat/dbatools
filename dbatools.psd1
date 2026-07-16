@@ -77,7 +77,6 @@
         'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
         'Add-DbaDbRoleMember',
-        'Add-DbaRegServer',
         'Add-DbaRegServerGroup',
         'Add-DbaServerRoleMember',
         'Backup-DbaDatabase',
