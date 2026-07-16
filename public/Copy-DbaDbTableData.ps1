@@ -574,8 +574,6 @@ function Copy-DbaDbTableData {
                     Stop-Function -Message "Table $DestinationTable cannot be found in $DestinationDatabase. Use -AutoCreateTable to automatically create the table on the destination." -Continue
                 }
 
-                $connstring = $destServer.ConnectionContext.ConnectionString
-
                 if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
                     $fqtnfrom = "$sqlObject"
                 } else {
@@ -651,6 +649,7 @@ function Copy-DbaDbTableData {
                 } else {
                     $sourceLabel = "Query"
                 }
+                $bulkCopyConnection = $null
                 try {
                     if ($Truncate -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
@@ -664,7 +663,9 @@ function Copy-DbaDbTableData {
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
-                        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
+                        $bulkCopyConnection = $destServer.ConnectionContext.SqlConnectionObject.Clone()
+                        $bulkCopyConnection.Open()
+                        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($bulkCopyConnection, $bulkCopyOptions, $null)
                         $bulkCopy.DestinationTableName = $fqtndest
                         $bulkCopy.EnableStreaming = $true
                         $bulkCopy.BatchSize = $BatchSize
@@ -752,6 +753,11 @@ function Copy-DbaDbTableData {
                     }
                 } catch {
                     Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
+                } finally {
+                    if ($bulkCopyConnection) {
+                        $bulkCopyConnection.Close()
+                        $bulkCopyConnection.Dispose()
+                    }
                 }
             }
         }
