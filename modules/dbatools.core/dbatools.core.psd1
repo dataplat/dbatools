@@ -80,7 +80,16 @@
         'Add-DbaRegServer',
         'Add-DbaRegServerGroup',
         'Copy-DbaRegServer',
-        'Measure-DbaBackupThroughput'
+        'Measure-DbaBackupThroughput',
+        'Move-DbaRegServer',
+        'Move-DbaRegServerGroup',
+        'New-DbaCmConnection',
+        'New-DbaCredential',
+        'New-DbaCustomError',
+        'New-DbaLinkedServer',
+        'New-DbaLinkedServerLogin',
+        'Remove-DbaBackup',
+        'Remove-DbaCmConnection'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

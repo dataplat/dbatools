@@ -9,6 +9,11 @@
     "retiredPath": "private/retired/Add-DbaInstanceList.ps1",
     "flippedUtc": "2026-07-16T01:10:41Z"
   },
+  "Add-DbaPfDataCollectorCounter": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Add-DbaPfDataCollectorCounter.ps1",
+    "flippedUtc": "2026-07-13T01:56:02Z"
+  },
   "Add-DbaRegServer": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Add-DbaRegServer.ps1",
@@ -18,11 +23,6 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Add-DbaRegServerGroup.ps1",
     "flippedUtc": "2026-07-16T08:47:13Z"
-  },
-  "Add-DbaPfDataCollectorCounter": {
-    "module": "dbatools.performance",
-    "retiredPath": "private/retired/Add-DbaPfDataCollectorCounter.ps1",
-    "flippedUtc": "2026-07-13T01:56:02Z"
   },
   "Backup-DbaComputerCertificate": {
     "module": "dbatools.computer",
@@ -309,26 +309,6 @@
     "retiredPath": "private/retired/Get-DbaCustomError.ps1",
     "flippedUtc": "2026-07-06T10:22:04Z"
   },
-  "Get-DbaDbccMemoryStatus": {
-    "module": "dbatools.performance",
-    "retiredPath": "private/retired/Get-DbaDbccMemoryStatus.ps1",
-    "flippedUtc": "2026-07-13T07:43:57Z"
-  },
-  "Get-DbaDbccProcCache": {
-    "module": "dbatools.performance",
-    "retiredPath": "private/retired/Get-DbaDbccProcCache.ps1",
-    "flippedUtc": "2026-07-13T08:03:31Z"
-  },
-  "Get-DbaDbccSessionBuffer": {
-    "module": "dbatools.performance",
-    "retiredPath": "private/retired/Get-DbaDbccSessionBuffer.ps1",
-    "flippedUtc": "2026-07-13T08:21:26Z"
-  },
-  "Get-DbaDbccUserOption": {
-    "module": "dbatools.maintenance",
-    "retiredPath": "private/retired/Get-DbaDbccUserOption.ps1",
-    "flippedUtc": "2026-07-06T10:41:15Z"
-  },
   "Get-DbaDbCertificate": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaDbCertificate.ps1",
@@ -403,6 +383,26 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbVirtualLogFile.ps1",
     "flippedUtc": "2026-07-13T11:20:52Z"
+  },
+  "Get-DbaDbccMemoryStatus": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbccMemoryStatus.ps1",
+    "flippedUtc": "2026-07-13T07:43:57Z"
+  },
+  "Get-DbaDbccProcCache": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbccProcCache.ps1",
+    "flippedUtc": "2026-07-13T08:03:31Z"
+  },
+  "Get-DbaDbccSessionBuffer": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaDbccSessionBuffer.ps1",
+    "flippedUtc": "2026-07-13T08:21:26Z"
+  },
+  "Get-DbaDbccUserOption": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Get-DbaDbccUserOption.ps1",
+    "flippedUtc": "2026-07-06T10:41:15Z"
   },
   "Get-DbaDefaultPath": {
     "module": "dbatools.core",
@@ -679,36 +679,6 @@
     "retiredPath": "private/retired/Get-DbaTempdbUsage.ps1",
     "flippedUtc": "2026-07-13T18:56:40Z"
   },
-  "Get-DbatoolsChangeLog": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsChangeLog.ps1",
-    "flippedUtc": "2026-07-11T18:14:03Z"
-  },
-  "Get-DbatoolsConfig": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsConfig.ps1",
-    "flippedUtc": "2026-07-11T18:43:51Z"
-  },
-  "Get-DbatoolsConfigValue": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsConfigValue.ps1",
-    "flippedUtc": "2026-07-11T19:00:00Z"
-  },
-  "Get-DbatoolsError": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsError.ps1",
-    "flippedUtc": "2026-07-11T19:17:18Z"
-  },
-  "Get-DbatoolsLog": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsLog.ps1",
-    "flippedUtc": "2026-07-11T19:36:46Z"
-  },
-  "Get-DbatoolsPath": {
-    "module": "dbatools.core",
-    "retiredPath": "private/retired/Get-DbatoolsPath.ps1",
-    "flippedUtc": "2026-07-11T19:49:47Z"
-  },
   "Get-DbaTopResourceUsage": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaTopResourceUsage.ps1",
@@ -729,11 +699,6 @@
     "retiredPath": "private/retired/Get-DbaUptime.ps1",
     "flippedUtc": "2026-07-13T19:44:44Z"
   },
-  "Get-DbaWaitingTask": {
-    "module": "dbatools.performance",
-    "retiredPath": "private/retired/Get-DbaWaitingTask.ps1",
-    "flippedUtc": "2026-07-13T20:03:38Z"
-  },
   "Get-DbaWaitResource": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaWaitResource.ps1",
@@ -743,6 +708,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaWaitStatistic.ps1",
     "flippedUtc": "2026-07-13T20:31:41Z"
+  },
+  "Get-DbaWaitingTask": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Get-DbaWaitingTask.ps1",
+    "flippedUtc": "2026-07-13T20:03:38Z"
   },
   "Get-DbaWindowsLog": {
     "module": "dbatools.performance",
@@ -803,6 +773,36 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1",
     "flippedUtc": "2026-07-06T22:25:53Z"
+  },
+  "Get-DbatoolsChangeLog": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsChangeLog.ps1",
+    "flippedUtc": "2026-07-11T18:14:03Z"
+  },
+  "Get-DbatoolsConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsConfig.ps1",
+    "flippedUtc": "2026-07-11T18:43:51Z"
+  },
+  "Get-DbatoolsConfigValue": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsConfigValue.ps1",
+    "flippedUtc": "2026-07-11T19:00:00Z"
+  },
+  "Get-DbatoolsError": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsError.ps1",
+    "flippedUtc": "2026-07-11T19:17:18Z"
+  },
+  "Get-DbatoolsLog": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsLog.ps1",
+    "flippedUtc": "2026-07-11T19:36:46Z"
+  },
+  "Get-DbatoolsPath": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbatoolsPath.ps1",
+    "flippedUtc": "2026-07-11T19:49:47Z"
   },
   "Import-DbaCsv": {
     "module": "dbatools.core",
@@ -884,6 +884,16 @@
     "retiredPath": "private/retired/Measure-DbatoolsImport.ps1",
     "flippedUtc": "2026-07-12T03:51:41Z"
   },
+  "Move-DbaRegServer": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Move-DbaRegServer.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
+  "Move-DbaRegServerGroup": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Move-DbaRegServerGroup.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
   "New-DbaAzAccessToken": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaAzAccessToken.ps1",
@@ -893,6 +903,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaClientAlias.ps1",
     "flippedUtc": "2026-07-12T06:51:10Z"
+  },
+  "New-DbaCmConnection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaCmConnection.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
   },
   "New-DbaComputerCertificate": {
     "module": "dbatools.computer",
@@ -914,6 +929,16 @@
     "retiredPath": "private/retired/New-DbaConnectionStringBuilder.ps1",
     "flippedUtc": "2026-07-12T07:31:13Z"
   },
+  "New-DbaCredential": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaCredential.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
+  "New-DbaCustomError": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaCustomError.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
   "New-DbaDiagnosticAdsNotebook": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/New-DbaDiagnosticAdsNotebook.ps1",
@@ -923,6 +948,16 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/New-DbaFirewallRule.ps1",
     "flippedUtc": "2026-07-10T11:03:00Z"
+  },
+  "New-DbaLinkedServer": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaLinkedServer.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
+  "New-DbaLinkedServerLogin": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaLinkedServerLogin.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
   },
   "New-DbaRgResourcePool": {
     "module": "dbatools.performance",
@@ -959,10 +994,20 @@
     "retiredPath": "private/retired/Register-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T08:28:46Z"
   },
+  "Remove-DbaBackup": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Remove-DbaBackup.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
+  },
   "Remove-DbaClientAlias": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaClientAlias.ps1",
     "flippedUtc": "2026-07-12T10:15:42Z"
+  },
+  "Remove-DbaCmConnection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Remove-DbaCmConnection.ps1",
+    "flippedUtc": "2026-07-16T14:17:08Z"
   },
   "Remove-DbaComputerCertificate": {
     "module": "dbatools.computer",
