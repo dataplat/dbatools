@@ -14,6 +14,11 @@
     "retiredPath": "private/retired/Add-DbaRegServer.ps1",
     "flippedUtc": "2026-07-16T08:17:59Z"
   },
+  "Add-DbaRegServerGroup": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Add-DbaRegServerGroup.ps1",
+    "flippedUtc": "2026-07-16T08:47:13Z"
+  },
   "Add-DbaPfDataCollectorCounter": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Add-DbaPfDataCollectorCounter.ps1",

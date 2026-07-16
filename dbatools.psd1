@@ -77,7 +77,6 @@
         'Add-DbaDbFile',
         'Add-DbaDbMirrorMonitor',
         'Add-DbaDbRoleMember',
-        'Add-DbaRegServerGroup',
         'Add-DbaServerRoleMember',
         'Backup-DbaDatabase',
         'Test-DbaBackupEncrypted',
