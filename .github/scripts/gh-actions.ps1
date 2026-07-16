@@ -272,7 +272,9 @@ exec sp_addrolemember 'userrole','bob';
     It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "copies table data to Azure SQL using an access token" {
         $PSDefaultParameterValues.Clear()
         $sourceInstance = if ($env:DBATOOLS_SQL_SOURCE) { $env:DBATOOLS_SQL_SOURCE } else { "localhost" }
-        $tableName = "dbatools_copy_access_token_$([guid]::NewGuid().ToString('N'))"
+        $sourceTableName = "dbatools_copy_access_token_$([guid]::NewGuid().ToString('N'))"
+        $destinationTableName = "dbatoolsci_copy_access_token"
+        $runId = [guid]::NewGuid()
         $sourceServer = Connect-DbaInstance -SqlInstance $sourceInstance -SqlCredential $cred -Database tempdb
 
         if ($env:AZURE_SQL_ACCESS_TOKEN) {
@@ -286,28 +288,27 @@ exec sp_addrolemember 'userrole','bob';
         }
 
         try {
-            $sourceServer.Query("CREATE TABLE dbo.[$tableName] (Id int NOT NULL, Value int NOT NULL); INSERT dbo.[$tableName] (Id, Value) VALUES (1, 10), (2, 20), (3, 30)", "tempdb")
-            $destinationServer.Query("CREATE TABLE dbo.[$tableName] (Id int NOT NULL, Value int NOT NULL)", "test")
+            $sourceServer.Query("CREATE TABLE dbo.[$sourceTableName] (RunId uniqueidentifier NOT NULL, Id int NOT NULL, Value int NOT NULL); INSERT dbo.[$sourceTableName] (RunId, Id, Value) VALUES ('$runId', 1, 10), ('$runId', 2, 20), ('$runId', 3, 30)", "tempdb")
 
             $splatCopy = @{
                 SqlInstance         = $sourceServer
                 Destination         = $destinationServer
                 Database            = "tempdb"
                 DestinationDatabase = "test"
-                Table               = "dbo.$tableName"
-                DestinationTable    = "dbo.$tableName"
+                Table               = "dbo.$sourceTableName"
+                DestinationTable    = "dbo.$destinationTableName"
                 EnableException     = $true
             }
             $result = Copy-DbaDbTableData @splatCopy
-            $destinationRows = $destinationServer.Query("SELECT COUNT(*) AS CopiedRowCount, SUM(Value) AS TotalValue FROM dbo.[$tableName]", "test")
+            $destinationRows = $destinationServer.Query("SELECT COUNT(*) AS CopiedRowCount, SUM(Value) AS TotalValue FROM dbo.[$destinationTableName] WHERE RunId = '$runId'", "test")
 
             $result.RowsCopied | Should -Be 3
             $destinationRows.CopiedRowCount | Should -Be 3
             $destinationRows.TotalValue | Should -Be 60
         } finally {
             $sourceServer.ConnectionContext.SqlConnectionObject.Close()
-            $sourceServer.Query("DROP TABLE IF EXISTS dbo.[$tableName]", "tempdb")
-            $destinationServer.Query("DROP TABLE IF EXISTS dbo.[$tableName]", "test")
+            $sourceServer.Query("DROP TABLE IF EXISTS dbo.[$sourceTableName]", "tempdb")
+            $destinationServer.Query("DELETE FROM dbo.[$destinationTableName] WHERE RunId = '$runId'", "test")
         }
     }
 
