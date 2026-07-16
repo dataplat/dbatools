@@ -316,7 +316,6 @@
         'Invoke-DbaWhoIsActive',
         'Invoke-DbaXEReplay',
         'Join-DbaAvailabilityGroup',
-        'Measure-DbaBackupThroughput',
         'Measure-DbaDiskSpaceRequirement',
         'Mount-DbaDatabase',
         'Move-DbaDbFile',

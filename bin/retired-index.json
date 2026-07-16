@@ -869,6 +869,11 @@
     "retiredPath": "private/retired/Join-DbaPath.ps1",
     "flippedUtc": "2026-07-12T03:26:28Z"
   },
+  "Measure-DbaBackupThroughput": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Measure-DbaBackupThroughput.ps1",
+    "flippedUtc": "2026-07-16T09:48:52Z"
+  },
   "Measure-DbaDbVirtualLogFile": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Measure-DbaDbVirtualLogFile.ps1",
