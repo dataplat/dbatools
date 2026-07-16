@@ -42,3 +42,26 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization context (W1-094 law: an empty run is never green). The CIM connection
+    # cache is process-local state - no lab instance required (W3-063/071 sibling pattern).
+    Context "When updating a registered connection" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = New-DbaCmConnection -ComputerName dbatoolsci-w3087
+            $setResults = @(Set-DbaCmConnection -ComputerName dbatoolsci-w3087 -DisableBadCredentialCache)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaCmConnection -ComputerName dbatoolsci-w3087 -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the updated connection with the bad-credential cache disabled" {
+            $setResults.Count | Should -Be 1
+            $setResults[0].DisableBadCredentialCache | Should -BeTrue
+        }
+    }
+}
