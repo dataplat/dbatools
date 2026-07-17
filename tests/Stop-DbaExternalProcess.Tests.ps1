@@ -58,22 +58,31 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup: Disable xp_cmdshell for security
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
-        EXECUTE sp_configure 'xp_cmdshell', 0;
-        GO
-        RECONFIGURE;
-        GO
-        EXECUTE sp_configure 'show advanced options', 0;
-        GO
-        RECONFIGURE;
-        GO"
+        try {
+            # Cleanup: Disable xp_cmdshell for security
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
+            EXECUTE sp_configure 'xp_cmdshell', 0;
+            GO
+            RECONFIGURE;
+            GO
+            EXECUTE sp_configure 'show advanced options', 0;
+            GO
+            RECONFIGURE;
+            GO"
 
-        # Restart the SQL Service to ensure we can remove the temporary file.
-        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
-        Remove-Item -Path $sqlFile
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            # Restart the SQL Service to ensure we can remove the temporary file.
+            $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
+            Remove-Item -Path $sqlFile
+        } finally {
+            # A failed or aborted restart above leaves the shared instance stopped,
+            # stranding every later suite that targets it. Restore must run even when
+            # the cleanup itself throws, and must never throw on its own.
+            $stoppedEngine = Get-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -EnableException:$false -WarningAction SilentlyContinue | Where-Object State -ne "Running"
+            if ($stoppedEngine) {
+                $null = $stoppedEngine | Start-DbaService -EnableException:$false -WarningAction SilentlyContinue
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
     }
 
     Context "Can stop an external process" {
