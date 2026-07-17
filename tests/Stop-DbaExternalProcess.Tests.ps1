@@ -28,6 +28,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
 
+        # Harness honesty: the fixture drives a long-running query through the sqlcmd CLIENT
+        # (sqlcmd -> xp_cmdshell -> cmd.exe is the external-process chain under test). A seat
+        # without the sqlcmd utilities cannot build the fixture at all - probe and skip the
+        # scenario instead of redding on Start-Process (W1-094 law).
+        $sqlcmdSource = (Get-Command sqlcmd -ErrorAction SilentlyContinue).Source
+        $skipExternalProcess = (-not $sqlcmdSource)
+        if ($skipExternalProcess) {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            return
+        }
+
         # Setup xp_cmdshell to create external processes for testing
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         -- To allow advanced options to be changed.
@@ -58,6 +69,11 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        if ($skipExternalProcess) {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            return
+        }
+
         # Cleanup: Disable xp_cmdshell for security
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         EXECUTE sp_configure 'xp_cmdshell', 0;
@@ -78,6 +94,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Can stop an external process" {
         It "returns results" {
+            if ($skipExternalProcess) {
+                # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
+                Set-ItResult -Skipped -Because "sqlcmd is not available on this runner, so the external-process fixture cannot be built"
+                return
+            }
             1..10 | ForEach-Object {
                 $results = Get-DbaExternalProcess -ComputerName $computerName | Stop-DbaExternalProcess
                 if ($results) { break }
