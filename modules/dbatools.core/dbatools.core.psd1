@@ -114,7 +114,11 @@
         'Set-DbaNetworkConfiguration',
         'Set-DbaSpConfigure',
         'Set-DbaStartupParameter',
-        'Set-DbaTcpPort'
+        'Set-DbaTcpPort',
+        'Set-DbaTempDbConfig',
+        'Show-DbaInstanceFileSystem',
+        'Start-DbaService',
+        'Stop-DbaExternalProcess'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

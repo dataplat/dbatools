@@ -1239,6 +1239,11 @@
     "retiredPath": "private/retired/Set-DbaTcpPort.ps1",
     "flippedUtc": "2026-07-17T00:10:03Z"
   },
+  "Set-DbaTempDbConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaTempDbConfig.ps1",
+    "flippedUtc": "2026-07-17T01:41:58Z"
+  },
   "Set-DbatoolsInsecureConnection": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbatoolsInsecureConnection.ps1",
@@ -1249,10 +1254,25 @@
     "retiredPath": "private/retired/Set-DbatoolsPath.ps1",
     "flippedUtc": "2026-07-12T17:52:06Z"
   },
+  "Show-DbaInstanceFileSystem": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Show-DbaInstanceFileSystem.ps1",
+    "flippedUtc": "2026-07-17T01:44:08Z"
+  },
   "Start-DbaPfDataCollectorSet": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Start-DbaPfDataCollectorSet.ps1",
     "flippedUtc": "2026-07-14T18:23:28Z"
+  },
+  "Start-DbaService": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Start-DbaService.ps1",
+    "flippedUtc": "2026-07-17T01:46:29Z"
+  },
+  "Stop-DbaExternalProcess": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Stop-DbaExternalProcess.ps1",
+    "flippedUtc": "2026-07-17T01:48:34Z"
   },
   "Stop-DbaPfDataCollectorSet": {
     "module": "dbatools.performance",
