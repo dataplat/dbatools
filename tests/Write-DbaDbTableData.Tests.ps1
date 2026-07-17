@@ -113,4 +113,27 @@ Describe $CommandName -Tag IntegrationTests {
         $query = "SELECT TOP 1 * FROM [$tableName]"
         { Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query $query -EnableException } | Should -Not -Throw
     }
+
+    Context "Bulk-copy gate parity (DEF-008 W1-043)" {
+        BeforeAll {
+            $gateTableName = "gateparity$random"
+            $gateData = Get-ChildItem | Select-Object -First 3 Name, Length
+            $gateData | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table $gateTableName -AutoCreateTable
+            $gateCountQuery = "SELECT COUNT(*) AS RowTotal FROM [dbo].[$gateTableName]"
+        }
+
+        It "Skips the write under -WhatIf" {
+            $gateData | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table $gateTableName -WhatIf
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query $gateCountQuery).RowTotal | Should -Be 3
+        }
+
+        It "Never confirm-prompts on the bulk copy, even with -Confirm" {
+            # The write gate lives in NESTED Invoke-BulkCopy ([CmdletBinding()], no
+            # SupportsShouldProcess): it honours -WhatIf but can never prompt. This
+            # runner's host is non-interactive - a prompt would throw, so completing
+            # the write proves the no-prompt parity with the source.
+            $gateData | Write-DbaDbTableData -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table $gateTableName -Confirm:$true
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Query $gateCountQuery).RowTotal | Should -Be 6
+        }
+    }
 }

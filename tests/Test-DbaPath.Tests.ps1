@@ -153,4 +153,20 @@ Describe $CommandName -Tag IntegrationTests {
             $result.FileExists | Should -BeTrue
         }
     }
+
+    Context "Cross-record narrowed-Path latch (DEF-008 W1-040)" {
+        # The source runs $Path = [string[]]$Path at FUNCTION scope inside the instance
+        # loop, so the SECOND pipeline record picks up the already-narrowed ARRAY as
+        # $RawPath and the scalar bare-bool mode is gone for good: record 1 emits a bool,
+        # record 2 emits the six-property object for the SAME scalar -Path input.
+        It "Emits a bool for record 1 and an object for record 2 of the same pipeline" {
+            $crossRecordResults = @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle | Test-DbaPath -Path "C:\Windows")
+            $crossRecordResults.Count | Should -BeExactly 2
+            $crossRecordResults[0] | Should -BeOfType [bool]
+            $crossRecordResults[0] | Should -BeTrue
+            $crossRecordResults[1] | Should -Not -BeOfType [bool]
+            $crossRecordResults[1].FilePath | Should -BeExactly "C:\Windows"
+            $crossRecordResults[1].FileExists | Should -BeTrue
+        }
+    }
 }
