@@ -72,13 +72,18 @@ Describe $CommandName -Tag IntegrationTests {
                 $null = Stop-DbaAgentJob @splatStop
             }
         } finally {
-            $splatRemove = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Job         = @($runningJobName, $idleJobName)
-                ErrorAction = "SilentlyContinue"
+            # Inner try/finally: the removal can still throw under the forced EnableException,
+            # so the default-parameter restoration lives in the innermost finally and always runs.
+            try {
+                $splatRemove = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Job         = @($runningJobName, $idleJobName)
+                    ErrorAction = "SilentlyContinue"
+                }
+                $null = Remove-DbaAgentJob @splatRemove
+            } finally {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
-            $null = Remove-DbaAgentJob @splatRemove
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
 
