@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaDbCertificate',
-        'Add-DbaServerRoleMember'
+        'Add-DbaServerRoleMember',
+        'Copy-DbaDbCertificate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -129,6 +129,11 @@
     "retiredPath": "private/retired/Copy-DbaAgentServer.ps1",
     "flippedUtc": "2026-07-15T03:43:35Z"
   },
+  "Copy-DbaDbCertificate": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Copy-DbaDbCertificate.ps1",
+    "flippedUtc": "2026-07-17T18:51:50Z"
+  },
   "Copy-DbaRegServer": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Copy-DbaRegServer.ps1",
@@ -168,6 +173,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Export-DbaCsv.ps1",
     "flippedUtc": "2026-07-11T10:11:42Z"
+  },
+  "Export-DbaDacPackage": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Export-DbaDacPackage.ps1",
+    "flippedUtc": "2026-07-17T18:51:13Z"
   },
   "Export-DbaExecutionPlan": {
     "module": "dbatools.performance",

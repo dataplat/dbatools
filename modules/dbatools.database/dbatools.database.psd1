@@ -26,7 +26,8 @@
         'Compare-DbaDbSchema',
         'Dismount-DbaDatabase',
         'Expand-DbaDbLogFile',
-        'Export-DbaBinaryFile'
+        'Export-DbaBinaryFile',
+        'Export-DbaDacPackage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
