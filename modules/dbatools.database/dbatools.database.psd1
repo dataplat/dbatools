@@ -27,7 +27,15 @@
         'Dismount-DbaDatabase',
         'Expand-DbaDbLogFile',
         'Export-DbaBinaryFile',
-        'Export-DbaDacPackage'
+        'Export-DbaDacPackage',
+        'Export-DbaDbRole',
+        'Export-DbaDbTableData',
+        'Find-DbaDatabase',
+        'Find-DbaObject',
+        'Find-DbaOrphanedFile',
+        'Find-DbaSimilarTable',
+        'Find-DbaStoredProcedure',
+        'Find-DbaTrigger'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

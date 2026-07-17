@@ -179,6 +179,16 @@
     "retiredPath": "private/retired/Export-DbaDacPackage.ps1",
     "flippedUtc": "2026-07-17T18:51:13Z"
   },
+  "Export-DbaDbRole": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Export-DbaDbRole.ps1",
+    "flippedUtc": "2026-07-17T21:45:02Z"
+  },
+  "Export-DbaDbTableData": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Export-DbaDbTableData.ps1",
+    "flippedUtc": "2026-07-17T21:45:35Z"
+  },
   "Export-DbaExecutionPlan": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Export-DbaExecutionPlan.ps1",
@@ -204,6 +214,11 @@
     "retiredPath": "private/retired/Find-DbaAgentJob.ps1",
     "flippedUtc": "2026-07-15T04:08:02Z"
   },
+  "Find-DbaDatabase": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-17T21:45:51Z"
+  },
   "Find-DbaDbDisabledIndex": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Find-DbaDbDisabledIndex.ps1",
@@ -228,6 +243,31 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Find-DbaInstance.ps1",
     "flippedUtc": "2026-07-11T22:53:01Z"
+  },
+  "Find-DbaObject": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaObject.ps1",
+    "flippedUtc": "2026-07-17T21:46:09Z"
+  },
+  "Find-DbaOrphanedFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaOrphanedFile.ps1",
+    "flippedUtc": "2026-07-17T21:46:33Z"
+  },
+  "Find-DbaSimilarTable": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaSimilarTable.ps1",
+    "flippedUtc": "2026-07-17T21:46:48Z"
+  },
+  "Find-DbaStoredProcedure": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaStoredProcedure.ps1",
+    "flippedUtc": "2026-07-17T21:47:08Z"
+  },
+  "Find-DbaTrigger": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Find-DbaTrigger.ps1",
+    "flippedUtc": "2026-07-17T21:47:47Z"
   },
   "Format-DbaBackupInformation": {
     "module": "dbatools.core",
