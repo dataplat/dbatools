@@ -100,7 +100,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaLinkedServer @splatLs2
 
             $exportDir = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_els_$random"
-            $null = New-Item -ItemType Directory -Force -Path $exportDir
+            $splatNewDir = @{
+                ItemType = "Directory"
+                Force    = $true
+                Path     = $exportDir
+            }
+            $null = New-Item @splatNewDir
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -108,16 +113,21 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             try {
-                foreach ($ls in $ls1, $ls2) {
-                    $splatRemove = @{
-                        SqlInstance  = $TestConfig.InstanceSingle
-                        LinkedServer = $ls
-                        Force        = $true
-                        ErrorAction  = "SilentlyContinue"
-                    }
-                    Remove-DbaLinkedServer @splatRemove
+                # Pipe only the linked servers that actually exist so a partial BeforeAll never
+                # makes cleanup throw under the forced EnableException and skip the rest.
+                $splatGet = @{
+                    SqlInstance  = $TestConfig.InstanceSingle
+                    LinkedServer = @($ls1, $ls2)
+                    ErrorAction  = "SilentlyContinue"
                 }
-                Remove-Item -Path $exportDir -Recurse -Force -ErrorAction SilentlyContinue
+                Get-DbaLinkedServer @splatGet | Remove-DbaLinkedServer -Force -ErrorAction SilentlyContinue
+                $splatCleanupDir = @{
+                    Path        = $exportDir
+                    Recurse     = $true
+                    Force       = $true
+                    ErrorAction = "SilentlyContinue"
+                }
+                Remove-Item @splatCleanupDir
             } finally {
                 $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
@@ -132,6 +142,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Export-DbaLinkedServer @splatPass
             $result | Should -Not -BeNullOrEmpty
+            # -Passthru returns the raw T-SQL script - every emitted item is a string
+            $result | ForEach-Object { $PSItem | Should -BeOfType System.String }
             $joined = $result -join [Environment]::NewLine
             $joined | Should -Match "sp_addlinkedserver"
             $joined | Should -Match $ls1
@@ -147,6 +159,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Export-DbaLinkedServer @splatFile
             $result | Should -BeOfType System.IO.FileInfo
+            $result.FullName | Should -Be $filePath
             Test-Path -Path $filePath | Should -BeTrue
             (Get-Content -Path $filePath -Raw) | Should -Match $ls1
         }
@@ -162,6 +175,30 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeOfType System.IO.FileInfo
             $result.Extension | Should -Be ".sql"
             $result.DirectoryName | Should -Be $exportDir
+            # Get-ExportFilePath builds "<server>-<timestamp>-<caller>.sql"; the caller token for
+            # this command resolves to "linkedserver" (Export-Dba stripped and lowercased).
+            $result.Name | Should -Match "-linkedserver\.sql$"
+            (Get-Content -Path $result.FullName -Raw) | Should -Match $ls1
+        }
+
+        It "Writes to the configured export directory when no -Path, -FilePath, or -Passthru is given" {
+            # -Path carries a config default (Path.DbatoolsExport), so a file is always written
+            # even with none of the output switches supplied, and the FileInfo is returned.
+            $splatDefault = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                LinkedServer    = $ls1
+                ExcludePassword = $true
+            }
+            $result = Export-DbaLinkedServer @splatDefault
+            $result | Should -BeOfType System.IO.FileInfo
+            $result.Extension | Should -Be ".sql"
+            Test-Path -Path $result.FullName | Should -BeTrue
+            $splatCleanupFile = @{
+                Path        = $result.FullName
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatCleanupFile
         }
 
         It "Filters to the requested linked server with -LinkedServer" {
@@ -207,6 +244,21 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Export-DbaLinkedServer @splatMissing
             $result | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Platform guard" -Skip:(-not ($IsLinux -or $IsMacOS)) {
+        It "Warns and returns nothing on Linux or macOS" {
+            # The OS guard fires before any connection attempt, so this needs no live instance.
+            $splatGuard = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Passthru        = $true
+                WarningAction   = "SilentlyContinue"
+                WarningVariable = "warn"
+            }
+            $result = Export-DbaLinkedServer @splatGuard
+            $result | Should -BeNullOrEmpty
+            $warn -join " " | Should -Match "not supported on Linux or macOS"
         }
     }
 }
