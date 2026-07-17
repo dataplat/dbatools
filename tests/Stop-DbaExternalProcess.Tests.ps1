@@ -77,11 +77,26 @@ Describe $CommandName -Tag IntegrationTests {
             # A failed or aborted restart above leaves the shared instance stopped,
             # stranding every later suite that targets it. Restore must run even when
             # the cleanup itself throws, and must never throw on its own.
-            $stoppedEngine = Get-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -EnableException:$false -WarningAction SilentlyContinue | Where-Object State -ne "Running"
-            if ($stoppedEngine) {
-                $null = $stoppedEngine | Start-DbaService -EnableException:$false -WarningAction SilentlyContinue
+            try {
+                $splatGetEngine = @{
+                    ComputerName    = $TestConfig.InstanceRestart
+                    Type            = "Engine"
+                    EnableException = $false
+                    WarningAction   = "SilentlyContinue"
+                }
+                $stoppedEngine = Get-DbaService @splatGetEngine | Where-Object State -ne "Running"
+                if ($stoppedEngine) {
+                    $splatStartEngine = @{
+                        EnableException = $false
+                        WarningAction   = "SilentlyContinue"
+                    }
+                    $null = $stoppedEngine | Start-DbaService @splatStartEngine
+                }
+            } catch {
+                Write-Warning "Fixture restoration failed: $PSItem"
+            } finally {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
 
