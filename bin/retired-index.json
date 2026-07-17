@@ -1009,6 +1009,21 @@
     "retiredPath": "private/retired/New-DbaAgentAlertCategory.ps1",
     "flippedUtc": "2026-07-17T20:16:56Z"
   },
+  "New-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-17T22:45:56Z"
+  },
+  "New-DbaAgentJobCategory": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentJobCategory.ps1",
+    "flippedUtc": "2026-07-17T22:47:14Z"
+  },
+  "New-DbaAgentJobStep": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentJobStep.ps1",
+    "flippedUtc": "2026-07-17T22:47:32Z"
+  },
   "New-DbaAzAccessToken": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaAzAccessToken.ps1",

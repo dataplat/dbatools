@@ -49,7 +49,10 @@
         'Get-DbaDbMailServer',
         'Install-DbaAgentAdminAlert',
         'New-DbaAgentAlert',
-        'New-DbaAgentAlertCategory'
+        'New-DbaAgentAlertCategory',
+        'New-DbaAgentJob',
+        'New-DbaAgentJobCategory',
+        'New-DbaAgentJobStep'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
