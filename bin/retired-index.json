@@ -24,6 +24,11 @@
     "retiredPath": "private/retired/Add-DbaRegServerGroup.ps1",
     "flippedUtc": "2026-07-16T08:47:13Z"
   },
+  "Add-DbaServerRoleMember": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Add-DbaServerRoleMember.ps1",
+    "flippedUtc": "2026-07-17T10:15:55Z"
+  },
   "Backup-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Backup-DbaComputerCertificate.ps1",
