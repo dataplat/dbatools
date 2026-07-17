@@ -30,13 +30,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         # A dedicated SQL login used as the non-default owner target. sa (login id 1) is the
         # dynamic default the command falls back to when -Login is omitted; capturing its name
-        # lets the default-owner test assert exactly what the source computes.
+        # lets the default-owner test assert exactly what the source computes. A WindowsGroup
+        # login (if any exists on this instance) drives the rejection path.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $saLogin = ($server.Logins | Where-Object { $PSItem.Id -eq 1 }).Name
+        $windowsGroupLogin = ($server.Logins | Where-Object { $PSItem.LoginType -eq "WindowsGroup" } | Select-Object -First 1).Name
 
         $ownerLogin = "dbatoolsci_owner_$(Get-Random)"
         $securePassword = ConvertTo-SecureString "dbatools.IO$(Get-Random)" -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $ownerLogin -SecurePassword $securePassword -Force
+        $splatLogin = @{
+            SqlInstance    = $TestConfig.InstanceSingle
+            Login          = $ownerLogin
+            SecurePassword = $securePassword
+            Force          = $true
+        }
+        $null = New-DbaLogin @splatLogin
 
         # One job per test so the destructive owner changes never leak across tests (each
         # scenario owns its state and the suite stays order-independent).
@@ -47,7 +55,8 @@ Describe $CommandName -Tag IntegrationTests {
         $jobDefault = "dbatoolsci_jobowner_default_$(Get-Random)"
         $jobKeep = "dbatoolsci_jobowner_keep_$(Get-Random)"
         $jobExclude = "dbatoolsci_jobowner_excl_$(Get-Random)"
-        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude)
+        $jobWinGroup = "dbatoolsci_jobowner_wingroup_$(Get-Random)"
+        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude, $jobWinGroup)
 
         foreach ($j in $allJobs) {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $j
@@ -87,23 +96,38 @@ Describe $CommandName -Tag IntegrationTests {
             $result.PSObject.Properties.Name | Should -Contain "ComputerName"
             $result.PSObject.Properties.Name | Should -Contain "InstanceName"
             $result.PSObject.Properties.Name | Should -Contain "SqlInstance"
+            # Alter() persisted the change, not just the in-memory object
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobSet).OwnerLoginName | Should -Be $ownerLogin
         }
 
-        It "Skips a job whose owner already matches the target" {
+        It "Skips a job whose owner already matches the target and leaves it unchanged" {
             # Establish the target owner first, then re-run: the second pass is the no-op path.
-            $null = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobSkip -Login $ownerLogin
-            $result = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobSkip -Login $ownerLogin
+            $splatSkip = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = $jobSkip
+                Login       = $ownerLogin
+            }
+            $null = Set-DbaAgentJobOwner @splatSkip
+            $result = Set-DbaAgentJobOwner @splatSkip
             $result.Status | Should -Be "Skipped"
             $result.Notes | Should -Be "Owner already set"
+            $result.OwnerLoginName | Should -Be $ownerLogin
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobSkip).OwnerLoginName | Should -Be $ownerLogin
         }
 
         It "Falls back to the sa (login id 1) owner when -Login is omitted" {
             # Move it off sa first so the default path has an observable change to make.
-            $null = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobDefault -Login $ownerLogin
+            $splatOff = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = $jobDefault
+                Login       = $ownerLogin
+            }
+            $null = Set-DbaAgentJobOwner @splatOff
             $result = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobDefault
             $result.Status | Should -Be "Successful"
             $result.OwnerLoginName | Should -Be $saLogin
+            # persisted, not just mutated in memory
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobDefault).OwnerLoginName | Should -Be $saLogin
         }
     }
 
@@ -111,17 +135,48 @@ Describe $CommandName -Tag IntegrationTests {
         It "Reports Failed for a login that does not exist and leaves the owner unchanged" {
             $before = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobInvalid).OwnerLoginName
             $missingLogin = "dbatoolsci_nologin_$(Get-Random)"
-            $result = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobInvalid -Login $missingLogin
+            $splatMissing = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = $jobInvalid
+                Login       = $missingLogin
+            }
+            $result = Set-DbaAgentJobOwner @splatMissing
             $result.Status | Should -Be "Failed"
             $result.Notes | Should -Be "Login $missingLogin not valid"
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobInvalid).OwnerLoginName | Should -Be $before
         }
+
+        It "Reports Failed for a WindowsGroup login and leaves the owner unchanged" {
+            if (-not $windowsGroupLogin) {
+                Set-ItResult -Skipped -Because "no WindowsGroup login is present on this instance"
+                return
+            }
+            $before = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobWinGroup).OwnerLoginName
+            $splatWin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = $jobWinGroup
+                Login       = $windowsGroupLogin
+            }
+            $result = Set-DbaAgentJobOwner @splatWin
+            $result.Status | Should -Be "Failed"
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobWinGroup).OwnerLoginName | Should -Be $before
+        }
     }
 
     Context "WhatIf" {
-        It "Does not change the owner under -WhatIf" {
+        It "Emits the job but does not change the owner under -WhatIf" {
             $before = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobWhatIf).OwnerLoginName
-            $null = Set-DbaAgentJobOwner -SqlInstance $TestConfig.InstanceSingle -Job $jobWhatIf -Login $ownerLogin -WhatIf
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = $jobWhatIf
+                Login       = $ownerLogin
+                WhatIf      = $true
+            }
+            $result = Set-DbaAgentJobOwner @splatWhatIf
+            # the object is still emitted, but the Alter branch (and its Status assignment) is skipped
+            $result | Should -BeOfType Microsoft.SqlServer.Management.Smo.Agent.Job
+            $result.Status | Should -BeNullOrEmpty
+            $result.OwnerLoginName | Should -Be $before
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobWhatIf).OwnerLoginName | Should -Be $before
         }
     }
@@ -137,8 +192,24 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Set-DbaAgentJobOwner @splatExclude
             $result.Name | Should -Be $jobKeep
-            $result.Name | Should -Not -Contain $jobExclude
+            $result.Status | Should -Be "Successful"
+            $result.OwnerLoginName | Should -Be $ownerLogin
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobKeep).OwnerLoginName | Should -Be $ownerLogin
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobExclude).OwnerLoginName | Should -Be $before
+        }
+
+        It "Selects all Local jobs when -Job is omitted" {
+            # -WhatIf keeps this read-only across every local job on the instance while still
+            # exercising the "all Local jobs, no non-Local" selection branch.
+            $splatAll = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $ownerLogin
+                WhatIf      = $true
+            }
+            $result = Set-DbaAgentJobOwner @splatAll
+            $result.Name | Should -Contain $jobSet
+            # the selection filter is JobType -eq Local, so nothing else should slip through
+            $result.JobType | Where-Object { $PSItem -ne "Local" } | Should -BeNullOrEmpty
         }
     }
 }
