@@ -203,16 +203,20 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobExclude).OwnerLoginName | Should -Be $before
         }
 
-        It "Selects all Local jobs when -Job is omitted" {
+        It "Selects every Local job exactly once when -Job is omitted" {
             # -WhatIf keeps this read-only across every local job on the instance while still
-            # exercising the "all Local jobs, no non-Local" selection branch.
+            # exercising the "all Local jobs, no non-Local" selection branch. Snapshot the Local
+            # set immediately before the call so the result can be checked for exact
+            # one-result-per-job coverage (no omissions, no duplicates).
+            $expectedLocal = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object JobType -eq "Local").Name | Sort-Object
             $splatAll = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Login       = $ownerLogin
                 WhatIf      = $true
             }
-            $result = Set-DbaAgentJobOwner @splatAll
-            # every job we created is Local, so the -Job-less selection must return all of them
+            $result = @(Set-DbaAgentJobOwner @splatAll)
+            ($result.Name | Sort-Object) | Should -Be $expectedLocal
+            # every job we created is Local, so all must appear in the selection
             foreach ($j in $allJobs) {
                 $result.Name | Should -Contain $j
             }
