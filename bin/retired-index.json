@@ -154,6 +154,11 @@
     "retiredPath": "private/retired/Enable-DbaForceNetworkEncryption.ps1",
     "flippedUtc": "2026-07-10T00:14:00Z"
   },
+  "Expand-DbaDbLogFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Expand-DbaDbLogFile.ps1",
+    "flippedUtc": "2026-07-17T17:36:15Z"
+  },
   "Export-DbaCsv": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Export-DbaCsv.ps1",

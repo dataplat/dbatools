@@ -122,7 +122,6 @@
         'Enable-DbaHideInstance',
         'Enable-DbaStartupProcedure',
         'Enable-DbaTraceFlag',
-        'Expand-DbaDbLogFile',
         'Export-DbaCredential',
         'Export-DbaDacPackage',
         'Export-DbaDbRole',

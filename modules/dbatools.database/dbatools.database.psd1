@@ -24,7 +24,8 @@
         'Add-DbaDbRoleMember',
         'Add-DbaExtendedProperty',
         'Compare-DbaDbSchema',
-        'Dismount-DbaDatabase'
+        'Dismount-DbaDatabase',
+        'Expand-DbaDbLogFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
