@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 12, 2026
+-- Last Modified: July 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -56,21 +56,31 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajor
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2025 will fall out of Mainstream Support on Jan 6, 2031
--- SQL Server 2025 will fall out of Extended Support on Jan 6, 2036
+-- @@SERVERNAME - Returns the name of the local server
+-- @@VERSION - Returns a detailed string containing the SQL Server product version, the build number, the architecture (e.g., x64), and the operating system version/build information
+
+
+-- SQL Server 2025 build versions
+-- https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/build-versions
 
 -- SQL Server 2025 Builds																		
 -- Build			Description							Release Date	URL to KB Article
--- 17.0.1000.7		RTM									11/18/2025
+-- 17.0.1000.7		RTM									11/18/2025		https://learn.microsoft.com/en-us/sql/sql-server/sql-server-2025-release-notes
 -- 17.0.1050.2		GDR									1/13/2026		https://support.microsoft.com/en-us/topic/kb5073177-description-of-the-security-update-for-sql-server-2025-gdr-january-13-2026-b1f8569f-b2e2-479e-84a4-96e1a9076b77	
 -- 17.0.4006.2		CU1									1/29/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate1
 -- 17.0.4015.4		CU2									2/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate2
 -- 17.0.4020.2		CU2 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077466-description-of-the-security-update-for-sql-server-2025-cu2-march-10-2026-e09ecd69-b429-47e8-835c-3bcd107330e5
 -- 17.0.4025.3		CU3									3/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate3
 -- 17.0.4030.1		CU3 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5083245-description-of-the-security-update-for-sql-server-2025-cu3-april-14-2026-05c1d543-9323-4484-9b11-23093088cd76
--- 17.0.4035.5		CU24								4/16/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate4
--- 17.0.4040.1		CU24 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089899-description-of-the-security-update-for-sql-server-2025-cu4-may-12-2026-de2c44d3-81c5-46f7-a756-d579a067f24e
+-- 17.0.4035.5		CU4									4/16/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate4
+-- 17.0.4040.1		CU4 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089899-description-of-the-security-update-for-sql-server-2025-cu4-may-12-2026-de2c44d3-81c5-46f7-a756-d579a067f24e
+-- 17.0.4045.5		CU5									5/20/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate5
+-- 17.0.4055.5		CU6									6/18/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate6
 
+
+-- SQL Server 2025 will fall out of Mainstream Support on Jan 6, 2031
+-- SQL Server 2025 will fall out of Extended Support on Jan 6, 2036
+-- https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2025
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -90,7 +100,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- http://bit.ly/2YY0pb1
 
 
--- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
+-- Get socket, physical core and logical core count from the SQL Server Error log (Query 2) (Core Counts)
 -- This query might take a few seconds depending on the size of your error log
 EXEC sys.xp_readerrorlog 0, 1, N'detected', N'socket';
 ------
@@ -172,12 +182,13 @@ ORDER BY [name] OPTION (RECOMPILE);
 -- sys.configurations (Transact-SQL)
 -- https://bit.ly/2HsyDZI
 
--- New in SQL Server 2025 *********************************************************************************************************
+-- New configuration options in SQL Server 2025 *********************************************************************************************************
 -- ADR cleaner lock timeout (s)					ADR cleaner lock timeout
 -- allow server scoped db credentials			Enable or disable use of server managed identity in database scoped credentials
 -- availability group commit time (ms)			Configure availability group commit time in milliseconds for SQL Server only.
 -- external AI runtimes enabled					Enable or disable using external AI runtimes
 -- external rest endpoint enabled				Enable or disable invocations of external REST endpoints
+-- max lock manager cache memory (%)			Maximum size of lock manager cache memory as a percentage of the SQLOS committed memory (added in SQL Server 2025 CU5)
 -- max server tiered memory (MB)				Maximum size of server tiered memory (MB)
 -- max UCS send boxcars							Maximum number of UCS boxcars for sending messages.
 -- SLOG memory quota (%)						SLOG memory quota percentage
@@ -385,7 +396,7 @@ WHERE osn.node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
 -- You want to see an equal number of schedulers on each NUMA node
 -- Watch out if SQL Server 2025 Standard Edition has been installed 
--- on a physical or virtual machine with more than four sockets or more than 24 physical cores
+-- on a physical or virtual machine with more than four sockets or more than 32 physical cores
 
 -- sys.dm_os_nodes (Transact-SQL)
 -- https://bit.ly/2pn5Mw8
@@ -431,6 +442,7 @@ DECLARE @SQLServerStartTime AS DATETIME;
 DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLCACHESTORE_SQLCPMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @OBJECTSTORE_LOCK_MANAGERMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @AvgPageLifeExpectancy int = 0;
 DECLARE @LastMemoryHealthSeverityLevel tinyint = 0;
 DECLARE @PeakMemoryHealthSeverityLevel tinyint = 0;
@@ -475,6 +487,12 @@ FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'CACHESTORE_SQLCP'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
 
+-- OBJECTSTORE_LOCK_MANAGER Memory Clerk Usage 
+SELECT @OBJECTSTORE_LOCK_MANAGERMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'OBJECTSTORE_LOCK_MANAGER'
+GROUP BY mc.[type] OPTION (RECOMPILE);  
+
 
 -- Most recent and peak sys.dm_os_memory_health_history values
 SELECT TOP (1) @LastMemoryHealthSeverityLevel = mh.severity_level,
@@ -509,6 +527,7 @@ SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version I
 		@SQLBufferPoolMemoryUsageMB AS [SQL Buffer Pool Memory Usage (MB)],
 		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
 		@SQLCACHESTORE_SQLCPMemoryUsageMB AS [CACHESTORE_SQLCP Memory Clerk Memory Usage (MB)],
+		@OBJECTSTORE_LOCK_MANAGERMemoryUsageMB AS [OBJECTSTORE_LOCK_MANAGER Memory Clerk Memory Usage (MB)],
 		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
 		@SQLServerStartTime AS [SQL Server Start Time];
 GO
@@ -664,13 +683,15 @@ IF EXISTS (SELECT * WHERE CONVERT(VARCHAR(2), SERVERPROPERTY('ProductMajorVersio
 	END
 ------ 
 
--- Note: TF 15097 enables AVX-512 support for SQL Server 2022 (16.x) Preview and later (if your CPU supports it)
+-- Note: TF 15097 enables AVX-512 support for SQL Server 2022 (16.x) and later (if your CPU supports it)
 -- If you see AVX-512 in the CPU vectorization level results, you should consider enabling TF 15097
 -- AVX-512 support only works in Enterprise Edition
 
 -- Here are some CPU families that have good AVX-512 support:
 -- Intel Ice Lake and later
 -- AMD EYPC Genoa and later
+-- AMD EYPC Turin and later has the full 512-bit data path
+-- https://www.amd.com/en/blogs/2026/understanding-avx-512---validating-usage-on-amd-epyc-.html
 
 
 

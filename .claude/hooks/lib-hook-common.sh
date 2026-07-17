@@ -207,3 +207,46 @@ hook_normalize_path() {
     esac
     printf '%s' "$p"
 }
+
+# ---------------------------------------------------------------- review scope
+# The files the codex Stop hook actually reviews: code/doc extensions (markdown
+# included — docs are deliverables), PLUS the review dispositions ledger, which
+# is force-included so a suppression edit is itself reviewed. Single-sourced
+# here so the snapshot hooks copy EXACTLY this set — never a non-reviewable
+# in-repo file (e.g. a .env) — and snapshot scope can never drift from review
+# scope.
+HOOK_REVIEWABLE_EXT_RE='\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh|md)$'
+hook_is_reviewable_file() {
+    [[ "$1" =~ $HOOK_REVIEWABLE_EXT_RE ]] && return 0
+    [[ "$1" == *codex-review-dispositions.jsonl ]] && return 0
+    return 1
+}
+
+# ---------------------------------------------------------------- snapshots
+# hook_snapshot_paths <session_id> <file_path> — set SNAP_BASE and SNAP_CUR to
+# THIS session's per-file content-snapshot paths, keyed by canonical absolute
+# path so the pre-write (baseline), post-write (current), and Stop (diff) hooks
+# all agree on the same two files. These let the codex Stop hook diff "what this
+# session first found" -> "what this session last wrote" instead of the shared
+# working tree, so a parallel session's edits to the same file (e.g. two
+# sessions both registering a command in dbatools.psd1) are neither reviewed
+# here nor churn this session's clean-cache.
+#
+# Returns 1 (and leaves SNAP_BASE/SNAP_CUR empty) when the session id is empty
+# or md5sum is unavailable — callers then fall back to a git working-tree diff.
+hook_snapshot_paths() {
+    local sid="$1" fp="$2"
+    SNAP_BASE=""
+    SNAP_CUR=""
+    [[ -n "$sid" ]] || return 1
+    command -v md5sum >/dev/null 2>&1 || return 1
+    local canon key
+    canon=$(realpath -m "$(hook_to_unix_path "$fp")" 2>/dev/null) || return 1
+    [[ -n "$canon" ]] || return 1
+    key=$(printf '%s' "$(hook_normalize_path "$canon")" | md5sum 2>/dev/null | cut -d' ' -f1)
+    [[ -n "$key" ]] || return 1
+    local dir="$HOOK_STATE_ROOT/snapshots/$sid"
+    SNAP_BASE="$dir/$key.base"
+    SNAP_CUR="$dir/$key.cur"
+    return 0
+}

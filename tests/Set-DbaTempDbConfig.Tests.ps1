@@ -23,11 +23,13 @@ Describe $CommandName -Tag UnitTests {
                 "OutFile",
                 "OutputScriptOnly",
                 "DisableGrowth",
+                "Force",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -122,6 +124,189 @@ Describe $CommandName -Tag IntegrationTests {
                     $indexToUse = 0
                 }
             }
+        }
+    }
+
+    Context "Reducing the tempdb data file count against a real instance" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $tempdbReductionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $tempdbReductionPhysicalName = $tempdbReductionServer.Databases["tempdb"].Query("SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
+            $tempdbReductionDataPath = Split-Path $tempdbReductionPhysicalName
+            $originalDataFileState = @($tempdbReductionServer.Databases["tempdb"].Query("SELECT file_id AS ID, name AS LogicalName, size AS SizePages, growth AS GrowthValue, is_percent_growth AS IsPercentGrowth FROM sys.database_files WHERE type = 0 ORDER BY file_id"))
+            $originalDataFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
+            $originalDataFileCount = $originalDataFiles.Count
+            $expandedDataFileCount = $originalDataFileCount + 2
+            $largestDataFileSize = ($originalDataFiles | ForEach-Object { [Math]::Ceiling($PSItem.Size.Megabyte) } | Measure-Object -Maximum).Maximum
+            $individualDataFileSize = [Math]::Max(64, [int]$largestDataFileSize)
+            $expandedTotalDataFileSize = $individualDataFileSize * $expandedDataFileCount
+            $allocationTableName = "dbatoolsci_tempdb_reduction_$(Get-Random)"
+            $allocationRowCount = 15000
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($null -ne $tempdbReductionServer -and $null -ne $allocationTableName) {
+                $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("IF OBJECT_ID(N'dbo.$allocationTableName', N'U') IS NOT NULL DROP TABLE dbo.[$allocationTableName];")
+            }
+
+            # Restore the original tempdb data file count in case an assertion above failed midway.
+            if ($null -ne $originalDataFileCount -and $null -ne $expandedTotalDataFileSize) {
+                $currentDataFileCount = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0).Count
+                $restoreAttempt = 0
+                $restoreError = $null
+                while ($currentDataFileCount -ne $originalDataFileCount -and $restoreAttempt -lt 3) {
+                    $restoreAttempt += 1
+                    $splatRestore = @{
+                        SqlInstance   = $tempdbReductionServer
+                        DataFileCount = $originalDataFileCount
+                        DataFileSize  = $expandedTotalDataFileSize
+                        DataPath      = $tempdbReductionDataPath
+                        Force         = $true
+                        Confirm       = $false
+                    }
+                    try {
+                        $null = Set-DbaTempDbConfig @splatRestore
+                        $restoreError = $null
+                    } catch {
+                        $restoreError = $PSItem
+                    }
+                    $currentDataFileCount = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0).Count
+                }
+
+                if ($currentDataFileCount -gt $originalDataFileCount) {
+                    $originalLogicalNames = @($originalDataFiles.LogicalName)
+                    $extraDataFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object { $PSItem.Type -eq 0 -and $PSItem.LogicalName -notin $originalLogicalNames } | Sort-Object ID -Descending)
+                    foreach ($extraDataFile in $extraDataFiles) {
+                        $escapedExtraLogicalName = $extraDataFile.LogicalName.Replace("'", "''")
+                        $escapedExtraIdentifier = $extraDataFile.LogicalName.Replace("]", "]]")
+                        $tempdbReductionServer.Databases["master"].ExecuteNonQuery("USE [tempdb]; DBCC SHRINKFILE (N'$escapedExtraLogicalName', EMPTYFILE); ALTER DATABASE tempdb REMOVE FILE [$escapedExtraIdentifier];")
+                    }
+                    $currentDataFileCount = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0).Count
+                }
+
+                if ($currentDataFileCount -ne $originalDataFileCount) {
+                    throw "Failed to restore tempdb to $originalDataFileCount data files after $restoreAttempt attempts. Last error: $restoreError"
+                }
+
+                foreach ($originalDataFile in $originalDataFileState) {
+                    $escapedOriginalLogicalName = $originalDataFile.LogicalName.Replace("'", "''")
+                    $originalSizeMb = [Math]::Max(1, [Math]::Floor($originalDataFile.SizePages / 128.0))
+                    $originalSizeKb = $originalDataFile.SizePages * 8
+                    if ($originalDataFile.GrowthValue -eq 0) {
+                        $originalGrowthSetting = "0"
+                    } elseif ($originalDataFile.IsPercentGrowth) {
+                        $originalGrowthSetting = "$($originalDataFile.GrowthValue)%"
+                    } else {
+                        $originalGrowthSetting = "$($originalDataFile.GrowthValue * 8)KB"
+                    }
+
+                    $sizeRestoreAttempt = 0
+                    do {
+                        $sizeRestoreAttempt += 1
+                        $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DBCC SHRINKFILE (N'$escapedOriginalLogicalName', $originalSizeMb);")
+                        $restoredSizePages = $tempdbReductionServer.Databases["tempdb"].Query("SELECT size AS SizePages FROM sys.database_files WHERE file_id = $($originalDataFile.ID)").SizePages
+                    } while ($restoredSizePages -gt $originalDataFile.SizePages -and $sizeRestoreAttempt -lt 3)
+
+                    if ($restoredSizePages -lt $originalDataFile.SizePages) {
+                        $tempdbReductionServer.Databases["master"].ExecuteNonQuery("ALTER DATABASE tempdb MODIFY FILE (NAME = N'$escapedOriginalLogicalName', SIZE = $($originalSizeKb)KB);")
+                    }
+                    $tempdbReductionServer.Databases["master"].ExecuteNonQuery("ALTER DATABASE tempdb MODIFY FILE (NAME = N'$escapedOriginalLogicalName', FILEGROWTH = $originalGrowthSetting);")
+
+                    if ($restoredSizePages -gt $originalDataFile.SizePages) {
+                        throw "Failed to shrink tempdb file $($originalDataFile.LogicalName) to its original size after $sizeRestoreAttempt attempts."
+                    }
+                }
+
+                $restoredDataFileState = @($tempdbReductionServer.Databases["tempdb"].Query("SELECT file_id AS ID, name AS LogicalName, size AS SizePages, growth AS GrowthValue, is_percent_growth AS IsPercentGrowth FROM sys.database_files WHERE type = 0 ORDER BY file_id"))
+                foreach ($originalDataFile in $originalDataFileState) {
+                    $restoredDataFile = $restoredDataFileState | Where-Object ID -eq $originalDataFile.ID
+                    if ($restoredDataFile.SizePages -ne $originalDataFile.SizePages -or $restoredDataFile.GrowthValue -ne $originalDataFile.GrowthValue -or $restoredDataFile.IsPercentGrowth -ne $originalDataFile.IsPercentGrowth) {
+                        throw "Failed to restore tempdb file $($originalDataFile.LogicalName) to its original size and growth settings."
+                    }
+                }
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "adds real files and safely force-removes the highest file ids" {
+            $splatExpand = @{
+                SqlInstance     = $tempdbReductionServer
+                DataFileCount   = $expandedDataFileCount
+                DataFileSize    = $expandedTotalDataFileSize
+                DataPath        = $tempdbReductionDataPath
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
+            }
+            $expandResult = Set-DbaTempDbConfig @splatExpand
+            $expandResult.DataFileCount | Should -Be $expandedDataFileCount
+
+            $expandedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
+            $expandedFiles.Count | Should -Be $expandedDataFileCount
+
+            $highestFile = $expandedFiles | Where-Object ID -ne 1 | Sort-Object ID -Descending | Select-Object -First 1
+            $specialLogicalName = "dbatoolsci_tempdb_'file]_$($highestFile.ID)%"
+            $escapedCurrentName = $highestFile.LogicalName.Replace("'", "''")
+            $escapedSpecialName = $specialLogicalName.Replace("'", "''")
+            $tempdbReductionServer.Databases["master"].ExecuteNonQuery("ALTER DATABASE tempdb MODIFY FILE (NAME = N'$escapedCurrentName', NEWNAME = N'$escapedSpecialName');")
+
+            $allocationQuery = @"
+CREATE TABLE dbo.[$allocationTableName] (Payload char(8000) NOT NULL);
+INSERT dbo.[$allocationTableName] (Payload)
+SELECT TOP ($allocationRowCount) REPLICATE('x', 8000)
+FROM sys.all_objects AS first_source
+CROSS JOIN sys.all_objects AS second_source;
+"@
+            $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery($allocationQuery)
+
+            $expandedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
+            $expectedRemovedFiles = @($expandedFiles | Where-Object ID -ne 1 | Sort-Object ID -Descending | Select-Object -First 2)
+            $fileUsage = @($tempdbReductionServer.Databases["tempdb"].Query("SELECT file_id AS ID, FILEPROPERTY(name, 'SpaceUsed') / 128.0 AS UsedMb FROM sys.database_files WHERE type = 0"))
+            foreach ($expectedRemovedFile in $expectedRemovedFiles) {
+                ($fileUsage | Where-Object ID -eq $expectedRemovedFile.ID).UsedMb | Should -BeGreaterThan 0
+            }
+
+            $withoutForceWarning = $null
+            $withoutForceResult = Set-DbaTempDbConfig -SqlInstance $tempdbReductionServer -DataFileCount $originalDataFileCount -DataFileSize $expandedTotalDataFileSize -OutputScriptOnly -WarningVariable withoutForceWarning -WarningAction SilentlyContinue
+            $withoutForceResult | Should -BeNullOrEmpty
+            ($withoutForceWarning -join " ") | Should -Match "greater number of files"
+
+            $tempdbUsedMb = $tempdbReductionServer.Databases["tempdb"].Query("SELECT SUM(FILEPROPERTY(name, 'SpaceUsed')) / 128.0 AS UsedMb FROM sys.database_files WHERE type = 0").UsedMb
+            $insufficientDataFileSize = [Math]::Max(1, [Math]::Floor($tempdbUsedMb / 2))
+            $capacityWarning = $null
+            $capacityResult = Set-DbaTempDbConfig -SqlInstance $tempdbReductionServer -DataFileCount $originalDataFileCount -DataFileSize $insufficientDataFileSize -Force -OutputScriptOnly -WarningVariable capacityWarning -WarningAction SilentlyContinue
+            $capacityResult | Should -BeNullOrEmpty
+            ($capacityWarning -join " ") | Should -Match "exceeds the requested target capacity"
+
+            $splatReduce = @{
+                SqlInstance     = $tempdbReductionServer
+                DataFileCount   = $originalDataFileCount
+                DataFileSize    = $expandedTotalDataFileSize
+                DataPath        = $tempdbReductionDataPath
+                Force           = $true
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
+            }
+            $reduceResult = Set-DbaTempDbConfig @splatReduce
+            $reduceResult.DataFileCount | Should -Be $originalDataFileCount
+
+            $reducedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
+            $reducedFiles.Count | Should -Be $originalDataFileCount
+            $reducedFiles.ID | Should -Contain 1
+            foreach ($removedFile in $expectedRemovedFiles) {
+                $reducedFiles.LogicalName | Should -Not -Contain $removedFile.LogicalName
+            }
+
+            $preservedRowCount = $tempdbReductionServer.Databases["tempdb"].Query("SELECT COUNT(1) AS PreservedRows FROM dbo.[$allocationTableName]").PreservedRows
+            $preservedRowCount | Should -Be $allocationRowCount
+            $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DROP TABLE dbo.[$allocationTableName];")
         }
     }
 }

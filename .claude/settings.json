@@ -16,6 +16,12 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-edit-read-check.sh",
             "timeout": 10,
             "statusMessage": "Checking Read-before-Edit..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-write-snapshot-baseline.sh",
+            "timeout": 10,
+            "statusMessage": "Snapshotting pre-write baseline..."
           }
         ]
       },

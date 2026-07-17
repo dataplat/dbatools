@@ -19,7 +19,11 @@ Describe $CommandName -Tag UnitTests {
                 "DatabaseName",
                 "FileGroupName",
                 "LogicalName",
+                "LogicalNameRows",
+                "LogicalNameLog",
                 "FileName",
+                "FileNameRows",
+                "FileNameLog",
                 "ReplaceBefore",
                 "Force",
                 "Move",
@@ -31,6 +35,7 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -167,6 +172,46 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $filePreviewResults = Rename-DbaDatabase @splatFilePreview
+
+            $previewDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_filemove"
+            $previewDataFile = $previewDatabase.FileGroups["PRIMARY"].Files[0]
+            $previewLogFile = $previewDatabase.LogFiles[0]
+
+            $splatLogicalOverrides = @{
+                InputObject     = $previewDatabase
+                LogicalNameRows = "<DBN>_data_override"
+                LogicalNameLog  = "<DBN>_log_override"
+                Preview         = $true
+                Confirm         = $false
+            }
+            $logicalOverrideResults = Rename-DbaDatabase @splatLogicalOverrides
+
+            $splatLogicalDefaults = @{
+                InputObject    = $previewDatabase
+                LogicalName   = "<DBN>_<FT>"
+                LogicalNameLog = "<DBN>_journal"
+                Preview        = $true
+                Confirm        = $false
+            }
+            $logicalDefaultResults = Rename-DbaDatabase @splatLogicalDefaults
+
+            $splatFileOverrides = @{
+                InputObject  = $previewDatabase
+                FileNameRows = "<DBN>_data_override"
+                FileNameLog  = "<DBN>_log_override"
+                Preview      = $true
+                Confirm      = $false
+            }
+            $fileOverrideResults = Rename-DbaDatabase @splatFileOverrides
+
+            $splatFileDefaults = @{
+                InputObject = $previewDatabase
+                FileName    = "<DBN>_<FT>"
+                FileNameLog = "<DBN>_journal"
+                Preview     = $true
+                Confirm     = $false
+            }
+            $fileDefaultResults = Rename-DbaDatabase @splatFileDefaults
         }
 
         It "Should have Results" {
@@ -180,6 +225,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have a Status of Partial" {
             $filePreviewResults.Status | Should -Be "Partial"
+        }
+
+        It "uses row and log logical-name templates on real database files" {
+            $logicalOverrideResults.LGN[$previewDataFile.Name] | Should -Be "dbatoolsci_filemove_data_override"
+            $logicalOverrideResults.LGN[$previewLogFile.Name] | Should -Be "dbatoolsci_filemove_log_override"
+            $logicalDefaultResults.LGN[$previewDataFile.Name] | Should -Be "dbatoolsci_filemove_ROWS"
+            $logicalDefaultResults.LGN[$previewLogFile.Name] | Should -Be "dbatoolsci_filemove_journal"
+        }
+
+        It "uses row and log physical-name templates on real database files" {
+            $dataDirectory = Split-Path -Path $previewDataFile.FileName -Parent
+            $logDirectory = Split-Path -Path $previewLogFile.FileName -Parent
+            $dataExtension = [System.IO.Path]::GetExtension($previewDataFile.FileName)
+            $logExtension = [System.IO.Path]::GetExtension($previewLogFile.FileName)
+
+            $fileOverrideResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_data_override$dataExtension")
+            $fileOverrideResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_log_override$logExtension")
+            $fileDefaultResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_ROWS$dataExtension")
+            $fileDefaultResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_journal$logExtension")
         }
     }
 

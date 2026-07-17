@@ -47,8 +47,8 @@ Describe $CommandName -Tag UnitTests {
 
                 $result.CimWinRMOptions | Should -Not -BeNullOrEmpty
                 $result.CimDCOMOptions | Should -Not -BeNullOrEmpty
-                Assert-MockCalled New-DbaCimSessionOptionWithTimeout -Exactly 1 -Scope It -ParameterFilter { $Protocol -eq "Default" }
-                Assert-MockCalled New-DbaCimSessionOptionWithTimeout -Exactly 1 -Scope It -ParameterFilter { $Protocol -eq "Dcom" }
+                Should -Invoke New-DbaCimSessionOptionWithTimeout -Exactly 1 -Scope It -ParameterFilter { $Protocol -eq "Default" }
+                Should -Invoke New-DbaCimSessionOptionWithTimeout -Exactly 1 -Scope It -ParameterFilter { $Protocol -eq "Dcom" }
             }
         }
     }

@@ -285,17 +285,41 @@ function Save-DbaCommunitySoftware {
             }
             # Download and extract.
             if ($PSCmdlet.ShouldProcess($Url, "Downloading to $zipFile")) {
-                try {
+                # Downloads from GitHub fail transiently now and then (rate limiting, connection resets),
+                # especially on shared CI runners, so retry with a short backoff before giving up.
+                $downloadAttempts = 3
+                foreach ($attempt in 1..$downloadAttempts) {
                     try {
-                        Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                        try {
+                            # Clear any partial file from an earlier request so the existence check
+                            # below can only see the file written by this request.
+                            Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                            Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                        } catch {
+                            # Try with default proxy and usersettings
+                            Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                            Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                        }
+                        # A download can complete without a terminating error and still not produce the file,
+                        # which otherwise surfaces later as a confusing Expand-Archive path error, so treat
+                        # a missing file as a failed attempt that is eligible for a retry.
+                        if (-not (Test-Path -Path $zipFile)) {
+                            throw "Download of $Url completed without error, but $zipFile was not created."
+                        }
+                        break
                     } catch {
-                        # Try with default proxy and usersettings
-                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                        # A failed attempt can leave a partial file behind that would mask the failure
+                        # or corrupt the next attempt, so clean it up before retrying or giving up.
+                        Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                        if ($attempt -lt $downloadAttempts) {
+                            Write-Message -Level Verbose -Message "Download attempt $attempt of $downloadAttempts for $Url failed, retrying. $PSItem"
+                            Start-Sleep -Seconds (2 * $attempt)
+                        } else {
+                            Stop-Function -Message "Unable to download $Url to $zipFile after $downloadAttempts attempts." -ErrorRecord $_
+                            return
+                        }
                     }
-                } catch {
-                    Stop-Function -Message "Unable to download $Url to $zipFile." -ErrorRecord $_
-                    return
                 }
             }
             if ($PSCmdlet.ShouldProcess($zipFile, "Extracting archive to $zipFolder path")) {
@@ -372,7 +396,7 @@ function Save-DbaCommunitySoftware {
                 } else {
                     Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName, and $LocalDirectory is not a folder."
                     Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                    Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                    Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                     return
                 }
             }
@@ -380,7 +404,7 @@ function Save-DbaCommunitySoftware {
             if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
                 Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
         }
@@ -389,12 +413,15 @@ function Save-DbaCommunitySoftware {
         if ($PSCmdlet.ShouldProcess($zipFolder, "Copying content to $LocalDirectory")) {
             try {
                 if (Test-Path -Path $LocalDirectory) {
-                    Remove-Item -Path $LocalDirectory -Recurse -ErrorAction Stop
+                    # -Force is required on macOS/Linux: GitHub archives contain dotfiles
+                    # (.github, .gitignore) which PowerShell treats as hidden there, and
+                    # Remove-Item refuses hidden items without it.
+                    Remove-Item -Path $LocalDirectory -Recurse -Force -ErrorAction Stop
                 }
             } catch {
                 Stop-Function -Message "Unable to remove the old target directory $LocalDirectory." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
             try {
@@ -402,7 +429,7 @@ function Save-DbaCommunitySoftware {
             } catch {
                 Stop-Function -Message "Unable to copy the directory $sourceDirectory to the target directory $localDirectoryBase." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
                 return
             }
         }
@@ -411,7 +438,7 @@ function Save-DbaCommunitySoftware {
             Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
         }
         if ($PSCmdlet.ShouldProcess($zipFolder, "Removing temporary folder")) {
-            Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Item -Path $zipFolder -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 }

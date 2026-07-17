@@ -25,6 +25,83 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Native local registered-server exports" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random = Get-Random
+            $parentA = "dbatoolsci-local-parentA-$random"
+            $parentB = "dbatoolsci-local-parentB-$random"
+            $groupPathA = "$parentA\Shared"
+            $groupPathB = "$parentB\Shared"
+            $localAlias = "dbatoolsci-local-alias-$random"
+            $sharedGroupA = Add-DbaRegServerGroup -Name $groupPathA
+            $sharedGroupB = Add-DbaRegServerGroup -Name $groupPathB
+            $splatLocalServer = @{
+                ServerName = "localhost\SQLEXPRESS"
+                Name       = $localAlias
+                Group      = $groupPathA
+            }
+            $localServer = Add-DbaRegServer @splatLocalServer
+            $script:regServerExportFiles = @()
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaRegServer -Group $groupPathA | Where-Object Name -eq $localAlias | Remove-DbaRegServer
+            Get-DbaRegServerGroup -Group $parentA, $parentB | Remove-DbaRegServerGroup
+            $script:regServerExportFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "exports a persisted local registered server with generated and explicit paths" {
+            $generatedFile = $localServer | Export-DbaRegServer -Path $TestDrive -EnableException
+            $explicitPath = Join-Path -Path $TestDrive -ChildPath "explicit-local.xml"
+            $explicitFile = $localServer | Export-DbaRegServer -FilePath $explicitPath -EnableException
+            $script:regServerExportFiles += $generatedFile, $explicitFile
+
+            $generatedFile.Name | Should -BeLike "localhost`$SQLEXPRESS-regserver-$localAlias-*.xml"
+            $generatedFile.Exists | Should -BeTrue
+            $explicitFile.FullName | Should -Be $explicitPath
+        }
+
+        It "exports persisted same-named groups to collision-free paths" {
+            $splatGeneratedGroups = @{
+                InputObject     = @($sharedGroupA, $sharedGroupB)
+                Path            = $TestDrive
+                EnableException = $true
+            }
+            $generatedFiles = Export-DbaRegServer @splatGeneratedGroups
+            $explicitBase = Join-Path -Path $TestDrive -ChildPath "groups.xml"
+            $splatExplicitGroups = @{
+                InputObject     = @($sharedGroupA, $sharedGroupB)
+                FilePath        = $explicitBase
+                EnableException = $true
+            }
+            $explicitFiles = Export-DbaRegServer @splatExplicitGroups
+            $script:regServerExportFiles += $generatedFiles
+            $script:regServerExportFiles += $explicitFiles
+            $script:regServerExportFiles += Get-Item -LiteralPath $explicitBase
+
+            $generatedFiles | Should -HaveCount 2
+            $generatedFiles.FullName | Select-Object -Unique | Should -HaveCount 2
+            $explicitFiles | Should -HaveCount 2
+            $explicitFiles.FullName | Select-Object -Unique | Should -HaveCount 2
+            $generatedFiles.Name -join "," | Should -BeLike "*$parentA`$Shared*"
+            $generatedFiles.Name -join "," | Should -BeLike "*$parentB`$Shared*"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

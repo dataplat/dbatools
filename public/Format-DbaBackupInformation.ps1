@@ -278,7 +278,13 @@ function Format-DbaBackupInformation {
                         $RestoreDir = $originalPath -replace '[/\\][^/\\]+$', ''
                     }
 
-                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $baseName + $DatabaseFileSuffix + $extension
+                    $restorePathSeparator = $PathSep
+                    if ($RestoreDir -match "^[a-z][a-z0-9+.-]*://") {
+                        $restorePathSeparator = "/"
+                        $RestoreDir = $RestoreDir.TrimEnd("/")
+                    }
+
+                    $_.PhysicalName = $RestoreDir + $restorePathSeparator + $DatabaseFilePrefix + $baseName + $DatabaseFileSuffix + $extension
                     Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                 }
             }

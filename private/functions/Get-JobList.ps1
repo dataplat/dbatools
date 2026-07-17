@@ -72,45 +72,20 @@ function Get-JobList {
 
             foreach ($job in $jobs) {
                 foreach ($jFilter in $JobFilter) {
-                    if ($jFilter -match '`*') {
-                        if ($Not) {
-                            $job | Where-Object Name -NotLike $jFilter
-                        } else {
-                            $job | Where-Object Name -Like $jFilter
-                        }
+                    if ($Not) {
+                        $job | Where-Object Name -NotLike $jFilter
                     } else {
-                        if ($Not) {
-                            $job | Where-Object Name -NE $jFilter
-                        } else {
-                            $job | Where-Object Name -EQ $jFilter
-                        }
+                        $job | Where-Object Name -Like $jFilter
                     }
                 }
                 foreach ($sFilter in $StepFilter) {
-                    if ($sFilter -match '`*') {
-                        if ($Not) {
-                            $stepFound = $job.JobSteps | Where-Object Name -NotLike $sFilter
-                            if ($stepFound.Count -gt 0) {
-                                $job
-                            }
-                        } else {
-                            $stepFound = $job.JobSteps | Where-Object Name -Like $sFilter
-                            if ($stepFound.Count -gt 0) {
-                                $job
-                            }
-                        }
+                    if ($Not) {
+                        $stepFound = $job.JobSteps | Where-Object Name -NotLike $sFilter
                     } else {
-                        if ($Not) {
-                            $stepFound = $job.JobSteps | Where-Object Name -NE $sFilter
-                            if ($stepFound.Count -gt 0) {
-                                $job
-                            }
-                        } else {
-                            $stepFound = $job.JobSteps | Where-Object Name -EQ $sFilter
-                            if ($stepFound.Count -gt 0) {
-                                $job
-                            }
-                        }
+                        $stepFound = $job.JobSteps | Where-Object Name -Like $sFilter
+                    }
+                    if ($stepFound) {
+                        $job
                     }
                 }
             }

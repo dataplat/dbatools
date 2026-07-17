@@ -46,6 +46,11 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -Database $db.Name
     }
 
+    It -Skip:($PSVersionTable.PSEdition -ne "Core") "installs darling data" {
+        $results = Install-DbaDarlingData
+        $results.Database | Select-Object -First 1 | Should -Be "master"
+    }
+
     It -Skip:(-not $hasAzureServicePrincipal) "connects to Azure using tenant and client id + client secret" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force

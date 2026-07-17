@@ -184,6 +184,11 @@ Get-DbaDatabase - Add support for filtering by recovery model
 
 For multiple commands: `(do *Login*)` or `(do *Backup*, *Restore*)`
 
+### Pull Request Integration
+
+**ABSOLUTE RULE: Always squash and merge pull requests that target `development`.**
+Never use a merge commit or rebase merge when integrating a PR into `development`.
+
 ### .OUTPUTS Documentation
 
 All commands should have proper `.OUTPUTS` documentation. **Use the prompt at `.github/prompts/typesncolumns.md`** to generate proper documentation.

@@ -62,10 +62,26 @@ function Rename-DbaDatabase {
         Use this when you need consistent logical file naming for backup operations, maintenance scripts, or troubleshooting, as logical names are referenced in many SQL commands.
         Valid placeholders are: <FT> (file type: ROWS, LOG, MMO, FS), <LGN> (current logical name), <FGN> (current filegroup name), <DBN> (current database name), <DATE> (current date in yyyyMMdd format). If distinct names cannot be generated, a counter is appended (0001, 0002, etc).
 
+    .PARAMETER LogicalNameRows
+        Specifies a template override for the logical names of ROWS data files. Uses the same placeholders as LogicalName.
+        When provided, this template is used for ROWS files while LogicalName remains the fallback for other file types.
+
+    .PARAMETER LogicalNameLog
+        Specifies a template override for the logical names of transaction log files. Uses the same placeholders as LogicalName, except <FGN> resolves to an empty string because log files do not belong to a filegroup.
+        When provided, this template is used for LOG files while LogicalName remains the fallback for other file types.
+
     .PARAMETER FileName
         Specifies a template for renaming physical database file names on disk using placeholder substitution. Changes only the file name, preserving the original directory and file extension.
         Use this when you need to align physical file names with your database naming standards for easier file management, monitoring, and disaster recovery operations.
         Valid placeholders are: <FNN> (current file name without directory or extension), <FT> (file type: ROWS, LOG, MMO, FS), <LGN> (current logical name), <FGN> (current filegroup name), <DBN> (current database name), <DATE> (current date in yyyyMMdd format). If distinct names cannot be generated, a counter is appended (0001, 0002, etc).
+
+    .PARAMETER FileNameRows
+        Specifies a template override for the physical file names of ROWS data files. Uses the same placeholders as FileName.
+        When provided, this template is used for ROWS files while FileName remains the fallback for other file types.
+
+    .PARAMETER FileNameLog
+        Specifies a template override for the physical file names of transaction log files. Uses the same placeholders as FileName, except <FGN> resolves to an empty string because log files do not belong to a filegroup.
+        When provided, this template is used for LOG files while FileName remains the fallback for other file types.
 
     .PARAMETER ReplaceBefore
         Modifies how placeholder substitution works by removing old database, filegroup, and logical names from current names before applying templates. This prevents duplicate naming components in nested scenarios.
@@ -187,6 +203,11 @@ function Rename-DbaDatabase {
         The db stays online (watch out!). You can then proceed manually to move/copy files by hand, set the db offline and then online again to finish the rename process
 
     .EXAMPLE
+        PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -FileNameRows "<DBN>" -FileNameLog "<DBN>_log"
+
+        Renames ROWS data files with the database name and transaction log files with an additional _log suffix.
+
+    .EXAMPLE
         PS C:\> Rename-DbaDatabase -SqlInstance sqlserver2014a -Database HR -DatabaseName "dbatools_<DBN>" -FileName "<DBN>_<FGN>_<FNN>" -SetOffline
 
         Renames the HR database to "dbatools_HR" and then all filenames as "dbatools_HR_[Name of the FileGroup]_[original_filename]"
@@ -212,7 +233,11 @@ function Rename-DbaDatabase {
         [string]$DatabaseName,
         [string]$FileGroupName,
         [string]$LogicalName,
+        [string]$LogicalNameRows,
+        [string]$LogicalNameLog,
         [string]$FileName,
+        [string]$FileNameRows,
+        [string]$FileNameLog,
         [switch]$ReplaceBefore,
         [switch]$Force,
         [switch]$Move,
@@ -254,8 +279,8 @@ function Rename-DbaDatabase {
             ($hashtable.GetEnumerator() | Where-Object Value -eq $Value).Name
         }
 
-        if ((Test-Bound -ParameterName SetOffline) -and (-not(Test-Bound -ParameterName FileName))) {
-            Stop-Function -Category InvalidArgument -Message "-SetOffline is only useful when -FileName is passed. Quitting."
+        if ((Test-Bound -ParameterName SetOffline) -and (-not $FileName -and -not $FileNameRows -and -not $FileNameLog)) {
+            Stop-Function -Category InvalidArgument -Message "-SetOffline is only useful when -FileName, -FileNameRows, or -FileNameLog is passed. Quitting."
         }
     }
     process {
@@ -264,8 +289,8 @@ function Rename-DbaDatabase {
             Stop-Function -Message "You must specify a -AllDatabases or -Database/ExcludeDatabase to continue"
             return
         }
-        if (!$DatabaseName -and !$FileGroupName -and !$LogicalName -and !$FileName) {
-            Stop-Function -Message "You must specify at least one of -DatabaseName,-FileGroupName,-LogicalName or -Filename to continue"
+        if (!$DatabaseName -and !$FileGroupName -and !$LogicalName -and !$LogicalNameRows -and !$LogicalNameLog -and !$FileName -and !$FileNameRows -and !$FileNameLog) {
+            Stop-Function -Message "You must specify at least one database, filegroup, logical name, or file name template to continue"
             return
         }
         $dbs = @()
@@ -434,7 +459,7 @@ function Rename-DbaDatabase {
                     $Entities_Before['LGN'][$fn] = $fn
                 }
             }
-            if (!$failed -and $LogicalName) {
+            if (!$failed -and ($LogicalName -or $LogicalNameRows -or $LogicalNameLog)) {
                 $New_LogicalNames = @{ }
                 foreach ($fn in $db.FileGroups.Files.Name) {
                     $New_LogicalNames[$fn] = 1
@@ -453,6 +478,10 @@ function Rename-DbaDatabase {
                             'FileStreamDataFileGroup' { 'FS' }
                             default { 'STD' }
                         }
+                        $EffectiveLogicalName = if ($FileType -eq "ROWS" -and $LogicalNameRows) { $LogicalNameRows } else { $LogicalName }
+                        if (-not $EffectiveLogicalName) {
+                            continue
+                        }
                         $Orig_LGName = $logical.Name
                         $Orig_Placeholder = $Orig_LGName
                         if ($ReplaceBefore) {
@@ -466,7 +495,7 @@ function Rename-DbaDatabase {
                                 $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
                             }
                         }
-                        $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
+                        $NewLGName = $EffectiveLogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
                             '<FT>', $FileType).Replace('<LGN>', $Orig_Placeholder)
                         $FinalLGName = $NewLGName
                         while ($logical.Name -ne $FinalLGName) {
@@ -502,6 +531,10 @@ function Rename-DbaDatabase {
                 if (!$failed) {
                     $logfiles = @($db.LogFiles)
                     for ($i = 0; $i -lt $logfiles.Count; $i++) {
+                        $EffectiveLogicalName = if ($LogicalNameLog) { $LogicalNameLog } else { $LogicalName }
+                        if (-not $EffectiveLogicalName) {
+                            continue
+                        }
                         $logicallog = $logfiles[$i]
                         $Orig_LGName = $logicallog.Name
                         $Orig_Placeholder = $Orig_LGName
@@ -516,7 +549,7 @@ function Rename-DbaDatabase {
                                 $Orig_Placeholder = $Orig_Placeholder.Replace($fgKey, '')
                             }
                         }
-                        $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
+                        $NewLGName = $EffectiveLogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
                             '<FT>', 'LOG').Replace('<LGN>', $Orig_Placeholder)
                         $FinalLGName = $NewLGName
                         if ($FinalLGName.Length -eq 0) {
@@ -564,7 +597,7 @@ function Rename-DbaDatabase {
                     $Entities_Before['FNN'][$fn] = $fn
                 }
             }
-            if (!$failed -and $FileName) {
+            if (!$failed -and ($FileName -or $FileNameRows -or $FileNameLog)) {
 
                 $New_FileNames = @{ }
                 foreach ($fn in $db.FileGroups.Files.FileName) {
@@ -603,6 +636,10 @@ function Rename-DbaDatabase {
                             'FileStreamDataFileGroup' { 'FS' }
                             default { 'STD' }
                         }
+                        $EffectiveFileName = if ($FileType -eq "ROWS" -and $FileNameRows) { $FileNameRows } else { $FileName }
+                        if (-not $EffectiveFileName) {
+                            continue
+                        }
                         $FNName = $logical.FileName
                         $FNNameDir = [IO.Path]::GetDirectoryName($FNName)
                         $Orig_FNNameLeaf = [IO.Path]::GetFileNameWithoutExtension($logical.FileName)
@@ -622,7 +659,7 @@ function Rename-DbaDatabase {
                                 $Orig_Placeholder = $Orig_Placeholder.Replace($lgKey, '')
                             }
                         }
-                        $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
+                        $NewFNName = $EffectiveFileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
                             '<FT>', $FileType).Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
                         $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$([IO.Path]::GetExtension($FNName))")
 
@@ -663,6 +700,10 @@ function Rename-DbaDatabase {
                     if (!$failed) {
                         $FG_Files = @($db.Logfiles)
                         foreach ($logical in $FG_Files) {
+                            $EffectiveFileName = if ($FileNameLog) { $FileNameLog } else { $FileName }
+                            if (-not $EffectiveFileName) {
+                                continue
+                            }
                             $FNName = $logical.FileName
                             $FNNameDir = [IO.Path]::GetDirectoryName($FNName)
                             $Orig_FNNameLeaf = [IO.Path]::GetFileNameWithoutExtension($logical.FileName)
@@ -682,7 +723,7 @@ function Rename-DbaDatabase {
                                     $Orig_Placeholder = $Orig_Placeholder.Replace($lgKey, '')
                                 }
                             }
-                            $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
+                            $NewFNName = $EffectiveFileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
                                 '<FT>', 'LOG').Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
                             $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$([IO.Path]::GetExtension($FNName))")
                             while ($logical.FileName -ne $FinalFNName) {

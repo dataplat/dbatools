@@ -178,18 +178,18 @@ Describe $CommandName -Tag UnitTests -Skip {
                 'CommandName' = 'Stop-Function'
                 'Times'       = 1
                 'Exactly'     = $true
-                'Module'      = 'dbatools'
+                'ModuleName'  = 'dbatools'
             }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke @assertMockParams
         }
         It "Validates that Test-FunctionInterrupt Mock has been called" {
             $assertMockParams = @{
                 'CommandName' = 'Test-FunctionInterrupt'
                 'Times'       = 1
                 'Exactly'     = $true
-                'Module'      = 'dbatools'
+                'ModuleName'  = 'dbatools'
             }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke @assertMockParams
         }
     }
     Context "Output" {
@@ -237,18 +237,18 @@ Describe $CommandName -Tag UnitTests -Skip {
                 'CommandName' = 'Connect-DbaInstance'
                 'Times'       = 2
                 'Exactly'     = $true
-                'Module'      = 'dbatools'
+                'ModuleName'  = 'dbatools'
             }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke @assertMockParams
         }
         It "Validates that Invoke-QueryDBlastUsed Mock has been called" {
             $assertMockParams = @{
                 'CommandName' = 'Invoke-QueryDBlastUsed'
                 'Times'       = 2
                 'Exactly'     = $true
-                'Module'      = 'dbatools'
+                'ModuleName'  = 'dbatools'
             }
-            Assert-MockCalled @assertMockParams
+            Should -Invoke @assertMockParams
         }
     }
 }

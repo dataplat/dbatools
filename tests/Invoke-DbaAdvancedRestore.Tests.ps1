@@ -110,9 +110,12 @@ Describe $CommandName -Tag UnitTests {
             }
 
             BeforeEach {
+                $script:mockRestores = @()
                 Mock Connect-DbaInstance { $script:mockServer }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     $script:lastRestore = New-MockRestore
+                    $script:mockRestores += $script:lastRestore
                     $script:lastRestore
                 } -ParameterFilter {
                     $TypeName -eq "Microsoft.SqlServer.Management.Smo.Restore"
@@ -177,6 +180,7 @@ Describe $CommandName -Tag UnitTests {
 
                 { Invoke-DbaAdvancedRestore -BackupHistory $script:backupHistory -SqlInstance "sql1" -OutputScriptOnly -StopAtLsn "bad-lsn" } | Should -Throw "*StopAtLsn must be a numeric restore LSN or a colon-delimited value*"
             }
+
         }
     }
 }

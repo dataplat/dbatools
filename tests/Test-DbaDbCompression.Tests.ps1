@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeDatabase",
                 "Schema",
                 "Table",
+                "ExcludeTable",
                 "ResultSize",
                 "Rank",
                 "FilterBy",
@@ -71,6 +72,15 @@ Describe $CommandName -Tag UnitTests {
 
                 $normalizedQuery | Should -Match "t\.name = N'Customer'\s+AND\s+s\.name = N'sales'\s+AND\s+DB_NAME\(\) = N'db1'"
                 $normalizedQuery | Should -Not -Match "t\.name IN"
+            }
+
+            It "translates schema-qualified ExcludeTable wildcards into a SQL exclusion predicate" {
+                $script:lastQuery = $null
+
+                $null = Test-DbaDbCompression -SqlInstance "sql1" -Database "db1" -ExcludeTable "db1.sales.Staging?"
+                $normalizedQuery = $script:lastQuery -replace "\s+", " "
+
+                $normalizedQuery | Should -Match "AND NOT \(t\.name LIKE N'Staging_' AND s\.name LIKE N'sales' AND DB_NAME\(\) LIKE N'db1'\)"
             }
         }
     }

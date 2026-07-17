@@ -29,6 +29,41 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Azure data file URLs" {
+        BeforeEach {
+            $history = [PSCustomObject]@{
+                Database = "TestDb"
+                Type     = "Full"
+                FullName = @("https://account.blob.core.windows.net/backups/TestDb.bak")
+                FileList = @(
+                    [PSCustomObject]@{
+                        LogicalName  = "TestDb"
+                        PhysicalName = "https://account.blob.core.windows.net/container/data/TestDb.mdf"
+                        Type         = "D"
+                    }
+                )
+            }
+        }
+
+        It "preserves an unchanged Azure data file URL" {
+            $result = Format-DbaBackupInformation -BackupHistory $history
+
+            $result.FileList[0].PhysicalName | Should -Be "https://account.blob.core.windows.net/container/data/TestDb.mdf"
+        }
+
+        It "uses URI separators when adding a file suffix" {
+            $result = Format-DbaBackupInformation -BackupHistory $history -DatabaseFileSuffix "_restored"
+
+            $result.FileList[0].PhysicalName | Should -Be "https://account.blob.core.windows.net/container/data/TestDb_restored.mdf"
+        }
+
+        It "uses URI separators for an Azure destination directory" {
+            $result = Format-DbaBackupInformation -BackupHistory $history -DataFileDirectory "https://account.blob.core.windows.net/newcontainer"
+
+            $result.FileList[0].PhysicalName | Should -Be "https://account.blob.core.windows.net/newcontainer/TestDb.mdf"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

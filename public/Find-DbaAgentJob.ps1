@@ -30,6 +30,10 @@ function Find-DbaAgentJob {
         Supports wildcards to find jobs with steps like *backup*, *index*, or *cleanup*.
         Helpful when troubleshooting issues in multi-step jobs or finding jobs that perform specific operations.
 
+    .PARAMETER Pattern
+        Filters job names using one or more regular expressions. Multiple patterns use OR semantics.
+        Combine this with JobName or StepName to further narrow those results.
+
     .PARAMETER LastUsed
         Finds jobs that haven't executed successfully in the specified number of days.
         Use this to identify stale or potentially broken jobs that may need attention.
@@ -142,6 +146,11 @@ function Find-DbaAgentJob {
         Returns all agent job(s) that are named exactly Mybackup
 
     .EXAMPLE
+        PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -Pattern "^(Backup|Restore)-\d{4}$"
+
+        Returns jobs whose names match the supplied regular expression.
+
+    .EXAMPLE
         PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
 
         Returns all agent job(s) that have not ran in 10 days
@@ -189,9 +198,12 @@ function Find-DbaAgentJob {
         [PSCredential]
         $SqlCredential,
         [Alias("Name")]
+        [SupportsWildcards()]
         [string[]]$JobName,
         [string[]]$ExcludeJobName,
+        [SupportsWildcards()]
         [string[]]$StepName,
+        [string[]]$Pattern,
         [int]$LastUsed,
         [Alias("Disabled")]
         [switch]$IsDisabled,
@@ -207,7 +219,7 @@ function Find-DbaAgentJob {
         [switch]$EnableException
     )
     begin {
-        if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {
+        if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$Pattern, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {
             Stop-Function -Message "At least one search term must be specified"
         }
     }
@@ -240,6 +252,19 @@ function Find-DbaAgentJob {
             if ( -not ($JobName -or $StepName)) {
                 Write-Message -Level Verbose -Message "Retrieving all jobs"
                 $jobs = Get-JobList -SqlInstance $server
+                $output = $jobs
+            }
+
+            if ($Pattern) {
+                Write-Message -Level Verbose -Message "Filtering job names by regular expression pattern."
+                $jobs = foreach ($job in $jobs) {
+                    foreach ($regexPattern in $Pattern) {
+                        if ($job.Name -match $regexPattern) {
+                            $job
+                            break
+                        }
+                    }
+                }
                 $output = $jobs
             }
 

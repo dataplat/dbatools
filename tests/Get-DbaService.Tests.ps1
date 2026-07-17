@@ -90,8 +90,8 @@ Describe $CommandName -Tag UnitTests {
 
                 $results | Should -HaveCount 1
                 $results.ServiceType | Should -Be "PowerBI"
-                Assert-MockCalled Get-DbaReportingService -Times 1 -Exactly -Scope It
-                Assert-MockCalled Get-DbaCmObject -Times 0 -Exactly -Scope It -ParameterFilter { $Namespace -eq "root\Microsoft\SQLServer" }
+                Should -Invoke Get-DbaReportingService -Times 1 -Exactly -Scope It
+                Should -Invoke Get-DbaCmObject -Times 0 -Exactly -Scope It -ParameterFilter { $Namespace -eq "root\Microsoft\SQLServer" }
             }
         }
     }

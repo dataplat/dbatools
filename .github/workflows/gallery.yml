@@ -25,12 +25,17 @@ defaults:
 
 permissions:
   contents: read
+
+concurrency:
+  group: gallery-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   linux-tests:
     env:
         SMODefaultModuleName: dbatools
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -83,9 +88,11 @@ jobs:
           # create a shared network
           docker network create localnet
           # Expose engine and endpoint then setup a shared path for migrations
-          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -d dbatools/sqlinstance
+          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -e MSSQL_MEMORY_LIMIT_MB=1536 -d dbatools/sqlinstance
           # Expose second engine and endpoint on different port
-          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2
+          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -e MSSQL_MEMORY_LIMIT_MB=1536 -d dbatools/sqlinstance2
+          # Keep the runner topology in parity with integration-tests.yml
+          docker run -p 14334:1433 --volume shared:/shared:z --name mssql3 --hostname mssql3 --network localnet -e MSSQL_MEMORY_LIMIT_MB=1024 -d dbatools/sqlinstance2
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
@@ -99,6 +106,10 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
+          DBATOOLS_GALLERY_TEST: "true"
         run: |
           Import-Module dbatools -Force
-          $null = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
+          $result = Invoke-Pester .github/scripts/gh-actions.ps1 -Output Detailed -PassThru
+          if ($result.Result -ne "Passed" -or $result.FailedCount -gt 0) {
+              throw "Gallery integration tests failed with result $($result.Result) and $($result.FailedCount) failed test(s)."
+          }

@@ -21,79 +21,6 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
-    InModuleScope dbatools {
-        Context "Contained database handling" {
-            BeforeAll {
-                $script:sqlOrphanUser = [PSCustomObject]@{
-                    Login     = ""
-                    ID        = 5
-                    Sid       = [byte[]](1..16)
-                    LoginType = "SqlLogin"
-                    Name      = "sql_orphan"
-                }
-                $script:windowsOrphanUser = [PSCustomObject]@{
-                    Login     = "CONTOSO\win_orphan"
-                    ID        = 6
-                    Sid       = [byte[]](1..20)
-                    LoginType = "WindowsUser"
-                    Name      = "CONTOSO\win_orphan"
-                }
-                $script:baseServer = [PSCustomObject]@{
-                    ComputerName       = "sql1"
-                    ServiceName        = "MSSQLSERVER"
-                    DomainInstanceName = "sql1"
-                    Logins             = @()
-                }
-            }
-
-            It "skips SQL login orphan detection for contained databases on SQL Server 2012 and newer" {
-                $containedDatabase = [PSCustomObject]@{
-                    Name            = "containeddb"
-                    IsAccessible    = $true
-                    ContainmentType = [Microsoft.SqlServer.Management.Smo.ContainmentType]::Partial
-                    Users           = @($script:sqlOrphanUser, $script:windowsOrphanUser)
-                }
-                $server = $script:baseServer | Select-Object *
-                $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 11 -Force
-                $server | Add-Member -NotePropertyName Databases -NotePropertyValue @($containedDatabase) -Force
-
-                Mock Connect-DbaInstance {
-                    $server
-                }
-                Mock Stop-Function {
-                    throw "Stop-Function called"
-                }
-
-                $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2012")
-
-                $results.Count | Should -Be 1
-                $results[0].User | Should -Be "CONTOSO\win_orphan"
-            }
-
-            It "does not require ContainmentType on pre-SQL 2012 servers" {
-                $legacyDatabase = [PSCustomObject]@{
-                    Name         = "legacydb"
-                    IsAccessible = $true
-                    Users        = @($script:sqlOrphanUser)
-                }
-                $server = $script:baseServer | Select-Object *
-                $server | Add-Member -NotePropertyName versionMajor -NotePropertyValue 10 -Force
-                $server | Add-Member -NotePropertyName Databases -NotePropertyValue @($legacyDatabase) -Force
-
-                Mock Connect-DbaInstance {
-                    $server
-                }
-                Mock Stop-Function {
-                    throw "Stop-Function called"
-                }
-
-                $results = @(Get-DbaDbOrphanUser -SqlInstance "sql2008")
-
-                $results.Count | Should -Be 1
-                $results[0].User | Should -Be "sql_orphan"
-            }
-        }
-    }
 }
 
 
@@ -102,11 +29,17 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        $containmentEnabled = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled).ConfiguredValue
+        if ($containmentEnabled -ne 1) {
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value 1
+        }
+
         $loginsq = @"
 CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan3] WITH PASSWORD = N'password3', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE DATABASE dbatoolsci_orphan;
+CREATE DATABASE dbatoolsci_orphan_contained CONTAINMENT = PARTIAL;
 "@
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
@@ -116,6 +49,14 @@ CREATE USER [dbatoolsci_orphan2] FROM LOGIN [dbatoolsci_orphan2];
 CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 "@
         Invoke-DbaQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
+        $specialUsersQuery = @"
+CREATE CERTIFICATE [dbatoolsci_orphan_certificate]
+    ENCRYPTION BY PASSWORD = N'dbatools.IO'
+    WITH SUBJECT = N'dbatoolsci orphan certificate';
+CREATE USER [dbatoolsci_certificate_user] FOR CERTIFICATE [dbatoolsci_orphan_certificate];
+"@
+        Invoke-DbaQuery -SqlInstance $server -Query $specialUsersQuery -Database dbatoolsci_orphan
+        Invoke-DbaQuery -SqlInstance $server -Query "CREATE USER [dbatoolsci_contained_user] WITHOUT LOGIN;" -Database dbatoolsci_orphan_contained
         $dropOrphan = "DROP LOGIN [dbatoolsci_orphan1];DROP LOGIN [dbatoolsci_orphan2];"
         Invoke-DbaQuery -SqlInstance $server -Query $dropOrphan
 
@@ -129,7 +70,10 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = Get-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 | Remove-DbaLogin -Force
-        $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan
+        $null = Get-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan, dbatoolsci_orphan_contained | Remove-DbaDatabase
+        if ($containmentEnabled -ne 1) {
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value $containmentEnabled
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -137,18 +81,27 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
     Context "When checking for orphan users" {
         BeforeAll {
             $results = @(Get-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan)
+            $containedResults = @(Get-DbaDbOrphanUser -SqlInstance $TestConfig.InstanceSingle -Database dbatoolsci_orphan_contained)
         }
 
         It "Shows time taken for preparation" {
             1 | Should -BeExactly 1
         }
 
-        It "Finds two orphans" {
-            $results.Count | Should -BeExactly 2
+        It "finds the expected orphans" {
+            $results.Count | Should -BeExactly 3
             foreach ($user in $results) {
-                $user.User | Should -BeIn @("dbatoolsci_orphan1", "dbatoolsci_orphan2")
+                $user.User | Should -BeIn @("dbatoolsci_orphan1", "dbatoolsci_orphan2", "dbatoolsci_certificate_user")
                 $user.DatabaseName | Should -Be "dbatoolsci_orphan"
             }
+        }
+
+        It "reports certificate users in non-contained databases" {
+            $results.User | Should -Contain "dbatoolsci_certificate_user"
+        }
+
+        It "does not report contained SQL users as orphans" {
+            $containedResults.User | Should -Not -Contain "dbatoolsci_contained_user"
         }
 
         It "Has the correct properties" {

@@ -8,7 +8,7 @@ function Get-DbaExtendedProtection {
 
         This function queries the Windows registry directly rather than connecting to SQL Server, so it requires Windows-level access to the target server. The setting corresponds to what you see in SQL Server Configuration Manager under Network Configuration > Protocols properties, but can be checked programmatically across multiple instances for compliance auditing.
 
-        Returns the current setting as both a numeric value (0, 1, 2) and descriptive text (Off, Allowed, Required) to help DBAs understand the security configuration and plan any necessary changes.
+        Returns the current setting as both a numeric value (0, 1, 2) and descriptive text (Off, Allowed, Required), together with the accepted SPNs configured for service binding validation.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -49,6 +49,7 @@ function Get-DbaExtendedProtection {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - ExtendedProtection: The current Extended Protection setting as a string combining the numeric value (0, 1, or 2) and its text description (Off, Allowed, or Required), formatted as "numeric - text" (e.g., "1 - Allowed")
+        - AcceptedSpns: The accepted service principal names configured for Extended Protection, returned as individual strings
 
     .EXAMPLE
         PS C:\> Get-DbaExtendedProtection
@@ -123,13 +124,16 @@ function Get-DbaExtendedProtection {
 
             $scriptblock = {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
-                $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
+                $settings = Get-ItemProperty -Path $regPath
+                $extendedProtection = $settings.ExtendedProtection
+                $acceptedSpns = @($settings.AcceptedSPNs -split ";" | Where-Object { -not [string]::IsNullOrWhiteSpace($PSItem) })
 
                 [PSCustomObject]@{
                     ComputerName       = $env:COMPUTERNAME
                     InstanceName       = $args[2]
                     SqlInstance        = $args[1]
                     ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
+                    AcceptedSpns       = $acceptedSpns
                 }
             }
 

@@ -11,10 +11,13 @@ on:
       - "public/Get-DbaBackupInformation.ps1"
       - "public/Test-DbaLastBackup.ps1"
       - "public/Test-DbaBackupInformation.ps1"
+      - "public/Test-DbaBackupStorageCompatibility.ps1"
+      - "private/functions/Get-DbaS3BackupStorageEstimate.ps1"
       - "private/functions/Read-DbaBackupHeader.ps1"
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   pull_request:
     paths:
       - "public/Backup-DbaDatabase.ps1"
@@ -22,10 +25,13 @@ on:
       - "public/Get-DbaBackupInformation.ps1"
       - "public/Test-DbaLastBackup.ps1"
       - "public/Test-DbaBackupInformation.ps1"
+      - "public/Test-DbaBackupStorageCompatibility.ps1"
+      - "private/functions/Get-DbaS3BackupStorageEstimate.ps1"
       - "private/functions/Read-DbaBackupHeader.ps1"
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   workflow_dispatch:
 
 defaults:
@@ -34,6 +40,10 @@ defaults:
 
 permissions:
   contents: read
+
+concurrency:
+  group: integration-tests-s3-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   s3-backup-tests:
@@ -46,6 +56,7 @@ jobs:
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -209,6 +220,11 @@ jobs:
           sudo cp $HOME/.minio/certs/public.crt /usr/local/share/ca-certificates/minio.crt
           sudo update-ca-certificates
           echo "MinIO certificate added to system trust store"
+
+      - name: Install Pester 6
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
 
       - name: Install AWS.Tools.S3 for S3 enumeration tests
         run: |

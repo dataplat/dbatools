@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 12, 2026
+-- Last Modified: July 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -40,7 +40,7 @@
 --*
 --******************************************************************************
 
--- Check the major product version to see if it is SQL Server 2022 CTP 2 or greater
+-- Check the major product version to see if it is SQL Server 2022
 IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajorVersion')) = '16')
 	BEGIN
 		DECLARE @ProductVersion varchar(128) = CONVERT(varchar(128), SERVERPROPERTY('ProductVersion'));
@@ -52,17 +52,21 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajor
 
 -- Instance level queries *******************************
 
--- SQL and OS Version information for current instance  (Query 1) (Version Info)
+-- Server name, SQL Server and OS Version information for the current instance  (Query 1) (Version Info)
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2022 will fall out of Mainstream Support on Jan 11, 2028
--- SQL Server 2022 will fall out of Extended Support on Jan 11, 2033
+-- @@SERVERNAME - Returns the name of the local server
+-- @@VERSION - Returns a detailed string containing the SQL Server product version, the build number, the architecture (e.g., x64), and the operating system version/build information
+
+
+-- SQL Server 2022 build versions
+-- https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/build-versions
 
 -- SQL Server 2022 Builds																		
 -- Build			Description							Release Date	URL to KB Article
--- 16.0.1000.6		RTM									11-16-2022
--- 16.0.1050.5		RTM GDR								2-14-2023		https://support.microsoft.com/en-us/topic/kb5021522-description-of-the-security-update-for-sql-server-2022-gdr-february-14-2023-7a5a84ed-e99c-4537-b064-fa4499549c8e
+-- 16.0.1000.6		RTM									11/16/2022		https://learn.microsoft.com/en-us/sql/sql-server/sql-server-2022-release-notes?view=sql-server-ver17
+-- 16.0.1050.5		RTM GDR								2/14/2023		https://support.microsoft.com/en-us/topic/kb5021522-description-of-the-security-update-for-sql-server-2022-gdr-february-14-2023-7a5a84ed-e99c-4537-b064-fa4499549c8e
 -- 16.0.4003.1		CU1									2/16/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate1
 -- 16.0.4015.1		CU2									3/15/2023		https://learn.microsoft.com/en-US/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate2
 -- 16.0.4025.1		CU3									4/13/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate3
@@ -102,7 +106,12 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4245.2		CU24								3/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate24
 -- 16.0.4250.1		CU24 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5083252-description-of-the-security-update-for-sql-server-2022-cu24-april-14-2026-0c8d572b-de26-4592-9ddc-09270c2a303c
 -- 16.0.4252.3		CU24 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089900-description-of-the-security-update-for-sql-server-2022-cu24-may-12-2026-695c0545-c0d1-4341-bb92-2f1037fe09b2
+-- 16.0.4255.1		CU25								5/20/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate25
 
+
+-- SQL Server 2022 will fall out of Mainstream Support on Jan 11, 2028
+-- SQL Server 2022 will fall out of Extended Support on Jan 11, 2033
+-- https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2022
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -125,7 +134,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- http://bit.ly/2YY0pb1
 
 
--- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
+-- Get socket, physical core and logical core count from the SQL Server Error log (Query 2) (Core Counts)
 -- This query might take a few seconds depending on the size of your error log
 EXEC sys.xp_readerrorlog 0, 1, N'detected', N'socket';
 ------
@@ -211,7 +220,7 @@ ORDER BY [name] OPTION (RECOMPILE);
 -- sys.configurations (Transact-SQL)
 -- https://bit.ly/2HsyDZI
 
--- New in SQL Server 2022 *********************************************************************************************************
+-- New configuration options in SQL Server 2022 *********************************************************************************************************
 -- ADR Cleaner Thread Count						Max number of threads ADR cleaner can assign
 -- backup compression algorithm					Configure backup compression algorithm
 -- Data processed daily limit in TB				SQL On-demand data processed daily limit in TB

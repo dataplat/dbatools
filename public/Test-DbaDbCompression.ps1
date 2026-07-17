@@ -44,6 +44,10 @@ function Test-DbaDbCompression {
         Filters analysis to specific table names only. Accepts multiple table names for focused compression analysis.
         Use this when investigating compression opportunities for known large tables or when validating compression recommendations for specific objects.
 
+    .PARAMETER ExcludeTable
+        Specifies table names to skip during compression analysis. Accepts multiple names, schema-qualified names, and the wildcards * and ?.
+        Use this to avoid analyzing transient or frequently changing tables such as staging tables.
+
     .PARAMETER ResultSize
         Limits the number of objects analyzed per database to control analysis scope and execution time. No limit applied when unspecified.
         Use this on large databases to focus on the biggest storage consumers first, as compression analysis can be time-intensive on systems with thousands of tables.
@@ -136,6 +140,11 @@ function Test-DbaDbCompression {
         Returns a result for each partition of any Heap, Clustered or NonClustered index.
 
     .EXAMPLE
+        PS C:\> Test-DbaDbCompression -SqlInstance ServerA -Database MyDatabase -ExcludeTable "Staging*"
+
+        Returns compression recommendations for MyDatabase while excluding tables whose names start with Staging.
+
+    .EXAMPLE
         PS C:\> Test-DbaDbCompression -SqlInstance ServerA, ServerB -ResultSize 10
 
         Returns results of all potential compression options for all databases on ServerA and ServerB.
@@ -181,6 +190,7 @@ function Test-DbaDbCompression {
         [string[]]$ExcludeDatabase,
         [string[]]$Schema,
         [string[]]$Table,
+        [string[]]$ExcludeTable,
         [int]$ResultSize,
         [ValidateSet('TotalPages', 'UsedPages', 'TotalRows')]
         [string]$Rank = 'TotalPages',
@@ -217,6 +227,28 @@ function Test-DbaDbCompression {
             }
 
             $sqlTableWhere = "AND ($($tableWhereClauses -join " OR "))"
+        }
+
+        if ($ExcludeTable) {
+            $excludeTableParts = $ExcludeTable | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
+            $excludeTableWhereClauses = foreach ($excludeTablePart in $excludeTableParts) {
+                $tableNamePattern = ([string]$excludeTablePart.Name).Replace("'", "''").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]").Replace("*", "%").Replace("?", "_")
+                $clauseParts = @("t.name LIKE N'$tableNamePattern'")
+
+                if ($excludeTablePart.Schema) {
+                    $schemaNamePattern = ([string]$excludeTablePart.Schema).Replace("'", "''").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]").Replace("*", "%").Replace("?", "_")
+                    $clauseParts += "s.name LIKE N'$schemaNamePattern'"
+                }
+
+                if ($excludeTablePart.Database) {
+                    $databaseNamePattern = ([string]$excludeTablePart.Database).Replace("'", "''").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]").Replace("*", "%").Replace("?", "_")
+                    $clauseParts += "DB_NAME() LIKE N'$databaseNamePattern'"
+                }
+
+                "NOT ($($clauseParts -join " AND "))"
+            }
+
+            $sqlExcludeTableWhere = "AND $($excludeTableWhereClauses -join " AND ")"
         }
 
         if ($ResultSize) {
@@ -268,6 +300,7 @@ function Test-DbaDbCompression {
                         AND p.data_compression_desc = 'NONE'
                         $sqlSchemaWhere
                         $sqlTableWhere
+                        $sqlExcludeTableWhere
                     GROUP BY
                         $groupBySQL
                     ORDER BY
@@ -427,6 +460,7 @@ WHERE OBJECTPROPERTY(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     $sqlSchemaWhere
     $sqlTableWhere
+    $sqlExcludeTableWhere
 ORDER BY [TableName] ASC;
 
 $sqlRestrict

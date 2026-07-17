@@ -106,6 +106,7 @@ Describe $CommandName -Tag UnitTests {
                         $EnableException
                     )
                 }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     New-MockCompareDbSchemaStartInfo
                 } -ParameterFilter {
@@ -178,6 +179,7 @@ Describe $CommandName -Tag UnitTests {
                         $script:capturedVerboseMessages += $Message
                     }
                 }
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters }
                 Mock New-Object {
                     New-MockCompareDbSchemaStartInfo
                 } -ParameterFilter {

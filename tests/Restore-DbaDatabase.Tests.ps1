@@ -434,6 +434,14 @@ Describe $CommandName -Tag IntegrationTests {
             $sqlResults = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
             $sqlResults.maxdt | Should -Be (Get-Date "2019-05-02 21:12:26")
         }
+
+        It "Should put STOPAT on only the final log restore" {
+            $logScripts = @($results.Script | Where-Object { $PSItem -match "RESTORE LOG" })
+            $stopAtScripts = @($logScripts | Where-Object { $PSItem -match "STOPAT" })
+
+            $stopAtScripts | Should -HaveCount 1
+            $logScripts[-1] | Should -Match "STOPAT.*2019-05-02T21:12:27"
+        }
     }
 
 

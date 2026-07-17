@@ -26,7 +26,11 @@ function Set-DbaDbCompression {
 
     .PARAMETER Table
         Specifies which tables to compress within the selected databases. Accepts multiple table names and works with wildcard patterns.
-        When omitted, all eligible tables in the database will be processed. Use this to target specific large tables or avoid compressing certain tables.
+        When both Table and View are omitted, all eligible tables and indexed views in the database are processed. Use this to target specific large tables or avoid compressing other objects.
+
+    .PARAMETER View
+        Specifies which indexed views to compress within the selected databases. Accepts multiple view names, including database- and schema-qualified names.
+        When View is specified without Table, only matching indexed views are processed. View requires an explicit CompressionType of Page, Row, or None because Recommended analysis supports tables only.
 
     .PARAMETER CompressionType
         Specifies the type of compression to apply: Recommended, Page, Row, or None. Default is 'Recommended' which analyzes each object and applies the optimal compression type.
@@ -115,6 +119,11 @@ function Set-DbaDbCompression {
         Utilizes Page compression for tables table1 and table2 in DBName on ServerA with no time limit.
 
     .EXAMPLE
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page -View "dbo.SalesSummary"
+
+        Utilizes Page compression only for indexes on the dbo.SalesSummary indexed view in DBName on ServerA.
+
+    .EXAMPLE
         PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView
 
         Will compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formatted GridView.
@@ -149,6 +158,7 @@ function Set-DbaDbCompression {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$Table,
+        [string[]]$View,
         [ValidateSet("Recommended", "Page", "Row", "None")]
         [string]$CompressionType = "Recommended",
         [int]$MaxRunTime = 0,
@@ -161,6 +171,11 @@ function Set-DbaDbCompression {
 
 
     process {
+        if ($View -and $CompressionType -eq "Recommended") {
+            Stop-Function -Message "View requires an explicit CompressionType of Page, Row, or None because Recommended analysis supports tables only."
+            return
+        }
+
         $starttime = Get-Date
         foreach ($instance in $SqlInstance) {
             try {
@@ -262,7 +277,10 @@ function Set-DbaDbCompression {
                     }
                 } else {
                     if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
-                        $tables = $server.Databases[$($db.name)].Tables
+                        $tables = @()
+                        if ($Table -or -not $View) {
+                            $tables = $server.Databases[$($db.name)].Tables
+                        }
                         if ($Table) {
                             $tableParts = $Table | ForEach-Object { Get-ObjectNameParts -ObjectName $_ }
                             $tables = foreach ($tablePart in $tableParts) {
@@ -270,6 +288,21 @@ function Set-DbaDbCompression {
                                     $_.Name -eq $tablePart.Name -and
                                     $tablePart.Schema -in ($_.Schema, $null) -and
                                     $tablePart.Database -in ($db.Name, $null)
+                                }
+                            }
+                        }
+
+                        $views = @()
+                        if ($View -or -not $Table) {
+                            $views = $server.Databases[$($db.name)].Views | Where-Object { $PSItem.Indexes }
+                        }
+                        if ($View) {
+                            $viewParts = $View | ForEach-Object { Get-ObjectNameParts -ObjectName $PSItem }
+                            $views = foreach ($viewPart in $viewParts) {
+                                $server.Databases[$($db.name)].Views | Where-Object {
+                                    $PSItem.Name -eq $viewPart.Name -and
+                                    $viewPart.Schema -in ($PSItem.Schema, $null) -and
+                                    $viewPart.Database -in ($db.Name, $null)
                                 }
                             }
                         }
@@ -365,7 +398,7 @@ function Set-DbaDbCompression {
                                 }
                             }
                         }
-                        foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object { $_.Indexes }).Indexes) {
+                        foreach ($index in $views.Indexes) {
                             $parentView = $index.Parent
                             foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                 Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"

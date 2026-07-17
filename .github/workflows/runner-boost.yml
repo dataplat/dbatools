@@ -1,0 +1,60 @@
+# When an automatic maintainer pushes to any branch, immediately dispatch
+# runner-reconcile so that maintainer's ten-runner allocation heats for one hour.
+# potatoqualitee is intentionally ignored unless the push contains [do ci].
+#
+# Reconcile is the single event-driven fleet controller; using one workflow prevents
+# GitHub's concurrency queue from cancelling scale-up in favor of a janitor run.
+# Branches created before it merged are still governed by the default-branch controller.
+name: runner-boost
+
+on:
+  push:
+
+permissions:
+  actions: write
+
+jobs:
+  nudge:
+    if: contains(' potatoqualitee andreasjordan niphlod ', format(' {0} ', github.actor))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch runner-reconcile
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOOST_USER: ${{ github.actor }}
+          BOOST_MESSAGE: ${{ github.event.head_commit.message }}
+          BOOST_SHA: ${{ github.sha }}
+          BOOST_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "$BOOST_USER" = "potatoqualitee" ]; then
+            message_lower=$(printf '%s' "$BOOST_MESSAGE" | tr '[:upper:]' '[:lower:]')
+            if [[ "$message_lower" != *"[do ci]"* ]]; then
+              echo "::notice::potatoqualitee push has no [do ci] marker; runner activation skipped."
+              exit 0
+            fi
+          fi
+
+          for attempt in 1 2 3; do
+            if gh workflow run runner-reconcile.yml --ref development \
+                -f boost_user="$BOOST_USER" -f boost_message="$BOOST_MESSAGE" \
+                -f boost_sha="$BOOST_SHA" -f boost_ref="$BOOST_REF" \
+                -R "${{ github.repository }}"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 3))
+            fi
+          done
+
+          echo "boost_user dispatch exhausted retries; trying the backward-compatible plain dispatch"
+          for attempt in 1 2 3; do
+            if gh workflow run runner-reconcile.yml --ref development -R "${{ github.repository }}"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 3))
+            fi
+          done
+          echo "::warning::Reconcile dispatch exhausted retries; workflow_run or the scheduled reconcile will recover without a false failure."

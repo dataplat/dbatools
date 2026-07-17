@@ -13,6 +13,7 @@ Describe $CommandName -Tag UnitTests {
             $expectedParameters += @(
                 "InputObject",
                 "ExcludeRowLabel",
+                "DateFormat",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -53,6 +54,23 @@ Describe $CommandName -Tag UnitTests {
             $result = $growthEventWithQuote | ConvertTo-DbaTimeline
 
             $result[1] | Should -BeLike "*O\'Reilly*"
+        }
+
+        It "Uses the requested date format in tooltips and the timeline axis" {
+            $result = $growthEvent | ConvertTo-DbaTimeline -DateFormat "MM/dd"
+
+            $result[2] | Should -Match ([regex]::Escape("pattern: 'MM/dd/yy HH:mm:ss'"))
+            $result[2] | Should -Match ([regex]::Escape("format: 'MM/dd HH:mm'"))
+        }
+
+        It "Does not append a second year to a format that includes one" {
+            $result = $growthEvent | ConvertTo-DbaTimeline -DateFormat "yyyy-MM-dd"
+
+            $result[2] | Should -Match ([regex]::Escape("pattern: 'yyyy-MM-dd HH:mm:ss'"))
+        }
+
+        It "Rejects date formats that could inject JavaScript" {
+            { $growthEvent | ConvertTo-DbaTimeline -DateFormat "';alert(1);//" } | Should -Throw
         }
     }
 }

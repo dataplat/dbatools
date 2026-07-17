@@ -16,6 +16,7 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "Collation",
                 "Recoverymodel",
+                "ContainmentType",
                 "Owner",
                 "DataFilePath",
                 "LogFilePath",
@@ -110,6 +111,7 @@ Describe $CommandName -Tag UnitTests {
                 Mock Connect-DbaInstance { $script:mockServer } -ModuleName dbatools
                 Mock Stop-Function { throw $Message } -ModuleName dbatools
                 Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+                Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
                 Mock New-Object {
                     [PSCustomObject]@{
                         Name       = $ArgumentList[1]
@@ -174,6 +176,45 @@ Describe $CommandName -Tag UnitTests {
                 $script:createdDataFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/data/db1.mdf"
                 $script:createdLogFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/log/db1_log.ldf"
             }
+
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When creating a contained database" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $containmentEnabled = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled).ConfiguredValue
+            if ($containmentEnabled -ne 1) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value 1
+            }
+
+            $containmentDbName = "dbatoolsci_containment_$(Get-Random)"
+            $containedDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $containmentDbName -ContainmentType Partial
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $containmentDbName | Remove-DbaDatabase
+            if ($containmentEnabled -ne 1) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value $containmentEnabled
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "sets containment type on the created database" {
+            $containedDatabase.Refresh()
+
+            $containedDatabase.ContainmentType | Should -Be "Partial"
         }
     }
 }
