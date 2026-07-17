@@ -93,7 +93,10 @@ Describe $CommandName -Tag IntegrationTests {
                     $null = $stoppedEngine | Start-DbaService @splatStartEngine
                 }
             } catch {
-                Write-Warning "Fixture restoration failed: $PSItem"
+                # Swallowed: surfacing anything here (even a warning, which can be
+                # promoted to terminating by preference) could mask the original
+                # cleanup error. The gate-driver post-step is the outer safety net.
+                $null = $PSItem
             } finally {
                 $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
