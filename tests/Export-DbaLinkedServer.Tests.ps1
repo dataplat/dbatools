@@ -82,6 +82,22 @@ Describe $CommandName -Tag IntegrationTests {
             $random = Get-Random
             $ls1 = "dbatoolsci_els1_$random"
             $ls2 = "dbatoolsci_els2_$random"
+
+            # Create the export directory FIRST so $exportDir is always assigned before anything
+            # that can throw - otherwise a failed linked-server creation would leave AfterAll with
+            # a null path and cleanup would fail even under SilentlyContinue.
+            $exportDir = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_els_$random"
+            $splatNewDir = @{
+                ItemType = "Directory"
+                Force    = $true
+                Path     = $exportDir
+            }
+            $null = New-Item @splatNewDir
+
+            # Fabricated provider/data source - New-DbaLinkedServer registers the linked server
+            # without contacting any remote, so no external dependency is required. No login
+            # mapping is added, which keeps every assertion on the DAC-free -ExcludePassword path
+            # (the password-decryption path needs a dedicated admin connection and a remote login).
             $splatLs1 = @{
                 SqlInstance   = $TestConfig.InstanceSingle
                 LinkedServer  = $ls1
@@ -98,14 +114,6 @@ Describe $CommandName -Tag IntegrationTests {
                 DataSource    = "dbatoolsci_src2"
             }
             $null = New-DbaLinkedServer @splatLs2
-
-            $exportDir = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_els_$random"
-            $splatNewDir = @{
-                ItemType = "Directory"
-                Force    = $true
-                Path     = $exportDir
-            }
-            $null = New-Item @splatNewDir
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -175,30 +183,35 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeOfType System.IO.FileInfo
             $result.Extension | Should -Be ".sql"
             $result.DirectoryName | Should -Be $exportDir
-            # Get-ExportFilePath builds "<server>-<timestamp>-<caller>.sql"; the caller token for
-            # this command resolves to "linkedserver" (Export-Dba stripped and lowercased).
-            $result.Name | Should -Match "-linkedserver\.sql$"
+            # Get-ExportFilePath builds "<server>-<timestamp>-<caller>.sql": the server prefix is
+            # the instance name with backslash replaced by "$", the caller token resolves to
+            # "linkedserver" (Export-Dba stripped and lowercased), and a timestamp sits between.
+            $serverToken = [regex]::Escape($TestConfig.InstanceSingle.ToString().Replace([char]92, [char]36))
+            $result.Name | Should -Match "^$serverToken-.+-linkedserver\.sql$"
             (Get-Content -Path $result.FullName -Raw) | Should -Match $ls1
         }
 
         It "Writes to the configured export directory when no -Path, -FilePath, or -Passthru is given" {
             # -Path carries a config default (Path.DbatoolsExport), so a file is always written
-            # even with none of the output switches supplied, and the FileInfo is returned.
-            $splatDefault = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                LinkedServer    = $ls1
-                ExcludePassword = $true
+            # even with none of the output switches supplied, and the FileInfo is returned. Point
+            # the config at the unique test directory so the file lands there (cleaned by AfterAll)
+            # instead of leaking into the shared default export location on an assertion failure.
+            $originalExportPath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport"
+            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $exportDir
+            try {
+                $splatDefault = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    LinkedServer    = $ls1
+                    ExcludePassword = $true
+                }
+                $result = Export-DbaLinkedServer @splatDefault
+                $result | Should -BeOfType System.IO.FileInfo
+                $result.Extension | Should -Be ".sql"
+                $result.DirectoryName | Should -Be $exportDir
+                Test-Path -Path $result.FullName | Should -BeTrue
+            } finally {
+                Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $originalExportPath
             }
-            $result = Export-DbaLinkedServer @splatDefault
-            $result | Should -BeOfType System.IO.FileInfo
-            $result.Extension | Should -Be ".sql"
-            Test-Path -Path $result.FullName | Should -BeTrue
-            $splatCleanupFile = @{
-                Path        = $result.FullName
-                Force       = $true
-                ErrorAction = "SilentlyContinue"
-            }
-            Remove-Item @splatCleanupFile
         }
 
         It "Filters to the requested linked server with -LinkedServer" {
@@ -235,15 +248,21 @@ Describe $CommandName -Tag IntegrationTests {
             $content | Should -Match $ls2
         }
 
-        It "Exports nothing when the named linked server does not exist" {
+        It "Exports nothing and reports Nothing to export when the named linked server does not exist" {
             $splatMissing = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 LinkedServer    = "dbatoolsci_nols_$random"
                 ExcludePassword = $true
                 Passthru        = $true
+                Verbose         = $true
             }
-            $result = Export-DbaLinkedServer @splatMissing
-            $result | Should -BeNullOrEmpty
+            # capture the verbose stream (4) alongside output so both the empty result and the
+            # documented "Nothing to export" message are pinned.
+            $captured = Export-DbaLinkedServer @splatMissing 4>&1
+            $emitted = $captured | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] }
+            $verbose = $captured | Where-Object { $PSItem -is [System.Management.Automation.VerboseRecord] }
+            $emitted | Should -BeNullOrEmpty
+            ($verbose.Message -join " ") | Should -Match "Nothing to export"
         }
     }
 
