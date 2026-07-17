@@ -31,7 +31,6 @@ Describe $CommandName -Tag IntegrationTests {
         $sq = [string][char]39
         $runningJobName = "dbatoolsci_running_$(Get-Random)"
         $idleJobName = "dbatoolsci_idle_$(Get-Random)"
-        $waitCommand = "WAITFOR DELAY ${sq}00:00:30${sq}"
 
         $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName
         $splatRunningStep = @{
@@ -39,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
             Job         = $runningJobName
             StepName    = "wait"
             Subsystem   = "TransactSql"
-            Command     = $waitCommand
+            Command     = "WAITFOR DELAY ${sq}00:00:30${sq}"
         }
         $null = New-DbaAgentJobStep @splatRunningStep
 
@@ -61,32 +60,46 @@ Describe $CommandName -Tag IntegrationTests {
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $null = Stop-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName -ErrorAction SilentlyContinue
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName, $idleJobName -ErrorAction SilentlyContinue
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        try {
+            # Only Stop a job that is still executing - Stop-DbaAgentJob throws on an Idle job.
+            $current = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName -ErrorAction SilentlyContinue
+            if ($current -and $current.CurrentRunStatus -ne "Idle") {
+                $splatStop = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Job         = $runningJobName
+                    ErrorAction = "SilentlyContinue"
+                }
+                $null = Stop-DbaAgentJob @splatStop
+            }
+        } finally {
+            $splatRemove = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = @($runningJobName, $idleJobName)
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaAgentJob @splatRemove
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
     }
 
-    Context "When jobs are executing" {
-        It "Returns the currently executing job" {
+    Context "When a job is executing" {
+        It "Returns the executing job and never an Idle one" {
             $results = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle
+            # The running job must be present (non-vacuous), and no returned job is Idle.
             $results.Name | Should -Contain $runningJobName
-        }
-
-        It "Every returned job is non-Idle" {
-            # characterization: the command filters out CurrentRunStatus -eq "Idle"
-            $results = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle
             ($results.CurrentRunStatus | Where-Object { $PSItem -eq "Idle" }) | Should -BeNullOrEmpty
         }
 
-        It "Does not return an idle job" {
+        It "Does not return the idle job" {
             $results = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle
             $results.Name | Should -Not -Contain $idleJobName
         }
 
-        It "Returns SMO Agent.Job objects" {
+        It "Returns the executing job as an SMO Agent.Job object" {
             # characterization: output is the SMO Agent.Job surface (Get-DbaAgentJob passthrough)
-            $results = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle
-            $results | Select-Object -First 1 | Should -BeOfType Microsoft.SqlServer.Management.Smo.Agent.Job
+            $result = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $runningJobName
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -BeOfType Microsoft.SqlServer.Management.Smo.Agent.Job
         }
 
         It "Filters piped Agent.Job input to only the running ones" {
@@ -96,22 +109,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "When nothing is executing" {
-        It "Returns nothing once the job has stopped" {
-            $null = Stop-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName -ErrorAction SilentlyContinue
-            # Poll briefly for the stop to settle, then characterize the empty result.
-            $deadline = (Get-Date).AddSeconds(30)
-            do {
-                Start-Sleep -Seconds 2
-                $stillRunning = Get-DbaRunningJob -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $runningJobName
-            } while ($stillRunning -and (Get-Date) -lt $deadline)
-            $stillRunning | Should -BeNullOrEmpty
+    Context "When the piped job is not executing" {
+        It "Returns nothing for an idle job piped in" {
+            # characterization: an Idle job through -InputObject yields no output at all.
+            $idleJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $idleJobName
+            $idleJob | Get-DbaRunningJob | Should -BeNullOrEmpty
         }
     }
 
     Context "Against an unreachable instance" {
         It "Warns and continues without EnableException" {
-            $null = Get-DbaRunningJob -SqlInstance "dbatoolsci_nope_$(Get-Random)" -WarningAction SilentlyContinue -WarningVariable warn 3> $null
+            $splatBad = @{
+                SqlInstance     = "dbatoolsci_nope_$(Get-Random)"
+                WarningAction   = "SilentlyContinue"
+                WarningVariable = "warn"
+            }
+            $null = Get-DbaRunningJob @splatBad 3> $null
             $warn | Should -Not -BeNullOrEmpty
         }
     }
