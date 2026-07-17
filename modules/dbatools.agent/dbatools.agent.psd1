@@ -44,7 +44,9 @@
         'Get-DbaDbMail',
         'Get-DbaDbMailAccount',
         'Get-DbaDbMailConfig',
-        'Get-DbaDbMailHistory'
+        'Get-DbaDbMailHistory',
+        'Get-DbaDbMailLog',
+        'Get-DbaDbMailServer'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

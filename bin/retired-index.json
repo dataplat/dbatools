@@ -394,10 +394,20 @@
     "retiredPath": "private/retired/Get-DbaDbMailHistory.ps1",
     "flippedUtc": "2026-07-15T12:59:42Z"
   },
+  "Get-DbaDbMailLog": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaDbMailLog.ps1",
+    "flippedUtc": "2026-07-17T16:26:21Z"
+  },
   "Get-DbaDbMailProfile": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaDbMailProfile.ps1",
     "flippedUtc": "2026-07-06T09:51:14Z"
+  },
+  "Get-DbaDbMailServer": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Get-DbaDbMailServer.ps1",
+    "flippedUtc": "2026-07-17T16:26:40Z"
   },
   "Get-DbaDbMemoryUsage": {
     "module": "dbatools.performance",
@@ -1394,6 +1404,16 @@
     "retiredPath": "private/retired/Test-DbaManagementObject.ps1",
     "flippedUtc": "2026-07-14T20:33:14Z"
   },
+  "Test-DbaMaxDop": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaMaxDop.ps1",
+    "flippedUtc": "2026-07-17T16:24:57Z"
+  },
+  "Test-DbaMaxMemory": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaMaxMemory.ps1",
+    "flippedUtc": "2026-07-17T16:25:41Z"
+  },
   "Test-DbaNetworkCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaNetworkCertificate.ps1",
@@ -1443,6 +1463,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Update-DbaInstance.ps1",
     "flippedUtc": "2026-07-11T03:07:39Z"
+  },
+  "Update-DbaServiceAccount": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Update-DbaServiceAccount.ps1",
+    "flippedUtc": "2026-07-17T16:26:02Z"
   },
   "Update-Dbatools": {
     "module": "dbatools.core",

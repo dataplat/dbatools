@@ -125,7 +125,10 @@
         'Test-DbaDbRecoveryModel',
         'Test-DbaInstanceName',
         'Test-DbaLastBackup',
-        'Test-DbaLinkedServerConnection'
+        'Test-DbaLinkedServerConnection',
+        'Test-DbaMaxDop',
+        'Test-DbaMaxMemory',
+        'Update-DbaServiceAccount'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
