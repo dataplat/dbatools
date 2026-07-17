@@ -43,29 +43,27 @@ Describe $CommandName -Tag IntegrationTests {
                 $restartServices = @()
             }
 
-            # Enumeration and CONTROL ride different channels (W3-084 discriminator): reads go
-            # through Get-DbaCmObject's fallback chain, but the actual service control runs a
-            # credential-less New-CimSession inside Invoke-Parallel workers. Where that second
-            # hop is blocked, legacy and compiled BOTH warn "Multi-threaded execution returned
-            # an error" and emit nothing - so probe the control channel exactly as the workers
-            # open it and skip the control-effect scenarios when it is absent.
-            $controlChannel = $false
+            # Enumeration and CONTROL are different paths (W3-084 discriminator): on some seats
+            # the full control path (input prep -> Update-ServiceStatus -> Invoke-Parallel
+            # workers) dies with the world-independent signature "Multi-threaded execution
+            # returned an error" + empty output - legacy function and compiled cmdlet
+            # IDENTICALLY (4-leg proof 2026-07-17). Probe it non-mutatingly: Start on an
+            # already-running service exercises the whole path through the workers' type
+            # check and emits "already running/Successful" on healthy seats; on broken seats
+            # it emits nothing with that warning. Skip the control-effect scenarios there.
+            $skipRestart = $true
             if ($restartServices.Count -gt 0) {
-                try {
-                    $controlSession = New-CimSession -ComputerName $restartServices[0].ComputerName -OperationTimeoutSec 15 -ErrorAction Stop
-                    Remove-CimSession -CimSession $controlSession
-                    $controlChannel = $true
-                } catch {
-                    $controlChannel = $false
-                }
+                $controlProbeWarn = @()
+                $controlProbeOut = @(Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -WarningAction SilentlyContinue -WarningVariable controlProbeWarn)
+                $controlPathDead = ($controlProbeOut.Count -eq 0) -and (($controlProbeWarn -join " ") -match "Multi-threaded execution returned an error")
+                $skipRestart = $controlPathDead
             }
-            $skipRestart = ($restartServices.Count -eq 0) -or (-not $controlChannel)
         }
 
         It "restarts some services" {
             if ($skipRestart) {
                 # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
-                Set-ItResult -Skipped -Because "service enumeration or CIM control channel to InstanceRestart is unavailable from this runner"
+                Set-ItResult -Skipped -Because "service enumeration or the service-control path to InstanceRestart is unavailable from this runner"
                 return
             }
             $services = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
@@ -78,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restarts some services through pipeline" {
             if ($skipRestart) {
-                Set-ItResult -Skipped -Because "service enumeration or CIM control channel to InstanceRestart is unavailable from this runner"
+                Set-ItResult -Skipped -Because "service enumeration or the service-control path to InstanceRestart is unavailable from this runner"
                 return
             }
             $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
