@@ -25,7 +25,8 @@
         'Add-DbaExtendedProperty',
         'Compare-DbaDbSchema',
         'Dismount-DbaDatabase',
-        'Expand-DbaDbLogFile'
+        'Expand-DbaDbLogFile',
+        'Export-DbaBinaryFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

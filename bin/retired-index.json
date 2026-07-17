@@ -159,6 +159,11 @@
     "retiredPath": "private/retired/Expand-DbaDbLogFile.ps1",
     "flippedUtc": "2026-07-17T17:36:15Z"
   },
+  "Export-DbaBinaryFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Export-DbaBinaryFile.ps1",
+    "flippedUtc": "2026-07-17T18:12:40Z"
+  },
   "Export-DbaCsv": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Export-DbaCsv.ps1",
