@@ -86,6 +86,18 @@ for (let i = lines.length - 1; i >= 0; i--) {
 LAST_MSG=$(last_assistant_text)
 [[ -z "$LAST_MSG" ]] && exit 0
 
+# USE vs MENTION: documenting a deflection pattern is not deflecting. When a
+# phrase is shown in a ```fenced``` block or an inline `code` span — the
+# mechanical convention for citing one while fixing or reporting it — it must
+# NOT self-fire, or the hook suppresses its own bug reports (a phrase cannot be
+# quoted to fix it without tripping it). Strip those spans before matching;
+# prose sentences are untouched, so genuine deflection stated in normal text is
+# still caught.
+SCAN_MSG=$(printf '%s' "$LAST_MSG" \
+    | awk 'BEGIN{f=0} /^[[:space:]]*```/{f=!f; next} f{next} {print}' \
+    | sed -E 's/`[^`]*`//g')
+[[ -z "$SCAN_MSG" ]] && exit 0
+
 # STRONG deflection phrases: unambiguous blame-dodging — fire on their own.
 STRONG_PATTERNS=(
     'not from (my|our) changes'
@@ -123,11 +135,11 @@ ERROR_CONTEXT='error|bug|failure|failed|failing|fails|broken|crash|regress|defec
 STRONG_RE=$(IFS='|'; echo "${STRONG_PATTERNS[*]}")
 WEAK_RE=$(IFS='|'; echo "${WEAK_PATTERNS[*]}")
 
-# Strong matches count anywhere in the message.
-STRONG_HITS=$(printf '%s' "$LAST_MSG" | grep -i -o -E "$STRONG_RE" 2>/dev/null | sort -u)
+# Strong matches count anywhere in the message (code spans already stripped).
+STRONG_HITS=$(printf '%s' "$SCAN_MSG" | grep -i -o -E "$STRONG_RE" 2>/dev/null | sort -u)
 
 # Weak matches count only within a sentence that also has error/failure context.
-WEAK_HITS=$(printf '%s' "$LAST_MSG" \
+WEAK_HITS=$(printf '%s' "$SCAN_MSG" \
     | tr '\n' ' ' \
     | sed -E 's/([.!?])/\1\n/g' \
     | grep -i -E "$WEAK_RE" 2>/dev/null \

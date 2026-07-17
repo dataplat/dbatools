@@ -16,7 +16,9 @@ fi
 # rather than risk a block loop.
 [[ -z "${_MARKER_DIR:-}" || -z "${_TRANSCRIPT_HASH:-}" ]] && exit 0
 
-CODE_FILES=$(printf '%s\n' "$CHANGED_FILES" | grep -E '\.(ps1|psm1|psd1)$' | grep -v '^\.claude/')
+# SESSION_CHANGED_FILES (not CHANGED_FILES): only files THIS session wrote, so
+# another lane's uncommitted work in a shared checkout never trips this gate.
+CODE_FILES=$(printf '%s\n' "$SESSION_CHANGED_FILES" | grep -E '\.(ps1|psm1|psd1)$' | grep -v '^\.claude/')
 [[ -z "$CODE_FILES" ]] && exit 0
 
 # Own marker, created only when we actually fire — the automatic stop-guard
