@@ -69,6 +69,11 @@
     "retiredPath": "private/retired/Clear-DbaWaitStatistics.ps1",
     "flippedUtc": "2026-07-13T03:01:19Z"
   },
+  "Compare-DbaDbSchema": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Compare-DbaDbSchema.ps1",
+    "flippedUtc": "2026-07-17T17:07:10Z"
+  },
   "Connect-DbaInstance": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Connect-DbaInstance.ps1",
@@ -138,6 +143,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Disconnect-DbaInstance.ps1",
     "flippedUtc": "2026-07-11T09:34:44Z"
+  },
+  "Dismount-DbaDatabase": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Dismount-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-17T17:07:26Z"
   },
   "Enable-DbaForceNetworkEncryption": {
     "module": "dbatools.computer",

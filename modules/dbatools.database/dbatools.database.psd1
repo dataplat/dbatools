@@ -22,7 +22,9 @@
         'Get-DbaDbState',
         'Add-DbaDbFile',
         'Add-DbaDbRoleMember',
-        'Add-DbaExtendedProperty'
+        'Add-DbaExtendedProperty',
+        'Compare-DbaDbSchema',
+        'Dismount-DbaDatabase'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
