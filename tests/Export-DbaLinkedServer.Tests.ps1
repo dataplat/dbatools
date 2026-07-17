@@ -197,8 +197,8 @@ Describe $CommandName -Tag IntegrationTests {
             # the config at the unique test directory so the file lands there (cleaned by AfterAll)
             # instead of leaking into the shared default export location on an assertion failure.
             $originalExportPath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport"
-            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $exportDir
             try {
+                Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $exportDir
                 $splatDefault = @{
                     SqlInstance     = $TestConfig.InstanceSingle
                     LinkedServer    = $ls1
@@ -226,8 +226,14 @@ Describe $CommandName -Tag IntegrationTests {
             $joined | Should -Not -Match $ls2
         }
 
-        It "Appends to an existing file under -Append rather than overwriting" {
+        It "Overwrites without -Append and preserves prior content with -Append" {
+            # Preseed a sentinel so the two branches are distinguishable: an implementation that
+            # always appended would leave the sentinel after the non-Append write and pass a
+            # both-present-only assertion. The non-Append call must REMOVE the sentinel.
             $appendPath = Join-Path -Path $exportDir -ChildPath "els_append_$random.sql"
+            $sentinel = "dbatoolsci_sentinel_$random"
+            Set-Content -Path $appendPath -Value $sentinel
+
             $splatFirst = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 LinkedServer    = $ls1
@@ -235,6 +241,10 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath        = $appendPath
             }
             $null = Export-DbaLinkedServer @splatFirst
+            $afterOverwrite = Get-Content -Path $appendPath -Raw
+            $afterOverwrite | Should -Not -Match $sentinel
+            $afterOverwrite | Should -Match $ls1
+
             $splatAppend = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 LinkedServer    = $ls2
@@ -243,9 +253,22 @@ Describe $CommandName -Tag IntegrationTests {
                 Append          = $true
             }
             $null = Export-DbaLinkedServer @splatAppend
-            $content = Get-Content -Path $appendPath -Raw
-            $content | Should -Match $ls1
-            $content | Should -Match $ls2
+            $afterAppend = Get-Content -Path $appendPath -Raw
+            $afterAppend | Should -Match $ls1
+            $afterAppend | Should -Match $ls2
+        }
+
+        It "Exports all linked servers when -LinkedServer is omitted" {
+            # Omitting -LinkedServer selects every linked server on the instance, so both fixtures
+            # must appear (other pre-existing linked servers may also be present - not asserted).
+            $splatAllLs = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                ExcludePassword = $true
+                Passthru        = $true
+            }
+            $joined = (Export-DbaLinkedServer @splatAllLs) -join [Environment]::NewLine
+            $joined | Should -Match $ls1
+            $joined | Should -Match $ls2
         }
 
         It "Exports nothing and reports Nothing to export when the named linked server does not exist" {
