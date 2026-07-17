@@ -19,7 +19,10 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaDbState'
+        'Get-DbaDbState',
+        'Add-DbaDbFile',
+        'Add-DbaDbRoleMember',
+        'Add-DbaExtendedProperty'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

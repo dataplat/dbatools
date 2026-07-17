@@ -4,6 +4,21 @@
     "retiredPath": "private/retired/Add-DbaComputerCertificate.ps1",
     "flippedUtc": "2026-07-09T23:54:46Z"
   },
+  "Add-DbaDbFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Add-DbaDbFile.ps1",
+    "flippedUtc": "2026-07-17T16:06:51Z"
+  },
+  "Add-DbaDbRoleMember": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Add-DbaDbRoleMember.ps1",
+    "flippedUtc": "2026-07-17T16:07:30Z"
+  },
+  "Add-DbaExtendedProperty": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Add-DbaExtendedProperty.ps1",
+    "flippedUtc": "2026-07-17T16:08:21Z"
+  },
   "Add-DbaInstanceList": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Add-DbaInstanceList.ps1",
