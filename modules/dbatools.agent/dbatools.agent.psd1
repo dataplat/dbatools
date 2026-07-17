@@ -46,7 +46,10 @@
         'Get-DbaDbMailConfig',
         'Get-DbaDbMailHistory',
         'Get-DbaDbMailLog',
-        'Get-DbaDbMailServer'
+        'Get-DbaDbMailServer',
+        'Install-DbaAgentAdminAlert',
+        'New-DbaAgentAlert',
+        'New-DbaAgentAlertCategory'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

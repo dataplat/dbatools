@@ -68,7 +68,6 @@
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
         'Test-DbaAgSpn',
-        'Install-DbaAgentAdminAlert',
         'Get-DbaDbServiceBrokerQueue',
         'Add-DbaAgDatabase',
         'Add-DbaAgListener',
@@ -307,8 +306,6 @@
         'Measure-DbaDiskSpaceRequirement',
         'Mount-DbaDatabase',
         'Move-DbaDbFile',
-        'New-DbaAgentAlert',
-        'New-DbaAgentAlertCategory',
         'New-DbaAgentJob',
         'New-DbaAgentJobCategory',
         'New-DbaAgentJobStep',

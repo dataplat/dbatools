@@ -879,6 +879,11 @@
     "retiredPath": "private/retired/Import-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T01:04:47Z"
   },
+  "Install-DbaAgentAdminAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Install-DbaAgentAdminAlert.ps1",
+    "flippedUtc": "2026-07-17T20:15:14Z"
+  },
   "Install-DbaInstance": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Install-DbaInstance.ps1",
@@ -953,6 +958,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Move-DbaRegServerGroup.ps1",
     "flippedUtc": "2026-07-16T14:17:08Z"
+  },
+  "New-DbaAgentAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentAlert.ps1",
+    "flippedUtc": "2026-07-17T20:16:24Z"
+  },
+  "New-DbaAgentAlertCategory": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentAlertCategory.ps1",
+    "flippedUtc": "2026-07-17T20:16:56Z"
   },
   "New-DbaAzAccessToken": {
     "module": "dbatools.core",
