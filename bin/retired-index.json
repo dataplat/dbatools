@@ -1179,6 +1179,21 @@
     "retiredPath": "private/retired/Set-DbaExtendedProtection.ps1",
     "flippedUtc": "2026-07-16T20:08:17Z"
   },
+  "Set-DbaMaxDop": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaMaxDop.ps1",
+    "flippedUtc": "2026-07-17T00:01:30Z"
+  },
+  "Set-DbaMaxMemory": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaMaxMemory.ps1",
+    "flippedUtc": "2026-07-17T00:03:25Z"
+  },
+  "Set-DbaNetworkConfiguration": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaNetworkConfiguration.ps1",
+    "flippedUtc": "2026-07-17T00:04:59Z"
+  },
   "Set-DbaPowerPlan": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Set-DbaPowerPlan.ps1",
@@ -1204,10 +1219,25 @@
     "retiredPath": "private/retired/Set-DbaRgWorkloadGroup.ps1",
     "flippedUtc": "2026-07-14T18:15:21Z"
   },
+  "Set-DbaSpConfigure": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaSpConfigure.ps1",
+    "flippedUtc": "2026-07-17T00:06:48Z"
+  },
   "Set-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Set-DbaSpn.ps1",
     "flippedUtc": "2026-07-10T20:33:54Z"
+  },
+  "Set-DbaStartupParameter": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaStartupParameter.ps1",
+    "flippedUtc": "2026-07-17T00:08:19Z"
+  },
+  "Set-DbaTcpPort": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Set-DbaTcpPort.ps1",
+    "flippedUtc": "2026-07-17T00:10:03Z"
   },
   "Set-DbatoolsInsecureConnection": {
     "module": "dbatools.core",

@@ -108,7 +108,13 @@
         'Set-DbaDbRecoveryModel',
         'Set-DbaDbState',
         'Set-DbaErrorLogConfig',
-        'Set-DbaExtendedProtection'
+        'Set-DbaExtendedProtection',
+        'Set-DbaMaxDop',
+        'Set-DbaMaxMemory',
+        'Set-DbaNetworkConfiguration',
+        'Set-DbaSpConfigure',
+        'Set-DbaStartupParameter',
+        'Set-DbaTcpPort'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
