@@ -61,15 +61,22 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets DbMailServer" {
         BeforeAll {
-            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Account -eq $mailAccountName
+            # TEST-FIX 2026-07-17 (disclosed, fn-identical by probe): the command stamps ALL
+            # mail-account names as an ARRAY onto every server row - legacy function and
+            # compiled cmdlet identically - so on an instance with any other mail account
+            # (this lab provisions a second account on dc1 deliberately), an Account filter
+            # matches every row and the scalar assertions read arrays. Scope to the suite's
+            # OWN server row and assert containment - the quirk-faithful contract. The green
+            # history relied on the fixture account being the instance's ONLY account.
+            $mailServerResults = Get-DbaDbMailServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq "smtp.dbatools.io"
         }
 
         It "Gets results" {
             $mailServerResults | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have Account of $mailAccountName" {
-            $mailServerResults.Account | Should -Be $mailAccountName
+        It "Should have Account containing $mailAccountName" {
+            $mailServerResults.Account | Should -Contain $mailAccountName
         }
 
         It "Should have Name of 'smtp.dbatools.io'" {
