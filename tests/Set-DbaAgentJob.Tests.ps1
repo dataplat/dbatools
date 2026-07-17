@@ -58,12 +58,15 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            $splatRemove = @{
+            # Only remove candidate jobs that actually exist - the rename leaves exactly one of
+            # $renameSrc / $renamedName present, so pipe the surviving matches rather than name
+            # a possibly-absent job (which would throw under the forced EnableException).
+            $splatGet = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Job         = @($jobName, $renameSrc, $renamedName)
                 ErrorAction = "SilentlyContinue"
             }
-            $null = Remove-DbaAgentJob @splatRemove
+            Get-DbaAgentJob @splatGet | Remove-DbaAgentJob -ErrorAction SilentlyContinue
         } finally {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -71,12 +74,16 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Modifying job properties" {
         It "Disables an enabled job" {
+            # Establish the opposite state first so the test is self-contained (no reliance on
+            # New-DbaAgentJob's default or on another test having run).
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Enabled
             $result = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Disabled
             $result.Enabled | Should -BeFalse
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName).Enabled | Should -BeFalse
         }
 
         It "Enables a disabled job" {
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Disabled
             $result = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName -Enabled
             $result.Enabled | Should -BeTrue
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName).Enabled | Should -BeTrue
@@ -129,8 +136,9 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningVariable = "warn"
             }
             Set-DbaAgentJob @splatBadJob 3> $null
-            # characterization: source message reads "doesn't exists" (regex dot for the apostrophe)
-            $warn -join " " | Should -Match "doesn.t exists"
+            # characterization: the missing-job message keeps the source grammar quirk "exists"
+            # ("...doesn't exists on..."); regex dot stands in for the apostrophe.
+            $warn -join " " | Should -Match "doesn.t exists on"
         }
 
         It "Warns setting an unknown category without -Force" {
@@ -142,7 +150,9 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningVariable = "warn"
             }
             Set-DbaAgentJob @splatBadCat 3> $null
-            $warn -join " " | Should -Match "Use -Force"
+            # characterization: unknown category without -Force warns to create it with -Force.
+            $warn -join " " | Should -Match "category .* doesn.t exist on"
+            $warn -join " " | Should -Match "Use -Force to create"
         }
     }
 }
