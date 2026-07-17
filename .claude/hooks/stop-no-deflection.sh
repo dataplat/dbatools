@@ -95,7 +95,7 @@ STRONG_PATTERNS=(
     'out-of-scope'
     'bigger refactor'
     'larger refactor'
-    'separate (refactor|effort|task|ticket|issue|PR)'
+    'separate (refactor|effort|task|ticket|issue|PR)s?\b'
     'defer(red)? (to|for) (a )?(later|future|separate|another)'
     'address(ed)? (later|separately|in a future)'
     'beyond the scope'

@@ -20,6 +20,10 @@ fi
 VIOLATIONS=""
 while IFS= read -r filepath; do
     [[ -z "$filepath" ]] && continue
+    # Skip DELETIONS. CHANGED_FILES comes from `git diff --name-only` (lib-git-changes.sh:24-25),
+    # which emits every status, so a flipped command's removed public/*.ps1 arrives here looking
+    # exactly like a new one. A deleted file is not on disk; a genuinely new command always is.
+    [[ -f "$REPO_ROOT/$filepath" ]] || continue
     func=$(basename "$filepath" .ps1)
     if ! grep -qE "['\"]${func}['\"]" "$REPO_ROOT/dbatools.psd1" 2>/dev/null; then
         VIOLATIONS+="  ${func}: missing from dbatools.psd1 FunctionsToExport"$'\n'
