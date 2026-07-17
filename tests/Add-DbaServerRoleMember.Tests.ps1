@@ -171,5 +171,20 @@ Describe $CommandName -Tag IntegrationTests {
             $namedRole.EnumMemberNames() | Should -Contain $precedenceLogin
             $passedRole.EnumMemberNames() | Should -Not -Contain $precedenceLogin
         }
+
+        It "Adds nothing when SqlInstance is supplied as null" {
+            # A null SqlInstance is still supplied, so it still replaces InputObject - leaving
+            # nothing to act on. The roles passed to -InputObject must not be touched.
+            $splatNullInstance = @{
+                SqlInstance = $null
+                InputObject = $ignoredRole
+                ServerRole  = $fixedServerRoles[0]
+                Login       = $precedenceLogin
+            }
+            Add-DbaServerRoleMember @splatNullInstance -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+
+            $passedRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]
+            $passedRole.EnumMemberNames() | Should -Not -Contain $precedenceLogin
+        }
     }
 }
