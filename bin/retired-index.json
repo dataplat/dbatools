@@ -1279,6 +1279,16 @@
     "retiredPath": "private/retired/Stop-DbaPfDataCollectorSet.ps1",
     "flippedUtc": "2026-07-14T18:38:10Z"
   },
+  "Stop-DbaProcess": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Stop-DbaProcess.ps1",
+    "flippedUtc": "2026-07-17T09:13:07Z"
+  },
+  "Stop-DbaService": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Stop-DbaService.ps1",
+    "flippedUtc": "2026-07-17T09:14:20Z"
+  },
   "Test-DbaBackupInformation": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaBackupInformation.ps1",
@@ -1288,6 +1298,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaBuild.ps1",
     "flippedUtc": "2026-07-14T18:50:34Z"
+  },
+  "Test-DbaCmConnection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaCmConnection.ps1",
+    "flippedUtc": "2026-07-17T09:14:40Z"
   },
   "Test-DbaComputerCertificateExpiration": {
     "module": "dbatools.computer",
@@ -1309,6 +1324,11 @@
     "retiredPath": "private/retired/Test-DbaDbCompression.ps1",
     "flippedUtc": "2026-07-14T19:19:55Z"
   },
+  "Test-DbaDbRecoveryModel": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaDbRecoveryModel.ps1",
+    "flippedUtc": "2026-07-17T09:15:05Z"
+  },
   "Test-DbaDiskAlignment": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaDiskAlignment.ps1",
@@ -1324,6 +1344,11 @@
     "retiredPath": "private/retired/Test-DbaDiskSpeed.ps1",
     "flippedUtc": "2026-07-14T19:58:10Z"
   },
+  "Test-DbaInstanceName": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaInstanceName.ps1",
+    "flippedUtc": "2026-07-17T09:15:31Z"
+  },
   "Test-DbaInstantFileInitialization": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaInstantFileInitialization.ps1",
@@ -1333,6 +1358,16 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Test-DbaKerberos.ps1",
     "flippedUtc": "2026-07-10T22:57:02Z"
+  },
+  "Test-DbaLastBackup": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaLastBackup.ps1",
+    "flippedUtc": "2026-07-17T09:15:50Z"
+  },
+  "Test-DbaLinkedServerConnection": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Test-DbaLinkedServerConnection.ps1",
+    "flippedUtc": "2026-07-17T09:16:09Z"
   },
   "Test-DbaManagementObject": {
     "module": "dbatools.performance",
