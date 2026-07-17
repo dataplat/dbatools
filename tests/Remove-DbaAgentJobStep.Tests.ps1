@@ -30,7 +30,7 @@ Describe $CommandName -Tag IntegrationTests {
         # step and the surviving steps prove the removal is surgical.
         $jobName = "dbatoolsci_rmstep_$(Get-Random)"
         $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobName
-        foreach ($step in "step_remove", "step_keep", "step_whatif") {
+        foreach ($step in "step_remove", "step_keep", "step_whatif", "step_nooutput") {
             $splatStep = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Job         = $jobName
@@ -72,11 +72,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns no output" {
-            # characterization: .OUTPUTS None - the removal emits nothing to the pipeline.
+            # characterization: .OUTPUTS None - the removal emits nothing to the pipeline. Uses its
+            # own step so it never disturbs a step another test asserts on (order-independent).
             $splatRemoveStep = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Job         = $jobName
-                StepName    = "step_keep"
+                StepName    = "step_nooutput"
             }
             $result = Remove-DbaAgentJobStep @splatRemoveStep
             $result | Should -BeNullOrEmpty
