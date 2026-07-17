@@ -33,8 +33,8 @@ Describe $CommandName -Tag IntegrationTests {
         # lets the default-owner test assert exactly what the source computes. A WindowsGroup
         # login (if any exists on this instance) drives the rejection path.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-        $saLogin = ($server.Logins | Where-Object { $PSItem.Id -eq 1 }).Name
-        $windowsGroupLogin = ($server.Logins | Where-Object { $PSItem.LoginType -eq "WindowsGroup" } | Select-Object -First 1).Name
+        $saLogin = ($server.Logins | Where-Object Id -eq 1).Name
+        $windowsGroupLogin = ($server.Logins | Where-Object LoginType -eq "WindowsGroup" | Select-Object -First 1).Name
 
         $ownerLogin = "dbatoolsci_owner_$(Get-Random)"
         $securePassword = ConvertTo-SecureString "dbatools.IO$(Get-Random)" -AsPlainText -Force
@@ -74,7 +74,12 @@ Describe $CommandName -Tag IntegrationTests {
                 ErrorAction = "SilentlyContinue"
             }
             Get-DbaAgentJob @splatGet | Remove-DbaAgentJob -ErrorAction SilentlyContinue
-            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $ownerLogin -ErrorAction SilentlyContinue
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $ownerLogin
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
         } finally {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -207,7 +212,10 @@ Describe $CommandName -Tag IntegrationTests {
                 WhatIf      = $true
             }
             $result = Set-DbaAgentJobOwner @splatAll
-            $result.Name | Should -Contain $jobSet
+            # every job we created is Local, so the -Job-less selection must return all of them
+            foreach ($j in $allJobs) {
+                $result.Name | Should -Contain $j
+            }
             # the selection filter is JobType -eq Local, so nothing else should slip through
             $result.JobType | Where-Object { $PSItem -ne "Local" } | Should -BeNullOrEmpty
         }
