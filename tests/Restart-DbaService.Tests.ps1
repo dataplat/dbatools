@@ -42,13 +42,30 @@ Describe $CommandName -Tag IntegrationTests {
             } catch {
                 $restartServices = @()
             }
-            $skipRestart = ($restartServices.Count -eq 0)
+
+            # Enumeration and CONTROL ride different channels (W3-084 discriminator): reads go
+            # through Get-DbaCmObject's fallback chain, but the actual service control runs a
+            # credential-less New-CimSession inside Invoke-Parallel workers. Where that second
+            # hop is blocked, legacy and compiled BOTH warn "Multi-threaded execution returned
+            # an error" and emit nothing - so probe the control channel exactly as the workers
+            # open it and skip the control-effect scenarios when it is absent.
+            $controlChannel = $false
+            if ($restartServices.Count -gt 0) {
+                try {
+                    $controlSession = New-CimSession -ComputerName $restartServices[0].ComputerName -OperationTimeoutSec 15 -ErrorAction Stop
+                    Remove-CimSession -CimSession $controlSession
+                    $controlChannel = $true
+                } catch {
+                    $controlChannel = $false
+                }
+            }
+            $skipRestart = ($restartServices.Count -eq 0) -or (-not $controlChannel)
         }
 
         It "restarts some services" {
             if ($skipRestart) {
                 # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
-                Set-ItResult -Skipped -Because "WMI service channel to InstanceRestart is unavailable from this runner"
+                Set-ItResult -Skipped -Because "service enumeration or CIM control channel to InstanceRestart is unavailable from this runner"
                 return
             }
             $services = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
@@ -61,7 +78,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "restarts some services through pipeline" {
             if ($skipRestart) {
-                Set-ItResult -Skipped -Because "WMI service channel to InstanceRestart is unavailable from this runner"
+                Set-ItResult -Skipped -Because "service enumeration or CIM control channel to InstanceRestart is unavailable from this runner"
                 return
             }
             $services = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent, Engine | Restart-DbaService
