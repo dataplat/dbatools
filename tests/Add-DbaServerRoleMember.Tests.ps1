@@ -111,4 +111,65 @@ Describe $CommandName -Tag IntegrationTests {
             $roleAfter.EnumMemberNames() | Should -Contain $login2
         }
     }
+
+    Context "Parameter combination validation" {
+        It "Warns when neither SqlInstance, ServerRole, nor Login is supplied" {
+            $missingWarnings = @()
+            Add-DbaServerRoleMember -WarningVariable missingWarnings -WarningAction SilentlyContinue
+            $missingWarnings -join " " | Should -Match "You must pipe in a ServerRole, Login, or specify a SqlInstance"
+        }
+    }
+
+    Context "When a pipeline record stops the command" {
+        It "Skips the remaining records instead of warning once per record" {
+            # A stop is recorded for the whole command, not for the record that caused it, so the
+            # second record must not be processed at all - one warning, not two.
+            $stopWarnings = @()
+            1, 2 | Add-DbaServerRoleMember -ServerRole $fixedServerRoles[0] -WarningVariable stopWarnings -WarningAction SilentlyContinue
+            @($stopWarnings | Where-Object { $PSItem -match "InputObject is not a server or role" }).Count | Should -Be 1
+        }
+    }
+
+    Context "When SqlInstance and InputObject are both supplied" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $precedenceLogin = "dbatoolsci_precedence_$(Get-Random)"
+            $splatPrecedenceLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $precedenceLogin
+                Password    = ("Password1234!" | ConvertTo-SecureString -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatPrecedenceLogin
+            $ignoredRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $precedenceLogin -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Applies SqlInstance and ignores the roles passed in InputObject" {
+            # SqlInstance replaces InputObject outright, so the roles handed to -InputObject are
+            # never touched; only the roles named by -ServerRole receive the login.
+            $splatBoth = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                InputObject = $ignoredRole
+                ServerRole  = $fixedServerRoles[0]
+                Login       = $precedenceLogin
+            }
+            Add-DbaServerRoleMember @splatBoth
+
+            $namedRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[0]
+            $passedRole = Get-DbaServerRole -SqlInstance $server -ServerRole $fixedServerRoles[-1]
+
+            $namedRole.EnumMemberNames() | Should -Contain $precedenceLogin
+            $passedRole.EnumMemberNames() | Should -Not -Contain $precedenceLogin
+        }
+    }
 }
