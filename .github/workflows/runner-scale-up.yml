@@ -10,10 +10,22 @@ on:
         description: "Actor whose pool should be heated immediately"
         required: false
         default: ""
+      boost_message:
+        description: "Head commit message used to evaluate the runner activation marker"
+        required: false
+        default: ""
+      boost_sha:
+        description: "Head commit SHA used to deduplicate marked CI dispatches"
+        required: false
+        default: ""
+      boost_ref:
+        description: "Branch ref used when dispatching marked CI"
+        required: false
+        default: ""
 
 permissions:
   contents: read
-  actions: read
+  actions: write
   id-token: write
 
 concurrency:
@@ -30,14 +42,22 @@ jobs:
       REPO: ${{ github.repository }}
       RG: ${{ vars.CI_AZURE_RG }}
       VMSS: ${{ vars.CI_VMSS_NAME }}
-      MAX_RUNNERS: ${{ vars.MAX_RUNNERS }}
+      MAX_RUNNERS: 35
       COMMUNITY_COUNT: 5
-      BOOST_USERS: ${{ vars.BOOST_USERS }}
-      BOOST_COUNT: ${{ vars.BOOST_COUNT }}
-      BOOST_HOURS: ${{ vars.BOOST_HOURS }}
-      BOOST_TRIGGER: ${{ inputs.boost_user || github.actor }}
+      COMMUNITY_GRACE_MINUTES: 20
+      BOOST_USERS: potatoqualitee andreasjordan niphlod
+      BOOST_COUNT: 10
+      BOOST_HOURS: 1
+      OPT_IN_PUSH_USERS: potatoqualitee
+      CI_MARKER: "[do ci]"
+      BOOST_TRIGGER: ${{ inputs.boost_user }}
+      BOOST_MESSAGE: ${{ inputs.boost_message }}
+      BOOST_SHA: ${{ inputs.boost_sha }}
+      BOOST_REF: ${{ inputs.boost_ref }}
+      WORKFLOW_TOKEN: ${{ github.token }}
       RUNNER_LABEL: dbatools-modern
       RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}
+      POLICY_PATH: /tmp/runner-policy.ps1
       BOOTSTRAP_PATH: /tmp/bootstrap-runner.ps1
     steps:
       - name: Azure login (OIDC)
@@ -56,6 +76,12 @@ jobs:
               "$RAW_BASE/.github/runners/reconcile-runner-fleet.ps1" \
               -o /tmp/reconcile-runner-fleet.ps1; then
             echo "::warning::Fleet controller download exhausted retries; run recovery again after the transient clears."
+            exit 0
+          fi
+          if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+              "$RAW_BASE/.github/runners/runner-policy.ps1" \
+              -o "$POLICY_PATH"; then
+            echo "::warning::Runner policy download exhausted retries; run recovery again after the transient clears."
             exit 0
           fi
           if ! curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \

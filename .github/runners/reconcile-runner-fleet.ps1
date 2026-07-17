@@ -3,7 +3,7 @@
     Reconciles the AppVeyor-style GitHub Actions worker pools on the Azure VMSS.
 
 .DESCRIPTION
-    Maintains three logical pools on one Flexible VMSS. Individual VMs retain their
+    Maintains four logical pools on one Flexible VMSS. Individual VMs retain their
     pool assignment in the runnerPool tag and register with a matching GitHub runner
     label. Runner agents are ephemeral; a VM is deleted after its single job and its
     pool slot is replaced from the golden image.
@@ -25,21 +25,30 @@ $runnerLabel = $env:RUNNER_LABEL
 $poolLabelPrefix = "dbatools-pool-"
 $communityCount = if ($env:COMMUNITY_COUNT) { [int]$env:COMMUNITY_COUNT } else { 5 }
 $maintainerCount = if ($env:BOOST_COUNT) { [int]$env:BOOST_COUNT } else { 10 }
-$boostHours = if ($env:BOOST_HOURS) { [int]$env:BOOST_HOURS } else { 2 }
-$maxRunners = if ($env:MAX_RUNNERS) { [int]$env:MAX_RUNNERS } else { 25 }
+$maintainerWindowMinutes = if ($env:BOOST_HOURS) { [int]$env:BOOST_HOURS * 60 } else { 60 }
+$communityGraceMinutes = if ($env:COMMUNITY_GRACE_MINUTES) { [int]$env:COMMUNITY_GRACE_MINUTES } else { 20 }
+$maxRunners = if ($env:MAX_RUNNERS) { [int]$env:MAX_RUNNERS } else { 35 }
 $maintainers = @($env:BOOST_USERS -split "\s+" | Where-Object { $PSItem })
+$optInPushUsers = @($env:OPT_IN_PUSH_USERS -split "\s+" | Where-Object { $PSItem })
+$ciMarker = if ($env:CI_MARKER) { $env:CI_MARKER } else { "[do ci]" }
 $bootstrapPath = $env:BOOTSTRAP_PATH
 $deletedVms = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$policyPath = $env:POLICY_PATH
+$workflowToken = $env:WORKFLOW_TOKEN
 
 $missingSettings = @(
     @{ Name = "REPO"; Value = $repo }, @{ Name = "RG"; Value = $resourceGroup },
     @{ Name = "VMSS"; Value = $vmss }, @{ Name = "RUNNER_LABEL"; Value = $runnerLabel },
-    @{ Name = "BOOTSTRAP_PATH"; Value = $bootstrapPath }
+    @{ Name = "BOOTSTRAP_PATH"; Value = $bootstrapPath },
+    @{ Name = "POLICY_PATH"; Value = $policyPath },
+    @{ Name = "WORKFLOW_TOKEN"; Value = $workflowToken }
     | Where-Object { -not $PSItem.Value } | ForEach-Object Name
 )
 if ($missingSettings) {
     throw "Missing required fleet settings: $($missingSettings -join ', ')"
 }
+
+. $policyPath
 
 function Invoke-WithRetry {
     [CmdletBinding()]
@@ -139,11 +148,6 @@ function Get-VmAgeMinutes {
     [int](([DateTimeOffset]::UtcNow - [DateTimeOffset]::Parse($Vm.created)).TotalMinutes)
 }
 
-function Test-CiActivityEvent {
-    param($Event)
-    $Event.type -eq "PushEvent" -or
-    ($Event.type -eq "PullRequestEvent" -and $Event.payload.action -in @("opened", "reopened", "synchronize"))
-}
 
 function Get-FleetState {
     $runnerResponse = Invoke-GhJson -Arguments @("repos/$repo/actions/runners?per_page=100") -Operation "list GitHub runners"
@@ -204,40 +208,75 @@ function Remove-FleetVm {
     ) -Operation "delete VM $($Vm.name)"
 }
 
-function Get-DesiredPools {
+function Get-RunnerDemand {
     $events = @(Invoke-GhJson -Arguments @("repos/$repo/events?per_page=100") -Operation "read repository activity")
     $runResponse = Invoke-GhJson -Arguments @(
         "repos/$repo/actions/workflows/ci-azure.yml/runs?per_page=100"
     ) -Operation "read CI build queue"
-    $liveRuns = @($runResponse.workflow_runs | Where-Object { $PSItem.status -ne "completed" })
-    $cutoff = [DateTimeOffset]::UtcNow.AddHours(-$boostHours)
-    $desired = [ordered]@{}
-
-    foreach ($maintainer in $maintainers) {
-        $recentPush = @($events | Where-Object {
-                (Test-CiActivityEvent -Event $PSItem) -and
-                $PSItem.actor.login -eq $maintainer -and
-                [DateTimeOffset]::Parse($PSItem.created_at) -ge $cutoff
-            }).Count -gt 0
-        $queuedBuild = @($liveRuns | Where-Object { $PSItem.actor.login -eq $maintainer }).Count -gt 0
-        $directTrigger = $env:BOOST_TRIGGER -eq $maintainer
-        $desired[$maintainer] = if ($recentPush -or $queuedBuild -or $directTrigger) { $maintainerCount } else { 0 }
+    $workflowRuns = @($runResponse.workflow_runs)
+    $now = [DateTimeOffset]::UtcNow
+    $splatPolicy = @{
+        Events                  = $events
+        WorkflowRuns            = $workflowRuns
+        Maintainers             = $maintainers
+        OptInPushUsers          = $optInPushUsers
+        MaintainerCount         = $maintainerCount
+        MaintainerWindowMinutes = $maintainerWindowMinutes
+        CommunityCount          = $communityCount
+        CommunityGraceMinutes   = $communityGraceMinutes
+        MaxRunners              = $maxRunners
+        Marker                  = $ciMarker
+        Now                     = $now
+        DirectTriggerActor      = [string]$env:BOOST_TRIGGER
+        DirectTriggerMessage    = [string]$env:BOOST_MESSAGE
     }
-    $recentCommunityPush = @($events | Where-Object {
-            (Test-CiActivityEvent -Event $PSItem) -and
-            $PSItem.actor.login -notin $maintainers -and
-            [DateTimeOffset]::Parse($PSItem.created_at) -ge $cutoff
-        }).Count -gt 0
-    $queuedCommunityBuild = @($liveRuns | Where-Object { $PSItem.actor.login -notin $maintainers }).Count -gt 0
-    $directCommunityTrigger = $env:BOOST_TRIGGER -and $env:BOOST_TRIGGER -notin $maintainers
-    $desired["community"] = if ($recentCommunityPush -or $queuedCommunityBuild -or $directCommunityTrigger) { $communityCount } else { 0 }
+    $desired = Get-DesiredRunnerPools @splatPolicy
 
     $total = ($desired.Values | Measure-Object -Sum).Sum
-    if ($total -gt $maxRunners) {
-        throw "Pool policy requests $total runners but MAX_RUNNERS is $maxRunners"
-    }
     Write-Host "desired pools: $(($desired.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ', ') total=$total"
-    $desired
+    $splatDispatch = @{
+        Events               = $events
+        WorkflowRuns         = $workflowRuns
+        OptInPushUsers       = $optInPushUsers
+        Marker               = $ciMarker
+        Cutoff               = $now.AddMinutes(-$maintainerWindowMinutes)
+        DirectTriggerActor   = [string]$env:BOOST_TRIGGER
+        DirectTriggerMessage = [string]$env:BOOST_MESSAGE
+        DirectTriggerSha     = [string]$env:BOOST_SHA
+        DirectTriggerRef     = [string]$env:BOOST_REF
+    }
+    [pscustomobject]@{
+        Desired  = $desired
+        Dispatch = Get-MarkedPushDispatch @splatDispatch
+    }
+}
+
+function Invoke-MarkedCiDispatch {
+    param(
+        [Parameter(Mandatory)]
+        $Request
+    )
+
+    $body = @{
+        ref    = $Request.Ref
+        inputs = @{ message = $Request.Message; pool_user = $Request.Actor }
+    } | ConvertTo-Json -Depth 4
+    $splatDispatch = @{
+        Method      = "Post"
+        Uri         = "https://api.github.com/repos/$repo/actions/workflows/ci-azure.yml/dispatches"
+        Headers     = @{
+            Accept                 = "application/vnd.github+json"
+            Authorization          = "Bearer $workflowToken"
+            "X-GitHub-Api-Version" = "2022-11-28"
+        }
+        Body        = $body
+        ContentType = "application/json"
+        TimeoutSec  = 30
+    }
+    $null = Invoke-WithRetry -Operation "dispatch marked CI for $($Request.Sha)" -Action {
+        Invoke-RestMethod @splatDispatch
+    }
+    Write-Host "dispatched marked CI ref=$($Request.Ref) sha=$($Request.Sha)"
 }
 
 function Assign-UnallocatedVms {
@@ -326,7 +365,11 @@ function Register-PoolVms {
 }
 
 try {
-    $desired = Get-DesiredPools
+    $demand = Get-RunnerDemand
+    if ($demand.Dispatch) {
+        Invoke-MarkedCiDispatch -Request $demand.Dispatch
+    }
+    $desired = $demand.Desired
     $desiredTotal = ($desired.Values | Measure-Object -Sum).Sum
     $state = Get-FleetState
 
@@ -422,6 +465,6 @@ try {
         Write-Host "pool=$pool desired=$($desired[$pool]) vms=$($poolVms.Count) online=$online busy=$busy"
     }
 } catch [TransientFleetException] {
-    Write-Warning "$($PSItem.Exception.Message) No further fleet changes will be attempted; a job-completion nudge or the hourly reconcile will retry."
+    Write-Warning "$($PSItem.Exception.Message) No further fleet changes will be attempted; a job-completion nudge or scheduled reconcile will retry."
     exit 0
 }

@@ -9,6 +9,7 @@
 #   - zero node-based actions on self-hosted jobs (git via run: steps only)
 #   - every job lands on a factory-fresh ephemeral VM; runner-reconcile deletes it after
 name: ci-azure
+run-name: "ci-azure [pool:${{ inputs.pool_user || github.actor }}] ${{ github.event.pull_request.title || github.event.head_commit.message || inputs.message }}"
 
 on:
   push:
@@ -42,6 +43,10 @@ on:
         required: false
         default: "Full-suite validation run"
 
+      pool_user:
+        description: "Runner pool owner for controller-dispatched CI"
+        required: false
+        default: ""
 permissions:
   contents: read
   actions: write
@@ -51,7 +56,7 @@ permissions:
 # while later builds wait in FIFO order. Pool-specific runner labels below prevent
 # an active maintainer or community lane from stealing another lane's workers.
 concurrency:
-  group: ci-azure-${{ github.actor == 'potatoqualitee' && 'potatoqualitee' || (github.actor == 'andreasjordan' && 'andreasjordan' || 'community') }}
+  group: ci-azure-${{ (inputs.pool_user || github.actor) == 'potatoqualitee' && 'potatoqualitee' || ((inputs.pool_user || github.actor) == 'andreasjordan' && 'andreasjordan' || ((inputs.pool_user || github.actor) == 'niphlod' && 'niphlod' || 'community')) }}
   queue: max
 
 env:
@@ -68,11 +73,39 @@ env:
   version: 2.1.${{ github.run_number }}
 
 jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      run-ci: ${{ steps.policy.outputs.run-ci }}
+    steps:
+      - name: Apply push CI policy
+        id: policy
+        env:
+          CI_ACTOR: ${{ inputs.pool_user || github.actor }}
+          CI_EVENT: ${{ github.event_name }}
+          CI_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || inputs.message }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_ci=true
+          if [ "$CI_ACTOR" = "potatoqualitee" ] && [ "$CI_EVENT" != "pull_request" ]; then
+            message_lower=$(printf '%s' "$CI_MESSAGE" | tr '[:upper:]' '[:lower:]')
+            if [[ "$message_lower" != *"[do ci]"* ]]; then
+              run_ci=false
+              echo "::notice::Unmarked potato push is not authorized to acquire Azure runners."
+            fi
+          fi
+          echo "run-ci=$run_ci" >> "$GITHUB_OUTPUT"
+
+
   test:
+    needs: authorize
+    if: needs.authorize.outputs.run-ci == 'true'
     runs-on:
       - self-hosted
       - dbatools-modern
-      - dbatools-pool-${{ github.actor == 'potatoqualitee' && 'potatoqualitee' || (github.actor == 'andreasjordan' && 'andreasjordan' || 'community') }}
+      - dbatools-pool-${{ (inputs.pool_user || github.actor) == 'potatoqualitee' && 'potatoqualitee' || ((inputs.pool_user || github.actor) == 'andreasjordan' && 'andreasjordan' || ((inputs.pool_user || github.actor) == 'niphlod' && 'niphlod' || 'community')) }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -234,4 +267,4 @@ jobs:
                   }
               }
           }
-          Write-Warning "Reconcile nudge skipped after bounded retries; the next job completion or hourly reconcile will recover it."
+          Write-Warning "Reconcile nudge skipped after bounded retries; the next job completion or scheduled reconcile will recover it."

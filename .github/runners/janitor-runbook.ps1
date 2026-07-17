@@ -11,11 +11,12 @@
 
     The kill rule is keyed to maintainer activity, not the clock:
 
-      - STALE (no push in the last 2 hours, checked through the anonymous GitHub
-        events API): no runner capacity is preserved; runners older than 2 hours
+      - STALE (no eligible activity, checked through anonymous GitHub APIs):
+        no runner capacity is preserved; runners older than 1 hour
         are deleted.
       - ACTIVE: ten runners are preserved for each active maintainer and five
-        for recent non-maintainer activity; excess runners older than 2 hours die.
+        while community CI is live or within its 20-minute grace period; excess
+        runners older than 1 hour die.
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
         apply to all capacity -- 3 hours on nights and weekends, 13 hours on
         weekday daytime (06-17 UTC).
@@ -40,28 +41,31 @@ $ErrorActionPreference = "Continue"
 Connect-AzAccount -Identity -WarningAction SilentlyContinue | Out-Null
 $rg = "dbatools-ci"
 $repo = "dataplat/dbatools"
-$maintainers = @("potatoqualitee", "andreasjordan")
-$activityWindowHours = 2
+$maintainers = @("potatoqualitee", "andreasjordan", "niphlod")
+$activityWindowMinutes = 60
+$communityGraceMinutes = 20
+$ciMarker = "[do ci]"
 $communityPoolSize = 5
 $maintainerPoolSize = 10
 $utcNow = (Get-Date).ToUniversalTime()
 
 # ---- recent pool activity (anonymous API, public repo) -------------------------
 $mode = "github-unreachable"
-$lastPushAgeHours = $null
+$lastActivityAgeHours = $null
 $activeMaintainers = @( )
 $communityActive = $false
-try {
-    $splatEvents = @{
-        Uri        = "https://api.github.com/repos/$repo/events?per_page=100"
+
+function Invoke-GitHubGet {
+    param([Parameter(Mandatory)][string]$Uri)
+
+    $splatRequest = @{
+        Uri        = $Uri
         Headers    = @{ "User-Agent" = "dbatools-ci-janitor" }
         TimeoutSec = 30
     }
-    $events = $null
     foreach ($attempt in 1..3) {
         try {
-            $events = Invoke-RestMethod @splatEvents
-            break
+            return Invoke-RestMethod @splatRequest
         } catch {
             if ($attempt -eq 3) {
                 throw
@@ -70,35 +74,102 @@ try {
             Start-Sleep -Seconds (3 * $attempt)
         }
     }
-    $pushes = @($events | Where-Object {
-            $PSItem.type -eq "PushEvent" -or
-            ($PSItem.type -eq "PullRequestEvent" -and $PSItem.payload.action -in @("opened", "reopened", "synchronize"))
-        })
-    if ($pushes) {
-        $lastPush = ($pushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
-        $lastPushAgeHours = ($utcNow - $lastPush).TotalHours
-        foreach ($maintainer in $maintainers) {
-            $maintainerPushes = @($pushes | Where-Object { $PSItem.actor.login -eq $maintainer })
-            if (-not $maintainerPushes) {
-                continue
-            }
-            $latestMaintainerPush = ($maintainerPushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
-            if (($utcNow - $latestMaintainerPush).TotalHours -le $activityWindowHours) {
-                $activeMaintainers += $maintainer
-            }
+}
+
+function Get-JanitorPushMessage {
+    param([Parameter(Mandatory)]$ActivityEvent)
+
+    $head = [string]$ActivityEvent.payload.head
+    $headCommit = @($ActivityEvent.payload.commits | Where-Object { [string]$PSItem.sha -eq $head } | Select-Object -First 1)
+    if ($headCommit) {
+        return [string]$headCommit[0].message
+    }
+    return ""
+}
+
+function Get-JanitorRunActor {
+    param([Parameter(Mandatory)]$Run)
+
+    if ([string]$Run.display_title -match "\[pool:([^\]]+)\]") {
+        return [string]$Matches[1]
+    }
+    return [string]$Run.actor.login
+}
+
+function Test-JanitorRunEligible {
+    param([Parameter(Mandatory)]$Run)
+
+    $actor = Get-JanitorRunActor -Run $Run
+    if ($actor -ne "potatoqualitee" -or [string]$Run.event -eq "pull_request") {
+        return $true
+    }
+    $message = "$([string]$Run.head_commit.message) $([string]$Run.display_title)"
+    return $message.IndexOf($ciMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+function Test-JanitorMaintainerEvent {
+    param(
+        [Parameter(Mandatory)]$ActivityEvent,
+        [Parameter(Mandatory)][string]$Maintainer,
+        [Parameter(Mandatory)][datetime]$Cutoff
+    )
+
+    if ([string]$ActivityEvent.actor.login -ne $Maintainer -or
+        ([datetime]::Parse($ActivityEvent.created_at)).ToUniversalTime() -le $Cutoff) {
+        return $false
+    }
+    if ([string]$ActivityEvent.type -eq "PullRequestEvent") {
+        return [string]$ActivityEvent.payload.action -in @("opened", "reopened", "synchronize")
+    }
+    if ([string]$ActivityEvent.type -ne "PushEvent") {
+        return $false
+    }
+    if ($Maintainer -ne "potatoqualitee") {
+        return $true
+    }
+    $message = Get-JanitorPushMessage -ActivityEvent $ActivityEvent
+    return $message.IndexOf($ciMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
+try {
+    $events = @(Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/events?per_page=100")
+    $runResponse = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/actions/workflows/ci-azure.yml/runs?per_page=100"
+    $runs = @($runResponse.workflow_runs | Where-Object { Test-JanitorRunEligible -Run $PSItem })
+    $liveRuns = @($runs | Where-Object { [string]$PSItem.status -ne "completed" })
+    $maintainerCutoff = $utcNow.AddMinutes(-$activityWindowMinutes)
+    $communityCutoff = $utcNow.AddMinutes(-$communityGraceMinutes)
+
+    foreach ($maintainer in $maintainers) {
+        $recentActivity = @($events | Where-Object {
+                Test-JanitorMaintainerEvent -ActivityEvent $PSItem -Maintainer $maintainer -Cutoff $maintainerCutoff
+            }).Count -gt 0
+        $liveCi = @($liveRuns | Where-Object { (Get-JanitorRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
+        if ($recentActivity -or $liveCi) {
+            $activeMaintainers += $maintainer
         }
-        $communityPushes = @($pushes | Where-Object { $PSItem.actor.login -notin $maintainers })
-        if ($communityPushes) {
-            $latestCommunityPush = ($communityPushes | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() } | Sort-Object -Descending)[0]
-            $communityActive = ($utcNow - $latestCommunityPush).TotalHours -le $activityWindowHours
-        }
-        if ($activeMaintainers.Count -gt 0 -or $communityActive) {
-            $mode = "active"
-        } else {
-            $mode = "stale"
-        }
+    }
+
+    $communityLive = @($liveRuns | Where-Object {
+            (Get-JanitorRunActor -Run $PSItem) -notin $maintainers
+        }).Count -gt 0
+    $communityRecent = @($runs | Where-Object {
+            (Get-JanitorRunActor -Run $PSItem) -notin $maintainers -and
+            [string]$PSItem.status -eq "completed" -and
+            ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $communityCutoff
+        }).Count -gt 0
+    $communityActive = $communityLive -or $communityRecent
+
+    $activityTimes = @(
+        $events | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() }
+        $runs | ForEach-Object { ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() }
+    )
+    if ($activityTimes) {
+        $lastActivity = @($activityTimes | Sort-Object -Descending)[0]
+        $lastActivityAgeHours = ($utcNow - $lastActivity).TotalHours
+    }
+    if ($activeMaintainers.Count -gt 0 -or $communityActive) {
+        $mode = "active"
     } else {
-        # no push within the last ~100 repo events: definitely stale
         $mode = "stale"
     }
 } catch {
@@ -112,16 +183,16 @@ if ($communityActive) {
 
 switch ($mode) {
     "active" {
-        $runnerMaxHours = 2
+        $runnerMaxHours = 1
         Write-Output "mode=active: maintainers=[$($activeMaintainers -join ', ')] community=$communityActive -- preserving $desiredPoolSize runners; excess runners past ${runnerMaxHours}h die"
     }
     "stale" {
-        $runnerMaxHours = 2
-        $ageText = "not in the last 100 events"
-        if ($null -ne $lastPushAgeHours) {
-            $ageText = "$([math]::Round($lastPushAgeHours, 1))h ago"
+        $runnerMaxHours = 1
+        $ageText = "not in the latest activity window"
+        if ($null -ne $lastActivityAgeHours) {
+            $ageText = "$([math]::Round($lastActivityAgeHours, 1))h ago"
         }
-        Write-Output "mode=stale: last push $ageText -- no capacity preserved; runners past ${runnerMaxHours}h die"
+        Write-Output "mode=stale: last activity $ageText -- no capacity preserved; runners past ${runnerMaxHours}h die"
     }
     default {
         $isWeekend = $utcNow.DayOfWeek -in @([DayOfWeek]::Saturday, [DayOfWeek]::Sunday)
@@ -199,8 +270,8 @@ foreach ($pip in Get-AzPublicIpAddress -ResourceGroupName $rg) {
 }
 
 $vmss = Get-AzVmss -ResourceGroupName $rg -VMScaleSetName "dbatools-runners" -ErrorAction SilentlyContinue
-if ($vmss -and $vmss.Sku.Capacity -gt 27) {
-    Write-Warning "VMSS capacity is $($vmss.Sku.Capacity) -- above any sane fleet size (MAX_RUNNERS is 25)"
+if ($vmss -and $vmss.Sku.Capacity -gt 35) {
+    Write-Warning "VMSS capacity is $($vmss.Sku.Capacity) -- above the hard fleet limit (MAX_RUNNERS is 35)"
 }
 
 if ($deleted -gt 0) {
