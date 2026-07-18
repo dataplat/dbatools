@@ -59,10 +59,13 @@ Describe $CommandName -Tag IntegrationTests {
             Query       = "ALTER DATABASE [$upgradeDb] SET COMPATIBILITY_LEVEL = 100; ALTER DATABASE [$upgradeDb] SET TARGET_RECOVERY_TIME = 60 SECONDS;"
         }
         $null = Invoke-DbaQuery @splatLower
+        # explicitly pin the "already current" db to the server level - model's compatibility is not
+        # guaranteed to equal the server level, so relying on the New-DbaDatabase default could make
+        # the skip test flaky on otherwise valid instances.
         $splatCurrent = @{
             SqlInstance = $TestConfig.InstanceSingle
             Database    = $currentDb
-            Query       = "ALTER DATABASE [$currentDb] SET TARGET_RECOVERY_TIME = 60 SECONDS;"
+            Query       = "ALTER DATABASE [$currentDb] SET COMPATIBILITY_LEVEL = $serverCompat; ALTER DATABASE [$currentDb] SET TARGET_RECOVERY_TIME = 60 SECONDS;"
         }
         $null = Invoke-DbaQuery @splatCurrent
 
@@ -101,10 +104,11 @@ Describe $CommandName -Tag IntegrationTests {
             $warn[0] | Should -BeLike "*You must specify either a SQL instance or pipe a database collection*"
         }
 
-        It "Warns when no database scope is specified" {
-            # -SqlInstance supplied but none of -Database/-ExcludeDatabase/-AllUserDatabases/pipe.
+        It "Warns when no database scope is specified, before connecting" {
+            # A non-connectable sentinel instance proves the scope guard runs BEFORE any connection:
+            # if a port connected first it would emit a connection failure, not the scope warning.
             $splatNoScope = @{
-                SqlInstance     = $TestConfig.InstanceSingle
+                SqlInstance     = "dbatoolsci_noconnect_$random"
                 WarningVariable = "warn"
                 WarningAction   = "SilentlyContinue"
             }
@@ -136,16 +140,24 @@ Describe $CommandName -Tag IntegrationTests {
             $upgraded.CurrentCompatibility | Should -Be $serverCompat
             $upgraded.Compatibility | Should -Be $serverCompat
             $upgraded.TargetRecoveryTime | Should -Be "No change"
-            # the explicitly skipped steps report "Skipped"
+            # the explicitly skipped steps report "Skipped"...
             $upgraded.UpdateUsage | Should -Be "Skipped"
             $upgraded.UpdateStats | Should -Be "Skipped"
             $upgraded.RefreshViews | Should -Be "Skipped"
+            # ...but -NoCheckDb leaves DataPurity UNSET (null), not "Skipped" - a source quirk that a
+            # port could silently "normalize" to "Skipped"; pin the current behavior.
+            $upgraded.DataPurity | Should -BeNullOrEmpty
             # the change actually persisted on the instance
             $liveLevel = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Databases[$upgradeDb].CompatibilityLevel.ToString().Replace("Version", "")
             $liveLevel | Should -Be $serverCompat
         }
 
         It "Skips a database already at the target level when -Force is not used" {
+            # precondition: the database really is at the server level (set explicitly in BeforeAll),
+            # so the skip is exercised for the right reason.
+            $preLevel = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Databases[$currentDb].CompatibilityLevel.ToString().Replace("Version", "")
+            $preLevel | Should -Be $serverCompat
+
             # levelOk and timeOk are both true, so the database is skipped and no object is emitted.
             $splatSkip = @{
                 SqlInstance   = $TestConfig.InstanceSingle
