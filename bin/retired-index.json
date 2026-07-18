@@ -119,6 +119,11 @@
     "retiredPath": "private/retired/ConvertTo-DbaTimeline.ps1",
     "flippedUtc": "2026-07-11T08:56:30Z"
   },
+  "ConvertTo-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/ConvertTo-DbaXESession.ps1",
+    "flippedUtc": "2026-07-18T13:57:29Z"
+  },
   "Copy-DbaAgentAlert": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Copy-DbaAgentAlert.ps1",
@@ -168,6 +173,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Copy-DbaRegServer.ps1",
     "flippedUtc": "2026-07-16T09:10:46Z"
+  },
+  "Copy-DbaXESessionTemplate": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Copy-DbaXESessionTemplate.ps1",
+    "flippedUtc": "2026-07-18T13:57:43Z"
   },
   "Disable-DbaDbEncryption": {
     "module": "dbatools.security",
@@ -268,6 +278,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Export-DbaUser.ps1",
     "flippedUtc": "2026-07-18T13:13:48Z"
+  },
+  "Export-DbaXESessionTemplate": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Export-DbaXESessionTemplate.ps1",
+    "flippedUtc": "2026-07-18T13:58:01Z"
   },
   "Find-DbaAgentJob": {
     "module": "dbatools.agent",
@@ -1519,10 +1534,20 @@
     "retiredPath": "private/retired/New-DbatoolsSupportPackage.ps1",
     "flippedUtc": "2026-07-12T08:13:55Z"
   },
+  "Read-DbaAuditFile": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Read-DbaAuditFile.ps1",
+    "flippedUtc": "2026-07-18T13:58:23Z"
+  },
   "Read-DbaBackupHeader": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
     "flippedUtc": "2026-07-07T10:20:06Z"
+  },
+  "Read-DbaXEFile": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Read-DbaXEFile.ps1",
+    "flippedUtc": "2026-07-18T13:58:37Z"
   },
   "Register-DbatoolsConfig": {
     "module": "dbatools.core",
@@ -1703,6 +1728,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaSpn.ps1",
     "flippedUtc": "2026-07-10T20:34:30Z"
+  },
+  "Remove-DbaTrace": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Remove-DbaTrace.ps1",
+    "flippedUtc": "2026-07-18T13:59:21Z"
   },
   "Rename-DbaDatabase": {
     "module": "dbatools.core",
@@ -1889,6 +1919,16 @@
     "retiredPath": "private/retired/Start-DbaService.ps1",
     "flippedUtc": "2026-07-17T01:46:29Z"
   },
+  "Start-DbaTrace": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Start-DbaTrace.ps1",
+    "flippedUtc": "2026-07-18T13:59:35Z"
+  },
+  "Start-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Start-DbaXESession.ps1",
+    "flippedUtc": "2026-07-18T14:00:01Z"
+  },
   "Stop-DbaAgentJob": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Stop-DbaAgentJob.ps1",
@@ -1918,6 +1958,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Stop-DbaService.ps1",
     "flippedUtc": "2026-07-17T09:14:20Z"
+  },
+  "Stop-DbaTrace": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Stop-DbaTrace.ps1",
+    "flippedUtc": "2026-07-18T14:00:49Z"
   },
   "Sync-DbaLoginPassword": {
     "module": "dbatools.security",
