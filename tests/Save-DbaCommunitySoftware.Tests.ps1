@@ -33,8 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
     # any download. This leg needs no SQL instance. WhatIf is passed as belt-and-braces on this
     # file-writing command, though the guard returns ahead of any write.
     BeforeAll {
-        $random = Get-Random
-        $missingLocalFile = Join-Path $env:TEMP "dbatoolsci_missing_$random.zip"
+        # a GUID guarantees a globally unique name, so no leftover or independently created file
+        # can pre-exist at this path and silently satisfy the guard
+        $missingLocalFile = Join-Path $env:TEMP "dbatoolsci_missing_$([guid]::NewGuid()).zip"
         # [char]39 supplies the apostrophe the source message contains (the contraction in "does
         # not exist") without putting a literal apostrophe in the test source
         $apostrophe = [char]39
@@ -42,6 +43,9 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Guarding a missing LocalFile" {
         It "Warns and returns nothing when the supplied LocalFile does not exist" {
+            # precondition: the path must genuinely not exist for this to test the guard
+            Test-Path -Path $missingLocalFile | Should -BeFalse
+
             $splatMissing = @{
                 Software        = "MaintenanceSolution"
                 LocalFile       = $missingLocalFile
