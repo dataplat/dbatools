@@ -71,7 +71,9 @@
         'Get-DbaDbUser',
         'Get-DbaDbUserDefinedTableType',
         'Get-DbaDbView',
-        'Get-DbaDependency'
+        'Get-DbaDependency',
+        'Get-DbaExtendedProperty',
+        'Get-DbaFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

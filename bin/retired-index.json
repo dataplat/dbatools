@@ -829,6 +829,11 @@
     "retiredPath": "private/retired/Get-DbaExecutionPlan.ps1",
     "flippedUtc": "2026-07-13T12:35:25Z"
   },
+  "Get-DbaExtendedProperty": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaExtendedProperty.ps1",
+    "flippedUtc": "2026-07-18T06:40:11Z"
+  },
   "Get-DbaExternalProcess": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaExternalProcess.ps1",
@@ -838,6 +843,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaFeature.ps1",
     "flippedUtc": "2026-07-09T20:23:10Z"
+  },
+  "Get-DbaFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaFile.ps1",
+    "flippedUtc": "2026-07-18T06:40:25Z"
   },
   "Get-DbaFirewallRule": {
     "module": "dbatools.computer",
