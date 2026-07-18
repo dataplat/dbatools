@@ -28,7 +28,13 @@
         'Remove-DbaTrace',
         'Start-DbaTrace',
         'Start-DbaXESession',
-        'Stop-DbaTrace'
+        'Stop-DbaTrace',
+        'Copy-DbaXESession',
+        'Export-DbaXESession',
+        'Import-DbaXESessionTemplate',
+        'Invoke-DbaXEReplay',
+        'Read-DbaTraceFile',
+        'Watch-DbaXESession'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

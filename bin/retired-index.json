@@ -174,6 +174,11 @@
     "retiredPath": "private/retired/Copy-DbaRegServer.ps1",
     "flippedUtc": "2026-07-16T09:10:46Z"
   },
+  "Copy-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Copy-DbaXESession.ps1",
+    "flippedUtc": "2026-07-18T15:20:54Z"
+  },
   "Copy-DbaXESessionTemplate": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Copy-DbaXESessionTemplate.ps1",
@@ -278,6 +283,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Export-DbaUser.ps1",
     "flippedUtc": "2026-07-18T13:13:48Z"
+  },
+  "Export-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Export-DbaXESession.ps1",
+    "flippedUtc": "2026-07-18T15:21:24Z"
   },
   "Export-DbaXESessionTemplate": {
     "module": "dbatools.xevents",
@@ -1309,6 +1319,11 @@
     "retiredPath": "private/retired/Import-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T01:04:47Z"
   },
+  "Import-DbaXESessionTemplate": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Import-DbaXESessionTemplate.ps1",
+    "flippedUtc": "2026-07-18T15:21:56Z"
+  },
   "Install-DbaAgentAdminAlert": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Install-DbaAgentAdminAlert.ps1",
@@ -1388,6 +1403,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Invoke-DbatoolsRenameHelper.ps1",
     "flippedUtc": "2026-07-12T04:01:04Z"
+  },
+  "Invoke-DbaXEReplay": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Invoke-DbaXEReplay.ps1",
+    "flippedUtc": "2026-07-18T15:22:15Z"
   },
   "Join-DbaPath": {
     "module": "dbatools.core",
@@ -1548,6 +1568,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Read-DbaBackupHeader.ps1",
     "flippedUtc": "2026-07-07T10:20:06Z"
+  },
+  "Read-DbaTraceFile": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Read-DbaTraceFile.ps1",
+    "flippedUtc": "2026-07-18T15:22:33Z"
   },
   "Read-DbaXEFile": {
     "module": "dbatools.xevents",
@@ -2168,6 +2193,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Watch-DbaDbLogin.ps1",
     "flippedUtc": "2026-07-14T22:22:28Z"
+  },
+  "Watch-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Watch-DbaXESession.ps1",
+    "flippedUtc": "2026-07-18T15:22:53Z"
   },
   "Write-DbaDbTableData": {
     "module": "dbatools.core",
