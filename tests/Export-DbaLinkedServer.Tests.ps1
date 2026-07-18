@@ -288,7 +288,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Passthru        = $true
             }
             $joined = (Export-DbaLinkedServer @splatMulti) -join [Environment]::NewLine
-            ([regex]::Matches($joined, "sp_addlinkedserver")).Count | Should -BeGreaterOrEqual 2
+            ([regex]::Matches($joined, "sp_addlinkedserver")).Count | Should -Be 2
         }
 
         It "Exports nothing and reports Nothing to export when the named linked server does not exist" {
