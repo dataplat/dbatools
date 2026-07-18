@@ -36,10 +36,6 @@ Describe $CommandName -Tag IntegrationTests {
     # proceed and returns. The guard runs before any connection (probe-verified). WhatIf is passed
     # as belt-and-braces on this destructive (drop master key) command, though the guard returns
     # ahead of any gated action.
-    BeforeAll {
-        $random = Get-Random
-    }
-
     Context "Guarding the database scope" {
         It "Warns once and returns nothing when SqlInstance is supplied without Database, ExcludeDatabase, or All" {
             $splatNoScope = @{
