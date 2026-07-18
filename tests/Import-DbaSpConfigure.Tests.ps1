@@ -155,7 +155,9 @@ Describe $CommandName -Tag IntegrationTests {
                 # and the restart warning still fires.
                 $editionRefusals = @($warn | Where-Object { "$PSItem" -match "failed. Feature may not be supported" })
                 foreach ($refusal in $editionRefusals) {
-                    "$refusal" | Should -Match "not supported in this edition"
+                    # SQL Server words the refusal two ways: "are not supported in this
+                    # edition" (value change) and "is not supported by this edition" (option).
+                    "$refusal" | Should -Match "not supported (in|by) this edition"
                 }
                 # every warning that is not an edition refusal must be the restart notice - any
                 # other warning class fails the round-trip
