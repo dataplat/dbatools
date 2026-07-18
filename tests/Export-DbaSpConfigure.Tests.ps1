@@ -63,14 +63,17 @@ Describe $CommandName -Tag IntegrationTests {
             Test-Path -Path $filePath | Should -BeTrue
 
             $content = Get-Content -Path $filePath -Raw
-            # header line enables advanced options (regex dot stands in for the single quotes,
-            # which the style guide forbids in source); note the source emits two spaces before
-            # RECONFIGURE.
-            $content | Should -Match "EXEC sp_configure . show advanced options . , 1;"
-            # every configuration property is scripted, so a standard setting is always present
-            $content | Should -Match "max degree of parallelism"
-            # header plus one line per configuration property means many sp_configure statements
-            ([regex]::Matches($content, "EXEC sp_configure")).Count | Should -BeGreaterThan 5
+            # complete header line (regex dot stands in for the single quotes the style guide
+            # forbids in source); the source emits two spaces before RECONFIGURE.
+            $content | Should -Match "EXEC sp_configure .show advanced options. , 1;  RECONFIGURE WITH OVERRIDE"
+            # every configuration property is scripted with its exact display name and value; SMO
+            # exposes the full Properties collection regardless of the show-advanced-options state,
+            # so build each expected statement from a fresh read and confirm it is present.
+            $configServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            foreach ($prop in $configServer.Configuration.Properties) {
+                $expectedLine = "EXEC sp_configure " + [char]39 + $prop.DisplayName + [char]39 + " , " + $prop.ConfigValue + ";"
+                $content | Should -Match ([regex]::Escape($expectedLine))
+            }
         }
 
         It "Auto-generates a .sql file name under -Path" {
@@ -85,26 +88,39 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-Content -Path $result.FullName -Raw) | Should -Match "EXEC sp_configure"
         }
 
-        It "Leaves the show advanced options setting unchanged after the export" {
-            # The command toggles advanced options on to read every property, then restores the
-            # original value - so the instance-level setting is the same before and after.
-            $before = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.ShowAdvancedOptions.ConfigValue
-            $restorePath = Join-Path -Path $exportDir -ChildPath "spcfg_restore_$random.sql"
-            $null = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $restorePath
-            $after = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.ShowAdvancedOptions.ConfigValue
-            $after | Should -Be $before
+        It "Restores show advanced options to 0 and emits the reset statements when it started disabled" {
+            # Arrange advanced options OFF so the toggle-and-restore branch actually runs (asserting
+            # before==after is vacuous if the setting already started enabled). Restore the original
+            # value in finally so the shared instance is never left mutated.
+            $configServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $original = $configServer.Configuration.ShowAdvancedOptions.ConfigValue
+            try {
+                $configServer.Configuration.ShowAdvancedOptions.ConfigValue = 0
+                $configServer.Configuration.Alter($true)
+
+                $togglePath = Join-Path -Path $exportDir -ChildPath "spcfg_toggle_$random.sql"
+                $null = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $togglePath
+
+                # the command put the setting back to 0 after reading every property
+                $after = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.ShowAdvancedOptions.ConfigValue
+                [int]$after | Should -Be 0
+
+                # the trailing reset statements are emitted only when advanced options started at 0
+                $content = Get-Content -Path $togglePath -Raw
+                $content | Should -Match "EXEC sp_configure .show advanced options. , 0;"
+                $content | Should -Match "RECONFIGURE WITH OVERRIDE"
+            } finally {
+                $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $restoreServer.Configuration.ShowAdvancedOptions.ConfigValue = [int]$original
+                $restoreServer.Configuration.Alter($true)
+            }
         }
 
-        It "Returns one file per value supplied to -SqlInstance" {
-            # Passing the same instance twice exercises the foreach($instance in $SqlInstance) loop
-            # without needing a second lab instance: one FileInfo must come back per element.
-            $splatMulti = @{
-                SqlInstance = @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle)
-                Path        = $exportDir
-            }
-            $result = @(Export-DbaSpConfigure @splatMulti)
-            $result.Count | Should -Be 2
-            $result | ForEach-Object { $PSItem | Should -BeOfType System.IO.FileInfo }
-        }
+        # NOTE: one-file-per-instance across MULTIPLE distinct instances is intentionally not
+        # asserted. Get-ExportFilePath auto-names as "<server>-<timestamp>-spconfigure.sql", so
+        # passing the same instance twice would collide on an identical same-second path and could
+        # not distinguish one-file-per-instance from an overwrite. Proving it needs two distinct
+        # live instances, which this feeder's single-instance (InstanceSingle) lab does not provide
+        # - DEFERRED-TO-GATE for an integrator with a multi-instance lab.
     }
 }
