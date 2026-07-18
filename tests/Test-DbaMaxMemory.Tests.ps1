@@ -187,11 +187,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         # Read-only analysis command - no server state is changed, so a live instance is all that
-        # is needed. Compute once and reuse across the shape/algorithm assertions.
-        $result = Test-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        # is needed. Compute once and reuse across the shape/algorithm assertions. try/finally makes
+        # sure the forced EnableException is removed even if the analysis call throws.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        try {
+            $result = Test-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
+        } finally {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
     }
 
     Context "Analyzing a live instance" {
@@ -210,6 +214,15 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Server | Should -BeOfType Microsoft.SqlServer.Management.Smo.Server
         }
 
+        It "Maps the identity columns from the connected Server object" {
+            # ComputerName/InstanceName/SqlInstance are sourced from the SMO Server's
+            # ComputerName/ServiceName/DomainInstanceName respectively - assert the mapping, not
+            # just that the columns are non-null.
+            $result.ComputerName | Should -Be $result.Server.ComputerName
+            $result.InstanceName | Should -Be $result.Server.ServiceName
+            $result.SqlInstance | Should -Be $result.Server.DomainInstanceName
+        }
+
         It "Reports Total and MaxValue straight from Get-DbaMaxMemory" {
             # both figures come from Get-DbaMaxMemory, so independently confirm the source values
             # rather than trusting the numbers the command handed back.
@@ -221,14 +234,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Derives InstanceCount from running Engine services with a fallback of 1" {
             # Independently reproduce the service-discovery count (running Engine services grouped by
             # instance) with the documented default-to-1 fallback, instead of trusting the returned
-            # value - so the algorithm test below rests on a verified InstanceCount.
-            $expectedCount = 1
-            try {
-                $services = Get-DbaService -ComputerName $TestConfig.InstanceSingle -EnableException
-                $discovered = ($services | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq "Engine" | Group-Object InstanceName | Measure-Object Count).Count
-                if ($discovered -gt 0) { $expectedCount = $discovered }
-            } catch {
+            # value - so the algorithm test below rests on a verified InstanceCount. On Linux/macOS
+            # the command never queries services and hardcodes 1, so mirror that unconditionally.
+            if ($IsLinux -or $IsMacOS) {
                 $expectedCount = 1
+            } else {
+                $expectedCount = 1
+                try {
+                    $services = Get-DbaService -ComputerName $TestConfig.InstanceSingle -EnableException
+                    $discovered = ($services | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq "Engine" | Group-Object InstanceName | Measure-Object Count).Count
+                    if ($discovered -gt 0) { $expectedCount = $discovered }
+                } catch {
+                    $expectedCount = 1
+                }
             }
             $result.InstanceCount | Should -Be $expectedCount
         }
