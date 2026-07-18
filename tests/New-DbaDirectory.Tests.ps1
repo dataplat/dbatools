@@ -27,34 +27,46 @@ Describe $CommandName -Tag UnitTests {
 #>
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # save the prior EnableException default and restore it in finally, so a setup failure never
+        # leaves the forced value enabled for later describes.
+        $priorEnableException = $PSDefaultParameterValues["*-Dba*:EnableException"]
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        try {
+            # New-DbaDirectory creates the folder on the SQL Server machine via xp_create_subdir,
+            # using the SQL service account. The instance backup directory is writable by that
+            # account, so new subfolders under it are a safe target. Test-DbaPath is the command's
+            # own existence check.
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $baseDir = $server.BackupDirectory
+            $random = Get-Random
+            $happyDir = "$baseDir\dbatoolsci_nd_happy_$random"
+            $existDir = "$baseDir\dbatoolsci_nd_exist_$random"
+            $whatIfDir = "$baseDir\dbatoolsci_nd_whatif_$random"
 
-        # New-DbaDirectory creates the folder on the SQL Server machine via xp_create_subdir, using
-        # the SQL service account. The instance backup directory is writable by that account, so new
-        # subfolders under it are a safe target. Test-DbaPath is the command's own existence check.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-        $baseDir = $server.BackupDirectory
-        $random = Get-Random
-        $happyDir = "$baseDir\dbatoolsci_nd_happy_$random"
-        $existDir = "$baseDir\dbatoolsci_nd_exist_$random"
-        $whatIfDir = "$baseDir\dbatoolsci_nd_whatif_$random"
-
-        # pre-create the "already exists" target through the command itself so the exists-guard test
-        # has a real server-side directory regardless of where the instance lives.
-        $splatPre = @{
-            SqlInstance = $TestConfig.InstanceSingle
-            Path        = $existDir
-            Confirm     = $false
+            # pre-create the "already exists" target through the command itself so the exists-guard
+            # test has a real server-side directory regardless of where the instance lives.
+            $splatPre = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Path        = $existDir
+                Confirm     = $false
+            }
+            $null = New-DbaDirectory @splatPre
+        } finally {
+            if ($null -ne $priorEnableException) {
+                $PSDefaultParameterValues["*-Dba*:EnableException"] = $priorEnableException
+            } else {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
         }
-        $null = New-DbaDirectory @splatPre
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        # the folders live on the SQL Server host; on the (local) lab instance this removes them.
+        # These folders live on the SQL Server host. When the instance is local (as on the lab gate)
+        # Remove-Item cleans them; the Test-Path guard means only paths actually on the test runner
+        # are touched. There is no Remove-DbaDirectory counterpart, so for a genuinely remote instance
+        # the empty test folders are a known, harmless residue on that host.
         foreach ($dir in $happyDir, $existDir, $whatIfDir) {
-            if ($dir) {
+            if ($dir -and (Test-Path -Path $dir)) {
                 Remove-Item -Path $dir -Recurse -Force -ErrorAction SilentlyContinue
             }
         }
@@ -94,10 +106,17 @@ Describe $CommandName -Tag IntegrationTests {
             $result | Should -BeNullOrEmpty
             $warn.Count | Should -Be 1
             $warn[0] | Should -BeLike "*$existDir already exists*"
+            # the guard must not delete the existing directory - it still exists afterward
+            Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path $existDir | Should -BeTrue
         }
 
         It "Creates nothing under -WhatIf" {
-            $result = New-DbaDirectory -SqlInstance $TestConfig.InstanceSingle -Path $whatIfDir -WhatIf
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Path        = $whatIfDir
+                WhatIf      = $true
+            }
+            $result = New-DbaDirectory @splatWhatIf
             $result | Should -BeNullOrEmpty
             # ShouldProcess was declined, so the directory was never created
             Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path $whatIfDir | Should -BeFalse
