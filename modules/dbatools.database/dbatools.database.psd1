@@ -92,7 +92,8 @@
         'Test-DbaDbCollation',
         'Set-DbaDbFileGrowth',
         'Show-DbaDbList',
-        'Set-DbaDbFileGroup'
+        'Set-DbaDbFileGroup',
+        'Set-DbaDbDataClassification'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

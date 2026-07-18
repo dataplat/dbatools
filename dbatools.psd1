@@ -313,7 +313,6 @@
         'Set-DbaAgentOperator',
         'Remove-DbaExtendedProperty',
         'Set-DbaExtendedProperty',
-        'Set-DbaDbDataClassification',
         'Remove-DbaDbDataClassification',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
