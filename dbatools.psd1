@@ -304,7 +304,6 @@
         'Test-DbaAgentJobOwner',
         'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
-        'Test-DbaDbCollation',
         'Test-DbaDbDataGeneratorConfig',
         'Test-DbaDbDataMaskingConfig',
         'Test-DbaDbLogShipStatus',
