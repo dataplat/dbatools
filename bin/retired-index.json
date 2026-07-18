@@ -1,4 +1,19 @@
 {
+  "Add-DbaAgDatabase": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Add-DbaAgDatabase.ps1",
+    "flippedUtc": "2026-07-18T17:55:12Z"
+  },
+  "Add-DbaAgListener": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Add-DbaAgListener.ps1",
+    "flippedUtc": "2026-07-18T17:56:07Z"
+  },
+  "Add-DbaAgReplica": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Add-DbaAgReplica.ps1",
+    "flippedUtc": "2026-07-18T17:56:49Z"
+  },
   "Add-DbaComputerCertificate": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Add-DbaComputerCertificate.ps1",
@@ -8,6 +23,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Add-DbaDbFile.ps1",
     "flippedUtc": "2026-07-17T16:06:51Z"
+  },
+  "Add-DbaDbMirrorMonitor": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Add-DbaDbMirrorMonitor.ps1",
+    "flippedUtc": "2026-07-18T17:57:24Z"
   },
   "Add-DbaDbRoleMember": {
     "module": "dbatools.database",
@@ -93,6 +113,26 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Compare-DbaAgReplicaCredential.ps1",
     "flippedUtc": "2026-07-18T03:22:11Z"
+  },
+  "Compare-DbaAgReplicaLogin": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAgReplicaLogin.ps1",
+    "flippedUtc": "2026-07-18T17:57:37Z"
+  },
+  "Compare-DbaAgReplicaOperator": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAgReplicaOperator.ps1",
+    "flippedUtc": "2026-07-18T17:57:50Z"
+  },
+  "Compare-DbaAgReplicaSync": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAgReplicaSync.ps1",
+    "flippedUtc": "2026-07-18T17:58:02Z"
+  },
+  "Compare-DbaAvailabilityGroup": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-07-18T17:58:52Z"
   },
   "Compare-DbaDbSchema": {
     "module": "dbatools.database",
@@ -184,6 +224,11 @@
     "retiredPath": "private/retired/Copy-DbaXESessionTemplate.ps1",
     "flippedUtc": "2026-07-18T13:57:43Z"
   },
+  "Disable-DbaAgHadr": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Disable-DbaAgHadr.ps1",
+    "flippedUtc": "2026-07-18T17:59:06Z"
+  },
   "Disable-DbaDbEncryption": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Disable-DbaDbEncryption.ps1",
@@ -203,6 +248,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Dismount-DbaDatabase.ps1",
     "flippedUtc": "2026-07-17T17:07:26Z"
+  },
+  "Enable-DbaAgHadr": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Enable-DbaAgHadr.ps1",
+    "flippedUtc": "2026-07-18T17:59:20Z"
   },
   "Enable-DbaDbEncryption": {
     "module": "dbatools.security",

@@ -42,7 +42,17 @@
         'Get-DbaEndpoint',
         'Invoke-DbaAgFailover',
         'Grant-DbaAgPermission',
-        'Invoke-DbaDbLogShipping'
+        'Invoke-DbaDbLogShipping',
+        'Add-DbaAgDatabase',
+        'Add-DbaAgListener',
+        'Add-DbaAgReplica',
+        'Add-DbaDbMirrorMonitor',
+        'Compare-DbaAgReplicaLogin',
+        'Compare-DbaAgReplicaOperator',
+        'Compare-DbaAgReplicaSync',
+        'Compare-DbaAvailabilityGroup',
+        'Disable-DbaAgHadr',
+        'Enable-DbaAgHadr'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
