@@ -75,6 +75,24 @@ Describe $CommandName -Tag IntegrationTests {
         $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $backupPath -ItemType Directory
 
+        # Snapshot the master-database certificates and master key so AfterAll can drop ONLY what this
+        # suite creates. Start-DbaDbEncryption provisions a certificate in the master database when none
+        # exists (New-DbaDbCertificate defaults the certificate name to the database name, so it is
+        # literally named "master") and nothing dropped it - stray master-named certificates on the
+        # instance are the residue of prior runs of this suite.
+        $preExistingMasterCerts = (Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master).Name
+        $preExistingMasterKey = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master
+
+        # Name the encryptor explicitly. Auto-discovery picks up every non-system certificate in the
+        # master database, and instances carrying more than one - lab instances have permanent fixture
+        # certificates - either stop with "More than one certificate found" or, on the -Parallel path
+        # which has no such guard, pass an array to a string parameter and fail the bind.
+        $encryptorName = "dbatoolsci_startdbencryption_$(Get-Random)"
+        if (-not $preExistingMasterKey) {
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master -SecurePassword (ConvertTo-SecureString "GoodPass1234!" -AsPlainText -Force)
+        }
+        $null = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master -Name $encryptorName
+
         # Explain what needs to be set up for the test:
         # To test database encryption, we need multiple test databases.
 
@@ -97,6 +115,17 @@ Describe $CommandName -Tag IntegrationTests {
             $testDatabases | Remove-DbaDatabase
         }
 
+        # Drop only the master-database certificates this suite's runs created - never pre-existing
+        # ones (the databases and their encryption keys are already gone, so the certificates are
+        # unreferenced). Then drop the master key only if the suite created it.
+        $newMasterCerts = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -NotIn $preExistingMasterCerts
+        if ($newMasterCerts) {
+            $newMasterCerts | Remove-DbaDbCertificate
+        }
+        if (-not $preExistingMasterKey) {
+            Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master | Remove-DbaDbMasterKey
+        }
+
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
 
@@ -112,6 +141,7 @@ Describe $CommandName -Tag IntegrationTests {
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd
                 BackupPath              = $backupPath
+                EncryptorName           = $encryptorName
             }
             $results = Start-DbaDbEncryption @splatEncryption
             $WarnVar | Should -BeNullOrEmpty
@@ -157,6 +187,7 @@ Describe $CommandName -Tag IntegrationTests {
                 BackupSecurePassword    = $passwd
                 BackupPath              = $parallelBackupPath
                 Parallel                = $true
+                EncryptorName           = $encryptorName
             }
             # Warnings during parallel execution are not catched in $WarnVar as they are in different runspaces
             $results = Start-DbaDbEncryption @splatParallelEncryption

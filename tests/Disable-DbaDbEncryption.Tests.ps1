@@ -41,7 +41,9 @@ Describe $CommandName -Tag IntegrationTests {
         $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
-        $testDb | New-DbaDbEncryptionKey -Force
+        # Name the encryptor explicitly: the default lookup errors when the master database carries
+        # more than one certificate, and lab instances have permanent fixture certificates.
+        $testDb | New-DbaDbEncryptionKey -Force -EncryptorName $mastercert.Name
         $testDb | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
     }
 

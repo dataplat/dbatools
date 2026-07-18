@@ -54,7 +54,9 @@ Describe $CommandName -Tag IntegrationTests {
         $db = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
-        $db | New-DbaDbEncryptionKey -Force
+        # Name the encryptor explicitly: the default lookup errors when the master database carries
+        # more than one certificate, and lab instances have permanent fixture certificates.
+        $db | New-DbaDbEncryptionKey -Force -EncryptorName $mastercert.Name
         $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -113,7 +115,9 @@ Describe $CommandName -Tag IntegrationTests {
                 $parallelDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
                 $parallelDb | New-DbaDbMasterKey -SecurePassword $passwd
                 $parallelDb | New-DbaDbCertificate
-                $parallelDb | New-DbaDbEncryptionKey -Force
+                # Name the encryptor explicitly: the default lookup errors when the master database
+                # carries more than one certificate, and lab instances have permanent fixture certificates.
+                $parallelDb | New-DbaDbEncryptionKey -Force -EncryptorName $parallelMastercert.Name
                 $parallelDb | Enable-DbaDbEncryption -EncryptorName $parallelMastercert.Name -Force
                 $parallelDatabases += $parallelDb
             }

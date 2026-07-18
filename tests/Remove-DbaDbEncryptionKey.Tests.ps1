@@ -38,7 +38,9 @@ Describe $CommandName -Tag IntegrationTests {
         $testDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDatabase | New-DbaDbMasterKey -SecurePassword $encryptionPasswd
         $testDatabase | New-DbaDbCertificate
-        $testDbEncryptionKey = $testDatabase | New-DbaDbEncryptionKey -Force
+        # Name the encryptor explicitly: the default lookup errors when the master database carries
+        # more than one certificate, and lab instances have permanent fixture certificates.
+        $testDbEncryptionKey = $testDatabase | New-DbaDbEncryptionKey -Force -EncryptorName $masterCertExists.Name
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -66,7 +68,7 @@ Describe $CommandName -Tag IntegrationTests {
             $testDatabase | Get-DbaDbEncryptionKey | Should -Be $null
         }
         It "should remove encryption key on a database" {
-            $null = $testDatabase | New-DbaDbEncryptionKey -Force
+            $null = $testDatabase | New-DbaDbEncryptionKey -Force -EncryptorName $masterCertExists.Name
             $results = Remove-DbaDbEncryptionKey -SqlInstance $TestConfig.InstanceSingle -Database $testDatabase.Name
             $results.Status | Should -Be "Success"
             $testDatabase.Refresh()

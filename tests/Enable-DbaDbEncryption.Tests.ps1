@@ -43,7 +43,9 @@ Describe $CommandName -Tag IntegrationTests {
         $testDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
         $testDb | New-DbaDbMasterKey -SecurePassword $passwd
         $testDb | New-DbaDbCertificate
-        $testDb | New-DbaDbEncryptionKey -Force
+        # Name the encryptor explicitly: the default lookup errors when the master database carries
+        # more than one certificate, and lab instances have permanent fixture certificates.
+        $testDb | New-DbaDbEncryptionKey -Force -EncryptorName $mastercert.Name
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
