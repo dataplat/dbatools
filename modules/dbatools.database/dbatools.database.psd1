@@ -52,7 +52,11 @@
         'Get-DbaDbForeignKey',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
-        'Get-DbaDbQueryStoreOption'
+        'Get-DbaDbQueryStoreOption',
+        'Get-DbaDbObjectTrigger',
+        'Get-DbaDbOrphanUser',
+        'Get-DbaDbRole',
+        'Get-DbaDbRoleMember'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

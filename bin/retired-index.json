@@ -619,6 +619,16 @@
     "retiredPath": "private/retired/Get-DbaDbMemoryUsage.ps1",
     "flippedUtc": "2026-07-13T10:01:59Z"
   },
+  "Get-DbaDbObjectTrigger": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbObjectTrigger.ps1",
+    "flippedUtc": "2026-07-18T02:55:16Z"
+  },
+  "Get-DbaDbOrphanUser": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbOrphanUser.ps1",
+    "flippedUtc": "2026-07-18T02:55:36Z"
+  },
   "Get-DbaDbPageInfo": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbPageInfo.ps1",
@@ -638,6 +648,16 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaDbQueryStoreOption.ps1",
     "flippedUtc": "2026-07-18T02:35:52Z"
+  },
+  "Get-DbaDbRole": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbRole.ps1",
+    "flippedUtc": "2026-07-18T02:55:52Z"
+  },
+  "Get-DbaDbRoleMember": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbRoleMember.ps1",
+    "flippedUtc": "2026-07-18T02:56:11Z"
   },
   "Get-DbaDbSpace": {
     "module": "dbatools.performance",
