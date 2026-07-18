@@ -1264,6 +1264,11 @@
     "retiredPath": "private/retired/Grant-DbaAgPermission.ps1",
     "flippedUtc": "2026-07-18T06:45:03Z"
   },
+  "Import-DbaBinaryFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Import-DbaBinaryFile.ps1",
+    "flippedUtc": "2026-07-18T08:25:34Z"
+  },
   "Import-DbaCsv": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Import-DbaCsv.ps1",
@@ -1308,6 +1313,11 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Invoke-DbaAgFailover.ps1",
     "flippedUtc": "2026-07-18T06:44:50Z"
+  },
+  "Invoke-DbaDbLogShipping": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Invoke-DbaDbLogShipping.ps1",
+    "flippedUtc": "2026-07-18T08:26:07Z"
   },
   "Invoke-DbaDiagnosticQuery": {
     "module": "dbatools.performance",

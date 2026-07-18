@@ -80,7 +80,8 @@
         'Get-DbaRandomizedType',
         'Get-DbaRandomizedValue',
         'Get-DbaSchemaChangeHistory',
-        'Get-DbaSuspectPage'
+        'Get-DbaSuspectPage',
+        'Import-DbaBinaryFile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
