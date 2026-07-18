@@ -84,11 +84,16 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Omits the excluded database with -ExcludeDatabase" {
+            # Request master AND the test db while excluding the test db: exactly master must come
+            # back, so the assertion cannot pass vacuously on an empty result.
             $splatExclude = @{
                 SqlInstance     = $TestConfig.InstanceSingle
+                Database        = @("master", $testDb)
                 ExcludeDatabase = $testDb
             }
-            $result = Get-DbaDbQueryStoreOption @splatExclude
+            $result = @(Get-DbaDbQueryStoreOption @splatExclude)
+            $result.Count | Should -Be 1
+            $result[0].Database | Should -Be "master"
             $result.Database | Should -Not -Contain $testDb
         }
 
@@ -112,7 +117,9 @@ Describe $CommandName -Tag IntegrationTests {
                 )
             }
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps | Should -BeNullOrEmpty
+            # -SyncWindow 0 makes the comparison positional, so a reordered display view (not just a
+            # missing/extra column) is also caught.
+            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps -SyncWindow 0 | Should -BeNullOrEmpty
         }
     }
 }
