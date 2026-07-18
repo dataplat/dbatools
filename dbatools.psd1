@@ -264,7 +264,6 @@
         'Remove-DbaDbData',
         'Remove-DbaDbFileGroup',
         'Remove-DbaDbLogShipping',
-        'Remove-DbaDbMasterKey',
         'Remove-DbaDbMirror',
         'Remove-DbaDbMirrorMonitor',
         'Remove-DbaDbOrphanUser',
@@ -278,11 +277,8 @@
         'Remove-DbaDbUser',
         'Remove-DbaDbView',
         'Remove-DbaEndpoint',
-        'Remove-DbaLogin',
-        'Remove-DbaServerRole',
         'Remove-DbaTrace',
         'Remove-DbaXESession',
-        'Rename-DbaLogin',
         'Repair-DbaDbMirror',
         'Repair-DbaDbOrphanUser',
         'Reset-DbaAdmin',
@@ -353,7 +349,6 @@
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
-        'Remove-DbaServerRoleMember',
         'Get-DbaLinkedServerLogin',
 
         # NEW REPLICATION STUFF

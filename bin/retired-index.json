@@ -1624,6 +1624,11 @@
     "retiredPath": "private/retired/Remove-DbaDbMailProfile.ps1",
     "flippedUtc": "2026-07-18T05:38:40Z"
   },
+  "Remove-DbaDbMasterKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaDbMasterKey.ps1",
+    "flippedUtc": "2026-07-18T13:20:05Z"
+  },
   "Remove-DbaFirewallRule": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaFirewallRule.ps1",
@@ -1643,6 +1648,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaLinkedServerLogin.ps1",
     "flippedUtc": "2026-07-16T18:29:07Z"
+  },
+  "Remove-DbaLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaLogin.ps1",
+    "flippedUtc": "2026-07-18T13:20:26Z"
   },
   "Remove-DbaNetworkCertificate": {
     "module": "dbatools.computer",
@@ -1679,6 +1689,16 @@
     "retiredPath": "private/retired/Remove-DbaRgWorkloadGroup.ps1",
     "flippedUtc": "2026-07-14T17:26:21Z"
   },
+  "Remove-DbaServerRole": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaServerRole.ps1",
+    "flippedUtc": "2026-07-18T13:21:04Z"
+  },
+  "Remove-DbaServerRoleMember": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaServerRoleMember.ps1",
+    "flippedUtc": "2026-07-18T13:21:39Z"
+  },
   "Remove-DbaSpn": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaSpn.ps1",
@@ -1688,6 +1708,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Rename-DbaDatabase.ps1",
     "flippedUtc": "2026-07-16T18:33:14Z"
+  },
+  "Rename-DbaLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Rename-DbaLogin.ps1",
+    "flippedUtc": "2026-07-18T13:21:54Z"
   },
   "Repair-DbaInstanceName": {
     "module": "dbatools.core",

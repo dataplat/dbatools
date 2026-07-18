@@ -42,7 +42,12 @@
         'Export-DbaUser',
         'Remove-DbaDbAsymmetricKey',
         'Remove-DbaDbCertificate',
-        'Remove-DbaDbEncryptionKey'
+        'Remove-DbaDbEncryptionKey',
+        'Remove-DbaDbMasterKey',
+        'Remove-DbaLogin',
+        'Remove-DbaServerRole',
+        'Remove-DbaServerRoleMember',
+        'Rename-DbaLogin'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
