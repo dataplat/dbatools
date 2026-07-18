@@ -257,7 +257,6 @@
         'Remove-DbaDbRoleMember',
         'Remove-DbaDbSchema',
         'Remove-DbaDbSequence',
-        'Remove-DbaDbSnapshot',
         'Remove-DbaDbSynonym',
         'Remove-DbaDbTableData',
         'Remove-DbaDbUser',

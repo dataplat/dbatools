@@ -96,7 +96,8 @@
         'Set-DbaDbDataClassification',
         'Set-DbaDbCompression',
         'Set-DbaDbCompatibility',
-        'Remove-DbaDbTable'
+        'Remove-DbaDbTable',
+        'Remove-DbaDbSnapshot'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
