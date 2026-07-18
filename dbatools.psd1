@@ -305,7 +305,6 @@
         'Test-DbaAgPolicyState',
         'Test-DbaAvailabilityGroup',
         'Test-DbaDbCollation',
-        'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig',
         'Test-DbaDbDataMaskingConfig',
         'Test-DbaDbLogShipStatus',

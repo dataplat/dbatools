@@ -2054,6 +2054,11 @@
     "retiredPath": "private/retired/Test-DbaConnectionAuthScheme.ps1",
     "flippedUtc": "2026-07-14T19:06:32Z"
   },
+  "Test-DbaDbCompatibility": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbCompatibility.ps1",
+    "flippedUtc": "2026-07-18T16:42:52Z"
+  },
   "Test-DbaDbCompression": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaDbCompression.ps1",
