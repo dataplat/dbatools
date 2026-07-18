@@ -282,7 +282,6 @@
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
         'Set-DbaDbCompatibility',
-        'Set-DbaDbCompression',
         'Set-DbaDbIdentity',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',

@@ -1839,6 +1839,11 @@
     "retiredPath": "private/retired/Set-DbaCmConnection.ps1",
     "flippedUtc": "2026-07-16T18:40:41Z"
   },
+  "Set-DbaDbCompression": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbCompression.ps1",
+    "flippedUtc": "2026-07-18T18:44:36Z"
+  },
   "Set-DbaDbDataClassification": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Set-DbaDbDataClassification.ps1",

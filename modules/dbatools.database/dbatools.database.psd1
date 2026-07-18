@@ -93,7 +93,8 @@
         'Set-DbaDbFileGrowth',
         'Show-DbaDbList',
         'Set-DbaDbFileGroup',
-        'Set-DbaDbDataClassification'
+        'Set-DbaDbDataClassification',
+        'Set-DbaDbCompression'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
