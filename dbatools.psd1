@@ -270,7 +270,6 @@
         'Restore-DbaDbSnapshot',
         'Resume-DbaAgDbDataMovement',
         'Revoke-DbaAgPermission',
-        'Select-DbaDbSequenceNextValue',
         'Set-DbaAgentAlert',
         'Set-DbaAgentJob',
         'Set-DbaAgentJobCategory',
