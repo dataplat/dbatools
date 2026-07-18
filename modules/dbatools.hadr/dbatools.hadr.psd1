@@ -39,7 +39,9 @@
         'Get-DbaDbLogShipError',
         'Get-DbaDbMirror',
         'Get-DbaDbMirrorMonitor',
-        'Get-DbaEndpoint'
+        'Get-DbaEndpoint',
+        'Invoke-DbaAgFailover',
+        'Grant-DbaAgPermission'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

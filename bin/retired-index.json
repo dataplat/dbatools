@@ -1224,6 +1224,11 @@
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1",
     "flippedUtc": "2026-07-06T22:25:53Z"
   },
+  "Grant-DbaAgPermission": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Grant-DbaAgPermission.ps1",
+    "flippedUtc": "2026-07-18T06:45:03Z"
+  },
   "Import-DbaCsv": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Import-DbaCsv.ps1",
@@ -1263,6 +1268,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Invoke-DbaAdvancedUpdate.ps1",
     "flippedUtc": "2026-07-10T23:30:06Z"
+  },
+  "Invoke-DbaAgFailover": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Invoke-DbaAgFailover.ps1",
+    "flippedUtc": "2026-07-18T06:44:50Z"
   },
   "Invoke-DbaDiagnosticQuery": {
     "module": "dbatools.performance",
