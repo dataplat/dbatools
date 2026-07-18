@@ -149,7 +149,6 @@
         'Remove-DbaDbEncryptionKey',
         'Start-DbaDbEncryption',
         'Stop-DbaDbEncryption',
-        'Get-DbaDbIdentity',
         'Get-DbaDbLogShipError',
         'Get-DbaDbMirror',
         'Get-DbaDbMirrorMonitor',

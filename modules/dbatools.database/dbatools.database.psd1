@@ -60,7 +60,8 @@
         'Get-DbaDbSchema',
         'Get-DbaDbSequence',
         'Get-DbaDbServiceBrokerService',
-        'Get-DbaDbSharePoint'
+        'Get-DbaDbSharePoint',
+        'Get-DbaDbIdentity'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
