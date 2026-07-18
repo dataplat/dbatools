@@ -281,7 +281,6 @@
         'Set-DbaAgListener',
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
-        'Set-DbaDbCompatibility',
         'Set-DbaDbIdentity',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
