@@ -61,7 +61,11 @@
         'Get-DbaInstanceAuditSpecification',
         'Get-DbaLogin',
         'Get-DbaPbmCategorySubscription',
-        'Get-DbaPbmStore'
+        'Get-DbaPbmStore',
+        'Get-DbaPbmCondition',
+        'New-DbaDbAsymmetricKey',
+        'New-DbaDbCertificate',
+        'New-DbaLogin'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

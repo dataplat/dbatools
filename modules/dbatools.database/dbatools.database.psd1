@@ -115,7 +115,9 @@
         'Set-DbaDbQueryStoreOption',
         'Set-DbaDbSchema',
         'Set-DbaDbSequence',
-        'Select-DbaDbSequenceNextValue'
+        'Select-DbaDbSequenceNextValue',
+        'Set-DbaExtendedProperty',
+        'Test-DbaDbQueryStore'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

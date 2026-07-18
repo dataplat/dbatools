@@ -1094,6 +1094,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaPbmCategorySubscription.ps1"
   },
+  "Get-DbaPbmCondition": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPbmCondition.ps1",
+    "flippedUtc": "2026-07-18T22:05:51Z"
+  },
   "Get-DbaPbmObjectSet": {
     "flippedUtc": "2026-07-18T02:36:54Z",
     "module": "dbatools.security",
@@ -1659,6 +1664,16 @@
     "retiredPath": "private/retired/New-DbaDacProfile.ps1",
     "flippedUtc": "2026-07-18T21:20:50Z"
   },
+  "New-DbaDbAsymmetricKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaDbAsymmetricKey.ps1",
+    "flippedUtc": "2026-07-18T22:06:39Z"
+  },
+  "New-DbaDbCertificate": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaDbCertificate.ps1",
+    "flippedUtc": "2026-07-18T22:07:05Z"
+  },
   "New-DbaDbDataGeneratorConfig": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/New-DbaDbDataGeneratorConfig.ps1",
@@ -1713,6 +1728,11 @@
     "flippedUtc": "2026-07-16T14:17:08Z",
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaLinkedServerLogin.ps1"
+  },
+  "New-DbaLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaLogin.ps1",
+    "flippedUtc": "2026-07-18T22:08:01Z"
   },
   "New-DbaRgResourcePool": {
     "flippedUtc": "2026-07-14T08:29:46Z",
@@ -2104,6 +2124,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaErrorLogConfig.ps1"
   },
+  "Set-DbaExtendedProperty": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaExtendedProperty.ps1",
+    "flippedUtc": "2026-07-18T22:02:59Z"
+  },
   "Set-DbaExtendedProtection": {
     "flippedUtc": "2026-07-16T20:08:17Z",
     "module": "dbatools.core",
@@ -2323,6 +2348,11 @@
     "flippedUtc": "2026-07-18T18:12:28Z",
     "module": "dbatools.database",
     "retiredPath": "private/retired/Test-DbaDbOwner.ps1"
+  },
+  "Test-DbaDbQueryStore": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbQueryStore.ps1",
+    "flippedUtc": "2026-07-18T22:04:48Z"
   },
   "Test-DbaDbRecoveryModel": {
     "flippedUtc": "2026-07-17T09:15:05Z",
