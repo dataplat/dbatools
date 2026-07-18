@@ -185,30 +185,37 @@ Describe $CommandName -Tag IntegrationTests {
                 FilePath    = $sourceFile
                 Confirm     = $false
             }
-            $result = Import-DbaBinaryFile @splatImport
-            $result | Should -BeOfType System.Management.Automation.PSCustomObject
-            $result.Status | Should -Be "Success"
-            $result.Database | Should -Be $db
-            $result.Table | Should -Be $tableName
-            $result.FilePath | Should -Be $sourceFile
+            # exactly one success object comes back (duplicate output would otherwise slip through)
+            $result = @(Import-DbaBinaryFile @splatImport)
+            $result.Count | Should -Be 1
+            $imported = $result[0]
+            $imported | Should -BeOfType System.Management.Automation.PSCustomObject
+            $imported.Status | Should -Be "Success"
+            $imported.Database | Should -Be $db
+            $imported.Table | Should -Be $tableName
+            $imported.FilePath | Should -Be $sourceFile
             # identity columns carry the connected server's values, not just any non-null string
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $result.ComputerName | Should -Be $server.ComputerName
-            $result.InstanceName | Should -Be $server.ServiceName
-            $result.SqlInstance | Should -Be $server.DomainInstanceName
+            $imported.ComputerName | Should -Be $server.ComputerName
+            $imported.InstanceName | Should -Be $server.ServiceName
+            $imported.SqlInstance | Should -Be $server.DomainInstanceName
 
-            # the row actually landed: the filename column holds the leaf name and the binary column
-            # holds all 64 payload bytes (auto-detected FileName + TheFile columns).
+            # the row landed with the leaf filename and the EXACT payload bytes: comparing the
+            # SHA-256 of the stored varbinary to the source file hash catches corrupted or wrong
+            # content that a length-only check would miss. [char]39 supplies the single quotes the
+            # T-SQL literal needs without putting forbidden single quotes in the test source.
+            $q = [char]39
             $splatRead = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $db
-                Query       = "SELECT [FileName] AS FileName, DATALENGTH([TheFile]) AS ByteLength FROM dbo.$tableName"
+                Query       = "SELECT [FileName] AS FileName, DATALENGTH([TheFile]) AS ByteLength, CONVERT(CHAR(64), HASHBYTES(${q}SHA2_256${q}, [TheFile]), 2) AS Sha FROM dbo.$tableName"
                 As          = "PSObject"
             }
             $rows = @(Invoke-DbaQuery @splatRead)
             $rows.Count | Should -Be 1
             $rows[0].FileName | Should -Be (Split-Path -Path $sourceFile -Leaf)
             $rows[0].ByteLength | Should -Be 64
+            $rows[0].Sha | Should -Be (Get-FileHash -Path $sourceFile -Algorithm SHA256).Hash
         }
     }
 }
