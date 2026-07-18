@@ -51,15 +51,21 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            # ensure the offline-guard test left nothing offline before dropping (benign no-op if the
-            # database is already online; SilentlyContinue covers an absent database).
-            $splatOnline = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = "master"
-                Query       = "ALTER DATABASE [$offlineDb] SET ONLINE"
-                ErrorAction = "SilentlyContinue"
+            # Best-effort: bring the offline-guard database back online before dropping. Under the
+            # forced EnableException this call can THROW (ErrorAction cannot suppress it), so swallow
+            # any failure so the removal below always runs and never leaks the databases.
+            try {
+                if ($offlineDb) {
+                    $splatOnline = @{
+                        SqlInstance = $TestConfig.InstanceSingle
+                        Database    = "master"
+                        Query       = "ALTER DATABASE [$offlineDb] SET ONLINE"
+                    }
+                    $null = Invoke-DbaQuery @splatOnline
+                }
+            } catch {
+                # already online, or already gone - proceed to removal regardless
             }
-            $null = Invoke-DbaQuery @splatOnline
             $dbsToRemove = @($logDb, $offlineDb) | Where-Object { $PSItem }
             if ($dbsToRemove) {
                 $splatRemove = @{
@@ -103,13 +109,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Reads the full log on the default (no -RowLimit) path" {
             # RowLimit 0 skips the TOP clause and runs the <500MB live-log size check, which passes
-            # for a fresh small database, so every fn_dblog record is returned.
+            # for a fresh small database, so every fn_dblog record is returned. The db has a table
+            # create plus five inserts, so the uncapped read returns far more than the bounded (25)
+            # fixture - proving no implicit cap is applied when RowLimit is 0.
             $splatFull = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $logDb
             }
             $result = @(Read-DbaTransactionLog @splatFull)
-            $result.Count | Should -BeGreaterThan 0
+            $result.Count | Should -BeGreaterThan 25
             $result[0].PSObject.Properties.Name | Should -Contain "Operation"
         }
 
