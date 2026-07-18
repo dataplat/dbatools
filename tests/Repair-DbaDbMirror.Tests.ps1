@@ -26,3 +26,62 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: actually repairing a mirror (restart the mirroring endpoints, resume the
+    # session) requires a database mirrored to a live partner instance, which the standalone
+    # InstanceSingle does not provide - that leg is DEFERRED-TO-GATE on a mirroring fixture. What
+    # IS characterizable on a standalone instance is the guard chain ahead of the repair: the
+    # no-Database guard, the silent no-match resolution, and a genuinely silent no-input path
+    # (resolution rides foreach ($instance in $SqlInstance), so an unbound SqlInstance iterates
+    # zero times and never reaches Get-DbaDatabase - probe-verified, same construct as
+    # Remove-DbaDbMirror). Every call passes WhatIf as belt-and-braces on this destructive
+    # (endpoint stop/start + mirror resume) command.
+    BeforeAll {
+        $random = Get-Random
+    }
+
+    Context "Guarding before the repair" {
+        It "Stays fully silent when neither SqlInstance nor InputObject is supplied" {
+            $splatNoInput = @{
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
+            }
+            $result = @(Repair-DbaDbMirror @splatNoInput)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 0
+        }
+
+        It "Warns once and returns nothing when SqlInstance is supplied without Database" {
+            $splatNoDatabase = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
+            }
+            $result = @(Repair-DbaDbMirror @splatNoDatabase)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 1
+
+            # strip the bracketed [timestamp]/[function] prefix added by Write-Message from the warning
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "Database is required when SqlInstance is specified"
+        }
+
+        It "Stays fully silent when the requested database does not exist" {
+            # with Database bound the guard passes; resolution rides Get-DbaDatabase, whose
+            # Where-Object filter drops a non-matching name silently, so no database resolves and
+            # the repair loop never runs
+            $splatAbsentDb = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "dbatoolsci_nodb_$random"
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
+            }
+            $result = @(Repair-DbaDbMirror @splatAbsentDb)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 0
+        }
+    }
+}
