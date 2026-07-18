@@ -49,11 +49,16 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = @(Compare-DbaAgReplicaOperator @splatCompare)
             $result.Count | Should -Be 0
-            $joinedWarn = $warn -join " "
+            $warn.Count | Should -Be 1
+            # the command interpolates "$instance" (the bound DbaInstanceParameter) into the message;
+            # reproduce that exact token and strip Write-Message's bracketed [timestamp]/[function]
+            # prefix so the full message can be compared exactly (no extra/erroneous warnings).
+            $instanceToken = "$([DbaInstanceParameter]$TestConfig.InstanceSingle)"
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
             if ($isHadrEnabled) {
-                $joinedWarn | Should -Match "No Availability Groups found on .* matching the specified criteria"
+                $payload | Should -Be "No Availability Groups found on $instanceToken matching the specified criteria."
             } else {
-                $joinedWarn | Should -Match "Availability Group \(HADR\) is not configured for the instance"
+                $payload | Should -Be "Availability Group (HADR) is not configured for the instance: $instanceToken."
             }
         }
     }
