@@ -300,7 +300,6 @@
         'Set-DbaDbSchema',
         'Set-DbaDbSequence',
         'Set-DbaEndpoint',
-        'Set-DbaLogin',
         'Set-DbaNetworkCertificate',
         'Show-DbaDbList',
         'Start-DbaAgentJob',

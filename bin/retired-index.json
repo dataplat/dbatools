@@ -1834,6 +1834,11 @@
     "retiredPath": "private/retired/Set-DbaExtendedProtection.ps1",
     "flippedUtc": "2026-07-16T20:08:17Z"
   },
+  "Set-DbaLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Set-DbaLogin.ps1",
+    "flippedUtc": "2026-07-18T14:55:27Z"
+  },
   "Set-DbaMaxDop": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaMaxDop.ps1",

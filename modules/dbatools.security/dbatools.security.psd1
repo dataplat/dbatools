@@ -52,7 +52,8 @@
         'Sync-DbaLoginPassword',
         'Sync-DbaLoginPermission',
         'Test-DbaLoginPassword',
-        'Reset-DbaAdmin'
+        'Reset-DbaAdmin',
+        'Set-DbaLogin'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
