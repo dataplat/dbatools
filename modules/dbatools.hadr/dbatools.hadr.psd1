@@ -32,7 +32,14 @@
         'Get-DbaWsfcRole',
         'Get-DbaWsfcSharedVolume',
         'Compare-DbaAgReplicaAgentJob',
-        'Compare-DbaAgReplicaCredential'
+        'Compare-DbaAgReplicaCredential',
+        'Get-DbaAgListener',
+        'Get-DbaAgReplica',
+        'Get-DbaAgRingBuffer',
+        'Get-DbaDbLogShipError',
+        'Get-DbaDbMirror',
+        'Get-DbaDbMirrorMonitor',
+        'Get-DbaEndpoint'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

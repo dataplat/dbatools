@@ -404,6 +404,21 @@
     "retiredPath": "private/retired/Get-DbaAgentServer.ps1",
     "flippedUtc": "2026-07-15T11:10:52Z"
   },
+  "Get-DbaAgListener": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgListener.ps1",
+    "flippedUtc": "2026-07-18T05:17:26Z"
+  },
+  "Get-DbaAgReplica": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgReplica.ps1",
+    "flippedUtc": "2026-07-18T05:17:50Z"
+  },
+  "Get-DbaAgRingBuffer": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgRingBuffer.ps1",
+    "flippedUtc": "2026-07-18T05:18:17Z"
+  },
   "Get-DbaAvailabilityGroup": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaAvailabilityGroup.ps1",
@@ -584,6 +599,11 @@
     "retiredPath": "private/retired/Get-DbaDbIdentity.ps1",
     "flippedUtc": "2026-07-18T04:45:40Z"
   },
+  "Get-DbaDbLogShipError": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaDbLogShipError.ps1",
+    "flippedUtc": "2026-07-18T05:18:34Z"
+  },
   "Get-DbaDbLogSpace": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbLogSpace.ps1",
@@ -633,6 +653,16 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbMemoryUsage.ps1",
     "flippedUtc": "2026-07-13T10:01:59Z"
+  },
+  "Get-DbaDbMirror": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaDbMirror.ps1",
+    "flippedUtc": "2026-07-18T05:19:00Z"
+  },
+  "Get-DbaDbMirrorMonitor": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaDbMirrorMonitor.ps1",
+    "flippedUtc": "2026-07-18T05:19:18Z"
   },
   "Get-DbaDbObjectTrigger": {
     "module": "dbatools.database",
@@ -748,6 +778,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDump.ps1",
     "flippedUtc": "2026-07-13T11:41:36Z"
+  },
+  "Get-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-18T05:19:31Z"
   },
   "Get-DbaErrorLog": {
     "module": "dbatools.performance",
