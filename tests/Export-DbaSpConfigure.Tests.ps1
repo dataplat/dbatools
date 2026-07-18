@@ -56,29 +56,46 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Exporting the configuration" {
         It "Writes the sp_configure script to -FilePath and returns the FileInfo" {
-            $filePath = Join-Path -Path $exportDir -ChildPath "spcfg_filepath_$random.sql"
-            $result = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath
-            $result | Should -BeOfType System.IO.FileInfo
-            $result.FullName | Should -Be $filePath
-            Test-Path -Path $filePath | Should -BeTrue
-
-            $content = Get-Content -Path $filePath -Raw
-            # complete header line (regex dot stands in for the single quotes the style guide
-            # forbids in source); the source emits two spaces before RECONFIGURE.
-            $content | Should -Match "EXEC sp_configure .show advanced options. , 1;  RECONFIGURE WITH OVERRIDE"
-            # every configuration property is scripted with its exact display name and value; SMO
-            # exposes the full Properties collection regardless of the show-advanced-options state,
-            # so build each expected statement from a fresh read and confirm it is present.
+            # Arrange advanced options ON so the command does not toggle mid-run: the values it
+            # writes then match a steady fresh read, and no trailing reset line exists to mask a
+            # missing property line. Restore the original setting in finally.
             $configServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            foreach ($prop in $configServer.Configuration.Properties) {
-                $expectedLine = "EXEC sp_configure " + [char]39 + $prop.DisplayName + [char]39 + " , " + $prop.ConfigValue + ";"
-                $content | Should -Match ([regex]::Escape($expectedLine))
+            $original = $configServer.Configuration.ShowAdvancedOptions.ConfigValue
+            try {
+                $configServer.Configuration.ShowAdvancedOptions.ConfigValue = 1
+                $configServer.Configuration.Alter($true)
+
+                $filePath = Join-Path -Path $exportDir -ChildPath "spcfg_filepath_$random.sql"
+                $result = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $filePath
+                $result | Should -BeOfType System.IO.FileInfo
+                @($result).Count | Should -Be 1
+                $result.FullName | Should -Be $filePath
+                Test-Path -Path $filePath | Should -BeTrue
+
+                $content = Get-Content -Path $filePath -Raw
+                # complete header, anchored at start-of-file (regex dot stands in for the single
+                # quotes the style guide forbids in source; the source emits two spaces before
+                # RECONFIGURE).
+                $content | Should -Match "^EXEC sp_configure .show advanced options. , 1;  RECONFIGURE WITH OVERRIDE"
+                # every configuration property is scripted with its exact display name and value;
+                # read them back while advanced options is still ON so the expected values match
+                # exactly what the command wrote.
+                $verifyServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                foreach ($prop in $verifyServer.Configuration.Properties) {
+                    $expectedLine = "EXEC sp_configure " + [char]39 + $prop.DisplayName + [char]39 + " , " + $prop.ConfigValue + ";"
+                    $content | Should -Match ([regex]::Escape($expectedLine))
+                }
+            } finally {
+                $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $restoreServer.Configuration.ShowAdvancedOptions.ConfigValue = [int]$original
+                $restoreServer.Configuration.Alter($true)
             }
         }
 
         It "Auto-generates a .sql file name under -Path" {
             $result = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path $exportDir
             $result | Should -BeOfType System.IO.FileInfo
+            @($result).Count | Should -Be 1
             $result.Extension | Should -Be ".sql"
             $result.DirectoryName | Should -Be $exportDir
             # Get-ExportFilePath builds "<server>-<timestamp>-<caller>.sql"; the caller token for
