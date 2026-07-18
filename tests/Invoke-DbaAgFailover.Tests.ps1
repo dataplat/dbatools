@@ -127,15 +127,17 @@ Describe $CommandName -Tag IntegrationTests {
         $agDbName = "dbatoolsci_agfailoverdb_$(Get-Random)"
         $agBackupPath = "$($TestConfig.Temp)\Invoke-DbaAgFailover-$(Get-Random)"
 
-        # Track exactly what this fixture creates so teardown removes only its own objects.
+        # Teardown state, resolved in the finally by ACTUAL existence rather than by flags set at
+        # creation time - so a resource created just before a mid-setup throw is still reclaimed, and
+        # a pre-existing shared endpoint is never mistaken for one this fixture created.
         $agReady = $false
+        $agSkipReason = $null
+        $baselineCaptured = $false
+        $preExistingEndpoints = @()
         $agCreated = $false
         $dbCreated = $false
         $backupDirCreated = $false
-        $enteredCreation = $false
         $createdEndpointNames = @()
-        $preExistingEndpoints = @()
-        $agSkipReason = $null
 
         try {
             $hadrServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
@@ -144,10 +146,15 @@ Describe $CommandName -Tag IntegrationTests {
             } elseif (-not $hadrServer.Databases["master"].Certificates["dbatoolsci_AGCert"]) {
                 $agSkipReason = "the dbatoolsci_AGCert certificate is not present in master on InstanceHadr"
             } else {
-                $enteredCreation = $true
-                # Record the mirroring endpoints that already exist so the delta below identifies only
-                # what this fixture creates; New-DbaAvailabilityGroup creates the hadr_endpoint it owns.
-                $preExistingEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
+                # Baseline the mirroring endpoints BEFORE any creation; only once this succeeds is the
+                # created-endpoint delta meaningful, so it can never classify a pre-existing endpoint
+                # as fixture-created.
+                $splatBaselineEndpoint = @{
+                    SqlInstance = $TestConfig.InstanceHadr
+                    Type        = "DatabaseMirroring"
+                }
+                $preExistingEndpoints = @(Get-DbaEndpoint @splatBaselineEndpoint).Name
+                $baselineCaptured = $true
 
                 $splatBackupDir = @{
                     Path        = $agBackupPath
@@ -155,10 +162,8 @@ Describe $CommandName -Tag IntegrationTests {
                     ErrorAction = "Stop"
                 }
                 $null = New-Item @splatBackupDir
-                $backupDirCreated = $true
 
                 $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
-                $dbCreated = $true
 
                 $splatBackup = @{
                     SqlInstance = $TestConfig.InstanceHadr
@@ -176,7 +181,6 @@ Describe $CommandName -Tag IntegrationTests {
                     Certificate  = "dbatoolsci_AGCert"
                 }
                 $null = New-DbaAvailabilityGroup @splatNewAg
-                $agCreated = $true
 
                 # The resolution path of the command must positively find the group, else the It
                 # assertions would pass vacuously against an empty loop. A created-but-unresolvable
@@ -188,14 +192,29 @@ Describe $CommandName -Tag IntegrationTests {
                 $agReady = $true
             }
         } finally {
-            # Even when setup throws mid-way, capture any endpoint this fixture created (the AG create
-            # can make the hadr_endpoint before a later step fails) so teardown can reclaim it, and
-            # always restore the EnableException default so AfterAll cleanup runs without it.
-            if ($enteredCreation) {
-                $postEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring -ErrorAction SilentlyContinue).Name
-                $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
-            }
+            # Restore the EnableException default FIRST, before any fallible discovery below, so a
+            # discovery error can neither mask the setup outcome nor leave the default enabled.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Best-effort: resolve what actually exists by exact randomized name so teardown reclaims
+            # whatever setup created even on a mid-setup throw, and never touches a shared endpoint.
+            # None of this may throw out of the finally.
+            try {
+                $backupDirCreated = Test-Path -Path $agBackupPath
+                $dbCreated = [bool](Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName -ErrorAction SilentlyContinue)
+                $agCreated = [bool](Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -ErrorAction SilentlyContinue)
+                if ($baselineCaptured) {
+                    $splatDeltaEndpoint = @{
+                        SqlInstance = $TestConfig.InstanceHadr
+                        Type        = "DatabaseMirroring"
+                        ErrorAction = "SilentlyContinue"
+                    }
+                    $postEndpoints = @(Get-DbaEndpoint @splatDeltaEndpoint).Name
+                    $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
+                }
+            } catch {
+                # Discovery is best-effort; teardown falls back to whatever was resolved.
+            }
         }
     }
 
