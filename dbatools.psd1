@@ -255,7 +255,6 @@
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbRole',
         'Remove-DbaDbRoleMember',
-        'Remove-DbaDbSchema',
         'Remove-DbaDbSequence',
         'Remove-DbaDbSynonym',
         'Remove-DbaDbTableData',
