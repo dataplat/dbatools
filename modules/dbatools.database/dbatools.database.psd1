@@ -77,7 +77,8 @@
         'Get-DbaHelpIndex',
         'Get-DbaRandomizedDataset',
         'Get-DbaRandomizedDatasetTemplate',
-        'Get-DbaRandomizedType'
+        'Get-DbaRandomizedType',
+        'Get-DbaRandomizedValue'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

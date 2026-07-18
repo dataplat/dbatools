@@ -171,7 +171,6 @@
         'Get-DbaPbmStore',
         'Get-DbaPermission',
         'Get-DbaProcess',
-        'Get-DbaRandomizedValue',
         'Get-DbaRegServer',
         'Get-DbaRegServerGroup',
         'Get-DbaRegServerStore',

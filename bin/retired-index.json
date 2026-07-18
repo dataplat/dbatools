@@ -1049,6 +1049,11 @@
     "retiredPath": "private/retired/Get-DbaRandomizedType.ps1",
     "flippedUtc": "2026-07-18T07:22:45Z"
   },
+  "Get-DbaRandomizedValue": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaRandomizedValue.ps1",
+    "flippedUtc": "2026-07-18T07:33:20Z"
+  },
   "Get-DbaRegistryRoot": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaRegistryRoot.ps1",
