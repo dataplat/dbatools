@@ -78,7 +78,9 @@
         'Get-DbaRandomizedDataset',
         'Get-DbaRandomizedDatasetTemplate',
         'Get-DbaRandomizedType',
-        'Get-DbaRandomizedValue'
+        'Get-DbaRandomizedValue',
+        'Get-DbaSchemaChangeHistory',
+        'Get-DbaSuspectPage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -1094,6 +1094,11 @@
     "retiredPath": "private/retired/Get-DbaRunningJob.ps1",
     "flippedUtc": "2026-07-18T00:14:38Z"
   },
+  "Get-DbaSchemaChangeHistory": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaSchemaChangeHistory.ps1",
+    "flippedUtc": "2026-07-18T08:17:09Z"
+  },
   "Get-DbaService": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaService.ps1",
@@ -1118,6 +1123,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaStartupParameter.ps1",
     "flippedUtc": "2026-07-06T23:59:47Z"
+  },
+  "Get-DbaSuspectPage": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaSuspectPage.ps1",
+    "flippedUtc": "2026-07-18T08:17:50Z"
   },
   "Get-DbaTempdbUsage": {
     "module": "dbatools.performance",
