@@ -2059,6 +2059,11 @@
     "retiredPath": "private/retired/Test-DbaDbCompression.ps1",
     "flippedUtc": "2026-07-14T19:19:55Z"
   },
+  "Test-DbaDbOwner": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbOwner.ps1",
+    "flippedUtc": "2026-07-18T16:23:08Z"
+  },
   "Test-DbaDbRecoveryModel": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaDbRecoveryModel.ps1",
