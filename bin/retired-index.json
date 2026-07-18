@@ -1354,6 +1354,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbDataGenerator.ps1",
     "flippedUtc": "2026-07-18T09:01:42Z"
   },
+  "Invoke-DbaDbDecryptObject": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbDecryptObject.ps1",
+    "flippedUtc": "2026-07-18T15:16:45Z"
+  },
   "Invoke-DbaDbLogShipping": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Invoke-DbaDbLogShipping.ps1",
@@ -1779,6 +1784,11 @@
     "retiredPath": "private/retired/Restore-DbaDatabase.ps1",
     "flippedUtc": "2026-07-07T10:21:29Z"
   },
+  "Restore-DbaDbCertificate": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Restore-DbaDbCertificate.ps1",
+    "flippedUtc": "2026-07-18T15:17:42Z"
+  },
   "Save-DbaDiagnosticQueryScript": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Save-DbaDiagnosticQueryScript.ps1",
@@ -1918,6 +1928,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Show-DbaInstanceFileSystem.ps1",
     "flippedUtc": "2026-07-17T01:44:08Z"
+  },
+  "Start-DbaDbEncryption": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Start-DbaDbEncryption.ps1",
+    "flippedUtc": "2026-07-18T15:18:48Z"
   },
   "Start-DbaPfDataCollectorSet": {
     "module": "dbatools.performance",
@@ -2118,6 +2133,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaTempDbConfig.ps1",
     "flippedUtc": "2026-07-14T21:16:41Z"
+  },
+  "Test-DbaWindowsLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Test-DbaWindowsLogin.ps1",
+    "flippedUtc": "2026-07-18T15:19:19Z"
   },
   "Unregister-DbatoolsConfig": {
     "module": "dbatools.core",

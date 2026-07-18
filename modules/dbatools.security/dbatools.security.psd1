@@ -53,7 +53,10 @@
         'Sync-DbaLoginPermission',
         'Test-DbaLoginPassword',
         'Reset-DbaAdmin',
-        'Set-DbaLogin'
+        'Set-DbaLogin',
+        'Restore-DbaDbCertificate',
+        'Start-DbaDbEncryption',
+        'Test-DbaWindowsLogin'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
