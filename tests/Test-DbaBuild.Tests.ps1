@@ -91,4 +91,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Not -Be $null
         }
     }
+
+    Context "Cross-record BuildVersions carry (DEF-008 W1-124)" {
+        It "Repeats the first record's builds for a record that binds neither Build nor SqlInstance" {
+            # The source's $BuildVersions is branch-assigned but read UNCONDITIONALLY at
+            # FUNCTION scope: a piped $null record binds neither -Build nor SqlInstance,
+            # so its foreach re-reads the PREVIOUS record's builds and re-emits them
+            # (quirk preserved, not a recommendation; probed identical 2026-07-17).
+            $carryResults = @(@($TestConfig.InstanceSingle, $null) | Test-DbaBuild -Latest -WarningAction SilentlyContinue)
+            $carryResults.Count | Should -BeExactly 2
+            $carryResults[1].Build | Should -Be $carryResults[0].Build
+            $carryResults[1].SqlInstance | Should -Be $carryResults[0].SqlInstance
+        }
+    }
 }

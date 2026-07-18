@@ -64,6 +64,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return true if Executed Against 2 instances: $TestConfig.InstanceMulti1 and $($TestConfig.InstanceMulti2)" {
+            # Two DEFAULT instances on different hosts both report InstanceName "MSSQLSERVER",
+            # so InstanceName cannot distinguish them even though both instances answered; only
+            # skip when the SqlInstance values prove the command really ran against two servers.
+            $uniqueSqlInstances = @($results.SqlInstance | Select-Object -Unique)
+            $uniqueInstanceNames = @($results.InstanceName | Select-Object -Unique)
+            if ($uniqueSqlInstances.Count -eq 2 -and $uniqueInstanceNames.Count -lt 2) {
+                Set-ItResult -Skipped -Because "both targets are default instances (InstanceName '$($uniqueInstanceNames -join ', ')') - InstanceName cannot distinguish them on this topology; execution against both servers is proven by 2 unique SqlInstance values"
+            }
             ($results.InstanceName | Select-Object -Unique).Count -eq 2 | Should -Be $true
         }
     }

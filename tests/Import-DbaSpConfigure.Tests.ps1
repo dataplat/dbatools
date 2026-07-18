@@ -149,14 +149,27 @@ Describe $CommandName -Tag IntegrationTests {
                     WarningAction   = "SilentlyContinue"
                 }
                 $captured = Import-DbaSpConfigure @splatRoundTrip 6>&1
-                # re-applying the instance's own values fails no line, and the restart warning fires
-                $warn -join " " | Should -Not -Match "failed. Feature may not be supported"
-                $warn -join " " | Should -Match "updated once SQL Server is restarted"
+                # Re-applying the instance's own values fails no line, EXCEPT options the edition
+                # refuses to set at all - sp_configure rejects even the current value of an
+                # edition-locked option. Tolerate exactly that refusal class and nothing else,
+                # and the restart warning still fires.
+                $editionRefusals = @($warn | Where-Object { "$PSItem" -match "failed. Feature may not be supported" })
+                foreach ($refusal in $editionRefusals) {
+                    "$refusal" | Should -Match "not supported in this edition"
+                }
+                # every warning that is not an edition refusal must be the restart notice - any
+                # other warning class fails the round-trip
+                $otherWarnings = @($warn | Where-Object { "$PSItem" -notmatch "failed. Feature may not be supported" })
+                $otherWarnings.Count | Should -BeGreaterThan 0
+                foreach ($otherWarning in $otherWarnings) {
+                    "$otherWarning" | Should -Match "updated once SQL Server is restarted"
+                }
                 # nothing reaches the success pipeline - only host/information records were captured
                 ($captured | Where-Object { $PSItem -isnot [System.Management.Automation.InformationRecord] }) | Should -BeNullOrEmpty
-                # one success message per file line means every line was executed, none skipped
+                # one success message per executed file line means every line the edition accepts
+                # was executed, none skipped
                 $successes = $captured | Where-Object { "$PSItem" -match "Successfully executed" }
-                $successes.Count | Should -Be $lineCount
+                $successes.Count | Should -Be ($lineCount - $editionRefusals.Count)
             } finally {
                 # the exported file's header enables show advanced options; the command's reset does
                 # not Alter it off, so restore it explicitly.

@@ -37,9 +37,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Return values" {
-        It "Get the log shipping errors" {
-            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle)
-            $results.Status.Count | Should -BeExactly 0
+        It "Returns well-formed log shipping error records for the queried instance" {
+            # The msdb log shipping error log is instance-global state that other suites
+            # legitimately write to when they exercise log shipping, so this suite must not
+            # pin the instance-wide error count. What the command owns is the shape of what
+            # it returns: zero or more records, each exposing the documented columns.
+            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle -EnableException)
+            foreach ($result in $results) {
+                $result.SqlInstance | Should -Not -BeNullOrEmpty
+                $result.Database | Should -Not -BeNullOrEmpty
+                $result.LogTime | Should -Not -BeNullOrEmpty
+                $result.Message | Should -Not -BeNullOrEmpty
+                $result.PSObject.Properties.Name | Should -Contain "ComputerName"
+                $result.PSObject.Properties.Name | Should -Contain "InstanceName"
+                $result.PSObject.Properties.Name | Should -Contain "Instance"
+                $result.PSObject.Properties.Name | Should -Contain "Action"
+                $result.PSObject.Properties.Name | Should -Contain "SessionID"
+                $result.PSObject.Properties.Name | Should -Contain "SequenceNumber"
+            }
         }
     }
 }

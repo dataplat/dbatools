@@ -92,3 +92,14 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization context (W1-094 law: an empty run is never green). Resolution of the
+    # local computer is environment-independent (no lab instance required).
+    Context "When resolving the local computer" {
+        It "Resolves env:computername with a non-empty IP address" {
+            $localResolved = Resolve-DbaNetworkName -ComputerName $env:COMPUTERNAME -EnableException
+            $localResolved.InputName | Should -Be $env:COMPUTERNAME
+            $localResolved.IPAddress | Should -Not -BeNullOrEmpty
+        }
+    }
+}

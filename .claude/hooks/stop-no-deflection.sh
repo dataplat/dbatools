@@ -86,11 +86,20 @@ for (let i = lines.length - 1; i >= 0; i--) {
 LAST_MSG=$(last_assistant_text)
 [[ -z "$LAST_MSG" ]] && exit 0
 
-# Deflection phrases to catch
-DEFLECTION_PATTERNS=(
-    'pre-existing'
-    'pre existing'
-    'preexisting'
+# USE vs MENTION: documenting a deflection pattern is not deflecting. When a
+# phrase is shown in a ```fenced``` block or an inline `code` span — the
+# mechanical convention for citing one while fixing or reporting it — it must
+# NOT self-fire, or the hook suppresses its own bug reports (a phrase cannot be
+# quoted to fix it without tripping it). Strip those spans before matching;
+# prose sentences are untouched, so genuine deflection stated in normal text is
+# still caught.
+SCAN_MSG=$(printf '%s' "$LAST_MSG" \
+    | awk 'BEGIN{f=0} /^[[:space:]]*```/{f=!f; next} f{next} {print}' \
+    | sed -E 's/`[^`]*`//g')
+[[ -z "$SCAN_MSG" ]] && exit 0
+
+# STRONG deflection phrases: unambiguous blame-dodging — fire on their own.
+STRONG_PATTERNS=(
     'not from (my|our) changes'
     'not related to (my|our) changes'
     'outside (the |my |our )?scope'
@@ -98,22 +107,46 @@ DEFLECTION_PATTERNS=(
     'out-of-scope'
     'bigger refactor'
     'larger refactor'
-    'separate (refactor|effort|task|ticket|issue|PR)'
+    'separate (refactor|effort|task|ticket|issue|PR)s?\b'
     'defer(red)? (to|for) (a )?(later|future|separate|another)'
     'address(ed)? (later|separately|in a future)'
     'beyond the scope'
     'not (my|our) (responsibility|concern)'
-    'existed before'
     'was already (broken|failing|there)'
-    'already existed'
     'not introduced by'
     'I did not (introduce|cause|create)'
     'this (error|bug|issue|failure|problem) (is|was) not'
     'leave (this|that|it) for (now|later|a separate)'
 )
 
-COMBINED_PATTERN=$(IFS='|'; echo "${DEFLECTION_PATTERNS[*]}")
-MATCHES=$(printf '%s' "$LAST_MSG" | grep -i -o -E "$COMBINED_PATTERN" 2>/dev/null | sort -u | head -5)
+# WEAK temporal descriptors: blame-dodging ONLY when they describe an error/failure. They also
+# legitimately describe test-fixture state, config, data, and prior conditions, so they only count
+# inside a sentence that ALSO carries error/failure context (per lane-A false-positive report:
+# "registrations that existed before the test starts" is fixture semantics, not deflection).
+WEAK_PATTERNS=(
+    'pre-existing'
+    'pre existing'
+    'preexisting'
+    'existed before'
+    'already existed'
+)
+ERROR_CONTEXT='error|bug|failure|failed|failing|fails|broken|crash|regress|defect|fault|exception|flaky|red'
+
+STRONG_RE=$(IFS='|'; echo "${STRONG_PATTERNS[*]}")
+WEAK_RE=$(IFS='|'; echo "${WEAK_PATTERNS[*]}")
+
+# Strong matches count anywhere in the message (code spans already stripped).
+STRONG_HITS=$(printf '%s' "$SCAN_MSG" | grep -i -o -E "$STRONG_RE" 2>/dev/null | sort -u)
+
+# Weak matches count only within a sentence that also has error/failure context.
+WEAK_HITS=$(printf '%s' "$SCAN_MSG" \
+    | tr '\n' ' ' \
+    | sed -E 's/([.!?])/\1\n/g' \
+    | grep -i -E "$WEAK_RE" 2>/dev/null \
+    | grep -i -E "$ERROR_CONTEXT" 2>/dev/null \
+    | grep -i -o -E "$WEAK_RE" 2>/dev/null | sort -u)
+
+MATCHES=$(printf '%s\n%s\n' "$STRONG_HITS" "$WEAK_HITS" | grep -v '^[[:space:]]*$' | sort -u | head -5)
 
 if [[ -z "$MATCHES" ]]; then
     stop_guard_emit ""

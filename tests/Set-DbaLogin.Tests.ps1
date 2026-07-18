@@ -182,7 +182,22 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # violate policy
             $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
 
-            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $invalidPassword -WarningAction 'SilentlyContinue'
+            # CHECK_POLICY delegates to the host OS password policy, so whether this password
+            # is rejected depends on the machine, not the command. When the OS accepts it the
+            # change legitimately succeeds and the error path cannot be exercised - skip
+            # instead of failing on an environment assumption.
+            $splatBadPassword = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Login           = "testlogin1_$random"
+                Password        = $invalidPassword
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Set-DbaLogin @splatBadPassword
+            if ($result -and -not $warn) {
+                Set-ItResult -Skipped -Because "the OS-level password policy on this instance accepted the probe password, so the failure path cannot be exercised"
+                return
+            }
             $result | Should -Be $null
 
             { Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $invalidPassword -EnableException } | Should -Throw

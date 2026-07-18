@@ -44,7 +44,26 @@
         'Get-DbaDbMail',
         'Get-DbaDbMailAccount',
         'Get-DbaDbMailConfig',
-        'Get-DbaDbMailHistory'
+        'Get-DbaDbMailHistory',
+        'Get-DbaDbMailLog',
+        'Get-DbaDbMailServer',
+        'Install-DbaAgentAdminAlert',
+        'New-DbaAgentAlert',
+        'New-DbaAgentAlertCategory',
+        'New-DbaAgentJob',
+        'New-DbaAgentJobCategory',
+        'New-DbaAgentJobStep',
+        'Get-DbaRunningJob',
+        'Remove-DbaAgentAlert',
+        'Remove-DbaAgentAlertCategory',
+        'Remove-DbaAgentJobCategory',
+        'Remove-DbaAgentOperator',
+        'Remove-DbaAgentProxy',
+        'Remove-DbaAgentSchedule',
+        'Remove-DbaDbMailAccount',
+        'Remove-DbaDbMailProfile',
+        'Set-DbaAgentJobOwner',
+        'Stop-DbaAgentJob'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

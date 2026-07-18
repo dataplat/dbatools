@@ -24,3 +24,15 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # Characterization context (W1-094 law: an empty run is never green). The command opens a
+    # WPF tree view on success, so the only headless-safe characterization is the pre-GUI
+    # failure path: an unresolvable instance warns and emits nothing (no window ever opens).
+    Context "When the instance cannot be reached" {
+        It "Warns and returns nothing without opening the GUI" {
+            $showResults = Show-DbaInstanceFileSystem -SqlInstance "dbatoolsci-nohost-$(Get-Random)" -WarningAction SilentlyContinue -WarningVariable showWarning
+            $showResults | Should -BeNullOrEmpty
+            $showWarning | Should -Not -BeNullOrEmpty
+        }
+    }
+}

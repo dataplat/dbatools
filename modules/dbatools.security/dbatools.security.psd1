@@ -19,7 +19,44 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaDbCertificate'
+        'Get-DbaDbCertificate',
+        'Add-DbaServerRoleMember',
+        'Copy-DbaDbCertificate',
+        'Backup-DbaDbCertificate',
+        'Backup-DbaDbMasterKey',
+        'Backup-DbaServiceMasterKey',
+        'Compare-DbaLogin',
+        'Disable-DbaDbEncryption',
+        'Enable-DbaDbEncryption',
+        'Export-DbaLogin',
+        'Export-DbaServerRole',
+        'Export-DbaSysDbUserObject',
+        'Get-DbaDbAsymmetricKey',
+        'Get-DbaDbEncryptionKey',
+        'Get-DbaDbMasterKey',
+        'Get-DbaPbmCategory',
+        'Find-DbaLoginInGroup',
+        'Get-DbaPbmPolicy',
+        'Get-DbaPbmObjectSet',
+        'New-DbaServiceMasterKey',
+        'Export-DbaUser',
+        'Remove-DbaDbAsymmetricKey',
+        'Remove-DbaDbCertificate',
+        'Remove-DbaDbEncryptionKey',
+        'Remove-DbaDbMasterKey',
+        'Remove-DbaLogin',
+        'Remove-DbaServerRole',
+        'Remove-DbaServerRoleMember',
+        'Rename-DbaLogin',
+        'Stop-DbaDbEncryption',
+        'Sync-DbaLoginPassword',
+        'Sync-DbaLoginPermission',
+        'Test-DbaLoginPassword',
+        'Reset-DbaAdmin',
+        'Set-DbaLogin',
+        'Restore-DbaDbCertificate',
+        'Start-DbaDbEncryption',
+        'Test-DbaWindowsLogin'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

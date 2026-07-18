@@ -28,6 +28,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         $computerName = Resolve-DbaComputerName -ComputerName $TestConfig.InstanceRestart -Property ComputerName
 
+        # Harness honesty: the fixture drives a long-running query through the sqlcmd CLIENT
+        # (sqlcmd -> xp_cmdshell -> cmd.exe is the external-process chain under test). A seat
+        # without the sqlcmd utilities cannot build the fixture at all - probe and skip the
+        # scenario instead of redding on Start-Process (W1-094 law).
+        $sqlcmdSource = (Get-Command sqlcmd -ErrorAction SilentlyContinue).Source
+        $skipExternalProcess = (-not $sqlcmdSource)
+        if ($skipExternalProcess) {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            return
+        }
+
         # Setup xp_cmdshell to create external processes for testing
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
         -- To allow advanced options to be changed.
@@ -58,26 +69,63 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup: Disable xp_cmdshell for security
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
-        EXECUTE sp_configure 'xp_cmdshell', 0;
-        GO
-        RECONFIGURE;
-        GO
-        EXECUTE sp_configure 'show advanced options', 0;
-        GO
-        RECONFIGURE;
-        GO"
+        if ($skipExternalProcess) {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            return
+        }
 
-        # Restart the SQL Service to ensure we can remove the temporary file.
-        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
-        Remove-Item -Path $sqlFile
+        try {
+            # Cleanup: Disable xp_cmdshell for security
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
+            EXECUTE sp_configure 'xp_cmdshell', 0;
+            GO
+            RECONFIGURE;
+            GO
+            EXECUTE sp_configure 'show advanced options', 0;
+            GO
+            RECONFIGURE;
+            GO"
 
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            # Restart the SQL Service to ensure we can remove the temporary file.
+            $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
+            Remove-Item -Path $sqlFile
+        } finally {
+            # A failed or aborted restart above leaves the shared instance stopped,
+            # stranding every later suite that targets it. Restore must run even when
+            # the cleanup itself throws, and must never throw on its own.
+            try {
+                $splatGetEngine = @{
+                    ComputerName    = $TestConfig.InstanceRestart
+                    Type            = "Engine"
+                    EnableException = $false
+                    WarningAction   = "SilentlyContinue"
+                }
+                $stoppedEngine = Get-DbaService @splatGetEngine | Where-Object State -ne "Running"
+                if ($stoppedEngine) {
+                    $splatStartEngine = @{
+                        EnableException = $false
+                        WarningAction   = "SilentlyContinue"
+                    }
+                    $null = $stoppedEngine | Start-DbaService @splatStartEngine
+                }
+            } catch {
+                # Swallowed: surfacing anything here (even a warning, which can be
+                # promoted to terminating by preference) could mask the original
+                # cleanup error. The gate-driver post-step is the outer safety net.
+                $null = $PSItem
+            } finally {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+        }
     }
 
     Context "Can stop an external process" {
         It "returns results" {
+            if ($skipExternalProcess) {
+                # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
+                Set-ItResult -Skipped -Because "sqlcmd is not available on this runner, so the external-process fixture cannot be built"
+                return
+            }
             1..10 | ForEach-Object {
                 $results = Get-DbaExternalProcess -ComputerName $computerName | Stop-DbaExternalProcess
                 if ($results) { break }

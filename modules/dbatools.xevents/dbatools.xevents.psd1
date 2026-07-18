@@ -19,7 +19,22 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaTrace'
+        'Get-DbaTrace',
+        'ConvertTo-DbaXESession',
+        'Copy-DbaXESessionTemplate',
+        'Export-DbaXESessionTemplate',
+        'Read-DbaAuditFile',
+        'Read-DbaXEFile',
+        'Remove-DbaTrace',
+        'Start-DbaTrace',
+        'Start-DbaXESession',
+        'Stop-DbaTrace',
+        'Copy-DbaXESession',
+        'Export-DbaXESession',
+        'Import-DbaXESessionTemplate',
+        'Invoke-DbaXEReplay',
+        'Read-DbaTraceFile',
+        'Watch-DbaXESession'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

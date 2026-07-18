@@ -84,6 +84,15 @@
             "statusMessage": "Resetting Read tracker post-compaction..."
           }
         ]
+      },
+      {
+        "matcher": "startup|compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'STANDING ORDER (operator Chrissy LeMaire, libmigration campaign): Do NOT stop, yield, or ask permission until the ENTIRE campaign is done -- every dbatools command ported to a compiled C# cmdlet, flipped, gated on the live lab, and codex-reviewed, across ALL waves. EXECUTE, DO NOT NARRATE: every turn must make concrete forward progress on the next PENDING or NEEDS_WORK tracker row -- actually write the code, run the gate, commit. A status summary that defers the real work to a future continuation is NOT compliance and is the main failure mode to avoid; if you catch yourself writing \"next I will do X\", do X now instead. Stop only when genuinely blocked on the lab or operator, or out of runway mid-task (then leave a one-line tracker note and keep going next turn). After compaction or resume, resume the in-flight row mid-stride; do not re-plan or re-summarize. CODEX AUTO-REVIEW CAP: 5 rounds max PER command or change -- on round 5, STOP, mark it DONE, one-line README note, MOVE ON. The Stop hook documentation-WORDING findings are prose, not campaign work: batch-fix them in ONE pass then proceed; NEVER spend consecutive turns polishing tracker or DISPOSITION prose (set CLAUDE_CODEX_REVIEW=off for a heads-down porting stretch if it keeps interrupting). An already-dispositioned finding that re-fires (run-all.sh symlink/TOCTOU, the [DIFF TRUNCATED] marker, the drvfs 100755 exec-bit) is THE LOOP -- do not re-fix or re-disposition it; move on. See memory notes never-stop-until-campaign-complete and codex-review-7-round-cap, and migration/CAMPAIGN-STATE.md.'"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -123,7 +132,7 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-codex-review.sh",
             "timeout": 660,
-            "statusMessage": "Running codex auto-review — tail -f ~/.codex-review.live.log to watch"
+            "statusMessage": "Running codex auto-review \u2014 tail -f ~/.codex-review.live.log to watch"
           }
         ]
       }

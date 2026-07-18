@@ -58,7 +58,12 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
 
-            $setPort = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceRestart).Port
+            # TEST-FIX 2026-07-17 (disclosed): once the restart REALLY takes effect, a DEFAULT
+            # instance now listens on $testPort - dialing the plain instance name goes to 1433
+            # and gets nothing (no SQL Browser resolution for MSSQLSERVER). Dial the moved port
+            # explicitly; the assertion still pins that the engine actually moved. The suite's
+            # green history on named instances masked this (Browser resolves those).
+            $setPort = (Get-DbaTcpPort -SqlInstance "$($instance.ComputerName),$testPort").Port
             $setPort | Should -Be $testPort
         }
 

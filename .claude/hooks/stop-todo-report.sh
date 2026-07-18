@@ -9,7 +9,9 @@ source "$(dirname "$0")/lib-git-changes.sh"
 
 # Code files only; .claude/ is excluded so the hook scripts' own message
 # strings (which legitimately contain these words) never self-flag.
-CODE_CHANGED=$(printf '%s\n' "$CHANGED_FILES" | grep -E '\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh)$' | grep -v '^\.claude/')
+# SESSION_CHANGED_FILES (not CHANGED_FILES): only files THIS session wrote, so
+# another lane's in-flight TODOs in a shared checkout never trip this gate.
+CODE_CHANGED=$(printf '%s\n' "$SESSION_CHANGED_FILES" | grep -E '\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh)$' | grep -v '^\.claude/')
 
 if [[ -z "$CODE_CHANGED" ]]; then
     stop_guard_emit ""

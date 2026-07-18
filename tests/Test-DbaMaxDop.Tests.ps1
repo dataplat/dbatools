@@ -53,14 +53,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "Should have correct properties" -Skip:(-not $setupSuccessful) {
+        # -Skip: evaluates at discovery, before BeforeAll assigns $setupSuccessful, so a
+        # discovery-time skip can never see the runtime setup outcome. Set-ItResult skips
+        # at run time instead, so these tests execute whenever setup really succeeded.
+        It "Should have correct properties" {
+            if (-not $setupSuccessful) { Set-ItResult -Skipped -Because "test database setup failed"; return }
             $expectedProps = "ComputerName", "InstanceName", "SqlInstance", "Database", "DatabaseMaxDop", "CurrentInstanceMaxDop", "RecommendedMaxDop", "Notes"
             foreach ($result in $testResults) {
                 ($result.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($expectedProps | Sort-Object)
             }
         }
 
-        It "Should have only one result for database name of dbatoolsci_testMaxDop" -Skip:(-not $setupSuccessful) {
+        It "Should have only one result for database name of dbatoolsci_testMaxDop" {
+            if (-not $setupSuccessful) { Set-ItResult -Skipped -Because "test database setup failed"; return }
             @($testResults | Where-Object Database -eq $testDbName).Count | Should -Be 1
         }
     }

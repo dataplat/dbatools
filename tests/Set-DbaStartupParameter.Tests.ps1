@@ -40,6 +40,23 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     Context "Validate command functionality" {
+        BeforeAll {
+            # Fixture hygiene (2026-07-17): lab instances accumulate residual trace flags (a
+            # stray -T2544 rode both Multi fixtures) and this suite's count assertions assume
+            # ZERO pre-existing flags. -TraceFlagOverride with no -TraceFlag removes all trace
+            # flags; startup parameters are pending-config reads, so no restart is needed for
+            # these assertions. Clear up front and leave clean after.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -TraceFlagOverride -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaStartupParameter -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -TraceFlagOverride -Confirm:$false
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         # See https://github.com/dataplat/dbatools/issues/7035
         It "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $splatSetStartup = @{

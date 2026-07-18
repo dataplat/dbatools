@@ -104,6 +104,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -BeExactly 0
         }
     }
+
+    Context "Cross-record isAzure latch under sql.connection.legacy (DEF-008 W1-027)" {
+        BeforeAll {
+            $legacyConfigOriginal = Get-DbatoolsConfigValue -FullName sql.connection.legacy
+            $null = Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
+            $latchPassword = ConvertTo-SecureString -String "fakepass" -AsPlainText -Force
+            $latchCredential = New-Object System.Management.Automation.PSCredential("me@myad.onmicrosoft.com", $latchPassword)
+        }
+
+        AfterAll {
+            $null = Set-DbatoolsConfig -FullName sql.connection.legacy -Value $legacyConfigOriginal
+        }
+
+        It "Latches the Azure auth branch onto later non-Azure records like the source" {
+            # The source's $isAzure = $true is FUNCTION scope and never reset, so once an
+            # Azure instance latches it, a plain instance later in the SAME pipeline gets
+            # the Azure auth string appended too (quirk preserved, not a recommendation).
+            $latchedResults = @("mydb.database.windows.net", "sql2016" | New-DbaConnectionString -Credential $latchCredential)
+            $latchedResults.Count | Should -BeExactly 2
+            $latchedResults[0] | Should -Match "Active Directory Password"
+            $latchedResults[1] | Should -Match "Active Directory Password"
+        }
+    }
 }
 
 <#

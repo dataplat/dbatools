@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Set-DbaAgentJobOutputFile @splatUpdate
             $result.OldOutputFileName | Should -Be $baseline
             $result.OutputFileName | Should -Be $updated
-            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobMain -StepName $stepName).OutputFileName | Should -Be $updated
+            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobMain | Where-Object Name -eq $stepName).OutputFileName | Should -Be $updated
         }
 
         It "Sets the only step when -Step is omitted" {
@@ -125,7 +125,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Set-DbaAgentJobOutputFile @splatNoStep
             $result.JobStep | Should -Be $stepName
             $result.OutputFileName | Should -Be $outFile
-            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobNoStep -StepName $stepName).OutputFileName | Should -Be $outFile
+            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobNoStep | Where-Object Name -eq $stepName).OutputFileName | Should -Be $outFile
         }
     }
 
@@ -148,7 +148,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Set-DbaAgentJobOutputFile @splatWhatIf
             $result | Should -BeNullOrEmpty
-            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobMain -StepName $stepName).OutputFileName | Should -Be $known
+            (Get-DbaAgentJobStep -SqlInstance $TestConfig.InstanceSingle -Job $jobMain | Where-Object Name -eq $stepName).OutputFileName | Should -Be $known
         }
     }
 
