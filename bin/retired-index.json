@@ -1679,6 +1679,21 @@
     "retiredPath": "private/retired/New-DbaDbRole.ps1",
     "flippedUtc": "2026-07-18T21:29:14Z"
   },
+  "New-DbaDbSchema": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbSchema.ps1",
+    "flippedUtc": "2026-07-18T21:47:49Z"
+  },
+  "New-DbaDbSequence": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbSequence.ps1",
+    "flippedUtc": "2026-07-18T21:46:33Z"
+  },
+  "New-DbaDbSnapshot": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbSnapshot.ps1",
+    "flippedUtc": "2026-07-18T21:48:44Z"
+  },
   "New-DbaDiagnosticAdsNotebook": {
     "flippedUtc": "2026-07-14T08:01:15Z",
     "module": "dbatools.performance",
@@ -2009,6 +2024,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Select-DbaBackupInformation.ps1"
   },
+  "Select-DbaDbSequenceNextValue": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Select-DbaDbSequenceNextValue.ps1",
+    "flippedUtc": "2026-07-18T22:01:35Z"
+  },
   "Set-DbaAgentJobOwner": {
     "flippedUtc": "2026-07-18T05:38:55Z",
     "module": "dbatools.agent",
@@ -2039,15 +2059,35 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Set-DbaDbFileGrowth.ps1"
   },
+  "Set-DbaDbIdentity": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbIdentity.ps1",
+    "flippedUtc": "2026-07-18T21:49:23Z"
+  },
   "Set-DbaDbOwner": {
     "flippedUtc": "2026-07-16T18:41:59Z",
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaDbOwner.ps1"
   },
+  "Set-DbaDbQueryStoreOption": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbQueryStoreOption.ps1",
+    "flippedUtc": "2026-07-18T21:50:29Z"
+  },
   "Set-DbaDbRecoveryModel": {
     "flippedUtc": "2026-07-16T19:26:25Z",
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaDbRecoveryModel.ps1"
+  },
+  "Set-DbaDbSchema": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbSchema.ps1",
+    "flippedUtc": "2026-07-18T21:57:49Z"
+  },
+  "Set-DbaDbSequence": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbSequence.ps1",
+    "flippedUtc": "2026-07-18T21:59:46Z"
   },
   "Set-DbaDbState": {
     "flippedUtc": "2026-07-16T19:45:45Z",

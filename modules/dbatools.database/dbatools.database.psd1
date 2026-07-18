@@ -107,7 +107,15 @@
         'New-DbaDbMaskingConfig',
         'New-DbaDbRole',
         'Repair-DbaDbOrphanUser',
-        'Restore-DbaDbSnapshot'
+        'Restore-DbaDbSnapshot',
+        'New-DbaDbSequence',
+        'New-DbaDbSchema',
+        'New-DbaDbSnapshot',
+        'Set-DbaDbIdentity',
+        'Set-DbaDbQueryStoreOption',
+        'Set-DbaDbSchema',
+        'Set-DbaDbSequence',
+        'Select-DbaDbSequenceNextValue'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
