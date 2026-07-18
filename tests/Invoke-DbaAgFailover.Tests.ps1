@@ -196,14 +196,36 @@ Describe $CommandName -Tag IntegrationTests {
             # discovery error can neither mask the setup outcome nor leave the default enabled.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            # Best-effort: resolve what actually exists by exact randomized name so teardown reclaims
+            # Best-effort discovery: each probe is isolated so one failure cannot hide the others,
+            # and every created resource is resolved by exact randomized name so teardown reclaims
             # whatever setup created even on a mid-setup throw, and never touches a shared endpoint.
-            # None of this may throw out of the finally.
             try {
                 $backupDirCreated = Test-Path -Path $agBackupPath
-                $dbCreated = [bool](Get-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName -ErrorAction SilentlyContinue)
-                $agCreated = [bool](Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -ErrorAction SilentlyContinue)
-                if ($baselineCaptured) {
+            } catch {
+                $backupDirCreated = $false
+            }
+            try {
+                $splatFindDb = @{
+                    SqlInstance = $TestConfig.InstanceHadr
+                    Database    = $agDbName
+                    ErrorAction = "SilentlyContinue"
+                }
+                $dbCreated = [bool](Get-DbaDatabase @splatFindDb)
+            } catch {
+                $dbCreated = $false
+            }
+            try {
+                $splatFindAg = @{
+                    SqlInstance       = $TestConfig.InstanceHadr
+                    AvailabilityGroup = $agName
+                    ErrorAction       = "SilentlyContinue"
+                }
+                $agCreated = [bool](Get-DbaAvailabilityGroup @splatFindAg)
+            } catch {
+                $agCreated = $false
+            }
+            if ($baselineCaptured) {
+                try {
                     $splatDeltaEndpoint = @{
                         SqlInstance = $TestConfig.InstanceHadr
                         Type        = "DatabaseMirroring"
@@ -211,50 +233,71 @@ Describe $CommandName -Tag IntegrationTests {
                     }
                     $postEndpoints = @(Get-DbaEndpoint @splatDeltaEndpoint).Name
                     $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
+                } catch {
+                    $createdEndpointNames = @()
                 }
-            } catch {
-                # Discovery is best-effort; teardown falls back to whatever was resolved.
             }
         }
     }
 
     AfterAll {
-        # Clean each created resource INDEPENDENTLY so one failure cannot strand the rest, and touch
-        # only what this fixture created. EnableException stays off here: a cleanup failure surfaces
-        # as a warning rather than masking a genuine test result.
+        # We want to run cleanup with EnableException so a failure to remove a created object surfaces
+        # loudly rather than silently leaking lab state - but each removal is isolated so one failure
+        # cannot strand the rest; the collected failures are reported after every attempt.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $cleanupErrors = New-Object System.Collections.Generic.List[string]
+
         if ($agCreated) {
-            $splatRemoveAg = @{
-                SqlInstance       = $TestConfig.InstanceHadr
-                AvailabilityGroup = $agName
-                ErrorAction       = "SilentlyContinue"
+            try {
+                $splatRemoveAg = @{
+                    SqlInstance       = $TestConfig.InstanceHadr
+                    AvailabilityGroup = $agName
+                }
+                $null = Remove-DbaAvailabilityGroup @splatRemoveAg
+            } catch {
+                $cleanupErrors.Add("availability group ${agName}: $($_.Exception.Message)")
             }
-            $null = Remove-DbaAvailabilityGroup @splatRemoveAg
         }
         if ($createdEndpointNames.Count -gt 0) {
-            $splatRemoveEndpoint = @{
-                SqlInstance = $TestConfig.InstanceHadr
-                Type        = "DatabaseMirroring"
-                Endpoint    = $createdEndpointNames
-                ErrorAction = "SilentlyContinue"
+            try {
+                $splatRemoveEndpoint = @{
+                    SqlInstance = $TestConfig.InstanceHadr
+                    Type        = "DatabaseMirroring"
+                    Endpoint    = $createdEndpointNames
+                }
+                $null = Get-DbaEndpoint @splatRemoveEndpoint | Remove-DbaEndpoint
+            } catch {
+                $cleanupErrors.Add("endpoints $($createdEndpointNames -join ", "): $($_.Exception.Message)")
             }
-            $null = Get-DbaEndpoint @splatRemoveEndpoint | Remove-DbaEndpoint -ErrorAction SilentlyContinue
         }
         if ($dbCreated) {
-            $splatRemoveDb = @{
-                SqlInstance = $TestConfig.InstanceHadr
-                Database    = $agDbName
-                ErrorAction = "SilentlyContinue"
+            try {
+                $splatRemoveDb = @{
+                    SqlInstance = $TestConfig.InstanceHadr
+                    Database    = $agDbName
+                }
+                $null = Remove-DbaDatabase @splatRemoveDb
+            } catch {
+                $cleanupErrors.Add("database ${agDbName}: $($_.Exception.Message)")
             }
-            $null = Remove-DbaDatabase @splatRemoveDb
         }
         if ($backupDirCreated -and (Test-Path -Path $agBackupPath)) {
-            $splatRemoveBackup = @{
-                Path        = $agBackupPath
-                Recurse     = $true
-                Force       = $true
-                ErrorAction = "SilentlyContinue"
+            try {
+                $splatRemoveBackup = @{
+                    Path        = $agBackupPath
+                    Recurse     = $true
+                    Force       = $true
+                    ErrorAction = "Stop"
+                }
+                Remove-Item @splatRemoveBackup
+            } catch {
+                $cleanupErrors.Add("backup directory ${agBackupPath}: $($_.Exception.Message)")
             }
-            Remove-Item @splatRemoveBackup
+        }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        if ($cleanupErrors.Count -gt 0) {
+            throw "disposable availability group teardown left state behind: $($cleanupErrors -join "; ")"
         }
     }
 
