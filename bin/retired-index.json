@@ -264,6 +264,11 @@
     "retiredPath": "private/retired/Export-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-11T13:18:50Z"
   },
+  "Export-DbaUser": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Export-DbaUser.ps1",
+    "flippedUtc": "2026-07-18T13:13:48Z"
+  },
   "Find-DbaAgentJob": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Find-DbaAgentJob.ps1",

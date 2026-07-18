@@ -38,7 +38,8 @@
         'Find-DbaLoginInGroup',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmObjectSet',
-        'New-DbaServiceMasterKey'
+        'New-DbaServiceMasterKey',
+        'Export-DbaUser'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

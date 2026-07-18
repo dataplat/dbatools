@@ -121,7 +121,6 @@
         'Export-DbaRegServer',
         'Export-DbaReplServerSetting',
         'Export-DbaSpConfigure',
-        'Export-DbaUser',
         'Export-DbaXESession',
         'Export-DbaXESessionTemplate',
         'Find-DbaBackup',
