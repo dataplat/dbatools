@@ -89,7 +89,8 @@
         'Invoke-DbaDbDecryptObject',
         'Test-DbaDbOwner',
         'Test-DbaDbCompatibility',
-        'Test-DbaDbCollation'
+        'Test-DbaDbCollation',
+        'Set-DbaDbFileGrowth'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

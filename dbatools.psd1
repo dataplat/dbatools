@@ -284,7 +284,6 @@
         'Set-DbaDbCompatibility',
         'Set-DbaDbCompression',
         'Set-DbaDbFileGroup',
-        'Set-DbaDbFileGrowth',
         'Set-DbaDbIdentity',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
