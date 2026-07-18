@@ -136,7 +136,6 @@
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
         'Remove-DbaDbPartitionScheme',
-        'Remove-DbaDbPartitionFunction',
         'Get-DbaDbRecoveryModel',
         'Get-DbaDbRestoreHistory',
         'Get-DbaErrorLogConfig',
