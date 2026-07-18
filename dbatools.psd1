@@ -253,7 +253,6 @@
         'Remove-DbaDbMirror',
         'Remove-DbaDbMirrorMonitor',
         'Remove-DbaDbOrphanUser',
-        'Remove-DbaDbRole',
         'Remove-DbaDbRoleMember',
         'Remove-DbaDbSequence',
         'Remove-DbaDbSynonym',

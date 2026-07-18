@@ -98,7 +98,8 @@
         'Set-DbaDbCompatibility',
         'Remove-DbaDbTable',
         'Remove-DbaDbSnapshot',
-        'Remove-DbaDbSchema'
+        'Remove-DbaDbSchema',
+        'Remove-DbaDbRole'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

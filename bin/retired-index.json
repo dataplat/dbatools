@@ -1684,6 +1684,11 @@
     "retiredPath": "private/retired/Remove-DbaDbMasterKey.ps1",
     "flippedUtc": "2026-07-18T13:20:05Z"
   },
+  "Remove-DbaDbRole": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbRole.ps1",
+    "flippedUtc": "2026-07-18T23:37:22Z"
+  },
   "Remove-DbaDbSchema": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Remove-DbaDbSchema.ps1",
