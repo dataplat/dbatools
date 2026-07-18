@@ -85,10 +85,12 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Input validation" {
+        # -SqlInstance is deliberately omitted from every guard case: it is not mandatory, and each
+        # guard Stop-Functions before any Get-DbaDbTable connection - so a warning WITHOUT a
+        # connection attempt proves the validation is genuinely pre-connection. Each case asserts a
+        # single warning carrying the complete expected message.
         It "Warns when neither Database and Table nor a piped table is supplied" {
-            # -Table omitted, and nothing piped, trips the first guard before any connection.
             $splatNoTable = @{
-                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $db
                 Path            = $sourceDir
                 WarningVariable = "warn"
@@ -96,12 +98,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Import-DbaBinaryFile @splatNoTable
             $result | Should -BeNullOrEmpty
-            $warn -join " " | Should -Match "must specify either Database and Table or pipe in a table"
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*You must specify either Database and Table or pipe in a table*"
         }
 
         It "Warns when both -Path and -FilePath are supplied" {
             $splatBoth = @{
-                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $db
                 Table           = $tableName
                 Path            = $sourceDir
@@ -111,12 +113,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Import-DbaBinaryFile @splatBoth
             $result | Should -BeNullOrEmpty
-            $warn -join " " | Should -Match "cannot specify both -Path and -FilePath"
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*You cannot specify both -Path and -FilePath*"
         }
 
         It "Warns when neither -Path nor -FilePath is supplied" {
             $splatNeither = @{
-                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $db
                 Table           = $tableName
                 WarningVariable = "warn"
@@ -124,14 +126,29 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Import-DbaBinaryFile @splatNeither
             $result | Should -BeNullOrEmpty
+            $warn.Count | Should -Be 1
             # characterization: the message keeps the source grammar quirk ("either" means "neither")
-            $warn -join " " | Should -Match "cannot specify either -Path or -FilePath"
+            $warn[0] | Should -BeLike "*You cannot specify either -Path or -FilePath*"
         }
 
-        It "Warns when -FilePath does not exist" {
+        It "Warns for a nonexistent -Path with the exact path" {
+            $missingDir = Join-Path -Path $sourceDir -ChildPath "missing_dir_$random"
+            $splatBadPath = @{
+                Database        = $db
+                Table           = $tableName
+                Path            = $missingDir
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Import-DbaBinaryFile @splatBadPath
+            $result | Should -BeNullOrEmpty
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*Path $missingDir does not exist*"
+        }
+
+        It "Warns for a nonexistent -FilePath with the exact path" {
             $missingFile = Join-Path -Path $sourceDir -ChildPath "does_not_exist_$random.bin"
             $splatMissing = @{
-                SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $db
                 Table           = $tableName
                 FilePath        = $missingFile
@@ -140,7 +157,22 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Import-DbaBinaryFile @splatMissing
             $result | Should -BeNullOrEmpty
-            $warn -join " " | Should -Match "File .* does not exist"
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*File $missingFile does not exist*"
+        }
+
+        It "Warns when -FilePath points at a directory" {
+            $splatDir = @{
+                Database        = $db
+                Table           = $tableName
+                FilePath        = $sourceDir
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Import-DbaBinaryFile @splatDir
+            $result | Should -BeNullOrEmpty
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*FilePath must be one or more files, not a directory*"
         }
     }
 
@@ -154,13 +186,16 @@ Describe $CommandName -Tag IntegrationTests {
                 Confirm     = $false
             }
             $result = Import-DbaBinaryFile @splatImport
+            $result | Should -BeOfType System.Management.Automation.PSCustomObject
             $result.Status | Should -Be "Success"
             $result.Database | Should -Be $db
             $result.Table | Should -Be $tableName
             $result.FilePath | Should -Be $sourceFile
-            foreach ($prop in "ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "FilePath", "Status") {
-                $result.PSObject.Properties.Name | Should -Contain $prop
-            }
+            # identity columns carry the connected server's values, not just any non-null string
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $result.ComputerName | Should -Be $server.ComputerName
+            $result.InstanceName | Should -Be $server.ServiceName
+            $result.SqlInstance | Should -Be $server.DomainInstanceName
 
             # the row actually landed: the filename column holds the leaf name and the binary column
             # holds all 64 payload bytes (auto-detected FileName + TheFile columns).
@@ -170,10 +205,10 @@ Describe $CommandName -Tag IntegrationTests {
                 Query       = "SELECT [FileName] AS FileName, DATALENGTH([TheFile]) AS ByteLength FROM dbo.$tableName"
                 As          = "PSObject"
             }
-            $row = @(Invoke-DbaQuery @splatRead)
-            $row.Count | Should -Be 1
-            $row[0].FileName | Should -Be (Split-Path -Path $sourceFile -Leaf)
-            $row[0].ByteLength | Should -Be 64
+            $rows = @(Invoke-DbaQuery @splatRead)
+            $rows.Count | Should -Be 1
+            $rows[0].FileName | Should -Be (Split-Path -Path $sourceFile -Leaf)
+            $rows[0].ByteLength | Should -Be 64
         }
     }
 }
