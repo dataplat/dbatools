@@ -42,7 +42,7 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     # NOTE ON COVERAGE: retrieving backup history across Availability Group replicas requires a live
     # Availability Group, which the standalone InstanceSingle does not provide - that leg is
-    # DEFERRED-TO-AG01 per the coordinator AG policy (a read-only smoke against the lab's AG01 supplies
+    # DEFERRED-TO-AG01 per the coordinator AG policy (a read-only smoke against AG01 in the lab supplies
     # the integration evidence). What IS characterizable on a standalone instance is the pre-retrieval
     # guard: with a mandatory -AvailabilityGroup that does not exist, the command skips the instance
     # (per-instance warning) and finishes without results (end-block warning), emitting nothing.
@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Count | Should -Be 0
             $warn.Count | Should -Be 2
 
-            # strip Write-Message's bracketed [timestamp]/[function] prefix from each warning
+            # strip the bracketed [timestamp]/[function] prefix added by Write-Message from each warning
             $payloads = $warn | ForEach-Object { $PSItem.Message -replace "^(\[[^\]]*\]\s*)+", "" }
 
             # the end-block guard always fires when no instance carried the group
