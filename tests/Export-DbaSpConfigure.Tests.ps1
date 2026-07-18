@@ -79,11 +79,14 @@ Describe $CommandName -Tag IntegrationTests {
                 $content | Should -Match "^EXEC sp_configure .show advanced options. , 1;  RECONFIGURE WITH OVERRIDE"
                 # every configuration property is scripted with its exact display name and value;
                 # read them back while advanced options is still ON so the expected values match
-                # exactly what the command wrote.
+                # exactly what the command wrote. Compare line-by-line with -Contain (exact string
+                # equality) so the trailing-RECONFIGURE header line cannot stand in for a missing
+                # "show advanced options , 1;" body line.
+                $lines = Get-Content -Path $filePath
                 $verifyServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
                 foreach ($prop in $verifyServer.Configuration.Properties) {
                     $expectedLine = "EXEC sp_configure " + [char]39 + $prop.DisplayName + [char]39 + " , " + $prop.ConfigValue + ";"
-                    $content | Should -Match ([regex]::Escape($expectedLine))
+                    $lines | Should -Contain $expectedLine
                 }
             } finally {
                 $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
