@@ -1989,11 +1989,6 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Set-DbaDbCompatibility.ps1"
   },
-  "Set-DbaDbCompression": {
-    "flippedUtc": "2026-07-18T18:44:36Z",
-    "module": "dbatools.database",
-    "retiredPath": "private/retired/Set-DbaDbCompression.ps1"
-  },
   "Set-DbaDbDataClassification": {
     "flippedUtc": "2026-07-18T18:10:26Z",
     "module": "dbatools.database",

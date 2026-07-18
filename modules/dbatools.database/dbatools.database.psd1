@@ -98,7 +98,6 @@
         'Show-DbaDbList',
         'Set-DbaDbFileGroup',
         'Set-DbaDbDataClassification',
-        'Set-DbaDbCompression',
         'Set-DbaDbCompatibility',
         'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig'

@@ -253,6 +253,7 @@
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
         'Set-DbaDbIdentity',
+        'Set-DbaDbCompression',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
         'Set-DbaDbQueryStoreOption',
