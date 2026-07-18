@@ -145,8 +145,10 @@ Describe $CommandName -Tag IntegrationTests {
             $upgraded.UpdateStats | Should -Be "Skipped"
             $upgraded.RefreshViews | Should -Be "Skipped"
             # ...but -NoCheckDb leaves DataPurity UNSET (null), not "Skipped" - a source quirk that a
-            # port could silently "normalize" to "Skipped"; pin the current behavior.
-            $upgraded.DataPurity | Should -BeNullOrEmpty
+            # port could silently "normalize" to "Skipped"; pin that the property is emitted AND its
+            # value is exactly $null (BeNullOrEmpty alone would also pass on a missing property or "").
+            $upgraded.PSObject.Properties.Name | Should -Contain "DataPurity"
+            ($null -eq $upgraded.DataPurity) | Should -BeTrue
             # the change actually persisted on the instance
             $liveLevel = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Databases[$upgradeDb].CompatibilityLevel.ToString().Replace("Version", "")
             $liveLevel | Should -Be $serverCompat
