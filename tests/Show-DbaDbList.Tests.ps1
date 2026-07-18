@@ -34,13 +34,19 @@ Describe $CommandName -Tag IntegrationTests {
     # desktop session, then returns the selected database name (or $null on cancel). That leg cannot
     # be exercised in a headless/non-interactive test harness (it would block indefinitely and needs
     # a window station), so it is DEFERRED to manual verification; the parameter contract is covered
-    # by the UnitTests above. The one branch that IS safely automatable is the graceful degradation
-    # when Windows Presentation Framework is unavailable, which the command checks in begin() BEFORE
-    # any connection - so it needs no live instance and runs on non-Windows only.
+    # by the UnitTests above. Two branches short-circuit BEFORE the window is ever built and are
+    # safely automatable: (1) Windows Presentation Framework unavailable (begin(), non-Windows only);
+    # (2) the connection failing (process catch, before any XAML/window creation - runnable on
+    # Windows with a throwing connection mock, so it never reaches ShowDialog).
     Context "When Windows Presentation Framework is unavailable" -Skip:(-not ($IsLinux -or $IsMacOS)) {
         BeforeAll {
             # spy on the connection so we can prove the guard returns BEFORE connecting.
-            Mock Connect-DbaInstance { } -ModuleName dbatools
+            $splatMock = @{
+                CommandName = "Connect-DbaInstance"
+                MockWith    = { }
+                ModuleName  = "dbatools"
+            }
+            Mock @splatMock
         }
 
         It "Warns and returns nothing WITHOUT attempting a connection" {
@@ -52,12 +58,52 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningVariable = "warn"
                 WarningAction   = "SilentlyContinue"
             }
-            $result = Show-DbaDbList @splatGuard
-            $result | Should -BeNullOrEmpty
+            $result = @(Show-DbaDbList @splatGuard)
+            $result.Count | Should -Be 0
             $warn.Count | Should -Be 1
-            $warn[0] | Should -BeLike "*Windows Presentation Framework required but not installed*"
+            $warn[0].Message | Should -Be "Windows Presentation Framework required but not installed"
             # the guard short-circuits before any connection attempt
-            Assert-MockCalled -CommandName Connect-DbaInstance -Times 0 -Exactly -Scope It -ModuleName dbatools
+            $splatAssert = @{
+                CommandName = "Connect-DbaInstance"
+                Times       = 0
+                Exactly     = $true
+                Scope       = "It"
+                ModuleName  = "dbatools"
+            }
+            Assert-MockCalled @splatAssert
+        }
+    }
+
+    Context "When the instance cannot be connected" -Skip:($IsLinux -or $IsMacOS) {
+        BeforeAll {
+            # a throwing connection mock drives the process-block catch, which Stop-Functions and
+            # returns before any window is built - so ShowDialog() is never reached on Windows.
+            $splatMockThrow = @{
+                CommandName = "Connect-DbaInstance"
+                MockWith    = { throw "mocked connection failure" }
+                ModuleName  = "dbatools"
+            }
+            Mock @splatMockThrow
+        }
+
+        It "Warns and returns nothing without opening the dialog" {
+            $splatConn = @{
+                SqlInstance     = "dbatoolsci_noconnect"
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = @(Show-DbaDbList @splatConn)
+            $result.Count | Should -Be 0
+            # the connection catch fires (Stop-Function "Failure" with the error record appended)
+            ($warn -join " ") | Should -BeLike "*Failure*"
+            $splatAssertConn = @{
+                CommandName = "Connect-DbaInstance"
+                Times       = 1
+                Exactly     = $true
+                Scope       = "It"
+                ModuleName  = "dbatools"
+            }
+            Assert-MockCalled @splatAssertConn
         }
     }
 }
