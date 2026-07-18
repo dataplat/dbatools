@@ -171,3 +171,44 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: the actual copy migrates Policy-Based Management policies, conditions, and
+    # object sets from a source to a destination instance, which needs a live Source+Destination
+    # pair - that behavior leg is DEFERRED-TO-COPYPAIR (the standing Source+Destination gate pair
+    # for the Copy-* family, per the coordinator ruling 2026-07-18; the mocked UnitTests above
+    # already pin the policy/objectset copy dispatch). What IS characterizable deterministically is
+    # the platform guard the source runs first: on a non-Windows host the command refuses to run.
+    # Per the coordinator ruling this is pinned by flipping the module-scope $script:isWindows state
+    # (InModuleScope), never by mocking Connect-DbaInstance (the documented mock-coupling latent-red
+    # class); the flip is restored in a finally so it cannot leak into other tests.
+    Context "Guarding on a non-Windows platform" {
+        It "Warns and returns nothing when the host is not Windows" {
+            InModuleScope dbatools {
+                # [char]39 supplies the apostrophe the source message contains (the contraction of
+                # "we are") without a literal apostrophe in the test source
+                $q = [char]39
+                $originalIsWindows = $script:isWindows
+                try {
+                    $script:isWindows = $false
+                    $splatNonWindows = @{
+                        Source          = "dbatoolsci-src"
+                        Destination     = "dbatoolsci-dst"
+                        WarningVariable = "warn"
+                        WarningAction   = "SilentlyContinue"
+                        WhatIf          = $true
+                    }
+                    $result = @(Copy-DbaPolicyManagement @splatNonWindows)
+                    $result.Count | Should -Be 0
+                    $warn.Count | Should -Be 1
+
+                    # strip the bracketed [timestamp]/[function] prefix added by Write-Message
+                    $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+                    $payload | Should -Be "Copy-DbaPolicyManagement does not support Linux - we${q}re still waiting for the Core SMOs from Microsoft"
+                } finally {
+                    $script:isWindows = $originalIsWindows
+                }
+            }
+        }
+    }
+}
