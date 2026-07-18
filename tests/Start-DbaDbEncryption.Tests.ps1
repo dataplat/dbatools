@@ -75,6 +75,14 @@ Describe $CommandName -Tag IntegrationTests {
         $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
         $null = New-Item -Path $backupPath -ItemType Directory
 
+        # Snapshot the master-database certificates and master key so AfterAll can drop ONLY what this
+        # suite creates. Start-DbaDbEncryption provisions a certificate in the master database when none
+        # exists (New-DbaDbCertificate defaults the certificate name to the database name, so it is
+        # literally named "master") and nothing dropped it - stray master-named certificates on the
+        # instance are the residue of prior runs of this suite.
+        $preExistingMasterCerts = (Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master).Name
+        $preExistingMasterKey = Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master
+
         # Explain what needs to be set up for the test:
         # To test database encryption, we need multiple test databases.
 
@@ -95,6 +103,17 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created objects.
         if ($testDatabases) {
             $testDatabases | Remove-DbaDatabase
+        }
+
+        # Drop only the master-database certificates this suite's runs created - never pre-existing
+        # ones (the databases and their encryption keys are already gone, so the certificates are
+        # unreferenced). Then drop the master key only if the suite created it.
+        $newMasterCerts = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -NotIn $preExistingMasterCerts
+        if ($newMasterCerts) {
+            $newMasterCerts | Remove-DbaDbCertificate
+        }
+        if (-not $preExistingMasterKey) {
+            Get-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database master | Remove-DbaDbMasterKey
         }
 
         # Remove the backup directory.
