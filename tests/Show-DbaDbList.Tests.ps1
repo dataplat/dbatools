@@ -38,10 +38,15 @@ Describe $CommandName -Tag IntegrationTests {
     # when Windows Presentation Framework is unavailable, which the command checks in begin() BEFORE
     # any connection - so it needs no live instance and runs on non-Windows only.
     Context "When Windows Presentation Framework is unavailable" -Skip:(-not ($IsLinux -or $IsMacOS)) {
-        It "Warns and returns nothing instead of attempting the dialog" {
+        BeforeAll {
+            # spy on the connection so we can prove the guard returns BEFORE connecting.
+            Mock Connect-DbaInstance { } -ModuleName dbatools
+        }
+
+        It "Warns and returns nothing WITHOUT attempting a connection" {
             # On Linux/macOS the PresentationFramework assembly is not available, so the begin-block
-            # Add-Type fails and the command Stop-Functions before connecting. -SqlInstance is a
-            # throwaway value - the guard fires first, so no connection is attempted.
+            # Add-Type fails, Stop-Function sets the interrupt flag, and process returns before the
+            # Connect-DbaInstance call. -SqlInstance is a throwaway value that is never reached.
             $splatGuard = @{
                 SqlInstance     = "dbatoolsci_noconnect"
                 WarningVariable = "warn"
@@ -49,7 +54,10 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Show-DbaDbList @splatGuard
             $result | Should -BeNullOrEmpty
-            $warn -join " " | Should -Match "Windows Presentation Framework required but not installed"
+            $warn.Count | Should -Be 1
+            $warn[0] | Should -BeLike "*Windows Presentation Framework required but not installed*"
+            # the guard short-circuits before any connection attempt
+            Assert-MockCalled -CommandName Connect-DbaInstance -Times 0 -Exactly -Scope It -ModuleName dbatools
         }
     }
 }
