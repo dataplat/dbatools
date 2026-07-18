@@ -99,9 +99,9 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbDataClassification',
         'Set-DbaDbCompression',
-        'Set-DbaDbCompatibility'
+        'Set-DbaDbCompatibility',
         'Test-DbaDbCompatibility',
-        'Test-DbaDbDataGeneratorConfig',
+        'Test-DbaDbDataGeneratorConfig'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
