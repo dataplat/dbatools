@@ -195,11 +195,11 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Analyzing a live instance" {
-        It "Returns one object carrying every documented property" {
+        It "Returns one object carrying exactly the documented property set" {
             $result | Should -Not -BeNullOrEmpty
-            foreach ($prop in "ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue", "Server") {
-                $result.PSObject.Properties.Name | Should -Contain $prop
-            }
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue", "Server")
+            # Compare-Object catches both missing AND extra (undocumented) properties.
+            Compare-Object -ReferenceObject $expectedProps -DifferenceObject $result.PSObject.Properties.Name | Should -BeNullOrEmpty
         }
 
         It "Types the memory figures as integers and keeps the SMO Server reference" {
@@ -210,16 +210,33 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Server | Should -BeOfType Microsoft.SqlServer.Management.Smo.Server
         }
 
-        It "Reports MaxValue matching the instance's current max server memory" {
-            # MaxValue comes straight from Get-DbaMaxMemory, so the two must agree.
-            $current = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle).MaxValue
-            $result.MaxValue | Should -Be ([int]$current)
+        It "Reports Total and MaxValue straight from Get-DbaMaxMemory" {
+            # both figures come from Get-DbaMaxMemory, so independently confirm the source values
+            # rather than trusting the numbers the command handed back.
+            $memory = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
+            $result.Total | Should -Be ([int]$memory.Total)
+            $result.MaxValue | Should -Be ([int]$memory.MaxValue)
+        }
+
+        It "Derives InstanceCount from running Engine services with a fallback of 1" {
+            # Independently reproduce the service-discovery count (running Engine services grouped by
+            # instance) with the documented default-to-1 fallback, instead of trusting the returned
+            # value - so the algorithm test below rests on a verified InstanceCount.
+            $expectedCount = 1
+            try {
+                $services = Get-DbaService -ComputerName $TestConfig.InstanceSingle -EnableException
+                $discovered = ($services | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq "Engine" | Group-Object InstanceName | Measure-Object Count).Count
+                if ($discovered -gt 0) { $expectedCount = $discovered }
+            } catch {
+                $expectedCount = 1
+            }
+            $result.InstanceCount | Should -Be $expectedCount
         }
 
         It "Computes RecommendedValue by the documented Kehayias algorithm" {
-            # Re-derive the recommendation from the SAME returned Total and InstanceCount using the
-            # exact source arithmetic and confirm the command's value matches - this pins the memory
-            # math against any drift in the port.
+            # Re-derive the recommendation from the returned Total and InstanceCount (both pinned to
+            # their sources in the tests above) using the exact source arithmetic and confirm the
+            # command's value matches - this pins the memory math against any drift in the port.
             $total = $result.Total
             $instanceCount = $result.InstanceCount
             if ($total -ge 4096) {
@@ -242,11 +259,11 @@ Describe $CommandName -Tag IntegrationTests {
             $result.RecommendedValue | Should -Be ([int]$recommendedMax)
         }
 
-        It "Excludes Server from the default view but keeps it accessible" {
-            # Select-DefaultView keeps the analysis columns visible and hides the SMO Server handle.
+        It "Sets the default view to exactly the seven analysis columns, hiding the Server handle" {
+            # Select-DefaultView shows the analysis columns and excludes the SMO Server handle.
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
-            $defaultProps | Should -Contain "RecommendedValue"
-            $defaultProps | Should -Not -Contain "Server"
+            $expectedView = @("ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue")
+            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps | Should -BeNullOrEmpty
         }
 
         It "Returns one object per value supplied to -SqlInstance" {
