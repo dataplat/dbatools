@@ -39,7 +39,10 @@
         'Get-DbaPbmPolicy',
         'Get-DbaPbmObjectSet',
         'New-DbaServiceMasterKey',
-        'Export-DbaUser'
+        'Export-DbaUser',
+        'Remove-DbaDbAsymmetricKey',
+        'Remove-DbaDbCertificate',
+        'Remove-DbaDbEncryptionKey'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

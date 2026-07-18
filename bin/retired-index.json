@@ -1594,10 +1594,25 @@
     "retiredPath": "private/retired/Remove-DbaDatabase.ps1",
     "flippedUtc": "2026-07-16T17:56:14Z"
   },
+  "Remove-DbaDbAsymmetricKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaDbAsymmetricKey.ps1",
+    "flippedUtc": "2026-07-18T13:18:40Z"
+  },
   "Remove-DbaDbBackupRestoreHistory": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaDbBackupRestoreHistory.ps1",
     "flippedUtc": "2026-07-16T18:26:15Z"
+  },
+  "Remove-DbaDbCertificate": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaDbCertificate.ps1",
+    "flippedUtc": "2026-07-18T13:19:02Z"
+  },
+  "Remove-DbaDbEncryptionKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Remove-DbaDbEncryptionKey.ps1",
+    "flippedUtc": "2026-07-18T13:19:21Z"
   },
   "Remove-DbaDbMailAccount": {
     "module": "dbatools.agent",
