@@ -125,13 +125,10 @@ Describe $CommandName -Tag IntegrationTests {
             # the returned Path is the SQL-escaped form (apostrophe doubled), mirroring the source
             $result[0].Path | Should -Be $quoteDir.Replace("$q", "$q$q")
             $result[0].Created | Should -BeTrue
-            # the ACTUAL directory on disk has the single apostrophe (SQL un-doubles the literal)
-            $splatVerifyQuote = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                Path            = $quoteDir
-                EnableException = $true
-            }
-            Test-DbaPath @splatVerifyQuote | Should -BeTrue
+            # the ACTUAL directory on disk has the single apostrophe (SQL un-doubles the literal).
+            # Test-DbaPath does not escape apostrophes in its own existence query, so verify locally
+            # (the context is gated to a local instance).
+            Test-Path -LiteralPath $quoteDir | Should -BeTrue
         }
 
         It "Warns and emits nothing when the path already exists" {
