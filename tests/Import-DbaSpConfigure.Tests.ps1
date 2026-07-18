@@ -132,11 +132,15 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "Round-trips a full Export-DbaSpConfigure file, applying every line without failure" {
+        It "Round-trips a full Export-DbaSpConfigure file, executing every line" {
             try {
-                # Re-applying the instance's own exported configuration is net-neutral, but it still
-                # executes every generated line; asserting NO per-line failure warning proves the
-                # import actually ran the file rather than failing on all of it.
+                # Every line of the exported file is a valid batch, so a successful import emits
+                # exactly one host "Successfully executed" message per line (Write-Message -Level
+                # Output = level 2, inside the default 1-3 information window, so it reaches the
+                # information stream). Capture stream 6 and count those messages against the file.
+                # The command and this test both read the file with Get-Content, so the line counts
+                # line up exactly and prove no line was skipped.
+                $lineCount = (Get-Content -Path $configFile).Count
                 $splatRoundTrip = @{
                     SqlInstance     = $TestConfig.InstanceSingle
                     Path            = $configFile
@@ -144,10 +148,15 @@ Describe $CommandName -Tag IntegrationTests {
                     WarningVariable = "warn"
                     WarningAction   = "SilentlyContinue"
                 }
-                $result = Import-DbaSpConfigure @splatRoundTrip
-                $result | Should -BeNullOrEmpty
+                $captured = Import-DbaSpConfigure @splatRoundTrip 6>&1
+                # re-applying the instance's own values fails no line, and the restart warning fires
                 $warn -join " " | Should -Not -Match "failed. Feature may not be supported"
                 $warn -join " " | Should -Match "updated once SQL Server is restarted"
+                # nothing reaches the success pipeline - only host/information records were captured
+                ($captured | Where-Object { $PSItem -isnot [System.Management.Automation.InformationRecord] }) | Should -BeNullOrEmpty
+                # one success message per file line means every line was executed, none skipped
+                $successes = $captured | Where-Object { "$PSItem" -match "Successfully executed" }
+                $successes.Count | Should -Be $lineCount
             } finally {
                 # the exported file's header enables show advanced options; the command's reset does
                 # not Alter it off, so restore it explicitly.
