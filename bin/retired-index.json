@@ -1469,6 +1469,21 @@
     "retiredPath": "private/retired/Invoke-DbaDbMirroring.ps1",
     "flippedUtc": "2026-07-18T18:02:51Z"
   },
+  "Invoke-DbaDbShrink": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbShrink.ps1",
+    "flippedUtc": "2026-07-18T18:04:19Z"
+  },
+  "Invoke-DbaDbTransfer": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbTransfer.ps1",
+    "flippedUtc": "2026-07-18T18:05:07Z"
+  },
+  "Invoke-DbaDbUpgrade": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbUpgrade.ps1",
+    "flippedUtc": "2026-07-18T18:05:45Z"
+  },
   "Invoke-DbaDiagnosticQuery": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Invoke-DbaDiagnosticQuery.ps1",
@@ -1523,6 +1538,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Measure-DbatoolsImport.ps1",
     "flippedUtc": "2026-07-12T03:51:41Z"
+  },
+  "Mount-DbaDatabase": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Mount-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-18T18:06:11Z"
+  },
+  "Move-DbaDbFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Move-DbaDbFile.ps1",
+    "flippedUtc": "2026-07-18T18:06:35Z"
   },
   "Move-DbaRegServer": {
     "module": "dbatools.core",
@@ -2149,10 +2174,30 @@
     "retiredPath": "private/retired/Test-DbaConnectionAuthScheme.ps1",
     "flippedUtc": "2026-07-14T19:06:32Z"
   },
+  "Test-DbaDbCollation": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbCollation.ps1",
+    "flippedUtc": "2026-07-18T18:09:22Z"
+  },
+  "Test-DbaDbCompatibility": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbCompatibility.ps1",
+    "flippedUtc": "2026-07-18T18:10:26Z"
+  },
   "Test-DbaDbCompression": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Test-DbaDbCompression.ps1",
     "flippedUtc": "2026-07-14T19:19:55Z"
+  },
+  "Test-DbaDbDataGeneratorConfig": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbDataGeneratorConfig.ps1",
+    "flippedUtc": "2026-07-18T18:11:16Z"
+  },
+  "Test-DbaDbOwner": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbOwner.ps1",
+    "flippedUtc": "2026-07-18T18:12:28Z"
   },
   "Test-DbaDbRecoveryModel": {
     "module": "dbatools.core",
