@@ -87,15 +87,21 @@
         'Invoke-DbaDbDataGenerator',
         'Get-DbaDbServiceBrokerQueue',
         'Invoke-DbaDbDecryptObject',
+        'Test-DbaDbOwner',
         'Invoke-DbaDbShrink',
         'Invoke-DbaDbTransfer',
         'Invoke-DbaDbUpgrade',
         'Mount-DbaDatabase',
         'Move-DbaDbFile',
         'Test-DbaDbCollation',
+        'Set-DbaDbFileGrowth',
+        'Show-DbaDbList',
+        'Set-DbaDbFileGroup',
+        'Set-DbaDbDataClassification',
+        'Set-DbaDbCompression',
+        'Set-DbaDbCompatibility'
         'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig',
-        'Test-DbaDbOwner'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
