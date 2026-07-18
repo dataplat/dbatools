@@ -74,6 +74,12 @@ Describe $CommandName -Tag IntegrationTests {
             $originalAdvanced = [int]$srvSnap.Configuration.ShowAdvancedOptions.ConfigValue
             # a distinct value guaranteed inside the documented 0-32767 range
             $targetCost = if ($originalCost -eq 50) { 60 } else { 50 }
+
+            # Export the instance's CURRENT sp_configure so the round-trip test can import a full,
+            # realistically-generated file (every setting, not just a hand-built pair). Export-Dba-
+            # SpConfigure restores show advanced options itself, so this does not disturb the snapshot.
+            $configFile = Join-Path -Path $exportDir -ChildPath "spcfg_export_$random.sql"
+            $null = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $configFile
         }
 
         It "Warns and returns nothing when -Path does not exist" {
@@ -119,6 +125,32 @@ Describe $CommandName -Tag IntegrationTests {
                 # the FromFile success path always warns that a restart may be required
                 $warn -join " " | Should -Match "updated once SQL Server is restarted"
             } finally {
+                $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $restoreServer.Configuration.CostThresholdForParallelism.ConfigValue = $originalCost
+                $restoreServer.Configuration.ShowAdvancedOptions.ConfigValue = $originalAdvanced
+                $restoreServer.Configuration.Alter($true)
+            }
+        }
+
+        It "Round-trips a full Export-DbaSpConfigure file, applying every line without failure" {
+            try {
+                # Re-applying the instance's own exported configuration is net-neutral, but it still
+                # executes every generated line; asserting NO per-line failure warning proves the
+                # import actually ran the file rather than failing on all of it.
+                $splatRoundTrip = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Path            = $configFile
+                    Confirm         = $false
+                    WarningVariable = "warn"
+                    WarningAction   = "SilentlyContinue"
+                }
+                $result = Import-DbaSpConfigure @splatRoundTrip
+                $result | Should -BeNullOrEmpty
+                $warn -join " " | Should -Not -Match "failed. Feature may not be supported"
+                $warn -join " " | Should -Match "updated once SQL Server is restarted"
+            } finally {
+                # the exported file's header enables show advanced options; the command's reset does
+                # not Alter it off, so restore it explicitly.
                 $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
                 $restoreServer.Configuration.CostThresholdForParallelism.ConfigValue = $originalCost
                 $restoreServer.Configuration.ShowAdvancedOptions.ConfigValue = $originalAdvanced
