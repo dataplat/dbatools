@@ -43,7 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.GetType().FullName | Should -Be "Microsoft.SqlServer.Replication.CreationScriptOptions"
             # the documented default set the source seeds before adding the requested options
-            foreach ($expected in "PrimaryObject", "CustomProcedures", "Identity", "KeepTimestamp", "ClusteredIndexes", "DriPrimaryKey", "Collation", "DriUniqueKeys", "Schema") {
+            foreach ($expected in "PrimaryObject", "CustomProcedures", "Identity", "KeepTimestamp", "ClusteredIndexes", "DriPrimaryKey", "Collation", "DriUniqueKeys", "MarkReplicatedCheckConstraintsAsNotForReplication", "MarkReplicatedForeignKeyConstraintsAsNotForReplication", "Schema") {
                 $result.HasFlag([Microsoft.SqlServer.Replication.CreationScriptOptions]$expected) | Should -BeTrue
             }
             # and the two explicitly requested options
