@@ -283,7 +283,6 @@
         'Set-DbaAvailabilityGroup',
         'Set-DbaDbCompatibility',
         'Set-DbaDbCompression',
-        'Set-DbaDbFileGroup',
         'Set-DbaDbIdentity',
         'Set-DbaDbMailAccount',
         'Set-DbaDbMirror',
