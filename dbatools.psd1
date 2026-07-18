@@ -309,6 +309,7 @@
         'Test-DbaDbDataGeneratorConfig',
         'Test-DbaDbDataMaskingConfig',
         'Test-DbaDbLogShipStatus',
+        'Test-DbaDbOwner',
         'Test-DbaDbQueryStore',
         'Test-DbaEndpoint',
         'Test-DbaIdentityUsage',
