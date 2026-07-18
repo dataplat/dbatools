@@ -53,7 +53,17 @@
         'New-DbaAgentJob',
         'New-DbaAgentJobCategory',
         'New-DbaAgentJobStep',
-        'Get-DbaRunningJob'
+        'Get-DbaRunningJob',
+        'Remove-DbaAgentAlert',
+        'Remove-DbaAgentAlertCategory',
+        'Remove-DbaAgentJobCategory',
+        'Remove-DbaAgentOperator',
+        'Remove-DbaAgentProxy',
+        'Remove-DbaAgentSchedule',
+        'Remove-DbaDbMailAccount',
+        'Remove-DbaDbMailProfile',
+        'Set-DbaAgentJobOwner',
+        'Stop-DbaAgentJob'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

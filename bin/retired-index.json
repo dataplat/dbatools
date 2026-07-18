@@ -1409,6 +1409,36 @@
     "retiredPath": "private/retired/Register-DbatoolsConfig.ps1",
     "flippedUtc": "2026-07-12T08:28:46Z"
   },
+  "Remove-DbaAgentAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentAlert.ps1",
+    "flippedUtc": "2026-07-18T05:36:22Z"
+  },
+  "Remove-DbaAgentAlertCategory": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentAlertCategory.ps1",
+    "flippedUtc": "2026-07-18T05:36:54Z"
+  },
+  "Remove-DbaAgentJobCategory": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentJobCategory.ps1",
+    "flippedUtc": "2026-07-18T05:37:22Z"
+  },
+  "Remove-DbaAgentOperator": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentOperator.ps1",
+    "flippedUtc": "2026-07-18T05:37:36Z"
+  },
+  "Remove-DbaAgentProxy": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentProxy.ps1",
+    "flippedUtc": "2026-07-18T05:37:56Z"
+  },
+  "Remove-DbaAgentSchedule": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentSchedule.ps1",
+    "flippedUtc": "2026-07-18T05:38:11Z"
+  },
   "Remove-DbaBackup": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaBackup.ps1",
@@ -1448,6 +1478,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaDbBackupRestoreHistory.ps1",
     "flippedUtc": "2026-07-16T18:26:15Z"
+  },
+  "Remove-DbaDbMailAccount": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaDbMailAccount.ps1",
+    "flippedUtc": "2026-07-18T05:38:26Z"
+  },
+  "Remove-DbaDbMailProfile": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaDbMailProfile.ps1",
+    "flippedUtc": "2026-07-18T05:38:40Z"
   },
   "Remove-DbaFirewallRule": {
     "module": "dbatools.computer",
@@ -1558,6 +1598,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Select-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:48Z"
+  },
+  "Set-DbaAgentJobOwner": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentJobOwner.ps1",
+    "flippedUtc": "2026-07-18T05:38:55Z"
   },
   "Set-DbaCmConnection": {
     "module": "dbatools.core",
@@ -1683,6 +1728,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Start-DbaService.ps1",
     "flippedUtc": "2026-07-17T01:46:29Z"
+  },
+  "Stop-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Stop-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-18T05:39:12Z"
   },
   "Stop-DbaExternalProcess": {
     "module": "dbatools.core",
