@@ -35,7 +35,15 @@
         'Find-DbaOrphanedFile',
         'Find-DbaSimilarTable',
         'Find-DbaStoredProcedure',
-        'Find-DbaTrigger'
+        'Find-DbaTrigger',
+        'Get-DbaDbCompatibility',
+        'Get-DbaDbDataClassification',
+        'Get-DbaDbAssembly',
+        'Get-DbaBinaryFileTable',
+        'Find-DbaView',
+        'Get-DbaDbCompression',
+        'Get-DbaDbCheckConstraint',
+        'Find-DbaUserObject'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

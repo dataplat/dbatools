@@ -21,7 +21,20 @@
     CmdletsToExport        = @(
         'Get-DbaDbCertificate',
         'Add-DbaServerRoleMember',
-        'Copy-DbaDbCertificate'
+        'Copy-DbaDbCertificate',
+        'Backup-DbaDbCertificate',
+        'Backup-DbaDbMasterKey',
+        'Backup-DbaServiceMasterKey',
+        'Compare-DbaLogin',
+        'Disable-DbaDbEncryption',
+        'Enable-DbaDbEncryption',
+        'Export-DbaLogin',
+        'Export-DbaServerRole',
+        'Export-DbaSysDbUserObject',
+        'Get-DbaDbAsymmetricKey',
+        'Get-DbaDbEncryptionKey',
+        'Get-DbaDbMasterKey',
+        'Get-DbaPbmCategory'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

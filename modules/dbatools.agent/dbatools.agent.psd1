@@ -52,7 +52,8 @@
         'New-DbaAgentAlertCategory',
         'New-DbaAgentJob',
         'New-DbaAgentJobCategory',
-        'New-DbaAgentJobStep'
+        'New-DbaAgentJobStep',
+        'Get-DbaRunningJob'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
