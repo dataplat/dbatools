@@ -100,7 +100,14 @@
         'Set-DbaDbDataClassification',
         'Set-DbaDbCompatibility',
         'Test-DbaDbCompatibility',
-        'Test-DbaDbDataGeneratorConfig'
+        'Test-DbaDbDataGeneratorConfig',
+        'New-DbaDacProfile',
+        'New-DbaDbDataGeneratorConfig',
+        'New-DbaDbFileGroup',
+        'New-DbaDbMaskingConfig',
+        'New-DbaDbRole',
+        'Repair-DbaDbOrphanUser',
+        'Restore-DbaDbSnapshot'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
