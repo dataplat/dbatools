@@ -95,8 +95,7 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbDataClassification',
         'Set-DbaDbCompression',
-        'Set-DbaDbCompatibility',
-        'Remove-DbaDbUdf'
+        'Set-DbaDbCompatibility'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

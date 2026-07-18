@@ -1684,11 +1684,6 @@
     "retiredPath": "private/retired/Remove-DbaDbMasterKey.ps1",
     "flippedUtc": "2026-07-18T13:20:05Z"
   },
-  "Remove-DbaDbUdf": {
-    "module": "dbatools.database",
-    "retiredPath": "private/retired/Remove-DbaDbUdf.ps1",
-    "flippedUtc": "2026-07-18T21:53:53Z"
-  },
   "Remove-DbaFirewallRule": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Remove-DbaFirewallRule.ps1",
