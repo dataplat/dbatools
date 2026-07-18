@@ -61,7 +61,10 @@ Describe $CommandName -Tag IntegrationTests {
             $result = @(Show-DbaDbList @splatGuard)
             $result.Count | Should -Be 0
             $warn.Count | Should -Be 1
-            $warn[0].Message | Should -Be "Windows Presentation Framework required but not installed"
+            # dbatools Write-Message prefixes the warning with bracketed [timestamp]/[function]
+            # metadata; strip those leading groups and compare the bare payload exactly.
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "Windows Presentation Framework required but not installed"
             # the guard short-circuits before any connection attempt
             $splatAssert = @{
                 CommandName = "Connect-DbaInstance"
@@ -94,8 +97,12 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = @(Show-DbaDbList @splatConn)
             $result.Count | Should -Be 0
-            # the connection catch fires (Stop-Function "Failure" with the error record appended)
-            ($warn -join " ") | Should -BeLike "*Failure*"
+            $warn.Count | Should -Be 1
+            # the catch calls Stop-Function -Message "Failure" -ErrorRecord $_, and Write-Message's
+            # _errorQualifiedMessage renders that as "Failure | <exception message>". Strip the
+            # bracketed metadata prefix and compare the exact payload.
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "Failure | mocked connection failure"
             $splatAssertConn = @{
                 CommandName = "Connect-DbaInstance"
                 Times       = 1
