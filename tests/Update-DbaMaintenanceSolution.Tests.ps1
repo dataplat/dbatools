@@ -36,14 +36,18 @@ Describe $CommandName -Tag IntegrationTests {
     # write, while the not-found guard is a plain warning that fires regardless. The instance token
     # in the message is reproduced from the same [DbaInstance] coercion the source applies.
     BeforeAll {
-        $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $instanceToken = "$([DbaInstance]$TestConfig.InstanceSingle)"
-        $random = Get-Random
+        # a GUID guarantees a globally unique name so no pre-existing database can match and
+        # silently defeat the not-found guard
+        $dbName = "dbatoolsci_nodb_$([guid]::NewGuid())"
     }
 
     Context "Guarding a missing database" {
         It "Warns once and returns nothing when the requested database does not exist" {
-            $dbName = "dbatoolsci_nodb_$random"
+            # precondition: the database must genuinely not exist for this to test the guard
+            ($server.Databases | Where-Object Name -eq $dbName) | Should -BeNullOrEmpty
+
             $splatMissingDb = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $dbName
