@@ -139,7 +139,6 @@
         'Remove-DbaDbPartitionFunction',
         'Get-DbaDbRecoveryModel',
         'Get-DbaDbRestoreHistory',
-        'Remove-DbaDbTable',
         'Get-DbaErrorLogConfig',
         'Get-DbaExtendedProtection',
         'Get-DbaFilestream',
