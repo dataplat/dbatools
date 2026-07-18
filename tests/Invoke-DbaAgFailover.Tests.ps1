@@ -127,11 +127,13 @@ Describe $CommandName -Tag IntegrationTests {
         $agDbName = "dbatoolsci_agfailoverdb_$(Get-Random)"
         $agBackupPath = "$($TestConfig.Temp)\Invoke-DbaAgFailover-$(Get-Random)"
 
-        # Teardown state, resolved in the finally by ACTUAL existence rather than by flags set at
-        # creation time - so a resource created just before a mid-setup throw is still reclaimed, and
-        # a pre-existing shared endpoint is never mistaken for one this fixture created.
+        # Teardown runs on creation ATTEMPT, not on post-hoc discovery: each flag is set immediately
+        # BEFORE its create call, so a resource that was created just before a mid-setup throw (or
+        # created but momentarily unresolvable) is still reclaimed by its exact randomized name, and a
+        # removal of something that never got created is a harmless no-op.
         $agReady = $false
         $agSkipReason = $null
+        $resolvedAg = $null
         $baselineCaptured = $false
         $preExistingEndpoints = @()
         $agCreated = $false
@@ -156,6 +158,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $preExistingEndpoints = @(Get-DbaEndpoint @splatBaselineEndpoint).Name
                 $baselineCaptured = $true
 
+                $backupDirCreated = $true
                 $splatBackupDir = @{
                     Path        = $agBackupPath
                     ItemType    = "Directory"
@@ -163,6 +166,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $null = New-Item @splatBackupDir
 
+                $dbCreated = $true
                 $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
 
                 $splatBackup = @{
@@ -172,6 +176,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $null = Backup-DbaDatabase @splatBackup
 
+                $agCreated = $true
                 $splatNewAg = @{
                     Primary      = $TestConfig.InstanceHadr
                     Name         = $agName
@@ -182,9 +187,9 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $null = New-DbaAvailabilityGroup @splatNewAg
 
-                # The resolution path of the command must positively find the group, else the It
-                # assertions would pass vacuously against an empty loop. A created-but-unresolvable
-                # group is a regression, not an environmental precondition, so throw rather than skip.
+                # Keep the resolved group for the It blocks so they exercise the failover loop through
+                # -InputObject rather than re-resolving; a created-but-unresolvable group is a
+                # regression, not an environmental precondition, so throw rather than skip.
                 $resolvedAg = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
                 if (-not $resolvedAg) {
                     throw "created availability group $agName but Get-DbaAvailabilityGroup could not resolve it"
@@ -192,38 +197,12 @@ Describe $CommandName -Tag IntegrationTests {
                 $agReady = $true
             }
         } finally {
-            # Restore the EnableException default FIRST, before any fallible discovery below, so a
-            # discovery error can neither mask the setup outcome nor leave the default enabled.
+            # Restore the EnableException default FIRST, before the fallible endpoint delta below, so a
+            # delta error can neither mask the setup outcome nor leave the default enabled.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            # Best-effort discovery: each probe is isolated so one failure cannot hide the others,
-            # and every created resource is resolved by exact randomized name so teardown reclaims
-            # whatever setup created even on a mid-setup throw, and never touches a shared endpoint.
-            try {
-                $backupDirCreated = Test-Path -Path $agBackupPath
-            } catch {
-                $backupDirCreated = $false
-            }
-            try {
-                $splatFindDb = @{
-                    SqlInstance = $TestConfig.InstanceHadr
-                    Database    = $agDbName
-                    ErrorAction = "SilentlyContinue"
-                }
-                $dbCreated = [bool](Get-DbaDatabase @splatFindDb)
-            } catch {
-                $dbCreated = $false
-            }
-            try {
-                $splatFindAg = @{
-                    SqlInstance       = $TestConfig.InstanceHadr
-                    AvailabilityGroup = $agName
-                    ErrorAction       = "SilentlyContinue"
-                }
-                $agCreated = [bool](Get-DbaAvailabilityGroup @splatFindAg)
-            } catch {
-                $agCreated = $false
-            }
+            # The created-endpoint delta needs the actual names; isolate it so it cannot throw out of
+            # the finally, and only compute it when the pre-creation baseline succeeded.
             if ($baselineCaptured) {
                 try {
                     $splatDeltaEndpoint = @{
@@ -307,18 +286,18 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "no resolvable disposable availability group on InstanceHadr: $agSkipReason"
                 return
             }
+            # Pass the resolved group directly through -InputObject so the loop runs on a known-present
+            # object and the assertion can never pass on an empty re-resolution.
             $splatWhatIf = @{
-                SqlInstance       = $TestConfig.InstanceHadr
-                AvailabilityGroup = $agName
-                WarningVariable   = "warn"
-                WarningAction     = "SilentlyContinue"
-                WhatIf            = $true
+                InputObject     = $resolvedAg
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
             }
             $result = @(Invoke-DbaAgFailover @splatWhatIf)
-            # The group resolves (guaranteed by the BeforeAll resolution check), so a wired gate is
-            # the only reason there is no output and no Failure warning: under -WhatIf ShouldProcess
-            # returns false and neither Failover nor FailoverWithPotentialDataLoss is called. A broken
-            # gate would instead attempt the failover and surface a Failure warning here.
+            # Under -WhatIf ShouldProcess returns false, so neither Failover nor
+            # FailoverWithPotentialDataLoss is called: no output and no Failure warning. A broken gate
+            # would instead attempt the failover on this present group and surface a Failure warning.
             $result.Count | Should -Be 0
             $warn -join "" | Should -Not -Match "Failure"
         }
@@ -329,21 +308,21 @@ Describe $CommandName -Tag IntegrationTests {
                 return
             }
             $splatForce = @{
-                SqlInstance       = $TestConfig.InstanceHadr
-                AvailabilityGroup = $agName
-                Force             = $true
-                WarningVariable   = "warn"
-                WarningAction     = "SilentlyContinue"
-                Confirm           = $false
+                InputObject     = $resolvedAg
+                Force           = $true
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                Confirm         = $false
             }
             $result = @(Invoke-DbaAgFailover @splatForce)
-            # A forced failover of the resolved group enters the per-AG loop and produces an
-            # observable - the availability group object on success, or a contained Failure warning
-            # when a single-replica clusterless group has no secondary to receive the failover. Either
-            # way the outcome is non-terminating (EnableException is off) and never silent, which a
-            # vacuous empty-loop run could not produce. The specific outcome depends on the replica
-            # topology and is intentionally not pinned.
-            ($result.Count + $warn.Count) | Should -BeGreaterThan 0
+            # A forced failover of the present group enters the per-AG loop and produces a specific
+            # observable: the availability group object emitted for $agName on success, or a contained
+            # Failure warning when a single-replica clusterless group has no secondary to receive the
+            # failover. Either is non-terminating (EnableException is off); direct invocation already
+            # enforces the no-throw invariant. The specific branch depends on the replica topology.
+            $emittedGroup = @($result | Where-Object { $PSItem.Name -eq $agName })
+            $failureWarned = @($warn) -join "" -match "Failure"
+            ($emittedGroup.Count -gt 0 -or $failureWarned) | Should -BeTrue
         }
     }
 }
