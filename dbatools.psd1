@@ -154,7 +154,6 @@
         'Get-DbaErrorLogConfig',
         'Get-DbaExtendedProtection',
         'Get-DbaFilestream',
-        'Get-DbaHelpIndex',
         'Get-DbaHideInstance',
         'Get-DbaInstanceAudit',
         'Get-DbaInstanceAuditSpecification',

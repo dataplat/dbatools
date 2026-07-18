@@ -859,6 +859,11 @@
     "retiredPath": "private/retired/Get-DbaForceNetworkEncryption.ps1",
     "flippedUtc": "2026-07-07T23:40:41Z"
   },
+  "Get-DbaHelpIndex": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaHelpIndex.ps1",
+    "flippedUtc": "2026-07-18T06:50:24Z"
+  },
   "Get-DbaInstalledPatch": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaInstalledPatch.ps1",

@@ -73,7 +73,8 @@
         'Get-DbaDbView',
         'Get-DbaDependency',
         'Get-DbaExtendedProperty',
-        'Get-DbaFile'
+        'Get-DbaFile',
+        'Get-DbaHelpIndex'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
