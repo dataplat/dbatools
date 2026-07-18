@@ -1894,6 +1894,11 @@
     "retiredPath": "private/retired/Stop-DbaAgentJob.ps1",
     "flippedUtc": "2026-07-18T05:39:12Z"
   },
+  "Stop-DbaDbEncryption": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Stop-DbaDbEncryption.ps1",
+    "flippedUtc": "2026-07-18T13:22:33Z"
+  },
   "Stop-DbaExternalProcess": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Stop-DbaExternalProcess.ps1",
@@ -1913,6 +1918,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Stop-DbaService.ps1",
     "flippedUtc": "2026-07-17T09:14:20Z"
+  },
+  "Sync-DbaLoginPassword": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Sync-DbaLoginPassword.ps1",
+    "flippedUtc": "2026-07-18T13:22:52Z"
+  },
+  "Sync-DbaLoginPermission": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Sync-DbaLoginPermission.ps1",
+    "flippedUtc": "2026-07-18T13:23:10Z"
   },
   "Test-DbaBackupInformation": {
     "module": "dbatools.core",
@@ -1993,6 +2008,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaLinkedServerConnection.ps1",
     "flippedUtc": "2026-07-17T09:16:09Z"
+  },
+  "Test-DbaLoginPassword": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Test-DbaLoginPassword.ps1",
+    "flippedUtc": "2026-07-18T13:23:36Z"
   },
   "Test-DbaManagementObject": {
     "module": "dbatools.performance",

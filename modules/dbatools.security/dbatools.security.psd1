@@ -47,7 +47,11 @@
         'Remove-DbaLogin',
         'Remove-DbaServerRole',
         'Remove-DbaServerRoleMember',
-        'Rename-DbaLogin'
+        'Rename-DbaLogin',
+        'Stop-DbaDbEncryption',
+        'Sync-DbaLoginPassword',
+        'Sync-DbaLoginPermission',
+        'Test-DbaLoginPassword'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
