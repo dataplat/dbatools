@@ -204,7 +204,6 @@
         'Invoke-DbaCycleErrorLog',
         'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbccFreeCache',
-        'Invoke-DbaDbDataGenerator',
         'Invoke-DbaDbDataMasking',
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',

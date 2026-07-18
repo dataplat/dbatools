@@ -83,7 +83,8 @@
         'Get-DbaSuspectPage',
         'Import-DbaBinaryFile',
         'Invoke-DbaBalanceDataFiles',
-        'Invoke-DbaDbClone'
+        'Invoke-DbaDbClone',
+        'Invoke-DbaDbDataGenerator'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

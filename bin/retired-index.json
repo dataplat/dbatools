@@ -1324,6 +1324,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbClone.ps1",
     "flippedUtc": "2026-07-18T08:46:05Z"
   },
+  "Invoke-DbaDbDataGenerator": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbDataGenerator.ps1",
+    "flippedUtc": "2026-07-18T09:01:42Z"
+  },
   "Invoke-DbaDbLogShipping": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Invoke-DbaDbLogShipping.ps1",
