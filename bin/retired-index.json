@@ -684,6 +684,11 @@
     "retiredPath": "private/retired/Get-DbaDbServiceBrokerService.ps1",
     "flippedUtc": "2026-07-18T04:00:27Z"
   },
+  "Get-DbaDbSharePoint": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbSharePoint.ps1",
+    "flippedUtc": "2026-07-18T04:14:36Z"
+  },
   "Get-DbaDbSpace": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbSpace.ps1",
