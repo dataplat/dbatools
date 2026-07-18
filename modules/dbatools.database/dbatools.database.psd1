@@ -81,7 +81,8 @@
         'Get-DbaRandomizedValue',
         'Get-DbaSchemaChangeHistory',
         'Get-DbaSuspectPage',
-        'Import-DbaBinaryFile'
+        'Import-DbaBinaryFile',
+        'Invoke-DbaBalanceDataFiles'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

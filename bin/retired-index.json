@@ -1314,6 +1314,11 @@
     "retiredPath": "private/retired/Invoke-DbaAgFailover.ps1",
     "flippedUtc": "2026-07-18T06:44:50Z"
   },
+  "Invoke-DbaBalanceDataFiles": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaBalanceDataFiles.ps1",
+    "flippedUtc": "2026-07-18T08:33:42Z"
+  },
   "Invoke-DbaDbLogShipping": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Invoke-DbaDbLogShipping.ps1",

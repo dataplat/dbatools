@@ -201,7 +201,6 @@
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',
         'Invoke-DbaDbAzSqlTip',
-        'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaCycleErrorLog',
         'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbccFreeCache',
