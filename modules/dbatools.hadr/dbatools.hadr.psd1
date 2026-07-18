@@ -52,7 +52,15 @@
         'Compare-DbaAgReplicaSync',
         'Compare-DbaAvailabilityGroup',
         'Disable-DbaAgHadr',
-        'Enable-DbaAgHadr'
+        'Enable-DbaAgHadr',
+        'Get-DbaAgBackupHistory',
+        'Get-DbaAgDatabase',
+        'Get-DbaAgDatabaseReplicaState',
+        'Get-DbaAgHadr',
+        'Invoke-DbaDbLogShipRecovery',
+        'Invoke-DbaDbMirrorFailover',
+        'Invoke-DbaDbMirroring',
+        'Join-DbaAvailabilityGroup'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

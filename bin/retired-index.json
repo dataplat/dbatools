@@ -424,6 +424,21 @@
     "retiredPath": "private/retired/Format-DbaBackupInformation.ps1",
     "flippedUtc": "2026-07-07T10:20:34Z"
   },
+  "Get-DbaAgBackupHistory": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgBackupHistory.ps1",
+    "flippedUtc": "2026-07-18T18:00:07Z"
+  },
+  "Get-DbaAgDatabase": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgDatabase.ps1",
+    "flippedUtc": "2026-07-18T18:00:43Z"
+  },
+  "Get-DbaAgDatabaseReplicaState": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgDatabaseReplicaState.ps1",
+    "flippedUtc": "2026-07-18T18:01:13Z"
+  },
   "Get-DbaAgentAlert": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaAgentAlert.ps1",
@@ -483,6 +498,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Get-DbaAgentServer.ps1",
     "flippedUtc": "2026-07-15T11:10:52Z"
+  },
+  "Get-DbaAgHadr": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Get-DbaAgHadr.ps1",
+    "flippedUtc": "2026-07-18T18:01:30Z"
   },
   "Get-DbaAgListener": {
     "module": "dbatools.hadr",
@@ -1434,6 +1454,21 @@
     "retiredPath": "private/retired/Invoke-DbaDbLogShipping.ps1",
     "flippedUtc": "2026-07-18T08:26:07Z"
   },
+  "Invoke-DbaDbLogShipRecovery": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Invoke-DbaDbLogShipRecovery.ps1",
+    "flippedUtc": "2026-07-18T18:01:58Z"
+  },
+  "Invoke-DbaDbMirrorFailover": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Invoke-DbaDbMirrorFailover.ps1",
+    "flippedUtc": "2026-07-18T18:02:25Z"
+  },
+  "Invoke-DbaDbMirroring": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Invoke-DbaDbMirroring.ps1",
+    "flippedUtc": "2026-07-18T18:02:51Z"
+  },
   "Invoke-DbaDiagnosticQuery": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Invoke-DbaDiagnosticQuery.ps1",
@@ -1463,6 +1498,11 @@
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Invoke-DbaXEReplay.ps1",
     "flippedUtc": "2026-07-18T15:22:15Z"
+  },
+  "Join-DbaAvailabilityGroup": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Join-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-07-18T18:03:05Z"
   },
   "Join-DbaPath": {
     "module": "dbatools.core",
