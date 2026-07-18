@@ -276,6 +276,21 @@ Describe $CommandName -Tag IntegrationTests {
             $joined | Should -Match $ls2
         }
 
+        It "Processes every value supplied to -SqlInstance" {
+            # Passing the same instance twice exercises the foreach($instance in $SqlInstance) loop
+            # without needing a second lab instance: an implementation that handled only the first
+            # element would script the linked server once instead of twice. sp_addlinkedserver is
+            # emitted once per linked server per instance (no login mapping, so no sp_addlinkedsrvlogin).
+            $splatMulti = @{
+                SqlInstance     = @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle)
+                LinkedServer    = $ls1
+                ExcludePassword = $true
+                Passthru        = $true
+            }
+            $joined = (Export-DbaLinkedServer @splatMulti) -join [Environment]::NewLine
+            ([regex]::Matches($joined, "sp_addlinkedserver")).Count | Should -BeGreaterOrEqual 2
+        }
+
         It "Exports nothing and reports Nothing to export when the named linked server does not exist" {
             $splatMissing = @{
                 SqlInstance     = $TestConfig.InstanceSingle
