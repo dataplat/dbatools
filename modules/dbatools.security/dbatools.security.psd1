@@ -34,7 +34,11 @@
         'Get-DbaDbAsymmetricKey',
         'Get-DbaDbEncryptionKey',
         'Get-DbaDbMasterKey',
-        'Get-DbaPbmCategory'
+        'Get-DbaPbmCategory',
+        'Find-DbaLoginInGroup',
+        'Get-DbaPbmPolicy',
+        'Get-DbaPbmObjectSet',
+        'New-DbaServiceMasterKey'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

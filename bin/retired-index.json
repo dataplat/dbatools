@@ -289,6 +289,11 @@
     "retiredPath": "private/retired/Find-DbaInstance.ps1",
     "flippedUtc": "2026-07-11T22:53:01Z"
   },
+  "Find-DbaLoginInGroup": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Find-DbaLoginInGroup.ps1",
+    "flippedUtc": "2026-07-18T02:36:16Z"
+  },
   "Find-DbaObject": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Find-DbaObject.ps1",
@@ -619,6 +624,21 @@
     "retiredPath": "private/retired/Get-DbaDbPageInfo.ps1",
     "flippedUtc": "2026-07-13T10:26:18Z"
   },
+  "Get-DbaDbPartitionFunction": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbPartitionFunction.ps1",
+    "flippedUtc": "2026-07-18T02:35:07Z"
+  },
+  "Get-DbaDbPartitionScheme": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbPartitionScheme.ps1",
+    "flippedUtc": "2026-07-18T02:35:34Z"
+  },
+  "Get-DbaDbQueryStoreOption": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbQueryStoreOption.ps1",
+    "flippedUtc": "2026-07-18T02:35:52Z"
+  },
   "Get-DbaDbSpace": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbSpace.ps1",
@@ -793,6 +813,16 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaPbmCategory.ps1",
     "flippedUtc": "2026-07-18T00:28:31Z"
+  },
+  "Get-DbaPbmObjectSet": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPbmObjectSet.ps1",
+    "flippedUtc": "2026-07-18T02:36:54Z"
+  },
+  "Get-DbaPbmPolicy": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPbmPolicy.ps1",
+    "flippedUtc": "2026-07-18T02:36:36Z"
   },
   "Get-DbaPfAvailableCounter": {
     "module": "dbatools.performance",
@@ -1243,6 +1273,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaScriptingOption.ps1",
     "flippedUtc": "2026-07-12T07:41:00Z"
+  },
+  "New-DbaServiceMasterKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaServiceMasterKey.ps1",
+    "flippedUtc": "2026-07-18T02:37:14Z"
   },
   "New-DbaSqlParameter": {
     "module": "dbatools.core",

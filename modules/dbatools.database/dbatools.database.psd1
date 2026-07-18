@@ -49,7 +49,10 @@
         'Get-DbaDbFileGroup',
         'Get-DbaDbFileGrowth',
         'Get-DbaDbFileMapping',
-        'Get-DbaDbForeignKey'
+        'Get-DbaDbForeignKey',
+        'Get-DbaDbPartitionFunction',
+        'Get-DbaDbPartitionScheme',
+        'Get-DbaDbQueryStoreOption'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
