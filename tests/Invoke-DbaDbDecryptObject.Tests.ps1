@@ -264,10 +264,18 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "DAC enabled" {
         It "Should throw error" {
-            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $false
-            Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
-            $error[0].Exception | Should -BeLike "*DAC is not enabled for instance*"
-            Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
+            # The re-enable must survive a failed assertion: without the finally, one red here
+            # leaves DAC disabled and every decrypt context below cascades red on the guard.
+            try {
+                Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $false
+                Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
+                # The command reports the disabled DAC on the warning channel it was invoked
+                # with, so assert the captured warning; $error is process-global state that any
+                # earlier noise (module import, prior suites) can occupy.
+                $warn -join " " | Should -BeLike "*DAC is not enabled for instance*"
+            } finally {
+                Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $true -EnableException
+            }
         }
     }
 
