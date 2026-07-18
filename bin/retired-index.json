@@ -669,6 +669,16 @@
     "retiredPath": "private/retired/Get-DbaDbRoleMember.ps1",
     "flippedUtc": "2026-07-18T02:56:11Z"
   },
+  "Get-DbaDbSchema": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbSchema.ps1",
+    "flippedUtc": "2026-07-18T03:37:42Z"
+  },
+  "Get-DbaDbSequence": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbSequence.ps1",
+    "flippedUtc": "2026-07-18T03:38:02Z"
+  },
   "Get-DbaDbSpace": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbSpace.ps1",

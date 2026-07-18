@@ -56,7 +56,9 @@
         'Get-DbaDbObjectTrigger',
         'Get-DbaDbOrphanUser',
         'Get-DbaDbRole',
-        'Get-DbaDbRoleMember'
+        'Get-DbaDbRoleMember',
+        'Get-DbaDbSchema',
+        'Get-DbaDbSequence'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

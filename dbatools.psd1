@@ -157,8 +157,6 @@
         'Remove-DbaDbPartitionFunction',
         'Get-DbaDbRecoveryModel',
         'Get-DbaDbRestoreHistory',
-        'Get-DbaDbSchema',
-        'Get-DbaDbSequence',
         'Get-DbaDbServiceBrokerService',
         'Get-DbaDbSharePoint',
         'Get-DbaDbSnapshot',
