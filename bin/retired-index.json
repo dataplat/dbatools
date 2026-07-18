@@ -974,6 +974,16 @@
     "retiredPath": "private/retired/Get-DbaInstalledPatch.ps1",
     "flippedUtc": "2026-07-09T23:04:23Z"
   },
+  "Get-DbaInstanceAudit": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaInstanceAudit.ps1",
+    "flippedUtc": "2026-07-18T18:16:06Z"
+  },
+  "Get-DbaInstanceAuditSpecification": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaInstanceAuditSpecification.ps1",
+    "flippedUtc": "2026-07-18T18:16:29Z"
+  },
   "Get-DbaInstanceProperty": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaInstanceProperty.ps1",
@@ -998,6 +1008,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaLocaleSetting.ps1",
     "flippedUtc": "2026-07-07T22:35:38Z"
+  },
+  "Get-DbaLogin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaLogin.ps1",
+    "flippedUtc": "2026-07-18T18:16:46Z"
   },
   "Get-DbaManagementObject": {
     "module": "dbatools.performance",
@@ -1074,6 +1089,11 @@
     "retiredPath": "private/retired/Get-DbaPbmCategory.ps1",
     "flippedUtc": "2026-07-18T00:28:31Z"
   },
+  "Get-DbaPbmCategorySubscription": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPbmCategorySubscription.ps1",
+    "flippedUtc": "2026-07-18T18:16:59Z"
+  },
   "Get-DbaPbmObjectSet": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaPbmObjectSet.ps1",
@@ -1083,6 +1103,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaPbmPolicy.ps1",
     "flippedUtc": "2026-07-18T02:36:36Z"
+  },
+  "Get-DbaPbmStore": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPbmStore.ps1",
+    "flippedUtc": "2026-07-18T18:17:13Z"
   },
   "Get-DbaPfAvailableCounter": {
     "module": "dbatools.performance",

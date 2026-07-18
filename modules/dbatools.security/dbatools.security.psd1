@@ -56,7 +56,12 @@
         'Set-DbaLogin',
         'Restore-DbaDbCertificate',
         'Start-DbaDbEncryption',
-        'Test-DbaWindowsLogin'
+        'Test-DbaWindowsLogin',
+        'Get-DbaInstanceAudit',
+        'Get-DbaInstanceAuditSpecification',
+        'Get-DbaLogin',
+        'Get-DbaPbmCategorySubscription',
+        'Get-DbaPbmStore'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
