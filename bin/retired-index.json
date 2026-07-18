@@ -1614,6 +1614,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/New-DbaAgentJobStep.ps1"
   },
+  "New-DbaAvailabilityGroup": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/New-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-07-18T22:09:15Z"
+  },
   "New-DbaAzAccessToken": {
     "flippedUtc": "2026-07-12T06:13:48Z",
     "module": "dbatools.core",
@@ -1714,6 +1719,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/New-DbaDiagnosticAdsNotebook.ps1"
   },
+  "New-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/New-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-18T22:09:49Z"
+  },
   "New-DbaFirewallRule": {
     "flippedUtc": "2026-07-10T11:03:00Z",
     "module": "dbatools.computer",
@@ -1789,6 +1799,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Register-DbatoolsConfig.ps1"
   },
+  "Remove-DbaAgDatabase": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaAgDatabase.ps1",
+    "flippedUtc": "2026-07-18T22:11:16Z"
+  },
   "Remove-DbaAgentAlert": {
     "flippedUtc": "2026-07-18T05:36:22Z",
     "module": "dbatools.agent",
@@ -1818,6 +1833,16 @@
     "flippedUtc": "2026-07-18T05:38:11Z",
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Remove-DbaAgentSchedule.ps1"
+  },
+  "Remove-DbaAgListener": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaAgListener.ps1",
+    "flippedUtc": "2026-07-18T22:11:39Z"
+  },
+  "Remove-DbaAgReplica": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaAgReplica.ps1",
+    "flippedUtc": "2026-07-18T22:12:00Z"
   },
   "Remove-DbaBackup": {
     "flippedUtc": "2026-07-16T14:17:08Z",

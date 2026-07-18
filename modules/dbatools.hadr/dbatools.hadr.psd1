@@ -60,7 +60,12 @@
         'Invoke-DbaDbLogShipRecovery',
         'Invoke-DbaDbMirrorFailover',
         'Invoke-DbaDbMirroring',
-        'Join-DbaAvailabilityGroup'
+        'Join-DbaAvailabilityGroup',
+        'New-DbaAvailabilityGroup',
+        'New-DbaEndpoint',
+        'Remove-DbaAgDatabase',
+        'Remove-DbaAgListener',
+        'Remove-DbaAgReplica'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
