@@ -74,22 +74,49 @@ Describe $CommandName -Tag IntegrationTests {
             return
         }
 
-        # Cleanup: Disable xp_cmdshell for security
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
-        EXECUTE sp_configure 'xp_cmdshell', 0;
-        GO
-        RECONFIGURE;
-        GO
-        EXECUTE sp_configure 'show advanced options', 0;
-        GO
-        RECONFIGURE;
-        GO"
+        try {
+            # Cleanup: Disable xp_cmdshell for security
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceRestart -Query "
+            EXECUTE sp_configure 'xp_cmdshell', 0;
+            GO
+            RECONFIGURE;
+            GO
+            EXECUTE sp_configure 'show advanced options', 0;
+            GO
+            RECONFIGURE;
+            GO"
 
-        # Restart the SQL Service to ensure we can remove the temporary file.
-        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
-        Remove-Item -Path $sqlFile
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            # Restart the SQL Service to ensure we can remove the temporary file.
+            $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
+            Remove-Item -Path $sqlFile
+        } finally {
+            # A failed or aborted restart above leaves the shared instance stopped,
+            # stranding every later suite that targets it. Restore must run even when
+            # the cleanup itself throws, and must never throw on its own.
+            try {
+                $splatGetEngine = @{
+                    ComputerName    = $TestConfig.InstanceRestart
+                    Type            = "Engine"
+                    EnableException = $false
+                    WarningAction   = "SilentlyContinue"
+                }
+                $stoppedEngine = Get-DbaService @splatGetEngine | Where-Object State -ne "Running"
+                if ($stoppedEngine) {
+                    $splatStartEngine = @{
+                        EnableException = $false
+                        WarningAction   = "SilentlyContinue"
+                    }
+                    $null = $stoppedEngine | Start-DbaService @splatStartEngine
+                }
+            } catch {
+                # Swallowed: surfacing anything here (even a warning, which can be
+                # promoted to terminating by preference) could mask the original
+                # cleanup error. The gate-driver post-step is the outer safety net.
+                $null = $PSItem
+            } finally {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            }
+        }
     }
 
     Context "Can stop an external process" {
