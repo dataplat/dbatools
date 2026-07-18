@@ -43,10 +43,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = New-Item @splatNewDir
 
-        # Export the instance's CURRENT sp_configure settings so the import round-trip re-applies
-        # the exact same values - a net-neutral change safe to run against a live instance.
-        $configFile = Join-Path -Path $exportDir -ChildPath "spcfg_$random.sql"
-        $null = Export-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -FilePath $configFile
+        # The execution tests toggle a single benign, dynamic advanced option (cost threshold for
+        # parallelism, valid range 0-32767, no restart) to a distinct value and read it back, which
+        # proves the file was actually executed. [char]39 builds the single quotes the T-SQL needs
+        # without putting forbidden literal single quotes in the test source.
+        $q = [char]39
+        $cfgName = "cost threshold for parallelism"
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -78,34 +80,64 @@ Describe $CommandName -Tag IntegrationTests {
             $warn -join " " | Should -Match "File .* Not Found"
         }
 
-        It "Applies the file and returns no pipeline object despite the .OUTPUTS Boolean doc" {
-            $splatImport = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                Path            = $configFile
-                Confirm         = $false
-                WarningVariable = "warn"
-                WarningAction   = "SilentlyContinue"
+        It "Executes the file so the setting actually changes, and returns no pipeline object despite the .OUTPUTS Boolean doc" {
+            $before = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.CostThresholdForParallelism.ConfigValue
+            $target = [int]$before + 7
+            try {
+                $applyFile = Join-Path -Path $exportDir -ChildPath "spcfg_apply_$random.sql"
+                $applyLines = @(
+                    "EXEC sp_configure ${q}show advanced options${q}, 1; RECONFIGURE WITH OVERRIDE"
+                    "EXEC sp_configure ${q}$cfgName${q}, $target; RECONFIGURE WITH OVERRIDE"
+                )
+                Set-Content -Path $applyFile -Value $applyLines
+
+                $splatImport = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Path            = $applyFile
+                    Confirm         = $false
+                    WarningVariable = "warn"
+                    WarningAction   = "SilentlyContinue"
+                }
+                $result = Import-DbaSpConfigure @splatImport
+                # characterization: .OUTPUTS documents System.Boolean, but the command only writes
+                # messages and emits NOTHING to the pipeline.
+                $result | Should -BeNullOrEmpty
+                # the query actually ran - the configured value moved to the target (proves real
+                # execution, not just the unconditional restart warning firing on a total failure).
+                $after = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.CostThresholdForParallelism.ConfigValue
+                [int]$after | Should -Be $target
+                # the FromFile success path always warns that a restart may be required
+                $warn -join " " | Should -Match "updated once SQL Server is restarted"
+            } finally {
+                $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+                $restoreServer.Configuration.CostThresholdForParallelism.ConfigValue = [int]$before
+                $restoreServer.Configuration.Alter($true)
             }
-            $result = Import-DbaSpConfigure @splatImport
-            # characterization: .OUTPUTS documents System.Boolean, but the command only writes
-            # messages and emits NOTHING to the pipeline.
-            $result | Should -BeNullOrEmpty
-            # the FromFile success path always warns that a restart may be required
-            $warn -join " " | Should -Match "updated once SQL Server is restarted"
         }
 
-        It "Does not import or warn about a restart under -WhatIf" {
-            # The entire import block sits inside ShouldProcess, so -WhatIf runs no queries and the
-            # restart warning (also inside the block) is never emitted.
+        It "Does not execute the file or warn about a restart under -WhatIf" {
+            # The entire import block sits inside ShouldProcess, so -WhatIf runs no queries: the
+            # configured value is unchanged and the restart warning (also inside the block) never fires.
+            $before = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.CostThresholdForParallelism.ConfigValue
+            $target = [int]$before + 11
+            $whatIfFile = Join-Path -Path $exportDir -ChildPath "spcfg_whatif_$random.sql"
+            $whatIfLines = @(
+                "EXEC sp_configure ${q}show advanced options${q}, 1; RECONFIGURE WITH OVERRIDE"
+                "EXEC sp_configure ${q}$cfgName${q}, $target; RECONFIGURE WITH OVERRIDE"
+            )
+            Set-Content -Path $whatIfFile -Value $whatIfLines
+
             $splatWhatIf = @{
                 SqlInstance     = $TestConfig.InstanceSingle
-                Path            = $configFile
+                Path            = $whatIfFile
                 WhatIf          = $true
                 WarningVariable = "warn"
                 WarningAction   = "SilentlyContinue"
             }
             $result = Import-DbaSpConfigure @splatWhatIf
             $result | Should -BeNullOrEmpty
+            $after = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.CostThresholdForParallelism.ConfigValue
+            [int]$after | Should -Be ([int]$before)
             $warn -join " " | Should -Not -Match "updated once SQL Server is restarted"
         }
     }
