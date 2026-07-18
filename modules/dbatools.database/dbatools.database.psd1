@@ -86,7 +86,8 @@
         'Invoke-DbaDbClone',
         'Invoke-DbaDbDataGenerator',
         'Get-DbaDbServiceBrokerQueue',
-        'Invoke-DbaDbDecryptObject'
+        'Invoke-DbaDbDecryptObject',
+        'Test-DbaDbOwner'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

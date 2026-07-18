@@ -68,3 +68,27 @@ END
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: reading SSIS environment variables needs the SSIS Catalog (IntegrationServices)
+    # SMO assemblies, available only on Windows PowerShell (Desktop) - live retrieval is DEFERRED-TO-GATE
+    # (integrationPs51). What IS deterministic is the edition guard the source runs first: on PowerShell
+    # Core the command refuses ($PSVersionTable.PSEdition -eq "Core"). This leg runs on the Core gate
+    # (integrationPs7) where the guard fires; skipped on Desktop where the live retrieval is deferred.
+    # Read-only command, no WhatiF. Probe-verified on Core.
+    Context "Guarding on PowerShell Core" {
+        It "Warns and returns nothing on PowerShell Core" -Skip:($PSVersionTable.PSEdition -ne "Core") {
+            $splatCoreGuard = @{
+                SqlInstance     = "dbatoolsci-core-guard"
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = @(Get-DbaSsisEnvironmentVariable @splatCoreGuard)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 1
+
+            # strip the bracketed [timestamp]/[function] prefix added by Write-Message
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "This command is not supported on Linux or macOS"
+        }
+    }
+}

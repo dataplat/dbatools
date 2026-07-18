@@ -278,3 +278,48 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: the sync itself copies logins, jobs, and related objects from the primary to
+    # each secondary replica of a live Availability Group, which needs a real multi-replica AG - that
+    # leg is DEFERRED-TO-AG01 per the coordinator AG policy (the mocked UnitTests above already pin
+    # the credential/DAC/agent-job dispatch behavior). What IS characterizable on a standalone
+    # instance is the two parameter guards the source runs before any connection: both fire
+    # deterministically and are connection-independent (probe-verified). Both calls pass WhatIf as
+    # belt-and-braces on this copy command, though the guards return before any gated action.
+    BeforeAll {
+        $random = Get-Random
+    }
+
+    Context "Guarding before the sync" {
+        It "Warns once and returns nothing when neither Primary nor InputObject is supplied" {
+            $splatNoInput = @{
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
+            }
+            $result = @(Sync-DbaAvailabilityGroup @splatNoInput)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 1
+
+            # strip the bracketed [timestamp]/[function] prefix added by Write-Message from the warning
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "You must supply either -Primary or an Input Object"
+        }
+
+        It "Warns once and returns nothing when Primary is supplied without a Secondary or AvailabilityGroup" {
+            $splatNoTarget = @{
+                Primary         = $TestConfig.InstanceSingle
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+                WhatIf          = $true
+            }
+            $result = @(Sync-DbaAvailabilityGroup @splatNoTarget)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 1
+
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "You must specify a secondary or an availability group."
+        }
+    }
+}

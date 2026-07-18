@@ -24,3 +24,28 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: retrieving the Policy-Based Management store needs the PBM SMO assemblies,
+    # which are only available on Windows PowerShell (Desktop) - the live retrieval is DEFERRED-TO-GATE
+    # (it runs on the integrationPs51/Desktop gate). What IS deterministic is the edition guard the
+    # source runs first: on PowerShell Core the command refuses because the PBM SMOs are unavailable
+    # (the source checks $PSVersionTable.PSEdition -eq "Core"). This leg runs on the Core gate
+    # (integrationPs7), where the guard fires; it is skipped on Desktop, where the guard does not fire
+    # and the live retrieval is the deferred leg. Read-only command, no WhatiF. Probe-verified on Core.
+    Context "Guarding on PowerShell Core" {
+        It "Warns and returns nothing on PowerShell Core" -Skip:($PSVersionTable.PSEdition -ne "Core") {
+            $splatCoreGuard = @{
+                SqlInstance     = "dbatoolsci-core-guard"
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = @(Get-DbaPbmStore @splatCoreGuard)
+            $result.Count | Should -Be 0
+            $warn.Count | Should -Be 1
+
+            # strip the bracketed [timestamp]/[function] prefix added by Write-Message
+            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
+            $payload | Should -Be "This command is not supported on Linux or macOS"
+        }
+    }
+}
