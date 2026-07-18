@@ -68,7 +68,6 @@
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
         'Test-DbaAgSpn',
-        'Get-DbaDbServiceBrokerQueue',
         'Add-DbaAgDatabase',
         'Add-DbaAgListener',
         'Add-DbaAgReplica',

@@ -714,6 +714,11 @@
     "retiredPath": "private/retired/Get-DbaDbSequence.ps1",
     "flippedUtc": "2026-07-18T03:38:02Z"
   },
+  "Get-DbaDbServiceBrokerQueue": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbServiceBrokerQueue.ps1",
+    "flippedUtc": "2026-07-18T09:14:21Z"
+  },
   "Get-DbaDbServiceBrokerService": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaDbServiceBrokerService.ps1",
