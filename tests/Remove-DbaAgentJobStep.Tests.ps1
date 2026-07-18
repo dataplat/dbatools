@@ -42,6 +42,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+        # Values baked into the child-host guard probes below. The probe scripts are generated with
+        # these already interpolated, so the generated file carries no variables of its own.
+        $moduleUnderTest = (Get-Module dbatools).Path
+        $probeInstance = $TestConfig.InstanceSingle
+        # launch the child on the SAME host executable as this run, so the guard is exercised on the
+        # edition the gate is currently running (Desktop or Core)
+        $probeHost = (Get-Process -Id $PID).Path
     }
 
     AfterAll {
@@ -93,30 +101,57 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When the target does not exist" {
+        # WHY THESE TWO RUN IN A CHILD HOST: both guards below reach
+        # Stop-Function -Continue -ContinueLabel main, but the source defines no :main label
+        # anywhere. PowerShell resolves the unmatched continue against whatever enclosing loops the
+        # HOST happens to have, which inside Pester unwinds the iteration of the runner itself and tears the
+        # session down silently with exit code 0 - producing a gate run with no artifact at all
+        # (confirmed on both editions by the integrator gate). Asserting these guards in-process is
+        # therefore structurally impossible, not merely awkward. Each guard is instead exercised in a
+        # child host whose warning stream is merged into stdout, and the behavior is asserted from
+        # outside: the warning text proves the guard fired, and the child exiting 0 with the command
+        # having emitted nothing further is the observable signature of the dangling-label unwind.
+
         It "Warns for a non-existent job without EnableException" {
-            $splatBadJob = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                Job             = "dbatoolsci_nojob_$(Get-Random)"
-                StepName        = "step_whatif"
-                WarningAction   = "SilentlyContinue"
-                WarningVariable = "warn"
+            $badJob = "dbatoolsci_nojob_$(Get-Random)"
+            $probeFile = Join-Path $env:TEMP "dbatoolsci_rmstep_nojob_$([guid]::NewGuid()).ps1"
+            # generated with the values already interpolated, so the probe holds no variables
+            $probeBody = @"
+Import-Module "$moduleUnderTest" -ErrorAction Stop
+Remove-DbaAgentJobStep -SqlInstance "$probeInstance" -Job "$badJob" -StepName "step_whatif" 3>&1
+"@
+            Set-Content -Path $probeFile -Value $probeBody
+            try {
+                $captured = & $probeHost -NoProfile -File $probeFile 2>&1 | Out-String
+                $childExit = $LASTEXITCODE
+
+                # characterization: the missing-job message carries the current doesnn-t typo
+                # (regex dot stands in for the apostrophe).
+                $captured | Should -Match "doesnn.t exist"
+                # the dangling-label unwind ends the child quietly rather than faulting it
+                $childExit | Should -Be 0
+            } finally {
+                Remove-Item -Path $probeFile -ErrorAction SilentlyContinue
             }
-            Remove-DbaAgentJobStep @splatBadJob 3> $null
-            # characterization: the missing-job message carries the current doesnn-t typo
-            # (regex dot stands in for the apostrophe).
-            $warn -join " " | Should -Match "doesnn.t exist"
         }
 
         It "Warns for a non-existent step without EnableException" {
-            $splatBadStep = @{
-                SqlInstance     = $TestConfig.InstanceSingle
-                Job             = $jobName
-                StepName        = "dbatoolsci_nostep_$(Get-Random)"
-                WarningAction   = "SilentlyContinue"
-                WarningVariable = "warn"
+            $badStep = "dbatoolsci_nostep_$(Get-Random)"
+            $probeFile = Join-Path $env:TEMP "dbatoolsci_rmstep_nostep_$([guid]::NewGuid()).ps1"
+            $probeBody = @"
+Import-Module "$moduleUnderTest" -ErrorAction Stop
+Remove-DbaAgentJobStep -SqlInstance "$probeInstance" -Job "$jobName" -StepName "$badStep" 3>&1
+"@
+            Set-Content -Path $probeFile -Value $probeBody
+            try {
+                $captured = & $probeHost -NoProfile -File $probeFile 2>&1 | Out-String
+                $childExit = $LASTEXITCODE
+
+                $captured | Should -Match "doesn.t exist for"
+                $childExit | Should -Be 0
+            } finally {
+                Remove-Item -Path $probeFile -ErrorAction SilentlyContinue
             }
-            Remove-DbaAgentJobStep @splatBadStep 3> $null
-            $warn -join " " | Should -Match "doesn.t exist for"
         }
     }
 }
