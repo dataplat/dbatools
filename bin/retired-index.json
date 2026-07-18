@@ -84,6 +84,16 @@
     "retiredPath": "private/retired/Clear-DbaWaitStatistics.ps1",
     "flippedUtc": "2026-07-13T03:01:19Z"
   },
+  "Compare-DbaAgReplicaAgentJob": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAgReplicaAgentJob.ps1",
+    "flippedUtc": "2026-07-18T03:21:30Z"
+  },
+  "Compare-DbaAgReplicaCredential": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Compare-DbaAgReplicaCredential.ps1",
+    "flippedUtc": "2026-07-18T03:22:11Z"
+  },
   "Compare-DbaDbSchema": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Compare-DbaDbSchema.ps1",

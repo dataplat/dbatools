@@ -30,7 +30,9 @@
         'Get-DbaWsfcResourceGroup',
         'Get-DbaWsfcResourceType',
         'Get-DbaWsfcRole',
-        'Get-DbaWsfcSharedVolume'
+        'Get-DbaWsfcSharedVolume',
+        'Compare-DbaAgReplicaAgentJob',
+        'Compare-DbaAgReplicaCredential'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

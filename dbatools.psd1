@@ -75,8 +75,6 @@
         'Add-DbaDbMirrorMonitor',
         'Backup-DbaDatabase',
         'Test-DbaBackupEncrypted',
-        'Compare-DbaAgReplicaAgentJob',
-        'Compare-DbaAgReplicaCredential',
         'Compare-DbaAgReplicaLogin',
         'Compare-DbaAgReplicaOperator',
         'Compare-DbaAgReplicaSync',
