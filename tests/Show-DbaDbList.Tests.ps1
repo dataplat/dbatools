@@ -90,6 +90,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns and returns nothing without opening the dialog" {
+            # The command's begin block builds dialog resources from PresentationCore types
+            # (BitmapImage). On hosts where those types cannot resolve, the command dies on
+            # type resolution before the process-block connection attempt, so this guard leg
+            # is only exercisable on WPF-capable hosts.
+            try {
+                Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+            } catch {
+                $null = $PSItem
+            }
+            if (-not ("System.Windows.Media.Imaging.BitmapImage" -as [type])) {
+                Set-ItResult -Skipped -Because "WPF types are unavailable on this host, so the command cannot construct its dialog resources"
+                return
+            }
             $splatConn = @{
                 SqlInstance     = "dbatoolsci_noconnect"
                 WarningVariable = "warn"
