@@ -44,5 +44,5 @@ digest is **`migration/creation-kit/QUICKSTART.md`** — read it before writing 
 - Test suite: `migration/creation-kit/TESTS-TEMPLATE.ps1`
 
 Normative order if anything conflicts: `migration/specs/contracts.md` >
-`migration/specs/new-commands.md` / `parity-contract.md §7` >
+`migration/specs/new-commands.md` / `migration/specs/parity-contract.md §7` >
 `migration/prompts/new-command-prompt.md` > creation-kit > this skill.
