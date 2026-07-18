@@ -105,10 +105,11 @@ Describe $CommandName -Tag IntegrationTests {
                 $after = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).Configuration.ShowAdvancedOptions.ConfigValue
                 [int]$after | Should -Be 0
 
-                # the trailing reset statements are emitted only when advanced options started at 0
+                # the trailing reset statements are emitted only when advanced options started at 0;
+                # assert the reset statement AND its following RECONFIGURE together at end-of-file so
+                # the header's own RECONFIGURE (line 1) cannot satisfy this on its own.
                 $content = Get-Content -Path $togglePath -Raw
-                $content | Should -Match "EXEC sp_configure .show advanced options. , 0;"
-                $content | Should -Match "RECONFIGURE WITH OVERRIDE"
+                $content | Should -Match "EXEC sp_configure .show advanced options. , 0;\s*RECONFIGURE WITH OVERRIDE\s*$"
             } finally {
                 $restoreServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
                 $restoreServer.Configuration.ShowAdvancedOptions.ConfigValue = [int]$original
