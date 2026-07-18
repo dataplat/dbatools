@@ -90,7 +90,8 @@
         'Test-DbaDbOwner',
         'Test-DbaDbCompatibility',
         'Test-DbaDbCollation',
-        'Set-DbaDbFileGrowth'
+        'Set-DbaDbFileGrowth',
+        'Show-DbaDbList'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

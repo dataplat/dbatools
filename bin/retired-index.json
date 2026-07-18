@@ -1954,6 +1954,11 @@
     "retiredPath": "private/retired/Set-DbatoolsPath.ps1",
     "flippedUtc": "2026-07-12T17:52:06Z"
   },
+  "Show-DbaDbList": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Show-DbaDbList.ps1",
+    "flippedUtc": "2026-07-18T17:31:32Z"
+  },
   "Show-DbaInstanceFileSystem": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Show-DbaInstanceFileSystem.ps1",

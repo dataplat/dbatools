@@ -292,7 +292,6 @@
         'Set-DbaDbSequence',
         'Set-DbaEndpoint',
         'Set-DbaNetworkCertificate',
-        'Show-DbaDbList',
         'Start-DbaAgentJob',
         'Start-DbaEndpoint',
         'Start-DbaMigration',
