@@ -113,40 +113,67 @@ Describe $CommandName -Tag IntegrationTests {
     # so a SUCCESSFUL failover cannot be demonstrated here (that mutation remains DEFERRED - it needs
     # a multi-replica topology the disposable AG cannot provide, and AG01 must never be failed over).
     # What a real resolved AG DOES prove: the -WhatIf gate suppresses the failover with no output, and
-    # a forced attempt is contained by the per-AG try/catch of the port as a non-terminating warning rather
-    # than a terminating exception. Setup is probed so a non-HADR seat skips instead of failing.
+    # a forced attempt enters the per-AG loop and is contained as a non-terminating result. Two
+    # preconditions legitimately vary by environment and skip rather than fail - the instance being
+    # HADR-enabled and the shared AG certificate being present; any failure past those preconditions
+    # is a real fixture regression and is allowed to throw. Teardown touches only what this fixture
+    # created and cleans each resource independently.
     BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        # We want to run all commands in the BeforeAll block with EnableException so a genuine setup
+        # failure surfaces rather than silently skipping the tests.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $agName = "dbatoolsci_agfailover_$(Get-Random)"
         $agDbName = "dbatoolsci_agfailoverdb_$(Get-Random)"
         $agBackupPath = "$($TestConfig.Temp)\Invoke-DbaAgFailover-$(Get-Random)"
 
+        # Track exactly what this fixture creates so teardown removes only its own objects.
+        $agCreated = $false
+        $dbCreated = $false
+        $backupDirCreated = $false
+        $createdEndpointNames = @()
+
+        $hadrServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
+        $agSkipReason = $null
+        if (-not $hadrServer.IsHadrEnabled) {
+            $agSkipReason = "InstanceHadr is not HADR-enabled"
+        } elseif (-not $hadrServer.Databases["master"].Certificates["dbatoolsci_AGCert"]) {
+            $agSkipReason = "the dbatoolsci_AGCert certificate is not present in master on InstanceHadr"
+        }
+
         $agReady = $false
-        $agSetupError = "not attempted"
-        try {
-            $hadrServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
-            if (-not $hadrServer.IsHadrEnabled) {
-                $agSetupError = "InstanceHadr is not HADR-enabled"
-            } else {
-                $null = New-Item -Path $agBackupPath -ItemType Directory
-                $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceHadr -Program "dbatools PowerShell module - dbatools.io" | Stop-DbaProcess -WarningAction SilentlyContinue
-                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
-                $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName -FilePath "$agBackupPath\$agDbName.bak"
-                $splatNewAg = @{
-                    Primary      = $TestConfig.InstanceHadr
-                    Name         = $agName
-                    ClusterType  = "None"
-                    FailoverMode = "Manual"
-                    Database     = $agDbName
-                    Certificate  = "dbatoolsci_AGCert"
-                }
-                $null = New-DbaAvailabilityGroup @splatNewAg
-                $agReady = $true
+        if (-not $agSkipReason) {
+            # Record the mirroring endpoints that already exist so teardown never removes a
+            # pre-existing one; New-DbaAvailabilityGroup creates the hadr_endpoint this suite owns.
+            $preExistingEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
+
+            $null = New-Item -Path $agBackupPath -ItemType Directory
+            $backupDirCreated = $true
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
+            $dbCreated = $true
+            $splatBackup = @{
+                SqlInstance = $TestConfig.InstanceHadr
+                Database    = $agDbName
+                FilePath    = "$agBackupPath\$agDbName.bak"
             }
-        } catch {
-            $agSetupError = $_.Exception.Message
+            $null = Backup-DbaDatabase @splatBackup
+            $splatNewAg = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $agName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Database     = $agDbName
+                Certificate  = "dbatoolsci_AGCert"
+            }
+            $null = New-DbaAvailabilityGroup @splatNewAg
+            $agCreated = $true
+
+            $postEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
+            $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
+
+            # Only mark the fixture ready once the resolution path of the command can positively find
+            # the group - otherwise the It assertions would pass vacuously against an empty loop.
+            $agReady = [bool](Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName)
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -154,25 +181,42 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the cleanup fails loudly.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        try {
-            $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName -ErrorAction SilentlyContinue
-            $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring -ErrorAction SilentlyContinue | Remove-DbaEndpoint -ErrorAction SilentlyContinue
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName -ErrorAction SilentlyContinue
-        } finally {
-            if (Test-Path -Path $agBackupPath) {
-                Remove-Item -Path $agBackupPath -Recurse -Force -ErrorAction SilentlyContinue
+        # Clean each created resource INDEPENDENTLY so one failure cannot strand the rest, and touch
+        # only what this fixture created. EnableException stays off here: a cleanup failure surfaces
+        # as a warning rather than masking a genuine test result.
+        if ($agCreated) {
+            $splatRemoveAg = @{
+                SqlInstance       = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                ErrorAction       = "SilentlyContinue"
             }
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+            $null = Remove-DbaAvailabilityGroup @splatRemoveAg
+        }
+        if ($createdEndpointNames.Count -gt 0) {
+            $splatRemoveEndpoint = @{
+                SqlInstance = $TestConfig.InstanceHadr
+                Type        = "DatabaseMirroring"
+                Endpoint    = $createdEndpointNames
+            }
+            $null = Get-DbaEndpoint @splatRemoveEndpoint | Remove-DbaEndpoint -ErrorAction SilentlyContinue
+        }
+        if ($dbCreated) {
+            $splatRemoveDb = @{
+                SqlInstance = $TestConfig.InstanceHadr
+                Database    = $agDbName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatRemoveDb
+        }
+        if ($backupDirCreated -and (Test-Path -Path $agBackupPath)) {
+            Remove-Item -Path $agBackupPath -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 
     Context "Against a disposable availability group" {
-        It "Honors -WhatIf and does not fail over a resolved availability group" {
+        It "Honors -WhatIf and does not fail over the resolved availability group" {
             if (-not $agReady) {
-                Set-ItResult -Skipped -Because "no disposable availability group could be built on InstanceHadr: $agSetupError"
+                Set-ItResult -Skipped -Because "no resolvable disposable availability group on InstanceHadr: $agSkipReason"
                 return
             }
             $splatWhatIf = @{
@@ -183,31 +227,35 @@ Describe $CommandName -Tag IntegrationTests {
                 WhatIf            = $true
             }
             $result = @(Invoke-DbaAgFailover @splatWhatIf)
-            # Under -WhatIf the inner ShouldProcess gate returns false, so neither Failover nor
-            # FailoverWithPotentialDataLoss is called: no output, and no Failure warning from the catch.
+            # The group resolves (guaranteed by the BeforeAll resolution check), so a wired gate is
+            # the only reason there is no output and no Failure warning: under -WhatIf ShouldProcess
+            # returns false and neither Failover nor FailoverWithPotentialDataLoss is called. A broken
+            # gate would instead attempt the failover and surface a Failure warning here.
             $result.Count | Should -Be 0
             $warn -join "" | Should -Not -Match "Failure"
         }
 
-        It "Handles a forced failover of the disposable group without a terminating error" {
+        It "Enters the failover loop for the resolved group and contains the outcome" {
             if (-not $agReady) {
-                Set-ItResult -Skipped -Because "no disposable availability group could be built on InstanceHadr: $agSetupError"
+                Set-ItResult -Skipped -Because "no resolvable disposable availability group on InstanceHadr: $agSkipReason"
                 return
             }
-            # A single-replica clusterless AG has no synchronized secondary to receive the failover,
-            # so the SMO call is expected to be rejected. The per-AG try/catch in the port (Stop-Function
-            # -Continue) must contain that as a non-terminating warning exactly like the source, never
-            # a terminating exception - this asserts that faithful-hop invariant, not a specific SMO
-            # outcome (which depends on the replica topology). EnableException is off here, so a
-            # contained failure surfaces as a warning, not a throw.
             $splatForce = @{
                 SqlInstance       = $TestConfig.InstanceHadr
                 AvailabilityGroup = $agName
                 Force             = $true
+                WarningVariable   = "warn"
                 WarningAction     = "SilentlyContinue"
                 Confirm           = $false
             }
-            { $null = Invoke-DbaAgFailover @splatForce } | Should -Not -Throw
+            $result = @(Invoke-DbaAgFailover @splatForce)
+            # A forced failover of the resolved group enters the per-AG loop and produces an
+            # observable - the availability group object on success, or a contained Failure warning
+            # when a single-replica clusterless group has no secondary to receive the failover. Either
+            # way the outcome is non-terminating (EnableException is off) and never silent, which a
+            # vacuous empty-loop run could not produce. The specific outcome depends on the replica
+            # topology and is intentionally not pinned.
+            ($result.Count + $warn.Count) | Should -BeGreaterThan 0
         }
     }
 }
