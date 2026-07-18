@@ -184,3 +184,111 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # Read-only analysis command - no server state is changed, so a live instance is all that
+        # is needed. Compute once and reuse across the shape/algorithm assertions. try/finally makes
+        # sure the forced EnableException is removed even if the analysis call throws.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        try {
+            $result = Test-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
+        } finally {
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+    }
+
+    Context "Analyzing a live instance" {
+        It "Returns one object carrying exactly the documented property set" {
+            $result | Should -Not -BeNullOrEmpty
+            $expectedProps = @("ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue", "Server")
+            # Compare-Object catches both missing AND extra (undocumented) properties.
+            Compare-Object -ReferenceObject $expectedProps -DifferenceObject $result.PSObject.Properties.Name | Should -BeNullOrEmpty
+        }
+
+        It "Types the memory figures as integers and keeps the SMO Server reference" {
+            $result.Total | Should -BeOfType System.Int32
+            $result.MaxValue | Should -BeOfType System.Int32
+            $result.RecommendedValue | Should -BeOfType System.Int32
+            $result.InstanceCount | Should -BeGreaterThan 0
+            $result.Server | Should -BeOfType Microsoft.SqlServer.Management.Smo.Server
+        }
+
+        It "Maps the identity columns from the connected Server object" {
+            # ComputerName/InstanceName/SqlInstance are sourced from the SMO Server's
+            # ComputerName/ServiceName/DomainInstanceName respectively - assert the mapping, not
+            # just that the columns are non-null.
+            $result.ComputerName | Should -Be $result.Server.ComputerName
+            $result.InstanceName | Should -Be $result.Server.ServiceName
+            $result.SqlInstance | Should -Be $result.Server.DomainInstanceName
+        }
+
+        It "Reports Total and MaxValue straight from Get-DbaMaxMemory" {
+            # both figures come from Get-DbaMaxMemory, so independently confirm the source values
+            # rather than trusting the numbers the command handed back.
+            $memory = Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
+            $result.Total | Should -Be ([int]$memory.Total)
+            $result.MaxValue | Should -Be ([int]$memory.MaxValue)
+        }
+
+        It "Derives InstanceCount from running Engine services with a fallback of 1" {
+            # Independently reproduce the service-discovery count (running Engine services grouped by
+            # instance) with the documented default-to-1 fallback, instead of trusting the returned
+            # value - so the algorithm test below rests on a verified InstanceCount. On Linux/macOS
+            # the command never queries services and hardcodes 1, so mirror that unconditionally.
+            if ($IsLinux -or $IsMacOS) {
+                $expectedCount = 1
+            } else {
+                $expectedCount = 1
+                try {
+                    $services = Get-DbaService -ComputerName $TestConfig.InstanceSingle -EnableException
+                    $discovered = ($services | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq "Engine" | Group-Object InstanceName | Measure-Object Count).Count
+                    if ($discovered -gt 0) { $expectedCount = $discovered }
+                } catch {
+                    $expectedCount = 1
+                }
+            }
+            $result.InstanceCount | Should -Be $expectedCount
+        }
+
+        It "Computes RecommendedValue by the documented Kehayias algorithm" {
+            # Re-derive the recommendation from the returned Total and InstanceCount (both pinned to
+            # their sources in the tests above) using the exact source arithmetic and confirm the
+            # command's value matches - this pins the memory math against any drift in the port.
+            $total = $result.Total
+            $instanceCount = $result.InstanceCount
+            if ($total -ge 4096) {
+                $reserve = 1
+                $currentCount = $total
+                while ($currentCount / 4096 -gt 0) {
+                    if ($currentCount -gt 16384) {
+                        $reserve += 1
+                        $currentCount += -8192
+                    } else {
+                        $reserve += 1
+                        $currentCount += -4096
+                    }
+                }
+                $recommendedMax = [int]($total - ($reserve * 1024))
+            } else {
+                $recommendedMax = $total * .5
+            }
+            $recommendedMax = $recommendedMax / $instanceCount
+            $result.RecommendedValue | Should -Be ([int]$recommendedMax)
+        }
+
+        It "Sets the default view to exactly the seven analysis columns, hiding the Server handle" {
+            # Select-DefaultView shows the analysis columns and excludes the SMO Server handle.
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $expectedView = @("ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue")
+            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps | Should -BeNullOrEmpty
+        }
+
+        It "Returns one object per value supplied to -SqlInstance" {
+            # Read-only, so passing the same instance twice simply exercises the foreach loop and
+            # must yield one analysis object per element.
+            $multi = @(Test-DbaMaxMemory -SqlInstance @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle))
+            $multi.Count | Should -Be 2
+        }
+    }
+}
