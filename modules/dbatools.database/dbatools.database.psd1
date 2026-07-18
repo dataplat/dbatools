@@ -65,7 +65,13 @@
         'Get-DbaDbSnapshot',
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
-        'Get-DbaDbTable'
+        'Get-DbaDbTable',
+        'Get-DbaDbTrigger',
+        'Get-DbaDbUdf',
+        'Get-DbaDbUser',
+        'Get-DbaDbUserDefinedTableType',
+        'Get-DbaDbView',
+        'Get-DbaDependency'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

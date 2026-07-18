@@ -754,6 +754,31 @@
     "retiredPath": "private/retired/Get-DbaDbTable.ps1",
     "flippedUtc": "2026-07-18T05:00:39Z"
   },
+  "Get-DbaDbTrigger": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbTrigger.ps1",
+    "flippedUtc": "2026-07-18T06:24:47Z"
+  },
+  "Get-DbaDbUdf": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbUdf.ps1",
+    "flippedUtc": "2026-07-18T06:25:01Z"
+  },
+  "Get-DbaDbUser": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbUser.ps1",
+    "flippedUtc": "2026-07-18T06:25:15Z"
+  },
+  "Get-DbaDbUserDefinedTableType": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbUserDefinedTableType.ps1",
+    "flippedUtc": "2026-07-18T06:25:28Z"
+  },
+  "Get-DbaDbView": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbView.ps1",
+    "flippedUtc": "2026-07-18T06:25:42Z"
+  },
   "Get-DbaDbVirtualLogFile": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbVirtualLogFile.ps1",
@@ -763,6 +788,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaDefaultPath.ps1",
     "flippedUtc": "2026-07-06T10:22:20Z"
+  },
+  "Get-DbaDependency": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDependency.ps1",
+    "flippedUtc": "2026-07-18T06:25:55Z"
   },
   "Get-DbaDeprecatedFeature": {
     "module": "dbatools.performance",
