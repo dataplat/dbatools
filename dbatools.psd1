@@ -312,7 +312,6 @@
         'Remove-DbaExtendedProperty',
         'Set-DbaExtendedProperty',
         'Remove-DbaDbDataClassification',
-        'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
         'Get-DbaLinkedServerLogin',
