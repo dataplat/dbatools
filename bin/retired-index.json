@@ -1749,6 +1749,11 @@
     "retiredPath": "private/retired/Repair-DbaInstanceName.ps1",
     "flippedUtc": "2026-07-16T18:36:42Z"
   },
+  "Reset-DbaAdmin": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Reset-DbaAdmin.ps1",
+    "flippedUtc": "2026-07-18T14:47:42Z"
+  },
   "Reset-DbatoolsConfig": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Reset-DbatoolsConfig.ps1",

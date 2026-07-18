@@ -274,7 +274,6 @@
         'Remove-DbaXESession',
         'Repair-DbaDbMirror',
         'Repair-DbaDbOrphanUser',
-        'Reset-DbaAdmin',
         'Restore-DbaDbCertificate',
         'Restore-DbaDbSnapshot',
         'Resume-DbaAgDbDataMovement',
