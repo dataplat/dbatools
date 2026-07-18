@@ -37,8 +37,12 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $versionMajor = $server.VersionMajor
 
+        # Two user databases: one target and one non-excluded control for the -ExcludeDatabase test
+        # (a system database like master cannot serve as the control - Get-DbaDatabase drops it).
         $testDb = "dbatoolsci_qso_$(Get-Random)"
+        $testDb2 = "dbatoolsci_qso2_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb2
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -46,12 +50,17 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            $splatRemove = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $testDb
-                ErrorAction = "SilentlyContinue"
+            # only remove databases that were actually created - if BeforeAll threw before the names
+            # were assigned, passing $null to a mandatory -Database throws under EnableException.
+            $dbsToRemove = @($testDb, $testDb2) | Where-Object { $PSItem }
+            if ($dbsToRemove) {
+                $splatRemove = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Database    = $dbsToRemove
+                    ErrorAction = "SilentlyContinue"
+                }
+                $null = Remove-DbaDatabase @splatRemove
             }
-            $null = Remove-DbaDatabase @splatRemove
         } finally {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -84,16 +93,16 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Omits the excluded database with -ExcludeDatabase" {
-            # Request master AND the test db while excluding the test db: exactly master must come
-            # back, so the assertion cannot pass vacuously on an empty result.
+            # Request both user databases while excluding one: exactly the control must come back, so
+            # the assertion cannot pass vacuously on an empty result.
             $splatExclude = @{
                 SqlInstance     = $TestConfig.InstanceSingle
-                Database        = @("master", $testDb)
+                Database        = @($testDb, $testDb2)
                 ExcludeDatabase = $testDb
             }
             $result = @(Get-DbaDbQueryStoreOption @splatExclude)
             $result.Count | Should -Be 1
-            $result[0].Database | Should -Be "master"
+            $result[0].Database | Should -Be $testDb2
             $result.Database | Should -Not -Contain $testDb
         }
 
@@ -119,7 +128,51 @@ Describe $CommandName -Tag IntegrationTests {
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             # -SyncWindow 0 makes the comparison positional, so a reordered display view (not just a
             # missing/extra column) is also caught.
-            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps -SyncWindow 0 | Should -BeNullOrEmpty
+            $splatCompare = @{
+                ReferenceObject  = $expectedView
+                DifferenceObject = $defaultProps
+                SyncWindow       = 0
+            }
+            Compare-Object @splatCompare | Should -BeNullOrEmpty
+        }
+
+        It "Populates the version-specific properties with the query-store DMV values" {
+            # Beyond the display metadata, the version-specific NoteProperties must actually exist on
+            # the object AND carry the values the command reads from sys.database_query_store_options.
+            if ($versionMajor -lt 14) {
+                Set-ItResult -Skipped -Because "no version-specific query-store columns before SQL 2017 (v14)"
+                return
+            }
+            $result = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $testDb
+            $result.PSObject.Properties.Name | Should -Contain "MaxPlansPerQuery"
+            $result.PSObject.Properties.Name | Should -Contain "WaitStatsCaptureMode"
+
+            $splatDmv14 = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $testDb
+                Query       = "SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options"
+                As          = "PSObject"
+            }
+            $dmv = Invoke-DbaQuery @splatDmv14
+            $result.MaxPlansPerQuery | Should -Be $dmv.MaxPlansPerQuery
+            $result.WaitStatsCaptureMode | Should -Be $dmv.WaitStatsCaptureMode
+
+            if ($versionMajor -ge 15) {
+                foreach ($p in "CustomCapturePolicyExecutionCount", "CustomCapturePolicyTotalCompileCPUTimeMS", "CustomCapturePolicyTotalExecutionCPUTimeMS", "CustomCapturePolicyStaleThresholdHours") {
+                    $result.PSObject.Properties.Name | Should -Contain $p
+                }
+                $splatDmv15 = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Database    = $testDb
+                    Query       = "SELECT capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options"
+                    As          = "PSObject"
+                }
+                $dmv15 = Invoke-DbaQuery @splatDmv15
+                $result.CustomCapturePolicyExecutionCount | Should -Be $dmv15.CustomCapturePolicyExecutionCount
+                $result.CustomCapturePolicyStaleThresholdHours | Should -Be $dmv15.CustomCapturePolicyStaleThresholdHours
+                $result.CustomCapturePolicyTotalCompileCPUTimeMS | Should -Be $dmv15.CustomCapturePolicyTotalCompileCPUTimeMS
+                $result.CustomCapturePolicyTotalExecutionCPUTimeMS | Should -Be $dmv15.CustomCapturePolicyTotalExecutionCPUTimeMS
+            }
         }
     }
 }
