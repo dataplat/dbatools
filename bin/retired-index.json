@@ -694,6 +694,11 @@
     "retiredPath": "private/retired/Get-DbaDbSharePoint.ps1",
     "flippedUtc": "2026-07-18T04:14:36Z"
   },
+  "Get-DbaDbSnapshot": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbSnapshot.ps1",
+    "flippedUtc": "2026-07-18T04:59:14Z"
+  },
   "Get-DbaDbSpace": {
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbSpace.ps1",
@@ -703,6 +708,21 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaDbState.ps1",
     "flippedUtc": "2026-07-06T10:40:22Z"
+  },
+  "Get-DbaDbStoredProcedure": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbStoredProcedure.ps1",
+    "flippedUtc": "2026-07-18T04:59:49Z"
+  },
+  "Get-DbaDbSynonym": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbSynonym.ps1",
+    "flippedUtc": "2026-07-18T05:00:21Z"
+  },
+  "Get-DbaDbTable": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbTable.ps1",
+    "flippedUtc": "2026-07-18T05:00:39Z"
   },
   "Get-DbaDbVirtualLogFile": {
     "module": "dbatools.performance",
