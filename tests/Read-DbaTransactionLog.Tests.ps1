@@ -35,7 +35,9 @@ Describe $CommandName -Tag IntegrationTests {
         # table + a few inserts guarantees plenty of transaction-log records to read back.
         $random = Get-Random
         $logDb = "dbatoolsci_txlog_$random"
+        $offlineDb = "dbatoolsci_txlogoff_$random"
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $logDb
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineDb
         $splatActivity = @{
             SqlInstance = $TestConfig.InstanceSingle
             Database    = $logDb
@@ -49,10 +51,20 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            if ($logDb) {
+            # ensure the offline-guard test left nothing offline before dropping (benign no-op if the
+            # database is already online; SilentlyContinue covers an absent database).
+            $splatOnline = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "master"
+                Query       = "ALTER DATABASE [$offlineDb] SET ONLINE"
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Invoke-DbaQuery @splatOnline
+            $dbsToRemove = @($logDb, $offlineDb) | Where-Object { $PSItem }
+            if ($dbsToRemove) {
                 $splatRemove = @{
                     SqlInstance = $TestConfig.InstanceSingle
-                    Database    = $logDb
+                    Database    = $dbsToRemove
                     ErrorAction = "SilentlyContinue"
                 }
                 $null = Remove-DbaDatabase @splatRemove
@@ -89,6 +101,18 @@ Describe $CommandName -Tag IntegrationTests {
             $result[0].PSObject.Properties.Name | Should -Contain "Operation"
         }
 
+        It "Reads the full log on the default (no -RowLimit) path" {
+            # RowLimit 0 skips the TOP clause and runs the <500MB live-log size check, which passes
+            # for a fresh small database, so every fn_dblog record is returned.
+            $splatFull = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $logDb
+            }
+            $result = @(Read-DbaTransactionLog @splatFull)
+            $result.Count | Should -BeGreaterThan 0
+            $result[0].PSObject.Properties.Name | Should -Contain "Operation"
+        }
+
         It "Caps the number of rows with -RowLimit" {
             $splatTwo = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -102,10 +126,40 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $two = @(Read-DbaTransactionLog @splatTwo)
             $ten = @(Read-DbaTransactionLog @splatTen)
-            # TOP 2 returns exactly 2 rows, and a larger limit returns more - proving the cap tracks
-            # the parameter rather than just reflecting a tiny log.
+            # a table create + five inserts produces far more than ten log records, so TOP N returns
+            # exactly N - pinning that the cap tracks the parameter value precisely.
             $two.Count | Should -Be 2
-            $ten.Count | Should -BeGreaterThan $two.Count
+            $ten.Count | Should -Be 10
+        }
+
+        It "Warns and returns nothing when the database is not in a Normal state" {
+            try {
+                # take the dedicated database offline so its Status is no longer Normal.
+                $splatOffline = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Database    = "master"
+                    Query       = "ALTER DATABASE [$offlineDb] SET OFFLINE WITH ROLLBACK IMMEDIATE"
+                }
+                $null = Invoke-DbaQuery @splatOffline
+
+                $splatRead = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Database        = $offlineDb
+                    WarningVariable = "warn"
+                    WarningAction   = "SilentlyContinue"
+                }
+                $result = Read-DbaTransactionLog @splatRead
+                $result | Should -BeNullOrEmpty
+                $warn -join " " | Should -Match "not in a normal State"
+            } finally {
+                $splatOnline = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Database    = "master"
+                    Query       = "ALTER DATABASE [$offlineDb] SET ONLINE"
+                    ErrorAction = "SilentlyContinue"
+                }
+                $null = Invoke-DbaQuery @splatOnline
+            }
         }
     }
 
