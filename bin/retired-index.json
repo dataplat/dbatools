@@ -1294,6 +1294,11 @@
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1",
     "flippedUtc": "2026-07-06T22:25:53Z"
   },
+  "Get-DbaXESessionTemplate": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Get-DbaXESessionTemplate.ps1",
+    "flippedUtc": "2026-07-18T17:35:55Z"
+  },
   "Grant-DbaAgPermission": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Grant-DbaAgPermission.ps1",

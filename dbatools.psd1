@@ -178,7 +178,6 @@
         'Get-DbaXESession',
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
-        'Get-DbaXESessionTemplate',
         'Get-DbaXEStore',
         'Import-DbaRegServer',
         'Import-DbaSpConfigure',
