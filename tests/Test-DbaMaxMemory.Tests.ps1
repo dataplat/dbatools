@@ -184,3 +184,76 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        # Read-only analysis command - no server state is changed, so a live instance is all that
+        # is needed. Compute once and reuse across the shape/algorithm assertions.
+        $result = Test-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "Analyzing a live instance" {
+        It "Returns one object carrying every documented property" {
+            $result | Should -Not -BeNullOrEmpty
+            foreach ($prop in "ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue", "Server") {
+                $result.PSObject.Properties.Name | Should -Contain $prop
+            }
+        }
+
+        It "Types the memory figures as integers and keeps the SMO Server reference" {
+            $result.Total | Should -BeOfType System.Int32
+            $result.MaxValue | Should -BeOfType System.Int32
+            $result.RecommendedValue | Should -BeOfType System.Int32
+            $result.InstanceCount | Should -BeGreaterThan 0
+            $result.Server | Should -BeOfType Microsoft.SqlServer.Management.Smo.Server
+        }
+
+        It "Reports MaxValue matching the instance's current max server memory" {
+            # MaxValue comes straight from Get-DbaMaxMemory, so the two must agree.
+            $current = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceSingle).MaxValue
+            $result.MaxValue | Should -Be ([int]$current)
+        }
+
+        It "Computes RecommendedValue by the documented Kehayias algorithm" {
+            # Re-derive the recommendation from the SAME returned Total and InstanceCount using the
+            # exact source arithmetic and confirm the command's value matches - this pins the memory
+            # math against any drift in the port.
+            $total = $result.Total
+            $instanceCount = $result.InstanceCount
+            if ($total -ge 4096) {
+                $reserve = 1
+                $currentCount = $total
+                while ($currentCount / 4096 -gt 0) {
+                    if ($currentCount -gt 16384) {
+                        $reserve += 1
+                        $currentCount += -8192
+                    } else {
+                        $reserve += 1
+                        $currentCount += -4096
+                    }
+                }
+                $recommendedMax = [int]($total - ($reserve * 1024))
+            } else {
+                $recommendedMax = $total * .5
+            }
+            $recommendedMax = $recommendedMax / $instanceCount
+            $result.RecommendedValue | Should -Be ([int]$recommendedMax)
+        }
+
+        It "Excludes Server from the default view but keeps it accessible" {
+            # Select-DefaultView keeps the analysis columns visible and hides the SMO Server handle.
+            $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+            $defaultProps | Should -Contain "RecommendedValue"
+            $defaultProps | Should -Not -Contain "Server"
+        }
+
+        It "Returns one object per value supplied to -SqlInstance" {
+            # Read-only, so passing the same instance twice simply exercises the foreach loop and
+            # must yield one analysis object per element.
+            $multi = @(Test-DbaMaxMemory -SqlInstance @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle))
+            $multi.Count | Should -Be 2
+        }
+    }
+}
