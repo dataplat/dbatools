@@ -1034,6 +1034,21 @@
     "retiredPath": "private/retired/Get-DbaQueryExecutionTime.ps1",
     "flippedUtc": "2026-07-13T17:57:33Z"
   },
+  "Get-DbaRandomizedDataset": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaRandomizedDataset.ps1",
+    "flippedUtc": "2026-07-18T07:22:10Z"
+  },
+  "Get-DbaRandomizedDatasetTemplate": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaRandomizedDatasetTemplate.ps1",
+    "flippedUtc": "2026-07-18T07:22:27Z"
+  },
+  "Get-DbaRandomizedType": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaRandomizedType.ps1",
+    "flippedUtc": "2026-07-18T07:22:45Z"
+  },
   "Get-DbaRegistryRoot": {
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaRegistryRoot.ps1",

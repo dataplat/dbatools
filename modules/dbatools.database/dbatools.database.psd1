@@ -74,7 +74,10 @@
         'Get-DbaDependency',
         'Get-DbaExtendedProperty',
         'Get-DbaFile',
-        'Get-DbaHelpIndex'
+        'Get-DbaHelpIndex',
+        'Get-DbaRandomizedDataset',
+        'Get-DbaRandomizedDatasetTemplate',
+        'Get-DbaRandomizedType'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
