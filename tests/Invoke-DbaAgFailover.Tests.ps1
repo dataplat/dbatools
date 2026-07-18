@@ -128,56 +128,75 @@ Describe $CommandName -Tag IntegrationTests {
         $agBackupPath = "$($TestConfig.Temp)\Invoke-DbaAgFailover-$(Get-Random)"
 
         # Track exactly what this fixture creates so teardown removes only its own objects.
+        $agReady = $false
         $agCreated = $false
         $dbCreated = $false
         $backupDirCreated = $false
+        $enteredCreation = $false
         $createdEndpointNames = @()
-
-        $hadrServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
+        $preExistingEndpoints = @()
         $agSkipReason = $null
-        if (-not $hadrServer.IsHadrEnabled) {
-            $agSkipReason = "InstanceHadr is not HADR-enabled"
-        } elseif (-not $hadrServer.Databases["master"].Certificates["dbatoolsci_AGCert"]) {
-            $agSkipReason = "the dbatoolsci_AGCert certificate is not present in master on InstanceHadr"
-        }
 
-        $agReady = $false
-        if (-not $agSkipReason) {
-            # Record the mirroring endpoints that already exist so teardown never removes a
-            # pre-existing one; New-DbaAvailabilityGroup creates the hadr_endpoint this suite owns.
-            $preExistingEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
+        try {
+            $hadrServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
+            if (-not $hadrServer.IsHadrEnabled) {
+                $agSkipReason = "InstanceHadr is not HADR-enabled"
+            } elseif (-not $hadrServer.Databases["master"].Certificates["dbatoolsci_AGCert"]) {
+                $agSkipReason = "the dbatoolsci_AGCert certificate is not present in master on InstanceHadr"
+            } else {
+                $enteredCreation = $true
+                # Record the mirroring endpoints that already exist so the delta below identifies only
+                # what this fixture creates; New-DbaAvailabilityGroup creates the hadr_endpoint it owns.
+                $preExistingEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
 
-            $null = New-Item -Path $agBackupPath -ItemType Directory
-            $backupDirCreated = $true
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
-            $dbCreated = $true
-            $splatBackup = @{
-                SqlInstance = $TestConfig.InstanceHadr
-                Database    = $agDbName
-                FilePath    = "$agBackupPath\$agDbName.bak"
+                $splatBackupDir = @{
+                    Path        = $agBackupPath
+                    ItemType    = "Directory"
+                    ErrorAction = "Stop"
+                }
+                $null = New-Item @splatBackupDir
+                $backupDirCreated = $true
+
+                $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $agDbName
+                $dbCreated = $true
+
+                $splatBackup = @{
+                    SqlInstance = $TestConfig.InstanceHadr
+                    Database    = $agDbName
+                    FilePath    = "$agBackupPath\$agDbName.bak"
+                }
+                $null = Backup-DbaDatabase @splatBackup
+
+                $splatNewAg = @{
+                    Primary      = $TestConfig.InstanceHadr
+                    Name         = $agName
+                    ClusterType  = "None"
+                    FailoverMode = "Manual"
+                    Database     = $agDbName
+                    Certificate  = "dbatoolsci_AGCert"
+                }
+                $null = New-DbaAvailabilityGroup @splatNewAg
+                $agCreated = $true
+
+                # The resolution path of the command must positively find the group, else the It
+                # assertions would pass vacuously against an empty loop. A created-but-unresolvable
+                # group is a regression, not an environmental precondition, so throw rather than skip.
+                $resolvedAg = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+                if (-not $resolvedAg) {
+                    throw "created availability group $agName but Get-DbaAvailabilityGroup could not resolve it"
+                }
+                $agReady = $true
             }
-            $null = Backup-DbaDatabase @splatBackup
-            $splatNewAg = @{
-                Primary      = $TestConfig.InstanceHadr
-                Name         = $agName
-                ClusterType  = "None"
-                FailoverMode = "Manual"
-                Database     = $agDbName
-                Certificate  = "dbatoolsci_AGCert"
+        } finally {
+            # Even when setup throws mid-way, capture any endpoint this fixture created (the AG create
+            # can make the hadr_endpoint before a later step fails) so teardown can reclaim it, and
+            # always restore the EnableException default so AfterAll cleanup runs without it.
+            if ($enteredCreation) {
+                $postEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring -ErrorAction SilentlyContinue).Name
+                $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
             }
-            $null = New-DbaAvailabilityGroup @splatNewAg
-            $agCreated = $true
-
-            $postEndpoints = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring).Name
-            $createdEndpointNames = @($postEndpoints | Where-Object { $PSItem -notin $preExistingEndpoints })
-
-            # Only mark the fixture ready once the resolution path of the command can positively find
-            # the group - otherwise the It assertions would pass vacuously against an empty loop.
-            $agReady = [bool](Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
@@ -197,6 +216,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceHadr
                 Type        = "DatabaseMirroring"
                 Endpoint    = $createdEndpointNames
+                ErrorAction = "SilentlyContinue"
             }
             $null = Get-DbaEndpoint @splatRemoveEndpoint | Remove-DbaEndpoint -ErrorAction SilentlyContinue
         }
@@ -209,7 +229,13 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaDatabase @splatRemoveDb
         }
         if ($backupDirCreated -and (Test-Path -Path $agBackupPath)) {
-            Remove-Item -Path $agBackupPath -Recurse -Force -ErrorAction SilentlyContinue
+            $splatRemoveBackup = @{
+                Path        = $agBackupPath
+                Recurse     = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatRemoveBackup
         }
     }
 
