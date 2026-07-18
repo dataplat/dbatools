@@ -519,6 +519,11 @@
     "retiredPath": "private/retired/Get-DbaDbDbccOpenTran.ps1",
     "flippedUtc": "2026-07-13T08:45:51Z"
   },
+  "Get-DbaDbDetachedFileInfo": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbDetachedFileInfo.ps1",
+    "flippedUtc": "2026-07-18T01:36:55Z"
+  },
   "Get-DbaDbEncryptionKey": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaDbEncryptionKey.ps1",
@@ -533,6 +538,31 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbFeatureUsage.ps1",
     "flippedUtc": "2026-07-13T09:34:38Z"
+  },
+  "Get-DbaDbFile": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbFile.ps1",
+    "flippedUtc": "2026-07-18T01:38:08Z"
+  },
+  "Get-DbaDbFileGroup": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbFileGroup.ps1",
+    "flippedUtc": "2026-07-18T01:38:33Z"
+  },
+  "Get-DbaDbFileGrowth": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbFileGrowth.ps1",
+    "flippedUtc": "2026-07-18T01:39:03Z"
+  },
+  "Get-DbaDbFileMapping": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbFileMapping.ps1",
+    "flippedUtc": "2026-07-18T01:39:48Z"
+  },
+  "Get-DbaDbForeignKey": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Get-DbaDbForeignKey.ps1",
+    "flippedUtc": "2026-07-18T01:40:53Z"
   },
   "Get-DbaDbLogSpace": {
     "module": "dbatools.performance",

@@ -43,7 +43,13 @@
         'Find-DbaView',
         'Get-DbaDbCompression',
         'Get-DbaDbCheckConstraint',
-        'Find-DbaUserObject'
+        'Find-DbaUserObject',
+        'Get-DbaDbDetachedFileInfo',
+        'Get-DbaDbFile',
+        'Get-DbaDbFileGroup',
+        'Get-DbaDbFileGrowth',
+        'Get-DbaDbFileMapping',
+        'Get-DbaDbForeignKey'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
