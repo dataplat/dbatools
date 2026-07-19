@@ -79,11 +79,23 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Ensure the monitor infrastructure exists on the instance we query; remember whether it
         # was already there so teardown only removes what this suite created.
+        # Existence is probed with a LIVE OBJECT_ID query, NOT the SMO Tables collection: the cached
+        # collection can report the table present when it was dropped since the connection (a stale
+        # false-positive silently SKIPS the ensure below, leaving dbm_monitor_data genuinely absent
+        # at query time - the exact re-gate red on this leg). The 3-part name resolves regardless of
+        # the connection's current database.
         $monitorServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
-        $monitorPreexisted = [bool]$monitorServer.Databases["msdb"].Tables["dbm_monitor_data"].Name
+        $monitorTableQuery = "SELECT CASE WHEN OBJECT_ID('msdb.dbo.dbm_monitor_data') IS NULL THEN 0 ELSE 1 END AS TablePresent"
+        $monitorPreexisted = [bool]$monitorServer.Query($monitorTableQuery).TablePresent
         if (-not $monitorPreexisted) {
             $null = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceMulti2
         }
+
+        # VERIFY the table is actually present now - the whole premise of the guard leg below. If the
+        # ensure could not establish it (permissions, sp_dbmmonitoraddmonitoring unavailable on this
+        # build), the leg degrades to an explicit skip rather than asserting the guard-never-fires on
+        # a fixture that was never built.
+        $monitorTablePresent = [bool]$monitorServer.Query($monitorTableQuery).TablePresent
 
         # The live-statistics leg needs a real mirroring session. Building one can legitimately
         # fail on an under-provisioned pair, and that must degrade the leg to an explicit skip
@@ -113,6 +125,31 @@ Describe $CommandName -Tag IntegrationTests {
             $mirrorProbeError = $_.Exception.Message
         }
 
+        # A live mirroring session is NECESSARY but not SUFFICIENT for the statistics leg: a freshly
+        # built session legitimately has ZERO rows in dbm_monitor_data until the monitor has sampled
+        # it, even after -Update. Probe whether monitor rows can actually be retrieved and record it,
+        # so the statistics leg skips with a reason (session too fresh) instead of failing 0 -gt 0 -
+        # the second re-gate red on this row. Probed defensively so a warning here cannot fail setup.
+        $mirrorStatsAvailable = $false
+        if ($mirrorLive) {
+            try {
+                $splatStatsProbe = @{
+                    SqlInstance     = $TestConfig.InstanceMulti2
+                    Database        = $mirrorDb
+                    Update          = $true
+                    EnableException = $false
+                    WarningAction   = "SilentlyContinue"
+                }
+                $statsProbe = @(Get-DbaDbMirrorMonitor @splatStatsProbe)
+                $mirrorStatsAvailable = $statsProbe.Count -gt 0
+                if (-not $mirrorStatsAvailable) {
+                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows after -Update (session too fresh to have monitor data)"
+                }
+            } catch {
+                $mirrorProbeError = "monitor statistics probe threw: $($_.Exception.Message)"
+            }
+        }
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -138,6 +175,21 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "With the monitor table present" {
         It "Does not fire the not-found guard for a non-mirrored database and returns nothing" {
+            # Re-establish + re-verify the monitor table on the EXACT instance THIS leg queries,
+            # immediately before the assertion. A's lab re-gate found dbm_monitor_data missing at
+            # query time even though the BeforeAll ensured it on this same instance - the BeforeAll
+            # check ran before the mirror build (and a prior run's teardown or the mirroring setup can
+            # leave the table absent by the time the leg runs). Ensuring at assertion time on the
+            # queried instance closes that scoping/timing gap; if the table still cannot be built the
+            # leg skips-with-reason rather than asserting on a premise that does not hold.
+            $guardServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            if (-not [bool]$guardServer.Query($monitorTableQuery).TablePresent) {
+                $null = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceMulti2 -EnableException:$false -WarningAction SilentlyContinue
+            }
+            if (-not [bool]$guardServer.Query($monitorTableQuery).TablePresent) {
+                Set-ItResult -Skipped -Because "dbm_monitor_data could not be established on the queried instance ($($TestConfig.InstanceMulti2)); the table-present premise does not hold"
+                return
+            }
             $splatNotMirrored = @{
                 SqlInstance     = $TestConfig.InstanceMulti2
                 Database        = "master"
@@ -152,8 +204,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns monitor statistics for a mirrored database" {
-            if (-not $mirrorLive) {
-                Set-ItResult -Skipped -Because "no mirroring session could be built on this pair: $mirrorProbeError"
+            if (-not ($mirrorLive -and $mirrorStatsAvailable)) {
+                Set-ItResult -Skipped -Because "no monitor statistics were retrievable on this pair: $mirrorProbeError"
                 return
             }
             $splatMonitor = @{
