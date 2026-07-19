@@ -1814,6 +1814,11 @@
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Read-DbaTraceFile.ps1"
   },
+  "Read-DbaTransactionLog": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Read-DbaTransactionLog.ps1",
+    "flippedUtc": "2026-07-19T09:33:07Z"
+  },
   "Read-DbaXEFile": {
     "flippedUtc": "2026-07-18T13:58:37Z",
     "module": "dbatools.xevents",
@@ -1924,10 +1929,20 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Remove-DbaDbCertificate.ps1"
   },
+  "Remove-DbaDbCheckConstraint": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbCheckConstraint.ps1",
+    "flippedUtc": "2026-07-19T09:33:24Z"
+  },
   "Remove-DbaDbData": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Remove-DbaDbData.ps1",
     "flippedUtc": "2026-07-19T00:21:40Z"
+  },
+  "Remove-DbaDbDataClassification": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbDataClassification.ps1",
+    "flippedUtc": "2026-07-19T09:33:36Z"
   },
   "Remove-DbaDbEncryptionKey": {
     "flippedUtc": "2026-07-18T13:19:21Z",
@@ -1973,6 +1988,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Remove-DbaDbPartitionFunction.ps1",
     "flippedUtc": "2026-07-18T23:48:52Z"
+  },
+  "Remove-DbaDbPartitionScheme": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbPartitionScheme.ps1",
+    "flippedUtc": "2026-07-19T09:33:47Z"
   },
   "Remove-DbaDbRole": {
     "module": "dbatools.database",
@@ -2028,6 +2048,11 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Remove-DbaEndpoint.ps1",
     "flippedUtc": "2026-07-19T00:17:23Z"
+  },
+  "Remove-DbaExtendedProperty": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaExtendedProperty.ps1",
+    "flippedUtc": "2026-07-19T09:34:04Z"
   },
   "Remove-DbaFirewallRule": {
     "flippedUtc": "2026-07-10T21:20:52Z",
@@ -2174,6 +2199,11 @@
     "retiredPath": "private/retired/Restore-DbaDbSnapshot.ps1",
     "flippedUtc": "2026-07-18T21:36:25Z"
   },
+  "Revoke-DbaAgPermission": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Revoke-DbaAgPermission.ps1",
+    "flippedUtc": "2026-07-19T09:34:28Z"
+  },
   "Save-DbaDiagnosticQueryScript": {
     "flippedUtc": "2026-07-14T17:42:34Z",
     "module": "dbatools.performance",
@@ -2278,6 +2308,11 @@
     "flippedUtc": "2026-07-12T17:25:56Z",
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaDefaultPath.ps1"
+  },
+  "Set-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Set-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-19T09:34:42Z"
   },
   "Set-DbaErrorLogConfig": {
     "flippedUtc": "2026-07-16T19:49:23Z",

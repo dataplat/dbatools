@@ -105,7 +105,7 @@
         'Remove-DbaDbRole',
         'Remove-DbaDbPartitionFunction',
         'Remove-DbaDbFileGroup',
-        'Remove-DbaDbData'
+        'Remove-DbaDbData',
         'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig',
         'New-DbaDacProfile',
@@ -135,7 +135,12 @@
         'Remove-DbaDbTableData',
         'Remove-DbaDbUdf',
         'Remove-DbaDbUser',
-        'Remove-DbaDbView'
+        'Remove-DbaDbView',
+        'Read-DbaTransactionLog',
+        'Remove-DbaDbCheckConstraint',
+        'Remove-DbaDbDataClassification',
+        'Remove-DbaDbPartitionScheme',
+        'Remove-DbaExtendedProperty'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

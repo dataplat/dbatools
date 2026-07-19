@@ -74,7 +74,9 @@
         'Repair-DbaDbMirror',
         'Set-DbaAgReplica',
         'Set-DbaAvailabilityGroup',
-        'Set-DbaDbMirror'
+        'Set-DbaDbMirror',
+        'Revoke-DbaAgPermission',
+        'Set-DbaEndpoint'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
