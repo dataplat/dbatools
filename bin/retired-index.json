@@ -1574,6 +1574,11 @@
     "retiredPath": "private/retired/Read-DbaTraceFile.ps1",
     "flippedUtc": "2026-07-18T15:22:33Z"
   },
+  "Read-DbaTransactionLog": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Read-DbaTransactionLog.ps1",
+    "flippedUtc": "2026-07-19T02:04:39Z"
+  },
   "Read-DbaXEFile": {
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Read-DbaXEFile.ps1",

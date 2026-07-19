@@ -102,7 +102,8 @@
         'Remove-DbaDbRole',
         'Remove-DbaDbPartitionFunction',
         'Remove-DbaDbFileGroup',
-        'Remove-DbaDbData'
+        'Remove-DbaDbData',
+        'Read-DbaTransactionLog'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

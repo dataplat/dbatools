@@ -237,7 +237,6 @@
         'New-DbaServerRole',
         'New-DbaXESession',
         'Publish-DbaDacPackage',
-        'Read-DbaTransactionLog',
         'Remove-DbaAgDatabase',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobSchedule',
