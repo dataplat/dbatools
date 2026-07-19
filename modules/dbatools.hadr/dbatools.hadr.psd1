@@ -76,7 +76,10 @@
         'Set-DbaAvailabilityGroup',
         'Set-DbaDbMirror',
         'Revoke-DbaAgPermission',
-        'Set-DbaEndpoint'
+        'Set-DbaEndpoint',
+        'Start-DbaEndpoint',
+        'Stop-DbaEndpoint',
+        'Suspend-DbaAgDbDataMovement'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

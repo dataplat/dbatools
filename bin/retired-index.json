@@ -1817,11 +1817,6 @@
   "Read-DbaTransactionLog": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Read-DbaTransactionLog.ps1",
-    "flippedUtc": "2026-07-19T09:33:07Z"
-  },
-  "Read-DbaTransactionLog": {
-    "module": "dbatools.database",
-    "retiredPath": "private/retired/Read-DbaTransactionLog.ps1",
     "flippedUtc": "2026-07-19T02:04:39Z"
   },
   "Read-DbaXEFile": {
@@ -2429,6 +2424,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Start-DbaDbEncryption.ps1"
   },
+  "Start-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Start-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-19T10:17:40Z"
+  },
   "Start-DbaPfDataCollectorSet": {
     "flippedUtc": "2026-07-14T18:23:28Z",
     "module": "dbatools.performance",
@@ -2459,6 +2459,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Stop-DbaDbEncryption.ps1"
   },
+  "Stop-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Stop-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-19T10:18:02Z"
+  },
   "Stop-DbaExternalProcess": {
     "flippedUtc": "2026-07-17T01:48:34Z",
     "module": "dbatools.core",
@@ -2483,6 +2488,11 @@
     "flippedUtc": "2026-07-18T14:00:49Z",
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Stop-DbaTrace.ps1"
+  },
+  "Suspend-DbaAgDbDataMovement": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Suspend-DbaAgDbDataMovement.ps1",
+    "flippedUtc": "2026-07-19T10:18:16Z"
   },
   "Sync-DbaLoginPassword": {
     "flippedUtc": "2026-07-18T13:22:52Z",
