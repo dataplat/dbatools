@@ -1669,6 +1669,11 @@
     "retiredPath": "private/retired/Remove-DbaDbEncryptionKey.ps1",
     "flippedUtc": "2026-07-18T13:19:21Z"
   },
+  "Remove-DbaDbFileGroup": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbFileGroup.ps1",
+    "flippedUtc": "2026-07-19T00:07:18Z"
+  },
   "Remove-DbaDbMailAccount": {
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Remove-DbaDbMailAccount.ps1",
