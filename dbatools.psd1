@@ -210,7 +210,6 @@
         'Stop-DbaXESession',
         'Sync-DbaAvailabilityGroup',
         'Test-DbaAgentJobOwner',
-        'Test-DbaAvailabilityGroup',
         'Test-DbaDbDataMaskingConfig',
         'Test-DbaDbLogShipStatus',
         'Test-DbaEndpoint',
