@@ -262,6 +262,7 @@ Describe $CommandName -Tag IntegrationTests {
             # The backup share accumulates one folder per shipped database; remove the
             # folder from this run so repeated gate runs do not pile up backup files on the share.
             Remove-Item -Path (Join-Path $TestConfig.Temp $primaryDb) -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path (Join-Path $TestConfig.Temp "dbatoolsci_invokels_copy") -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -273,16 +274,34 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "log shipping preconditions not met on this pair: $preconditionError"
                 return
             }
+            # CopyDestinationFolder EXPLICIT + bounded warm-up retry: same two measured lab
+            # facts fixed in Remove-DbaDbLogShipping.Tests.ps1 - the command's S:\-derived
+            # default copy path does not exist on this pair, and the FIRST setup attempt can
+            # fail with a wrapped Path-null while an immediate retry succeeds.
+            $copyFolder = Join-Path $TestConfig.Temp "dbatoolsci_invokels_copy"
+            if (-not (Test-Path -Path $copyFolder)) {
+                $null = New-Item -Path $copyFolder -ItemType Directory
+            }
             $splatLogShipping = @{
                 SourceSqlInstance       = $TestConfig.InstanceMulti1
                 DestinationSqlInstance  = $TestConfig.InstanceMulti2
                 Database                = $primaryDb
                 SharedPath              = $TestConfig.Temp
+                CopyDestinationFolder   = $copyFolder
                 GenerateFullBackup      = $true
                 SecondaryDatabaseSuffix = "_LS"
                 Force                   = $true
             }
-            $results = Invoke-DbaDbLogShipping @splatLogShipping
+            try {
+                $results = Invoke-DbaDbLogShipping @splatLogShipping -EnableException
+            } catch {
+                if ($_.Exception.Message -like "*Cannot bind argument to parameter 'Path'*") {
+                    Start-Sleep -Seconds 5
+                    $results = Invoke-DbaDbLogShipping @splatLogShipping -EnableException
+                } else {
+                    throw
+                }
+            }
             $results.Result | Should -Be "Success"
             $results.PrimaryDatabase | Should -Be $primaryDb
             $results.SecondaryDatabase | Should -Be $secondaryDb
