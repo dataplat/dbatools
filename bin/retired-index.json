@@ -2509,6 +2509,11 @@
     "retiredPath": "private/retired/Test-DbaAgPolicyState.ps1",
     "flippedUtc": "2026-07-19T11:32:55Z"
   },
+  "Test-DbaAgSpn": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Test-DbaAgSpn.ps1",
+    "flippedUtc": "2026-07-19T11:53:10Z"
+  },
   "Test-DbaBackupInformation": {
     "flippedUtc": "2026-07-07T10:21:01Z",
     "module": "dbatools.core",
