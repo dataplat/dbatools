@@ -118,7 +118,12 @@ Describe $CommandName -Tag IntegrationTests {
                 StartupProcedure = $startupProc
             }
             $null = Enable-DbaStartupProcedure @splatEnable
-            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle | Disable-DbaStartupProcedure
+            # TEST-SCOPING: pipe ONLY the fixture procedure. Unfiltered, this disabled every
+            # startup procedure on the shared instance - including replication's
+            # sp_MSrepl_startup - which both broke these single-object assertions (2 records)
+            # and mutated state other suites depend on (measured gate red; the repl proc was
+            # re-enabled by hand).
+            $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $startupProcName | Disable-DbaStartupProcedure
         }
 
         It "Should return correct schema" {
