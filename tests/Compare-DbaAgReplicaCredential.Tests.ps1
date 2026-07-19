@@ -55,6 +55,9 @@ Describe $CommandName -Tag IntegrationTests {
             } else {
                 $joinedWarn | Should -Match "Availability Group \(HADR\) is not configured for the instance"
             }
+        }
+    }
+}
 
 <#
     AG01 READ-ONLY SMOKE (authored per the coordinator's zero-test ruling: author now, a lab seat with
