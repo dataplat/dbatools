@@ -137,8 +137,19 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "With the monitor table present" {
         It "Does not fire the not-found guard for a non-mirrored database and returns nothing" {
-            if (-not $monitorTablePresent) {
-                Set-ItResult -Skipped -Because "the monitor table dbm_monitor_data could not be established on this instance, so the table-present premise does not hold"
+            # Re-establish + re-verify the monitor table on the EXACT instance THIS leg queries,
+            # immediately before the assertion. A's lab re-gate found dbm_monitor_data missing at
+            # query time even though the BeforeAll ensured it on this same instance - the BeforeAll
+            # check ran before the mirror build (and a prior run's teardown or the mirroring setup can
+            # leave the table absent by the time the leg runs). Ensuring at assertion time on the
+            # queried instance closes that scoping/timing gap; if the table still cannot be built the
+            # leg skips-with-reason rather than asserting on a premise that does not hold.
+            $guardServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            if (-not [bool]$guardServer.Query($monitorTableQuery).TablePresent) {
+                $null = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceMulti2 -EnableException:$false -WarningAction SilentlyContinue
+            }
+            if (-not [bool]$guardServer.Query($monitorTableQuery).TablePresent) {
+                Set-ItResult -Skipped -Because "dbm_monitor_data could not be established on the queried instance ($($TestConfig.InstanceMulti2)); the table-present premise does not hold"
                 return
             }
             $splatNotMirrored = @{
