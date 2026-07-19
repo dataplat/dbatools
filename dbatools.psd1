@@ -246,7 +246,6 @@
         'Remove-DbaAgReplica',
         'Remove-DbaAvailabilityGroup',
         'Remove-DbaDatabaseSafely',
-        'Remove-DbaDbData',
         'Remove-DbaDbLogShipping',
         'Remove-DbaDbMirror',
         'Remove-DbaDbMirrorMonitor',

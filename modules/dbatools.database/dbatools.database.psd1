@@ -101,7 +101,8 @@
         'Remove-DbaDbSchema',
         'Remove-DbaDbRole',
         'Remove-DbaDbPartitionFunction',
-        'Remove-DbaDbFileGroup'
+        'Remove-DbaDbFileGroup',
+        'Remove-DbaDbData'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

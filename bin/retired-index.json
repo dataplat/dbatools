@@ -1664,6 +1664,11 @@
     "retiredPath": "private/retired/Remove-DbaDbCertificate.ps1",
     "flippedUtc": "2026-07-18T13:19:02Z"
   },
+  "Remove-DbaDbData": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbData.ps1",
+    "flippedUtc": "2026-07-19T00:21:40Z"
+  },
   "Remove-DbaDbEncryptionKey": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/Remove-DbaDbEncryptionKey.ps1",
