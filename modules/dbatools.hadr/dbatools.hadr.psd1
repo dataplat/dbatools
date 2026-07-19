@@ -79,7 +79,8 @@
         'Set-DbaEndpoint',
         'Start-DbaEndpoint',
         'Stop-DbaEndpoint',
-        'Suspend-DbaAgDbDataMovement'
+        'Suspend-DbaAgDbDataMovement',
+        'Test-DbaAgPolicyState'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

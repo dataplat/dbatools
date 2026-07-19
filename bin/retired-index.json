@@ -2504,6 +2504,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Sync-DbaLoginPermission.ps1"
   },
+  "Test-DbaAgPolicyState": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Test-DbaAgPolicyState.ps1",
+    "flippedUtc": "2026-07-19T11:32:55Z"
+  },
   "Test-DbaBackupInformation": {
     "flippedUtc": "2026-07-07T10:21:01Z",
     "module": "dbatools.core",
