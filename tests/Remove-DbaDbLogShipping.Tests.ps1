@@ -74,7 +74,21 @@ Describe $CommandName -Tag IntegrationTests {
                     SecondaryDatabaseSuffix = "_LS"
                     Force                   = $true
                 }
-                $setupResult = Invoke-DbaDbLogShipping @splatLogShipping
+                # Measured warm-up flake on the pair: the FIRST setup attempt can fail with a
+                # wrapped "Cannot bind argument to parameter 'Path' because it is null" from
+                # inside the command's path resolution while an immediate retry succeeds
+                # (fresh UNC subfolder visibility). ONE bounded retry, scoped to exactly that
+                # shape - anything else still fails the setup loudly.
+                try {
+                    $setupResult = Invoke-DbaDbLogShipping @splatLogShipping
+                } catch {
+                    if ($_.Exception.Message -like "*Cannot bind argument to parameter 'Path'*") {
+                        Start-Sleep -Seconds 5
+                        $setupResult = Invoke-DbaDbLogShipping @splatLogShipping
+                    } else {
+                        throw
+                    }
+                }
                 if ($setupResult.Result -ne "Success") {
                     $setupFailure = "log shipping setup returned $($setupResult.Result)"
                 } else {
