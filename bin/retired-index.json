@@ -1924,6 +1924,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Remove-DbaDbCertificate.ps1"
   },
+  "Remove-DbaDbData": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbData.ps1",
+    "flippedUtc": "2026-07-19T00:21:40Z"
+  },
   "Remove-DbaDbEncryptionKey": {
     "flippedUtc": "2026-07-18T13:19:21Z",
     "module": "dbatools.security",
@@ -1933,6 +1938,11 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Remove-DbaDbLogShipping.ps1",
     "flippedUtc": "2026-07-19T00:16:15Z"
+  },
+  "Remove-DbaDbFileGroup": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbFileGroup.ps1",
+    "flippedUtc": "2026-07-19T00:07:18Z"
   },
   "Remove-DbaDbMailAccount": {
     "flippedUtc": "2026-07-18T05:38:26Z",
@@ -1993,6 +2003,31 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Remove-DbaEndpoint.ps1",
     "flippedUtc": "2026-07-19T00:17:23Z"
+  },
+  "Remove-DbaDbPartitionFunction": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbPartitionFunction.ps1",
+    "flippedUtc": "2026-07-18T23:48:52Z"
+  },
+  "Remove-DbaDbRole": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbRole.ps1",
+    "flippedUtc": "2026-07-18T23:37:22Z"
+  },
+  "Remove-DbaDbSchema": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbSchema.ps1",
+    "flippedUtc": "2026-07-18T23:17:32Z"
+  },
+  "Remove-DbaDbSnapshot": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbSnapshot.ps1",
+    "flippedUtc": "2026-07-18T23:04:55Z"
+  },
+  "Remove-DbaDbTable": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbTable.ps1",
+    "flippedUtc": "2026-07-18T22:35:16Z"
   },
   "Remove-DbaFirewallRule": {
     "flippedUtc": "2026-07-10T21:20:52Z",

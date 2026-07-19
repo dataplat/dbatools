@@ -99,6 +99,13 @@
         'Set-DbaDbFileGroup',
         'Set-DbaDbDataClassification',
         'Set-DbaDbCompatibility',
+        'Remove-DbaDbTable',
+        'Remove-DbaDbSnapshot',
+        'Remove-DbaDbSchema',
+        'Remove-DbaDbRole',
+        'Remove-DbaDbPartitionFunction',
+        'Remove-DbaDbFileGroup',
+        'Remove-DbaDbData'
         'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig',
         'New-DbaDacProfile',
