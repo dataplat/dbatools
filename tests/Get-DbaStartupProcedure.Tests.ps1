@@ -49,9 +49,14 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When retrieving all startup procedures" {
         It "Returns correct results" {
+            # TEST-SCOPING: the shared instance legitimately has OTHER startup procedures
+            # (replication's sp_MSrepl_startup) - assert the fixture proc is PRESENT in the
+            # unfiltered list rather than assuming it is the only row (measured gate red:
+            # two-element array where the single-object comparison expected one).
             $result = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle
-            $result.Schema -eq "dbo" | Should -Be $true
-            $result.Name -eq "StartUpProc$random" | Should -Be $true
+            $fixtureRow = $result | Where-Object Name -eq "StartUpProc$random"
+            $fixtureRow.Schema | Should -Be "dbo"
+            $fixtureRow.Name | Should -Be "StartUpProc$random"
         }
     }
 
