@@ -56,11 +56,20 @@ Describe $CommandName -Tag IntegrationTests {
             } else {
                 $null = $primaryServer.Query("CREATE DATABASE $primaryDb")
                 $null = $primaryServer.Query("ALTER DATABASE $primaryDb SET RECOVERY FULL")
+                # CopyDestinationFolder is EXPLICIT: the command's default derives an
+                # S:\...\Logshipping path from the secondary's backup directory, which does
+                # not exist on this pair (measured gate red: "Copy destination folder ... is
+                # not valid or can't be reached"). The UNC temp share serves both roles.
+                $copyFolder = Join-Path $TestConfig.Temp "dbatoolsci_removels_copy"
+                if (-not (Test-Path -Path $copyFolder)) {
+                    $null = New-Item -Path $copyFolder -ItemType Directory
+                }
                 $splatLogShipping = @{
                     SourceSqlInstance       = $TestConfig.InstanceMulti1
                     DestinationSqlInstance  = $TestConfig.InstanceMulti2
                     Database                = $primaryDb
                     SharedPath              = $TestConfig.Temp
+                    CopyDestinationFolder   = $copyFolder
                     GenerateFullBackup      = $true
                     SecondaryDatabaseSuffix = "_LS"
                     Force                   = $true
@@ -134,6 +143,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $primaryDb -ErrorAction SilentlyContinue
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $secondaryDb -ErrorAction SilentlyContinue
         Remove-Item -Path (Join-Path $TestConfig.Temp $primaryDb) -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path (Join-Path $TestConfig.Temp "dbatoolsci_removels_copy") -Recurse -Force -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
