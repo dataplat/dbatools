@@ -1714,10 +1714,35 @@
     "retiredPath": "private/retired/New-DbaDbSnapshot.ps1",
     "flippedUtc": "2026-07-18T21:48:44Z"
   },
+  "New-DbaDbSynonym": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbSynonym.ps1",
+    "flippedUtc": "2026-07-19T00:18:53Z"
+  },
+  "New-DbaDbTable": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbTable.ps1",
+    "flippedUtc": "2026-07-19T00:19:07Z"
+  },
+  "New-DbaDbTransfer": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbTransfer.ps1",
+    "flippedUtc": "2026-07-19T00:19:20Z"
+  },
+  "New-DbaDbUser": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDbUser.ps1",
+    "flippedUtc": "2026-07-19T00:19:34Z"
+  },
   "New-DbaDiagnosticAdsNotebook": {
     "flippedUtc": "2026-07-14T08:01:15Z",
     "module": "dbatools.performance",
     "retiredPath": "private/retired/New-DbaDiagnosticAdsNotebook.ps1"
+  },
+  "New-DbaDirectory": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDirectory.ps1",
+    "flippedUtc": "2026-07-19T00:19:47Z"
   },
   "New-DbaEndpoint": {
     "module": "dbatools.hadr",
@@ -1933,6 +1958,36 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Remove-DbaDbMirrorMonitor.ps1",
     "flippedUtc": "2026-07-19T00:16:41Z"
+  },
+  "Remove-DbaDbRoleMember": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbRoleMember.ps1",
+    "flippedUtc": "2026-07-19T00:20:02Z"
+  },
+  "Remove-DbaDbSequence": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbSequence.ps1",
+    "flippedUtc": "2026-07-19T00:20:26Z"
+  },
+  "Remove-DbaDbTableData": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbTableData.ps1",
+    "flippedUtc": "2026-07-19T00:20:38Z"
+  },
+  "Remove-DbaDbUdf": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbUdf.ps1",
+    "flippedUtc": "2026-07-19T00:20:51Z"
+  },
+  "Remove-DbaDbUser": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbUser.ps1",
+    "flippedUtc": "2026-07-19T00:21:05Z"
+  },
+  "Remove-DbaDbView": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Remove-DbaDbView.ps1",
+    "flippedUtc": "2026-07-19T00:21:20Z"
   },
   "Remove-DbaEndpoint": {
     "module": "dbatools.hadr",

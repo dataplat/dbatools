@@ -117,7 +117,18 @@
         'Set-DbaDbSequence',
         'Select-DbaDbSequenceNextValue',
         'Set-DbaExtendedProperty',
-        'Test-DbaDbQueryStore'
+        'Test-DbaDbQueryStore',
+        'New-DbaDbSynonym',
+        'New-DbaDbTable',
+        'New-DbaDbTransfer',
+        'New-DbaDbUser',
+        'New-DbaDirectory',
+        'Remove-DbaDbRoleMember',
+        'Remove-DbaDbSequence',
+        'Remove-DbaDbTableData',
+        'Remove-DbaDbUdf',
+        'Remove-DbaDbUser',
+        'Remove-DbaDbView'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
