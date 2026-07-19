@@ -65,7 +65,13 @@
         'New-DbaEndpoint',
         'Remove-DbaAgDatabase',
         'Remove-DbaAgListener',
-        'Remove-DbaAgReplica'
+        'Remove-DbaAgReplica',
+        'Remove-DbaAvailabilityGroup',
+        'Remove-DbaDbLogShipping',
+        'Remove-DbaDbMirror',
+        'Remove-DbaDbMirrorMonitor',
+        'Remove-DbaEndpoint',
+        'Repair-DbaDbMirror'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -1844,6 +1844,11 @@
     "retiredPath": "private/retired/Remove-DbaAgReplica.ps1",
     "flippedUtc": "2026-07-18T22:12:00Z"
   },
+  "Remove-DbaAvailabilityGroup": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-07-19T00:16:04Z"
+  },
   "Remove-DbaBackup": {
     "flippedUtc": "2026-07-16T14:17:08Z",
     "module": "dbatools.core",
@@ -1899,6 +1904,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Remove-DbaDbEncryptionKey.ps1"
   },
+  "Remove-DbaDbLogShipping": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaDbLogShipping.ps1",
+    "flippedUtc": "2026-07-19T00:16:15Z"
+  },
   "Remove-DbaDbMailAccount": {
     "flippedUtc": "2026-07-18T05:38:26Z",
     "module": "dbatools.agent",
@@ -1913,6 +1923,21 @@
     "flippedUtc": "2026-07-18T13:20:05Z",
     "module": "dbatools.security",
     "retiredPath": "private/retired/Remove-DbaDbMasterKey.ps1"
+  },
+  "Remove-DbaDbMirror": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaDbMirror.ps1",
+    "flippedUtc": "2026-07-19T00:16:29Z"
+  },
+  "Remove-DbaDbMirrorMonitor": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaDbMirrorMonitor.ps1",
+    "flippedUtc": "2026-07-19T00:16:41Z"
+  },
+  "Remove-DbaEndpoint": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Remove-DbaEndpoint.ps1",
+    "flippedUtc": "2026-07-19T00:17:23Z"
   },
   "Remove-DbaFirewallRule": {
     "flippedUtc": "2026-07-10T21:20:52Z",
@@ -2003,6 +2028,11 @@
     "flippedUtc": "2026-07-18T13:21:54Z",
     "module": "dbatools.security",
     "retiredPath": "private/retired/Rename-DbaLogin.ps1"
+  },
+  "Repair-DbaDbMirror": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Repair-DbaDbMirror.ps1",
+    "flippedUtc": "2026-07-19T00:17:58Z"
   },
   "Repair-DbaDbOrphanUser": {
     "module": "dbatools.database",
