@@ -27,6 +27,20 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # This suite restarts the instance (filestream level changes take a service restart via
+        # -Force), and the gate runs its ps7 and ps51 legs back-to-back - so this leg may start
+        # while the instance is still recovering from the previous leg's restart (measured:
+        # "connection forcibly closed" in BOTH worlds). Wait for stable connectivity, bounded.
+        $deadline = (Get-Date).AddSeconds(90)
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart -ConnectTimeout 5
+                break
+            } catch {
+                Start-Sleep -Seconds 5
+            }
+        }
+
         $null = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 1 -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
