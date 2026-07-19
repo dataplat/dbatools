@@ -106,6 +106,7 @@
         'Remove-DbaDbPartitionFunction',
         'Remove-DbaDbFileGroup',
         'Remove-DbaDbData',
+        'Read-DbaTransactionLog'
         'Test-DbaDbCompatibility',
         'Test-DbaDbDataGeneratorConfig',
         'New-DbaDacProfile',
