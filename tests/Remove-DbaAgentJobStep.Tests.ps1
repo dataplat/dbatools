@@ -45,7 +45,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Values baked into the child-host guard probes below. The probe scripts are generated with
         # these already interpolated, so the generated file carries no variables of its own.
-        $moduleUnderTest = (Get-Module dbatools).Path
+        # Round 2 (A re-gate 2026-07-19): (Get-Module dbatools).Path resolved to the GALLERY module
+        # under the gate, and the child's Import-Module of it failed - reddening both guard legs on the
+        # import error instead of the characterized warning. Per A's route, the child must use the
+        # dev-tree convention: the dev-tree modules dir prepended to PSModulePath (the child inherits
+        # this process env) and the dev-tree root module imported by explicit path.
+        $devTreeModule = "C:\github\dbatools\dbatools.psm1"
+        $script:savedPSModulePath = $env:PSModulePath
+        $env:PSModulePath = "C:\github\dbatools\modules;$env:PSModulePath"
         $probeInstance = $TestConfig.InstanceSingle
         # launch the child on the SAME host executable as this run, so the guard is exercised on the
         # edition the gate is currently running (Desktop or Core)
@@ -53,6 +60,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
+        $env:PSModulePath = $script:savedPSModulePath
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
             $splatRemove = @{
@@ -117,7 +125,7 @@ Describe $CommandName -Tag IntegrationTests {
             $probeFile = Join-Path $env:TEMP "dbatoolsci_rmstep_nojob_$([guid]::NewGuid()).ps1"
             # generated with the values already interpolated, so the probe holds no variables
             $probeBody = @"
-Import-Module "$moduleUnderTest" -ErrorAction Stop
+Import-Module "$devTreeModule" -ErrorAction Stop
 Remove-DbaAgentJobStep -SqlInstance "$probeInstance" -Job "$badJob" -StepName "step_whatif" 3>&1
 "@
             Set-Content -Path $probeFile -Value $probeBody
@@ -139,7 +147,7 @@ Remove-DbaAgentJobStep -SqlInstance "$probeInstance" -Job "$badJob" -StepName "s
             $badStep = "dbatoolsci_nostep_$(Get-Random)"
             $probeFile = Join-Path $env:TEMP "dbatoolsci_rmstep_nostep_$([guid]::NewGuid()).ps1"
             $probeBody = @"
-Import-Module "$moduleUnderTest" -ErrorAction Stop
+Import-Module "$devTreeModule" -ErrorAction Stop
 Remove-DbaAgentJobStep -SqlInstance "$probeInstance" -Job "$jobName" -StepName "$badStep" 3>&1
 "@
             Set-Content -Path $probeFile -Value $probeBody
