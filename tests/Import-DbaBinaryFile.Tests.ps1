@@ -50,11 +50,15 @@ Describe $CommandName -Tag IntegrationTests {
 
         $db = "dbatoolsci_binfile_$random"
         $tableName = "BinaryFiles"
+        # A SECOND identically-shaped table for the W2-128 cross-record leg: two auto-detectable tables
+        # piped in one call with no -Statement is the exact divergence path (record-2 must reuse
+        # record-1's persisted INSERT, which bakes in table-1's name).
+        $tableName2 = "BinaryFilesTwo"
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db
         $splatCreate = @{
             SqlInstance = $TestConfig.InstanceSingle
             Database    = $db
-            Query       = "CREATE TABLE dbo.$tableName ([FileName] NVARCHAR(500) NULL, [TheFile] VARBINARY(MAX) NULL)"
+            Query       = "CREATE TABLE dbo.$tableName ([FileName] NVARCHAR(500) NULL, [TheFile] VARBINARY(MAX) NULL); CREATE TABLE dbo.$tableName2 ([FileName] NVARCHAR(500) NULL, [TheFile] VARBINARY(MAX) NULL)"
         }
         $null = Invoke-DbaQuery @splatCreate
 
@@ -216,6 +220,31 @@ Describe $CommandName -Tag IntegrationTests {
             $rows[0].FileName | Should -Be (Split-Path -Path $sourceFile -Leaf)
             $rows[0].ByteLength | Should -Be 64
             $rows[0].Sha | Should -Be (Get-FileHash -Path $sourceFile -Algorithm SHA256).Hash
+        }
+    }
+
+    Context "Cross-record Statement persistence (W2-128 P0)" {
+        # The source guards its whole column-detect + $Statement build with if (-not $Statement) on a
+        # NON-pipeline param, so on a multi-table pipe with no -Statement, record-2 reuses record-1's
+        # persisted INSERT - which bakes in TABLE-1's name - and record-2's file lands in TABLE-1, not
+        # TABLE-2. The hop MUST reproduce that, not "fix" it: both files land in one table, the other
+        # stays empty (2-and-0). Before the W2-128 carrier the hop rebuilt $Statement per record and
+        # split the rows one-per-table (1-and-1) - the exact divergence this leg gates.
+        It "Reproduces the source: two piped tables (no -Statement) both insert into the first table" {
+            # clean slate, independent of the single-table import above
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query "TRUNCATE TABLE dbo.$tableName; TRUNCATE TABLE dbo.$tableName2"
+
+            $tables = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $db -Table $tableName, $tableName2
+            $tables.Count | Should -Be 2
+            $null = $tables | Import-DbaBinaryFile -FilePath $sourceFile -Confirm:$false
+
+            $countOne = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query "SELECT COUNT(*) AS n FROM dbo.$tableName" -As PSObject).n
+            $countTwo = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query "SELECT COUNT(*) AS n FROM dbo.$tableName2" -As PSObject).n
+            # order-independent: both rows in ONE table (2), the other empty (0) - reproduces the source;
+            # a 1-and-1 split would be the pre-carrier divergence.
+            $sorted = @($countOne, $countTwo) | Sort-Object
+            $sorted[0] | Should -Be 0
+            $sorted[1] | Should -Be 2
         }
     }
 }
