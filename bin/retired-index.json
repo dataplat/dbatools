@@ -1874,6 +1874,11 @@
     "retiredPath": "private/retired/New-DbaDacProfile.ps1",
     "flippedUtc": "2026-07-18T21:20:50Z"
   },
+  "New-DbaDatabase": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/New-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-20T14:54:33Z"
+  },
   "New-DbaDbAsymmetricKey": {
     "module": "dbatools.security",
     "retiredPath": "private/retired/New-DbaDbAsymmetricKey.ps1",

@@ -86,6 +86,7 @@
         'New-DbaCmConnection',
         'New-DbaCredential',
         'New-DbaCustomError',
+        'New-DbaDatabase',
         'New-DbaLinkedServer',
         'New-DbaLinkedServerLogin',
         'Remove-DbaBackup',

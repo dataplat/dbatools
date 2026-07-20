@@ -139,7 +139,6 @@
         'New-DbaAgentOperator',
         'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
-        'New-DbaDatabase',
         'New-DbaDbMailAccount',
         'New-DbaDbMailProfile',
         'New-DbaDbMasterKey',
