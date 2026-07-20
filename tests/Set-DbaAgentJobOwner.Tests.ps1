@@ -57,7 +57,8 @@ Describe $CommandName -Tag IntegrationTests {
         $jobExclude = "dbatoolsci_jobowner_excl_$(Get-Random)"
         $jobWinGroup = "dbatoolsci_jobowner_wingroup_$(Get-Random)"
         $jobPipe = "dbatoolsci_jobowner_pipe_$(Get-Random)"
-        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude, $jobWinGroup, $jobPipe)
+        $jobPipe2 = "dbatoolsci_jobowner_pipe2_$(Get-Random)"
+        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude, $jobWinGroup, $jobPipe, $jobPipe2)
 
         foreach ($j in $allJobs) {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $j
@@ -87,13 +88,21 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Setting the owner" {
-        It "Sets the owner on a job piped in as InputObject and persists it" {
-            # the pipeline route: SMO Agent.Job objects bind to -InputObject ValueFromPipeline
-            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobPipe | Set-DbaAgentJobOwner -Login $ownerLogin
-            $result.Name | Should -Be $jobPipe
-            $result.Status | Should -Be "Successful"
-            $result.OwnerLoginName | Should -Be $ownerLogin
-            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobPipe).OwnerLoginName | Should -Be $ownerLogin
+        It "Sets the owner on EVERY job piped in as InputObject and persists each" {
+            # the pipeline route with TWO records: SMO Agent.Job objects bind to -InputObject
+            # ValueFromPipeline, and the two-record shape guards the cross-record cardinality
+            # class (a per-record port that only honours the LAST piped record - the measured
+            # W1-117 P1 shape - passes a single-record pipe but fails this).
+            $results = @(Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobPipe, $jobPipe2 | Set-DbaAgentJobOwner -Login $ownerLogin)
+            $results.Count | Should -Be 2
+            ($results.Name | Sort-Object) | Should -Be (@($jobPipe, $jobPipe2) | Sort-Object)
+            foreach ($r in $results) {
+                $r.Status | Should -Be "Successful"
+                $r.OwnerLoginName | Should -Be $ownerLogin
+            }
+            foreach ($j in @($jobPipe, $jobPipe2)) {
+                (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $j).OwnerLoginName | Should -Be $ownerLogin
+            }
         }
 
         It "Sets the owner and returns the modified SMO job with Successful status" {
