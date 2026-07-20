@@ -69,6 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $splatStop = @{
                     SqlInstance     = $TestConfig.InstanceSingle
                     Job             = $runningJobName
+                    Wait            = $true
                     EnableException = $false
                     ErrorAction     = "SilentlyContinue"
                     WarningAction   = "SilentlyContinue"
