@@ -95,7 +95,6 @@
         'Export-DbaInstance',
         'Export-DbaReplServerSetting',
         'Get-DbaCredential',
-        'Get-DbaDbccHelp',
         'Get-DbaDbccStatistic',
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
