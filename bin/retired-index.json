@@ -1079,6 +1079,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaHelpIndex.ps1"
   },
+  "Get-DbaHideInstance": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaHideInstance.ps1",
+    "flippedUtc": "2026-07-20T14:15:41Z"
+  },
   "Get-DbaInstalledPatch": {
     "flippedUtc": "2026-07-09T23:04:23Z",
     "module": "dbatools.computer",

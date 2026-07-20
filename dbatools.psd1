@@ -101,7 +101,6 @@
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
         'Get-DbaErrorLogConfig',
-        'Get-DbaHideInstance',
         'Get-DbaInstanceInstallDate',
         'Get-DbaLastGoodCheckDb',
         'Get-DbaMaintenanceSolutionLog',
