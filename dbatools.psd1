@@ -102,7 +102,6 @@
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
         'Get-DbaErrorLogConfig',
-        'Get-DbaFilestream',
         'Get-DbaHideInstance',
         'Get-DbaInstanceInstallDate',
         'Get-DbaLastGoodCheckDb',
@@ -179,7 +178,6 @@
         'Set-DbaAgentOperator',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
-        'Get-DbaLinkedServerLogin',
 
         # NEW REPLICATION STUFF
         'Disable-DbaReplDistributor',

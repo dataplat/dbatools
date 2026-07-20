@@ -1054,6 +1054,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaFile.ps1"
   },
+  "Get-DbaFilestream": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaFilestream.ps1",
+    "flippedUtc": "2026-07-20T13:56:21Z"
+  },
   "Get-DbaFirewallRule": {
     "flippedUtc": "2026-07-10T02:18:31Z",
     "module": "dbatools.computer",
@@ -1133,6 +1138,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaLinkedServer.ps1",
     "flippedUtc": "2026-07-19T22:53:42Z"
+  },
+  "Get-DbaLinkedServerLogin": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaLinkedServerLogin.ps1",
+    "flippedUtc": "2026-07-20T13:56:10Z"
   },
   "Get-DbaLocaleSetting": {
     "flippedUtc": "2026-07-07T22:35:38Z",

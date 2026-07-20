@@ -163,7 +163,9 @@
         'Get-DbaDbBackupHistory',
         'Disable-DbaTraceFlag',
         'Enable-DbaTraceFlag',
-        'Export-DbaSpConfigure'
+        'Export-DbaSpConfigure',
+        'Get-DbaLinkedServerLogin',
+        'Get-DbaFilestream'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
