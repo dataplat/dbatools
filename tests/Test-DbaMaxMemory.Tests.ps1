@@ -25,6 +25,10 @@ Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
         Context "Validate input arguments" {
             It "No SQL Server Windows service is running on the host" {
+                # deterministic failure: without the mock this attempted a REAL connection to the
+                # environment-dependent name "ABC" (resolvable on some networks, slow DNS timeout
+                # on others)
+                Mock Connect-DbaInstance -MockWith { throw "connection failed" }
                 { Test-DbaMaxMemory -SqlInstance "ABC" -EnableException } | Should -Throw
             }
 
@@ -65,7 +69,13 @@ Describe $CommandName -Tag UnitTests {
                 $result = Test-DbaMaxMemory -SqlInstance "ABC"
 
                 Assert-MockCalled Connect-DbaInstance -Scope It -Times 1
-                Assert-MockCalled Get-DbaService -Scope It -Times 1
+                # the command only queries services on Windows; on Linux/macOS it hardcodes
+                # InstanceCount 1 and never calls Get-DbaService
+                if ($IsLinux -or $IsMacOS) {
+                    Assert-MockCalled Get-DbaService -Scope It -Times 0 -Exactly
+                } else {
+                    Assert-MockCalled Get-DbaService -Scope It -Times 1
+                }
                 Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
             }
 

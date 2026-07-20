@@ -55,14 +55,21 @@ Describe $CommandName -Tag IntegrationTests {
             # so a genuinely unreachable host never leaves an uncleanable leak - and the gate
             # actually exercises the characterization instead of skipping everything.
             $isLocal = $server.ComputerName -eq $env:COMPUTERNAME
-            # S:\backups\x -> \\host\S$\backups\x
-            $uncBase = "\\$($server.ComputerName)\$($baseDir -replace ([regex]::Escape(":")), [char]36)"
+            # An already-UNC BackupDirectory (\\server\share\...) is directly reachable - remapping
+            # it through the admin-share form would mangle it into \\host\\\server\share. Only a
+            # drive-letter path needs the S:\backups\x -> \\host\S$\backups\x conversion.
+            $baseDirIsUnc = $baseDir.StartsWith("\\")
+            if ($baseDirIsUnc) {
+                $uncBase = $baseDir
+            } else {
+                $uncBase = "\\$($server.ComputerName)\$($baseDir -replace ([regex]::Escape(":")), [char]36)"
+            }
             $canClean = $isLocal -or (Test-Path -LiteralPath $uncBase)
 
             # maps a server-side path to the path this seat deletes/verifies it at
             $script:ResolveHostPath = {
                 param($serverPath)
-                if ($isLocal) { return $serverPath }
+                if ($isLocal -or $serverPath.StartsWith("\\")) { return $serverPath }
                 return "\\$($server.ComputerName)\$($serverPath -replace ([regex]::Escape(":")), [char]36)"
             }
 
