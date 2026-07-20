@@ -64,7 +64,9 @@ Describe $CommandName -Tag IntegrationTests {
             } else {
                 $uncBase = "\\$($server.ComputerName)\$($baseDir -replace ([regex]::Escape(":")), [char]36)"
             }
-            $canClean = $isLocal -or (Test-Path -LiteralPath $uncBase)
+            # a LOCAL instance whose BackupDirectory is itself a UNC (pointing anywhere) still
+            # needs the reachability probe - the local shortcut only covers genuinely local paths
+            $canClean = ($isLocal -and -not $baseDirIsUnc) -or (Test-Path -LiteralPath $uncBase)
 
             # maps a server-side path to the path this seat deletes/verifies it at
             $script:ResolveHostPath = {

@@ -296,7 +296,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Select-DefaultView shows the analysis columns and excludes the SMO Server handle.
             $defaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
             $expectedView = @("ComputerName", "InstanceName", "SqlInstance", "InstanceCount", "Total", "MaxValue", "RecommendedValue")
-            Compare-Object -ReferenceObject $expectedView -DifferenceObject $defaultProps | Should -BeNullOrEmpty
+            # order-sensitive: the default view IS an ordered column list, which Compare-Object ignores
+            @($defaultProps) | Should -Be $expectedView
         }
 
         It "Returns one object per value supplied to -SqlInstance" {
