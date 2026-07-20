@@ -82,7 +82,9 @@
         'Suspend-DbaAgDbDataMovement',
         'Test-DbaAgPolicyState',
         'Test-DbaAgSpn',
-        'Test-DbaAvailabilityGroup'
+        'Test-DbaAvailabilityGroup',
+        'Test-DbaDbLogShipStatus',
+        'Test-DbaEndpoint'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
