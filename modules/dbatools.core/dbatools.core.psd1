@@ -168,7 +168,8 @@
         'Get-DbaLinkedServerLogin',
         'Get-DbaFilestream',
         'Export-DbaCredential',
-        'Get-DbaHideInstance'
+        'Get-DbaHideInstance',
+        'Export-DbaLinkedServer'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

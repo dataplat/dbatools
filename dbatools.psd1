@@ -93,7 +93,6 @@
         'Copy-DbaSystemDbUserObject',
         'Export-DbaDiagnosticQuery',
         'Export-DbaInstance',
-        'Export-DbaLinkedServer',
         'Export-DbaReplServerSetting',
         'Get-DbaCredential',
         'Get-DbaDbccHelp',

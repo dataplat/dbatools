@@ -344,6 +344,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Export-DbaExecutionPlan.ps1"
   },
+  "Export-DbaLinkedServer": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Export-DbaLinkedServer.ps1",
+    "flippedUtc": "2026-07-20T18:45:33Z"
+  },
   "Export-DbaLogin": {
     "flippedUtc": "2026-07-18T00:23:12Z",
     "module": "dbatools.security",
