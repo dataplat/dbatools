@@ -25,6 +25,21 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # Same restart-race as the Disable sibling (measured there, world-independent): this
+        # suite restarts the instance via -Force, and the gate's back-to-back ps7/ps51 legs
+        # can start while it is still recovering. Bounded connection-readiness wait.
+        $deadline = (Get-Date).AddSeconds(90)
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceRestart -ConnectTimeout 5
+                break
+            } catch {
+                Start-Sleep -Seconds 5
+            }
+        }
+    }
+
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
