@@ -649,6 +649,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaCustomError.ps1"
   },
+  "Get-DbaDatabase": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-20T05:04:32Z"
+  },
   "Get-DbaDbAssembly": {
     "flippedUtc": "2026-07-18T00:14:16Z",
     "module": "dbatools.database",

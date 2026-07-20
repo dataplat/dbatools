@@ -100,7 +100,6 @@
         'Export-DbaReplServerSetting',
         'Export-DbaSpConfigure',
         'Get-DbaCredential',
-        'Get-DbaDatabase',
         'Get-DbaDbBackupHistory',
         'Get-DbaDbccHelp',
         'Get-DbaDbccStatistic',
