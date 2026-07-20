@@ -1629,6 +1629,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Invoke-DbaDbDataGenerator.ps1"
   },
+  "Invoke-DbaDbDataMasking": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Invoke-DbaDbDataMasking.ps1",
+    "flippedUtc": "2026-07-20T08:42:04Z"
+  },
   "Invoke-DbaDbDecryptObject": {
     "flippedUtc": "2026-07-18T15:16:45Z",
     "module": "dbatools.database",
@@ -1819,6 +1824,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaCustomError.ps1"
   },
+  "New-DbaDacOption": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDacOption.ps1",
+    "flippedUtc": "2026-07-20T08:42:18Z"
+  },
+  "New-DbaDacPackage": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/New-DbaDacPackage.ps1",
+    "flippedUtc": "2026-07-20T08:42:37Z"
+  },
   "New-DbaDacProfile": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/New-DbaDacProfile.ps1",
@@ -1953,6 +1968,11 @@
     "flippedUtc": "2026-07-12T08:13:55Z",
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbatoolsSupportPackage.ps1"
+  },
+  "Publish-DbaDacPackage": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Publish-DbaDacPackage.ps1",
+    "flippedUtc": "2026-07-20T08:42:51Z"
   },
   "Read-DbaAuditFile": {
     "flippedUtc": "2026-07-18T13:58:23Z",
@@ -2728,6 +2748,11 @@
     "flippedUtc": "2026-07-18T18:11:16Z",
     "module": "dbatools.database",
     "retiredPath": "private/retired/Test-DbaDbDataGeneratorConfig.ps1"
+  },
+  "Test-DbaDbDataMaskingConfig": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaDbDataMaskingConfig.ps1",
+    "flippedUtc": "2026-07-20T08:43:04Z"
   },
   "Test-DbaDbLogShipStatus": {
     "module": "dbatools.hadr",
