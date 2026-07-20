@@ -56,7 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
         $jobKeep = "dbatoolsci_jobowner_keep_$(Get-Random)"
         $jobExclude = "dbatoolsci_jobowner_excl_$(Get-Random)"
         $jobWinGroup = "dbatoolsci_jobowner_wingroup_$(Get-Random)"
-        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude, $jobWinGroup)
+        $jobPipe = "dbatoolsci_jobowner_pipe_$(Get-Random)"
+        $allJobs = @($jobSet, $jobSkip, $jobInvalid, $jobWhatIf, $jobDefault, $jobKeep, $jobExclude, $jobWinGroup, $jobPipe)
 
         foreach ($j in $allJobs) {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $j
@@ -86,6 +87,15 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Setting the owner" {
+        It "Sets the owner on a job piped in as InputObject and persists it" {
+            # the pipeline route: SMO Agent.Job objects bind to -InputObject ValueFromPipeline
+            $result = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobPipe | Set-DbaAgentJobOwner -Login $ownerLogin
+            $result.Name | Should -Be $jobPipe
+            $result.Status | Should -Be "Successful"
+            $result.OwnerLoginName | Should -Be $ownerLogin
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobPipe).OwnerLoginName | Should -Be $ownerLogin
+        }
+
         It "Sets the owner and returns the modified SMO job with Successful status" {
             $splatSet = @{
                 SqlInstance = $TestConfig.InstanceSingle
