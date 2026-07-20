@@ -38,7 +38,7 @@ Describe $CommandName -Tag IntegrationTests {
             Job         = $runningJobName
             StepName    = "wait"
             Subsystem   = "TransactSql"
-            Command     = "WAITFOR DELAY ${sq}00:00:30${sq}"
+            Command     = "WAITFOR DELAY ${sq}00:02:00${sq}"
         }
         $null = New-DbaAgentJobStep @splatRunningStep
 
@@ -61,13 +61,17 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            # Only Stop a job that is still executing - Stop-DbaAgentJob throws on an Idle job.
+            # Best-effort stop: the job can go Idle between any status check and the Stop call,
+            # so no check-then-act - the explicit EnableException $false outranks the forced
+            # default above and an already-idle failure is swallowed.
             $current = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName -ErrorAction SilentlyContinue
-            if ($current -and $current.CurrentRunStatus -ne "Idle") {
+            if ($current) {
                 $splatStop = @{
-                    SqlInstance = $TestConfig.InstanceSingle
-                    Job         = $runningJobName
-                    ErrorAction = "SilentlyContinue"
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Job             = $runningJobName
+                    EnableException = $false
+                    ErrorAction     = "SilentlyContinue"
+                    WarningAction   = "SilentlyContinue"
                 }
                 $null = Stop-DbaAgentJob @splatStop
             }
@@ -108,7 +112,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Filters piped Agent.Job input to only the running ones" {
-            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Get-DbaRunningJob
+            # Scoped to the two fixture jobs: piping every job on the shared instance exposes
+            # the assertion to unrelated job churn from concurrent suites.
+            $results = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $runningJobName, $idleJobName | Get-DbaRunningJob
             $results.Name | Should -Contain $runningJobName
             $results.Name | Should -Not -Contain $idleJobName
         }

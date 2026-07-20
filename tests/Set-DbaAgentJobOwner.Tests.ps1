@@ -164,6 +164,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = Set-DbaAgentJobOwner @splatWin
             $result.Status | Should -Be "Failed"
+            # pin the source-carried reason so a generic failure path cannot vacuously pass
+            $result.Notes | Should -Be "$windowsGroupLogin is a Windows Group and can not be a job owner."
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $jobWinGroup).OwnerLoginName | Should -Be $before
         }
     }
@@ -205,20 +207,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Selects every Local job exactly once when -Job is omitted" {
             # -WhatIf keeps this read-only across every local job on the instance while still
-            # exercising the "all Local jobs, no non-Local" selection branch. Snapshot the Local
-            # set immediately before the call so the result can be checked for exact
-            # one-result-per-job coverage (no omissions, no duplicates).
-            $expectedLocal = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle | Where-Object JobType -eq "Local").Name | Sort-Object
+            # exercising the "all Local jobs, no non-Local" selection branch. Only the
+            # suite-owned jobs are pinned exactly-once: an exact whole-set comparison would
+            # race with concurrent suites creating or dropping their own jobs on the shared
+            # instance between the snapshot and the call.
             $splatAll = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Login       = $ownerLogin
                 WhatIf      = $true
             }
             $result = @(Set-DbaAgentJobOwner @splatAll)
-            ($result.Name | Sort-Object) | Should -Be $expectedLocal
-            # every job we created is Local, so all must appear in the selection
+            # every job we created is Local, so each must appear in the selection exactly once
             foreach ($j in $allJobs) {
-                $result.Name | Should -Contain $j
+                @($result | Where-Object Name -eq $j).Count | Should -Be 1
             }
             # the selection filter is JobType -eq Local, so nothing else should slip through
             $result.JobType | Where-Object { $PSItem -ne "Local" } | Should -BeNullOrEmpty
