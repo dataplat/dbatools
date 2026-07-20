@@ -664,6 +664,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaDbAsymmetricKey.ps1"
   },
+  "Get-DbaDbBackupHistory": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaDbBackupHistory.ps1",
+    "flippedUtc": "2026-07-20T06:12:39Z"
+  },
   "Get-DbaDbccMemoryStatus": {
     "flippedUtc": "2026-07-13T07:43:57Z",
     "module": "dbatools.performance",
