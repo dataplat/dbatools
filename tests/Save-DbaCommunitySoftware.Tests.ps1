@@ -46,9 +46,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         # offline happy-path fixture: a zip whose single top-level directory name matches the
         # -LocalDirectory leaf, which is the shape the command's post-extract safety net requires
-        $random = Get-Random
-        $fixtureName = "dbatoolsci_ms_$random"
-        $fixtureRoot = Join-Path $tempBase "dbatoolsci_savecs_$random"
+        # GUID, not Get-Random: parallel runs on the shared temp root could collide on a
+        # 32-bit random and cross-delete each other's fixtures
+        $fixtureToken = ([guid]::NewGuid()).ToString("N")
+        $fixtureName = "dbatoolsci_ms_$fixtureToken"
+        $fixtureRoot = Join-Path $tempBase "dbatoolsci_savecs_$fixtureToken"
         $fixtureSource = Join-Path $fixtureRoot $fixtureName
         $null = New-Item -Path $fixtureSource -ItemType Directory -Force
         Set-Content -Path (Join-Path $fixtureSource "MaintenanceSolution.sql") -Value "SELECT 1;"
