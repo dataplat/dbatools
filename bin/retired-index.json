@@ -254,6 +254,11 @@
     "retiredPath": "private/retired/Disable-DbaStartupProcedure.ps1",
     "flippedUtc": "2026-07-19T21:39:09Z"
   },
+  "Disable-DbaTraceFlag": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Disable-DbaTraceFlag.ps1",
+    "flippedUtc": "2026-07-20T13:44:48Z"
+  },
   "Disconnect-DbaInstance": {
     "flippedUtc": "2026-07-11T09:34:44Z",
     "module": "dbatools.core",
@@ -293,6 +298,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Enable-DbaStartupProcedure.ps1",
     "flippedUtc": "2026-07-19T21:39:50Z"
+  },
+  "Enable-DbaTraceFlag": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Enable-DbaTraceFlag.ps1",
+    "flippedUtc": "2026-07-20T13:45:03Z"
   },
   "Expand-DbaDbLogFile": {
     "flippedUtc": "2026-07-17T17:36:15Z",
@@ -353,6 +363,11 @@
     "flippedUtc": "2026-07-18T00:23:34Z",
     "module": "dbatools.security",
     "retiredPath": "private/retired/Export-DbaServerRole.ps1"
+  },
+  "Export-DbaSpConfigure": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Export-DbaSpConfigure.ps1",
+    "flippedUtc": "2026-07-20T13:45:16Z"
   },
   "Export-DbaSysDbUserObject": {
     "flippedUtc": "2026-07-18T00:24:15Z",

@@ -160,7 +160,10 @@
         'Get-DbaRegServerGroup',
         'Get-DbaCmObject',
         'Get-DbaDatabase',
-        'Get-DbaDbBackupHistory'
+        'Get-DbaDbBackupHistory',
+        'Disable-DbaTraceFlag',
+        'Enable-DbaTraceFlag',
+        'Export-DbaSpConfigure'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
