@@ -99,7 +99,6 @@
         'Export-DbaLinkedServer',
         'Export-DbaReplServerSetting',
         'Export-DbaSpConfigure',
-        'Get-DbaCmObject',
         'Get-DbaCredential',
         'Get-DbaDatabase',
         'Get-DbaDbBackupHistory',

@@ -609,6 +609,11 @@
     "retiredPath": "private/retired/Get-DbaCmConnection.ps1",
     "flippedUtc": "2026-07-20T00:19:39Z"
   },
+  "Get-DbaCmObject": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaCmObject.ps1",
+    "flippedUtc": "2026-07-20T04:26:59Z"
+  },
   "Get-DbaComputerCertificate": {
     "flippedUtc": "2026-07-09T20:36:57Z",
     "module": "dbatools.computer",
