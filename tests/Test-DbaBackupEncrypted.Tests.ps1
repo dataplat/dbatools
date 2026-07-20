@@ -44,10 +44,15 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "should detect encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            # The shared instance carries MULTIPLE certificates, and Start-DbaDbEncryption
+            # refuses to guess ("More than one certificate found ... specify an EncryptorName"
+            # - the known cert-count class). Pick one deterministically.
+            $encryptorCert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object Name -NotMatch "^##" | Select-Object -First 1
             $splat = @{
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd
                 BackupPath              = $backupPath
+                EncryptorName           = $encryptorCert.Name
                 EnableException         = $true
             }
             $null = $alldbs | Start-DbaDbEncryption @splat
