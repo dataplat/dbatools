@@ -165,7 +165,8 @@
         'Enable-DbaTraceFlag',
         'Export-DbaSpConfigure',
         'Get-DbaLinkedServerLogin',
-        'Get-DbaFilestream'
+        'Get-DbaFilestream',
+        'Export-DbaCredential'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

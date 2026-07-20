@@ -314,6 +314,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Export-DbaBinaryFile.ps1"
   },
+  "Export-DbaCredential": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Export-DbaCredential.ps1",
+    "flippedUtc": "2026-07-20T14:09:15Z"
+  },
   "Export-DbaCsv": {
     "flippedUtc": "2026-07-11T10:11:42Z",
     "module": "dbatools.core",
