@@ -136,6 +136,7 @@
         'Remove-DbaDbTableData',
         'Remove-DbaDbUdf',
         'Remove-DbaDbUser',
+        'Set-DbaDbUser',
         'Remove-DbaDbView',
         'Read-DbaTransactionLog',
         'Remove-DbaDbCheckConstraint',
