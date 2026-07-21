@@ -190,4 +190,83 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    # The live evaluation leg. The mocked UnitTests above pin the policy logic in isolation;
+    # these pin that it actually runs against real SMO. Assertions derive the expected shape
+    # from the AG object rather than hardcoding the lab's current size, so they hold on any
+    # Availability Group: the source emits 7 AG-level rows (Replica $null), then 4 rows per
+    # AvailabilityReplica, then 3 rows per DatabaseReplicaState. IsHealthy is deliberately NOT
+    # asserted to a value - real replica health is environmental, and a characterization test
+    # that demands a green lab is a lab test, not a contract test.
+    Context "Evaluating a real Availability Group" {
+        BeforeAll {
+            $liveAg = @(Get-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue)[0]
+            $liveAgName = $liveAg.Name
+            $expectedRowCount = 7 + (4 * @($liveAg.AvailabilityReplicas).Count) + (3 * @($liveAg.DatabaseReplicaStates).Count)
+
+            $liveResult = @(Test-DbaAgPolicyState -SqlInstance $TestConfig.InstanceSingle -AvailabilityGroup $liveAgName -WarningAction SilentlyContinue)
+        }
+
+        It "Emits one row per policy per scoped object" {
+            $liveResult.Count | Should -Be $expectedRowCount
+        }
+
+        It "Scopes every row to the requested Availability Group" {
+            @($liveResult.AvailabilityGroup | Sort-Object -Unique) | Should -Be @($liveAgName)
+        }
+
+        It "Returns the documented property set on every row" {
+            $expectedProperties = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "AvailabilityGroup",
+                "Replica",
+                "Database",
+                "PolicyName",
+                "Category",
+                "Facet",
+                "IsHealthy",
+                "Issue",
+                "Details"
+            )
+            foreach ($row in $liveResult) {
+                Compare-Object -ReferenceObject $expectedProperties -DifferenceObject $row.PSObject.Properties.Name | Should -BeNullOrEmpty
+            }
+        }
+
+        It "Emits the seven Availability-Group-level policies once each, unscoped to a replica" {
+            $agLevelPolicies = @(
+                "WSFC Cluster State",
+                "Availability Group Online State",
+                "Availability Group Automatic Failover Readiness",
+                "Availability Replicas Connection State",
+                "Availability Replicas Data Synchronization State",
+                "Availability Replicas Role State",
+                "Synchronous Replicas Data Synchronization State"
+            )
+            $agLevelRows = @($liveResult | Where-Object { $PSItem.PolicyName -in $agLevelPolicies })
+
+            $agLevelRows.Count | Should -Be $agLevelPolicies.Count
+            @($agLevelRows.Replica | Sort-Object -Unique) | Should -BeNullOrEmpty
+        }
+
+        It "Reports IsHealthy as a boolean on every row" {
+            foreach ($row in $liveResult) {
+                $row.IsHealthy | Should -BeOfType [bool]
+            }
+        }
+
+        It "Accepts an Availability Group on the pipeline and evaluates the same policies" {
+            $splatPipedAg = @{
+                SqlInstance       = $TestConfig.InstanceSingle
+                AvailabilityGroup = $liveAgName
+                WarningAction     = "SilentlyContinue"
+            }
+            $pipedResult = @(Get-DbaAvailabilityGroup @splatPipedAg | Test-DbaAgPolicyState -WarningAction SilentlyContinue)
+
+            $pipedResult.Count | Should -Be $liveResult.Count
+            @($pipedResult.PolicyName | Sort-Object -Unique) | Should -Be @($liveResult.PolicyName | Sort-Object -Unique)
+        }
+    }
 }
