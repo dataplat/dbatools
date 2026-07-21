@@ -169,6 +169,17 @@ Describe $CommandName -Tag IntegrationTests {
             if (-not $monitorPreexisted) {
                 $null = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceMulti2 -ErrorAction SilentlyContinue
             }
+
+            # Invoke-DbaDbMirroring creates a "Mirroring" DBM endpoint on BOTH instances to
+            # establish the session, and removing the mirror does not remove it. specs/lab-requirements.md
+            # requires the Multi instances to be endpoint-free and LAB-12 enforces it, so leaving the
+            # endpoint behind fails preflight on every run and trains everyone to ignore it (LAB-02
+            # drift went unnoticed for 14 days that way). In the finally so it runs even when the
+            # mirror teardown above throws.
+            $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 |
+                Where-Object EndpointType -eq DatabaseMirroring |
+                Remove-DbaEndpoint -ErrorAction SilentlyContinue
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
     }
