@@ -90,7 +90,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'STANDING ORDER (operator Chrissy LeMaire, libmigration campaign): Do NOT stop, yield, or ask permission until the ENTIRE campaign is done -- every dbatools command ported to a compiled C# cmdlet, flipped, gated on the live lab, and codex-reviewed, across ALL waves. EXECUTE, DO NOT NARRATE: every turn must make concrete forward progress on the next PENDING or NEEDS_WORK tracker row -- actually write the code, run the gate, commit. A status summary that defers the real work to a future continuation is NOT compliance and is the main failure mode to avoid; if you catch yourself writing \"next I will do X\", do X now instead. Stop only when genuinely blocked on the lab or operator, or out of runway mid-task (then leave a one-line tracker note and keep going next turn). After compaction or resume, resume the in-flight row mid-stride; do not re-plan or re-summarize. CODEX AUTO-REVIEW CAP: 5 rounds max PER command or change -- on round 5, STOP, mark it DONE, one-line README note, MOVE ON. The Stop hook documentation-WORDING findings are prose, not campaign work: batch-fix them in ONE pass then proceed; NEVER spend consecutive turns polishing tracker or DISPOSITION prose (set CLAUDE_CODEX_REVIEW=off for a heads-down porting stretch if it keeps interrupting). An already-dispositioned finding that re-fires (run-all.sh symlink/TOCTOU, the [DIFF TRUNCATED] marker, the drvfs 100755 exec-bit) is THE LOOP -- do not re-fix or re-disposition it; move on. See memory notes never-stop-until-campaign-complete and codex-review-7-round-cap, and migration/CAMPAIGN-STATE.md.'"
+            "command": "echo 'STANDING ORDER (libmigration campaign, revised 2026-07-21). WORK QUEUE: GitHub Issues on potatoqualitee/migration -- ALWAYS pass -R potatoqualitee/migration, because an unpinned gh issue command run from a code repo hits the public dataplat upstreams instead. The trackers/*.md + COORDINATION.md + lane (/bot, /coordinator) convention is RETIRED: the operator ended it because it burned tokens without converging. Do not revive it, and do not spin up lane or coordinator sessions. EXECUTE, DO NOT NARRATE: make concrete progress -- write the code, run the gate, commit. If you catch yourself writing \"next I will do X\", do X now instead. But DO stop and ask when a decision is genuinely the operator\"s (taxonomy, scope, sign-off); label those issues ready-for-human and tell them, since they do not watch the board. VERIFY AGAINST SOURCE, NOT EVIDENCE: tracker Evidence cells have been caught describing code that does not exist (RG family W1-097/098/116/120, W1-049). Read the actual source and .cs before acting on a row; when evidence and code disagree, the code wins and the cell gets corrected. LAB: dedicated to this migration, destructive operations pre-authorized -- restart services, drop endpoints, reset fixtures, revert checkpoints without asking. If one SQL instance is offline, route to another rather than marking BLOCKED(lab). Gate PASS = all 7 core steps green; SKIPPED NEVER counts as PASS, and a green gate that skipped the distinguishing leg proves nothing. CODEX AUTO-REVIEW CAP: 5 rounds max PER command or change -- on round 5, STOP, mark it DONE, one-line note, MOVE ON. Documentation-WORDING findings are prose: batch-fix in ONE pass; never spend consecutive turns polishing prose (CLAUDE_CODEX_REVIEW=off for a heads-down stretch). An already-dispositioned finding that re-fires (run-all.sh symlink/TOCTOU, the [DIFF TRUNCATED] marker, the drvfs 100755 exec-bit) is THE LOOP -- do not re-fix or re-disposition it; move on.'"
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-context.sh",
+            "timeout": 10,
+            "statusMessage": "Re-injecting migration project rules..."
           }
         ]
       }
@@ -132,7 +138,7 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-codex-review.sh",
             "timeout": 660,
-            "statusMessage": "Running codex auto-review \u2014 tail -f ~/.codex-review.live.log to watch"
+            "statusMessage": "Running codex auto-review — tail -f ~/.codex-review.live.log to watch"
           }
         ]
       }
