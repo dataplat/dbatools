@@ -514,6 +514,32 @@ go
         }
     }
 
+    Context "Description truncation persists across piped records (W3-004 cross-record state)" {
+        # $Description is truncated in place at 255 characters and the truncated value survives
+        # into the next pipeline record, so the "too long" warning fires exactly ONCE for the
+        # whole pipeline. Re-initialising $Description per record would warn twice - that is the
+        # distinguishing observation for the cross-record state carried between the two hops.
+        BeforeAll {
+            $longDescription = "W" * 300
+            $splatDescription = @{
+                Path        = "$DestBackupDir\desc"
+                Description = $longDescription
+                BuildPath   = $true
+            }
+            $descriptionResults = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master, msdb |
+                Backup-DbaDatabase @splatDescription -WarningVariable descriptionWarnings -WarningAction SilentlyContinue
+        }
+
+        It "Should back up both piped databases" {
+            $descriptionResults | Should -HaveCount 2
+            $descriptionResults.BackupComplete | Should -Be @($true, $true)
+        }
+
+        It "Should warn about the over-long description only once across both records" {
+            @($descriptionWarnings | Where-Object { $PSItem -match "Description is too long" }).Count | Should -Be 1
+        }
+    }
+
     Context "Test CreateFolder with ReplaceInName prevents duplicate dbname (issue 9135)" {
         It "Should not duplicate database name when path contains dbname token" {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path "$DestBackupDir\servername\instancename\dbname\backuptype" -BackupFileName "servername_dbname_backuptype_timestamp.bak" -ReplaceInName -CreateFolder -BuildPath
