@@ -104,6 +104,24 @@ Describe $CommandName -Tag IntegrationTests {
         $mirrorProbeError = "not attempted"
         try {
             $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Where-Object Program -Match dbatools | Stop-DbaProcess -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+
+            # A run that died mid-fixture leaves $mirrorDb behind - ONLINE on the primary and
+            # RESTORING on the mirror - and CREATE DATABASE then throws "already exists". The catch
+            # below turns that into a permanent SKIP of the statistics leg rather than a failure, so
+            # the leg silently never runs again on this pair (found exactly that way: the leftover
+            # dated from an earlier interrupted run and every gate since had skipped). Purge any
+            # leftover on BOTH instances first so the fixture build is idempotent. Best-effort: a
+            # clean pair has nothing to remove and must not fail setup.
+            $null = Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1 -Database $mirrorDb -EnableException:$false -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            $splatPurge = @{
+                SqlInstance     = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+                Database        = $mirrorDb
+                EnableException = $false
+                WarningAction   = "SilentlyContinue"
+                ErrorAction     = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatPurge
+
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $null = $server.Query("CREATE DATABASE $mirrorDb")
             $splatMirroring = @{
@@ -140,10 +158,22 @@ Describe $CommandName -Tag IntegrationTests {
                     EnableException = $false
                     WarningAction   = "SilentlyContinue"
                 }
-                $statsProbe = @(Get-DbaDbMirrorMonitor @splatStatsProbe)
-                $mirrorStatsAvailable = $statsProbe.Count -gt 0
+                # A single probe against a just-built session always came back empty, which skipped
+                # the statistics leg on every run - so the one behavior this command exists for was
+                # never actually characterized. dbm_monitor_data is populated by sampling, so give
+                # the monitor a bounded window to produce its first row instead of giving up after
+                # one look. Bounded (not open-ended) so an genuinely unproductive pair still degrades
+                # to an honest skip rather than hanging the suite.
+                $statsDeadline = (Get-Date).AddSeconds(120)
+                do {
+                    $statsProbe = @(Get-DbaDbMirrorMonitor @splatStatsProbe)
+                    $mirrorStatsAvailable = $statsProbe.Count -gt 0
+                    if (-not $mirrorStatsAvailable) {
+                        Start-Sleep -Seconds 10
+                    }
+                } until ($mirrorStatsAvailable -or (Get-Date) -gt $statsDeadline)
                 if (-not $mirrorStatsAvailable) {
-                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows after -Update (session too fresh to have monitor data)"
+                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows after -Update within 120s (monitor never sampled this session)"
                 }
             } catch {
                 $mirrorProbeError = "monitor statistics probe threw: $($_.Exception.Message)"
@@ -159,8 +189,18 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
+            # EnableException is $true here, which makes dbatools commands THROW regardless of
+            # -ErrorAction. Removing the mirror and dropping the database therefore need separate
+            # try/catch: with both in one block a throwing Remove-DbaDbMirror skipped the drop and
+            # leaked $mirrorDb onto the pair, which then made every later run skip the statistics
+            # leg (the leftover found on this pair got there exactly that way). The drop must run
+            # even when the mirror teardown fails.
             if ($mirrorLive) {
-                $null = Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1 -Database $mirrorDb -ErrorAction SilentlyContinue
+                try {
+                    $null = Remove-DbaDbMirror -SqlInstance $TestConfig.InstanceMulti1 -Database $mirrorDb -ErrorAction SilentlyContinue
+                } catch {
+                    Write-Warning -Message "Mirror teardown failed, continuing to the database drop: $($PSItem.Exception.Message)"
+                }
             }
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $mirrorDb -ErrorAction SilentlyContinue
         } finally {
