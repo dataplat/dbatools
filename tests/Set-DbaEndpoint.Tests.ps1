@@ -65,4 +65,86 @@ Describe $CommandName -Tag IntegrationTests {
             $payload | Should -Be "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
         }
     }
+
+    # The Alter leg. Only Owner is characterized here: the source assigns EndpointType from -Type
+    # before Alter(), but SMO does not permit changing the type of an existing endpoint, so a -Type
+    # characterization would assert on a server-side failure rather than on this command's contract.
+    # A ServiceBroker endpoint on a free high port is used so the instance's DatabaseMirroring
+    # endpoint (one per instance, often already present) is left alone.
+    Context "Altering an endpoint" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $endpointName = "dbatoolsci_setep_$random"
+            $ownerLogin = "dbatoolsci_epowner_$random"
+            $endpointPort = Get-Random -Minimum 55000 -Maximum 58999
+
+            $splatOwnerLogin = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $ownerLogin
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO$random" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatOwnerLogin
+
+            $splatNewEndpoint = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Name        = $endpointName
+                Type        = "ServiceBroker"
+                Protocol    = "Tcp"
+                Port        = $endpointPort
+            }
+            $null = New-DbaEndpoint @splatNewEndpoint
+
+            $originalOwner = (Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName).Owner
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $ownerLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Does not change the owner under -WhatIf" {
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Endpoint    = $endpointName
+                Owner       = $ownerLogin
+                WhatIf      = $true
+            }
+            $result = @(Set-DbaEndpoint @splatWhatIf)
+
+            $result.Count | Should -Be 0
+            (Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName).Owner | Should -Be $originalOwner
+        }
+
+        It "Sets the owner and emits the altered endpoint" {
+            $splatSetOwner = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Endpoint    = $endpointName
+                Owner       = $ownerLogin
+            }
+            $result = @(Set-DbaEndpoint @splatSetOwner)
+
+            $result.Count | Should -Be 1
+            $result[0].Name | Should -Be $endpointName
+            $result[0].Owner | Should -Be $ownerLogin
+        }
+
+        It "Persists the new owner on the server" {
+            (Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName).Owner | Should -Be $ownerLogin
+        }
+
+        It "Accepts an endpoint on the pipeline and returns it" {
+            $result = @(Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName | Set-DbaEndpoint -Owner $originalOwner)
+
+            $result.Count | Should -Be 1
+            $result[0].Owner | Should -Be $originalOwner
+            (Get-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Endpoint $endpointName).Owner | Should -Be $originalOwner
+        }
+    }
 }
