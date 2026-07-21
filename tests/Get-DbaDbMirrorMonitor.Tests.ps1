@@ -158,22 +158,24 @@ Describe $CommandName -Tag IntegrationTests {
                     EnableException = $false
                     WarningAction   = "SilentlyContinue"
                 }
-                # A single probe against a just-built session always came back empty, which skipped
-                # the statistics leg on every run - so the one behavior this command exists for was
-                # never actually characterized. dbm_monitor_data is populated by sampling, so give
-                # the monitor a bounded window to produce its first row instead of giving up after
-                # one look. Bounded (not open-ended) so an genuinely unproductive pair still degrades
-                # to an honest skip rather than hanging the suite.
+                # A single probe against a just-built session ALWAYS comes back empty, so the leg
+                # skipped on every run and the one behavior this command exists for was never
+                # characterized. Measured on the lab pair: sp_dbmmonitorresults reports rates BETWEEN
+                # consecutive samples, so it needs TWO rows in dbm_monitor_data - one sample yields 0
+                # results, the second yields 1. sp_dbmmonitorupdate also ignores calls made less than
+                # ~15 seconds apart, so the retry interval must exceed that or every extra -Update is
+                # a silent no-op and a second sample never accumulates. 20s spacing clears both.
+                # Bounded so a genuinely unproductive pair still degrades to an honest skip.
                 $statsDeadline = (Get-Date).AddSeconds(120)
                 do {
                     $statsProbe = @(Get-DbaDbMirrorMonitor @splatStatsProbe)
                     $mirrorStatsAvailable = $statsProbe.Count -gt 0
                     if (-not $mirrorStatsAvailable) {
-                        Start-Sleep -Seconds 10
+                        Start-Sleep -Seconds 20
                     }
                 } until ($mirrorStatsAvailable -or (Get-Date) -gt $statsDeadline)
                 if (-not $mirrorStatsAvailable) {
-                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows after -Update within 120s (monitor never sampled this session)"
+                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows within 120s of repeated -Update sampling"
                 }
             } catch {
                 $mirrorProbeError = "monitor statistics probe threw: $($_.Exception.Message)"
