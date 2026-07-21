@@ -166,6 +166,7 @@
         'Enable-DbaTraceFlag',
         'Export-DbaSpConfigure',
         'Get-DbaLinkedServerLogin',
+        'Set-DbaLinkedServerLogin',
         'Get-DbaFilestream',
         'Export-DbaCredential',
         'Get-DbaHideInstance',
