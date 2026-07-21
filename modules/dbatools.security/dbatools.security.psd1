@@ -47,6 +47,7 @@
         'Remove-DbaLogin',
         'Remove-DbaServerRole',
         'Remove-DbaServerRoleMember',
+        'Set-DbaServerRole',
         'Rename-DbaLogin',
         'Stop-DbaDbEncryption',
         'Sync-DbaLoginPassword',
