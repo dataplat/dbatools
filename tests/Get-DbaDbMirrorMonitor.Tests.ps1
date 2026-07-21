@@ -143,42 +143,30 @@ Describe $CommandName -Tag IntegrationTests {
             $mirrorProbeError = $_.Exception.Message
         }
 
-        # A live mirroring session is NECESSARY but not SUFFICIENT for the statistics leg: a freshly
-        # built session legitimately has ZERO rows in dbm_monitor_data until the monitor has sampled
-        # it, even after -Update. Probe whether monitor rows can actually be retrieved and record it,
-        # so the statistics leg skips with a reason (session too fresh) instead of failing 0 -gt 0 -
-        # the second re-gate red on this row. Probed defensively so a warning here cannot fail setup.
-        $mirrorStatsAvailable = $false
+        # Build REAL monitor data for the leg below, so that leg tests the command rather than an
+        # empty monitor table. Two facts, both measured on this pair rather than assumed:
+        # sp_dbmmonitorresults reports rates BETWEEN consecutive samples, so it needs TWO rows in
+        # dbm_monitor_data (one sample returns 0 results, the second returns 1), and
+        # sp_dbmmonitorupdate ignores calls made less than ~15 seconds apart, so samples must be
+        # spaced past that floor or every extra call is a silent no-op. Driven with raw T-SQL
+        # deliberately: the command's own -Update cannot be used to establish the premise for a
+        # test of the command. Probed defensively so a failure here cannot fail setup.
+        $monitorDataRows = 0
         if ($mirrorLive) {
             try {
-                $splatStatsProbe = @{
-                    SqlInstance     = $TestConfig.InstanceMulti2
-                    Database        = $mirrorDb
-                    Update          = $true
-                    EnableException = $false
-                    WarningAction   = "SilentlyContinue"
-                }
-                # A single probe against a just-built session ALWAYS comes back empty, so the leg
-                # skipped on every run and the one behavior this command exists for was never
-                # characterized. Measured on the lab pair: sp_dbmmonitorresults reports rates BETWEEN
-                # consecutive samples, so it needs TWO rows in dbm_monitor_data - one sample yields 0
-                # results, the second yields 1. sp_dbmmonitorupdate also ignores calls made less than
-                # ~15 seconds apart, so the retry interval must exceed that or every extra -Update is
-                # a silent no-op and a second sample never accumulates. 20s spacing clears both.
-                # Bounded so a genuinely unproductive pair still degrades to an honest skip.
-                $statsDeadline = (Get-Date).AddSeconds(120)
-                do {
-                    $statsProbe = @(Get-DbaDbMirrorMonitor @splatStatsProbe)
-                    $mirrorStatsAvailable = $statsProbe.Count -gt 0
-                    if (-not $mirrorStatsAvailable) {
+                $sampleServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+                foreach ($sample in 1..2) {
+                    $null = $sampleServer.Query("EXEC msdb.dbo.sp_dbmmonitorupdate")
+                    if ($sample -lt 2) {
                         Start-Sleep -Seconds 20
                     }
-                } until ($mirrorStatsAvailable -or (Get-Date) -gt $statsDeadline)
-                if (-not $mirrorStatsAvailable) {
-                    $mirrorProbeError = "mirroring session built but sp_dbmmonitorresults returned no rows within 120s of repeated -Update sampling"
+                }
+                $monitorDataRows = [int]$sampleServer.Query("SELECT COUNT(*) AS RowCountValue FROM msdb.dbo.dbm_monitor_data WHERE database_id = DB_ID('$mirrorDb')").RowCountValue
+                if ($monitorDataRows -lt 2) {
+                    $mirrorProbeError = "only $monitorDataRows monitor sample(s) accumulated for $mirrorDb; sp_dbmmonitorresults needs two to report"
                 }
             } catch {
-                $mirrorProbeError = "monitor statistics probe threw: $($_.Exception.Message)"
+                $mirrorProbeError = "monitor sampling threw: $($_.Exception.Message)"
             }
         }
 
@@ -256,22 +244,37 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Not -Match "dbm_monitor_data not found"
         }
 
-        It "Returns monitor statistics for a mirrored database" {
-            if (-not ($mirrorLive -and $mirrorStatsAvailable)) {
-                Set-ItResult -Skipped -Because "no monitor statistics were retrievable on this pair: $mirrorProbeError"
+        It "Characterizes the bracket-quoted database name sent to sp_dbmmonitorresults" {
+            # CHARACTERIZATION OF A LIVE BUG - this asserts what the command DOES, not what it
+            # should do. The source interpolates the SMO database OBJECT into the T-SQL string
+            # ("@database_name = '$db'"), and SMO's Database.ToString() renders "[name]", so the
+            # procedure is handed '[dbatoolsci_mirrormonitor]' - a literal that never matches a
+            # database. Statistics retrieval therefore returns NOTHING and warns, on every mirrored
+            # database, and always has. Verified on this pair: the same sp_dbmmonitorresults call
+            # with the PLAIN name returns a row, so the monitor data is present and it is purely the
+            # bracket quoting that fails. The behavior is identical in the PowerShell source and the
+            # compiled cmdlet, so the port is FAITHFUL - this is an upstream dbatools bug, tracked
+            # on the campaign's source-bug register, not a conversion defect.
+            #
+            # When the upstream bug is fixed this test goes RED. That is the point of a
+            # characterization test: replace it then with the real statistics assertion.
+            if (-not $mirrorLive -or $monitorDataRows -lt 2) {
+                Set-ItResult -Skipped -Because "the mirroring fixture could not be established on this pair: $mirrorProbeError"
                 return
             }
             $splatMonitor = @{
-                SqlInstance  = $TestConfig.InstanceMulti2
-                Database     = $mirrorDb
-                Update       = $true
-                LimitResults = "LastRow"
+                SqlInstance     = $TestConfig.InstanceMulti2
+                Database        = $mirrorDb
+                Update          = $true
+                LimitResults    = "LastRow"
+                WarningVariable = "statsWarn"
+                WarningAction   = "SilentlyContinue"
             }
             $results = @(Get-DbaDbMirrorMonitor @splatMonitor)
-            $results.Count | Should -BeGreaterThan 0
-            $results[0].DatabaseName | Should -Be $mirrorDb
-            $results[0].PSObject.Properties.Name | Should -Contain "MirroringState"
-            $results[0].PSObject.Properties.Name | Should -Contain "Role"
+            $results.Count | Should -Be 0
+            # The bracketed name is the distinguishing evidence - a generic failure would not prove
+            # the quoting is the cause.
+            ($statsWarn -join " ") | Should -BeLike "*[[]$mirrorDb[]]*does not exist*"
         }
     }
 }
