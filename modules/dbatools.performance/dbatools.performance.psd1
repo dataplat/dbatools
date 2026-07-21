@@ -110,7 +110,8 @@
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaTempDbConfig',
         'Update-DbaBuildReference',
-        'Watch-DbaDbLogin'
+        'Watch-DbaDbLogin',
+        'Export-DbaDiagnosticQuery'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

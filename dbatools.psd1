@@ -91,7 +91,6 @@
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
         'Copy-DbaSystemDbUserObject',
-        'Export-DbaDiagnosticQuery',
         'Export-DbaInstance',
         'Export-DbaReplServerSetting',
         'Get-DbaCredential',

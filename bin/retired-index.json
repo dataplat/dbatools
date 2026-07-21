@@ -339,6 +339,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Export-DbaDbTableData.ps1"
   },
+  "Export-DbaDiagnosticQuery": {
+    "module": "dbatools.performance",
+    "retiredPath": "private/retired/Export-DbaDiagnosticQuery.ps1",
+    "flippedUtc": "2026-07-21T04:23:46Z"
+  },
   "Export-DbaExecutionPlan": {
     "flippedUtc": "2026-07-13T03:51:49Z",
     "module": "dbatools.performance",
