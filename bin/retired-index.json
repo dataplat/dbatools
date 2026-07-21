@@ -69,6 +69,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Backup-DbaComputerCertificate.ps1"
   },
+  "Backup-DbaDatabase": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Backup-DbaDatabase.ps1",
+    "flippedUtc": "2026-07-21T20:32:59Z"
+  },
   "Backup-DbaDbCertificate": {
     "flippedUtc": "2026-07-18T00:20:59Z",
     "module": "dbatools.security",

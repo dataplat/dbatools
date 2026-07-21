@@ -67,7 +67,6 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
-        'Backup-DbaDatabase',
         'Copy-DbaBackupDevice',
         'Copy-DbaCredential',
         'Copy-DbaCustomError',
