@@ -46,4 +46,29 @@ Describe $CommandName -Tag IntegrationTests {
             $typeResults | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Multi-record pipe emits each pool exactly once (deviation from source, #6 / DEF-012)" {
+        # The retired function accumulated instances in a process-scope `$InputObject +=`, so a
+        # multi-record pipe re-emitted earlier records' pools: record 2 relisted record 1's pools,
+        # giving 9 rows where 6 existed. The compiled port runs each pipeline record in its own hop
+        # scope and emits every pool exactly once. This is the #6 ruling (a) deviation from source,
+        # and a single-instance leg cannot observe it - it needs at least two piped records.
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $instanceOne = $TestConfig.InstanceMulti1
+            $instanceTwo = $TestConfig.InstanceMulti2
+            $pipedResults = @($instanceOne, $instanceTwo | Get-DbaRgResourcePool)
+            $expectedResults = @(Get-DbaRgResourcePool -SqlInstance $instanceOne) + @(Get-DbaRgResourcePool -SqlInstance $instanceTwo)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "emits each instance's pools exactly once across a two-instance pipe" {
+            $pipedResults.Count | Should -Be $expectedResults.Count
+        }
+
+        It "never re-emits an earlier record's pool" {
+            $duplicated = $pipedResults | Group-Object -Property SqlInstance, Name | Where-Object Count -gt 1
+            $duplicated | Should -BeNullOrEmpty
+        }
+    }
 }
