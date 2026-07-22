@@ -105,6 +105,7 @@
         'Resolve-DbaNetworkName',
         'Restart-DbaService',
         'Set-DbaCmConnection',
+        'Set-DbaCustomError',
         'Set-DbaDatabase',
         'Set-DbaDbOwner',
         'Set-DbaDbRecoveryModel',
