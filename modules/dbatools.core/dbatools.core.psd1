@@ -105,6 +105,7 @@
         'Resolve-DbaNetworkName',
         'Restart-DbaService',
         'Set-DbaCmConnection',
+        'Set-DbaCredential',
         'Set-DbaCustomError',
         'Set-DbaDatabase',
         'Set-DbaDbOwner',
@@ -173,7 +174,8 @@
         'Export-DbaCredential',
         'Get-DbaHideInstance',
         'Export-DbaLinkedServer',
-        'Get-DbaCredential'
+        'Get-DbaCredential',
+        'Get-DbaErrorLogConfig'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in

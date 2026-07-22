@@ -1049,6 +1049,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaErrorLog.ps1"
   },
+  "Get-DbaErrorLogConfig": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaErrorLogConfig.ps1",
+    "flippedUtc": "2026-07-22T16:31:43Z"
+  },
   "Get-DbaEstimatedCompletionTime": {
     "flippedUtc": "2026-07-13T12:12:37Z",
     "module": "dbatools.performance",
@@ -1188,6 +1193,11 @@
     "flippedUtc": "2026-07-18T18:16:46Z",
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaLogin.ps1"
+  },
+  "Get-DbaMaintenanceSolutionLog": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Get-DbaMaintenanceSolutionLog.ps1",
+    "flippedUtc": "2026-07-22T16:29:19Z"
   },
   "Get-DbaManagementObject": {
     "flippedUtc": "2026-07-13T13:55:26Z",
