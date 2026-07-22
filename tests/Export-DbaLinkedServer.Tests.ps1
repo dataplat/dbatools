@@ -309,6 +309,74 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Cross-record credential carrier (DEF-012)" -Skip:($IsLinux -or $IsMacOS) {
+        BeforeAll {
+            # This leg needs no live instance: it mocks the connection and the decryption so it
+            # can construct the exact two-record shape that triggers the DEF-012 carrier. The
+            # live -ExcludePassword integration above never enters the decryption/substitution
+            # block, so without this context the gate's green PASS proves nothing about the
+            # distinguishing carrier behavior (rule 5).
+            Mock Test-ExportDirectory { } -ModuleName dbatools
+            Mock Test-FunctionInterrupt { $false } -ModuleName dbatools
+            Mock Disconnect-DbaInstance { } -ModuleName dbatools
+            Mock Get-ExportFilePath { "C:\temp\linkedservers.sql" } -ModuleName dbatools
+
+            # Two linked servers on one instance. lsA has a decryptable remote login (Identity
+            # "carrieduser"); lsB's decrypted mapping has a DBNull Identity but a populated
+            # Password, and lsB's own login is registered under the SAME rmtuser=N'carrieduser'
+            # token. The source assigns $rmtuser/$password only under a non-DBNull Identity yet
+            # reads them unconditionally in the rmtpassword substitution, so lsB re-uses lsA's
+            # decrypted password - the DEF-012 cross-record credential leak. This proves the port
+            # reproduces that source bug VERBATIM (reproduce-not-sanitize, U-list upstream #34).
+            Mock Connect-DbaInstance {
+                $lsA = New-Object Microsoft.SqlServer.Management.Smo.LinkedServer
+                $lsA.Name = "lsA"
+                $lsA | Add-Member -MemberType ScriptMethod -Name Script -Value {
+                    "EXEC sp_addlinkedsrvlogin @rmtsrvname=N'lsA',@rmtuser=N'carrieduser',@rmtpassword='########' /* For security reasons the linked server remote logins password is changed with ######## */"
+                } -Force
+
+                $lsB = New-Object Microsoft.SqlServer.Management.Smo.LinkedServer
+                $lsB.Name = "lsB"
+                $lsB | Add-Member -MemberType ScriptMethod -Name Script -Value {
+                    "EXEC sp_addlinkedsrvlogin @rmtsrvname=N'lsB',@rmtuser=N'carrieduser',@rmtpassword='########' /* For security reasons the linked server remote logins password is changed with ######## */"
+                } -Force
+
+                $server = New-Object Microsoft.SqlServer.Management.Smo.Server "sql1"
+                $server | Add-Member -MemberType NoteProperty -Name LinkedServers -Value @($lsA, $lsB) -Force
+                $server
+            } -ModuleName dbatools
+
+            Mock Get-DecryptedObject {
+                $recA = [PSCustomObject]@{
+                    Name     = "lsA"
+                    Identity = "carrieduser"
+                    Password = "SecretA1!"
+                }
+                $recB = [PSCustomObject]@{
+                    Name     = "lsB"
+                    Identity = [System.DBNull]::Value
+                    Password = "unused-but-truthy"
+                }
+                @($recA, $recB)
+            } -ModuleName dbatools
+        }
+
+        It "Reproduces the DEF-012 leak: a DBNull-Identity record re-uses the prior record's decrypted password" {
+            $result = Export-DbaLinkedServer -SqlInstance "sql1" -Passthru
+
+            # lsA is scripted first and populates the carrier with its own decrypted password.
+            $scriptA = $result | Where-Object { $PSItem -match "@rmtsrvname=N'lsA'" }
+            $scriptA | Should -Match "@rmtpassword='SecretA1!'"
+
+            # lsB's mapping has a DBNull Identity, so the carrier still holds lsA's password and
+            # lsB's export SQL leaks it under lsB's own login - the source bug, reproduced verbatim.
+            $scriptB = $result | Where-Object { $PSItem -match "@rmtsrvname=N'lsB'" }
+            $scriptB | Should -Match "@rmtpassword='SecretA1!'"
+            # The masking placeholder is gone, proving the substitution actually fired for lsB.
+            $scriptB | Should -Not -Match "########"
+        }
+    }
+
     Context "Platform guard" -Skip:(-not ($IsLinux -or $IsMacOS)) {
         It "Warns and returns nothing on Linux or macOS" {
             # The OS guard fires before any connection attempt, so this needs no live instance.
