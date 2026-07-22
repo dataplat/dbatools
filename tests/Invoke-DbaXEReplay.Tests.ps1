@@ -24,6 +24,13 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 Describe $CommandName -Tag IntegrationTests {
+    BeforeDiscovery {
+        # sqlcmd presence must be resolved at DISCOVERY time so the -Skip conditions on the replay
+        # legs below see a real value. A copy computed only in BeforeAll (run phase) is $null when
+        # Pester evaluates -Skip during discovery, so every replay leg would skip unconditionally
+        # even on a host that HAS sqlcmd - a vacuous pass that never exercises the replay path.
+        $sqlcmdPresent = $null -ne (Get-Command sqlcmd -ErrorAction Ignore)
+    }
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
