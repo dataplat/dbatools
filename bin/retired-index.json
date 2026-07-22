@@ -1349,6 +1349,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaPrivilege.ps1"
   },
+  "Get-DbaProcess": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaProcess.ps1",
+    "flippedUtc": "2026-07-22T21:29:35Z"
+  },
   "Get-DbaProductKey": {
     "flippedUtc": "2026-07-09T20:06:57Z",
     "module": "dbatools.computer",

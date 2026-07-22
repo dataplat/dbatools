@@ -97,7 +97,6 @@
         'New-DbaDbEncryptionKey',
         'Get-DbaLastGoodCheckDb',
         'Get-DbaPermission',
-        'Get-DbaProcess',
         'Get-DbaReplPublication',
         'Get-DbaReplServer',
         'Get-DbaServerRole',
