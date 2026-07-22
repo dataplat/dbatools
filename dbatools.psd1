@@ -95,7 +95,6 @@
         'Export-DbaReplServerSetting',
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
-        'Get-DbaInstanceInstallDate',
         'Get-DbaLastGoodCheckDb',
         'Get-DbaPermission',
         'Get-DbaProcess',

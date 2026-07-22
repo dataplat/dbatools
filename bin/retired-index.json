@@ -1129,6 +1129,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaInstanceAuditSpecification.ps1"
   },
+  "Get-DbaInstanceInstallDate": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaInstanceInstallDate.ps1",
+    "flippedUtc": "2026-07-22T16:38:19Z"
+  },
   "Get-DbaInstanceList": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Get-DbaInstanceList.ps1",
