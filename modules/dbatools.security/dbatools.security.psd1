@@ -48,6 +48,7 @@
         'Remove-DbaServerRole',
         'Remove-DbaServerRoleMember',
         'Set-DbaServerRole',
+        'Set-DbaDbMasterKey',
         'Rename-DbaLogin',
         'Stop-DbaDbEncryption',
         'Sync-DbaLoginPassword',
@@ -66,7 +67,8 @@
         'Get-DbaPbmCondition',
         'New-DbaDbAsymmetricKey',
         'New-DbaDbCertificate',
-        'New-DbaLogin'
+        'New-DbaLogin',
+        'New-DbaInstanceAudit'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
