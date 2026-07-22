@@ -36,4 +36,29 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "Multi-record pipe emits each workload group exactly once (deviation from source, #6 / DEF-012)" {
+        # The retired function accumulated instances in a process-scope `$InputObject +=`, so a
+        # multi-record pipe re-emitted earlier records' groups: record 2 relisted record 1's groups.
+        # The compiled port runs each pipeline record in its own hop scope and emits every workload
+        # group exactly once. This is the #6 ruling (a) deviation from source, and a single-instance
+        # leg cannot observe it - it needs at least two piped records.
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $instanceOne = $TestConfig.InstanceMulti1
+            $instanceTwo = $TestConfig.InstanceMulti2
+            $pipedResults = @($instanceOne, $instanceTwo | Get-DbaRgWorkloadGroup)
+            $expectedResults = @(Get-DbaRgWorkloadGroup -SqlInstance $instanceOne) + @(Get-DbaRgWorkloadGroup -SqlInstance $instanceTwo)
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "emits each instance's workload groups exactly once across a two-instance pipe" {
+            $pipedResults.Count | Should -Be $expectedResults.Count
+        }
+
+        It "never re-emits an earlier record's workload group" {
+            $duplicated = $pipedResults | Group-Object -Property SqlInstance, Name | Where-Object Count -gt 1
+            $duplicated | Should -BeNullOrEmpty
+        }
+    }
 }
