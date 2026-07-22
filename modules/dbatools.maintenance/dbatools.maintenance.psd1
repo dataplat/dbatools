@@ -21,7 +21,8 @@
     CmdletsToExport        = @(
         'Get-DbaDbccUserOption',
         'Get-DbaDbccHelp',
-        'Get-DbaDbccStatistic'
+        'Get-DbaDbccStatistic',
+        'Get-DbaMaintenanceSolutionLog'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
