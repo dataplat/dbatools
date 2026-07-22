@@ -61,6 +61,7 @@
         'Test-DbaWindowsLogin',
         'Get-DbaInstanceAudit',
         'Get-DbaInstanceAuditSpecification',
+        'New-DbaInstanceAuditSpecification',
         'Get-DbaLogin',
         'Get-DbaPbmCategorySubscription',
         'Get-DbaPbmStore',
