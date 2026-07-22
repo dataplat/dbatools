@@ -170,6 +170,7 @@
         'Export-DbaSpConfigure',
         'Get-DbaLinkedServerLogin',
         'Set-DbaLinkedServerLogin',
+        'Set-DbaLinkedServer',
         'Get-DbaFilestream',
         'Export-DbaCredential',
         'Get-DbaHideInstance',
