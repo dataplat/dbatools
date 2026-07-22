@@ -68,7 +68,8 @@
         'New-DbaDbAsymmetricKey',
         'New-DbaDbCertificate',
         'New-DbaLogin',
-        'New-DbaInstanceAudit'
+        'New-DbaInstanceAudit',
+        'Set-DbaInstanceAudit'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
