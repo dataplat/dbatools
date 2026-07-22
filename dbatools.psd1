@@ -111,7 +111,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
         'Install-DbaSqlPackage',
         'Install-DbaSqlWatch',

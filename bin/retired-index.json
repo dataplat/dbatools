@@ -1679,6 +1679,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Install-DbaInstance.ps1"
   },
+  "Install-DbaMaintenanceSolution": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Install-DbaMaintenanceSolution.ps1",
+    "flippedUtc": "2026-07-22T23:42:32Z"
+  },
   "Invoke-DbaAdvancedInstall": {
     "flippedUtc": "2026-07-10T23:50:37Z",
     "module": "dbatools.computer",

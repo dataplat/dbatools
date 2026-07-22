@@ -24,7 +24,8 @@
         'Get-DbaDbccStatistic',
         'Get-DbaMaintenanceSolutionLog',
         'Install-DbaDarlingData',
-        'Install-DbaFirstResponderKit'
+        'Install-DbaFirstResponderKit',
+        'Install-DbaMaintenanceSolution'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
