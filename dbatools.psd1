@@ -93,8 +93,6 @@
         'Copy-DbaSystemDbUserObject',
         'Export-DbaInstance',
         'Export-DbaReplServerSetting',
-        'Get-DbaCredential',
-        'Get-DbaDbccStatistic',
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
         'Get-DbaErrorLogConfig',

@@ -674,6 +674,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaCpuUsage.ps1"
   },
+  "Get-DbaCredential": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaCredential.ps1",
+    "flippedUtc": "2026-07-22T16:04:38Z"
+  },
   "Get-DbaCustomError": {
     "flippedUtc": "2026-07-06T10:22:04Z",
     "module": "dbatools.core",
@@ -718,6 +723,11 @@
     "flippedUtc": "2026-07-13T08:21:26Z",
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaDbccSessionBuffer.ps1"
+  },
+  "Get-DbaDbccStatistic": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Get-DbaDbccStatistic.ps1",
+    "flippedUtc": "2026-07-22T16:09:45Z"
   },
   "Get-DbaDbccUserOption": {
     "flippedUtc": "2026-07-06T10:41:15Z",

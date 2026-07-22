@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaDbccUserOption',
-        'Get-DbaDbccHelp'
+        'Get-DbaDbccHelp',
+        'Get-DbaDbccStatistic'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
