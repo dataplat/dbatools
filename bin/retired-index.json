@@ -1664,6 +1664,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Install-DbaAgentAdminAlert.ps1"
   },
+  "Install-DbaDarlingData": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Install-DbaDarlingData.ps1",
+    "flippedUtc": "2026-07-22T22:40:45Z"
+  },
   "Install-DbaInstance": {
     "flippedUtc": "2026-07-11T01:49:40Z",
     "module": "dbatools.computer",

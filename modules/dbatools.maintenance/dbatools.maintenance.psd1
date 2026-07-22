@@ -22,7 +22,8 @@
         'Get-DbaDbccUserOption',
         'Get-DbaDbccHelp',
         'Get-DbaDbccStatistic',
-        'Get-DbaMaintenanceSolutionLog'
+        'Get-DbaMaintenanceSolutionLog',
+        'Install-DbaDarlingData'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

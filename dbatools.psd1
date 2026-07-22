@@ -111,7 +111,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
