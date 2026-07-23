@@ -2589,6 +2589,11 @@
     "retiredPath": "private/retired/Set-DbaAgentJobCategory.ps1",
     "flippedUtc": "2026-07-23T02:43:12Z"
   },
+  "Set-DbaAgentJobOutputFile": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentJobOutputFile.ps1",
+    "flippedUtc": "2026-07-23T02:47:27Z"
+  },
   "Set-DbaAgentJobOwner": {
     "flippedUtc": "2026-07-18T05:38:55Z",
     "module": "dbatools.agent",

@@ -125,7 +125,6 @@
         'Remove-DbaDbSynonym',
         'Remove-DbaXESession',
         'Resume-DbaAgDbDataMovement',
-        'Set-DbaAgentJobOutputFile',
         'Set-DbaAgentJobStep',
         'Set-DbaAgentSchedule',
         'Set-DbaAgentServer',
