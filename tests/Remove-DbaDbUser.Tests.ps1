@@ -84,5 +84,14 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
             $db.Users[$user.Name] | Should -Be $user
         }
+
+        It "emits nothing for an empty pipeline" {
+            # The piped users accumulate across process records and the drops run in the end block, so
+            # the end block must iterate zero times for an empty pipeline - like the source - not once
+            # over a null placeholder that yields a phantom record or a null-method error. A Get-DbaDbUser
+            # that matches nothing pipes an empty collection.
+            $result = Get-DbaDbUser -SqlInstance $server -Database tempdb -User "nonexistent_$(Get-Random)" | Remove-DbaDbUser
+            $result | Should -BeNullOrEmpty
+        }
     }
 }
