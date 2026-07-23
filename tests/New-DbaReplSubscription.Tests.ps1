@@ -29,3 +29,33 @@ Describe $CommandName -Tag UnitTests {
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: creating a subscription requires a configured publisher/distributor and a
+    # live publication, which the GitHub Actions replication harness provides (gh-actions-repl-*) -
+    # the live TransSubscription/MergeSubscription .Create() leg is DEFERRED-TO-GATE. The source
+    # has no pre-connection guard: both mutating actions (creating the subscription database and
+    # creating the subscription) are gated by ShouldProcess. What IS characterizable on a plain
+    # instance is that -WhatIf routes through the module hop to the real cmdlet, so the connect and
+    # publication lookup run, but neither the subscription database nor the subscription is created
+    # and nothing is emitted. That leg exercises the hop, the live publisher connection, the
+    # Get-DbaReplServer / Get-DbaReplPublication lookups, and the ShouldProcess wiring while
+    # asserting the side effect did not happen. Target is a standalone instance not configured for
+    # replication.
+    Context "Honoring -WhatIf" {
+        It "Skips the subscription-database creation and emits nothing under -WhatIf" {
+            $splatSubscription = @{
+                SqlInstance           = $TestConfig.InstanceMulti1
+                Database              = "master"
+                SubscriberSqlInstance = $TestConfig.InstanceMulti1
+                SubscriptionDatabase  = "dbatoolsci_subwhatif"
+                PublicationName       = "dbatoolsci_nopub"
+                Type                  = "Push"
+                WhatIf                = $true
+            }
+            $result = New-DbaReplSubscription @splatSubscription
+            $result | Should -BeNullOrEmpty
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database "dbatoolsci_subwhatif" -WarningAction SilentlyContinue) | Should -BeNullOrEmpty
+        }
+    }
+}

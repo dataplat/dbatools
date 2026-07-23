@@ -111,7 +111,6 @@
         # NEW REPLICATION STUFF
         'Remove-DbaReplArticle',
         'Remove-DbaReplPublication',
-        'New-DbaReplSubscription',
         'Remove-DbaReplSubscription'
     )
 
