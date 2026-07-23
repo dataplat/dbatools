@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaSsisExecutionHistory',
-        'Get-DbaSsisEnvironmentVariable'
+        'Get-DbaSsisEnvironmentVariable',
+        'New-DbaSsisCatalog'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

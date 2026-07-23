@@ -2294,6 +2294,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaSqlParameter.ps1"
   },
+  "New-DbaSsisCatalog": {
+    "module": "dbatools.ssis",
+    "retiredPath": "private/retired/New-DbaSsisCatalog.ps1",
+    "flippedUtc": "2026-07-23T19:41:26Z"
+  },
   "New-DbatoolsSupportPackage": {
     "flippedUtc": "2026-07-12T08:13:55Z",
     "module": "dbatools.core",

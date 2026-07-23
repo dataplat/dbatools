@@ -93,7 +93,6 @@
         'Export-DbaInstance',
         'Get-DbaLastGoodCheckDb',
         'Copy-DbaSsisCatalog',
-        'New-DbaSsisCatalog',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',
