@@ -61,7 +61,7 @@ Describe $CommandName -Tag UnitTests {
             BeforeEach {
                 $script:createdDataFiles = @()
                 $script:createdLogFiles = @()
-                $script:executedPathQueries = @()
+                $script:testedPaths = @()
 
                 $script:modelPrimaryFile = [PSCustomObject]@{
                     Size       = 8192
@@ -79,7 +79,6 @@ Describe $CommandName -Tag UnitTests {
                 $script:mockConnectionContext = [PSCustomObject]@{ }
                 Add-Member -InputObject $script:mockConnectionContext -Force -MemberType ScriptMethod -Name ExecuteWithResults -Value {
                     param($sql)
-                    $script:executedPathQueries += $sql
                     [PSCustomObject]@{
                         Tables = [PSCustomObject]@{
                             rows = @($true, $false)
@@ -156,13 +155,22 @@ Describe $CommandName -Tag UnitTests {
                 } -ParameterFilter {
                     $TypeName -eq "Microsoft.SqlServer.Management.Smo.LogFile"
                 } -ModuleName dbatools
+
+                # Test-DbaPath is the boundary New-DbaDatabase uses to validate rooted directory
+                # paths (its xp_fileexist query is Test-DbaPath's own internal detail). Capture the
+                # directory paths it is asked to test, and report them as accessible so the command
+                # does not attempt to create them.
+                Mock Test-DbaPath {
+                    $script:testedPaths += $Path
+                    $true
+                } -ModuleName dbatools
             }
 
             It "preserves rooted default paths for validation and creation" {
                 $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -DataFilePath "C:\" -LogFilePath "L:\" -WhatIf
 
-                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'L:\'"
-                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'C:\'"
+                $script:testedPaths | Should -Contain "L:\"
+                $script:testedPaths | Should -Contain "C:\"
                 $script:createdDataFiles[0].FileName | Should -Be "C:\db1.mdf"
                 $script:createdLogFiles[0].FileName | Should -Be "L:\db1_log.ldf"
             }
@@ -170,7 +178,7 @@ Describe $CommandName -Tag UnitTests {
             It "skips directory checks for Azure Blob Storage default paths" {
                 $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -DataFilePath "https://storage.blob.core.windows.net/data/" -LogFilePath "https://storage.blob.core.windows.net/log/" -WhatIf
 
-                $script:executedPathQueries | Should -BeNullOrEmpty
+                $script:testedPaths | Should -BeNullOrEmpty
                 $script:createdDataFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/data/db1.mdf"
                 $script:createdLogFiles[0].FileName | Should -Be "https://storage.blob.core.windows.net/log/db1_log.ldf"
             }
