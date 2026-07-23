@@ -27,7 +27,8 @@
         'Install-DbaFirstResponderKit',
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
-        'Install-DbaSqlPackage'
+        'Install-DbaSqlPackage',
+        'Install-DbaSqlWatch'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

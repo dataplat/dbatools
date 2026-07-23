@@ -67,7 +67,8 @@
         'New-DbaAgentOperator',
         'New-DbaAgentProxy',
         'New-DbaAgentSchedule',
-        'New-DbaDbMailAccount'
+        'New-DbaDbMailAccount',
+        'New-DbaDbMailProfile'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

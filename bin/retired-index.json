@@ -1699,6 +1699,11 @@
     "retiredPath": "private/retired/Install-DbaSqlPackage.ps1",
     "flippedUtc": "2026-07-23T00:35:20Z"
   },
+  "Install-DbaSqlWatch": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Install-DbaSqlWatch.ps1",
+    "flippedUtc": "2026-07-23T01:02:24Z"
+  },
   "Invoke-DbaAdvancedInstall": {
     "flippedUtc": "2026-07-10T23:50:37Z",
     "module": "dbatools.computer",
@@ -1993,6 +1998,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/New-DbaDbMailAccount.ps1",
     "flippedUtc": "2026-07-23T00:57:05Z"
+  },
+  "New-DbaDbMailProfile": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaDbMailProfile.ps1",
+    "flippedUtc": "2026-07-23T01:01:31Z"
   },
   "New-DbaDbMaskingConfig": {
     "module": "dbatools.database",
