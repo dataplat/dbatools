@@ -19,8 +19,24 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When reading the replication server role on a non-distributor instance" {
+        BeforeAll {
+            $results = Get-DbaReplServer -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns a ReplicationServer object" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Reports the instance is not configured as a distributor" {
+            $results.IsDistributor | Should -Be $false
+        }
+
+        It "Decorates the instance identity columns" {
+            $results.ComputerName | Should -Not -BeNullOrEmpty
+            $results.InstanceName | Should -Not -BeNullOrEmpty
+            $results.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+    }
+}
