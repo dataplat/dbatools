@@ -319,3 +319,71 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe "$CommandName streaming end-block emission" -Tag IntegrationTests {
+    # The end block emits one result per service it finds, then can raise a terminating
+    # Stop-Function under -EnableException on a service it cannot find. A buffered end block
+    # discards every row already emitted before that throw; a streaming end block preserves
+    # them. The live suite above never drives a found-then-not-found batch under
+    # -EnableException, so this leg is what proves the streaming end block. It is fully mocked
+    # and needs no live service-account fixture.
+    Context "When a later service in the batch cannot be found under -EnableException" {
+        BeforeAll {
+            $computerPart = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
+
+            Mock Resolve-DbaNetworkName -ModuleName dbatools -MockWith {
+                param($ComputerName, $Credential)
+                [PSCustomObject]@{ FullComputerName = "$ComputerName" }
+            }
+
+            # The account change itself is a no-op - the row's survival, not the mutation, is under test.
+            Mock Invoke-ManagedComputerCommand -ModuleName dbatools -MockWith { }
+
+            # The first service resolves and emits its row; the second is not found, so the
+            # source raises its terminating Stop-Function once the first row is already out.
+            # A real Get-DbaService object binds to the source's ShouldProcess($serviceObject,
+            # $action) call because it ToStrings to a plain string; a PSObject/PSCustomObject does
+            # not (the (string, string) overload is unreachable), so a hashtable stand-in is used -
+            # it ToStrings cleanly and still exposes the .ServiceType/.ServiceName the source reads.
+            Mock Get-DbaService -ModuleName dbatools -MockWith {
+                param($ComputerName, $ServiceName, $Credential, $EnableException, $Type, $InstanceName)
+                if ($ServiceName -eq "SvcFound") {
+                    @{
+                        ComputerName = "$ComputerName"
+                        ServiceName  = "SvcFound"
+                        ServiceType  = "Agent"
+                        State        = "Running"
+                        StartName    = "NT AUTHORITY\NETWORKSERVICE"
+                        InstanceName = "SvcFound"
+                    }
+                }
+                # SvcMissing returns nothing -> the source's "not been found" throw path.
+            }
+
+            $emitted = @()
+            $threw = $false
+            try {
+                $splatFoundThenThrow = @{
+                    ComputerName    = $computerPart
+                    ServiceName     = "SvcFound", "SvcMissing"
+                    Username        = "$computerPart\svcuser"
+                    SecurePassword  = (ConvertTo-SecureString "P@ssw0rd streaming leg" -AsPlainText -Force)
+                    EnableException = $true
+                    Confirm         = $false
+                }
+                Update-DbaServiceAccount @splatFoundThenThrow | ForEach-Object { $emitted += $PSItem }
+            } catch {
+                $threw = $true
+            }
+        }
+
+        It "Throws when a later service in the batch cannot be found" {
+            $threw | Should -BeTrue
+        }
+
+        It "Preserves the row emitted before the throw (streaming, not buffered)" {
+            @($emitted).Count | Should -Be 1
+            @($emitted)[0].ServiceName | Should -Be "SvcFound"
+        }
+    }
+}
