@@ -122,7 +122,6 @@
         'Test-DbaReplLatency',
 
         # NEW REPLICATION STUFF
-        'Disable-DbaReplDistributor',
         'Enable-DbaReplDistributor',
         'Disable-DbaReplPublishing',
         'Enable-DbaReplPublishing',

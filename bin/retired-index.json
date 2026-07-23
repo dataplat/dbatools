@@ -254,6 +254,11 @@
     "retiredPath": "private/retired/Disable-DbaHideInstance.ps1",
     "flippedUtc": "2026-07-19T20:54:51Z"
   },
+  "Disable-DbaReplDistributor": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Disable-DbaReplDistributor.ps1",
+    "flippedUtc": "2026-07-23T11:03:54Z"
+  },
   "Disable-DbaStartupProcedure": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Disable-DbaStartupProcedure.ps1",
