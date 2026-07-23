@@ -1659,6 +1659,11 @@
     "retiredPath": "private/retired/Get-DbaXEObject.ps1",
     "flippedUtc": "2026-07-23T11:15:07Z"
   },
+  "Get-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Get-DbaXESession.ps1",
+    "flippedUtc": "2026-07-23T11:21:43Z"
+  },
   "Get-DbaXESessionTemplate": {
     "flippedUtc": "2026-07-18T17:35:55Z",
     "module": "dbatools.xevents",
