@@ -224,6 +224,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Copy-DbaRegServer.ps1"
   },
+  "Copy-DbaSsisCatalog": {
+    "module": "dbatools.ssis",
+    "retiredPath": "private/retired/Copy-DbaSsisCatalog.ps1",
+    "flippedUtc": "2026-07-23T20:13:07Z"
+  },
   "Copy-DbaXESession": {
     "flippedUtc": "2026-07-18T15:20:54Z",
     "module": "dbatools.xevents",

@@ -92,7 +92,6 @@
         'Copy-DbaSystemDbUserObject',
         'Export-DbaInstance',
         'Get-DbaLastGoodCheckDb',
-        'Copy-DbaSsisCatalog',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',

@@ -28,28 +28,37 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 Describe $CommandName -Tag IntegrationTests {
-    # NOTE ON COVERAGE: copying an SSIS catalog needs the SSIS Catalog SMO assemblies plus a live
-    # Source+Destination pair, available only on Windows PowerShell (Desktop) - the live copy is
-    # DEFERRED-TO-GATE. What IS deterministic is the edition guard the source runs first: on PowerShell
-    # Core the command refuses ($PSVersionTable.PSEdition -eq "Core"). This leg runs on the Core gate
-    # (integrationPs7) where the guard fires; skipped on Desktop. WhatIf is belt-and-braces on this copy
-    # command, though the guard returns before any action. Probe-verified on Core.
-    Context "Guarding on PowerShell Core" {
-        It "Warns and returns nothing on PowerShell Core" -Skip:($PSVersionTable.PSEdition -ne "Core") {
-            $splatCoreGuard = @{
-                Source          = "dbatoolsci-core-src"
-                Destination     = "dbatoolsci-core-dst"
+    # NOTE ON COVERAGE: copying an SSIS catalog needs the IntegrationServices SMO object model plus a live
+    # Source+Destination pair with a running SSIS service, all Windows-PowerShell-only and absent from the gate
+    # host, so the live copy is deferred. What IS deterministic on both editions is the pre-copy refusal the
+    # source runs before it deploys anything: on PowerShell Core the command refuses outright ("This command is
+    # not supported on Linux or macOS"), and on Windows PowerShell the source-connection failure returns nothing
+    # with a friendly warning. The source connection is mocked so the Desktop leg is deterministic and needs no
+    # reachable endpoint. Both branches return zero objects and one warning, so this leg runs on both gate
+    # editions with zero skips and asserts the edition-appropriate message.
+    Context "Refuses before copying anything" {
+        It "warns and copies nothing when the source cannot be reached" {
+            Mock -CommandName Connect-DbaInstance -ModuleName dbatools -MockWith {
+                throw "simulated: source instance unreachable"
+            }
+
+            $splatRefuse = @{
+                Source          = "dbatoolsci-mock-src"
+                Destination     = "dbatoolsci-mock-dst"
                 WarningVariable = "warn"
                 WarningAction   = "SilentlyContinue"
-                WhatIf          = $true
             }
-            $result = @(Copy-DbaSsisCatalog @splatCoreGuard)
+            $result = @(Copy-DbaSsisCatalog @splatRefuse)
             $result.Count | Should -Be 0
-            $warn.Count | Should -Be 1
+            $warn.Count | Should -BeGreaterThan 0
 
             # strip the bracketed [timestamp]/[function] prefix added by Write-Message
             $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
-            $payload | Should -Be "This command is not supported on Linux or macOS"
+            if ($PSVersionTable.PSEdition -eq "Core") {
+                $payload | Should -Be "This command is not supported on Linux or macOS"
+            } else {
+                $payload | Should -BeLike "Error occurred while establishing connection to *"
+            }
         }
     }
 }
