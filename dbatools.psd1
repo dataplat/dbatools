@@ -107,7 +107,6 @@
         'Get-DbaXEStore',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
-        'New-DbaDbMasterKey',
         'New-DbaServerRole',
         'New-DbaXESession',
         'Remove-DbaDbOrphanUser',

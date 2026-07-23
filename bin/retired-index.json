@@ -2079,6 +2079,11 @@
     "retiredPath": "private/retired/New-DbaDbMaskingConfig.ps1",
     "flippedUtc": "2026-07-18T21:28:43Z"
   },
+  "New-DbaDbMasterKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaDbMasterKey.ps1",
+    "flippedUtc": "2026-07-23T10:30:18Z"
+  },
   "New-DbaDbRole": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/New-DbaDbRole.ps1",
