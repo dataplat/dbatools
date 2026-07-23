@@ -1744,6 +1744,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbAzSqlTip.ps1",
     "flippedUtc": "2026-07-23T01:43:03Z"
   },
+  "Invoke-DbaDbccDropCleanBuffer": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaDbccDropCleanBuffer.ps1",
+    "flippedUtc": "2026-07-23T02:26:07Z"
+  },
   "Invoke-DbaDbClone": {
     "flippedUtc": "2026-07-18T08:46:05Z",
     "module": "dbatools.database",

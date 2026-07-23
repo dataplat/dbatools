@@ -110,7 +110,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbccFreeCache',
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
