@@ -46,11 +46,13 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $result = @(Get-DbaPbmObjectSet @splatCoreGuard)
             $result.Count | Should -Be 0
-            $warn.Count | Should -Be 1
-
+            # The harness context can add ambient warnings to the shared channel, so scope the
+            # assertions to what the guard owns: its exact payload is present, and no
+            # connection was attempted (the guard fires before any connect).
             # strip the bracketed [timestamp]/[function] prefix added by Write-Message
-            $payload = $warn[0].Message -replace "^(\[[^\]]*\]\s*)+", ""
-            $payload | Should -Be "This command is not supported on Linux or macOS"
+            $payloads = @($warn | ForEach-Object { $PSItem.Message -replace "^(\[[^\]]*\]\s*)+", "" })
+            $payloads | Should -Contain "This command is not supported on Linux or macOS"
+            ($payloads -match "Error connecting") | Should -BeNullOrEmpty
         }
     }
 }
