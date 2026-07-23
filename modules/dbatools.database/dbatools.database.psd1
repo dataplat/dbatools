@@ -128,6 +128,7 @@
         'Test-DbaDbQueryStore',
         'New-DbaDbSynonym',
         'New-DbaDbTable',
+        'New-DbaDbView',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
         'New-DbaDirectory',
