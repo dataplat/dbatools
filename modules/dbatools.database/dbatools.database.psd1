@@ -134,6 +134,7 @@
         'Set-DbaDbStoredProcedure',
         'New-DbaDbUdf',
         'Set-DbaDbUdf',
+        'New-DbaDbTrigger',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
         'New-DbaDirectory',
