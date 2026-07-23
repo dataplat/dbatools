@@ -59,5 +59,15 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence
             (Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
         }
+
+        It "Emits nothing for an empty pipeline" {
+            # The drops are deferred to the end block (piping straight from Get-DbaDbSequence would
+            # otherwise raise a collection-modified error), so nothing accumulates across the process
+            # records. A Get-DbaDbSequence that matches nothing pipes an empty collection; the end block
+            # must then iterate zero times - like the source - not once over a null placeholder that
+            # yields a phantom record or a null-method error.
+            $result = Get-DbaDbSequence -SqlInstance $server -Database $newDbName -Sequence "nonexistent_$random" -Schema "Schema_$random" | Remove-DbaDbSequence
+            $result | Should -BeNullOrEmpty
+        }
     }
 }
