@@ -24,6 +24,16 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Input guard" {
+        It "warns and returns nothing when neither an instance nor an input object is supplied" {
+            $result = Test-DbaWindowsLogin -WarningVariable guardWarning -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            ($guardWarning -join "`n") | Should -Match "You must supply either"
+        }
+    }
+}
 <#
 Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
 Describe $CommandName -Tag IntegrationTests {
