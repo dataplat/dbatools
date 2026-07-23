@@ -99,7 +99,6 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
-        'Get-DbaXEStore',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
         'New-DbaXESession',
@@ -118,7 +117,6 @@
 
         # NEW REPLICATION STUFF
         'New-DbaReplPublication',
-        'Get-DbaReplArticle',
         'Get-DbaReplArticleColumn',
         'Remove-DbaReplArticle',
         'Remove-DbaReplPublication',

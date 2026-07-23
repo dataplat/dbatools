@@ -1439,6 +1439,11 @@
     "retiredPath": "private/retired/Get-DbaRegServerStore.ps1",
     "flippedUtc": "2026-07-20T00:20:23Z"
   },
+  "Get-DbaReplArticle": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Get-DbaReplArticle.ps1",
+    "flippedUtc": "2026-07-23T12:04:09Z"
+  },
   "Get-DbaReplDistributor": {
     "flippedUtc": "2026-07-06T11:50:51Z",
     "module": "dbatools.replication",
@@ -1693,6 +1698,11 @@
     "flippedUtc": "2026-07-18T17:35:55Z",
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaXESessionTemplate.ps1"
+  },
+  "Get-DbaXEStore": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Get-DbaXEStore.ps1",
+    "flippedUtc": "2026-07-23T12:03:24Z"
   },
   "Grant-DbaAgPermission": {
     "flippedUtc": "2026-07-18T06:45:03Z",
