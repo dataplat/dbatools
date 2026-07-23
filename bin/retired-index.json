@@ -1739,6 +1739,11 @@
     "retiredPath": "private/retired/Invoke-DbaCycleErrorLog.ps1",
     "flippedUtc": "2026-07-20T00:20:37Z"
   },
+  "Invoke-DbaDbAzSqlTip": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaDbAzSqlTip.ps1",
+    "flippedUtc": "2026-07-23T01:43:03Z"
+  },
   "Invoke-DbaDbClone": {
     "flippedUtc": "2026-07-18T08:46:05Z",
     "module": "dbatools.database",
@@ -2178,6 +2183,11 @@
     "flippedUtc": "2026-07-18T05:37:22Z",
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Remove-DbaAgentJobCategory.ps1"
+  },
+  "Remove-DbaAgentJobSchedule": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentJobSchedule.ps1",
+    "flippedUtc": "2026-07-23T01:31:26Z"
   },
   "Remove-DbaAgentOperator": {
     "flippedUtc": "2026-07-18T05:37:36Z",
