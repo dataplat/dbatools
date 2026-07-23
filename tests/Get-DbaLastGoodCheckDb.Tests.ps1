@@ -97,6 +97,56 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Carries CreateVersion and DbccFlags across piped records" {
+        # CreateVersion and DbccFlags are only assigned on the DBCC DBINFO branch, which needs
+        # SQL 2008 or older or a sysadmin connection. They are read unconditionally by the output,
+        # so on SQL 2008 R2 and newer a non-sysadmin record re-emits whatever the previous record
+        # left behind. These two records pin that behaviour: record one connects as a sysadmin and
+        # assigns, record two connects as a plain login and must repeat record one's values.
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $limitedLogin = "dbatoolsci_limited_$(Get-Random)"
+            $limitedPassword = ConvertTo-SecureString -String "dbatools.IO_$(Get-Random)" -AsPlainText -Force
+
+            $splatLimitedLogin = @{
+                SqlInstance    = $TestConfig.InstanceMulti1
+                Login          = $limitedLogin
+                SecurePassword = $limitedPassword
+                Force          = $true
+            }
+            $null = New-DbaLogin @splatLimitedLogin
+
+            $limitedCredential = New-Object System.Management.Automation.PSCredential ($limitedLogin, $limitedPassword)
+
+            $sysadminDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database master
+            $limitedDatabase = Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -SqlCredential $limitedCredential -Database master
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $carryResults = @($sysadminDatabase, $limitedDatabase | Get-DbaLastGoodCheckDb)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $limitedLogin -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "assigns CreateVersion and DbccFlags on the sysadmin record" {
+            $carryResults.Count | Should -Be 2
+            $carryResults[0].CreateVersion | Should -Not -BeNullOrEmpty
+        }
+
+        It "re-emits the sysadmin record's CreateVersion and DbccFlags on the non-sysadmin record" {
+            $carryResults[1].DataPurityEnabled | Should -BeNullOrEmpty
+            $carryResults[1].CreateVersion | Should -Be $carryResults[0].CreateVersion
+            $carryResults[1].DbccFlags | Should -Be $carryResults[0].DbccFlags
+        }
+    }
+
     Context "Doesn't return duplicate results" {
         BeforeAll {
             $duplicateResults = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $dbname

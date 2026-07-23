@@ -1219,6 +1219,11 @@
     "retiredPath": "private/retired/Get-DbaLastBackup.ps1",
     "flippedUtc": "2026-07-20T01:20:35Z"
   },
+  "Get-DbaLastGoodCheckDb": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Get-DbaLastGoodCheckDb.ps1",
+    "flippedUtc": "2026-07-23T20:54:42Z"
+  },
   "Get-DbaLatchStatistic": {
     "flippedUtc": "2026-07-13T13:41:37Z",
     "module": "dbatools.performance",

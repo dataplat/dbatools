@@ -40,7 +40,8 @@
         'Remove-DbaDatabaseSafely',
         'Save-DbaCommunitySoftware',
         'Uninstall-DbaSqlWatch',
-        'Update-DbaMaintenanceSolution'
+        'Update-DbaMaintenanceSolution',
+        'Get-DbaLastGoodCheckDb'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

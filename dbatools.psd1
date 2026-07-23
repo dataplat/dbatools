@@ -91,7 +91,6 @@
         'Copy-DbaStartupProcedure',
         'Copy-DbaSystemDbUserObject',
         'Export-DbaInstance',
-        'Get-DbaLastGoodCheckDb',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',
