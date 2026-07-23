@@ -28,6 +28,7 @@
         'Remove-DbaTrace',
         'Start-DbaTrace',
         'Start-DbaXESession',
+        'Set-DbaXESession',
         'Stop-DbaTrace',
         'Copy-DbaXESession',
         'Export-DbaXESession',
