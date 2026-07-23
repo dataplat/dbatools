@@ -28,7 +28,8 @@
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
         'Install-DbaSqlPackage',
-        'Install-DbaSqlWatch'
+        'Install-DbaSqlWatch',
+        'Install-DbaWhoIsActive'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

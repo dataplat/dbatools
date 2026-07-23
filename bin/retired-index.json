@@ -1704,6 +1704,11 @@
     "retiredPath": "private/retired/Install-DbaSqlWatch.ps1",
     "flippedUtc": "2026-07-23T01:02:24Z"
   },
+  "Install-DbaWhoIsActive": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Install-DbaWhoIsActive.ps1",
+    "flippedUtc": "2026-07-23T01:15:23Z"
+  },
   "Invoke-DbaAdvancedInstall": {
     "flippedUtc": "2026-07-10T23:50:37Z",
     "module": "dbatools.computer",

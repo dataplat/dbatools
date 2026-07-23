@@ -110,7 +110,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Install-DbaWhoIsActive',
         'Invoke-DbaDbAzSqlTip',
         'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbccFreeCache',
