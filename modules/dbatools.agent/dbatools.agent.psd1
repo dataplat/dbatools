@@ -75,7 +75,9 @@
         'Set-DbaAgentAlert',
         'Set-DbaAgentJob',
         'Set-DbaAgentJobCategory',
-        'Set-DbaAgentJobOutputFile'
+        'Set-DbaAgentJobOutputFile',
+        'Set-DbaAgentProxy',
+        'Set-DbaAgentJobStep'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
