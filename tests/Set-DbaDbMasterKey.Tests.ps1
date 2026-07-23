@@ -51,6 +51,15 @@ Describe $CommandName -Tag IntegrationTests {
         $dbPipe2 = "dbatoolsci_mkpipe2_$random"
         $allDbs = @($dbWhatIf, $dbToggle, $dbGuard, $dbRegen, $dbPipe1, $dbPipe2)
 
+        # Only these two legs need a password-only key (no service-master-key encryptor): the WhatIf leg
+        # asserts the service-key encryption was NOT added, and the guard leg needs a key whose only
+        # encryptor is the password so that dropping it would be refused. The other databases stay in the
+        # SQL default state (encrypted by BOTH the password and the service master key) so their master
+        # keys auto-open for the add/regenerate/pipe operations - a password-only key must be opened with
+        # its current password before any add/regenerate can decrypt it, which is a server limitation, not
+        # the command's job.
+        $passwordOnlyDbs = @($dbWhatIf, $dbGuard)
+
         foreach ($dbName in $allDbs) {
             New-DbaDatabase -SqlInstance $InstanceSingle -Name $dbName
             New-DbaDbMasterKey -SqlInstance $InstanceSingle -Database $dbName -SecurePassword $mkPassword
@@ -58,15 +67,17 @@ Describe $CommandName -Tag IntegrationTests {
             # on this reused Server object (db.MasterKey stays cached null) - Get- and the command under
             # test both read db.MasterKey, so refresh the database's SMO view before either is exercised.
             $InstanceSingle.Databases[$dbName].Refresh()
-            # Normalize to a KNOWN encryption state (password only, no service-key encryption) so
-            # the toggle/guard legs are deterministic regardless of the server default. Get- reports
-            # IsEncryptedByServer reliably; the drop is raw T-SQL to avoid using the command under test in setup.
-            $mk = Get-DbaDbMasterKey -SqlInstance $InstanceSingle -Database $dbName
-            if ($mk.IsEncryptedByServer) {
-                Invoke-DbaQuery -SqlInstance $InstanceSingle -Database $dbName -Query "ALTER MASTER KEY DROP ENCRYPTION BY SERVICE MASTER KEY"
-                # The raw T-SQL drop does not update the cached SMO property bag - refresh so
-                # IsEncryptedByServer reflects the normalized (password-only) state for the tests.
-                $InstanceSingle.Databases[$dbName].Refresh()
+
+            if ($dbName -in $passwordOnlyDbs) {
+                # Get- reports IsEncryptedByServer reliably; the drop is raw T-SQL to avoid using the
+                # command under test in setup.
+                $mk = Get-DbaDbMasterKey -SqlInstance $InstanceSingle -Database $dbName
+                if ($mk.IsEncryptedByServer) {
+                    Invoke-DbaQuery -SqlInstance $InstanceSingle -Database $dbName -Query "ALTER MASTER KEY DROP ENCRYPTION BY SERVICE MASTER KEY"
+                    # The raw T-SQL drop does not update the cached SMO property bag - refresh so
+                    # IsEncryptedByServer reflects the normalized (password-only) state for the tests.
+                    $InstanceSingle.Databases[$dbName].Refresh()
+                }
             }
         }
 
