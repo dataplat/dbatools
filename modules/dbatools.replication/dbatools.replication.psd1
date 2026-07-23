@@ -36,7 +36,8 @@
         'New-DbaReplPublication',
         'New-DbaReplSubscription',
         'Remove-DbaReplArticle',
-        'Remove-DbaReplPublication'
+        'Remove-DbaReplPublication',
+        'Remove-DbaReplSubscription'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

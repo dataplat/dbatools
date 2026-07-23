@@ -106,10 +106,9 @@
         'Start-DbaMigration',
         'Sync-DbaAvailabilityGroup',
         'Test-DbaMigrationConstraint',
-        'Test-DbaReplLatency',
+        'Test-DbaReplLatency'
 
         # NEW REPLICATION STUFF
-        'Remove-DbaReplSubscription'
     )
 
     # Cmdlets to export from this module

@@ -2639,6 +2639,11 @@
     "retiredPath": "private/retired/Remove-DbaReplPublication.ps1",
     "flippedUtc": "2026-07-23T18:13:13Z"
   },
+  "Remove-DbaReplSubscription": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Remove-DbaReplSubscription.ps1",
+    "flippedUtc": "2026-07-23T18:47:54Z"
+  },
   "Remove-DbaRgResourcePool": {
     "flippedUtc": "2026-07-14T17:15:40Z",
     "module": "dbatools.performance",
