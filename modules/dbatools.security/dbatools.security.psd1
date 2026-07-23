@@ -49,6 +49,7 @@
         'Remove-DbaServerRoleMember',
         'Set-DbaServerRole',
         'Set-DbaDbMasterKey',
+        'Set-DbaDbCertificate',
         'Set-DbaDbEncryptionKey',
         'Rename-DbaLogin',
         'Stop-DbaDbEncryption',
