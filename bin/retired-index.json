@@ -2629,6 +2629,16 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaRegServerGroup.ps1"
   },
+  "Remove-DbaReplArticle": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Remove-DbaReplArticle.ps1",
+    "flippedUtc": "2026-07-23T18:12:56Z"
+  },
+  "Remove-DbaReplPublication": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Remove-DbaReplPublication.ps1",
+    "flippedUtc": "2026-07-23T18:13:13Z"
+  },
   "Remove-DbaRgResourcePool": {
     "flippedUtc": "2026-07-14T17:15:40Z",
     "module": "dbatools.performance",

@@ -109,8 +109,6 @@
         'Test-DbaReplLatency',
 
         # NEW REPLICATION STUFF
-        'Remove-DbaReplArticle',
-        'Remove-DbaReplPublication',
         'Remove-DbaReplSubscription'
     )
 
