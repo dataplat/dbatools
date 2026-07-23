@@ -19,7 +19,8 @@
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
     CmdletsToExport        = @(
-        'Get-DbaSsisExecutionHistory'
+        'Get-DbaSsisExecutionHistory',
+        'Get-DbaSsisEnvironmentVariable'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

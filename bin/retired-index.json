@@ -1544,6 +1544,11 @@
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Get-DbaSpn.ps1"
   },
+  "Get-DbaSsisEnvironmentVariable": {
+    "module": "dbatools.ssis",
+    "retiredPath": "private/retired/Get-DbaSsisEnvironmentVariable.ps1",
+    "flippedUtc": "2026-07-23T19:03:59Z"
+  },
   "Get-DbaSsisExecutionHistory": {
     "flippedUtc": "2026-07-06T12:06:00Z",
     "module": "dbatools.ssis",
