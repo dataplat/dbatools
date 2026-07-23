@@ -59,4 +59,25 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Test-DbaCmConnection -Type Wmi
         $results.ComputerName | Should -Be $env:COMPUTERNAME
     }
+
+    It "binds each piped computer to its own output record" {
+        # Two computers down the pipeline must each produce their own result carrying their
+        # own ComputerName; the implicit local-computer default must neither bleed across
+        # records nor collapse the pair into a single output.
+        $piped = @("localhost", $env:COMPUTERNAME | Test-DbaCmConnection -Type Wmi)
+        $piped.Count | Should -Be 2
+        $piped[0].ComputerName | Should -Be "localhost"
+        $piped[1].ComputerName | Should -Be $env:COMPUTERNAME
+    }
+
+    It "registers each piped computer in the connection cache in input order" {
+        # Every processed record registers its connection into the shared cache; a subsequent
+        # read returns each requested computer, in the order requested, confirming per-record
+        # registration is intact and the local-computer default did not displace them.
+        $null = "localhost", $env:COMPUTERNAME | Test-DbaCmConnection -Type Wmi
+        $cached = @(Get-DbaCmConnection -ComputerName localhost, $env:COMPUTERNAME)
+        $cached.Count | Should -Be 2
+        $cached[0].ComputerName | Should -Be "localhost"
+        $cached[1].ComputerName | Should -Be $env:COMPUTERNAME
+    }
 }
