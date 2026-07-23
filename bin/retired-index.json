@@ -2259,6 +2259,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbatoolsSupportPackage.ps1"
   },
+  "New-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/New-DbaXESession.ps1",
+    "flippedUtc": "2026-07-23T12:16:01Z"
+  },
   "Publish-DbaDacPackage": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/Publish-DbaDacPackage.ps1",

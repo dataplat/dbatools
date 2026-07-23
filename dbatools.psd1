@@ -101,7 +101,6 @@
         'New-DbaSsisCatalog',
         'Invoke-DbaDbPiiScan',
         'Measure-DbaDiskSpaceRequirement',
-        'New-DbaXESession',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
         'Remove-DbaXESession',
