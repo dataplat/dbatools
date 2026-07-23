@@ -129,6 +129,7 @@
         'New-DbaDbSynonym',
         'New-DbaDbTable',
         'New-DbaDbView',
+        'Set-DbaDbView',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
         'New-DbaDirectory',
