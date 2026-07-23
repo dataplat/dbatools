@@ -26,7 +26,8 @@
         'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
         'Install-DbaMaintenanceSolution',
-        'Install-DbaMultiTool'
+        'Install-DbaMultiTool',
+        'Install-DbaSqlPackage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

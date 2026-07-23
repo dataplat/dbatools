@@ -1689,6 +1689,11 @@
     "retiredPath": "private/retired/Install-DbaMultiTool.ps1",
     "flippedUtc": "2026-07-23T00:00:31Z"
   },
+  "Install-DbaSqlPackage": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Install-DbaSqlPackage.ps1",
+    "flippedUtc": "2026-07-23T00:35:20Z"
+  },
   "Invoke-DbaAdvancedInstall": {
     "flippedUtc": "2026-07-10T23:50:37Z",
     "module": "dbatools.computer",
@@ -1878,6 +1883,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/New-DbaAgentOperator.ps1",
     "flippedUtc": "2026-07-23T00:22:17Z"
+  },
+  "New-DbaAgentProxy": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentProxy.ps1",
+    "flippedUtc": "2026-07-23T00:28:47Z"
   },
   "New-DbaAvailabilityGroup": {
     "module": "dbatools.hadr",

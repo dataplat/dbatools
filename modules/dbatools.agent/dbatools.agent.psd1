@@ -64,7 +64,8 @@
         'Remove-DbaDbMailProfile',
         'Set-DbaAgentJobOwner',
         'Stop-DbaAgentJob',
-        'New-DbaAgentOperator'
+        'New-DbaAgentOperator',
+        'New-DbaAgentProxy'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
