@@ -2639,6 +2639,11 @@
     "retiredPath": "private/retired/Set-DbaAgentSchedule.ps1",
     "flippedUtc": "2026-07-23T04:46:35Z"
   },
+  "Set-DbaAgentServer": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentServer.ps1",
+    "flippedUtc": "2026-07-23T05:08:42Z"
+  },
   "Set-DbaAgReplica": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Set-DbaAgReplica.ps1",
@@ -2678,6 +2683,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Set-DbaDbIdentity.ps1",
     "flippedUtc": "2026-07-18T21:49:23Z"
+  },
+  "Set-DbaDbMailAccount": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaDbMailAccount.ps1",
+    "flippedUtc": "2026-07-23T05:24:03Z"
   },
   "Set-DbaDbMirror": {
     "module": "dbatools.hadr",
@@ -2913,6 +2923,11 @@
     "flippedUtc": "2026-07-18T13:23:10Z",
     "module": "dbatools.security",
     "retiredPath": "private/retired/Sync-DbaLoginPermission.ps1"
+  },
+  "Test-DbaAgentJobOwner": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Test-DbaAgentJobOwner.ps1",
+    "flippedUtc": "2026-07-23T05:12:44Z"
   },
   "Test-DbaAgPolicyState": {
     "module": "dbatools.hadr",
