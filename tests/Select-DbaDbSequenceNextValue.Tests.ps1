@@ -51,9 +51,9 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "commands work as expected" {
         It "validates required Database param" {
-            $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -ErrorVariable error -WarningAction SilentlyContinue
+            $sequenceValue = Select-DbaDbSequenceNextValue -SqlInstance $server -Sequence SequenceTest -WarningVariable sequenceWarning -WarningAction SilentlyContinue
             $sequenceValue | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
+            $sequenceWarning | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "selects the next value of a sequence" {
