@@ -146,4 +146,27 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Note | Should -Be "Disable succeded"
         }
     }
+
+    Context "When a trailing pipeline record has no input object" {
+        BeforeAll {
+            # Re-enable so the first record performs a real disable.
+            $null = Enable-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle -StartupProcedure $startupProc -Confirm:$false
+            $fixtureProc = Get-DbaStartupProcedure -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -eq $startupProcName
+
+            # The Add-Member/Select-DefaultView emit block sits OUTSIDE the inner foreach over the
+            # input objects, so a record whose input is empty still emits - re-using the previous
+            # record's stored-procedure variables. Piping the fixture procedure followed by $null
+            # drives two records: the second (empty) record re-emits the first record's procedure.
+            # A single-record leg cannot observe this cross-record behaviour.
+            $crossRecordResult = $fixtureProc, $null | Disable-DbaStartupProcedure -Confirm:$false
+        }
+
+        It "Emits one object per record, including the empty trailing record" {
+            @($crossRecordResult).Count | Should -Be 2
+        }
+
+        It "The empty trailing record re-emits the previous procedure" {
+            @($crossRecordResult).Name | Should -Be @($startupProcName, $startupProcName)
+        }
+    }
 }
