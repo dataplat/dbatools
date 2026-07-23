@@ -2249,6 +2249,11 @@
     "retiredPath": "private/retired/New-DbaReplCreationScriptOptions.ps1",
     "flippedUtc": "2026-07-23T05:34:45Z"
   },
+  "New-DbaReplPublication": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/New-DbaReplPublication.ps1",
+    "flippedUtc": "2026-07-23T17:23:37Z"
+  },
   "New-DbaRgResourcePool": {
     "flippedUtc": "2026-07-14T08:29:46Z",
     "module": "dbatools.performance",
