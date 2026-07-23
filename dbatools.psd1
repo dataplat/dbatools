@@ -115,7 +115,6 @@
         'New-DbaDbMasterKey',
         'New-DbaServerRole',
         'New-DbaXESession',
-        'Remove-DbaDatabaseSafely',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
         'Remove-DbaXESession',

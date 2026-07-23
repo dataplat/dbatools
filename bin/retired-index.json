@@ -2294,6 +2294,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Remove-DbaDatabase.ps1"
   },
+  "Remove-DbaDatabaseSafely": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Remove-DbaDatabaseSafely.ps1",
+    "flippedUtc": "2026-07-23T06:50:48Z"
+  },
   "Remove-DbaDbAsymmetricKey": {
     "flippedUtc": "2026-07-18T13:18:40Z",
     "module": "dbatools.security",
