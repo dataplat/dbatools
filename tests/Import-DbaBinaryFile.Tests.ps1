@@ -218,4 +218,46 @@ Describe $CommandName -Tag IntegrationTests {
             $rows[0].Sha | Should -Be (Get-FileHash -Path $sourceFile -Algorithm SHA256).Hash
         }
     }
+
+    Context "Cross-record statement persistence on a multi-table pipe" {
+        # $Statement and the auto-detected $FileNameColumn/$BinaryColumn are NON-pipeline parameters
+        # that the process block reassigns. PowerShell keeps a reassigned non-pipeline parameter value
+        # across process iterations, so once the FIRST piped table builds its INSERT the value persists
+        # to every later piped table and the if (-not $Statement) build block is skipped. The command
+        # therefore reuses the first table's INSERT for the rest of the pipe: the file lands in the
+        # first table again instead of the second. This pins that behavior so a rewrite cannot silently
+        # change it.
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $firstTable = "CarryFirst"
+            $secondTable = "CarrySecond"
+            $splatTwoTables = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $db
+                Query       = "CREATE TABLE dbo.$firstTable ([FileName] NVARCHAR(500) NULL, [TheFile] VARBINARY(MAX) NULL); CREATE TABLE dbo.$secondTable ([FileName] NVARCHAR(500) NULL, [TheFile] VARBINARY(MAX) NULL)"
+            }
+            $null = Invoke-DbaQuery @splatTwoTables
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Reuses the first piped table's INSERT for later tables, so the file lands in the first table twice" {
+            # Fetch the two tables and pipe them in a fixed order so the first record is deterministic,
+            # then import one file. Faithful behavior: both records reuse the first table's INSERT, so
+            # the first table receives two rows and the second receives none.
+            $tableOne = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $db -Table $firstTable
+            $tableTwo = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $db -Table $secondTable
+            $result = @($tableOne, $tableTwo | Import-DbaBinaryFile -FilePath $sourceFile -Confirm:$false)
+            $result.Count | Should -Be 2
+
+            $splatCount = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $db
+                As          = "PSObject"
+            }
+            $firstCount = (Invoke-DbaQuery @splatCount -Query "SELECT COUNT(*) AS Total FROM dbo.$firstTable").Total
+            $secondCount = (Invoke-DbaQuery @splatCount -Query "SELECT COUNT(*) AS Total FROM dbo.$secondTable").Total
+            $firstCount | Should -Be 2
+            $secondCount | Should -Be 0
+        }
+    }
 }
