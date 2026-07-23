@@ -126,7 +126,6 @@
         'Remove-DbaDbSynonym',
         'Remove-DbaXESession',
         'Resume-DbaAgDbDataMovement',
-        'Set-DbaAgentAlert',
         'Set-DbaAgentJob',
         'Set-DbaAgentJobCategory',
         'Set-DbaAgentJobOutputFile',

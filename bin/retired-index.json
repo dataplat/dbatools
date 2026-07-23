@@ -2569,6 +2569,11 @@
     "retiredPath": "private/retired/Select-DbaDbSequenceNextValue.ps1",
     "flippedUtc": "2026-07-18T22:01:35Z"
   },
+  "Set-DbaAgentAlert": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentAlert.ps1",
+    "flippedUtc": "2026-07-23T02:04:26Z"
+  },
   "Set-DbaAgentJobOwner": {
     "flippedUtc": "2026-07-18T05:38:55Z",
     "module": "dbatools.agent",

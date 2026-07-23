@@ -71,7 +71,8 @@
         'New-DbaDbMailProfile',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobSchedule',
-        'Remove-DbaAgentJobStep'
+        'Remove-DbaAgentJobStep',
+        'Set-DbaAgentAlert'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
