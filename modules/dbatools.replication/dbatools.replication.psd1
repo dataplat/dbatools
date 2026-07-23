@@ -21,7 +21,8 @@
     CmdletsToExport        = @(
         'Get-DbaReplDistributor',
         'Get-DbaReplPublisher',
-        'New-DbaReplCreationScriptOptions'
+        'New-DbaReplCreationScriptOptions',
+        'Add-DbaReplArticle'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

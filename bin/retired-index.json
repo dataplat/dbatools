@@ -59,6 +59,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Add-DbaRegServerGroup.ps1"
   },
+  "Add-DbaReplArticle": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Add-DbaReplArticle.ps1",
+    "flippedUtc": "2026-07-23T10:23:20Z"
+  },
   "Add-DbaServerRoleMember": {
     "flippedUtc": "2026-07-17T10:15:55Z",
     "module": "dbatools.security",
@@ -2048,6 +2053,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/New-DbaDbDataGeneratorConfig.ps1",
     "flippedUtc": "2026-07-18T21:22:38Z"
+  },
+  "New-DbaDbEncryptionKey": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaDbEncryptionKey.ps1",
+    "flippedUtc": "2026-07-23T10:24:09Z"
   },
   "New-DbaDbFileGroup": {
     "module": "dbatools.database",
