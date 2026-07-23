@@ -160,7 +160,8 @@
         'New-DbaDacOption',
         'New-DbaDacPackage',
         'Publish-DbaDacPackage',
-        'Test-DbaDbDataMaskingConfig'
+        'Test-DbaDbDataMaskingConfig',
+        'Test-DbaIdentityUsage'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -37,7 +37,8 @@
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaWhoIsActive',
-        'Remove-DbaDatabaseSafely'
+        'Remove-DbaDatabaseSafely',
+        'Save-DbaCommunitySoftware'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -2589,6 +2589,11 @@
     "retiredPath": "private/retired/Revoke-DbaAgPermission.ps1",
     "flippedUtc": "2026-07-19T09:34:28Z"
   },
+  "Save-DbaCommunitySoftware": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Save-DbaCommunitySoftware.ps1",
+    "flippedUtc": "2026-07-23T08:38:04Z"
+  },
   "Save-DbaDiagnosticQueryScript": {
     "flippedUtc": "2026-07-14T17:42:34Z",
     "module": "dbatools.performance",
@@ -3058,6 +3063,11 @@
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Test-DbaEndpoint.ps1",
     "flippedUtc": "2026-07-19T14:42:00Z"
+  },
+  "Test-DbaIdentityUsage": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Test-DbaIdentityUsage.ps1",
+    "flippedUtc": "2026-07-23T08:49:44Z"
   },
   "Test-DbaInstanceName": {
     "flippedUtc": "2026-07-17T09:15:31Z",

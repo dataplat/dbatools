@@ -125,11 +125,9 @@
         'Start-DbaMigration',
         'Stop-DbaXESession',
         'Sync-DbaAvailabilityGroup',
-        'Test-DbaIdentityUsage',
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',
         'Uninstall-DbaSqlWatch',
-        'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
 
         # NEW REPLICATION STUFF
