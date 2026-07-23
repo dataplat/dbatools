@@ -110,7 +110,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaDbPiiScan',
         'Invoke-DbaWhoIsActive',
         'Measure-DbaDiskSpaceRequirement',
