@@ -70,6 +70,7 @@
         'New-DbaDbCertificate',
         'New-DbaLogin',
         'New-DbaInstanceAudit',
+        'Remove-DbaInstanceAudit',
         'Set-DbaInstanceAudit'
     )
     VariablesToExport      = @()
