@@ -20,7 +20,8 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Get-DbaReplDistributor',
-        'Get-DbaReplPublisher'
+        'Get-DbaReplPublisher',
+        'New-DbaReplCreationScriptOptions'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

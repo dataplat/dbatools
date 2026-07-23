@@ -146,7 +146,6 @@
         'Remove-DbaReplPublication',
         'New-DbaReplSubscription',
         'Remove-DbaReplSubscription',
-        'New-DbaReplCreationScriptOptions',
         'Get-DbaReplSubscription'
     )
 
