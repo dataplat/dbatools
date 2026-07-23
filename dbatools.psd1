@@ -94,7 +94,6 @@
         'Export-DbaInstance',
         'Get-DbaDbEncryption',
         'Get-DbaLastGoodCheckDb',
-        'Get-DbaReplPublication',
         'Get-DbaReplServer',
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',

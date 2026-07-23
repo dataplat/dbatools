@@ -1454,6 +1454,11 @@
     "module": "dbatools.replication",
     "retiredPath": "private/retired/Get-DbaReplDistributor.ps1"
   },
+  "Get-DbaReplPublication": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Get-DbaReplPublication.ps1",
+    "flippedUtc": "2026-07-23T12:27:04Z"
+  },
   "Get-DbaReplPublisher": {
     "flippedUtc": "2026-07-06T14:31:03Z",
     "module": "dbatools.replication",

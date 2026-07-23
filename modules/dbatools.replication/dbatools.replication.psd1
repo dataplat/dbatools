@@ -29,7 +29,8 @@
         'Enable-DbaReplPublishing',
         'Export-DbaReplServerSetting',
         'Get-DbaReplArticle',
-        'Get-DbaReplArticleColumn'
+        'Get-DbaReplArticleColumn',
+        'Get-DbaReplPublication'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
