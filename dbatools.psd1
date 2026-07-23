@@ -121,7 +121,6 @@
         'Invoke-DbaDbPiiScan',
         'Invoke-DbaWhoIsActive',
         'Measure-DbaDiskSpaceRequirement',
-        'New-DbaDbMailAccount',
         'New-DbaDbMailProfile',
         'New-DbaDbMasterKey',
         'New-DbaServerRole',

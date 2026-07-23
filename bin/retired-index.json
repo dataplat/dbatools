@@ -1989,6 +1989,11 @@
     "retiredPath": "private/retired/New-DbaDbFileGroup.ps1",
     "flippedUtc": "2026-07-18T21:25:26Z"
   },
+  "New-DbaDbMailAccount": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaDbMailAccount.ps1",
+    "flippedUtc": "2026-07-23T00:57:05Z"
+  },
   "New-DbaDbMaskingConfig": {
     "module": "dbatools.database",
     "retiredPath": "private/retired/New-DbaDbMaskingConfig.ps1",
