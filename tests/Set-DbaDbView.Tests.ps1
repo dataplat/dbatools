@@ -38,7 +38,8 @@ Describe $CommandName -Tag IntegrationTests {
         $dbBasic = "dbatoolsci_setview_$random"
         $dbPipe1 = "dbatoolsci_setview_p1_$random"
         $dbPipe2 = "dbatoolsci_setview_p2_$random"
-        $allDatabases = @($dbBasic, $dbPipe1, $dbPipe2)
+        $dbGuard = "dbatoolsci_setview_guard_$random"
+        $allDatabases = @($dbBasic, $dbPipe1, $dbPipe2, $dbGuard)
         $null = New-DbaDatabase -SqlInstance $InstanceSingle -Name $allDatabases
 
         # Seed the views the tests will alter. Each starts as "SELECT 1 AS x".
@@ -110,6 +111,45 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Measure-Object).Count | Should -Be 2
             (Invoke-DbaQuery -SqlInstance $InstanceSingle -Database $dbPipe1 -Query "SELECT seven FROM dbo.vPipe").seven | Should -Be 7
             (Invoke-DbaQuery -SqlInstance $InstanceSingle -Database $dbPipe2 -Query "SELECT seven FROM dbo.vPipe").seven | Should -Be 7
+        }
+    }
+
+    Context "Target requirement" {
+        It "Refuses an unfiltered instance-wide alter and changes nothing" {
+            # A call with -SqlInstance but neither -View nor -InputObject must not silently rewrite every view in
+            # the database. The guard refuses it; the distinguishing assertion is that an unrelated seeded view in
+            # the target database was NOT mass-altered - without the guard it would have become "SELECT 999 AS mass".
+            $splatUnfiltered = @{
+                SqlInstance     = $InstanceSingle
+                Database        = $dbGuard
+                Definition      = "SELECT 999 AS mass"
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                WarningVariable = "warnTarget"
+            }
+            $results = Set-DbaDbView @splatUnfiltered
+            $warnTarget | Should -BeLike "*You must specify the target view*"
+            $results | Should -BeNullOrEmpty
+            # The seeded body still resolves and the mass column never existed.
+            $untouched = Invoke-DbaQuery -SqlInstance $InstanceSingle -Database $dbGuard -Query "SELECT x FROM dbo.vWhatIf"
+            $untouched.x | Should -Be 1
+        }
+
+        It "Refuses to alter a system view" {
+            # System views are refused unconditionally (no -Force). Pipe one in so the target guard is satisfied
+            # and the system-object guard is the leg under test. The system view is sourced from the test's own
+            # database (every database exposes INFORMATION_SCHEMA views) so the leg stays hermetic.
+            $systemView = Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbGuard |
+                Where-Object IsSystemObject | Select-Object -First 1
+            $splatSystem = @{
+                Definition      = "SELECT 1 AS x"
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                WarningVariable = "warnSystem"
+            }
+            $results = $systemView | Set-DbaDbView @splatSystem
+            $warnSystem | Should -BeLike "*is a system object and will not be altered*"
+            $results | Should -BeNullOrEmpty
         }
     }
 
