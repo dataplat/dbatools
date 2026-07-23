@@ -1484,6 +1484,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaSuspectPage.ps1"
   },
+  "Get-DbaTcpPort": {
+    "module": "dbatools.core",
+    "retiredPath": "private/retired/Get-DbaTcpPort.ps1",
+    "flippedUtc": "2026-07-23T00:48:44Z"
+  },
   "Get-DbaTempdbUsage": {
     "flippedUtc": "2026-07-13T18:56:40Z",
     "module": "dbatools.performance",
@@ -1888,6 +1893,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/New-DbaAgentProxy.ps1",
     "flippedUtc": "2026-07-23T00:28:47Z"
+  },
+  "New-DbaAgentSchedule": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/New-DbaAgentSchedule.ps1",
+    "flippedUtc": "2026-07-23T00:50:44Z"
   },
   "New-DbaAvailabilityGroup": {
     "module": "dbatools.hadr",
