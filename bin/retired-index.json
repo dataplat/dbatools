@@ -1559,6 +1559,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Get-DbaUptime.ps1"
   },
+  "Get-DbaUserPermission": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaUserPermission.ps1",
+    "flippedUtc": "2026-07-23T10:18:17Z"
+  },
   "Get-DbaWaitingTask": {
     "flippedUtc": "2026-07-13T20:03:38Z",
     "module": "dbatools.performance",

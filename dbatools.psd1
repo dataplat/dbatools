@@ -101,7 +101,6 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
-        'Get-DbaUserPermission',
         'Get-DbaXEObject',
         'Get-DbaXESession',
         'Get-DbaXESessionTarget',
