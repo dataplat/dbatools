@@ -39,7 +39,15 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1, $db2
         Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db1, $db2 | Remove-DbaDatabase
         $server.Query("CREATE DATABASE $db1")
-        $server.Query("ALTER DATABASE $db1 MODIFY FILE ( NAME = N'$($db1)_log', SIZE = 13312KB )")
+        # Grow the log by a fixed delta from its live size rather than shrinking to a fixed target.
+        # A fixed small target (the old 13312KB) is unreachable on SQL 2022's 72MB default log, and
+        # MODIFY FILE cannot shrink below the current size. Growing works on any SQL default. This
+        # grown size is the snapshot-time log size; Restore-DbaDbSnapshot reverts the log to it, and
+        # the "Honors the Snapshot parameter" test asserts against $db1LogSizeTarget.
+        $server.Databases.Refresh()
+        $db1LogSizeStart = [int]$server.Databases[$db1].LogFiles[0].Size
+        $db1LogSizeTarget = $db1LogSizeStart + 16384
+        $server.Query("ALTER DATABASE $db1 MODIFY FILE ( NAME = N'$($db1)_log', SIZE = $($db1LogSizeTarget)KB )")
         $server.Query("CREATE DATABASE $db2")
         $server.Query("CREATE TABLE [$db1].[dbo].[Example] (id int identity, name nvarchar(max))")
         $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample')")
@@ -95,17 +103,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Honors the Snapshot parameter" {
+            # Capture the log size at snapshot time (nothing changes it between the BeforeEach
+            # snapshot and this revert). Restore-DbaDbSnapshot must return the log to this size;
+            # capturing it live keeps the assertion correct regardless of what an earlier test in
+            # this Context left the log at (an earlier revert can reset it off the BeforeAll grow).
+            $server.Databases[$db1].Refresh()
+            $server.Databases[$db1].LogFiles.Refresh()
+            $db1LogSizeAtSnapshot = [int]$server.Databases[$db1].LogFiles[0].Size
+
             $result = Restore-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Snapshot $db1_snap1 -EnableException -Force
             $result.Name | Should -Be $db1
             $result.Status | Should -Be "Normal"
 
-            # the other snapshot has been dropped
+            # restoring from a specific snapshot drops the OTHER snapshots of the same database but
+            # leaves the one restored from, so exactly $db1_snap1 remains
             $result = Get-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db1
             $result.SnapshotOf | Should -Be $db1
-            $result.Database.Name | Should -Be $db1_snap
+            $result.Name | Should -Be $db1_snap1
 
-            # the log size has been restored to the correct size
-            $server.databases[$db1].Logfiles.Size | Should -Be 13312
+            # the log size has been restored to the snapshot-time size (Restore-DbaDbSnapshot fixes
+            # the SQL Server bug that resets log growth settings during a snapshot restore)
+            $server.Databases[$db1].Refresh()
+            $server.Databases[$db1].LogFiles.Refresh()
+            [int]$server.Databases[$db1].LogFiles[0].Size | Should -Be $db1LogSizeAtSnapshot
         }
 
         It "Stops if multiple snapshot for the same db are passed" {
