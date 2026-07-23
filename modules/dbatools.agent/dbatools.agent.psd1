@@ -72,7 +72,8 @@
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
-        'Set-DbaAgentAlert'
+        'Set-DbaAgentAlert',
+        'Set-DbaAgentJob'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

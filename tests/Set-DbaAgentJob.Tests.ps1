@@ -155,4 +155,37 @@ Describe $CommandName -Tag IntegrationTests {
             $warn -join " " | Should -Match "Use -Force to create"
         }
     }
+
+    Context "Cross-record interrupt" {
+        It "Skips later piped jobs once an unknown category without -Force interrupts" {
+            # The unknown-category-without-Force branch is a non-Continue Stop-Function that sets the
+            # function-scope interrupt; process entry checks it. Piping two jobs, only the first is
+            # examined and warns - the second is short-circuited. Exactly one "Use -Force" warning
+            # proves the interrupt carries across pipeline records, not just within one.
+            $splatNew = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                EnableException = $true
+            }
+            $catJob1 = "dbatoolsci_catint1_$(Get-Random)"
+            $catJob2 = "dbatoolsci_catint2_$(Get-Random)"
+            $null = New-DbaAgentJob @splatNew -Job $catJob1
+            $null = New-DbaAgentJob @splatNew -Job $catJob2
+            try {
+                $splatGet = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Job         = @($catJob1, $catJob2)
+                }
+                Get-DbaAgentJob @splatGet |
+                    Set-DbaAgentJob -Category "dbatoolsci_nocat_$(Get-Random)" -WarningAction SilentlyContinue -WarningVariable warn 3> $null
+                ($warn | Where-Object { $PSItem -match "Use -Force to create" }).Count | Should -Be 1
+            } finally {
+                $splatCleanup = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Job         = @($catJob1, $catJob2)
+                    ErrorAction = "SilentlyContinue"
+                }
+                Get-DbaAgentJob @splatCleanup | Remove-DbaAgentJob -ErrorAction SilentlyContinue
+            }
+        }
+    }
 }
