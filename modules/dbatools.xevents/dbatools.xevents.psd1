@@ -42,7 +42,8 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'New-DbaXESession'
+        'New-DbaXESession',
+        'Remove-DbaXESession'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

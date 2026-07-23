@@ -103,7 +103,6 @@
         'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
-        'Remove-DbaXESession',
         'Resume-DbaAgDbDataMovement',
         'Set-DbaAgListener',
         'Set-DbaDbCompression',

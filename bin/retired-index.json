@@ -2624,6 +2624,11 @@
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Remove-DbaTrace.ps1"
   },
+  "Remove-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Remove-DbaXESession.ps1",
+    "flippedUtc": "2026-07-23T12:20:03Z"
+  },
   "Rename-DbaDatabase": {
     "flippedUtc": "2026-07-16T18:33:14Z",
     "module": "dbatools.core",
