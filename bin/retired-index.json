@@ -1769,6 +1769,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbDataMasking.ps1",
     "flippedUtc": "2026-07-20T08:42:04Z"
   },
+  "Invoke-DbaDbDbccCheckConstraint": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaDbDbccCheckConstraint.ps1",
+    "flippedUtc": "2026-07-23T03:49:47Z"
+  },
   "Invoke-DbaDbDecryptObject": {
     "flippedUtc": "2026-07-18T15:16:45Z",
     "module": "dbatools.database",
@@ -2608,6 +2613,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Set-DbaAgentJobStep.ps1",
     "flippedUtc": "2026-07-23T02:56:29Z"
+  },
+  "Set-DbaAgentOperator": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentOperator.ps1",
+    "flippedUtc": "2026-07-23T03:35:32Z"
   },
   "Set-DbaAgReplica": {
     "module": "dbatools.hadr",

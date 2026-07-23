@@ -110,7 +110,6 @@
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
-        'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaDbPiiScan',
@@ -139,7 +138,6 @@
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',
         'Uninstall-DbaSqlWatch',
-        'Set-DbaAgentOperator',
         'Save-DbaCommunitySoftware',
         'Update-DbaMaintenanceSolution',
 
