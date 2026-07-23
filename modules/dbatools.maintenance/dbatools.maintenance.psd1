@@ -29,7 +29,8 @@
         'Install-DbaMultiTool',
         'Install-DbaSqlPackage',
         'Install-DbaSqlWatch',
-        'Install-DbaWhoIsActive'
+        'Install-DbaWhoIsActive',
+        'Invoke-DbaDbAzSqlTip'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

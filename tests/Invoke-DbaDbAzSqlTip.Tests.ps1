@@ -28,6 +28,13 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Input validation" {
+        It "Throws when no database scope is specified" {
+            { Invoke-DbaDbAzSqlTip -SqlInstance NotConnected -EnableException -WarningAction SilentlyContinue } |
+                Should -Throw -ExpectedMessage "*You must specify databases*"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "failstoooften") {
