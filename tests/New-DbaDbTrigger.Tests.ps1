@@ -125,6 +125,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Scope requirement" {
+        It "Refuses an unscoped instance-wide create and touches no database" {
+            # A call with -SqlInstance but neither -Database nor -InputObject must not deploy the trigger into
+            # every database (master, msdb, and model - which would propagate to all future databases). The guard
+            # refuses it; the distinguishing assertion is that model and master carry no such trigger afterwards.
+            $splatUnscoped = @{
+                SqlInstance     = $InstanceSingle
+                Name            = "trUnscoped_$random"
+                Definition      = $triggerBody
+                DdlEvent        = "CreateTable"
+                Confirm         = $false
+                WarningAction   = "SilentlyContinue"
+                WarningVariable = "warnScope"
+            }
+            $results = New-DbaDbTrigger @splatUnscoped
+            $warnScope | Should -BeLike "*You must specify the target database*"
+            $results | Should -BeNullOrEmpty
+            # Nothing was created in the system databases the unscoped path would have walked.
+            (Get-DbaDbTrigger -SqlInstance $InstanceSingle -Database model | Where-Object Name -eq "trUnscoped_$random") | Should -BeNullOrEmpty
+            (Get-DbaDbTrigger -SqlInstance $InstanceSingle -Database master | Where-Object Name -eq "trUnscoped_$random") | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Failure paths" {
         It "Requires either -SqlInstance or an input object" {
             $splatNeither = @{
