@@ -78,7 +78,8 @@
         'Get-DbaPermission',
         'Get-DbaServerRole',
         'Get-DbaServerRoleMember',
-        'Get-DbaUserPermission'
+        'Get-DbaUserPermission',
+        'New-DbaDbEncryptionKey'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
