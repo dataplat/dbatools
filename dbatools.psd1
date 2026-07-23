@@ -121,7 +121,6 @@
         'New-DbaDbMasterKey',
         'New-DbaServerRole',
         'New-DbaXESession',
-        'Remove-DbaAgentJobStep',
         'Remove-DbaDatabaseSafely',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',

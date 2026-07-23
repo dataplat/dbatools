@@ -2189,6 +2189,11 @@
     "retiredPath": "private/retired/Remove-DbaAgentJobSchedule.ps1",
     "flippedUtc": "2026-07-23T01:31:26Z"
   },
+  "Remove-DbaAgentJobStep": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentJobStep.ps1",
+    "flippedUtc": "2026-07-23T01:56:41Z"
+  },
   "Remove-DbaAgentOperator": {
     "flippedUtc": "2026-07-18T05:37:36Z",
     "module": "dbatools.agent",
