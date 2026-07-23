@@ -33,7 +33,8 @@
         'Invoke-DbaDbAzSqlTip',
         'Invoke-DbaDbccDropCleanBuffer',
         'Invoke-DbaDbccFreeCache',
-        'Invoke-DbaDbDbccCheckConstraint'
+        'Invoke-DbaDbDbccCheckConstraint',
+        'Invoke-DbaDbDbccCleanTable'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

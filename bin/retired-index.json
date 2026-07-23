@@ -1774,6 +1774,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbDbccCheckConstraint.ps1",
     "flippedUtc": "2026-07-23T03:49:47Z"
   },
+  "Invoke-DbaDbDbccCleanTable": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaDbDbccCleanTable.ps1",
+    "flippedUtc": "2026-07-23T04:07:11Z"
+  },
   "Invoke-DbaDbDecryptObject": {
     "flippedUtc": "2026-07-18T15:16:45Z",
     "module": "dbatools.database",
