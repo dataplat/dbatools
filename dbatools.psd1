@@ -108,7 +108,6 @@
         'Set-DbaDbCompression',
         'Set-DbaNetworkCertificate',
         'Start-DbaMigration',
-        'Stop-DbaXESession',
         'Sync-DbaAvailabilityGroup',
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',

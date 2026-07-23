@@ -3039,6 +3039,11 @@
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Stop-DbaTrace.ps1"
   },
+  "Stop-DbaXESession": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Stop-DbaXESession.ps1",
+    "flippedUtc": "2026-07-23T12:22:27Z"
+  },
   "Suspend-DbaAgDbDataMovement": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Suspend-DbaAgDbDataMovement.ps1",
