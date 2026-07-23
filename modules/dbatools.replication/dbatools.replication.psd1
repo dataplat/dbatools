@@ -31,7 +31,8 @@
         'Get-DbaReplArticle',
         'Get-DbaReplArticleColumn',
         'Get-DbaReplPublication',
-        'Get-DbaReplServer'
+        'Get-DbaReplServer',
+        'Get-DbaReplSubscription'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -115,8 +115,7 @@
         'Remove-DbaReplArticle',
         'Remove-DbaReplPublication',
         'New-DbaReplSubscription',
-        'Remove-DbaReplSubscription',
-        'Get-DbaReplSubscription'
+        'Remove-DbaReplSubscription'
     )
 
     # Cmdlets to export from this module
