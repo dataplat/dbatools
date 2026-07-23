@@ -100,7 +100,6 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
-        'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
         'Get-DbaXEStore',
         'Invoke-DbaDbPiiScan',

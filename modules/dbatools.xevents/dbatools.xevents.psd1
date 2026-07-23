@@ -38,7 +38,8 @@
         'Watch-DbaXESession',
         'Get-DbaXESessionTemplate',
         'Get-DbaXEObject',
-        'Get-DbaXESession'
+        'Get-DbaXESession',
+        'Get-DbaXESessionTarget'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
