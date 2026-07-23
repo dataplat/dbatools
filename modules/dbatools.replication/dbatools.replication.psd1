@@ -23,7 +23,8 @@
         'Get-DbaReplPublisher',
         'New-DbaReplCreationScriptOptions',
         'Add-DbaReplArticle',
-        'Disable-DbaReplDistributor'
+        'Disable-DbaReplDistributor',
+        'Disable-DbaReplPublishing'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
