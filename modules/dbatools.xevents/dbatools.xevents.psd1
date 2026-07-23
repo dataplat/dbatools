@@ -36,7 +36,8 @@
         'Invoke-DbaXEReplay',
         'Read-DbaTraceFile',
         'Watch-DbaXESession',
-        'Get-DbaXESessionTemplate'
+        'Get-DbaXESessionTemplate',
+        'Get-DbaXEObject'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

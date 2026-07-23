@@ -100,7 +100,6 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
         'New-DbaSsisCatalog',
-        'Get-DbaXEObject',
         'Get-DbaXESession',
         'Get-DbaXESessionTarget',
         'Get-DbaXESessionTargetFile',
@@ -123,7 +122,6 @@
 
         # NEW REPLICATION STUFF
         'Enable-DbaReplDistributor',
-        'Disable-DbaReplPublishing',
         'Enable-DbaReplPublishing',
         'New-DbaReplPublication',
         'Get-DbaReplArticle',

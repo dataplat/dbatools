@@ -259,6 +259,11 @@
     "retiredPath": "private/retired/Disable-DbaReplDistributor.ps1",
     "flippedUtc": "2026-07-23T11:03:54Z"
   },
+  "Disable-DbaReplPublishing": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Disable-DbaReplPublishing.ps1",
+    "flippedUtc": "2026-07-23T11:14:08Z"
+  },
   "Disable-DbaStartupProcedure": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Disable-DbaStartupProcedure.ps1",
@@ -1648,6 +1653,11 @@
     "flippedUtc": "2026-07-06T22:25:53Z",
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Get-DbaWsfcSharedVolume.ps1"
+  },
+  "Get-DbaXEObject": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Get-DbaXEObject.ps1",
+    "flippedUtc": "2026-07-23T11:15:07Z"
   },
   "Get-DbaXESessionTemplate": {
     "flippedUtc": "2026-07-18T17:35:55Z",
