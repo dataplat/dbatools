@@ -65,4 +65,53 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name | Should -Be "CategoryTest2"
         }
     }
+
+    Context "Begin guard and WhatIf" {
+        It "Halts every record when several categories are renamed to one name" {
+            # The begin block's many-to-one guard is a non-Continue Stop-Function that sets the
+            # function-scope interrupt; every process record then short-circuits at Test-FunctionInterrupt.
+            # So the rename never runs and both source categories keep their names - proving the begin
+            # interrupt carries into the process records.
+            $splatNew = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                EnableException = $true
+            }
+            $catA = "dbatoolsci_guardA_$(Get-Random)"
+            $catB = "dbatoolsci_guardB_$(Get-Random)"
+            $null = New-DbaAgentJobCategory @splatNew -Category $catA
+            $null = New-DbaAgentJobCategory @splatNew -Category $catB
+            try {
+                $splatMany = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Category        = @($catA, $catB)
+                    NewName         = "dbatoolsci_guardOne_$(Get-Random)"
+                    WarningAction   = "SilentlyContinue"
+                    WarningVariable = "warn"
+                }
+                Set-DbaAgentJobCategory @splatMany 3> $null
+                $warn -join " " | Should -Match "cannot rename multiple"
+                (Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $catA).Name | Should -Be $catA
+                (Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $catB).Name | Should -Be $catB
+            } finally {
+                Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category @($catA, $catB) -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Does not rename under -WhatIf" {
+            $splatNew = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                EnableException = $true
+            }
+            $catSrc = "dbatoolsci_wifsrc_$(Get-Random)"
+            $catDst = "dbatoolsci_wifdst_$(Get-Random)"
+            $null = New-DbaAgentJobCategory @splatNew -Category $catSrc
+            try {
+                Set-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $catSrc -NewName $catDst -WhatIf
+                (Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $catSrc).Name | Should -Be $catSrc
+                Get-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category $catDst -WarningAction SilentlyContinue | Should -BeNullOrEmpty
+            } finally {
+                Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceSingle -Category @($catSrc, $catDst) -ErrorAction SilentlyContinue
+            }
+        }
+    }
 }
