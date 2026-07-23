@@ -165,6 +165,7 @@ $splat = @{
 2. **Use approved verbs** - Get, Set, New, Remove, Invoke, etc.
 3. **Follow `<Verb>-Dba<Noun>` pattern**
 4. **Include Claude as author** - List "the dbatools team + Claude" in .NOTES when creating commands
+5. **No `-Detailed`/`-Simple` output mode switches**
 
 ### Command Registration
 
@@ -201,37 +202,3 @@ Key points:
 - ALWAYS update parameter validation tests when parameters change
 - Add 1-3 focused tests for new functionality
 - Use EnableException in BeforeAll/AfterAll blocks
-
-## VERIFICATION CHECKLIST
-
-**Syntax and Style:**
-- [ ] No backticks for line continuation
-- [ ] No `= $true` in parameter attributes
-- [ ] No `::new()` syntax (PowerShell v3 compatible)
-- [ ] Splats for 3+ parameters with `$splat<Purpose>` naming
-- [ ] Hashtables perfectly aligned
-- [ ] Double quotes for strings
-- [ ] All comments preserved
-
-**dbatools Patterns:**
-- [ ] SMO used first, T-SQL only when appropriate
-- [ ] Pipeline output emitted immediately
-- [ ] No `-Detailed`/`-Simple` output mode switches
-- [ ] Command names use singular nouns
-
-**Command Registration (if adding new commands):**
-- [ ] Added to dbatools.psd1 FunctionsToExport
-- [ ] Added to dbatools.psm1 Export-ModuleMember
-- [ ] Author includes "the dbatools team + Claude"
-
-## SUMMARY - THE GOLDEN RULES
-
-1. **NEVER use backticks** - Use splats for 3+ parameters
-2. **NEVER use `= $true` in attributes** - Use `[Parameter(Mandatory)]`
-3. **NEVER use `::new()`** - Use `New-Object` for PowerShell v3
-4. **NEVER collect pipeline output** - Emit objects immediately
-5. **ALWAYS prefer SMO first** - T-SQL only when needed
-6. **ALWAYS align hashtables** - Equals signs line up vertically
-7. **ALWAYS preserve comments** - Every comment stays exactly as written
-8. **ALWAYS use double quotes** - SQL Server module standard
-9. **ALWAYS register new commands** - Both dbatools.psd1 and dbatools.psm1
