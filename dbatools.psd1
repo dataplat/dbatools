@@ -122,7 +122,6 @@
         'New-DbaDbMasterKey',
         'New-DbaServerRole',
         'New-DbaXESession',
-        'Remove-DbaAgentJob',
         'Remove-DbaAgentJobSchedule',
         'Remove-DbaAgentJobStep',
         'Remove-DbaDatabaseSafely',

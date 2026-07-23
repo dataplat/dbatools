@@ -2169,6 +2169,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Remove-DbaAgentAlertCategory.ps1"
   },
+  "Remove-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Remove-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-23T01:24:50Z"
+  },
   "Remove-DbaAgentJobCategory": {
     "flippedUtc": "2026-07-18T05:37:22Z",
     "module": "dbatools.agent",
