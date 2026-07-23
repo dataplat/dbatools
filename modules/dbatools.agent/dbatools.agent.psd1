@@ -65,7 +65,8 @@
         'Set-DbaAgentJobOwner',
         'Stop-DbaAgentJob',
         'New-DbaAgentOperator',
-        'New-DbaAgentProxy'
+        'New-DbaAgentProxy',
+        'New-DbaAgentSchedule'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
