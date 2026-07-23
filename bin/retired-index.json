@@ -1849,6 +1849,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Invoke-DbatoolsRenameHelper.ps1"
   },
+  "Invoke-DbaWhoIsActive": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaWhoIsActive.ps1",
+    "flippedUtc": "2026-07-23T04:52:06Z"
+  },
   "Invoke-DbaXEReplay": {
     "flippedUtc": "2026-07-18T15:22:15Z",
     "module": "dbatools.xevents",
@@ -2628,6 +2633,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Set-DbaAgentOperator.ps1",
     "flippedUtc": "2026-07-23T03:35:32Z"
+  },
+  "Set-DbaAgentSchedule": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentSchedule.ps1",
+    "flippedUtc": "2026-07-23T04:46:35Z"
   },
   "Set-DbaAgReplica": {
     "module": "dbatools.hadr",

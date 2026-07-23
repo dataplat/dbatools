@@ -35,7 +35,8 @@
         'Invoke-DbaDbccFreeCache',
         'Invoke-DbaDbDbccCheckConstraint',
         'Invoke-DbaDbDbccCleanTable',
-        'Invoke-DbaDbDbccUpdateUsage'
+        'Invoke-DbaDbDbccUpdateUsage',
+        'Invoke-DbaWhoIsActive'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
