@@ -21,3 +21,28 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+# Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1
+
+Describe $CommandName -Tag IntegrationTests {
+    # NOTE ON COVERAGE: actually enabling publishing requires the native RMO replication libraries
+    # and an instance already configured as a distributor, which the GitHub Actions replication
+    # harness provides (gh-actions-repl-*) - that live DistributionPublisher.Create leg is
+    # DEFERRED-TO-GATE. What IS characterizable on a plain instance that is not a distributor is the
+    # branch the source takes first: it connects, reads the ReplicationServer's IsDistributor flag,
+    # finds it false, and raises "isn't currently enabled for distributing. Please enable that
+    # first." via Stop-Function. That single leg exercises the module hop, the live connection, the
+    # Get-DbaReplServer lookup, the IsDistributor guard, and the warning surface end to end.
+    Context "Guarding an instance that is not a distributor" {
+        It "Warns that the instance isn't currently enabled for distributing" {
+            $splatEnable = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                WarningVariable = "distWarn"
+                WarningAction   = "SilentlyContinue"
+                Confirm         = $false
+            }
+            $result = Enable-DbaReplPublishing @splatEnable
+            $result | Should -BeNullOrEmpty
+            ($distWarn -join "`n") | Should -Match "isn't currently enabled for distributing"
+        }
+    }
+}

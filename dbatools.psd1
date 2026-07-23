@@ -120,7 +120,6 @@
         'Test-DbaReplLatency',
 
         # NEW REPLICATION STUFF
-        'Enable-DbaReplPublishing',
         'New-DbaReplPublication',
         'Get-DbaReplArticle',
         'Get-DbaReplArticleColumn',

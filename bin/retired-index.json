@@ -314,6 +314,11 @@
     "retiredPath": "private/retired/Enable-DbaReplDistributor.ps1",
     "flippedUtc": "2026-07-23T11:28:41Z"
   },
+  "Enable-DbaReplPublishing": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Enable-DbaReplPublishing.ps1",
+    "flippedUtc": "2026-07-23T11:35:07Z"
+  },
   "Enable-DbaStartupProcedure": {
     "module": "dbatools.core",
     "retiredPath": "private/retired/Enable-DbaStartupProcedure.ps1",

@@ -25,7 +25,8 @@
         'Add-DbaReplArticle',
         'Disable-DbaReplDistributor',
         'Disable-DbaReplPublishing',
-        'Enable-DbaReplDistributor'
+        'Enable-DbaReplDistributor',
+        'Enable-DbaReplPublishing'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
