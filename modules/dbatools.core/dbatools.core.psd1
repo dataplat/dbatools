@@ -179,7 +179,8 @@
         'Get-DbaErrorLogConfig',
         'Get-DbaInstanceInstallDate',
         'Get-DbaProcess',
-        'Get-DbaTcpPort'
+        'Get-DbaTcpPort',
+        'Backup-DbaDatabase'
     )
     VariablesToExport      = @()
     # Shortcut aliases for commands owned by this module (BP-604); registered by Set-Alias in
