@@ -135,6 +135,7 @@
         'New-DbaDbUdf',
         'Set-DbaDbUdf',
         'New-DbaDbTrigger',
+        'Set-DbaDbTrigger',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
         'New-DbaDirectory',
