@@ -1449,6 +1449,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Get-DbaSchemaChangeHistory.ps1"
   },
+  "Get-DbaServerRole": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaServerRole.ps1",
+    "flippedUtc": "2026-07-23T09:43:19Z"
+  },
   "Get-DbaService": {
     "flippedUtc": "2026-07-07T01:08:57Z",
     "module": "dbatools.core",

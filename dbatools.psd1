@@ -98,7 +98,6 @@
         'Get-DbaLastGoodCheckDb',
         'Get-DbaReplPublication',
         'Get-DbaReplServer',
-        'Get-DbaServerRole',
         'Get-DbaServerRoleMember',
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisEnvironmentVariable',
