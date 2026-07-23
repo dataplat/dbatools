@@ -38,7 +38,8 @@
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaWhoIsActive',
         'Remove-DbaDatabaseSafely',
-        'Save-DbaCommunitySoftware'
+        'Save-DbaCommunitySoftware',
+        'Uninstall-DbaSqlWatch'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

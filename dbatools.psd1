@@ -127,7 +127,6 @@
         'Sync-DbaAvailabilityGroup',
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',
-        'Uninstall-DbaSqlWatch',
         'Update-DbaMaintenanceSolution',
 
         # NEW REPLICATION STUFF

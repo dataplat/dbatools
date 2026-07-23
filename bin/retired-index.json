@@ -3154,6 +3154,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Test-DbaWindowsLogin.ps1"
   },
+  "Uninstall-DbaSqlWatch": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Uninstall-DbaSqlWatch.ps1",
+    "flippedUtc": "2026-07-23T09:29:32Z"
+  },
   "Unregister-DbatoolsConfig": {
     "flippedUtc": "2026-07-12T23:16:27Z",
     "module": "dbatools.core",
