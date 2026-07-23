@@ -76,7 +76,8 @@
         'Set-DbaInstanceAuditSpecification',
         'Remove-DbaInstanceAuditSpecification',
         'Get-DbaPermission',
-        'Get-DbaServerRole'
+        'Get-DbaServerRole',
+        'Get-DbaServerRoleMember'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
