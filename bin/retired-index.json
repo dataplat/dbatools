@@ -1749,6 +1749,11 @@
     "retiredPath": "private/retired/Invoke-DbaDbccDropCleanBuffer.ps1",
     "flippedUtc": "2026-07-23T02:26:07Z"
   },
+  "Invoke-DbaDbccFreeCache": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Invoke-DbaDbccFreeCache.ps1",
+    "flippedUtc": "2026-07-23T03:05:32Z"
+  },
   "Invoke-DbaDbClone": {
     "flippedUtc": "2026-07-18T08:46:05Z",
     "module": "dbatools.database",
@@ -2598,6 +2603,11 @@
     "flippedUtc": "2026-07-18T05:38:55Z",
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Set-DbaAgentJobOwner.ps1"
+  },
+  "Set-DbaAgentJobStep": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Set-DbaAgentJobStep.ps1",
+    "flippedUtc": "2026-07-23T02:56:29Z"
   },
   "Set-DbaAgReplica": {
     "module": "dbatools.hadr",

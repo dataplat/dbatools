@@ -569,4 +569,20 @@ Describe $CommandName -Tag IntegrationTests {
             $newJobStep.JobStepFlags | Should -Be AppendAllCmdExecOutputToJobHistory
         }
     }
+
+    Context "Begin-validation interrupt carries across blocks" {
+        It "Warns and changes nothing when OnSuccessStepId is set without OnSuccessAction GoToStep" {
+            # The begin-block validation sets the function-scope interrupt and returns; that interrupt is
+            # carried so ProcessRecord short-circuits. Passing -NewName alongside the invalid OnSuccessStepId
+            # proves the carry - the rename must not be applied because the process block never runs.
+            $before = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle).JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name
+
+            Set-DbaAgentJobStep -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle -StepName $before -NewName "should_not_apply_$random" -OnSuccessStepId 1 -WarningAction SilentlyContinue -WarningVariable warn 3> $null
+
+            $warn -join " " | Should -Match "OnSuccessStepId can only be used with OnSuccessAction .GoToStep."
+
+            $after = (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceMulti1 -Job $job1InstanceSingle).JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name
+            $after | Should -Be $before
+        }
+    }
 }
