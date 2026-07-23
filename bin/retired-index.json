@@ -2839,6 +2839,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Show-DbaInstanceFileSystem.ps1"
   },
+  "Start-DbaAgentJob": {
+    "module": "dbatools.agent",
+    "retiredPath": "private/retired/Start-DbaAgentJob.ps1",
+    "flippedUtc": "2026-07-23T05:30:27Z"
+  },
   "Start-DbaDbEncryption": {
     "flippedUtc": "2026-07-18T15:18:48Z",
     "module": "dbatools.security",

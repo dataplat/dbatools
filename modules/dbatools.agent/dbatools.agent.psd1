@@ -83,7 +83,8 @@
         'Set-DbaAgentSchedule',
         'Set-DbaAgentServer',
         'Test-DbaAgentJobOwner',
-        'Set-DbaDbMailAccount'
+        'Set-DbaDbMailAccount',
+        'Start-DbaAgentJob'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

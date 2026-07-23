@@ -123,7 +123,6 @@
         'Set-DbaAgListener',
         'Set-DbaDbCompression',
         'Set-DbaNetworkCertificate',
-        'Start-DbaAgentJob',
         'Start-DbaMigration',
         'Stop-DbaXESession',
         'Sync-DbaAvailabilityGroup',
