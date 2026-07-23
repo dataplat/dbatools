@@ -117,7 +117,6 @@
 
         # NEW REPLICATION STUFF
         'New-DbaReplPublication',
-        'Get-DbaReplArticleColumn',
         'Remove-DbaReplArticle',
         'Remove-DbaReplPublication',
         'New-DbaReplSubscription',

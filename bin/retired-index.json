@@ -1444,6 +1444,11 @@
     "retiredPath": "private/retired/Get-DbaReplArticle.ps1",
     "flippedUtc": "2026-07-23T12:04:09Z"
   },
+  "Get-DbaReplArticleColumn": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Get-DbaReplArticleColumn.ps1",
+    "flippedUtc": "2026-07-23T12:09:49Z"
+  },
   "Get-DbaReplDistributor": {
     "flippedUtc": "2026-07-06T11:50:51Z",
     "module": "dbatools.replication",
