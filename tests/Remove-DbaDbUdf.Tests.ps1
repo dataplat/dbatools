@@ -67,5 +67,15 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $udf2 | Remove-DbaDbUdf
             Get-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name $udf2 | Should -BeNullOrEmpty
         }
+
+        It "Emits nothing for an empty pipeline" {
+            # The drops are deferred to the end block (dropping while enumerating a collection piped
+            # straight from Get-DbaDbUdf would otherwise raise a collection-modified error), so nothing
+            # accumulates across the process records. A Get-DbaDbUdf that matches nothing pipes an empty
+            # collection; the end block must then iterate zero times - like the source - not once over a
+            # null placeholder that yields a phantom failed record or a spurious warning.
+            $result = Get-DbaDbUdf -SqlInstance $server -Database $dbname1 -Name "nonexistent_$(Get-Random)" | Remove-DbaDbUdf
+            $result | Should -BeNullOrEmpty
+        }
     }
 }
