@@ -63,5 +63,15 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2 | Remove-DbaDbView
             (Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View $view2) | Should -BeNullOrEmpty
         }
+
+        It "emits nothing for an empty pipeline" {
+            # The drops are deferred to the end block (dropping while enumerating a collection piped
+            # straight from Get-DbaDbView would otherwise raise a collection-modified error), so nothing
+            # accumulates across the process records. A Get-DbaDbView that matches nothing pipes an empty
+            # collection; the end block must then iterate zero times - like the source - not once over a
+            # null placeholder that yields a phantom record or a null-method error.
+            $result = Get-DbaDbView -SqlInstance $InstanceSingle -Database $dbname1 -View "nonexistent_$(Get-Random)" | Remove-DbaDbView
+            $result | Should -BeNullOrEmpty
+        }
     }
 }
