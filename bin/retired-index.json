@@ -394,6 +394,11 @@
     "retiredPath": "private/retired/Export-DbaRegServer.ps1",
     "flippedUtc": "2026-07-20T03:30:45Z"
   },
+  "Export-DbaReplServerSetting": {
+    "module": "dbatools.replication",
+    "retiredPath": "private/retired/Export-DbaReplServerSetting.ps1",
+    "flippedUtc": "2026-07-23T11:50:15Z"
+  },
   "Export-DbaScript": {
     "flippedUtc": "2026-07-11T10:57:22Z",
     "module": "dbatools.core",
@@ -1678,6 +1683,11 @@
     "module": "dbatools.xevents",
     "retiredPath": "private/retired/Get-DbaXESessionTarget.ps1",
     "flippedUtc": "2026-07-23T11:41:54Z"
+  },
+  "Get-DbaXESessionTargetFile": {
+    "module": "dbatools.xevents",
+    "retiredPath": "private/retired/Get-DbaXESessionTargetFile.ps1",
+    "flippedUtc": "2026-07-23T11:54:04Z"
   },
   "Get-DbaXESessionTemplate": {
     "flippedUtc": "2026-07-18T17:35:55Z",
