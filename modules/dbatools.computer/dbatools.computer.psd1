@@ -56,6 +56,7 @@
         'Set-DbaSpn',
         'Remove-DbaSpn',
         'Remove-DbaFirewallRule',
+        'Set-DbaFirewallRule',
         'Get-DbaKbUpdate',
         'Save-DbaKbUpdate',
         'Test-DbaKerberos',
