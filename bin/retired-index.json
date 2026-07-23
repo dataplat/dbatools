@@ -2179,6 +2179,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/New-DbaScriptingOption.ps1"
   },
+  "New-DbaServerRole": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/New-DbaServerRole.ps1",
+    "flippedUtc": "2026-07-23T10:34:01Z"
+  },
   "New-DbaServiceMasterKey": {
     "flippedUtc": "2026-07-18T02:37:14Z",
     "module": "dbatools.security",
