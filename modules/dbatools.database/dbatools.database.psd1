@@ -131,6 +131,7 @@
         'New-DbaDbView',
         'Set-DbaDbView',
         'New-DbaDbStoredProcedure',
+        'Set-DbaDbStoredProcedure',
         'New-DbaDbTransfer',
         'New-DbaDbUser',
         'New-DbaDirectory',
