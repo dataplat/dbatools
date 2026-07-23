@@ -83,7 +83,14 @@ Describe $CommandName -Tag IntegrationTests {
 
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
 
-            $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database master
+            # Name one key rather than taking whatever master holds: an instance carrying more than
+            # one asymmetric key would leave an array in $masterasym, and -EncryptorName is a single
+            # string, so the leg below would die on the bind instead of testing the command. System
+            # keys are excluded for the same reason the certificate suites exclude them - they are
+            # not usable as an encryptor.
+            $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $TestConfig.InstanceSingle -Database master |
+                Where-Object Name -notmatch "##" |
+                Select-Object -First 1
 
             if (-not $masterasym) {
                 $delmasterasym = $true
