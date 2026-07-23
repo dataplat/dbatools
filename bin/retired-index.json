@@ -1304,6 +1304,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Get-DbaPbmStore.ps1"
   },
+  "Get-DbaPermission": {
+    "module": "dbatools.security",
+    "retiredPath": "private/retired/Get-DbaPermission.ps1",
+    "flippedUtc": "2026-07-23T09:35:25Z"
+  },
   "Get-DbaPfAvailableCounter": {
     "flippedUtc": "2026-07-13T15:39:39Z",
     "module": "dbatools.performance",
@@ -3173,6 +3178,11 @@
     "flippedUtc": "2026-07-11T03:07:39Z",
     "module": "dbatools.computer",
     "retiredPath": "private/retired/Update-DbaInstance.ps1"
+  },
+  "Update-DbaMaintenanceSolution": {
+    "module": "dbatools.maintenance",
+    "retiredPath": "private/retired/Update-DbaMaintenanceSolution.ps1",
+    "flippedUtc": "2026-07-23T09:40:16Z"
   },
   "Update-DbaServiceAccount": {
     "flippedUtc": "2026-07-17T16:26:02Z",

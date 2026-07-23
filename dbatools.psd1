@@ -96,7 +96,6 @@
         'Get-DbaDbEncryption',
         'New-DbaDbEncryptionKey',
         'Get-DbaLastGoodCheckDb',
-        'Get-DbaPermission',
         'Get-DbaReplPublication',
         'Get-DbaReplServer',
         'Get-DbaServerRole',
@@ -127,7 +126,6 @@
         'Sync-DbaAvailabilityGroup',
         'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency',
-        'Update-DbaMaintenanceSolution',
 
         # NEW REPLICATION STUFF
         'Disable-DbaReplDistributor',
