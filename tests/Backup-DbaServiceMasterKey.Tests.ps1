@@ -87,5 +87,29 @@ Describe $CommandName -Tag IntegrationTests {
             $fileBackupResults.Status | Should -Be "Success"
             $fileBackupPath = $fileBackupResults.Path
         }
+
+        It "prompts once for the run, matching the source function's two-call lifetime over two records" {
+            $promptServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $promptPath = $promptServer.BackupDirectory
+            $promptFileBaseName = "smkpromptcarry_$(Get-Random)"
+            $splatPromptPath = @{
+                SqlInstance = $promptServer
+                Path        = $promptPath
+                ChildPath   = "$promptFileBaseName.key"
+            }
+            $promptExpectedFile = Join-DbaPath @splatPromptPath
+            Test-DbaPath -SqlInstance $promptServer -Path $promptExpectedFile | Should -BeFalse
+
+            Mock Read-Host -ModuleName dbatools { $securePassword }
+            $splatPromptCarry = @{
+                Path         = $promptPath
+                FileBaseName = $promptFileBaseName
+                WhatIf       = $true
+            }
+            @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle) | Backup-DbaServiceMasterKey @splatPromptCarry
+
+            Should -Invoke Read-Host -ModuleName dbatools -Times 2 -Exactly
+            Test-DbaPath -SqlInstance $promptServer -Path $promptExpectedFile | Should -BeFalse
+        }
     }
 }
