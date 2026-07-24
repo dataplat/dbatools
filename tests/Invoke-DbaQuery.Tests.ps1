@@ -401,4 +401,36 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
     }
+
+    It "reports a failed query as a warning without putting a record on the error stream" {
+        # ErrorActionPreference is pinned rather than inherited: the no-display rule applies to
+        # Continue specifically, and a harness running the leg under Stop would take a different
+        # branch entirely and assert nothing.
+        $ErrorActionPreference = "Continue"
+
+        $records = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELEC 1" 2>&1 3>&1)
+        $errorRecords = @($records | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+        $warningRecords = @($records | Where-Object { $_ -is [System.Management.Automation.WarningRecord] })
+
+        $errorRecords.Count | Should -Be 0
+        $warningRecords.Count | Should -BeGreaterThan 0
+        $warningRecords[0].Message | Should -BeLike "*Failed during execution*"
+        # The record is still recorded, just not shown - dropping the display must not cost the
+        # $error bookkeeping the caller can still inspect.
+        "$($Error[0])" | Should -BeLike "*SELEC*"
+    }
+
+    It "still records a failed query in `$error under -ErrorAction SilentlyContinue" {
+        $ErrorActionPreference = "Continue"
+
+        $records = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "SELEC 1" -ErrorAction SilentlyContinue -ErrorVariable queryError 2>&1 3>&1)
+        $errorRecords = @($records | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
+
+        $errorRecords.Count | Should -Be 0
+        # The surviving record is read off -ErrorVariable, not off a $Error.Count delta: $error
+        # is capped at $MaximumErrorCount, so once a long suite has filled it a delta measures
+        # the trim rather than the write and reads 0 no matter what the command did.
+        @($queryError).Count | Should -Be 1
+        "$($queryError[0])" | Should -BeLike "*SELEC*"
+    }
 }
