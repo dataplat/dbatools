@@ -68,7 +68,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns all TFs" {
             $results = Get-DbaTraceFlag -SqlInstance $TestConfig.InstanceSingle
             #$results.TraceFlag.Count | Should -Be $startingTfsCount
-            $results.TraceFlag | Should -Be $safeTraceFlag
+            # -Contain, not -Be: an unfiltered call returns every global trace flag on the
+            # instance, so -Be asserted that the one this suite enables is the ONLY one. Lab
+            # instances accumulate residual startup flags (a stray -T2544 is on this one, and
+            # Set-DbaStartupParameter.Tests.ps1 clears the same flag off the Multi fixtures for
+            # the same reason), and a startup flag returns after every restart, so clearing it
+            # here would neither hold nor be safe on an instance other suites share. What this
+            # test is for is that the unfiltered call includes the flag we turned on; the
+            # filtered case is already pinned to exactly one result above.
+            $results.TraceFlag | Should -Contain $safeTraceFlag
         }
     }
 }
