@@ -95,7 +95,6 @@
         'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
-        'Set-DbaAgListener',
         'Set-DbaDbCompression',
         'Set-DbaNetworkCertificate',
         'Start-DbaMigration',

@@ -2844,6 +2844,11 @@
     "retiredPath": "private/retired/Set-DbaAgentServer.ps1",
     "flippedUtc": "2026-07-23T05:08:42Z"
   },
+  "Set-DbaAgListener": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Set-DbaAgListener.ps1",
+    "flippedUtc": "2026-07-24T04:35:54Z"
+  },
   "Set-DbaAgReplica": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Set-DbaAgReplica.ps1",
