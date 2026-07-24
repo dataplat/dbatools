@@ -417,8 +417,17 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Should handle StorageBaseUrl striping when OutputScriptOnly specified" {
+        BeforeDiscovery {
+            # S3 backup is refused outright below SQL Server 2022, so these two legs are version
+            # gated. Pester binds -Skip while it DISCOVERS the file, which is strictly before any
+            # BeforeAll runs, so the version has to be resolved here: against a $null server
+            # `$null.VersionMajor -lt 16` is $true and both legs skip on every host, whatever it is
+            # running. InstanceMulti2 is the instance carrying the version this path needs; only the
+            # generated script is inspected, so nothing reaches S3 and the credential name never has
+            # to exist on the instance.
+            $storageScriptSkip = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2).VersionMajor -lt 16
+        }
         BeforeAll {
-            $storageScriptServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
             $s3StorageCredential = "dbatools_ci_s3"
             $singleS3StorageBaseUrl = "s3://dbatools-test.s3.us-west-2.amazonaws.com/backups"
             $multipleS3StorageBaseUrls = @(
@@ -427,16 +436,16 @@ Describe $CommandName -Tag IntegrationTests {
             )
         }
 
-        It "Should respect explicit FileCount when a single StorageBaseUrl is used" -Skip:($storageScriptServer.VersionMajor -lt 16) {
-            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -StorageBaseUrl $singleS3StorageBaseUrl -StorageCredential $s3StorageCredential -FileCount 3 -OutputScriptOnly
+        It "Should respect explicit FileCount when a single StorageBaseUrl is used" -Skip:$storageScriptSkip {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database master -StorageBaseUrl $singleS3StorageBaseUrl -StorageCredential $s3StorageCredential -FileCount 3 -OutputScriptOnly
 
             ([regex]::Matches($result, "URL = N'")).Count | Should -Be 3
             $result | Should -Match "-1-of-3\.bak'"
             $result | Should -Match "-3-of-3\.bak'"
         }
 
-        It "Should let multiple StorageBaseUrl values determine the stripe count" -Skip:($storageScriptServer.VersionMajor -lt 16) {
-            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -StorageBaseUrl $multipleS3StorageBaseUrls -StorageCredential $s3StorageCredential -FileCount 4 -OutputScriptOnly
+        It "Should let multiple StorageBaseUrl values determine the stripe count" -Skip:$storageScriptSkip {
+            $result = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database master -StorageBaseUrl $multipleS3StorageBaseUrls -StorageCredential $s3StorageCredential -FileCount 4 -OutputScriptOnly
 
             ([regex]::Matches($result, "URL = N'")).Count | Should -Be 2
             $result | Should -Match "-1-of-2\.bak'"

@@ -282,6 +282,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
     Context "Should create graph tables with IsNode and IsEdge switches" {
+        BeforeDiscovery {
+            # Graph tables need SQL Server 2017 or later. Pester binds the -Skip arguments below while
+            # it DISCOVERS this file, which is strictly before any BeforeAll runs, so the version has
+            # to be resolved here. Computed only in BeforeAll, $server is still $null when -Skip is
+            # bound, `$null.VersionMajor -lt 14` is $true, and both legs skip on every host - including
+            # the ones that do support graph tables.
+            $skipGraphTests = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2).VersionMajor -lt 14
+        }
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
             $skipGraphTests = $server.VersionMajor -lt 14
