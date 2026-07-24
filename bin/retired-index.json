@@ -2764,6 +2764,11 @@
     "retiredPath": "private/retired/Restore-DbaDbSnapshot.ps1",
     "flippedUtc": "2026-07-18T21:36:25Z"
   },
+  "Resume-DbaAgDbDataMovement": {
+    "module": "dbatools.hadr",
+    "retiredPath": "private/retired/Resume-DbaAgDbDataMovement.ps1",
+    "flippedUtc": "2026-07-24T04:30:29Z"
+  },
   "Revoke-DbaAgPermission": {
     "module": "dbatools.hadr",
     "retiredPath": "private/retired/Revoke-DbaAgPermission.ps1",
