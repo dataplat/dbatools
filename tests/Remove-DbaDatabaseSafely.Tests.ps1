@@ -107,4 +107,79 @@ Describe $CommandName -Tag IntegrationTests {
             $results.BackupFolder | Should -Be $backupPath
         }
     }
+    Context "Confirmation suppression under -Force" {
+        BeforeAll {
+            # The suite pins '*-Dba*:Confirm' = $false, which latches the cmdlet runtime and masks
+            # the behavior under test. Shadow the dictionary with a copy rather than mutating the
+            # shared one.
+            $suppressionDefaults = @{ }
+            foreach ($entry in $TestConfig.Defaults.GetEnumerator()) {
+                if ($entry.Key -notlike "*:Confirm") {
+                    $suppressionDefaults[$entry.Key] = $entry.Value
+                }
+            }
+            $PSDefaultParameterValues = $suppressionDefaults
+
+            # The observation point: the SQL Agent probe is the first thing the process block does,
+            # before any database is touched, and reporting a stopped agent ends the run right
+            # there. It has to be a plain function and not a mock - a mock body does not see its
+            # caller's scope, which is the whole thing being measured.
+            & (Get-Module dbatools) {
+                function script:Get-DbaService {
+                    [CmdletBinding()]
+                    param(
+                        [string]$ComputerName,
+                        [string]$InstanceName,
+                        [string]$Type,
+                        [switch]$EnableException
+                    )
+                    $global:dbatoolsciSafelyProcessConfirmPreference = "$ConfirmPreference"
+                    [PSCustomObject]@{ State = "Stopped"; Name = "SQLSERVERAGENT" }
+                }
+            }
+        }
+
+        AfterAll {
+            # NOT function:script:Get-DbaService - the Function provider takes no scope qualifier,
+            # so that path removes nothing and -ErrorAction SilentlyContinue hides the miss.
+            & (Get-Module dbatools) {
+                Remove-Item -Path function:Get-DbaService -ErrorAction SilentlyContinue
+            }
+            Remove-Variable -Name dbatoolsciSafelyProcessConfirmPreference -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It "suppresses confirmation for the whole process block when -Force is used" {
+            Mock -CommandName Test-DbaPath -ModuleName dbatools -MockWith { $true }
+            $global:dbatoolsciSafelyProcessConfirmPreference = $null
+
+            $splatForced = @{
+                SqlInstance   = $TestConfig.InstanceCopy1
+                Database      = "dbatoolsci_absent_$(Get-Random)"
+                BackupFolder  = $backupPath
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabaseSafely @splatForced
+
+            $global:dbatoolsciSafelyProcessConfirmPreference | Should -Be "none"
+        }
+
+        It "leaves the session preference alone without -Force" {
+            Mock -CommandName Test-DbaPath -ModuleName dbatools -MockWith { $true }
+            $global:dbatoolsciSafelyProcessConfirmPreference = $null
+
+            $splatUnforced = @{
+                SqlInstance   = $TestConfig.InstanceCopy1
+                Database      = "dbatoolsci_absent_$(Get-Random)"
+                BackupFolder  = $backupPath
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabaseSafely @splatUnforced
+
+            # Not-null FIRST: `Should -Not -Be "none"` passes vacuously on $null, i.e. it would pass
+            # when the process block was never reached at all.
+            $global:dbatoolsciSafelyProcessConfirmPreference | Should -Not -BeNullOrEmpty
+            $global:dbatoolsciSafelyProcessConfirmPreference | Should -Not -Be "none"
+        }
+    }
 }
