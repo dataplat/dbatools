@@ -46,20 +46,10 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $db1
         $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $db2
 
-        # Harness honesty: the command's own preconditions require (a) the instance service
-        # account to reach the runner-local backup folder and (b) WMI service access for the
-        # SQL Agent probe. Environments where the test instances are not local to the runner
-        # (remote lab VMs) fail those preconditions before the command does any work - the
-        # scenarios can then only fail environmentally, so they skip at runtime instead.
-        $safelyCapable = $false
-        try {
-            $copy1Server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-            $backupFolderVisible = Test-DbaPath -SqlInstance $copy1Server -Path $backupPath
-            $agentReachable = @(Get-DbaService -ComputerName $copy1Server.ComputerName -Type Agent -EnableException).Count -gt 0
-            $safelyCapable = $backupFolderVisible -and $agentReachable
-        } catch {
-            $safelyCapable = $false
-        }
+        # The command checks its own preconditions against the DESTINATION instance: it probes
+        # the SQL Agent service there over WMI and has that instance write the backup. So the
+        # backup folder must be a share that both this runner and the instance service accounts
+        # can write to, and the destination host must answer WMI.
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -69,11 +59,15 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $db1, $db2
-        if ($safelyCapable) {
-            # The restore jobs exist only when the scenarios actually ran (see the capability probe).
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "Rationalised Database Restore Script for $db1"
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "Rationalised Database Restore Script for $db2"
+        # The scenarios drop the databases themselves, so only clean up what a partial run left behind.
+        $leftoverDatabases = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $db1, $db2
+        if ($leftoverDatabases) {
+            $null = $leftoverDatabases | Remove-DbaDatabase
+        }
+
+        $restoreJobs = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Job "Rationalised Database Restore Script for $db1", "Rationalised Database Restore Script for $db2"
+        if ($restoreJobs) {
+            $null = $restoreJobs | Remove-DbaAgentJob
         }
 
         # Remove the backup directory.
@@ -83,28 +77,39 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command actually works" {
         It "Should restore to the same server" {
-            if (-not $safelyCapable) {
-                # -Skip evaluates at discovery, before BeforeAll runs - runtime skip instead.
-                Set-ItResult -Skipped -Because "the command's backup-folder/agent preconditions are not satisfiable from this runner"
-                return
+            $splatSameServer = @{
+                SqlInstance   = $TestConfig.InstanceCopy1
+                Database      = $db1
+                BackupFolder  = $backupPath
+                NoDbccCheckDb = $true
             }
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db1 -BackupFolder $backupPath -NoDbccCheckDb
+            $results = Remove-DbaDatabaseSafely @splatSameServer
             $results.DatabaseName | Should -Be $db1
             $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
             $results.TestingInstance | Should -Be $TestConfig.InstanceCopy1
             $results.BackupFolder | Should -Be $backupPath
+
+            # The whole point of the command: the database is gone once the restore verified.
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $db1 | Should -BeNullOrEmpty
         }
 
         It "Should restore to another server" {
-            if (-not $safelyCapable) {
-                Set-ItResult -Skipped -Because "the command's backup-folder/agent preconditions are not satisfiable from this runner"
-                return
+            $splatOtherServer = @{
+                SqlInstance   = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $db2
+                BackupFolder  = $backupPath
+                NoDbccCheckDb = $true
             }
-            $results = Remove-DbaDatabaseSafely -SqlInstance $TestConfig.InstanceCopy1 -Database $db2 -BackupFolder $backupPath -NoDbccCheckDb -Destination $TestConfig.InstanceCopy2
+            $results = Remove-DbaDatabaseSafely @splatOtherServer
             $results.DatabaseName | Should -Be $db2
             $results.SqlInstance | Should -Be $TestConfig.InstanceCopy1
             $results.TestingInstance | Should -Be $TestConfig.InstanceCopy2
             $results.BackupFolder | Should -Be $backupPath
+
+            # Dropped on the source, and the verification copy on the destination is cleaned up too.
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $db2 | Should -BeNullOrEmpty
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $db2 | Should -BeNullOrEmpty
         }
     }
     Context "Confirmation suppression under -Force" {
@@ -124,7 +129,12 @@ Describe $CommandName -Tag IntegrationTests {
             # before any database is touched, and reporting a stopped agent ends the run right
             # there. It has to be a plain function and not a mock - a mock body does not see its
             # caller's scope, which is the whole thing being measured.
-            & (Get-Module dbatools) {
+            #
+            # `Get-Module dbatools` can return TWO modules - the base library's binary dbatools.dll
+            # and this script module - and `& <two modules> { }` stringifies to a command named
+            # "dbatools dbatools", so the script module has to be selected explicitly.
+            $dbatoolsScriptModule = Get-Module -Name dbatools | Where-Object { $PSItem.Path -like "*.psm1" }
+            & $dbatoolsScriptModule {
                 function script:Get-DbaService {
                     [CmdletBinding()]
                     param(
@@ -142,7 +152,8 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             # NOT function:script:Get-DbaService - the Function provider takes no scope qualifier,
             # so that path removes nothing and -ErrorAction SilentlyContinue hides the miss.
-            & (Get-Module dbatools) {
+            $dbatoolsScriptModule = Get-Module -Name dbatools | Where-Object { $PSItem.Path -like "*.psm1" }
+            & $dbatoolsScriptModule {
                 Remove-Item -Path function:Get-DbaService -ErrorAction SilentlyContinue
             }
             Remove-Variable -Name dbatoolsciSafelyProcessConfirmPreference -Scope Global -ErrorAction SilentlyContinue
