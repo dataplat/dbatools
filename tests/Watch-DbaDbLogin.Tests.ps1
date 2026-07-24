@@ -79,21 +79,34 @@ Describe $CommandName -Tag IntegrationTests {
         It "preserves the validation warning and silent error" {
             $validationWarnings = @()
             $expectedMessage = "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
-            $errorCountBefore = $Error.Count
+            $errorHeadBefore = if ($global:Error.Count -gt 0) { $global:Error[0] } else { $null }
 
-            Watch-DbaDbLogin -WarningVariable validationWarnings
+            $emitted = @(Watch-DbaDbLogin -WarningVariable validationWarnings 2>&1)
 
             $validationWarnings.Count | Should -Be 1
             $validationWarnings[0].ToString().EndsWith("[Watch-DbaDbLogin] $expectedMessage") | Should -BeTrue
-            # Characterization (compiled cmdlet, accepted divergence): the legacy function left its
-            # self-swallowed Stop-Function record (FQID dbatools_Watch-DbaDbLogin) in the caller's
-            # $Error; under the test harness defaults the compiled cmdlet's hop bookkeeping removes
-            # it, so no new record survives here (ruled permissible engine leakage by the opus
-            # review, migration/logs/opus-review-20260715-watch-dbadblogin). Outside the harness
-            # the record IS present with the compiled FQID "dbatools_Watch-DbaDbLogin,Stop-Function"
-            # (probe: migration/tools/Probe-WatchDbaDbLoginErrorState.ps1). Pin the harness contract
-            # so the $Error surface is asserted rather than ignored.
-            $Error.Count | Should -Be $errorCountBefore
+            # Characterization (parity, measured on both editions): Stop-Function's
+            # non-EnableException path writes its record with "$null = Write-Error ... 2>&1", which
+            # is bookkeeping-only - the record never rides a stream, so nothing reaches the caller's
+            # error stream and the runspace's $Error is its only footprint. The retired function and
+            # the compiled cmdlet agree on both halves
+            # (probe: migration/tools/Probe-WatchDbaDbLoginErrorParity.ps1).
+            #
+            # $global:Error, not $Error: these suites run through Invoke-ManualPester, which calls
+            # Invoke-Pester from the dbatools module's session state, and a module-hosted run leaves
+            # the plain $Error the It resolves inert - a Write-Error issued IN this scope does not
+            # appear in it either - so "$Error.Count | Should -Be $before" here is 0 | Should -Be 0
+            # and can never fail (probe: migration/tools/probes/Probe-PesterErrorHostScope.ps1,
+            # which shows the same Invoke-Pester call live from global scope and from a plain
+            # function, inert only from a module function).
+            # Nor a count delta on the global one: $Error is capped at $MaximumErrorCount and the
+            # engine trims the TAIL as it inserts at the head, so a delta reads 0 once the list is
+            # full. The pre-call head moving to index 1 says "exactly one record was added" and
+            # holds saturated or not (probe: migration/tools/Probe-WatchDbaDbLoginErrorPin.ps1).
+            @($emitted | Where-Object { $PSItem -is [System.Management.Automation.ErrorRecord] }).Count | Should -Be 0
+            $global:Error[0].FullyQualifiedErrorId | Should -Be "dbatools_Watch-DbaDbLogin,Stop-Function"
+            "$($global:Error[0])" | Should -Be $expectedMessage
+            [object]::ReferenceEquals($global:Error[1], $errorHeadBefore) | Should -BeTrue
         }
 
         It "preserves the validation warning before an EnableException error" {
