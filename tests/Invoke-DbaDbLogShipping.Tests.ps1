@@ -307,4 +307,90 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SecondaryDatabase | Should -Be $secondaryDb
         }
     }
+
+    # Mocked rather than live: the lab has no Azure blob container, and the branch under test is
+    # decided before any storage is touched. -AzureBaseUrl selects the blob-storage path, which
+    # substitutes the URL for the shared path and skips the UNC file checks entirely. The two paths
+    # are distinguished by observable behaviour and not by an exception, so the branch has to be
+    # asserted on a positive outcome: taking the file-share path with no -SharedPath fails on the
+    # backup-network-path check instead.
+    InModuleScope dbatools {
+        Context "Azure blob storage backup destination" {
+            BeforeAll {
+                $script:azureSourceServer = [PSCustomObject]@{
+                    ConnectionContext  = [PSCustomObject]@{
+                        StatementTimeout = 30
+                    }
+                    Databases          = @(
+                        [PSCustomObject]@{
+                            Name          = "db1"
+                            RecoveryModel = "Full"
+                        }
+                    )
+                    DomainInstanceName = "source"
+                    InstanceName       = "MSSQLSERVER"
+                    Name               = "source"
+                    Version            = [PSCustomObject]@{
+                        Major = 15
+                    }
+                }
+                $script:azureDestinationServer = [PSCustomObject]@{
+                    ConnectionContext  = [PSCustomObject]@{
+                        StatementTimeout = 30
+                    }
+                    Databases          = @(
+                        [PSCustomObject]@{
+                            Name   = "db1"
+                            Status = "Restoring"
+                        }
+                    )
+                    DomainInstanceName = "dest"
+                    InstanceName       = "MSSQLSERVER"
+                    IsAzure            = $false
+                    Name               = "dest"
+                }
+
+                Mock Connect-DbaInstance -ModuleName dbatools -MockWith {
+                    param($SqlInstance)
+
+                    switch ($SqlInstance.FullName) {
+                        "source" { return $script:azureSourceServer }
+                        "dest" { return $script:azureDestinationServer }
+                        default { throw "Unexpected instance $($SqlInstance.FullName)" }
+                    }
+                }
+                Mock Get-DbaSpConfigure -ModuleName dbatools {
+                    [PSCustomObject]@{
+                        ConfiguredValue = 0
+                    }
+                }
+                Mock Stop-Function -ModuleName dbatools {
+                    param($Message)
+                    throw $Message
+                }
+                # Nothing on the file-share path is reachable here, so the file-share branch fails
+                # loudly rather than quietly producing a Success that means nothing.
+                Mock Test-DbaPath -ModuleName dbatools { $false }
+                Mock Test-FunctionInterrupt -ModuleName dbatools { $false }
+            }
+
+            It "Selects the blob-storage path and skips the file-share checks when AzureBaseUrl is used" {
+                $splatAzureLogShipping = @{
+                    SourceSqlInstance      = "source"
+                    DestinationSqlInstance = "dest"
+                    Database               = "db1"
+                    AzureBaseUrl           = "https://dbatoolsci.blob.core.windows.net/logshipping"
+                    AzureCredential        = "dbatoolsci-azure"
+                    NoInitialization       = $true
+                    Force                  = $true
+                    WhatIf                 = $true
+                }
+
+                $results = Invoke-DbaDbLogShipping @splatAzureLogShipping
+
+                $results.Result | Should -Be "Success"
+                Should -Invoke Test-DbaPath -ModuleName dbatools -Times 0 -Exactly
+            }
+        }
+    }
 }
