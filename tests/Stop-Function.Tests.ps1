@@ -191,6 +191,169 @@ Describe $CommandName -Tag UnitTests {
         #endregion Evaluate Results
     }
 
+    Context "Nested command interrupt beacon" -Tag InterruptBeacon {
+        It "Records a direct hard stop from a parameterized command scope" {
+            $beacon = @{
+                Interrupted              = $false
+                CallerCommand            = $null
+                CallerHasBoundParameters = $false
+                CommandName              = "Invoke-DirectNestedStop"
+            }
+            $module = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+
+            $result = & $module {
+                param($beacon)
+                Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $beacon -Force
+                try {
+                    function Invoke-DirectNestedStop {
+                        [CmdletBinding()]
+                        param()
+                        Stop-Function -Message "nested stop" -FunctionName Invoke-DirectNestedStop -EnableException $false -WarningAction SilentlyContinue
+                    }
+                    Invoke-DirectNestedStop
+                    $beacon
+                } finally {
+                    Remove-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Force -ErrorAction Ignore
+                }
+            } $beacon
+
+            $result.Interrupted | Should -BeTrue
+            $result.CallerCommand | Should -Be "Invoke-DirectNestedStop"
+            $result.CallerHasBoundParameters | Should -BeTrue
+        }
+
+        It "Does not record a -Continue stop" {
+            $beacon = @{
+                Interrupted              = $false
+                CallerCommand            = $null
+                CallerHasBoundParameters = $false
+                CommandName              = "Invoke-ContinueNestedStop"
+            }
+            $module = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+
+            $result = & $module {
+                param($beacon)
+                Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $beacon -Force
+                try {
+                    function Invoke-ContinueNestedStop {
+                        [CmdletBinding()]
+                        param()
+                        foreach ($item in 1) {
+                            Stop-Function -Message "nested continue" -FunctionName Invoke-ContinueNestedStop -EnableException $false -Continue -WarningAction SilentlyContinue
+                        }
+                    }
+                    Invoke-ContinueNestedStop
+                    $beacon
+                } finally {
+                    Remove-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Force -ErrorAction Ignore
+                }
+            } $beacon
+
+            $result.Interrupted | Should -BeFalse
+            $result.CallerHasBoundParameters | Should -BeFalse
+        }
+
+        It "Rejects a stop attributed through a named helper" {
+            $beacon = @{
+                Interrupted              = $false
+                CallerCommand            = $null
+                CallerHasBoundParameters = $false
+                CommandName              = "Invoke-OuterNestedStop"
+            }
+            $module = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+
+            $result = & $module {
+                param($beacon)
+                Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $beacon -Force
+                try {
+                    function Invoke-NamedStopHelper {
+                        [CmdletBinding()]
+                        param()
+                        Stop-Function -Message "helper stop" -FunctionName Invoke-OuterNestedStop -EnableException $false -WarningAction SilentlyContinue
+                    }
+                    function Invoke-OuterNestedStop {
+                        [CmdletBinding()]
+                        param()
+                        Invoke-NamedStopHelper
+                    }
+                    Invoke-OuterNestedStop
+                    $beacon
+                } finally {
+                    Remove-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Force -ErrorAction Ignore
+                }
+            } $beacon
+
+            $result.Interrupted | Should -BeTrue
+            $result.CallerCommand | Should -Be "Invoke-NamedStopHelper"
+            ($result.CallerCommand -eq $result.CommandName) | Should -BeFalse
+        }
+
+        It "Keeps nested beacons independent and restores the outer positive control" {
+            $outer = @{
+                Interrupted              = $false
+                CallerCommand            = $null
+                CallerHasBoundParameters = $false
+                CommandName              = "Invoke-OuterBeaconStop"
+            }
+            $inner = @{
+                Interrupted              = $false
+                CallerCommand            = $null
+                CallerHasBoundParameters = $false
+                CommandName              = "Invoke-InnerBeaconStop"
+            }
+            $module = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+
+            $result = & $module {
+                param($outer, $inner)
+                function Invoke-OuterBeaconStop {
+                    [CmdletBinding()]
+                    param()
+                    Stop-Function -Message "outer stop" -FunctionName Invoke-OuterBeaconStop -EnableException $false -WarningAction SilentlyContinue
+                }
+                function Invoke-InnerBeaconStop {
+                    [CmdletBinding()]
+                    param()
+                    Stop-Function -Message "inner stop" -FunctionName Invoke-InnerBeaconStop -EnableException $false -WarningAction SilentlyContinue
+                }
+
+                Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $outer -Force
+                try {
+                    Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $inner -Force
+                    Invoke-InnerBeaconStop
+                    $outerBefore = $outer.Interrupted
+                    Set-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Value $outer -Force
+                    Invoke-OuterBeaconStop
+                    [pscustomobject]@{
+                        InnerInterrupted = $inner.Interrupted
+                        OuterBefore       = $outerBefore
+                        OuterAfter        = $outer.Interrupted
+                    }
+                } finally {
+                    Remove-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Force -ErrorAction Ignore
+                }
+            } $outer $inner
+
+            $result.InnerInterrupted | Should -BeTrue
+            $result.OuterBefore | Should -BeFalse
+            $result.OuterAfter | Should -BeTrue
+        }
+
+        It "Leaves an unported call inert when no beacon is installed" {
+            $module = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+            {
+                & $module {
+                    Remove-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -Force -ErrorAction Ignore
+                    function Invoke-UnportedStop {
+                        [CmdletBinding()]
+                        param()
+                        Stop-Function -Message "unported stop" -FunctionName Invoke-UnportedStop -EnableException $false -WarningAction SilentlyContinue
+                    }
+                    Invoke-UnportedStop
+                }
+            } | Should -Not -Throw
+        }
+    }
+
     Context "Testing silent: Explicit call" {
         BeforeAll {
             try {
