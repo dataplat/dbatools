@@ -109,13 +109,29 @@ Describe $CommandName -Tag IntegrationTests {
         $whatIfResult | Should -BeNullOrEmpty
     }
 
-    It "Surfaces the destination-connect warning instead of throwing when the destination is unreachable" {
-        $connectWarning = $null
-        try {
-            $null = Copy-DbaInstanceAuditSpecification -Source $TestConfig.InstanceCopy1 -Destination "localhost,9999" -AuditSpecification $specName -WarningVariable connectWarning -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
-        } catch {
-            # an unreachable destination may raise downstream errors; the warning stream is what this test asserts
+    Context "Unreachable destination" {
+        BeforeAll {
+            # Scoped to this Context alone, never the whole file: the legs above make real
+            # connections and would turn flaky on a slow guest under a 1-second fuse. The pin is
+            # needed because the unreachable endpoint is only refused instantly where the port is
+            # CLOSED - where it is firewalled the packet is dropped and the leg waits out the
+            # 15-second default instead. Restoring in AfterAll is mandatory, the setting being
+            # process-wide.
+            $previousConnectTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
         }
-        $connectWarning | Should -Not -BeNullOrEmpty
+        AfterAll {
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value $previousConnectTimeout
+        }
+
+        It "Surfaces the destination-connect warning instead of throwing when the destination is unreachable" {
+            $connectWarning = $null
+            try {
+                $null = Copy-DbaInstanceAuditSpecification -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceUnreachable -AuditSpecification $specName -WarningVariable connectWarning -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            } catch {
+                # an unreachable destination may raise downstream errors; the warning stream is what this test asserts
+            }
+            $connectWarning | Should -Not -BeNullOrEmpty
+        }
     }
 }

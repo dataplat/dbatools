@@ -59,18 +59,34 @@ Describe $CommandName -Tag IntegrationTests {
         $after | Should -BeExactly $before
     }
 
-    It "Surfaces the destination-connect warning instead of swallowing the warning stream" {
-        # Distinguishing leg for the 3>&1 warning-stream fix: an unreachable destination raises the friendly
-        # Stop-Function connect warning. InvokeScopedStreaming recovers a WarningRecord only when it reaches the
-        # output collection, so without the hop closing on '3>&1 2>&1' the entire warning stream is swallowed and
-        # -WarningVariable stays empty. A downstream null-ref against the failed destination may follow the warning;
-        # the warning is emitted first, so it is captured regardless.
-        $connectWarning = $null
-        try {
-            $null = Copy-DbaAgentServer -Source $TestConfig.InstanceCopy1 -Destination "localhost,9999" -ExcludeServerProperties -WarningVariable connectWarning -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
-        } catch {
-            # unreachable destination may raise downstream errors; the warning stream is what this test asserts
+    Context "Unreachable destination" {
+        BeforeAll {
+            # Scoped to this Context alone, never the whole file: the legs above make real
+            # connections and would turn flaky on a slow guest under a 1-second fuse. The pin is
+            # needed because the unreachable endpoint is only refused instantly where the port is
+            # CLOSED - where it is firewalled the packet is dropped and the leg waits out the
+            # 15-second default instead. Restoring in AfterAll is mandatory, the setting being
+            # process-wide.
+            $previousConnectTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
         }
-        $connectWarning | Should -Not -BeNullOrEmpty
+        AfterAll {
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value $previousConnectTimeout
+        }
+
+        It "Surfaces the destination-connect warning instead of swallowing the warning stream" {
+            # Distinguishing leg for the 3>&1 warning-stream fix: an unreachable destination raises the friendly
+            # Stop-Function connect warning. InvokeScopedStreaming recovers a WarningRecord only when it reaches the
+            # output collection, so without the hop closing on '3>&1 2>&1' the entire warning stream is swallowed and
+            # -WarningVariable stays empty. A downstream null-ref against the failed destination may follow the warning;
+            # the warning is emitted first, so it is captured regardless.
+            $connectWarning = $null
+            try {
+                $null = Copy-DbaAgentServer -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceUnreachable -ExcludeServerProperties -WarningVariable connectWarning -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            } catch {
+                # unreachable destination may raise downstream errors; the warning stream is what this test asserts
+            }
+            $connectWarning | Should -Not -BeNullOrEmpty
+        }
     }
 }

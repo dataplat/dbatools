@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
         $failureFile = "$($TestConfig.Temp)\Servers_unreachable_$random.txt"
 
         $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Out-File $testFile
-        "localhost,1" | Out-File $failureFile
+        $TestConfig.InstanceUnreachable | Out-File $failureFile
 
         $server1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
@@ -114,6 +114,23 @@ Describe $CommandName -Tag IntegrationTests {
             $caught.Exception.Message | Should -Be $expectedMessage
         }
 
+    }
+
+    Context "Unreachable source" {
+        BeforeAll {
+            # Scoped to this Context alone, never the whole file: the legs above make real
+            # connections and would turn flaky on a slow guest under a 1-second fuse. The pin is
+            # needed because the unreachable endpoint is only refused instantly where the port is
+            # CLOSED - where it is firewalled the packet is dropped and the leg waits out the
+            # 15-second default instead. Restoring in AfterAll is mandatory, the setting being
+            # process-wide.
+            $previousConnectTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
+        }
+        AfterAll {
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value $previousConnectTimeout
+        }
+
         It "preserves nested and outer warnings for an unreachable source" {
             $sourceWarnings = @()
 
@@ -127,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $result.Count | Should -Be 0
             $sourceWarnings.Count | Should -Be 2
-            $sourceWarnings[0].ToString() | Should -Match ([regex]::Escape("[Connect-DbaInstance] Failure | Error connecting to [localhost,1]:"))
+            $sourceWarnings[0].ToString() | Should -Match ([regex]::Escape("[Connect-DbaInstance] Failure | Error connecting to [$($TestConfig.InstanceUnreachable)]:"))
             $sourceWarnings[1].ToString() | Should -Match ([regex]::Escape("[Watch-DbaDbLogin] Failure |"))
         }
     }

@@ -4,8 +4,8 @@ function Get-TestConfig {
     )
 
     $config = [ordered]@{
-        CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
-        Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        CommonParameters    = [System.Management.Automation.PSCmdlet]::CommonParameters
+        Defaults            = [System.Management.Automation.DefaultParameterDictionary]@{
             # We want the tests as readable as possible so we want to set Confirm globally to $false.
             '*-Dba*:Confirm'         = $false
             # We use a global warning variable so that we can always test
@@ -16,7 +16,14 @@ function Get-TestConfig {
         # We want all the tests to only write to this location.
         # When testing a remote SQL Server instance this must be a network share
         # where both the SQL Server instance and the test script can write to.
-        Temp             = 'C:\Temp'
+        Temp                = 'C:\Temp'
+        # The endpoint for legs that must characterize a connection FAILURE. Deliberately
+        # environment-independent: loopback, so nothing leaves the box, and port 1, which no SQL
+        # Server listens on. The literal IPv4 address avoids the resolver picking ::1 first on
+        # Windows. It is never fast BY ITSELF - a leg using it also pins sql.connection.timeout to
+        # 1 second for the duration, because relying on the environment to refuse quickly costs the
+        # full 15-second default wherever the port is firewalled instead of closed.
+        InstanceUnreachable = '127.0.0.1,1'
     }
 
     if (Test-Path $LocalConfigPath) {
