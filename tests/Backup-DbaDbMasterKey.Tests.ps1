@@ -102,5 +102,20 @@ Describe $CommandName -Tag IntegrationTests {
 
             # File will be cleaned up with the backupPath directory in AfterAll
         }
+
+        It "Prompts once and reuses the answer for the second pipeline record" {
+            $server = Connect-DbaInstance -SqlInstance $testInstance
+            $fileBaseName = "dbatoolscli_dbmasterkey_promptcarry_$(Get-Random)"
+            $expectedFile = Join-DbaPath -SqlInstance $server -Path $server.BackupDirectory -ChildPath "$fileBaseName.key"
+            $databaseObject = Get-DbaDatabase -SqlInstance $testInstance -Database $testDatabase
+            Test-DbaPath -SqlInstance $server -Path $expectedFile | Should -BeFalse
+
+            Mock Read-Host -ModuleName dbatools { $masterKeyPass }
+            @($databaseObject, $databaseObject) |
+                Backup-DbaDbMasterKey -Path $server.BackupDirectory -FileBaseName $fileBaseName -WhatIf
+
+            Should -Invoke Read-Host -ModuleName dbatools -Times 2 -Exactly
+            Test-DbaPath -SqlInstance $server -Path $expectedFile | Should -BeFalse
+        }
     }
 }
