@@ -2869,6 +2869,11 @@
     "module": "dbatools.database",
     "retiredPath": "private/retired/Set-DbaDbCompatibility.ps1"
   },
+  "Set-DbaDbCompression": {
+    "module": "dbatools.database",
+    "retiredPath": "private/retired/Set-DbaDbCompression.ps1",
+    "flippedUtc": "2026-07-24T14:31:57Z"
+  },
   "Set-DbaDbDataClassification": {
     "flippedUtc": "2026-07-18T18:10:26Z",
     "module": "dbatools.database",
