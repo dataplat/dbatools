@@ -53,6 +53,11 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         try {
+            # First statement in the try on purpose: the DROPs below are unconditional and throw
+            # when their object is absent, and the catch swallows the rest of the block, so any
+            # later slot strands this database whenever a filtered run skips the tests that create
+            # dbo.my_proc, dbo.usp_Insertsomething or dbo.dbatools_tabletype.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database master -Query "IF DB_ID('dbatoolsci_dryrunsession') IS NOT NULL BEGIN ALTER DATABASE [dbatoolsci_dryrunsession] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [dbatoolsci_dryrunsession]; END"
             $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
             $null = $db.Query("DROP PROCEDURE dbo.my_proc")
             $null = $db.Query("DROP PROCEDURE dbo.usp_Insertsomething")
@@ -142,6 +147,65 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -Query $check
         $results.Name | Should -Be 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database tempdb -Query $cleanup
+    }
+    It "scripts smo objects when the caller is in a dry run" {
+        $cleanup = "IF OBJECT_ID('dbo.dbatoolsci_drytable') IS NOT NULL DROP TABLE dbo.dbatoolsci_drytable"
+        $splatCleanup = @{
+            SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            Database    = "tempdb"
+            Query       = $cleanup
+        }
+        $null = Invoke-DbaQuery @splatCleanup
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Query "CREATE TABLE dbo.dbatoolsci_drytable (id INT NOT NULL)"
+        $smoobj = Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table dbatoolsci_drytable
+        $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[dbatoolsci_drytable]') AND type in (N'U')"
+
+        # An ambient dry run in the CALLER's scope, which a script function never saw and a cmdlet's
+        # nested calls do.
+        & {
+            $WhatIfPreference = $true
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -SqlObject $smoobj
+        }
+        $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -Query $check
+        $results.Name | Should -Be "dbatoolsci_drytable"
+
+        # And the same through a SupportsShouldProcess caller invoked with -WhatIf, which leaves the
+        # same local preference behind.
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -Query $cleanup
+        function Invoke-DryRunWrapper {
+            [CmdletBinding(SupportsShouldProcess)]
+            param($Object)
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -SqlObject $Object
+        }
+        Invoke-DryRunWrapper -Object $smoobj -WhatIf
+
+        $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database tempdb -Query $check
+        $results.Name | Should -Be "dbatoolsci_drytable"
+
+        $null = Invoke-DbaQuery @splatCleanup
+    }
+    It "closes its own non-pooled connection when the caller is in a dry run" {
+        # The connection Invoke-DbaQuery opened for itself is non-pooled, so a suppressed
+        # Disconnect-DbaInstance leaves a real session behind. The observable is the SET of
+        # session ids in a dedicated database before and after the call, not a count of them:
+        # sys.dm_exec_sessions keeps the last database_id on a long-idle session and SQL Server
+        # recycles database ids, so a plain count matches sessions that predate the database
+        # itself and can never read zero.
+        $dbName = "dbatoolsci_dryrunsession"
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database master -Query "IF DB_ID('$dbName') IS NULL CREATE DATABASE [$dbName]"
+        $sessions = "SELECT session_id FROM sys.dm_exec_sessions WHERE database_id = DB_ID('$dbName') AND session_id <> @@SPID"
+        $before = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database master -Query $sessions | Select-Object -ExpandProperty session_id)
+
+        $result = & {
+            $WhatIfPreference = $true
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database $dbName -Query "SELECT 1 AS one"
+        }
+        # Positive control: the call really connected and ran, so a green session assertion
+        # below cannot come from the command never opening a session in the first place.
+        $result.one | Should -Be 1
+
+        $after = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database master -Query $sessions | Select-Object -ExpandProperty session_id)
+        @($after | Where-Object { $before -notcontains $PSItem }) | Should -BeNullOrEmpty
     }
     <#
     It "supports loose objects (with SqlInstance and database props)" {
