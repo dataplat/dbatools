@@ -110,6 +110,16 @@ Describe $CommandName -Tag IntegrationTests {
             $allServicesResults.DisplayName | Should -Not -BeNullOrEmpty
         }
 
+        It "stamps every emitted service with the dbatools.DbaSqlService type name" {
+            # The service-control commands gate on this inserted type name before they touch a
+            # service, and the formatting views key on it as well. It is an instance type name,
+            # so nothing about the object's shape reveals its absence - assert it directly.
+            $allServicesResults | Should -Not -BeNullOrEmpty
+            foreach ($result in $allServicesResults) {
+                $result.PSObject.TypeNames | Should -Contain "dbatools.DbaSqlService"
+            }
+        }
+
         It "shows only one service type" {
             foreach ($result in $agentServicesResults) {
                 $result.DisplayName -match "Agent" | Should -Be $true
