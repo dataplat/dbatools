@@ -100,7 +100,9 @@ Describe $CommandName -Tag IntegrationTests {
             $promptExpectedFile = Join-DbaPath @splatPromptPath
             Test-DbaPath -SqlInstance $promptServer -Path $promptExpectedFile | Should -BeFalse
 
-            Mock Read-Host -ModuleName dbatools { $securePassword }
+            # The mock body runs inside the dbatools module scope, so it builds its own SecureString
+            # rather than closing over $securePassword, which does not resolve there under Pester 5.
+            Mock Read-Host -ModuleName dbatools { ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force }
             $splatPromptCarry = @{
                 Path         = $promptPath
                 FileBaseName = $promptFileBaseName
