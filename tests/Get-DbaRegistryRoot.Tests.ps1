@@ -77,4 +77,60 @@ Describe $CommandName -Tag IntegrationTests {
             @($multiResults.RegistryRoot | Select-Object -Unique).Count | Should -Be $multiResults.Count
         }
     }
+
+    # The command runs part of its work inside the dbatools script module on the caller's behalf.
+    # Commands invoked there never saw the caller's $PSDefaultParameterValues - they resolved the
+    # table from the module's own session state, where none is defined - so the caller's defaults
+    # are shielded for the duration and restored afterwards. A user's global default is the only
+    # state that makes the shield observable, so these legs plant one.
+    #
+    # Both plants bind a parameter on a command run inside the module scope, which turns a leak
+    # into a wrong RESULT rather than a stream difference: -Skip 1 past a single-element pipeline
+    # and -ListAvailable on a lookup for the loaded module each yield nothing, and the work that
+    # depends on the lookup then cannot run. Neither has any effect on the caller's own pipeline.
+    Context "Command shields the caller's default parameter values from module-scoped calls" {
+        BeforeAll {
+            $shieldComputer = ([DbaInstanceParameter]($TestConfig.InstanceSingle)).ComputerName
+            if ($null -eq $global:PSDefaultParameterValues) {
+                $global:PSDefaultParameterValues = @{}
+            }
+        }
+
+        AfterAll {
+            foreach ($plantedKey in @("Select-Object:Skip", "Get-Module:ListAvailable", "*-Dba*:EnableException")) {
+                $global:PSDefaultParameterValues.Remove($plantedKey)
+            }
+        }
+
+        It "ignores a global default that would bind a parameter inside the module scope" {
+            $global:PSDefaultParameterValues["Select-Object:Skip"] = 1
+            try {
+                @(Get-DbaRegistryRoot -ComputerName $shieldComputer).Count | Should -BeGreaterThan 0
+            } finally {
+                $global:PSDefaultParameterValues.Remove("Select-Object:Skip")
+            }
+        }
+
+        It "ignores a global default that would redirect a lookup inside the module scope" {
+            $global:PSDefaultParameterValues["Get-Module:ListAvailable"] = $true
+            try {
+                @(Get-DbaRegistryRoot -ComputerName $shieldComputer).Count | Should -BeGreaterThan 0
+            } finally {
+                $global:PSDefaultParameterValues.Remove("Get-Module:ListAvailable")
+            }
+        }
+
+        It "leaves the caller's table exactly as it found it" {
+            $global:PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $global:PSDefaultParameterValues["Get-Module:ListAvailable"] = $true
+            try {
+                $null = Get-DbaRegistryRoot -ComputerName $shieldComputer
+                $global:PSDefaultParameterValues["*-Dba*:EnableException"] | Should -BeTrue
+                $global:PSDefaultParameterValues["Get-Module:ListAvailable"] | Should -BeTrue
+            } finally {
+                $global:PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+                $global:PSDefaultParameterValues.Remove("Get-Module:ListAvailable")
+            }
+        }
+    }
 }
