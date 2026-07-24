@@ -62,21 +62,24 @@ Describe $CommandName -Tag IntegrationTests {
 }
 
 <#
-    AG01 READ-ONLY SMOKE (authored per the coordinator's zero-test ruling: author now, a lab seat with
-    a live multi-replica Availability Group runs it later). Compare-DbaAgReplicaAgentJob compares SQL
-    Agent jobs ACROSS AG replicas, so it can only be exercised against a real >=2-replica AG - the
-    standalone InstanceSingle cannot resolve a second replica. This suite DISCOVERS a >=2-replica AG on
-    a HADR instance and skips-with-reason if none is provisioned; it never fails over or mutates the AG
-    topology (read-only). The one fixture it creates - a disposable dbatoolsci_ agent job on a single
-    replica, to force a detectable difference - is torn down on attempt, exactly by its randomized name.
+    LIVE MULTI-REPLICA COVERAGE. Compare-DbaAgReplicaAgentJob compares SQL Agent jobs ACROSS AG
+    replicas, so the behavior that distinguishes it can only be exercised against a real >=2-replica
+    Availability Group. This suite DISCOVERS one on a reachable HADR instance and skips-with-reason
+    if none is provisioned; it never fails over or mutates the AG topology (read-only). The one
+    fixture it creates - a disposable dbatoolsci_ agent job on a single replica, to force a
+    detectable difference - is torn down on attempt, exactly by its randomized name.
 #>
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # Run setup with EnableException so a genuine fixture failure surfaces rather than a silent skip.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Discover a >=2-replica AG on any reachable HADR instance. AG01 has no dedicated TestConfig key
-        # (it is a persistent lab AG), so resolve it dynamically and skip if the topology is not present.
+        # Discover a >=2-replica AG on any reachable HADR instance. The AG has no dedicated TestConfig
+        # key (it is a persistent lab fixture), so resolve it dynamically and skip if the topology is
+        # not present. Every instance role is a candidate, InstanceSingle included: whether a role is
+        # HADR-enabled and carries a multi-replica group is a property of the lab, not of the role
+        # name, and this lab hosts its group on InstanceSingle. Restricting the search to the roles
+        # whose names sound multi-instance is what made this whole block skip.
         $agReady = $false
         $agSkipReason = $null
         $agInstance = $null
@@ -85,10 +88,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Disposable divergence fixture, torn down by exact name whether or not resolution completed.
         $probeJobName = "dbatoolsci_agjobcmp_$(Get-Random)"
-        $probeJobCreatedOn = $null
+        $script:probeJobCreatedOn = $null
 
         try {
-            $candidates = @($TestConfig.InstanceHadr, $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Where-Object { $PSItem } | Select-Object -Unique
+            $candidates = @($TestConfig.InstanceSingle, $TestConfig.InstanceHadr, $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Where-Object { $PSItem } | Select-Object -Unique
             foreach ($candidate in $candidates) {
                 $candidateServer = Connect-DbaInstance -SqlInstance $candidate
                 if (-not $candidateServer.IsHadrEnabled) {
@@ -104,7 +107,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
             if (-not $agReady) {
-                $agSkipReason = "no reachable HADR instance hosts a >=2-replica availability group (AG01 not provisioned on this lab)"
+                $agSkipReason = "no reachable instance hosts a >=2-replica availability group"
             }
         } catch {
             $agSkipReason = "availability-group discovery failed: $($_.Exception.Message)"
@@ -117,8 +120,8 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         try {
-            if ($probeJobCreatedOn) {
-                $null = Remove-DbaAgentJob -SqlInstance $probeJobCreatedOn -Job $probeJobName -Confirm:$false -ErrorAction SilentlyContinue
+            if ($script:probeJobCreatedOn) {
+                $null = Remove-DbaAgentJob -SqlInstance $script:probeJobCreatedOn -Job $probeJobName -Confirm:$false -ErrorAction SilentlyContinue
             }
         } finally {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -153,8 +156,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Inject a disposable job on ONE replica only (agent-job state, not AG topology) so the
             # comparison has a deterministic difference to surface. Set the teardown flag before the
             # create so a mid-setup throw still reclaims it.
-            $probeJobCreatedOn = $replicaInstances[0]
-            $null = New-DbaAgentJob -SqlInstance $probeJobCreatedOn -Job $probeJobName -EnableException
+            $script:probeJobCreatedOn = $replicaInstances[0]
+            $null = New-DbaAgentJob -SqlInstance $script:probeJobCreatedOn -Job $probeJobName -EnableException
 
             $rows = @(Compare-DbaAgReplicaAgentJob -SqlInstance $agInstance -AvailabilityGroup $resolvedAg -WarningAction SilentlyContinue)
             $probeRows = @($rows | Where-Object JobName -eq $probeJobName)
