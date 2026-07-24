@@ -680,7 +680,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return the destination instance" {
-            $results.SqlInstance = $TestConfig.InstanceSingle
+            $results.SqlInstance | Should -Be $TestConfig.InstanceSingle
         }
 
         It "Should have a BlockSize of 65536" {
@@ -789,6 +789,27 @@ use master
             $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -WarningAction SilentlyContinue
             $WarnVar | Should -Match ([regex]::Escape("SQL Server detected a logical consistency-based I/O error: incorrect checksum (expected"))
             $sqlResults2 | Should -BeNullOrEmpty
+        }
+
+        # A page restore takes a tail-log backup WITH NORECOVERY, which writes a backup file and
+        # takes the database offline. An inherited dry-run must reach that nested backup, not
+        # just the restore that follows it, so this asserts the file was never written rather
+        # than that the command announced itself.
+        It "Should not take the tail-log backup when the dry-run preference is inherited" {
+            $whatIfTailFolder = "$backupPath\whatif-tail"
+            $null = New-Item -Path $whatIfTailFolder -ItemType Directory -Force
+            $splatWhatIfPageRestore = @{
+                SqlInstance           = $TestConfig.InstanceSingle
+                PageRestore           = (Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle -Database PageRestore)
+                TrustDbBackupHistory  = $true
+                DatabaseName          = "PageRestore"
+                PageRestoreTailFolder = $whatIfTailFolder
+            }
+            $WhatIfPreference = $true
+            $null = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database pagerestore -last | Restore-DbaDatabase @splatWhatIfPageRestore
+            $WhatIfPreference = $false
+
+            @(Get-ChildItem -Path $whatIfTailFolder -File).Count | Should -Be 0
         }
 
         It "Should work after page restore" {
