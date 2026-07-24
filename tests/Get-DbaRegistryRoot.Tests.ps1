@@ -27,14 +27,6 @@ Describe $CommandName -Tag IntegrationTests {
             $regexPath = "Software\\Microsoft\\Microsoft SQL Server"
         }
 
-        It "returns at least one named instance if more than one result is returned" {
-            if (@($results).Count -le 1) {
-                Set-ItResult -Skipped -Because "only one instance was returned, so no named instance is expected"
-            }
-            $named = $results | Where-Object SqlInstance -match '\\'
-            $named.SqlInstance.Count -gt 0 | Should -BeTrue
-        }
-
         It "returns non-null values" {
             foreach ($result in $results) {
                 $result.Hive | Should -Not -BeNullOrEmpty
@@ -46,6 +38,43 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($result in $results) {
                 $result.RegistryRoot -match $regexPath | Should -BeTrue
             }
+        }
+    }
+
+    # InstanceMulti1 hosts a named instance alongside its default instance, so it is the only
+    # role that reaches the instance-name qualification branch. InstanceSingle carries a lone
+    # default instance and can never exercise it.
+    Context "Command qualifies instance names on a multi-instance host" {
+        BeforeAll {
+            $multiComputer = ([DbaInstanceParameter]($TestConfig.InstanceMulti1)).ComputerName
+            $multiResults = @(Get-DbaRegistryRoot -ComputerName $multiComputer)
+            $namedResults = @($multiResults | Where-Object InstanceName -NE "MSSQLSERVER")
+            $defaultResults = @($multiResults | Where-Object InstanceName -EQ "MSSQLSERVER")
+        }
+
+        It "returns one result per installed instance" {
+            $multiResults.Count | Should -BeGreaterThan 1
+        }
+
+        It "qualifies a named instance as computer\instance" {
+            $namedResults.Count | Should -BeGreaterThan 0
+            foreach ($result in $namedResults) {
+                $result.SqlInstance | Should -Be "$($result.ComputerName)\$($result.InstanceName)"
+            }
+        }
+
+        It "leaves the default instance unqualified" {
+            $defaultResults.Count | Should -BeGreaterThan 0
+            foreach ($result in $defaultResults) {
+                $result.SqlInstance | Should -Be $result.ComputerName
+            }
+        }
+
+        It "gives each instance its own registry root" {
+            foreach ($result in $multiResults) {
+                $result.RegistryRoot | Should -BeLike "HKLM:\*$($result.InstanceName)*"
+            }
+            @($multiResults.RegistryRoot | Select-Object -Unique).Count | Should -Be $multiResults.Count
         }
     }
 }
