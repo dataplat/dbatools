@@ -44,7 +44,8 @@
         'dbatools.maintenance',
         'dbatools.computer',
         'dbatools.replication',
-        'dbatools.ssis'
+        'dbatools.ssis',
+        'dbatools.migration'
     )
 
     # Assemblies that must be loaded prior to importing this module
@@ -67,7 +68,6 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
-        'Copy-DbaBackupDevice',
         'Copy-DbaCredential',
         'Copy-DbaCustomError',
         'Copy-DbaDatabase',

@@ -214,6 +214,11 @@
     "module": "dbatools.agent",
     "retiredPath": "private/retired/Copy-DbaAgentServer.ps1"
   },
+  "Copy-DbaBackupDevice": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaBackupDevice.ps1",
+    "flippedUtc": "2026-07-24T20:25:27Z"
+  },
   "Copy-DbaDbCertificate": {
     "flippedUtc": "2026-07-17T18:51:50Z",
     "module": "dbatools.security",
