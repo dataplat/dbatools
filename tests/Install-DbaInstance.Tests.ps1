@@ -332,6 +332,55 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Values that persist for the whole call" {
+        BeforeAll {
+            foreach ($fileNumber in 1, 2) {
+                @(
+                    "[OPTIONS]"
+                    "SQLSVCACCOUNT=""foo\bar"""
+                    "FEATURES=""SQLEngine"""
+                    "ACTION=""Install"""
+                ) | Set-Content -Path "TestDrive:\PersistCfg$fileNumber.ini" -Force
+            }
+            $persistedConfigFiles = @("TestDrive:\PersistCfg1.ini", "TestDrive:\PersistCfg2.ini")
+        }
+
+        It "generates one sa password for every record of a piped run" {
+            Mock -CommandName Get-RandomPassword -MockWith {
+                ConvertTo-SecureString "dbatoolsSaProbe1" -AsPlainText -Force
+            } -ModuleName dbatools
+
+            $splatMixedInstall = @{
+                Version            = "2016"
+                Path               = "TestDrive:"
+                AuthenticationMode = "Mixed"
+                EnableException    = $true
+                Confirm            = $false
+            }
+            $persistedResult = @($persistedConfigFiles | Install-DbaInstance @splatMixedInstall)
+
+            $persistedResult.Count | Should -Be 2
+            # One generation for the whole call means one credential object exists, so every record
+            # is installed with the same sa password.
+            Should -Invoke -CommandName Get-RandomPassword -ModuleName dbatools -Exactly 1 -Scope It
+        }
+
+        It "writes SQLSVCINSTANTFILEINIT only for the first record of a piped run" {
+            $splatIfiInstall = @{
+                Version                       = "2016"
+                Path                          = "TestDrive:"
+                PerformVolumeMaintenanceTasks = $true
+                EnableException               = $true
+                Confirm                       = $false
+            }
+            $ifiResult = @($persistedConfigFiles | Install-DbaInstance @splatIfiInstall)
+
+            $ifiResult.Count | Should -Be 2
+            $ifiResult[0].Configuration.OPTIONS.SQLSVCINSTANTFILEINIT | Should -Be "True"
+            $ifiResult[1].Configuration.OPTIONS.SQLSVCINSTANTFILEINIT | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Negative tests" {
         It "fails when a reboot is pending" {
             #override default mock
