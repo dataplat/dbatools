@@ -84,23 +84,26 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should export some text matching create table" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "CREATE TABLE"
+            # Passthru emits one string per script part, so join before asserting on the script as a whole.
+            ($results -join "`n") | Should -Match "CREATE TABLE"
         }
 
         It "Should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
+            $configuredSeparator = Get-DbatoolsConfigValue -FullName "Formatting.BatchSeparator"
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
+            # The rendered separator is what has to appear, on a line of its own - not the expression that produces it.
+            ($results -join "`n") | Should -Match "(?m)^$([regex]::Escape($configuredSeparator))\s*$"
         }
 
         It "Should include the defined BatchSeparator" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $results -match "MakeItSo"
+            ($results -join "`n") | Should -Match "(?m)^MakeItSo\s*$"
         }
 
         It "Should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
-            $invalid -match "not a SQL Management Object"
+            ($invalid -join " ") | Should -Match "not a SQL Management Object"
         }
 
         It "Should not append when using NoPrefix (#7455)" {
