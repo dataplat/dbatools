@@ -5,7 +5,7 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-# migration PHASE-0-TRACKER row P0-008 / best-practices BP-6xx message-channel proof.
+# Message-channel proof.
 #
 # Proves the C# message channel end to end: a NATIVELY implemented binary cmdlet whose warning
 # originates in DbaBaseCmdlet.WriteMessage(MessageLevel.Warning, ...) (routed to
@@ -20,7 +20,7 @@ param(
 # RFC 6761 reserved .invalid target triggers that warning deterministically offline - no SQL
 # Server, no lab, and no live-network dependency.
 
-Describe "Message channel (P0-008)" -Tag IntegrationTests {
+Describe "Message channel" -Tag IntegrationTests {
     Context "A native cmdlet's WriteMessage warning surfaces through -WarningVariable" {
         BeforeAll {
             # RFC 6761 reserves the .invalid TLD, so this name can never resolve; the warning is

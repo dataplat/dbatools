@@ -37,11 +37,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Multi-record pipe emits each workload group exactly once (deviation from source, #6 / DEF-012)" {
+    Context "Multi-record pipe emits each workload group exactly once (deviation from source)" {
         # The retired function accumulated instances in a process-scope `$InputObject +=`, so a
         # multi-record pipe re-emitted earlier records' groups: record 2 relisted record 1's groups.
         # The compiled port runs each pipeline record in its own hop scope and emits every workload
-        # group exactly once. This is the #6 ruling (a) deviation from source, and a single-instance
+        # group exactly once. This is the deviation from source, and a single-instance
         # leg cannot observe it - it needs at least two piped records.
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

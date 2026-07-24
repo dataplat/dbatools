@@ -5,11 +5,11 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-# migration PHASE-0-TRACKER row P0-009 - the ps1xml round-trip proof for OutputHelper.
+# The ps1xml round-trip proof for OutputHelper.
 #
 # OutputHelper (project/dbatools/Utility/OutputHelper.cs) is the compiled Select-DefaultView
 # equivalent every ported cmdlet shapes output through. Its MSTest coverage proves the ETS
-# decoration is attached correctly; this proof closes the other half the row asks for - that a
+# decoration is attached correctly; this proof closes the other half - that a
 # decorated object RENDERS through the shipped Types/Format data (xml/dbatools.Format.ps1xml)
 # identically to the PowerShell Select-DefaultView function.
 #
@@ -21,7 +21,7 @@ param(
 #   2. SetDefaultDisplayPropertySet renders identically to Select-DefaultView -Property for a type
 #      with no ps1xml view, where PSStandardMembers alone drives the default columns.
 
-Describe "OutputHelper ps1xml round-trip (P0-009)" -Tag IntegrationTests {
+Describe "OutputHelper ps1xml round-trip" -Tag IntegrationTests {
     Context "InsertTypeName renders through the shipped dbatools.Format.ps1xml view" {
         BeforeAll {
             # Properties Type/Name/Status/Notes match the shipped dbatools.MigrationObject view;

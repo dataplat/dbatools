@@ -29,12 +29,11 @@ Describe $CommandName -Tag IntegrationTests {
     # write targets are empty here for the script function and the compiled cmdlet alike.
     # (A 2026-07-12 revision asserted a real HKCU round-trip here after gate runs appeared
     # to show the cmdlet registering under the harness - those runs were measuring a Gallery
-    # dbatools 2.8.2 function through the Gallery-shadow auto-load incident, see
-    # migration/CAMPAIGN-STATE.md. Post-fix, the compiled cmdlet's module hop reads the same
-    # blanked variables, so the honest harness shape below is restored.)
-    # The out-of-harness registry/file behavior is pinned by the migration smoke battery
-    # (see migration/trackers WAVE-1 W1-032 Evidence). These tests pin the
-    # environment-independent no-op paths plus the harness-observable failure shape.
+    # dbatools 2.8.2 function through a Gallery-shadow auto-load incident. Post-fix, the compiled
+    # cmdlet's module hop reads the same blanked variables, so the honest harness shape below is
+    # restored.)
+    # The out-of-harness registry/file behavior is pinned by a separate smoke battery. These tests
+    # pin the environment-independent no-op paths plus the harness-observable failure shape.
 
     Context "No-op paths" {
         It "Silently ignores an unknown FullName" {
