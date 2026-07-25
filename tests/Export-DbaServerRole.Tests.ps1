@@ -32,6 +32,45 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Multiple piped records" {
+        It "does not re-emit the prior role when the current record produces no SQL" {
+            Mock Get-DbaServerRole -ModuleName dbatools {
+                param($SqlInstance)
+
+                $name = @($SqlInstance)[0].ToString()
+                $version = if ($name -eq "instance-1") { 15 } else { 10 }
+                $server = [pscustomobject]@{
+                    ServerType  = "Standalone"
+                    VersionMajor = $version
+                }
+                $server | Add-Member -MemberType ScriptMethod -Name Query -Value { param($query) @() }
+                $role = [pscustomobject]@{
+                    Name        = "role-$name"
+                    SqlInstance = $name
+                    Parent      = $server
+                    Login       = @()
+                    Role        = "role-$name"
+                }
+                $role | Add-Member -MemberType ScriptMethod -Name Script -Value {
+                    param($options)
+                    @("CREATE SERVER ROLE [$($this.Name)]")
+                }
+                $role
+            }
+
+            $instances = @(
+                [Dataplat.Dbatools.Parameter.DbaInstanceParameter]::new("instance-1")
+                [Dataplat.Dbatools.Parameter.DbaInstanceParameter]::new("instance-2")
+            )
+            $options = [Microsoft.SqlServer.Management.Smo.ScriptingOptions]::new()
+            $result = @($instances | Export-DbaServerRole -ScriptingOptionsObject $options -Passthru -NoPrefix -BatchSeparator "")
+
+            @($result | Where-Object { $_ -match "role-instance-1" }).Count | Should -BeExactly 1
+            @($result | Where-Object { $_ -match "role-instance-2" }).Count | Should -BeExactly 0
+            Should -Invoke Get-DbaServerRole -ModuleName dbatools -Times 2 -Exactly
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
