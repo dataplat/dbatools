@@ -61,7 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
         It "Does not re-emit an earlier record's schedule" {
             # Confirmation is host-direct, so run the actual compiled command in a child of the
             # current edition and provide deterministic answers: create record 1, decline record 2.
-            $modulePath = (Get-Module dbatools).Path
+            $moduleRoot = Split-Path $PSScriptRoot -Parent
+            $modulePath = (Get-Module dbatools | Where-Object ModuleBase -eq $moduleRoot).Path
             $instanceName = $TestConfig.InstanceSingle.ToString()
             $childScript = @'
 Import-Module "__MODULE_PATH__" -Force
