@@ -48,6 +48,61 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job 'dbatoolsci_newschedule'
     }
 
+    Context "When creation is declined on a later pipeline record" {
+        BeforeEach {
+            $pipelineSchedule = "dbatoolsci_pipe_$(Get-Random)"
+        }
+
+        AfterEach {
+            Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $pipelineSchedule |
+                Remove-DbaAgentSchedule -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Does not re-emit an earlier record's schedule" {
+            # Confirmation is host-direct, so run the actual compiled command in a child of the
+            # current edition and provide deterministic answers: create record 1, decline record 2.
+            $modulePath = (Get-Module dbatools).Path
+            $instanceName = $TestConfig.InstanceSingle.ToString()
+            $childScript = @'
+Import-Module "__MODULE_PATH__" -Force
+$instances = @("__INSTANCE__", "__INSTANCE__")
+$results = @(
+    $instances | New-DbaAgentSchedule -Schedule "__SCHEDULE__" -FrequencyType Daily -FrequencyInterval 1 -StartDate "__START__" -StartTime "010000" -EndDate "__END__" -EndTime "020000" -Confirm
+)
+"__DBATOOLS_RESULT_COUNT__=$($results.Count)"
+'@
+            $childScript = $childScript.Replace("__MODULE_PATH__", $modulePath)
+            $childScript = $childScript.Replace("__INSTANCE__", $instanceName)
+            $childScript = $childScript.Replace("__SCHEDULE__", $pipelineSchedule)
+            $childScript = $childScript.Replace("__START__", $start)
+            $childScript = $childScript.Replace("__END__", $end)
+            $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($childScript))
+
+            $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+            $processInfo.FileName = (Get-Process -Id $PID).Path
+            $processInfo.Arguments = "-NoProfile -EncodedCommand $encodedCommand"
+            $processInfo.UseShellExecute = $false
+            $processInfo.RedirectStandardInput = $true
+            $processInfo.RedirectStandardOutput = $true
+            $processInfo.RedirectStandardError = $true
+
+            $child = New-Object System.Diagnostics.Process
+            $child.StartInfo = $processInfo
+            $null = $child.Start()
+            $child.StandardInput.WriteLine("Y")
+            $child.StandardInput.WriteLine("N")
+            $child.StandardInput.Close()
+            $standardOutput = $child.StandardOutput.ReadToEnd()
+            $standardError = $child.StandardError.ReadToEnd()
+            $child.WaitForExit()
+
+            $standardError | Should -BeNullOrEmpty
+            $child.ExitCode | Should -Be 0
+            $standardOutput | Should -Match "__DBATOOLS_RESULT_COUNT__=1"
+            @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $pipelineSchedule).Count | Should -Be 1
+        }
+    }
+
     Context "Should create schedules based on frequency type" {
         BeforeAll {
             $results = @{ }
