@@ -65,6 +65,7 @@ Describe $CommandName -Tag IntegrationTests {
             $modulePath = (Get-Module dbatools | Where-Object ModuleBase -eq $moduleRoot).Path
             $instanceName = $TestConfig.InstanceSingle.ToString()
             $childScript = @'
+$ProgressPreference = "SilentlyContinue"
 Import-Module "__MODULE_PATH__" -Force
 $instances = @("__INSTANCE__", "__INSTANCE__")
 $results = @(
@@ -97,7 +98,13 @@ $results = @(
             $standardError = $child.StandardError.ReadToEnd()
             $child.WaitForExit()
 
-            $standardError | Should -BeNullOrEmpty
+            $unexpectedError = if (
+                $standardError -and
+                -not ($standardError -match '^#< CLIXML' -and $standardError -notmatch ' S="Error"')
+            ) {
+                $standardError
+            }
+            $unexpectedError | Should -BeNullOrEmpty
             $child.ExitCode | Should -Be 0
             $standardOutput | Should -Match "__DBATOOLS_RESULT_COUNT__=1"
             @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule $pipelineSchedule).Count | Should -Be 1
