@@ -414,3 +414,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe "$CommandName legacy kill-switch Boolean handoff" -Tag IntegrationTests {
+    It "normalizes both SwitchParameter action-plan values for the compiled nested cmdlet" {
+        $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot "..\private\retired\Install-DbaInstance.ps1") -Raw
+
+        ([regex]::Matches($source, '(?m)^\s*Restart\s*=\s*\[bool\]\$Restart\s*$')).Count | Should -Be 1
+        ([regex]::Matches($source, '(?m)^\s*PerformVolumeMaintenanceTasks\s*=\s*\[bool\]\$PerformVolumeMaintenanceTasks\s*$')).Count | Should -Be 1
+        ([regex]::Matches($source, '(?m)^\s*Restart\s*=\s*\$Restart\s*$')).Count | Should -Be 0
+        ([regex]::Matches($source, '(?m)^\s*PerformVolumeMaintenanceTasks\s*=\s*\$PerformVolumeMaintenanceTasks\s*$')).Count | Should -Be 0
+
+        $nested = Get-Command Invoke-DbaAdvancedInstall -CommandType Cmdlet
+        $nested.Parameters["Restart"].ParameterType | Should -Be ([bool])
+        $nested.Parameters["PerformVolumeMaintenanceTasks"].ParameterType | Should -Be ([bool])
+    }
+}

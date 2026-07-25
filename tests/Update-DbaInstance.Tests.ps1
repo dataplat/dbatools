@@ -1072,3 +1072,15 @@ Describe "$CommandName compiled-cmdlet characterization" -Tag IntegrationTests {
         Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter { $Authentication -eq "Credssp" }
     }
 }
+
+Describe "$CommandName legacy kill-switch Boolean handoff" -Tag IntegrationTests {
+    It "normalizes the Restart SwitchParameter action-plan value for the compiled nested cmdlet" {
+        $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot "..\private\retired\Update-DbaInstance.ps1") -Raw
+
+        ([regex]::Matches($source, '(?m)^\s*Restart\s*=\s*\[bool\]\$Restart\s*$')).Count | Should -Be 1
+        ([regex]::Matches($source, '(?m)^\s*Restart\s*=\s*\$Restart\s*$')).Count | Should -Be 0
+
+        $nested = Get-Command Invoke-DbaAdvancedUpdate -CommandType Cmdlet
+        $nested.Parameters["Restart"].ParameterType | Should -Be ([bool])
+    }
+}

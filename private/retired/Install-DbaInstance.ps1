@@ -873,12 +873,12 @@ function Install-DbaInstance {
                     InstallationPath              = $setupFile
                     ConfigurationPath             = $configFile
                     ArgumentList                  = $execParams
-                    Restart                       = $Restart
+                    Restart                       = [bool]$Restart
                     Version                       = $canonicVersion
                     Configuration                 = $config
                     SaveConfiguration             = $SaveConfiguration
                     SaCredential                  = $SaCredential
-                    PerformVolumeMaintenanceTasks = $PerformVolumeMaintenanceTasks
+                    PerformVolumeMaintenanceTasks = [bool]$PerformVolumeMaintenanceTasks
                     Credential                    = $Credential
                     NoPendingRenameCheck          = $NoPendingRenameCheck
                     EnableException               = $EnableException
