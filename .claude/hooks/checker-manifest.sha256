@@ -5,7 +5,7 @@
 # stop-checker-integrity.sh, so silently re-baselining a weakened checker
 # does not go unrecorded - which is the whole point of the file.
 #
-# Generated from HEAD 208ccdd9e
+# Generated from HEAD 2f629e475
 3f368c88538596eb37cc023905d2bec70425b7d6ad1eec37d075eaa38ece34d6  .claude/hooks/hooks-doctor.sh
 abe4c845ae6f5dd974d323503e5b190c80720c8310921f08f7751409201d352c  .claude/hooks/jscpd-baseline.sh
 7a0221328269aae82c94f23ecebd1aa4f9cf503fe3d3de77c63a464634f38694  .claude/hooks/lib-codex-review-exec.sh
@@ -37,3 +37,4 @@ fe64cd6bed46c05e7392b36fe74b6cc8387aba3722586a9fe72cffeda6889234  .claude/hooks/
 6466333c98d60f6fb1aa54fcfda85e45dcaf37fbd7b4b923f90112aa5b771f89  .claude/hooks/test-jscpd-ratchet.sh
 010ca5e3d5b90f51660d6ffb7aa0d9d4c88404e790b3f863f6f3e9782a2ea172  .claude/hooks/verify-checker-integrity.sh
 bf209d10005cf9fcb0d6ece52e37952a9a7348a82b994a4c64d1f92fda2806b3  .claude/settings.json
+e7a6694133bebf6326b27c380b1d16c8d479a858b6dd2eb2cc1e990137dba916  .claude/skills/reviewme/SKILL.md
