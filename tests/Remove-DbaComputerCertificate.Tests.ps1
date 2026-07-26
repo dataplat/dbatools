@@ -23,9 +23,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
-    # Skip IntegrationTests on pwsh because we need code changes (X509Certificate is immutable on this platform. Use the equivalent constructor instead.)
-
+Describe $CommandName -Tag IntegrationTests {
     Context "Can remove a certificate" {
         BeforeAll {
             $null = Add-DbaComputerCertificate -Path "$($TestConfig.appveyorlabrepo)\certificates\localhost.crt" -EnableException
@@ -48,6 +46,60 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "really removed it" {
             $verifyResults = Get-DbaComputerCertificate -Thumbprint $thumbprint
             $verifyResults | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Can remove certificates from the property pipeline" {
+        BeforeAll {
+            $pipelineCertificateSuffix = [guid]::NewGuid().ToString("N")
+            $pipelineCertificates = @(
+                foreach ($pipelineCertificateNumber in 1..2) {
+                    $splatNewPipelineCertificate = @{
+                        DnsName           = "dbatools-remove-certificate-$pipelineCertificateNumber-$pipelineCertificateSuffix"
+                        CertStoreLocation = "Cert:\LocalMachine\My"
+                        NotAfter          = (Get-Date).AddDays(1)
+                    }
+                    New-SelfSignedCertificate @splatNewPipelineCertificate
+                }
+            )
+            $pipelineCertificateInput = @(
+                [pscustomobject]@{
+                    Thumbprint = $pipelineCertificates[0].Thumbprint
+                }
+                [pscustomobject]@{
+                    Thumbprint = $pipelineCertificates[1].Thumbprint
+                }
+            )
+            $pipelineResults = @($pipelineCertificateInput | Remove-DbaComputerCertificate -Confirm:$false -EnableException)
+        }
+
+        AfterAll {
+            foreach ($pipelineCertificate in $pipelineCertificates) {
+                $pipelineCertificatePath = "Cert:\LocalMachine\My\$($pipelineCertificate.Thumbprint)"
+                if (Test-Path -LiteralPath $pipelineCertificatePath) {
+                    $splatRemovePipelineCertificate = @{
+                        LiteralPath = $pipelineCertificatePath
+                        Force       = $true
+                        ErrorAction = "SilentlyContinue"
+                    }
+                    Remove-Item @splatRemovePipelineCertificate
+                }
+            }
+        }
+
+        It "removes each piped certificate exactly once" {
+            @($pipelineResults).Count | Should -Be 2
+            foreach ($pipelineCertificate in $pipelineCertificates) {
+                @($pipelineResults | Where-Object Thumbprint -eq $pipelineCertificate.Thumbprint).Count | Should -Be 1
+            }
+            @($pipelineResults | Where-Object Status -ne "Removed") | Should -BeNullOrEmpty
+        }
+
+        It "really removed each piped certificate" {
+            foreach ($pipelineCertificate in $pipelineCertificates) {
+                $pipelineVerifyResults = Get-DbaComputerCertificate -Thumbprint $pipelineCertificate.Thumbprint
+                $pipelineVerifyResults | Should -BeNullOrEmpty
+            }
         }
     }
 }
