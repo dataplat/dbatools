@@ -50,4 +50,27 @@ Describe $CommandName -Tag IntegrationTests {
             ($pubWarn -join "`n") | Should -Match "isn't currently enabled for publishing"
         }
     }
+
+    Context "Containing the non-publisher guard per piped record" {
+        It "Processes both piped records after the dangling labeled continue" {
+            InModuleScope dbatools {
+                Mock Get-DbaReplServer {
+                    [pscustomobject]@{ IsPublisher = $false }
+                }
+
+                $warnings = @()
+                $result = @(
+                    "repl-one", "repl-two" |
+                        Disable-DbaReplPublishing -WarningVariable warnings -WarningAction SilentlyContinue -Confirm:$false
+                )
+                $ownedWarnings = @(
+                    $warnings | Where-Object { $PSItem.ToString() -match "\[Disable-DbaReplPublishing\].*isn't currently enabled for publishing" }
+                )
+
+                $result | Should -BeNullOrEmpty
+                $ownedWarnings.Count | Should -Be 2
+                Should -Invoke Get-DbaReplServer -Exactly -Times 2
+            }
+        }
+    }
 }
