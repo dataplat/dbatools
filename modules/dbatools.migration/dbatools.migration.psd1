@@ -23,7 +23,8 @@
     # dropping that entry breaks every Import-Module dbatools.
     CmdletsToExport        = @(
         'Copy-DbaBackupDevice',
-        'Copy-DbaCredential'
+        'Copy-DbaCredential',
+        'Copy-DbaCustomError'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
