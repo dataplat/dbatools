@@ -96,6 +96,10 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           # Disabled for now, it's suddenly failing
           # $null = Invoke-Pester .github/scripts/gh-actions-repl-1.ps1 -Output Detailed -PassThru -Verbose
+          $results = Invoke-Pester .github/scripts/gh-actions-repl-1.ps1 -Output Detailed -PassThru -Verbose
+          if ($results.TotalCount -eq 0) {
+            throw "Replication tests part 1 executed zero tests"
+          }
 
   repl-tests-part2:
     runs-on: ubuntu-latest
@@ -162,10 +166,12 @@ jobs:
           docker exec mssql1 mkdir /shared/data /shared/repldata /var/opt/mssql/ReplData
 
       - name: Run replication tests part 2
-        if: env.TESTS_FIXED == 'true'
         run: |
           Import-Module ./dbatools.psd1 -Force
-          $null = Invoke-Pester .github/scripts/gh-actions-repl-2.ps1 -Output Detailed -PassThru -Verbose
+          $results = Invoke-Pester .github/scripts/gh-actions-repl-2.ps1 -Output Detailed -PassThru -Verbose
+          if ($results.TotalCount -eq 0) {
+            throw "Replication tests part 2 executed zero tests"
+          }
 
   repl-tests-part3:
     runs-on: ubuntu-latest
@@ -235,3 +241,7 @@ jobs:
         run: |
           Import-Module ./dbatools.psd1 -Force
           # Invoke-Pester .github/scripts/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose
+          $results = Invoke-Pester .github/scripts/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose
+          if ($results.TotalCount -eq 0) {
+            throw "Replication tests part 3 executed zero tests"
+          }
