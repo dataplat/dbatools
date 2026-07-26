@@ -33,7 +33,9 @@ Describe $CommandName -Tag IntegrationTests {
 
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
+            $pipelineCertificateName = "Cert_$(Get-Random)"
             $dbName = "dbatoolscli_db1_$(Get-Random)"
+            $pipelineDbName = "dbatoolscli_db2_$(Get-Random)"
             $pw = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
 
             $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbName
@@ -41,6 +43,21 @@ Describe $CommandName -Tag IntegrationTests {
 
             $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw -Name $certificateName1
             $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Password $pw -Name $certificateName2
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $pipelineDbName
+            $splatPipelineMasterKey = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $pipelineDbName
+                Password    = $pw
+            }
+            $null = New-DbaDbMasterKey @splatPipelineMasterKey
+            $splatPipelineCertificate = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $pipelineDbName
+                Password    = $pw
+                Name        = $pipelineCertificateName
+            }
+            $null = New-DbaDbCertificate @splatPipelineCertificate
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -51,7 +68,12 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created objects
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+            $splatRemoveDatabases = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName, $pipelineDbName
+                Confirm     = $false
+            }
+            Remove-DbaDatabase @splatRemoveDatabases
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -72,6 +94,25 @@ Describe $CommandName -Tag IntegrationTests {
             $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName
             $cert.Database | Should -Not -Match $dbName
             $cert.Name | Should -Not -BeIn $certificateName1, $certificateName2
+        }
+
+        It "Returns the certificate attributable to each piped database" {
+            $pipelineDatabases = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName, $pipelineDbName
+            $certificates = $pipelineDatabases |
+                Get-DbaDbCertificate -Certificate $certificateName1, $pipelineCertificateName
+            $actualIdentities = @(
+                $certificates | ForEach-Object { "$($PSItem.Database)|$($PSItem.Name)" }
+            )
+            $expectedIdentities = @(
+                "$dbName|$certificateName1",
+                "$pipelineDbName|$pipelineCertificateName"
+            )
+
+            $certificates | Should -HaveCount 2
+            $actualIdentities | Should -Contain $expectedIdentities[0]
+            $actualIdentities | Should -Contain $expectedIdentities[1]
+            @($actualIdentities | Where-Object { $PSItem -eq $expectedIdentities[0] }).Count | Should -Be 1
+            @($actualIdentities | Where-Object { $PSItem -eq $expectedIdentities[1] }).Count | Should -Be 1
         }
     }
 }
