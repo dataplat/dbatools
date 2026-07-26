@@ -132,10 +132,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $dbname = "dbatoolsci_exportdbauser"
+        $dbname2 = "dbatoolsci_exportdbauser_pipeline"
         $login = "dbatoolsci_exportdbauser_login"
         $login2 = "dbatoolsci_exportdbauser_login2"
         $user = "dbatoolsci_exportdbauser_user"
         $user2 = "dbatoolsci_exportdbauser_user2"
+        $pipelineUser = "dbatoolsci_exportdbauser_pipeline_user"
         $table = "dbatoolsci_exportdbauser_table"
         $role = "dbatoolsci_exportdbauser_role"
         $schema = "dbatoolsci_exportdbauser_schema"
@@ -156,6 +158,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Create the objects.
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("CREATE DATABASE [$dbname]")
+        $null = $server.Query("CREATE DATABASE [$dbname2]")
 
         $securePassword = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
         $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login -Password $securePassword
@@ -164,6 +167,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login02 -Password $securePassword
 
         $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $db2 = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname2
         $null = $db.Query("CREATE USER [$user] FOR LOGIN [$login]")
         $null = $db.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
         $null = $db.Query("CREATE USER [$user01] FOR LOGIN [$login01]")
@@ -182,6 +186,8 @@ Describe $CommandName -Tag IntegrationTests {
         $null = $db.Query("EXEC sp_addrolemember '$role02', '$user02';")
         $null = $db.Query("EXEC sp_addrolemember '$role03', '$user02';")
         $null = $db.Query("GRANT SELECT ON OBJECT::$table TO [$user2];")
+        $null = $db.Query("CREATE USER [$pipelineUser] WITHOUT LOGIN")
+        $null = $db2.Query("CREATE USER [$pipelineUser] WITHOUT LOGIN")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -192,7 +198,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created object.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname, $dbname2
         $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $login, $login2, $login01, $login02
 
         # Remove the backup directory.
@@ -215,6 +221,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Pipeline input" {
+        It "Exports every piped database record" {
+            $pipelineDatabases = @($db, $db2)
+            $results = @($pipelineDatabases | Export-DbaUser -User $pipelineUser -Passthru -EnableException)
+            $scriptText = $results -join [Environment]::NewLine
+
+            [regex]::Matches($scriptText, [regex]::Escape("USE [$dbname]")).Count | Should -BeExactly 1
+            [regex]::Matches($scriptText, [regex]::Escape("USE [$dbname2]")).Count | Should -BeExactly 1
         }
     }
 
