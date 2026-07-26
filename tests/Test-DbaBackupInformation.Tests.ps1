@@ -25,8 +25,12 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests {
+Describe "$CommandName legacy kill-switch mock-only coverage" -Tag UnitTests {
     InModuleScope dbatools {
+        BeforeAll {
+            . (Join-Path $PSScriptRoot "..\private\retired\Test-DbaBackupInformation.ps1")
+        }
+
         Context "Everything as it should" {
             It "Should pass as all systems Green" {
                 $BackupHistory = Import-Clixml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
@@ -309,6 +313,38 @@ Describe $CommandName -Tag IntegrationTests {
                 ($output.Count) -gt 0 | Should -Be $true
                 $true -in ($Output.IsVerified) | Should -Be $False
                 ($null -ne $WarnVar) | Should -Be $True
+            }
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    InModuleScope dbatools {
+        It "validates a readable backup against InstanceSingle through the compiled cmdlet" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            try {
+                $backupPath = "$($TestConfig.AppveyorLabRepo)\singlerestore\singlerestore.bak"
+                $targetName = "dbatoolsci_testbackupinfo_$([Guid]::NewGuid().ToString('N'))"
+                $history = @(
+                    Get-DbaBackupInformation `
+                        -SqlInstance $TestConfig.InstanceSingle `
+                        -Path $backupPath |
+                        Format-DbaBackupInformation -ReplaceDatabaseName $targetName
+                )
+                $result = @(
+                    $history |
+                        Test-DbaBackupInformation `
+                            -SqlInstance $TestConfig.InstanceSingle `
+                            -VerifyOnly
+                )
+
+                (Get-Command Test-DbaBackupInformation).CommandType | Should -Be "Cmdlet"
+                $history.Count | Should -BeGreaterThan 0
+                $result.Count | Should -BeExactly $history.Count
+                $result.IsVerified | Should -Not -Contain $false
+                $result.IsVerified | Should -Not -Contain $null
+            } finally {
+                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
             }
         }
     }
