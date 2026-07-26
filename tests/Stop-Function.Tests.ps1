@@ -42,7 +42,8 @@ Describe $CommandName -Tag UnitTests {
         BeforeAll {
             try {
                 $result = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-                $record = $Error[0]
+                # Invoke-ManualPester runs from the dbatools module session state, whose plain $Error is inert.
+                $record = $global:Error[0]
                 $failed = $false
             } catch {
                 $record = $null
@@ -82,7 +83,7 @@ Describe $CommandName -Tag UnitTests {
                     $null.GetType()
                 } catch {
                     $result = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $PSItem -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
-                    $record = $Error[0]
+                    $record = $global:Error[0]
                     $failed = $false
                 }
             } catch {
