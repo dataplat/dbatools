@@ -34,8 +34,73 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-}
 
+    Context "Mutually exclusive database filters" {
+        It "warns without throwing or emitting data when both filters are bound" {
+            $guardWarnings = @()
+            $guardOutput = Get-DbaDatabase -SqlInstance "invalid" -ExcludeSystem -ExcludeUser -WarningAction SilentlyContinue -WarningVariable guardWarnings
+
+            $guardOutput | Should -BeNullOrEmpty
+            $guardWarnings.Count | Should -Be 1
+            $guardWarnings[0].Message | Should -Match "\[Get-DbaDatabase\]"
+            $guardWarnings[0].Message | Should -Match "You cannot specify both ExcludeUser and ExcludeSystem\."
+        }
+
+        It "preserves the nested warning exception identity for bound Stop" {
+            $guardWarnings = @()
+            $guardException = $null
+            try {
+                Get-DbaDatabase -SqlInstance "invalid" -ExcludeSystem -ExcludeUser -WarningAction Stop -WarningVariable guardWarnings
+            } catch {
+                $guardException = $PSItem
+            }
+
+            $guardException.Exception.GetType().FullName | Should -Be "System.Management.Automation.ActionPreferenceStopException"
+            $guardException.FullyQualifiedErrorId | Should -Be "ActionPreferenceStop,Dataplat.Dbatools.Commands.WriteMessageCommand"
+            $guardWarnings.Count | Should -Be 1
+        }
+
+        It "preserves the nested warning exception identity for ambient Stop" {
+            $guardWarnings = @()
+            $guardException = $null
+            $previousWarningPreference = $global:WarningPreference
+            try {
+                $global:WarningPreference = "Stop"
+                try {
+                    Get-DbaDatabase -SqlInstance "invalid" -ExcludeSystem -ExcludeUser -WarningVariable guardWarnings
+                } catch {
+                    $guardException = $PSItem
+                }
+            } finally {
+                $global:WarningPreference = $previousWarningPreference
+            }
+
+            $guardException.Exception.GetType().FullName | Should -Be "System.Management.Automation.ActionPreferenceStopException"
+            $guardException.FullyQualifiedErrorId | Should -Be "ActionPreferenceStop,Dataplat.Dbatools.Commands.WriteMessageCommand"
+            $guardWarnings.Count | Should -Be 1
+        }
+
+        It "appends one warning to a pre-populated WarningVariable" {
+            $existingWarning = New-Object -TypeName System.Management.Automation.WarningRecord -ArgumentList "existing"
+            $guardWarnings = [System.Collections.ArrayList]@($existingWarning)
+            $guardOutput = Get-DbaDatabase -SqlInstance "invalid" -ExcludeSystem -ExcludeUser -WarningAction SilentlyContinue -WarningVariable +guardWarnings
+
+            $guardOutput | Should -BeNullOrEmpty
+            $guardWarnings.Count | Should -Be 2
+            $guardWarnings[0].Message | Should -Be "existing"
+            $guardWarnings[1].Message | Should -Match "You cannot specify both ExcludeUser and ExcludeSystem\."
+        }
+
+        It "throws the guard exception without warning records for EnableException" {
+            $guardWarnings = @()
+            $guardException = { Get-DbaDatabase -SqlInstance "invalid" -ExcludeSystem -ExcludeUser -EnableException -WarningVariable guardWarnings } |
+                Should -Throw -PassThru
+
+            $guardException.Exception.Message | Should -Be "You cannot specify both ExcludeUser and ExcludeSystem."
+            $guardWarnings | Should -BeNullOrEmpty
+        }
+    }
+}
 Describe $CommandName -Tag IntegrationTests {
     Context "Count system databases on localhost" {
         It "reports the right number of databases" {
@@ -126,129 +191,6 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should return no results for non-matching pattern" {
             $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Pattern "^nonexistent_"
             $results | Should -BeNullOrEmpty
-        }
-    }
-}
-
-Describe $CommandName -Tag UnitTests -Skip {
-    # Skip UnitTests because they need refactoring.
-
-    BeforeAll {
-        ## Ensure it is the module that is being coded that is in the session when running just this Pester test
-        #  Remove-Module dbatools -Force -ErrorAction SilentlyContinue
-        #  $Base = Split-Path -parent $PSCommandPath
-        #  Import-Module $Base\..\dbatools.psd1
-    }
-    Context "Input validation" {
-        BeforeAll {
-            Mock Stop-Function { } -ModuleName dbatools
-            Mock Test-FunctionInterrupt { } -ModuleName dbatools
-        }
-        Mock Connect-DbaInstance -MockWith {
-            [object]@{
-                Name      = 'SQLServerName'
-                Databases = @(
-                    @{
-                        Name           = 'db1'
-                        Status         = 'Normal'
-                        ReadOnly       = 'false'
-                        IsSystemObject = 'false'
-                        RecoveryModel  = 'Full'
-                        Owner          = 'sa'
-                    }
-                ) #databases
-            } #object
-        } -ModuleName dbatools #mock connect-SqlInstance
-        function Invoke-QueryRawDatabases { }
-        Mock Invoke-QueryRawDatabases -MockWith {
-            [object]@(
-                @{
-                    name  = 'db1'
-                    state = 0
-                    Owner = 'sa'
-                }
-            )
-        } -ModuleName dbatools
-        It "Should Call Stop-Function if NoUserDbs and NoSystemDbs are specified" {
-            # TODO: What does this do???
-            Get-DbaDatabase -SqlInstance Dummy -ExcludeSystem -ExcludeUser -ErrorAction SilentlyContinue | Should Be
-        }
-        It "Validates that Stop Function Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Stop-Function'
-                'Times'       = 1
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
-        }
-        It "Validates that Test-FunctionInterrupt Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Test-FunctionInterrupt'
-                'Times'       = 1
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
-        }
-    }
-    Context "Output" {
-        It "Should have Last Read and Last Write Property when IncludeLastUsed switch is added" {
-            Mock Connect-DbaInstance -MockWith {
-                [object]@{
-                    Name      = 'SQLServerName'
-                    Databases = @(
-                        @{
-                            Name           = 'db1'
-                            Status         = 'Normal'
-                            ReadOnly       = 'false'
-                            IsSystemObject = 'false'
-                            RecoveryModel  = 'Full'
-                            Owner          = 'sa'
-                            IsAccessible   = $true
-                        }
-                    )
-                } #object
-            } -ModuleName dbatools #mock connect-SqlInstance
-            function Invoke-QueryDBlastUsed { }
-            Mock Invoke-QueryDBlastUsed -MockWith {
-                [object]
-                @{
-                    dbname     = 'db1'
-                    last_read  = (Get-Date).AddHours(-1)
-                    last_write = (Get-Date).AddHours( - 1)
-                }
-            } -ModuleName dbatools
-            function Invoke-QueryRawDatabases { }
-            Mock Invoke-QueryRawDatabases -MockWith {
-                [object]@(
-                    @{
-                        name  = 'db1'
-                        state = 0
-                        Owner = 'sa'
-                    }
-                )
-            } -ModuleName dbatools
-            (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastRead -ne $null | Should -BeTrue
-            (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastWrite -ne $null | Should -BeTrue
-        }
-        It "Validates that Connect-DbaInstance Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Connect-DbaInstance'
-                'Times'       = 2
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
-        }
-        It "Validates that Invoke-QueryDBlastUsed Mock has been called" {
-            $assertMockParams = @{
-                'CommandName' = 'Invoke-QueryDBlastUsed'
-                'Times'       = 2
-                'Exactly'     = $true
-                'Module'      = 'dbatools'
-            }
-            Assert-MockCalled @assertMockParams
         }
     }
 }
