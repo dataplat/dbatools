@@ -22,6 +22,7 @@
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisExecutionHistory',
         'Get-DbaSsisEnvironmentVariable',
+        'Get-DbaSsisFolder',
         'New-DbaSsisCatalog'
     )
     VariablesToExport      = @()
