@@ -21,16 +21,72 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    if ($PSVersionTable.PSEdition -eq "Desktop") {
+        Context "Processes each piped instance with fresh service state" {
+            BeforeEach {
+                $global:newDbaSsisCatalogServiceLookups = 0
+                $global:newDbaSsisCatalogFallbackLookups = 0
+                Mock Connect-DbaInstance -ModuleName dbatools -MockWith {
+                    param($SqlInstance)
+                    @($SqlInstance)[0]
+                }
+                Mock Get-DbaService -ModuleName dbatools -MockWith {
+                    $global:newDbaSsisCatalogServiceLookups++
+                    if ($global:newDbaSsisCatalogServiceLookups -eq 2) {
+                        throw "simulated service lookup failure"
+                    }
+                    [PSCustomObject]@{
+                        ServiceType = "SSIS"
+                        State       = "Running"
+                    }
+                }
+                Mock Invoke-Command2 -ModuleName dbatools -MockWith {
+                    $global:newDbaSsisCatalogFallbackLookups++
+                    [PSCustomObject]@{
+                        Name   = "MsDtsServer150"
+                        Status = "Running"
+                    }
+                }
+                Mock Get-DbaSpConfigure -ModuleName dbatools -MockWith {
+                    [PSCustomObject]@{ RunningValue = $true }
+                }
+                Mock New-Object -ModuleName dbatools -ParameterFilter {
+                    $TypeName -eq "Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices"
+                } -MockWith {
+                    [PSCustomObject]@{ Catalogs = @([PSCustomObject]@{ Name = "SSISDB" }) }
+                }
+            }
+
+            AfterEach {
+                Remove-Variable newDbaSsisCatalogServiceLookups -Scope Global -ErrorAction SilentlyContinue
+                Remove-Variable newDbaSsisCatalogFallbackLookups -Scope Global -ErrorAction SilentlyContinue
+            }
+
+            It "uses the fallback only for the record whose service lookup fails" {
+                $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+                $instances = @(
+                    [DbaInstanceParameter]"pipe-one.example.test"
+                    [DbaInstanceParameter]"pipe-two.example.test"
+                )
+
+                $warnings = @()
+                $errors = @()
+                $result = @(
+                    $instances | New-DbaSsisCatalog -SecurePassword $password `
+                        -WarningVariable warnings -WarningAction SilentlyContinue `
+                        -ErrorVariable errors -ErrorAction SilentlyContinue
+                )
+
+                $global:newDbaSsisCatalogServiceLookups |
+                    Should -Be 2 -Because "result=$($result.Count); warnings=$($warnings -join ' | '); errors=$($errors -join ' | ')"
+                $global:newDbaSsisCatalogFallbackLookups | Should -Be 1
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    # COVERAGE NOTE: creating an SSIS Catalog needs the IntegrationServices SMO object model plus a running
-    # SSIS service, both of which are Windows-PowerShell-only and absent from the gate host, so the live
-    # Create path is deferred. What IS deterministic on both editions is the begin-block refusal the source
-    # runs BEFORE any connection: PowerShell Core refuses outright ("This command is not supported on Linux
-    # or macOS"), and Windows PowerShell refuses when neither a password nor a credential is supplied. Both
-    # latch the interrupt in the begin scope and return without touching the instance, so this leg runs on
-    # both gate editions and asserts the edition-appropriate message.
     Context "Refuses in the begin block without creating a catalog" {
         It "warns and creates nothing when no password or credential is supplied" {
             $splatNoPassword = @{
@@ -50,6 +106,67 @@ Describe $CommandName -Tag IntegrationTests {
                 "You must specify either -SecurePassword or -Credential"
             }
             $payload | Should -Be $expected
+        }
+    }
+
+    if ($PSVersionTable.PSEdition -eq "Desktop") {
+        Context "Creates the SSIS catalog on the SSIS fixture" {
+            BeforeAll {
+                $ssisInstance = $TestConfig.InstanceSsis
+                $ssisPassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+
+                function Get-SsisCatalogCount {
+                    $query = "SELECT COUNT(*) AS CatalogCount FROM sys.databases WHERE name = N'SSISDB'"
+                    [int](Invoke-DbaQuery -SqlInstance $ssisInstance -Database master -Query $query -EnableException).CatalogCount
+                }
+
+                function New-IndependentSsisCatalog {
+                    $server = Connect-DbaInstance -SqlInstance $ssisInstance -MinimumVersion 10
+                    $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+                    $passwordPointer = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ssisPassword)
+                    try {
+                        $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($passwordPointer)
+                        $catalog = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog (
+                            $ssis,
+                            "SSISDB",
+                            $plainPassword
+                        )
+                        $catalog.Create()
+                    } finally {
+                        $plainPassword = $null
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
+                    }
+                }
+
+                function Remove-SsisCatalog {
+                    if ((Get-SsisCatalogCount) -gt 0) {
+                        Remove-DbaDatabase -SqlInstance $ssisInstance -Database SSISDB -Confirm:$false -EnableException
+                    }
+                }
+            }
+
+            AfterAll {
+                if ((Get-SsisCatalogCount) -eq 0) {
+                    New-IndependentSsisCatalog
+                }
+                Get-SsisCatalogCount | Should -Be 1
+            }
+
+            It "honors WhatIf and then creates the catalog on the same target" {
+                Remove-SsisCatalog
+                Get-SsisCatalogCount | Should -Be 0
+
+                $whatIfResult = @(New-DbaSsisCatalog -SqlInstance $ssisInstance -SecurePassword $ssisPassword -WhatIf)
+                $whatIfResult.Count | Should -Be 0
+                Get-SsisCatalogCount | Should -Be 0
+
+                $result = @(New-DbaSsisCatalog -SqlInstance $ssisInstance -SecurePassword $ssisPassword -Confirm:$false)
+                $result.Count | Should -Be 1
+                $result[0].Created | Should -BeTrue
+                $result[0].SsisCatalog | Should -Be "SSISDB"
+                $result[0].SqlInstance | Should -BeLike "*$ssisInstance*"
+                Get-SsisCatalogCount | Should -Be 1
+            }
         }
     }
 }
