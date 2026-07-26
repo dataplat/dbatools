@@ -32,6 +32,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $testSpnBase     = "MSSQLSvc/dbatoolsci-w5039-$(Get-Random).lab.local"
         $testSpn         = "$testSpnBase`:1433"
         $testSpnNoDeleg  = "$testSpnBase`:2433"
+        $pipelineSpnBase = "MSSQLSvc/dbatoolsci-setspn-$([guid]::NewGuid().ToString('N')).lab.local"
+        $pipelineSpnOne  = "$pipelineSpnBase`:1433"
+        $pipelineSpnTwo  = "$pipelineSpnBase`:2433"
+        $missingAccount  = "$env:USERDOMAIN\dbatoolsci-missing-$([guid]::NewGuid().ToString('N'))"
     }
 
     AfterAll {
@@ -44,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $searcher.SearchRoot = [ADSI]"LDAP://$env:USERDOMAIN"
         $adEntry = $searcher.FindOne().GetDirectoryEntry()
         foreach ($prop in @("servicePrincipalName", "msDS-AllowedToDelegateTo")) {
-            foreach ($value in @($testSpn, $testSpnNoDeleg)) {
+            foreach ($value in @($testSpn, $testSpnNoDeleg, $pipelineSpnOne, $pipelineSpnTwo)) {
                 if ($adEntry.Properties[$prop] -contains $value) {
                     $null = $adEntry.Properties[$prop].Remove($value)
                 }
@@ -108,6 +112,37 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $results[0].Property | Should -Be "servicePrincipalName"
             $results[0].IsSet | Should -BeTrue
             $results[0].Notes | Should -Be "Successfully added SPN"
+        }
+
+        It "Does not apply a later missing account record to the previous account" {
+            $records = @(
+                [pscustomobject]@{ RequiredSPN = $pipelineSpnOne; AccountName = $testAccount }
+                [pscustomobject]@{ RequiredSPN = $pipelineSpnTwo; AccountName = $missingAccount }
+            )
+            $warnings = @()
+            $results = @(
+                $records | Set-DbaSpn -NoDelegation -Confirm:$false -WarningVariable warnings 3>$null
+            )
+
+            $records.Count | Should -Be 2
+            $results.Count | Should -Be 2
+            $results[0].Name | Should -Be $pipelineSpnOne
+            $results[0].IsSet | Should -BeTrue
+            $results[0].Notes | Should -Be "Successfully added SPN"
+            $results[1].Name | Should -Be $pipelineSpnTwo
+            $results[1].IsSet | Should -BeFalse
+            $results[1].Notes | Should -Be "Failed to add SPN"
+
+            $warningText = @($warnings | ForEach-Object Message) -join "`n"
+            $warningText | Should -Match "has not been found"
+            $warningText | Should -Match "Could not add SPN"
+
+            $searcher = [ADSISearcher]"(&(objectClass=computer)(name=$env:COMPUTERNAME))"
+            $searcher.SearchRoot = [ADSI]"LDAP://$env:USERDOMAIN"
+            $adEntry = $searcher.FindOne().GetDirectoryEntry()
+            $adEntry.RefreshCache()
+            $adEntry.Properties["servicePrincipalName"] | Should -Contain $pipelineSpnOne
+            $adEntry.Properties["servicePrincipalName"] | Should -Not -Contain $pipelineSpnTwo
         }
     }
 }
