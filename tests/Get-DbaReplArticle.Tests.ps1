@@ -74,4 +74,30 @@ Describe $CommandName -Tag IntegrationTests {
             ($connectWarning | ForEach-Object { $PSItem.ToString() }) -join "`n" | Should -Match ([regex]::Escape("[Get-DbaReplArticle] Error occurred while establishing connection to"))
         }
     }
+
+    Context "Connection failures remain isolated to each piped record" {
+        BeforeAll {
+            $previousConnectTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
+        }
+        AfterAll {
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value $previousConnectTimeout
+        }
+
+        It "Emits one command-owned connection warning for each unreachable record" {
+            $warnings = @()
+            $result = @(
+                $TestConfig.InstanceUnreachable, $TestConfig.InstanceUnreachable |
+                    Get-DbaReplArticle -WarningVariable warnings -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+            )
+            $ownedWarnings = @(
+                $warnings | Where-Object {
+                    $PSItem.ToString() -match "\[Get-DbaReplArticle\]\s+Error occurred while establishing connection to"
+                }
+            )
+
+            $result | Should -BeNullOrEmpty
+            $ownedWarnings.Count | Should -Be 2
+        }
+    }
 }
