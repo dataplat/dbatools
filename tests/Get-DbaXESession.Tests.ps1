@@ -32,5 +32,17 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             $results.Name -eq "system_health" | Should -Be $true
         }
+
+        It "returns attributable output for every piped instance" {
+            $expectedInstances = @("$($TestConfig.InstanceSingle)", "$($TestConfig.InstanceMulti1)")
+            $piped = $expectedInstances | Get-DbaXESession
+            $actualInstances = @($piped.SqlInstance | Sort-Object -Unique)
+
+            $actualInstances.Count | Should -Be 2
+            foreach ($expectedInstance in $expectedInstances) {
+                $actualInstances | Should -Contain $expectedInstance
+                @($piped | Where-Object SqlInstance -eq $expectedInstance).Count | Should -BeGreaterThan 0
+            }
+        }
     }
 }
