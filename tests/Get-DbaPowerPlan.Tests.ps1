@@ -27,5 +27,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaPowerPlan -ComputerName $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
         }
+
+        It "returns attributable output for every piped computer" {
+            $expectedComputers = @("$($TestConfig.InstanceSingle)", "$($TestConfig.InstanceMulti1)")
+            $pipelineResult = @(
+                @($TestConfig.InstanceSingle, $TestConfig.InstanceMulti1) |
+                    Get-DbaPowerPlan -EnableException
+            )
+            $actualComputers = @($pipelineResult.ComputerName | ForEach-Object { "$PSItem" })
+
+            $pipelineResult.Count | Should -Be 2
+            $actualComputers | Should -Contain $expectedComputers[0]
+            $actualComputers | Should -Contain $expectedComputers[1]
+            @($actualComputers | Where-Object { $PSItem -eq $expectedComputers[0] }).Count | Should -Be 1
+            @($actualComputers | Where-Object { $PSItem -eq $expectedComputers[1] }).Count | Should -Be 1
+        }
     }
 }
