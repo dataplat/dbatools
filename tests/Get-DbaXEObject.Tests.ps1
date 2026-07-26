@@ -26,7 +26,7 @@ Describe $CommandName -Tag UnitTests {
     for more guidence.
 #>
 Describe $CommandName -Tag IntegrationTests {
-    # CHARACTERIZATION (TA-132): Get-DbaXEObject has NO connection-independent guard - it connects
+    # CHARACTERIZATION: Get-DbaXEObject has NO connection-independent guard - it connects
     # (Connect-DbaInstance -MinimumVersion 9) as its first action and enumerates sys.dm_xe_packages /
     # sys.dm_xe_objects, so the whole behavior rides the standalone gate against InstanceSingle. These
     # pins record the current shape: a populated result set, the documented default-view members, and
@@ -53,6 +53,18 @@ Describe $CommandName -Tag IntegrationTests {
             $events = Get-DbaXEObject -SqlInstance $TestConfig.InstanceSingle -Type Event
             $events.Count | Should -BeGreaterThan 1
             ($events.ObjectType | Sort-Object -Unique) | Should -Be "Event"
+        }
+
+        It "returns attributable output for every piped instance" {
+            $expectedInstances = @("$($TestConfig.InstanceSingle)", "$($TestConfig.InstanceMulti1)")
+            $piped = $expectedInstances | Get-DbaXEObject
+            $actualInstances = @($piped.SqlInstance | Sort-Object -Unique)
+
+            $actualInstances.Count | Should -Be 2
+            foreach ($expectedInstance in $expectedInstances) {
+                $actualInstances | Should -Contain $expectedInstance
+                @($piped | Where-Object SqlInstance -eq $expectedInstance).Count | Should -BeGreaterThan 1
+            }
         }
     }
 }
