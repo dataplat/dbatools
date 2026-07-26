@@ -598,6 +598,155 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Setup validation stops the run before any work is done" {
+        It "warns and copies nothing when -BackupRestore has neither -SharedPath nor -UseLastBackup" {
+            $splatNoPath = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $backuprestoredb
+                BackupRestore = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $resultsNoPath = Copy-DbaDatabase @splatNoPath -WarningVariable warnNoPath
+
+            $resultsNoPath | Should -BeNullOrEmpty
+            ($warnNoPath -join "`n") | Should -BeLike "*you must specify -SharedPath or -UseLastBackup*"
+        }
+
+        It "warns and copies nothing when -SharedPath is combined with -UseLastBackup" {
+            $splatBothPaths = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $backuprestoredb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                UseLastBackup = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $resultsBothPaths = Copy-DbaDatabase @splatBothPaths -WarningVariable warnBothPaths
+
+            $resultsBothPaths | Should -BeNullOrEmpty
+            ($warnBothPaths -join "`n") | Should -BeLike "*-SharedPath cannot be used with -UseLastBackup*"
+        }
+
+        It "warns and copies nothing when -Continue is used without -UseLastBackup" {
+            $splatContinueOnly = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $backuprestoredb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                Continue      = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $resultsContinueOnly = Copy-DbaDatabase @splatContinueOnly -WarningVariable warnContinueOnly
+
+            $resultsContinueOnly | Should -BeNullOrEmpty
+            ($warnContinueOnly -join "`n") | Should -BeLike "*-Continue cannot be used without -UseLastBackup*"
+        }
+    }
+
+    Context "WhatIf leaves the destination untouched" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $whatIfDb = "dbatoolsci_whatif$(Get-Random)"
+
+            $serverWhatIfSource = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverWhatIfSource.Query("CREATE DATABASE $whatIfDb; ALTER DATABASE $whatIfDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveWhatIf = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Database    = $whatIfDb
+            }
+            Remove-DbaDatabase @splatRemoveWhatIf -ErrorAction SilentlyContinue
+
+            Get-ChildItem -Path $NetworkPath -Filter "*$whatIfDb*" -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "emits no migration result and does not create the database on the destination" {
+            $splatWhatIf = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $whatIfDb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                WhatIf        = $true
+            }
+            $resultsWhatIf = Copy-DbaDatabase @splatWhatIf
+
+            $resultsWhatIf | Should -BeNullOrEmpty
+
+            $destWhatIfDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $whatIfDb
+            $destWhatIfDb | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "State carries across piped records" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $carryDb = "dbatoolsci_carry$(Get-Random)"
+
+            $serverCarrySource = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverCarrySource.Query("CREATE DATABASE $carryDb; ALTER DATABASE $carryDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveCarry = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Database    = $carryDb
+            }
+            Remove-DbaDatabase @splatRemoveCarry -ErrorAction SilentlyContinue
+
+            Get-ChildItem -Path $NetworkPath -Filter "*$carryDb*" -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reuses the earlier record's backup and reports the elapsed summary" {
+            $carrySourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $carryDb
+
+            $splatCarry = @{
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                NumberFiles   = 1
+                Force         = $true
+            }
+            $carryOutput = $carrySourceDb, $carrySourceDb | Copy-DbaDatabase @splatCarry -Verbose 4>&1
+
+            $carryVerbose = ($carryOutput | Where-Object { $PSItem -is [System.Management.Automation.VerboseRecord] } | ForEach-Object { $PSItem.Message }) -join "`n"
+            $carryResults = @($carryOutput | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] })
+
+            $carryResults.Count | Should -Be 2
+            $carryResults[0].Status | Should -Be "Successful"
+            $carryResults[1].Status | Should -Be "Successful"
+
+            # The backup taken for the first record is remembered, so the second record restores from it
+            # instead of taking a second backup. One file means the collection survived the record boundary.
+            $carryBackups = @(Get-ChildItem -Path $NetworkPath -Filter "*$carryDb*" -ErrorAction SilentlyContinue)
+            $carryBackups.Count | Should -Be 1
+
+            # The summary is only written when the stopwatch started during a record is still readable
+            # afterwards; without it the command reports that no work was done.
+            $carryVerbose | Should -BeLike "*Database migration finished*"
+            $carryVerbose | Should -Not -BeLike "*No work was done*"
+        }
+    }
+
     if ($env:azurepasswd) {
         Context "Copying via Azure storage" {
             BeforeAll {
