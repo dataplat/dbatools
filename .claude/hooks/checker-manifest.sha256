@@ -5,7 +5,7 @@
 # stop-checker-integrity.sh, so silently re-baselining a weakened checker
 # does not go unrecorded - which is the whole point of the file.
 #
-# Generated from HEAD da8aed324
+# Generated from HEAD 208ccdd9e
 3f368c88538596eb37cc023905d2bec70425b7d6ad1eec37d075eaa38ece34d6  .claude/hooks/hooks-doctor.sh
 abe4c845ae6f5dd974d323503e5b190c80720c8310921f08f7751409201d352c  .claude/hooks/jscpd-baseline.sh
 7a0221328269aae82c94f23ecebd1aa4f9cf503fe3d3de77c63a464634f38694  .claude/hooks/lib-codex-review-exec.sh
@@ -35,5 +35,5 @@ da4e4ec2265076ac4f16333073d8522950d4614bf38d54f71d7d131ee66b1555  .claude/hooks/
 e6f5b722a1465f7258b35fff58fd5ebae62030237c2df29dc1359e9979b49706  .claude/hooks/stop-todo-report.sh
 fe64cd6bed46c05e7392b36fe74b6cc8387aba3722586a9fe72cffeda6889234  .claude/hooks/stop-verify.sh
 6466333c98d60f6fb1aa54fcfda85e45dcaf37fbd7b4b923f90112aa5b771f89  .claude/hooks/test-jscpd-ratchet.sh
-0dbab80fc506c5a9dc5d7a222f35cbefda80a6eeff6465143ec78f5c3c186039  .claude/hooks/verify-checker-integrity.sh
+010ca5e3d5b90f51660d6ffb7aa0d9d4c88404e790b3f863f6f3e9782a2ea172  .claude/hooks/verify-checker-integrity.sh
 bf209d10005cf9fcb0d6ece52e37952a9a7348a82b994a4c64d1f92fda2806b3  .claude/settings.json

@@ -67,6 +67,11 @@ surface_paths() {
         cd "$REPO_ROOT" || exit 0
         find .claude/hooks -maxdepth 1 -type f -name '*.sh' 2>/dev/null
         [[ -f .claude/settings.json ]] && echo .claude/settings.json
+        # The adversarial plan reviewer is a checker that happens to be written
+        # as a skill. surface_classify has protected it from EDITS since
+        # 2026-07-26, but enumeration is the only thing that notices a
+        # DELETION - and a deleted reviewer cannot report that it is gone.
+        [[ -f .claude/skills/reviewme/SKILL.md ]] && echo .claude/skills/reviewme/SKILL.md
         for f in tools/GateStepTable.ps1 \
                  tools/Test-MigratedCommand.ps1 \
                  tools/Invoke-GateWithWorkstationSteps.ps1 \
