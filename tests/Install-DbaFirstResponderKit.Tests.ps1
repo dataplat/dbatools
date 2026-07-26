@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "Database",
                 "LocalFile",
                 "OnlyScript",
+                "LetPublicExecute",
                 "Force",
                 "EnableException"
             )
@@ -130,6 +131,215 @@ Describe $CommandName -Tag IntegrationTests {
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti2 -Database $database -WarningAction SilentlyContinue
             $result[0].Status -eq "Error" | Should -Be $true
+        }
+    }
+
+    Context "Testing certificate signing in user database" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $database = "dbatoolsci_frk_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $server.Query("CREATE DATABASE $database")
+
+            $server.Query("CREATE LOGIN AsGoodAsPublic WITH PASSWORD = '<enterStrongPasswordHere>';")
+            $password = ConvertTo-SecureString "<enterStrongPasswordHere>" -AsPlainText
+            $public = [PsCredential]::New("AsGoodAsPublic", $password)
+            
+            $FirstResponderKitParams = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = $database
+                Branch           = 'main'
+                Force            = $true
+                LetPublicExecute = @('sp_BlitzFirst', 'sp_BlitzIndex')
+            }
+            
+            $resultsDownload = Install-DbaFirstResponderKit @FirstResponderKitParams
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login AsGoodAsPublic -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Lets public execute sp_BlitzFirst when signed for" {
+            $splatPublicBlitzFirst = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = $database
+                Query            = "EXECUTE sp_BlitzFirst @SinceStartup = 1;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitzFirst } | Should -Not -Throw
+        }
+        
+        It "Does not let public execute sp_Blitz when not signed for" {
+            $splatPublicBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitz } | Should -Throw
+        }
+         
+        It "Lets admin execute sp_Blitz when not signed for" {
+            $splatAdminBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz @Help = 1"
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatAdminBlitz } | Should -Not -Throw
+        }
+    }
+    
+    Context "Testing without certificate signing" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $database = "dbatoolsci_frk_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $server.Query("CREATE DATABASE $database")
+
+            $server.Query("CREATE LOGIN AsGoodAsPublic WITH PASSWORD = '<enterStrongPasswordHere>';")
+            $password = ConvertTo-SecureString "<enterStrongPasswordHere>" -AsPlainText
+            $public = [PsCredential]::New("AsGoodAsPublic", $password)
+
+            $FirstResponderKitParams = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = $database
+                Branch           = 'main'
+                Force            = $true
+            }
+            
+            $resultsDownload = Install-DbaFirstResponderKit @FirstResponderKitParams
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login AsGoodAsPublic -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Does not let public execute sp_BlitzFirst" {
+            $splatPublicBlitzFirst = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = $database
+                Query            = "EXECUTE sp_BlitzFirst @SinceStartup = 1;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitzFirst } | Should -Throw
+        }
+        
+        It "Does not let public execute sp_Blitz" {
+            $splatPublicBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitz } | Should -Throw
+        }
+         
+        It "Lets admin execute sp_Blitz" {
+            $splatAdminBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz @Help = 1"
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatAdminBlitz } | Should -Not -Throw
+        }
+    }
+
+    Context "Testing certificate signing in master database" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $database = 'master'
+
+            $server.Query("CREATE LOGIN AsGoodAsPublic WITH PASSWORD = '<enterStrongPasswordHere>';")
+            $password = ConvertTo-SecureString "<enterStrongPasswordHere>" -AsPlainText
+            $public = [PsCredential]::New("AsGoodAsPublic", $password)
+            
+            $FirstResponderKitParams = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = 'master' 
+                Branch           = 'main'
+                Force            = $true
+                LetPublicExecute = @('sp_BlitzFirst', 'sp_BlitzIndex')
+            }
+            
+            $resultsDownload = Install-DbaFirstResponderKit @FirstResponderKitParams
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $database
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login AsGoodAsPublic -Force
+            Install-DbaFirstResponderKit -SqlInstance $TestConfig.InstanceMulti1 -OnlyScript Uninstall.sql
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Lets public execute sp_BlitzFirst when signed for" {
+            $splatPublicBlitzFirst = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                Database         = $database
+                Query            = "EXECUTE sp_BlitzFirst @SinceStartup = 1;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitzFirst } | Should -Not -Throw
+        }
+        
+        It "Does not let public execute sp_Blitz when not signed for" {
+            $splatPublicBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz;"
+                SqlCredential    = $public
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatPublicBlitz } | Should -Throw
+        }
+         
+        It "Lets admin execute sp_Blitz when not signed for" {
+            $splatAdminBlitz = @{
+                SqlInstance      = $TestConfig.InstanceMulti1  
+                Database         = $database
+                Query            = "EXECUTE sp_Blitz @Help = 1"
+                EnableException  = $true
+            }
+            { Invoke-DbaQuery @splatAdminBlitz } | Should -Not -Throw
         }
     }
 }

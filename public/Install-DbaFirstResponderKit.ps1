@@ -40,6 +40,13 @@ function Install-DbaFirstResponderKit {
         Specifies specific script files to install instead of the entire First Responder Kit. Accepts multiple script names and wildcards.
         Use this to install only the procedures you need (like sp_Blitz.sql, sp_BlitzCache.sql) or to run official install scripts (Install-All-Scripts.sql, Install-Azure.sql). Also supports Uninstall.sql to remove the toolkit.
 
+    .PARAMETER LetPublicExecute
+        Signs the specified stored procedures with a certificate called "FirstResponderKitCertificate" that lets members of the public server role (that is, everyone) execute those procedures as if they have the CONTROL SERVER permission.
+        This follows the pattern set in the "How to Grant Permissions to Non-DBAs" example at https://www.brentozar.com/askbrent/
+        If you are installing to a non-master database, then the public server role will be given GRANT CONNECT in that database.
+        To prevent abuse, we remove the private key from the certificate after use.
+        Drops any user or login called "FirstResponderKitLogin" and drops any certificate called "FirstResponderKitCertificate" before running.
+
     .PARAMETER Force
         Forces a fresh download of the First Responder Kit from GitHub even if a cached version already exists locally.
         Use this when you want to ensure you have the absolute latest version or when the cached version may be corrupted.
@@ -131,6 +138,10 @@ function Install-DbaFirstResponderKit {
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript Uninstall.sql
 
         Uninstalls the First Responder Kit by running the official uninstall script.
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -LetPublicExecute sp_BlitzFirst, sp_BlitzIndex
+
+        Installs all scripts, but lets the everyone execute sp_BlitzFirst and sp_BlitzIndex even if they do not have high permissions.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -144,9 +155,10 @@ function Install-DbaFirstResponderKit {
         [ValidateSet('Install-All-Scripts.sql', 'Install-Azure.sql',
             'sp_Blitz.sql', 'sp_BlitzFirst.sql', 'sp_BlitzIndex.sql', 'sp_BlitzCache.sql', 'sp_BlitzWho.sql',
             'sp_BlitzAnalysis.sql', 'sp_BlitzBackups.sql', 'sp_BlitzLock.sql',
-            'sp_DatabaseRestore.sql', 'sp_ineachdb.sql',
+            'sp_DatabaseRestore.sql', 'sp_ineachdb.sql', 'sp_kill.sql',
             'SqlServerVersions.sql', 'Uninstall.sql')]
         [string[]]$OnlyScript,
+        [string[]]$LetPublicExecute,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -240,6 +252,78 @@ function Install-DbaFirstResponderKit {
                             $baseres.Status = 'Installed'
                         }
                         $baseres
+                    }
+                }
+                if ($LetPublicExecute) {
+                    Write-Message -Level Verbose -Message "Signing $LetPublicExecute for $database on $instance."
+                    try {
+                        # For idempotency.
+                        # Cannot use Get-DbaDbUser here. It does not see certificate-mapped users.
+                        $userDrop = "
+                        IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'FirstResponderKitLogin')
+                        BEGIN
+                            DROP USER [FirstResponderKitLogin];
+                        END
+                        "
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $userDrop -EnableException
+                        Get-DbaLogin -SqlInstance $server -Login FirstResponderKitLogin | Remove-DbaLogin
+                        foreach ($proc in $LetPublicExecute) {
+                            $signatureDrop = "
+                            IF EXISTS (SELECT 1 FROM sys.crypt_properties WHERE major_id = OBJECT_ID('$proc') AND crypt_type = 'SPVC')
+                            BEGIN
+                                DROP SIGNATURE FROM $proc BY CERTIFICATE FirstResponderKitCertificate;
+                            END
+                            "
+                            Invoke-DbaQuery -SqlInstance $server -Database master -Query $signatureDrop -EnableException
+                        }
+                        # Will fail if signatures remain.
+                        # The block above assumes that you are either creating from scratch or only replacing what already exists.
+                        $certDrop = "
+                        IF EXISTS (SELECT 1 FROM sys.certificates WHERE name = 'FirstResponderKitCertificate')
+                        BEGIN
+                            DROP CERTIFICATE FirstResponderKitCertificate;
+                        END;
+                        "
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $certDrop -EnableException
+                        Invoke-DbaQuery -SqlInstance $server -Database master -Query $certDrop -EnableException
+                        # From https://www.brentozar.com/askbrent/ but tweaked to work outside of master.
+                        # Many steps taken from https://www.sommarskog.se/grantperm.html#serverleveluserdbcert
+                        # See issue #10368
+                        $certMake = "
+                        CREATE CERTIFICATE FirstResponderKitCertificate
+                        ENCRYPTION BY PASSWORD = '5OClockSomewhere-Dr0ppedSoon'
+                        WITH SUBJECT = 'CONTROL SERVER certificate for the First Responder Kit',
+                        START_DATE = '20010101', EXPIRY_DATE = '21000101';
+                        "
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $certMake -EnableException
+                        foreach ($proc in $LetPublicExecute) {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "ADD SIGNATURE TO $proc BY CERTIFICATE FirstResponderKitCertificate WITH PASSWORD = '5OClockSomewhere-Dr0ppedSoon';" -EnableException
+                        }
+                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "ALTER CERTIFICATE FirstResponderKitCertificate REMOVE PRIVATE KEY;" -EnableException
+                        if ($Database -ne 'master') {
+                            $certClone = "
+                            DECLARE @public_key varbinary(MAX) = certencoded(cert_id('FirstResponderKitCertificate')),
+                                    @sql nvarchar(MAX);
+
+                            SELECT @sql =
+                            'USE master;
+                            CREATE CERTIFICATE FirstResponderKitCertificate 
+                                FROM BINARY = ' + convert(varchar(MAX), @public_key, 1);
+
+                            EXEC(@SQL) 
+                            "
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $certClone -EnableException
+                        }
+                        New-DbaLogin -SqlInstance $server -Login FirstResponderKitLogin -MapToCertificate FirstResponderKitCertificate
+                        Invoke-DbaQuery -SqlInstance $server -Database master -Query "GRANT CONTROL SERVER TO FirstResponderKitLogin;" -EnableException
+                        if ($Database -ne 'master') {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "GRANT CONNECT TO [public];" -EnableException
+                        }
+                        foreach ($proc in $LetPublicExecute) {
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "GRANT EXECUTE ON $proc TO [public];" -EnableException
+                        }
+                    } catch {
+                        Write-Message -Level Warning -Message "Certificate signing failed for $database on $instance." -ErrorRecord $_
                     }
                 }
             }
