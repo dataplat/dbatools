@@ -151,7 +151,6 @@
         'Set-DbaDbUser',
         'Set-DbaDbRole',
         'Remove-DbaDbView',
-        'Read-DbaTransactionLog',
         'Remove-DbaDbCheckConstraint',
         'Remove-DbaDbDataClassification',
         'Remove-DbaDbPartitionScheme',
