@@ -150,6 +150,50 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When resolving the command name in a cold shell" {
+        BeforeAll {
+            # Every other leg runs in a session that imported dbatools long before Pester started,
+            # so none of them can tell the binary cmdlet apart from the retired script function -
+            # whichever got there first answers to the name. This leg starts a shell of the same
+            # edition that has imported nothing, loads the module the way a consumer does, and asks
+            # what the name resolves to. dbatools.psm1 is the import under test on purpose: it is
+            # the loader that pulls the satellite in by path, and importing the manifest by name
+            # cannot work in a dev tree because the satellites are not on PSModulePath.
+            $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
+            $shellPath = (Get-Process -Id $PID).Path
+            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+
+            # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
+            # entry rather than silently winning; the count is what proves it is not there.
+            $probeBody = @"
+Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+`$resolved = Get-Command -Name Copy-DbaBackupDevice -ErrorAction SilentlyContinue
+`$allResolved = @(Get-Command -Name Copy-DbaBackupDevice -All -ErrorAction SilentlyContinue)
+`$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
+`$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
+"RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
+"@
+            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+
+            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
+        }
+
+        AfterAll {
+            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+        }
+
+        It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
+            $probeFields[1] | Should -Be "Cmdlet"
+            $probeFields[2] | Should -Be "dbatools.migration"
+        }
+
+        It "Should load the satellite and leave no retired function shadowing the name" {
+            $probeFields[4] | Should -Be "True"
+            $probeFields[3] | Should -Be "0"
+        }
+    }
+
     Context "When the host is not Windows" {
         It "Should warn and do nothing" {
             # Pinned by flipping the module-scope platform flag rather than by mocking the
