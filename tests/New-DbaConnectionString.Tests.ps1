@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "ConnectTimeout",
                 "Database",
                 "EncryptConnection",
+                "EnableException",
                 "FailoverPartner",
                 "IsActiveDirectoryUniversalAuth",
                 "LockTimeout",
@@ -56,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Builds the Windows Authentication string" {
-            $result = New-DbaConnectionString -SqlInstance sql2016
+            $result = New-DbaConnectionString -SqlInstance sql2016 -Credential $null
             $result | Should -Be "Data Source=sql2016;Integrated Security=True;Multiple Active Result Sets=False;Connect Timeout=15;Trust Server Certificate=True;Packet Size=4096;Application Name=`"dbatools PowerShell module - dbatools.io`""
         }
 
@@ -80,7 +81,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Uses Active Directory Integrated for Azure without a credential" {
-            $result = New-DbaConnectionString -SqlInstance mydb.database.windows.net
+            $result = New-DbaConnectionString -SqlInstance mydb.database.windows.net -Credential $null
             $result | Should -Match "Authentication=ActiveDirectoryIntegrated"
             $result | Should -Not -Match "Integrated Security"
         }
