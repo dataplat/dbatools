@@ -69,4 +69,19 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Option | Should -Be "ansi_nulls"
         }
     }
+
+    Context "Accepts pipeline input" {
+        It "returns an attributed option row for each piped instance" {
+            $pipelineResult = @(
+                @($TestConfig.InstanceSingle, $TestConfig.InstanceMulti1) |
+                    Get-DbaDbccUserOption -Option ansi_nulls -EnableException
+            )
+
+            $pipelineResult.Count | Should -Be 2
+            $pipelineResult.SqlInstance | Should -Contain $TestConfig.InstanceSingle
+            $pipelineResult.SqlInstance | Should -Contain $TestConfig.InstanceMulti1
+            @($pipelineResult.Option | Where-Object { $PSItem -ne "ansi_nulls" }) |
+                Should -BeNullOrEmpty
+        }
+    }
 }
