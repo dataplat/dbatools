@@ -42,5 +42,20 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Watch-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Match "system_health is not running"
         }
+
+        It "warns once for each piped XE session that is not running" {
+            $suffix = [guid]::NewGuid().ToString("N")
+            $firstName = "dbatoolsci_watch_pipeline_first_$suffix"
+            $secondName = "dbatoolsci_watch_pipeline_second_$suffix"
+            $firstSession = New-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Name $firstName
+            $secondSession = New-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Name $secondName
+
+            $results = @($firstSession, $secondSession) | Watch-DbaXESession -WarningAction SilentlyContinue -WarningVariable warn
+
+            $results | Should -BeNullOrEmpty
+            @($warn).Count | Should -Be 2
+            @($warn | Where-Object { $PSItem -match [regex]::Escape($firstName) }).Count | Should -Be 1
+            @($warn | Where-Object { $PSItem -match [regex]::Escape($secondName) }).Count | Should -Be 1
+        }
     }
 }
