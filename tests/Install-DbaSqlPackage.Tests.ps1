@@ -24,6 +24,55 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    Context "WhatIf download protection" {
+        BeforeEach {
+            Mock Get-DbaSqlPackagePath -ModuleName dbatools { $null }
+            Mock Invoke-TlsWebRequest -ModuleName dbatools {
+                param($Uri, $OutFile, [switch]$UseBasicParsing)
+                [System.IO.File]::WriteAllText($OutFile, "downloaded")
+            }
+            Mock Expand-Archive -ModuleName dbatools {
+                param($Path, $DestinationPath, [switch]$Force)
+                $null = New-Item -ItemType Directory -Path $DestinationPath -Force
+                [System.IO.File]::WriteAllText((Join-Path $DestinationPath "SqlPackage.exe"), "fixture")
+            }
+        }
+
+        It "does not create an absent download under WhatIf" {
+            $localFile = Join-Path $TestDrive "absent.zip"
+            $installPath = Join-Path $TestDrive "absent-install"
+            Test-Path -LiteralPath $localFile | Should -BeFalse
+
+            $null = Install-DbaSqlPackage -LocalFile $localFile -Path $installPath -WhatIf -Confirm:$false -EnableException:$false
+
+            Test-Path -LiteralPath $localFile | Should -BeFalse
+            Should -Invoke Invoke-TlsWebRequest -ModuleName dbatools -Times 0 -Exactly
+
+            $null = Install-DbaSqlPackage -LocalFile $localFile -Path $installPath -Confirm:$false -EnableException:$false
+
+            [System.IO.File]::ReadAllText($localFile) | Should -Be "downloaded"
+            Test-Path -LiteralPath (Join-Path $installPath "SqlPackage.exe") | Should -BeTrue
+            Should -Invoke Invoke-TlsWebRequest -ModuleName dbatools -Times 1 -Exactly
+        }
+
+        It "does not overwrite an existing download under Force WhatIf" {
+            $localFile = Join-Path $TestDrive "existing.zip"
+            $installPath = Join-Path $TestDrive "existing-install"
+            [System.IO.File]::WriteAllText($localFile, "original")
+
+            $null = Install-DbaSqlPackage -LocalFile $localFile -Path $installPath -Force -WhatIf -Confirm:$false -EnableException:$false
+
+            [System.IO.File]::ReadAllText($localFile) | Should -Be "original"
+            Should -Invoke Invoke-TlsWebRequest -ModuleName dbatools -Times 0 -Exactly
+
+            $null = Install-DbaSqlPackage -LocalFile $localFile -Path $installPath -Force -Confirm:$false -EnableException:$false
+
+            [System.IO.File]::ReadAllText($localFile) | Should -Be "downloaded"
+            Test-Path -LiteralPath (Join-Path $installPath "SqlPackage.exe") | Should -BeTrue
+            Should -Invoke Invoke-TlsWebRequest -ModuleName dbatools -Times 1 -Exactly
+        }
+    }
+
     Context "Testing SqlPackage installer" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
