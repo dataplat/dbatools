@@ -56,6 +56,25 @@ Describe $CommandName -Tag IntegrationTests {
             $emptyResults.Count | Should -Be 0
         }
     }
+
+    Context "When distributor and non-distributor instances are piped together" {
+        It "Processes records after an empty middle instance without carrying publisher results" {
+            $expectedSqlInstance = @(Get-DbaReplPublisher -SqlInstance $TestConfig.InstanceCopy1 -WarningAction SilentlyContinue)[0].SqlInstance
+            $pipelineResults = @(
+                @(
+                    $TestConfig.InstanceCopy1,
+                    $TestConfig.InstanceSingle,
+                    $TestConfig.InstanceCopy1
+                ) | Get-DbaReplPublisher -WarningAction SilentlyContinue
+            )
+
+            $pipelineResults | Should -HaveCount 2
+            foreach ($result in $pipelineResults) {
+                $result.PSObject.TypeNames[0] | Should -Match "DistributionPublisher"
+                $result.SqlInstance | Should -Be $expectedSqlInstance
+            }
+        }
+    }
 }
 <#
     Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
