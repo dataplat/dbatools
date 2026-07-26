@@ -20,11 +20,11 @@
 #
 # stop_guard_emit <reason-or-empty>:
 #   - empty      -> satisfied this turn; resets the streak counter.
-#   - non-empty  -> a violation. Increments a per-hook streak counter and:
-#                     n <= STOP_GUARD_MAX_BLOCKS (default 3): emits the block
-#                     n >  max: emits a loud advisory instead and lets the turn
-#                     end, so the agent is never trapped in a Stop->work->Stop
-#                     loop. The counter stays armed until the violation clears.
+#   - non-empty  -> a violation. Increments a per-hook streak counter and emits
+#                   the block. EVERY round: there is no budget and no env-var
+#                   ceiling. The counter only lets the message say how long this
+#                   has been going on; it decides nothing. See the note at the
+#                   emit below for why the budget was removed.
 #
 # Marker and counter files are keyed per hook per transcript and auto-clean
 # after an hour (stale sessions).
@@ -62,16 +62,31 @@ stop_guard_emit() {
     n=$((n + 1))
     printf '%s' "$n" > "$counter_file" 2>/dev/null || true
 
-    local max="${STOP_GUARD_MAX_BLOCKS:-3}"
-    if (( n <= max )); then
-        emit_stop_block "$reason"
-        return 0
-    fi
+    # THE BLOCK BUDGET HAS BEEN REMOVED (operator directive 2026-07-25).
+    #
+    # This function used to emit the block for the first STOP_GUARD_MAX_BLOCKS
+    # rounds (default 3) and then print "GATE BYPASSED ... Allowing this turn
+    # to end" and return success. Two defects in one:
+    #
+    #   * The ceiling was an env var. A flag an agent can set is not a guard,
+    #     and STOP_GUARD_MAX_BLOCKS=0 disabled every Stop-hook checker at once.
+    #   * Even untouched, four attempts at ending the turn bought an exit. The
+    #     violation was still there; only the reporting stopped. That is the
+    #     campaign's whole scar list in one branch - #74, #208/#249, #75, #231
+    #     are each a check that could not fail.
+    #
+    # The counter is still kept, purely so the block message can say how long
+    # this has been going on. It no longer decides anything.
+    #
+    # There is deliberately no way out from inside the session. A checker that
+    # cannot be satisfied is an operator event: stash the work, release any
+    # lease so peers are not blocked by a dead window, file the outage, and
+    # stop. A window that loops here is doing its job - the loop is the signal.
+    emit_stop_block "$reason
 
-    # Budget exhausted — downgrade to advisory so the agent is never trapped.
-    emit_system_message "GATE BYPASSED after ${max} blocked attempts (${_HOOK_NAME}). Allowing this turn to end so you are not stuck in a loop — the issue is NOT resolved. Fix it:
-
-${reason}"
+(blocked round ${n} for ${_HOOK_NAME}. This does not time out. If the checker
+itself is broken or its dependency is gone, that is an outage to file, not a
+round to wait out - stash, release any lease, report it, and stop.)"
     return 0
 }
 

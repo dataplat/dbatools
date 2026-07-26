@@ -26,6 +26,17 @@
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pretooluse-checker-removal-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking this edit does not weaken a verification step..."
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -45,6 +56,12 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-bash-pwsh-script.sh",
             "timeout": 10,
             "statusMessage": "Checking inline PowerShell usage..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pretooluse-bash-tamper-guard.sh",
+            "timeout": 10,
+            "statusMessage": "Checking this command does not tamper with a checker..."
           }
         ]
       }
@@ -104,6 +121,12 @@
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-checker-integrity.sh",
+            "timeout": 30,
+            "statusMessage": "Verifying the checker surface still matches the approved baseline..."
+          },
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-registration-check.sh",

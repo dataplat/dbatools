@@ -70,30 +70,50 @@ CODE_EXT_RE='\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh|md)$'
 
 SESSION_ID=$(hook_field '.session_id')
 
-# 1. Opt-outs: review disabled, or codex not installed (a teammate without
-#    codex never sees this gate — that is the intended degradation).
-if [[ "${CLAUDE_CODEX_REVIEW:-}" == "off" || "${CLAUDE_CODEX_REVIEW:-}" == "OFF" ]]; then
-    exit 0
-fi
+# 1. Availability.
+#
+#    The CLAUDE_CODEX_REVIEW=off opt-out that used to sit here has been REMOVED
+#    (operator directive 2026-07-25). A flag an agent can set is not a guard,
+#    and this one was advertised in the hook's own bypass message, which made
+#    it the single easiest way to turn the reviewer off for a whole session.
+#    pretooluse-bash-tamper-guard.sh now refuses attempts to set it.
+#
+#    codex being absent is still a degradation rather than a block: this hook
+#    is copied into repos worked by people who do not have codex, and wedging
+#    their session is not this campaign's call to make. But it is no longer
+#    SILENT. Between 2026-07-21 and 2026-07-24 this review did not fire at all
+#    for the entire fleet — the hook lived only in the code repos and the fleet
+#    had moved to migration-rooted sessions — and nobody noticed for three
+#    days. A skipped review that says nothing is indistinguishable from a
+#    review that passed, so it says something, every turn it is skipped.
 if ! hook_find_codex >/dev/null; then
-    # Distinguish "not installed" (silent — the intended degradation) from
-    # "installed but cannot start" (say so, at most once every few hours, so a
-    # wrong-platform install doesn't masquerade as a codex outage every turn).
     if command -v codex >/dev/null 2>&1; then
-        BROKEN_MARKER="$HOOK_STATE_ROOT/codex-broken.warned"
-        if [[ -z "$(find "$BROKEN_MARKER" -mmin -240 2>/dev/null)" ]]; then
-            touch "$BROKEN_MARKER" 2>/dev/null
-            emit_system_message "codex is on PATH but cannot start on this platform (wrong-platform npm install?) — auto-review is skipped. Diagnose: bash .claude/hooks/hooks-doctor.sh"
-        fi
+        emit_system_message "CODEX AUTO-REVIEW DID NOT RUN: codex is on PATH but cannot start on this platform (wrong-platform npm install?). This turn has NOT been adversarially reviewed. Diagnose: bash .claude/hooks/hooks-doctor.sh"
+    else
+        emit_system_message "CODEX AUTO-REVIEW DID NOT RUN: codex is not installed. This turn has NOT been adversarially reviewed — treat the work as unreviewed, not as approved."
     fi
     exit 0
 fi
 
-REPO_ROOT=$(hook_to_unix_path "$(git rev-parse --show-toplevel 2>/dev/null)")
-[[ -z "$REPO_ROOT" ]] && exit 0
+# CAMPAIGN MULTI-ROOT (migration copy): fleet sessions are rooted in the
+# migration repo but edit the code repos through absolute paths. A single
+# cwd-derived root silently dropped every cross-repo file from review scope --
+# the gate ran and reviewed nothing (dead 2026-07-20..24, found by gomanager).
+# Most-specific first: migration nests inside the dbatools worktree.
+CAMPAIGN_ROOTS=(
+    "/mnt/c/github/dbatools/migration"
+    "/mnt/c/github/dbatools.library"
+    "/mnt/c/github/dbatools"
+)
+# Ledger + dispute path anchor stays the session repo (migration).
+REPO_ROOT="/mnt/c/github/dbatools/migration"
+# codex needs read access to all three repos.
+CODEX_CWD="/mnt/c/github"
 
-# Defer entirely if another git process holds the index lock.
-[[ -f "$REPO_ROOT/.git/index.lock" ]] && exit 0
+# Defer entirely if another git process holds any campaign index lock.
+for _r in "${CAMPAIGN_ROOTS[@]}"; do
+    [[ -f "$_r/.git/index.lock" ]] && exit 0
+done
 
 # 2. Scope to THIS session's writes only.
 SESSION_STATE="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.txt"
@@ -116,35 +136,48 @@ fi
 build_session_payload() {
     CODE_FILES=""
     PAYLOAD=""
-    local f rf spec d
+    DROPPED=0
+    local f rf spec d root file_root rel
     while IFS= read -r f; do
         [[ -z "$f" ]] && continue
-        # Canonicalize before the containment check: a traversal path like
-        # "$REPO_ROOT/../secret" must not be read into the prompt. -m resolves
-        # ".." without requiring the file to exist (deleted files must still
-        # resolve). Must land inside the repo.
+        # Canonicalize before the containment check: a traversal path must not
+        # be read into the prompt. -m resolves ".." without requiring the file
+        # to exist (deleted files must still resolve).
         rf=$(realpath -m "$(hook_to_unix_path "$f")" 2>/dev/null) || continue
-        [[ -n "$rf" && "$rf" == "$REPO_ROOT/"* ]] || continue
-        f="$rf"
+        [[ -n "$rf" ]] || continue
+        # Resolve the file to ITS OWN campaign repo (most-specific root wins).
+        # A file outside every campaign root is counted, never silently lost:
+        # silent scope loss is exactly how this gate died the first time.
+        file_root=""
+        for root in "${CAMPAIGN_ROOTS[@]}"; do
+            if [[ "$rf" == "$root/"* ]]; then file_root="$root"; break; fi
+        done
+        if [[ -z "$file_root" ]]; then DROPPED=$((DROPPED+1)); continue; fi
+        rel="${rf#$file_root/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a
         # file named e.g. `*.ps1` could otherwise pull unrelated files in.
-        spec=":(literal)${f#$REPO_ROOT/}"
+        spec=":(literal)${rel}"
         # diff vs HEAD first: catches modifications AND deletions of tracked
         # files. For an untracked, still-present file that yields nothing
         # here, fall back to --no-index so its full content is reviewed.
-        d=$(git -C "$REPO_ROOT" diff --no-color HEAD -- "$spec" 2>/dev/null)
-        if [[ -z "$d" && -f "$f" ]] && ! git -C "$REPO_ROOT" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
-            d=$(git -C "$REPO_ROOT" diff --no-index --no-color -- /dev/null "${f#$REPO_ROOT/}" 2>/dev/null)
+        d=$(git -C "$file_root" diff --no-color HEAD -- "$spec" 2>/dev/null)
+        if [[ -z "$d" && -f "$rf" ]] && ! git -C "$file_root" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
+            d=$(cd "$file_root" && git diff --no-index --no-color -- /dev/null "$rel" 2>/dev/null)
         fi
         [[ -z "$d" ]] && continue                        # written but no net change
-        CODE_FILES+="${f#$REPO_ROOT/}"$'\n'
+        CODE_FILES+="${rf#/mnt/c/github/}"$'\n'
         PAYLOAD+="$d"$'\n'
     done <<< "$SESSION_FILES"
 }
 
 # 3. Build the changed-file list + a bounded diff payload.
 build_session_payload
+DROPPED_NOTE=""
+if (( DROPPED > 0 )); then
+    DROPPED_NOTE="codex auto-review: ${DROPPED} tracked file(s) fell outside the campaign roots and were NOT reviewed."
+fi
 if [[ -z "$PAYLOAD" ]]; then
+    [[ -n "$DROPPED_NOTE" ]] && emit_system_message "$DROPPED_NOTE"
     codex_memory_clear_prev
     stop_guard_emit ""
     exit 0
@@ -185,15 +218,19 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
         printf '%s' "$PAYLOAD_HASH" > "$LASTHASH_FILE" 2>/dev/null
     fi
 
-    # Budget exhausted for THIS diff? Say so loudly and let the turn end.
-    if [[ -f "$COUNT_FILE" ]]; then
-        n=$(cat "$COUNT_FILE" 2>/dev/null || echo 0)
-        [[ "$n" =~ ^[0-9]+$ ]] || n=0
-        if (( n >= ${STOP_GUARD_MAX_BLOCKS:-3} )); then
-            emit_system_message "CODEX AUTO-REVIEW gate bypassed after ${n} blocked rounds -- this is NOT an approval; unresolved findings almost certainly remain. Fix the remaining items now or re-review in a fresh turn; raise STOP_GUARD_MAX_BLOCKS for more rounds, or set CLAUDE_CODEX_REVIEW=off to opt out deliberately."
-            exit 0
-        fi
-    fi
+    # The per-diff bypass that used to live here has been REMOVED (operator
+    # directive 2026-07-25). It let the turn end after STOP_GUARD_MAX_BLOCKS
+    # rounds with the message "gate bypassed ... this is NOT an approval",
+    # which is precisely a check that could not fail: the work shipped, the
+    # findings stayed unresolved, and the only trace was one advisory line in a
+    # transcript nobody re-reads. Four rounds of hitting Stop was the entire
+    # cost of ignoring the reviewer.
+    #
+    # Unresolved findings now keep blocking. The way out is to FIX them, or -
+    # if they are wrong - to record a disposition in the ledger
+    # (codex-review-dispositions.jsonl), which is a reviewed, durable, and
+    # auditable act rather than an invisible one.
+    :
 fi
 
 # 4b. Review memory: standing rejections from the repo ledger + the prior
@@ -220,7 +257,8 @@ RUN_LOG=$(mktemp "${TMPDIR:-/tmp}/codex-review.XXXXXXXX" 2>/dev/null) || RUN_LOG
 
 printf '%s' "$PROMPT" | timeout "${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}" codex exec \
     --json \
-    -C "$REPO_ROOT" \
+    -C "$CODEX_CWD" \
+    --skip-git-repo-check \
     --sandbox read-only \
     --ignore-user-config \
     --ephemeral \
@@ -236,10 +274,43 @@ REVIEW=$(codex_jsonl_final_message "$RUN_LOG")   # per-run private JSONL fallbac
 
 for _f in "$RUN_LOG" "$OUT_FILE"; do [[ "$_f" != /dev/null ]] && rm -f "$_f" 2>/dev/null; done
 
-# 7. Fail OPEN on infra failure — never block because codex could not run.
+# 7. Fail CLOSED on infra failure (changed 2026-07-25; it used to fail open and
+#    let the turn end with an advisory).
+#
+#    "Never block because codex could not run" is the unavailable-dependency
+#    case, and CLAUDE.md is explicit about it: stash the work, release any
+#    lease so peers are not blocked by a dead window, file the outage, exit. Do
+#    not route around it, do not proceed for now. A turn that ships unreviewed
+#    because the reviewer was down is indistinguishable from one the reviewer
+#    approved - and that is the defect behind every scar in this campaign.
+#
+#    Worth knowing before assuming an outage: on 2026-07-25 eight separate
+#    "reviewer down" filings (#230/#240/#243/#251/#254/#256, plus #208/#249)
+#    were all root-caused by 35112df7 to the CALLER, not the service - either
+#    --permission-mode default, which hangs a headless reviewer on a permission
+#    prompt and returns nothing, or a 180-300s bound against a review that
+#    genuinely needs 148-162s. Every one of those verdicts came back on the
+#    first try once the invocation was fixed. Check the invocation before
+#    declaring an outage.
 if [[ $RC -ne 0 || -z "$REVIEW" ]]; then
-    emit_system_message "codex auto-review unavailable this turn (codex error or timeout) -- proceeding without it. Set CLAUDE_CODEX_REVIEW=off to silence."
-    stop_guard_emit ""
+    stop_guard_emit "CODEX AUTO-REVIEW COULD NOT RUN (exit ${RC}$([[ -z "$REVIEW" ]] && printf ', empty output')).
+
+This turn has NOT been reviewed, so it is not approvable. The review is not
+optional and this block does not time out.
+
+FIRST, suspect the caller, not the service. Eight recorded 'reviewer outages'
+in this campaign were caller-side: a too-short timeout, or --permission-mode
+default hanging a headless call. The bound here is
+CLAUDE_CODEX_REVIEW_TIMEOUT (currently ${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}s); a real review takes 148-162s.
+Check: codex --version, and ~/.codex-review.live.log for this run.
+
+If codex is GENUINELY unavailable (quota, outage), that is a dependency
+failure to report, not to work around:
+  1. Stash the work.
+  2. Release any library-edit lease, so peers are not blocked by a dead window:
+       tools\\Invoke-LibraryEditLease.ps1 -Action Release -Owner <your-marker>
+  3. File it: gh issue create -R potatoqualitee/migration --label needs-operator
+  4. Stop. Do not keep working with the reviewer down."
     exit 0
 fi
 
@@ -280,7 +351,8 @@ fi
 #    false positive gets a durable ruling instead of an argument loop.
 codex_memory_save_prev "$REVIEW"
 DISPUTE_HOWTO='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a documented project ruling), do not ignore it and do not burn rounds arguing: append ONE JSON line to .claude/codex-review-dispositions.jsonl -- {"date":"YYYY-MM-DD","file":"<repo-relative path>","finding":"<short summary of the finding>","ruling":"rejected","reason":"<why it is wrong, citing the governing rule>"} -- then fix everything else. The ledger edit is itself reviewed next round (an illegitimate ruling is a finding), and legitimate rulings suppress materially-matching findings from then on.'
-REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: %s, effort %s. Disable for this session with CLAUDE_CODEX_REVIEW=off.)' \
+[[ -n "$DROPPED_NOTE" ]] && REVIEW="$REVIEW"$'\n\n'"($DROPPED_NOTE)"
+REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: %s, effort %s. There is no session opt-out: fix the findings, or record a disposition in the ledger if one is wrong.)' \
     "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" "${CLAUDE_CODEX_REVIEW_EFFORT:-high}")
 stop_guard_emit "$REASON"
 exit 0
