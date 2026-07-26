@@ -23,7 +23,8 @@
     # RequiredModules, because the psm1 hard-fails when no dll is staged and that would break
     # every Import-Module dbatools in the campaign. Add it there with the first shipped cmdlet.
     CmdletsToExport        = @(
-        'Copy-DbaBackupDevice'
+        'Copy-DbaBackupDevice',
+        'Copy-DbaCredential'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
