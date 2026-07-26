@@ -154,6 +154,37 @@ function Invoke-ManualPester {
             return '4'
         }
 
+        function Invoke-Pester5Isolated {
+            param(
+                [Parameter(Mandatory)]
+                $Configuration
+            )
+
+            # Pester inherits the session state of its caller. Invoke-ManualPester runs inside
+            # dbatools, so invoking Pester directly here makes test script scope overlay the
+            # dbatools module scope and blanks module variables such as $script:isWindows.
+            # A uniquely named child module gives Pester an isolated caller scope while keeping
+            # the loaded dbatools module available to tests.
+            $runnerName = "dbatools.Pester5Runner.$PID.$([guid]::NewGuid().ToString('N'))"
+            $runnerModule = New-Module -Name $runnerName -ScriptBlock {
+                function Invoke-DbatoolsPester5 {
+                    param($ChildConfiguration)
+                    Invoke-Pester -Configuration $ChildConfiguration
+                }
+                Export-ModuleMember -Function Invoke-DbatoolsPester5
+            }
+
+            try {
+                $importedRunner = Import-Module $runnerModule -Force -PassThru
+                & $importedRunner {
+                    param($ChildConfiguration)
+                    Invoke-DbatoolsPester5 -ChildConfiguration $ChildConfiguration
+                } $Configuration
+            } finally {
+                Remove-Module $runnerModule -ErrorAction SilentlyContinue
+            }
+        }
+
         # Go up the folder structure until we find the root of the module, where dbatools.psd1 is located
         function Get-ModuleBase {
             $startOfSearch = $PSScriptRoot
@@ -349,7 +380,7 @@ function Invoke-ManualPester {
                 if ($Tag) {
                     $pester5Config.Filter.Tag = $Tag
                 }
-                Invoke-Pester -Configuration $pester5config
+                Invoke-Pester5Isolated -Configuration $pester5config
             } else {
                 Write-DetailedMessage "Running Pester 4 tests $($f.FullName)"
                 Remove-Module -Name Pester -ErrorAction SilentlyContinue
