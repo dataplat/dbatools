@@ -23,6 +23,7 @@
         'Get-DbaSsisExecutionHistory',
         'Get-DbaSsisEnvironmentVariable',
         'Get-DbaSsisFolder',
+        'Get-DbaSsisProject',
         'New-DbaSsisCatalog'
     )
     VariablesToExport      = @()
