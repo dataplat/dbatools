@@ -86,9 +86,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Emits one command-owned connection warning for each unreachable record" {
             $warnings = @()
+            $splatPipedUnreachable = @{
+                WarningVariable = "warnings"
+                WarningAction   = "SilentlyContinue"
+                ErrorAction     = "SilentlyContinue"
+            }
             $result = @(
                 $TestConfig.InstanceUnreachable, $TestConfig.InstanceUnreachable |
-                    Get-DbaReplArticle -WarningVariable warnings -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                    Get-DbaReplArticle @splatPipedUnreachable
             )
             $ownedWarnings = @(
                 $warnings | Where-Object {
