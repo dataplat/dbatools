@@ -1,62 +1,20 @@
-# dbatools PowerShell Style Guide for Claude Code
+# dbatools
 
-This style guide provides coding standards for dbatools PowerShell development to ensure consistency, readability, and maintainability across the project.
+The community PowerShell module for SQL Server professionals. This file covers the conventions
+that differ from ordinary modern PowerShell — the ones you cannot infer from the surrounding code.
 
-## CRITICAL COMMAND SYNTAX RULES
+## Hard constraints
 
-### NO BACKTICKS - ALWAYS USE SPLATS
+**PowerShell v3 must keep working.** No `::new()` and no other v5+ syntax — use
+`New-Object -TypeName System.Collections.Hashtable`.
 
-**ABSOLUTE RULE**: NEVER suggest or use backticks (`) for line continuation. Backticks are an anti-pattern in modern PowerShell development.
-
-### PARAMETER ATTRIBUTES - NO `= $true` SYNTAX
-
-**MODERN RULE**: Do NOT use `Mandatory = $true` or similar boolean attribute assignments.
-
-```powershell
-# CORRECT - Modern attribute syntax (no = $true)
-param(
-    [Parameter(Mandatory)]
-    [string]$SqlInstance,
-    [Parameter(ValueFromPipeline)]
-    [object[]]$InputObject,
-    [switch]$EnableException
-)
-
-# WRONG - Outdated PSv2 syntax
-param(
-    [Parameter(Mandatory = $true)]
-    [string]$SqlInstance
-)
-```
-
-**Guidelines:**
-- Use `[Parameter(Mandatory)]` not `[Parameter(Mandatory = $true)]`
-- Use `[switch]` for boolean flags, not `[bool]` parameters
-- Avoid ParameterSets - use Test-Bound instead with useful error messages
-- No extra line breaks between parameter declarations
-
-### POWERSHELL v3 COMPATIBILITY
-
-**CRITICAL RULE**: dbatools must support PowerShell v3. NEVER use `::new()` or other PowerShell v5+ syntax.
+**Never use backticks for line continuation.** Splat instead. Under 3 parameters, pass them
+directly; at 3 or more use a splatted hashtable named `$splat<Purpose>` (never a bare `$splat`),
+with the `=` signs aligned:
 
 ```powershell
-# CORRECT - PowerShell v3 compatible
-$object = New-Object -TypeName System.Collections.Hashtable
-
-# WRONG - PowerShell v5+ only
-$object = [System.Collections.Hashtable]::new()
-```
-
-### SPLAT USAGE REQUIREMENT
-
-- **1-2 parameters**: Use direct parameter syntax
-- **3+ parameters**: Use splatted hashtables with `$splat<Purpose>` naming
-
-```powershell
-# CORRECT - 2 parameters, direct syntax
 $database = Get-DbaDatabase -SqlInstance $instance -Name "master"
 
-# CORRECT - 5 parameters, must use splat
 $splatConnection = @{
     SqlInstance     = $instance
     SqlCredential   = $TestConfig.SqlCredential
@@ -67,115 +25,46 @@ $splatConnection = @{
 $result = New-DbaDatabase @splatConnection
 ```
 
-## SQL SERVER VERSION SUPPORT
+Alignment applies to every hashtable, not just splats. Variable names must be unique across
+scopes — collisions have caused real bugs here.
 
-Support SQL Server 2000 when feasible. Skip gracefully when feature requires SQL 2005+. Never be dismissive about users running old versions.
+**Parameter attributes use the modern form**: `[Parameter(Mandatory)]`, not
+`[Parameter(Mandatory = $true)]`. Use `[switch]` for flags, never `[bool]`. Avoid ParameterSets —
+use `Test-Bound` with a useful error message instead. No blank lines between parameter
+declarations.
 
-**For detailed version patterns and examples**, read `.github/prompts/sql-version-support.md`.
+**Double quotes for all strings**, escaping inner quotes as `` `" `` — the SQL Server module
+standard, even when the string has nothing to interpolate.
 
-Quick reference:
-- SQL 2000 = Version 8, SQL 2005 = Version 9, SQL 2012 = Version 11, etc.
-- Use `Connect-DbaInstance -MinimumVersion 9` for SQL 2005+ requirements
-- Use conditional logic when SQL 2000 support is straightforward
-
-## SMO vs T-SQL USAGE
-
-**Default to SMO** for object manipulation, scripting, and property access. Use T-SQL for system views, DMVs, stored procedures, and version-specific logic.
-
-**For detailed guidance and examples**, read `.github/prompts/smo-vs-tsql.md`.
-
-## PIPELINE OUTPUT
-
-**CRITICAL RULE**: Output objects immediately to the pipeline. Never collect in ArrayList or array.
-
-**For detailed patterns**, read `.github/prompts/pipeline-output.md`.
+**Output to the pipeline immediately.** Never accumulate into an ArrayList or array and emit at
+the end:
 
 ```powershell
-# CORRECT - Output immediately
 foreach ($db in $server.Databases) {
     [PSCustomObject]@{
         ComputerName = $server.ComputerName
         Database     = $db.Name
     }
 }
-
-# WRONG - Collecting results
-$results = New-Object System.Collections.ArrayList
-# ... add to results ...
-$results
 ```
 
-## COMMENT PRESERVATION REQUIREMENT
+**Preserve every comment exactly as written** — including development notes, temporary comments,
+CI/CD markers, and anything resembling `#$TestConfig.instance...`. AppVeyor metadata in particular
+looks like dead text and is not.
 
-**ABSOLUTE MANDATE**: ALL COMMENTS MUST BE PRESERVED EXACTLY as they appear in the original code including:
-- Development notes and temporary comments
-- CI/CD system comments (especially AppVeyor)
-- Do not delete anything that says `#$TestConfig.instance...` or similar metadata
+OTBS braces, 4-space indent, no trailing whitespace.
 
-## STRING AND QUOTE STANDARDS
+## Conventions
 
-- **Always use double quotes** for strings (SQL Server module standard)
-- Properly escape quotes when needed
+**Naming**: `<Verb>-Dba<Noun>`, approved verbs, **singular** nouns (`Get-DbaDatabase`, not
+`Get-DbaDatabases`). No `-Detailed`/`-Simple` output-mode switches. A `-Pattern` parameter is
+always **regex** — never SQL `LIKE`, never PowerShell wildcards.
 
-```powershell
-# CORRECT
-$database = "master"
-$message = "Database `"$dbName`" created successfully"
+**Registering a new command takes two edits**: the `FunctionsToExport` array in `dbatools.psd1`,
+*and* the explicit export section in `dbatools.psm1`. New commands list "the dbatools team +
+Claude" as author in `.NOTES`.
 
-# WRONG
-$database = 'master'
-```
-
-## HASHTABLE ALIGNMENT (MANDATORY)
-
-**CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned:
-
-```powershell
-# REQUIRED FORMAT - Aligned = signs
-$splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
-    Database        = $dbName
-    EnableException = $true
-}
-
-# FORBIDDEN - Misaligned hashtables
-$splat = @{
-    SqlInstance = $instance
-    Database = $db
-}
-```
-
-## VARIABLE NAMING CONVENTIONS
-
-- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
-- Create unique variable names across all scopes to prevent collisions
-
-## FORMATTING RULES
-
-- Apply OTBS (One True Brace Style) formatting to all code blocks
-- No trailing spaces anywhere
-- 4-space indentation for consistency
-
-## DBATOOLS-SPECIFIC CONVENTIONS
-
-### Command Naming and Creation
-
-1. **Use singular nouns** - `Get-DbaDatabase`, not `Get-DbaDatabases`
-2. **Use approved verbs** - Get, Set, New, Remove, Invoke, etc.
-3. **Follow `<Verb>-Dba<Noun>` pattern**
-4. **Include Claude as author** - List "the dbatools team + Claude" in .NOTES when creating commands
-5. **No `-Detailed`/`-Simple` output mode switches**
-
-### Command Registration
-
-When adding a new command, register it in **TWO places**:
-1. **dbatools.psd1** - In the `FunctionsToExport` array
-2. **dbatools.psm1** - In the explicit command export section
-
-### Commit Messages and Pull Request Naming
-
-**CRITICAL: Always include the `(do ...)` pattern** to limit CI test runs:
+**Commit messages and PR titles must carry a `(do ...)` line** — it scopes the CI run:
 
 ```
 Get-DbaDatabase - Add support for filtering by recovery model
@@ -183,22 +72,49 @@ Get-DbaDatabase - Add support for filtering by recovery model
 (do Get-DbaDatabase)
 ```
 
-For multiple commands: `(do *Login*)` or `(do *Backup*, *Restore*)`
+Wildcards and lists work: `(do *Login*)`, `(do *Backup*, *Restore*)`.
 
-### .OUTPUTS Documentation
+**SQL Server version support**: aim for SQL 2000 where feasible and skip gracefully where a
+feature needs 2005+ — never dismissively, people really do run these. Version 8 = 2000, 9 = 2005,
+11 = 2012; `Connect-DbaInstance -MinimumVersion 9` expresses a 2005+ floor.
 
-All commands should have proper `.OUTPUTS` documentation. **Use the prompt at `.github/prompts/typesncolumns.md`** to generate proper documentation.
+**SMO vs T-SQL**: default to SMO for object manipulation, scripting, and property access. Reach
+for T-SQL for system views, DMVs, stored procedures, and version-specific logic.
 
-### Pattern Parameter Convention
+**Tests**: update parameter-validation tests whenever parameters change, add 1–3 focused tests for
+new behavior, and use `EnableException` in `BeforeAll`/`AfterAll`.
 
-When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not SQL LIKE or PowerShell wildcards.
+## Tone: warm and short
 
-## TEST GUIDELINES
+Talk like a friendly colleague who is busy — kind, plain, and finished in a few lines. The warmth
+is in the wording, not in extra words.
 
-**For test style requirements**, read `.github/prompts/style.md`.
-**For Pester v5 migration**, read `.github/prompts/migration.md`.
+**Prose**: lead with the answer or the result, and add detail only when it changes what happens
+next. No preamble, no restating the request back, no closing paragraph that summarizes the opening
+one. Say "I'm not sure" once instead of hedging three times.
 
-Key points:
-- ALWAYS update parameter validation tests when parameters change
-- Add 1-3 focused tests for new functionality
-- Use EnableException in BeforeAll/AfterAll blocks
+**Comments**: explain *why*, never *what*. If the code already says it, delete the comment. No
+banners, no `# Step 1:` narration, no comment above a function that restates its parameters. A
+version quirk, a non-obvious workaround, a constraint that cost real debugging — those earn a line.
+Comment-based help (`.SYNOPSIS`/`.EXAMPLE`/`.OUTPUTS`) is required and not covered by this, and
+neither is the rule above about preserving existing comments exactly.
+
+## Deeper references
+
+Read these when the task lands in one of them, rather than up front.
+
+| Topic | File |
+| --- | --- |
+| SQL version support patterns | `.github/prompts/sql-version-support.md` |
+| SMO vs T-SQL guidance | `.github/prompts/smo-vs-tsql.md` |
+| Pipeline output patterns | `.github/prompts/pipeline-output.md` |
+| Generating `.OUTPUTS` docs (all commands need them) | `.github/prompts/typesncolumns.md` |
+| Test style | `.github/prompts/style.md` |
+| Pester v5 migration | `.github/prompts/migration.md` |
+
+## The 3.0 library migration
+
+This repo is one of three in an active campaign porting these commands to C#. The coordination
+repo, specs, and issue queue live in `migration/` — **read `migration/CLAUDE.md` before touching a
+command that is being ported.** The C# side is `../dbatools.library`. Both code repos work on
+branch `libmigration`.

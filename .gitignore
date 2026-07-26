@@ -79,3 +79,8 @@ modules/**/*.dll
 .jscpd-baseline.json
 .jscpd-baseline-*.tmp
 node_modules/
+
+# Stray worktrees of the coordination repo (potatoqualitee/migration) that past
+# gocodex sessions created INSIDE this tree. They are registered worktrees, not
+# content - committing them would duplicate the whole coordination repo in here.
+migration-gocodex-*/
