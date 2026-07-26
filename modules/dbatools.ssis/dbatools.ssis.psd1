@@ -21,6 +21,7 @@
     CmdletsToExport        = @(
         'Copy-DbaSsisCatalog',
         'Get-DbaSsisExecutionHistory',
+        'Get-DbaSsisEnvironment',
         'Get-DbaSsisEnvironmentVariable',
         'Get-DbaSsisFolder',
         'Get-DbaSsisProject',
