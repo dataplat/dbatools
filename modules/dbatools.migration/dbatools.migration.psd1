@@ -18,10 +18,9 @@
 
     # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
     FunctionsToExport      = @()
-    # Empty until the first WAVE-6 row ports. Scaffolded 2026-07-24 per the #220 operator
-    # ruling; this satellite is deliberately NOT yet listed in the root dbatools.psd1
-    # RequiredModules, because the psm1 hard-fails when no dll is staged and that would break
-    # every Import-Module dbatools in the campaign. Add it there with the first shipped cmdlet.
+    # The psm1 hard-fails when no edition dll is staged, so this list and the root
+    # dbatools.psd1 RequiredModules entry move together: emptying this one without also
+    # dropping that entry breaks every Import-Module dbatools.
     CmdletsToExport        = @(
         'Copy-DbaBackupDevice',
         'Copy-DbaCredential'
