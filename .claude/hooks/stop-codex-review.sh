@@ -184,9 +184,14 @@ campaign_file_root() {
     if [[ -z "$_top" ]]; then
         return 1
     fi
-    _origin=$(git -C "$_top" remote get-url origin 2>/dev/null)
+    # Exact identity, not a suffix: *[/:]dataplat/dbatools also matched
+    # https://evil.example/dataplat/dbatools.git, which would pull a foreign
+    # repo's content into the review payload. Userinfo is stripped before
+    # matching so an authenticated github remote still qualifies.
+    _origin=$(git -C "$_top" remote get-url origin 2>/dev/null | sed 's#//[^/@]*@#//#')
+    _origin="${_origin%.git}"
     case "$_origin" in
-        *[/:]dataplat/dbatools|*[/:]dataplat/dbatools.git|*[/:]dataplat/dbatools.library|*[/:]dataplat/dbatools.library.git|*[/:]potatoqualitee/migration|*[/:]potatoqualitee/migration.git)
+        https://github.com/dataplat/dbatools|https://github.com/dataplat/dbatools.library|https://github.com/potatoqualitee/migration|git@github.com:dataplat/dbatools|git@github.com:dataplat/dbatools.library|git@github.com:potatoqualitee/migration|ssh://github.com/dataplat/dbatools|ssh://github.com/dataplat/dbatools.library|ssh://github.com/potatoqualitee/migration)
             printf '%s' "$_top"
             return 0
             ;;
@@ -261,9 +266,16 @@ build_session_payload() {
             continue
         fi
         # For an untracked, still-present file the tree diff yields nothing;
-        # fall back to --no-index so its full content is reviewed.
+        # fall back to --no-index so its full content is reviewed. --no-index
+        # exits 0 for identical, 1 for a real diff (the normal case here);
+        # anything higher is a failed measurement, not an empty one.
         if [[ -z "$d" && -f "$rf" ]] && ! git -C "$file_root" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
             d=$(cd "$file_root" && git diff --no-index --no-color -- /dev/null "$rel" 2>/dev/null)
+            _ni_rc=$?
+            if (( _ni_rc > 1 )); then
+                MEASURE_FAIL+="$rf (git diff --no-index exited $_ni_rc)"$'\n'
+                continue
+            fi
         fi
         if [[ -z "$d" && "$base" == "HEAD" ]] && git -C "$file_root" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
             LEGACY_NOTE="This session predates turn-start baselines and a tracked file matched HEAD exactly; if this session committed that file mid-turn, its diff was NOT reviewed - cite the commit in a gocodex review issue for backfill."

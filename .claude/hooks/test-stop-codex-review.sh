@@ -23,6 +23,9 @@
 #   leg F  outer repo, then NESTED repo committed mid-turn -> both get
 #          baselines and the nested diff reaches the reviewer (migration
 #          nests inside the dbatools worktree in production)
+#   leg G  a repo whose origin merely ENDS in a campaign name
+#          (evil.example/dataplat/dbatools.git) -> dropped from the payload,
+#          out loud - suffix matching let lookalikes into the review
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -48,6 +51,7 @@ for a in "$@"; do
     prev="$a"
 done
 cat > "${CODEX_STUB_PROMPT_FILE:-/dev/null}"
+printf '%s\n' "$@" > "${CODEX_STUB_ARGS_FILE:-/dev/null}"
 printf 'stub finding: fixture\nVERDICT: %s\n' "${CODEX_STUB_VERDICT:-CLEAN}" > "${out:-/dev/null}"
 exit 0
 STUB
@@ -94,12 +98,23 @@ else
     fail "leg A: tracker did not record the pre-commit baseline"
 fi
 export CODEX_STUB_PROMPT_FILE="$WORK/promptA.txt"
+export CODEX_STUB_ARGS_FILE="$WORK/argsA.txt"
 export CODEX_STUB_VERDICT=CLEAN
 run_hook legA
 if grep -q 'SENTINEL_A' "$WORK/promptA.txt" 2>/dev/null; then
     pass "leg A: committed-mid-turn diff reached the reviewer"
 else
     fail "leg A: committed-mid-turn diff never reached the reviewer (the #625 hole)"
+fi
+if grep -x -A1 -- '--disable' "$WORK/argsA.txt" 2>/dev/null | grep -qx 'hooks'; then
+    pass "leg A: reviewer ran with codex hooks disabled"
+else
+    fail "leg A: codex invocation is missing --disable hooks"
+fi
+if grep -q -- '--dangerously-bypass-hook-trust' "$WORK/argsA.txt" 2>/dev/null; then
+    fail "leg A: hook-trust bypass present - repo hooks would execute during review"
+else
+    pass "leg A: no hook-trust bypass flag in the codex invocation"
 fi
 if [[ "$OUT" == *'"decision":"block"'* ]]; then
     fail "leg A: CLEAN verdict still blocked the turn"
@@ -205,6 +220,32 @@ if [[ "$OUT" == *'"decision":"block"'* ]]; then
     fail "leg F: CLEAN verdict still blocked the turn"
 else
     pass "leg F: CLEAN verdict allowed the turn"
+fi
+
+# ---- leg G: a lookalike origin must not enter the review payload ------------
+EVIL="$WORK/evil"
+mkdir -p "$EVIL"
+git -C "$EVIL" init -q -b main
+git -C "$EVIL" config user.email fixture@test
+git -C "$EVIL" config user.name fixture
+git -C "$EVIL" remote add origin https://evil.example/dataplat/dbatools.git
+printf 'x = 1\n' > "$EVIL/evil.ps1"
+git -C "$EVIL" add evil.ps1
+git -C "$EVIL" commit -qm init
+track legG "$EVIL/evil.ps1"
+printf 'x = 2 # SENTINEL_G\n' > "$EVIL/evil.ps1"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptG.txt"
+export CODEX_STUB_VERDICT=CLEAN
+run_hook legG
+if grep -q 'SENTINEL_G' "$WORK/promptG.txt" 2>/dev/null; then
+    fail "leg G: foreign lookalike origin's content entered the external review"
+else
+    pass "leg G: foreign lookalike origin kept out of the review payload"
+fi
+if [[ "$OUT" == *'non-campaign'* ]]; then
+    pass "leg G: the dropped file was announced, not silent"
+else
+    fail "leg G: foreign-repo drop was silent"
 fi
 
 exit "$FAILED"
