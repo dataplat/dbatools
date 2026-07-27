@@ -129,8 +129,8 @@ Describe $CommandName -Tag IntegrationTests {
             $resultskey = Get-DbaWaitResource -SqlInstance $TestConfig.InstanceSingle -WaitResource $key -row
         }
 
-        It "Should Return DatabaseName $WaitResourceDB" {
-            $results
+        It "Should return exactly one record for the KEY resource" {
+            @($resultskey).Count | Should -Be 1
         }
 
         It "Should return databasename $WaitResourceDB" {
