@@ -109,16 +109,49 @@ CAMPAIGN_ROOTS=(
 REPO_ROOT="/mnt/c/github/dbatools/migration"
 # codex needs read access to all three repos.
 CODEX_CWD="/mnt/c/github"
+# Same trees, second spelling: C:\github is also mounted as a docker-desktop
+# bind mount (#625 follow-up - the literals above miss that spelling and this
+# hook dropped every file a bind-rooted session wrote). The literals stay
+# canonical; on a box where they do not exist, anchor to the repo carrying
+# this very hook file rather than silently reviewing nothing.
+if [[ ! -d "$REPO_ROOT" ]]; then
+    REPO_ROOT=$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)
+fi
+if [[ ! -d "$CODEX_CWD" ]]; then
+    CODEX_CWD=$(cd "$REPO_ROOT/.." 2>/dev/null && pwd)
+fi
 
-# Defer entirely if another git process holds any campaign index lock.
-for _r in "${CAMPAIGN_ROOTS[@]}"; do
-    [[ -f "$_r/.git/index.lock" ]] && exit 0
+# A held campaign index lock defers the measurement briefly and OUT LOUD. The
+# old shape - bare exit 0 on any lock - silently ate one turn's review per
+# transient lock, with three fleets committing into two shared worktrees
+# (#625). A lock that outlives the wait blocks: cannot-measure is not pass.
+LOCKED_ROOT=""
+for _try in 1 2 3; do
+    LOCKED_ROOT=""
+    for _r in "${CAMPAIGN_ROOTS[@]}"; do
+        [[ -f "$_r/.git/index.lock" ]] && LOCKED_ROOT="$_r"
+    done
+    [[ -z "$LOCKED_ROOT" ]] && break
+    sleep 5
 done
+if [[ -n "$LOCKED_ROOT" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW COULD NOT MEASURE: ${LOCKED_ROOT}/.git/index.lock was still held after three 5s waits, so this turn's diff cannot be computed and no review ran. If another git process is genuinely working, end the turn again in a moment. If the lock is stale (no live git process), remove that one lock file and end the turn again."
+    exit 0
+fi
 
 # 2. Scope to THIS session's writes only.
 SESSION_STATE="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.txt"
+SESSION_BASELINES="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.repos"
 if [[ -z "$SESSION_ID" || ! -f "$SESSION_STATE" ]]; then
-    stop_guard_emit ""    # nothing tracked for this session -> nothing to review
+    # No ledger can mean "the session wrote nothing" OR "the tracker that
+    # records writes is gone" - and those must not read the same (#625). The
+    # tracker lives beside this hook, so its presence is checkable here;
+    # settings.json wiring drift is stop-checker-integrity.sh's job.
+    if [[ ! -f "$(dirname "$0")/post-write-track-session-files.sh" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: post-write-track-session-files.sh is missing, so 'no tracked writes' is indistinguishable from 'the write tracker is gone'. Restore the tracker (git checkout of .claude/hooks) and end the turn again."
+        exit 0
+    fi
+    stop_guard_emit ""    # tracker intact and recorded nothing -> nothing to review
     exit 0
 fi
 # The dispositions ledger is force-INCLUDED despite its extension: it
@@ -130,6 +163,52 @@ if [[ -z "$SESSION_FILES" ]]; then
     exit 0
 fi
 
+# campaign_file_root <realpath> - echo the campaign repo root containing the
+# file. The literal CAMPAIGN_ROOTS fast path first; when the file sits on a
+# different mount spelling of the same trees, its own git toplevel is accepted
+# iff origin names a campaign repo. The literal list never shrinks (see
+# surface_mincounts); this only widens the same scope to other mounts.
+# Returns: 0 root printed / 1 not in any git repo / 2 in a non-campaign repo.
+campaign_file_root() {
+    local rf="$1" root _dir _top _origin
+    for root in "${CAMPAIGN_ROOTS[@]}"; do
+        if [[ "$rf" == "$root/"* ]]; then printf '%s' "$root"; return 0; fi
+    done
+    _dir=$(dirname "$rf")
+    # A deleted file may have taken its directory with it; walk up to the
+    # nearest surviving parent so the deletion is still attributed to a repo.
+    while [[ -n "$_dir" && "$_dir" != "/" && ! -d "$_dir" ]]; do
+        _dir=$(dirname "$_dir")
+    done
+    _top=$(git -C "$_dir" rev-parse --show-toplevel 2>/dev/null)
+    if [[ -z "$_top" ]]; then
+        return 1
+    fi
+    _origin=$(git -C "$_top" remote get-url origin 2>/dev/null)
+    case "$_origin" in
+        *[/:]dataplat/dbatools|*[/:]dataplat/dbatools.git|*[/:]dataplat/dbatools.library|*[/:]dataplat/dbatools.library.git|*[/:]potatoqualitee/migration|*[/:]potatoqualitee/migration.git)
+            printf '%s' "$_top"
+            return 0
+            ;;
+    esac
+    return 2
+}
+
+# session_baseline <repo_root> - echo the HEAD recorded at this session's
+# first write into that repo (post-write-track-session-files.sh), or nothing
+# for session state recorded before baselines existed.
+session_baseline() {
+    local want="$1" _sha _origin _top
+    [[ -f "$SESSION_BASELINES" ]] || return 1
+    while IFS=$'\t' read -r _sha _origin _top; do
+        if [[ -n "$_top" && "$_top" == "$want" ]]; then
+            printf '%s' "$_sha"
+            return 0
+        fi
+    done < "$SESSION_BASELINES"
+    return 1
+}
+
 # Build CODE_FILES + PAYLOAD from the session's code files. Re-callable: the
 # CLEAN path calls it again to confirm nothing changed during the
 # (minutes-long) codex run before caching the approval (TOCTOU guard).
@@ -137,7 +216,10 @@ build_session_payload() {
     CODE_FILES=""
     PAYLOAD=""
     DROPPED=0
-    local f rf spec d root file_root rel
+    MEASURED=0
+    MEASURE_FAIL=""
+    LEGACY_NOTE=""
+    local f rf spec d file_root rel base
     while IFS= read -r f; do
         [[ -z "$f" ]] && continue
         # Canonicalize before the containment check: a traversal path must not
@@ -145,27 +227,44 @@ build_session_payload() {
         # to exist (deleted files must still resolve).
         rf=$(realpath -m "$(hook_to_unix_path "$f")" 2>/dev/null) || continue
         [[ -n "$rf" ]] || continue
-        # Resolve the file to ITS OWN campaign repo (most-specific root wins).
-        # A file outside every campaign root is counted, never silently lost:
-        # silent scope loss is exactly how this gate died the first time.
-        file_root=""
-        for root in "${CAMPAIGN_ROOTS[@]}"; do
-            if [[ "$rf" == "$root/"* ]]; then file_root="$root"; break; fi
-        done
-        if [[ -z "$file_root" ]]; then DROPPED=$((DROPPED+1)); continue; fi
+        file_root=$(campaign_file_root "$rf")
+        case $? in
+            1) continue ;;                          # not in any git repo (scratchpad, memory) - not code under review
+            2) DROPPED=$((DROPPED+1)); continue ;;  # a git repo outside the campaign - counted, never silent
+        esac
         rel="${rf#$file_root/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a
         # file named e.g. `*.ps1` could otherwise pull unrelated files in.
         spec=":(literal)${rel}"
-        # diff vs HEAD first: catches modifications AND deletions of tracked
-        # files. For an untracked, still-present file that yields nothing
-        # here, fall back to --no-index so its full content is reviewed.
-        d=$(git -C "$file_root" diff --no-color HEAD -- "$spec" 2>/dev/null)
+        # Diff from the session's first-write baseline, not HEAD: a window
+        # that commits mid-turn must not erase its own review surface - that
+        # was #625's main hole. HEAD only for legacy session state recorded
+        # before baselines existed.
+        base=$(session_baseline "$file_root")
+        if [[ -n "$base" ]]; then
+            if ! git -C "$file_root" cat-file -e "${base}^{commit}" 2>/dev/null; then
+                MEASURE_FAIL+="$rf (recorded baseline $base is not a commit in $file_root)"$'\n'
+                continue
+            fi
+        else
+            base="HEAD"
+        fi
+        d=$(git -C "$file_root" diff --no-color "$base" -- "$spec" 2>/dev/null)
+        if [[ $? -ne 0 ]]; then
+            MEASURE_FAIL+="$rf (git diff against $base failed in $file_root)"$'\n'
+            continue
+        fi
+        # For an untracked, still-present file the tree diff yields nothing;
+        # fall back to --no-index so its full content is reviewed.
         if [[ -z "$d" && -f "$rf" ]] && ! git -C "$file_root" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
             d=$(cd "$file_root" && git diff --no-index --no-color -- /dev/null "$rel" 2>/dev/null)
         fi
-        [[ -z "$d" ]] && continue                        # written but no net change
-        CODE_FILES+="${rf#/mnt/c/github/}"$'\n'
+        if [[ -z "$d" && "$base" == "HEAD" ]] && git -C "$file_root" ls-files --error-unmatch -- "$spec" >/dev/null 2>&1; then
+            LEGACY_NOTE="This session predates turn-start baselines and a tracked file matched HEAD exactly; if this session committed that file mid-turn, its diff was NOT reviewed - cite the commit in a gocodex review issue for backfill."
+        fi
+        MEASURED=$((MEASURED+1))
+        [[ -z "$d" ]] && continue                        # measured: no net change vs baseline
+        CODE_FILES+="$(basename "$file_root")/${rel}"$'\n'
         PAYLOAD+="$d"$'\n'
     done <<< "$SESSION_FILES"
 }
@@ -174,10 +273,28 @@ build_session_payload() {
 build_session_payload
 DROPPED_NOTE=""
 if (( DROPPED > 0 )); then
-    DROPPED_NOTE="codex auto-review: ${DROPPED} tracked file(s) fell outside the campaign roots and were NOT reviewed."
+    DROPPED_NOTE="codex auto-review: ${DROPPED} tracked file(s) sit in a non-campaign git repo and were NOT reviewed."
+fi
+# Cannot-measure is not pass (#625): any git failure over a session file
+# blocks BEFORE the codex call - a CLEAN verdict over a partial diff would
+# bless exactly the files that failed to measure.
+if [[ -n "$MEASURE_FAIL" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW COULD NOT MEASURE this turn's changes, so no review ran and the turn is not approvable:
+
+$MEASURE_FAIL
+Fix the measurement (stale baseline, dead repo path). If this session's work is already committed and the state is unrecoverable, cite those commits in a gocodex review issue so the backfill covers them - then end the turn again."
+    exit 0
 fi
 if [[ -z "$PAYLOAD" ]]; then
-    [[ -n "$DROPPED_NOTE" ]] && emit_system_message "$DROPPED_NOTE"
+    # Distinguish "measured: nothing changed" from silence - an empty payload
+    # over a non-empty write ledger was #625's original disguise.
+    EMPTY_NOTE=""
+    if (( MEASURED > 0 )); then
+        EMPTY_NOTE="codex auto-review: ${MEASURED} session file(s) show no net change against their turn-start baseline - nothing to review."
+    fi
+    [[ -n "$LEGACY_NOTE" ]] && EMPTY_NOTE="${EMPTY_NOTE} ${LEGACY_NOTE}"
+    [[ -n "$DROPPED_NOTE" ]] && EMPTY_NOTE="${EMPTY_NOTE} ${DROPPED_NOTE}"
+    [[ -n "$EMPTY_NOTE" ]] && emit_system_message "$EMPTY_NOTE"
     codex_memory_clear_prev
     stop_guard_emit ""
     exit 0
@@ -259,6 +376,7 @@ printf '%s' "$PROMPT" | timeout "${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}" codex exec
     --json \
     -C "$CODEX_CWD" \
     --skip-git-repo-check \
+    --dangerously-bypass-hook-trust \
     --sandbox read-only \
     --ignore-user-config \
     --ephemeral \
@@ -341,6 +459,9 @@ if [[ "$VERDICT" == "CLEAN" ]]; then
     if [[ "$(printf '%s' "$PAYLOAD" | sha256sum | cut -d' ' -f1)" == "$PAYLOAD_HASH" && -n "$CLEAN_FILE" ]]; then
         printf '%s' "$PAYLOAD_HASH" > "$CLEAN_FILE" 2>/dev/null
     fi
+    # A clean verdict must not swallow the scope warning: files in foreign
+    # repos were still not reviewed, and silence here is how scope loss hides.
+    [[ -n "$DROPPED_NOTE" ]] && emit_system_message "$DROPPED_NOTE"
     stop_guard_emit ""    # approved -> reset streak, allow
     exit 0
 fi
