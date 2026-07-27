@@ -79,6 +79,44 @@ CODE_EXT_RE='\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh|md)$'
 
 SESSION_ID=$(hook_field '.session_id')
 
+# 0. Session-state integrity precedes reviewer availability: a codex-less box
+#    degrades to an advisory and allows, and that allow must never cover a
+#    session whose write ledger is known-incomplete - the tracker's failure
+#    marker, an empty ledger, a baseline file without its ledger, or a missing
+#    tracker all mean the measurement is broken NO MATTER what reviewer is or
+#    is not installed. Block on those before asking whether codex exists.
+SESSION_STATE="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.txt"
+SESSION_BASELINES="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.repos"
+SESSION_FAIL="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.fail"
+# -L as well as -e: a marker left as a dangling symlink names a persistence
+# failure just the same, and -e alone follows the link and misses it.
+if [[ -n "$SESSION_ID" ]] && [[ -e "$SESSION_FAIL" || -L "$SESSION_FAIL" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write tracker recorded a persistence failure for this session (${SESSION_ID}.fail exists), so the write ledger is incomplete regardless of its contents. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill, remove the marker, and end the turn again."
+    exit 0
+fi
+if [[ -n "$SESSION_ID" && -f "$SESSION_STATE" && ! -s "$SESSION_STATE" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write ledger ${SESSION_ID}.txt exists but is empty - a persistence failure, not a quiet session. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill - then end the turn again."
+    exit 0
+fi
+if [[ -z "$SESSION_ID" || ! -f "$SESSION_STATE" ]]; then
+    # No ledger can mean "the session wrote nothing" OR "the tracker that
+    # records writes is gone" - and those must not read the same (#625). The
+    # tracker lives beside this hook, so its presence is checkable here;
+    # settings.json wiring drift is stop-checker-integrity.sh's job.
+    if [[ ! -f "$(dirname "$0")/post-write-track-session-files.sh" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: post-write-track-session-files.sh is missing, so 'no tracked writes' is indistinguishable from 'the write tracker is gone'. Restore the tracker (git checkout of .claude/hooks) and end the turn again."
+        exit 0
+    fi
+    # The tracker touches .repos before appending .txt, so .repos WITHOUT .txt
+    # means the tracker ran this session and the write ledger failed to
+    # persist. That is partial tracker state, not a quiet session - allowing
+    # it would ship exactly the writes that failed to record.
+    if [[ -n "$SESSION_ID" && -e "$SESSION_BASELINES" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: ${SESSION_ID}.repos exists but the write ledger ${SESSION_ID}.txt does not, so this session's writes were tracked and then lost. Inspect $HOOK_STATE_ROOT/session-files (disk full? deleted mid-turn?); if the writes are unrecoverable, cite this turn's commits in a gocodex review issue for backfill - then end the turn again."
+        exit 0
+    fi
+fi
+
 # 1. Availability.
 #
 #    The CLAUDE_CODEX_REVIEW=off opt-out that used to sit here has been REMOVED
@@ -134,53 +172,33 @@ fi
 # old shape - bare exit 0 on any lock - silently ate one turn's review per
 # transient lock, with three fleets committing into two shared worktrees
 # (#625). A lock that outlives the wait blocks: cannot-measure is not pass.
-LOCKED_ROOT=""
-for _try in 1 2 3; do
+# The last scan must come AFTER the last wait: a lock cleared during the
+# final sleep must read as cleared, never as a verdict one scan stale.
+wait_for_index_locks() {
     LOCKED_ROOT=""
-    for _r in "${CAMPAIGN_ROOTS[@]}"; do
-        [[ -f "$_r/.git/index.lock" ]] && LOCKED_ROOT="$_r"
+    local _try _r
+    for _try in 1 2 3 4; do
+        LOCKED_ROOT=""
+        for _r in "${CAMPAIGN_ROOTS[@]}"; do
+            [[ -f "$_r/.git/index.lock" ]] && LOCKED_ROOT="$_r"
+        done
+        [[ -z "$LOCKED_ROOT" ]] && return 0
+        [[ "$_try" -lt 4 ]] && sleep 5
     done
-    [[ -z "$LOCKED_ROOT" ]] && break
-    sleep 5
-done
+    return 0
+}
+wait_for_index_locks
 if [[ -n "$LOCKED_ROOT" ]]; then
     stop_guard_emit "CODEX AUTO-REVIEW COULD NOT MEASURE: ${LOCKED_ROOT}/.git/index.lock was still held after three 5s waits, so this turn's diff cannot be computed and no review ran. If another git process is genuinely working, end the turn again in a moment. If the lock is stale (no live git process), remove that one lock file and end the turn again."
     exit 0
 fi
 
-# 2. Scope to THIS session's writes only.
-SESSION_STATE="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.txt"
-SESSION_BASELINES="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.repos"
-SESSION_FAIL="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.fail"
-# The tracker leaves a durable .fail marker when it could not persist a write
-# record, and it never leaves the ledger empty (the first path is appended in
-# the same operation that creates it). Either state means the ledger
-# undercounts NO MATTER what else it says - block before reading it.
-if [[ -n "$SESSION_ID" && -e "$SESSION_FAIL" ]]; then
-    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write tracker recorded a persistence failure for this session (${SESSION_ID}.fail exists), so the write ledger is incomplete regardless of its contents. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill, remove the marker, and end the turn again."
-    exit 0
-fi
-if [[ -n "$SESSION_ID" && -f "$SESSION_STATE" && ! -s "$SESSION_STATE" ]]; then
-    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write ledger ${SESSION_ID}.txt exists but is empty - a persistence failure, not a quiet session. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill - then end the turn again."
-    exit 0
-fi
+# 2. Scope to THIS session's writes only. The session-state integrity blocks
+#    (.fail marker, empty ledger, .repos without ledger, missing tracker)
+#    MOVED to step 0 so they fire before the codex availability advisory can
+#    allow a broken session on a codex-less box (round 6). What remains here
+#    is the quiet session.
 if [[ -z "$SESSION_ID" || ! -f "$SESSION_STATE" ]]; then
-    # No ledger can mean "the session wrote nothing" OR "the tracker that
-    # records writes is gone" - and those must not read the same (#625). The
-    # tracker lives beside this hook, so its presence is checkable here;
-    # settings.json wiring drift is stop-checker-integrity.sh's job.
-    if [[ ! -f "$(dirname "$0")/post-write-track-session-files.sh" ]]; then
-        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: post-write-track-session-files.sh is missing, so 'no tracked writes' is indistinguishable from 'the write tracker is gone'. Restore the tracker (git checkout of .claude/hooks) and end the turn again."
-        exit 0
-    fi
-    # The tracker touches .repos before appending .txt, so .repos WITHOUT .txt
-    # means the tracker ran this session and the write ledger failed to
-    # persist. That is partial tracker state, not a quiet session - allowing
-    # it would ship exactly the writes that failed to record.
-    if [[ -n "$SESSION_ID" && -e "$SESSION_BASELINES" ]]; then
-        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: ${SESSION_ID}.repos exists but the write ledger ${SESSION_ID}.txt does not, so this session's writes were tracked and then lost. Inspect $HOOK_STATE_ROOT/session-files (disk full? deleted mid-turn?); if the writes are unrecoverable, cite this turn's commits in a gocodex review issue for backfill - then end the turn again."
-        exit 0
-    fi
     stop_guard_emit ""    # tracker intact and recorded nothing -> nothing to review
     exit 0
 fi
@@ -201,7 +219,9 @@ fi
 # payload. The literal list never shrinks (see surface_mincounts); the origin
 # check only widens the same scope to other mounts.
 # Returns: 0 root printed / 1 not in any git repo / 2 in a non-campaign repo /
-# 3 under a campaign root but unresolvable (cannot-measure, never skip).
+# 3 under a campaign root but unresolvable / 4 resolved only to an OUTER repo
+# while this session recorded a baseline for a deeper (now deleted) nested
+# repo - 3 and 4 are cannot-measure, never skip.
 campaign_file_root() {
     local rf="$1" root _dir _top _origin
     _dir=$(dirname "$rf")
@@ -218,6 +238,21 @@ campaign_file_root() {
             if [[ "$rf" == "$root/"* ]]; then return 3; fi
         done
         return 1
+    fi
+    # A deleted NESTED repo resolves to its outer repo: the dirname walk-up
+    # lands on the surviving parent, and the outer tree never tracked the
+    # nested files, so deleting a whole repo would measure as "no change".
+    # If this session recorded a baseline for a deeper repo that contained
+    # this file, that deeper root is the truth and it is gone -
+    # cannot-measure, never skip.
+    if [[ -n "${SESSION_BASELINES:-}" && -f "${SESSION_BASELINES:-}" ]]; then
+        local _bsha _bmid _btop
+        while IFS=$'\t' read -r _bsha _bmid _btop; do
+            [[ -n "$_btop" ]] || continue
+            if [[ "$_btop" != "$_top" && "$_btop" == "$_top/"* && "$rf" == "$_btop/"* ]]; then
+                return 4
+            fi
+        done < "$SESSION_BASELINES"
     fi
     for root in "${CAMPAIGN_ROOTS[@]}"; do
         if [[ "$_top" == "$root" ]]; then printf '%s' "$_top"; return 0; fi
@@ -256,6 +291,11 @@ session_baseline() {
 # CLEAN path calls it again to confirm nothing changed during the
 # (minutes-long) codex run before caching the approval (TOCTOU guard).
 build_session_payload() {
+    # Re-derive the file list from the ledger on EVERY call: the post-review
+    # TOCTOU recheck must see writes tracked while the reviewer was running -
+    # reusing the list captured before the review let a newly tracked file
+    # ride out on the pre-review approval (round 6).
+    SESSION_FILES=$(sort -u "$SESSION_STATE" | grep -E "$CODE_EXT_RE|codex-review-dispositions\.jsonl$")
     CODE_FILES=""
     PAYLOAD=""
     DROPPED=0
@@ -275,6 +315,7 @@ build_session_payload() {
             1) continue ;;                          # not in any git repo (scratchpad, memory) - not code under review
             2) DROPPED=$((DROPPED+1)); continue ;;  # a git repo outside the campaign - counted, never silent
             3) MEASURE_FAIL+="$rf (under a campaign root but git cannot resolve its repo)"$'\n'; continue ;;
+            4) MEASURE_FAIL+="$rf (its recorded repo is gone - the path resolves only to the outer repo, which cannot see a nested deletion)"$'\n'; continue ;;
         esac
         rel="${rf#$file_root/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a

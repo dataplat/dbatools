@@ -42,6 +42,23 @@
 #   leg L  a foreign repo NESTED UNDER a campaign root -> the file's own git
 #          toplevel decides (dropped), never the outer root's path prefix;
 #          campaign-root files still resolve (function-level, extracted)
+#   leg M  a file joins the write ledger WHILE the reviewer runs -> the CLEAN
+#          verdict must block (the TOCTOU recheck reloads the ledger; a scope
+#          captured before the review must not approve the wider one)
+#   leg N  a nested repo with a recorded baseline is DELETED whole -> block;
+#          the path resolves only to the outer repo, which cannot see the
+#          deletion, and "no change" is exactly the wrong verdict
+#   leg O  first-baseline creation is serialized: a held lock starves the
+#          tracker into fail-closed (exit 2 + marker, NO baseline), and 8
+#          parallel first writes yield exactly one baseline line
+#   leg P  the .fail marker is a planted symlink -> the failure path must not
+#          write through it, and a dangling symlink marker must still block
+#   leg Q  codex unavailable AND tracker state broken -> the integrity block
+#          fires BEFORE the availability advisory can allow
+#   leg R  an index lock cleared during the FINAL wait reads as cleared
+#          (function-level, extracted); plus leg H-e: the append verifier
+#          rejects a short re-append that an older intact occurrence of the
+#          same path would previously have vouched for
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -70,6 +87,9 @@ cat > "${CODEX_STUB_PROMPT_FILE:-/dev/null}"
 printf '%s\n' "$@" > "${CODEX_STUB_ARGS_FILE:-/dev/null}"
 if [[ -n "${CODEX_STUB_MUTATE_FILE:-}" ]]; then
     printf '# mutated-while-the-reviewer-ran\n' >> "$CODEX_STUB_MUTATE_FILE"
+fi
+if [[ -n "${CODEX_STUB_LEDGER_ADD:-}" && -n "${CODEX_STUB_LEDGER_FILE:-}" ]]; then
+    printf '%s\n' "$CODEX_STUB_LEDGER_ADD" >> "$CODEX_STUB_LEDGER_FILE"
 fi
 printf 'stub finding: fixture\nVERDICT: %s\n' "${CODEX_STUB_VERDICT:-CLEAN}" > "${out:-/dev/null}"
 exit 0
@@ -313,6 +333,18 @@ if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
 else
     fail "leg H: failure marker ignored - an undercounting ledger was trusted"
 fi
+# H-e: the append verifier must reject a same-path re-append that landed
+# short - an older intact occurrence must not vouch for the new one.
+# Function-level: extracted from the tracker and fed a fabricated ledger
+# whose second copy of the path is truncated (fault injection into a live
+# printf is not portable; the verifier's contract is what is pinned here).
+eval "$(awk '/^ledger_verify_append\(\) \{/,/^\}$/' "$HOOK_DIR/post-write-track-session-files.sh")"
+printf '%s\n%s' "$REPO/thing.ps1" "$REPO/thi" > "$WORK/legHe-ledger"
+if declare -f ledger_verify_append >/dev/null 2>&1 && ! ledger_verify_append "$WORK/legHe-ledger" "$REPO/thing.ps1" 1; then
+    pass "leg H: short re-append of a known path is rejected (count must grow)"
+else
+    fail "leg H: an older occurrence vouched for a short re-append"
+fi
 
 # ---- leg I: a symlinked state ROOT must be refused, not written through -----
 HOSTILE="$WORK/hostile"
@@ -395,6 +427,119 @@ else
 fi
 git -C "$REPO" checkout -q -- thing.ps1
 
+# ---- leg M: scope growth during the review must void the approval -----------
+printf 'function Get-Thing { 6 } # SENTINEL_M\n' > "$REPO/thing.ps1"
+MHEAD=$(git -C "$REPO" rev-parse HEAD)
+printf 'late = 1 # SENTINEL_M2\n' > "$REPO/late.ps1"
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legM.txt"
+printf '%s\t-\t%s\n' "$MHEAD" "$REPO" > "$STATE/legM.repos"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptM.txt"
+export CODEX_STUB_VERDICT=CLEAN
+export CODEX_STUB_LEDGER_ADD="$REPO/late.ps1"
+export CODEX_STUB_LEDGER_FILE="$STATE/legM.txt"
+run_hook legM
+export CODEX_STUB_LEDGER_ADD=""
+export CODEX_STUB_LEDGER_FILE=""
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'while the reviewer was running'* ]]; then
+    pass "leg M: file tracked during the review voided the CLEAN verdict"
+else
+    fail "leg M: pre-review scope approved a ledger that grew during the review"
+fi
+rm -f "$REPO/late.ps1"
+git -C "$REPO" checkout -q -- thing.ps1
+
+# ---- leg N: whole nested-repo deletion must block, not read as no change ----
+NESTGONE="$REPO/nestgone"
+mkdir -p "$NESTGONE"
+git -C "$NESTGONE" init -q -b main
+git -C "$NESTGONE" config user.email fixture@test
+git -C "$NESTGONE" config user.name fixture
+git -C "$NESTGONE" remote add origin https://github.com/potatoqualitee/migration.git
+printf 'gone = 1\n' > "$NESTGONE/gone.ps1"
+git -C "$NESTGONE" add gone.ps1
+git -C "$NESTGONE" commit -qm init
+track legN "$REPO/thing.ps1"
+track legN "$NESTGONE/gone.ps1"
+chmod -R u+w "$NESTGONE"
+rm -r "$NESTGONE"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptN.txt"
+export CODEX_STUB_VERDICT=CLEAN
+run_hook legN
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'COULD NOT MEASURE'* ]]; then
+    pass "leg N: deleted nested repo blocked as cannot-measure"
+else
+    fail "leg N: nested-repo deletion measured as no change and shipped"
+fi
+
+# ---- leg O: first-baseline creation is serialized, fail-closed --------------
+# A held lock must starve the tracker into exit 2 + marker with NO baseline
+# recorded; a tracker without the lock sails through, which is the red side.
+mkdir -p "$STATE/legO.baseline.lock"
+track legO "$REPO/thing.ps1"
+TRACK_RC=$?
+if [[ $TRACK_RC -eq 2 && -e "$STATE/legO.fail" ]] && ! cut -f3 "$STATE/legO.repos" 2>/dev/null | grep -qxF "$REPO"; then
+    pass "leg O: held baseline lock fails closed (exit 2, marker, no baseline)"
+else
+    fail "leg O: tracker recorded a baseline despite a held lock (rc=$TRACK_RC)"
+fi
+rmdir "$STATE/legO.baseline.lock" 2>/dev/null
+# Parallel first writes into one repo must yield exactly one baseline line.
+# Measured red on unlocked hooks: 8 simultaneous first writes all read the
+# empty file before any append and recorded 8 baselines.
+for _n in 1 2 3 4 5 6 7 8; do
+    track legOp "$REPO/par$_n.ps1" &
+done
+wait
+OLINES=$(cut -f3 "$STATE/legOp.repos" 2>/dev/null | grep -cxF "$REPO")
+OPATHS=$(sort -u "$STATE/legOp.txt" 2>/dev/null | grep -c 'par[0-9]\.ps1$')
+if [[ "$OLINES" == "1" && "$OPATHS" == "8" ]]; then
+    pass "leg O: 8 parallel first writes -> one baseline line, all 8 paths intact"
+else
+    fail "leg O: parallel first writes corrupted session state (baselines=$OLINES paths=$OPATHS)"
+fi
+
+# ---- leg P: a planted symlink .fail marker must not become a write-through --
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legP.txt"
+chmod 400 "$STATE/legP.txt"
+ln -s "$WORK/evil-marker-target" "$STATE/legP.fail"
+track legP "$REPO/other-p.ps1"
+TRACK_RC=$?
+if [[ $TRACK_RC -eq 2 && ! -e "$WORK/evil-marker-target" ]]; then
+    pass "leg P: failure path refused to write through the planted symlink"
+else
+    fail "leg P: persist_failure wrote through a symlinked marker (rc=$TRACK_RC)"
+fi
+chmod 600 "$STATE/legP.txt"
+# A marker that survives only as a DANGLING symlink still names a failure;
+# -e follows the link and misses it, so the Stop gate must check -L too.
+PHEAD=$(git -C "$REPO" rev-parse HEAD)
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legPs.txt"
+printf '%s\t-\t%s\n' "$PHEAD" "$REPO" > "$STATE/legPs.repos"
+ln -s "$WORK/absent-marker-target" "$STATE/legPs.fail"
+run_hook legPs
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
+    pass "leg P: dangling symlink marker still blocked the turn"
+else
+    fail "leg P: a dangling symlink marker was invisible to the Stop gate"
+fi
+
+# ---- leg Q: broken tracker state must block even with no reviewer installed -
+mkdir -p "$WORK/nocodexbin"
+printf '#!/bin/bash\nexit 127\n' > "$WORK/nocodexbin/codex"
+chmod +x "$WORK/nocodexbin/codex"
+rm -f "$TMPDIR/claude-dbatools-hooks/codex.cached"
+QHEAD=$(git -C "$REPO" rev-parse HEAD)
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legQ.txt"
+printf '%s\t-\t%s\n' "$QHEAD" "$REPO" > "$STATE/legQ.repos"
+: > "$STATE/legQ.fail"
+OUT=$(printf '{"session_id":"legQ","transcript_path":"%s/transcript-legQ.jsonl"}' "$WORK" \
+    | PATH="$WORK/nocodexbin:$PATH" bash "$HOOK_DIR/stop-codex-review.sh" 2>"$WORK/err-legQ.log")
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
+    pass "leg Q: integrity block fired before the no-reviewer advisory"
+else
+    fail "leg Q: a codex-less allow covered a session with broken tracker state"
+fi
+
 # ---- leg L: a nested foreign repo must not ride a campaign root's path ------
 # Function-level: campaign_file_root is extracted verbatim from the hook and
 # called with a test-owned literal root, because the production literals
@@ -428,6 +573,28 @@ if [[ $? -eq 0 && "$LROOT" == "$FAKE" ]]; then
     pass "leg L: campaign-root file still resolves to its root"
 else
     fail "leg L: campaign-root file no longer resolves (scope regression)"
+fi
+
+# ---- leg R: a lock cleared during the FINAL wait must read as cleared -------
+# Function-level: wait_for_index_locks is extracted verbatim; the lock is
+# removed ~12s in, inside the third 5s wait, so only a rescan AFTER that wait
+# can see it clear. Costs ~15s of wall clock - that is the point.
+LOCKREPO="$WORK/lockrepo"
+mkdir -p "$LOCKREPO/.git"
+: > "$LOCKREPO/.git/index.lock"
+eval "$(awk '/^wait_for_index_locks\(\) \{/,/^\}$/' "$HOOK_DIR/stop-codex-review.sh")"
+CAMPAIGN_ROOTS=("$LOCKREPO")
+LOCKED_ROOT="never-scanned"
+( sleep 12; rm -f "$LOCKREPO/.git/index.lock" ) &
+LOCKCLEAR_PID=$!
+if declare -f wait_for_index_locks >/dev/null 2>&1; then
+    wait_for_index_locks
+fi
+wait "$LOCKCLEAR_PID" 2>/dev/null
+if [[ -z "$LOCKED_ROOT" ]]; then
+    pass "leg R: lock cleared during the final wait reads as cleared"
+else
+    fail "leg R: stale scan reported a cleared lock as still held (LOCKED_ROOT=$LOCKED_ROOT)"
 fi
 
 exit "$FAILED"

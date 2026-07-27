@@ -58,10 +58,30 @@ FAILMARK="$STATE_DIR/${SESSION_ID}.fail"
 # would ship unreviewed. If even the marker cannot be written, the Stop gate's
 # empty-ledger check is the remaining backstop.
 persist_failure() {
-    : >> "$FAILMARK" 2>/dev/null
-    chmod 600 "$FAILMARK" 2>/dev/null
+    # Never write through a marker that already exists as a symlink (or any
+    # non-regular file): a planted link would turn this failure path into a
+    # write to an attacker-chosen target. Replace it; if that fails, skip the
+    # write - the Stop gate treats a lingering symlink marker as a failure too.
+    if [[ -L "$FAILMARK" ]]; then
+        rm -f -- "$FAILMARK" 2>/dev/null
+    fi
+    if [[ ! -L "$FAILMARK" ]] && [[ ! -e "$FAILMARK" || -f "$FAILMARK" ]]; then
+        : >> "$FAILMARK" 2>/dev/null
+        chmod 600 "$FAILMARK" 2>/dev/null
+    fi
     echo "post-write-track-session-files: $1" >&2
     exit 2
+}
+
+# ledger_verify_append <ledger> <path> <pre-count> - true iff the ledger now
+# holds MORE intact copies of <path> than before the append. Presence alone is
+# not enough: on a re-write of the same path, an older intact occurrence would
+# vouch for a new append that landed short (round 6).
+ledger_verify_append() {
+    local _file="$1" _path="$2" _pre="$3" _post
+    _post=$(grep -cxF -- "$_path" "$_file" 2>/dev/null)
+    [[ "$_post" =~ ^[0-9]+$ ]] || _post=0
+    (( _post > _pre ))
 }
 
 if [[ -L "$TXT" || -L "$BASELINES" ]]; then
@@ -70,13 +90,16 @@ fi
 if ! : >> "$BASELINES" 2>/dev/null; then
     persist_failure "cannot create $BASELINES - the review gate cannot measure this turn"
 fi
+PRE_COUNT=$(grep -cxF -- "$FILE_PATH" "$TXT" 2>/dev/null)
+[[ "$PRE_COUNT" =~ ^[0-9]+$ ]] || PRE_COUNT=0
 if ! printf '%s\n' "$FILE_PATH" >> "$TXT" 2>/dev/null; then
     persist_failure "cannot append to $TXT - the review gate cannot measure this turn"
 fi
 # A reported-successful append can still land short (disk full mid-write):
-# trust the ledger only after reading the path back out of it. Any line, not
-# the last one - hooks from parallel tool calls in one message can interleave.
-if ! grep -qxF -- "$FILE_PATH" "$TXT" 2>/dev/null; then
+# trust the ledger only after counting intact copies of the path - the count
+# must GROW, so an older occurrence of a re-written path cannot vouch for a
+# short new one. Count, not last-line: parallel tool-call hooks interleave.
+if ! ledger_verify_append "$TXT" "$FILE_PATH" "$PRE_COUNT"; then
     persist_failure "append to $TXT did not persist intact - the review gate cannot measure this turn"
 fi
 chmod 600 "$TXT" "$BASELINES" 2>/dev/null
@@ -93,11 +116,35 @@ TOP=$(git -C "$DIR" rev-parse --show-toplevel 2>/dev/null)
 if cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
     exit 0
 fi
+# First-baseline creation is serialized: two parallel hooks in one message
+# can both miss the dedup check above and append DIFFERENT HEADs for one repo
+# (a peer session can commit between their reads), leaving the diff base
+# ambiguous. mkdir is the portable atomic claim (no flock on Git Bash); a
+# lock that cannot be acquired is a persistence failure, not a skip.
+BASE_LOCK="$STATE_DIR/${SESSION_ID}.baseline.lock"
+_LOCKED=""
+for ((_i = 0; _i < 50; _i++)); do
+    if mkdir "$BASE_LOCK" 2>/dev/null; then
+        _LOCKED=1
+        break
+    fi
+    sleep 0.1
+done
+if [[ -z "$_LOCKED" ]]; then
+    persist_failure "baseline lock $BASE_LOCK still held after 5s - cannot record a trustworthy first-write baseline for $TOP"
+fi
+if cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
+    rmdir "$BASE_LOCK" 2>/dev/null
+    exit 0
+fi
 SHA=$(git -C "$TOP" rev-parse HEAD 2>/dev/null)
 if [[ -z "$SHA" ]]; then
+    rmdir "$BASE_LOCK" 2>/dev/null
     persist_failure "cannot read HEAD of $TOP - no baseline recorded, so the review gate will refuse to measure files there"
 fi
 if ! printf '%s\t-\t%s\n' "$SHA" "$TOP" >> "$BASELINES" 2>/dev/null; then
+    rmdir "$BASE_LOCK" 2>/dev/null
     persist_failure "baseline append failed for $TOP - the review gate will refuse to measure files there"
 fi
+rmdir "$BASE_LOCK" 2>/dev/null
 exit 0
