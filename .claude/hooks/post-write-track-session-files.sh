@@ -23,26 +23,25 @@ STATE_DIR="$HOOK_STATE_ROOT/session-files"
 mkdir -p "$STATE_DIR" 2>/dev/null
 printf '%s\n' "$FILE_PATH" >> "$STATE_DIR/${SESSION_ID}.txt" 2>/dev/null
 
-# Baseline bookkeeping: one git probe per NEW repo per session; writes into a
-# repo already on file are a string comparison, no subprocess.
+# Baseline bookkeeping. Dedup is by EXACT git toplevel, never by path prefix:
+# migration nests inside the dbatools worktree, so an ancestor-prefix match
+# would suppress the nested repo's baseline and its mid-turn commits would
+# fall back to a HEAD diff and vanish (review round on 637cfd04).
 BASELINES="$STATE_DIR/${SESSION_ID}.repos"
+chmod 600 "$STATE_DIR/${SESSION_ID}.txt" 2>/dev/null
 UNIX_PATH=$(hook_to_unix_path "$FILE_PATH")
-if [[ -f "$BASELINES" ]]; then
-    while IFS=$'\t' read -r _sha _origin _top; do
-        [[ -n "$_top" && "$UNIX_PATH" == "$_top/"* ]] && exit 0
-    done < "$BASELINES"
-fi
 DIR=$(dirname "$UNIX_PATH")
 [[ -d "$DIR" ]] || exit 0
 TOP=$(git -C "$DIR" rev-parse --show-toplevel 2>/dev/null)
 [[ -z "$TOP" ]] && exit 0
-# Git Bash spells toplevels C:/... while the prefix check above saw /c/...;
-# the exact-match dedup below keeps the file from growing a line per write.
 if [[ -f "$BASELINES" ]] && cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
     exit 0
 fi
 SHA=$(git -C "$TOP" rev-parse HEAD 2>/dev/null)
 [[ -z "$SHA" ]] && exit 0
-ORIGIN=$(git -C "$TOP" remote get-url origin 2>/dev/null)
+# Strip URL userinfo: an origin can embed credentials, and this state file is
+# no place to persist them.
+ORIGIN=$(git -C "$TOP" remote get-url origin 2>/dev/null | sed 's#//[^/@]*@#//#')
 printf '%s\t%s\t%s\n' "$SHA" "${ORIGIN:-none}" "$TOP" >> "$BASELINES" 2>/dev/null
+chmod 600 "$BASELINES" 2>/dev/null
 exit 0

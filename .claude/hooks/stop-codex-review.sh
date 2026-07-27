@@ -246,6 +246,12 @@ build_session_payload() {
                 MEASURE_FAIL+="$rf (recorded baseline $base is not a commit in $file_root)"$'\n'
                 continue
             fi
+        elif [[ -f "$SESSION_BASELINES" ]]; then
+            # A ledger that exists but lacks this repo means the tracker
+            # failed to record the first write here; diffing HEAD instead
+            # would let a mid-turn commit vanish. Cannot-measure, not pass.
+            MEASURE_FAIL+="$rf (session baseline ledger has no entry for $file_root)"$'\n'
+            continue
         else
             base="HEAD"
         fi
@@ -367,6 +373,9 @@ codex_review_build_prompt
 #        decide THIS run.
 #      * The live VIEW (~/.codex-review.live.log) is a best-effort mirror for
 #        a human tail -f; its failure can never corrupt the verdict.
+#      * --disable hooks: a repo-defined codex hook would run arbitrary
+#        commands outside the read-only sandbox, and its trust prompt hangs
+#        headless runs. The reviewer needs no hooks, so none are loaded.
 codex_review_setup_livelog
 
 OUT_FILE=$(mktemp "${TMPDIR:-/tmp}/codex-review-out.XXXXXXXX" 2>/dev/null) || OUT_FILE=/dev/null
@@ -376,7 +385,7 @@ printf '%s' "$PROMPT" | timeout "${CLAUDE_CODEX_REVIEW_TIMEOUT:-600}" codex exec
     --json \
     -C "$CODEX_CWD" \
     --skip-git-repo-check \
-    --dangerously-bypass-hook-trust \
+    --disable hooks \
     --sandbox read-only \
     --ignore-user-config \
     --ephemeral \

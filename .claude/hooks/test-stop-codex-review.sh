@@ -4,11 +4,15 @@
 # when its mechanism is absent, not only a leg that passes when it works.
 # #625 sat unnoticed for 12.5 hours precisely because no such fixture existed.
 #
-# Hermetic: isolated TMPDIR state root, isolated HOME, a throwaway git repo
-# whose origin claims dataplat/dbatools, and a stub `codex` on PATH. No
-# network, no real reviewer, no shared state. One caveat: the hook also scans
-# the REAL campaign roots for index locks, so a genuinely held lock on this
-# box fails legs spuriously - rerun after the lock clears.
+# Hermetic: isolated TMPDIR state root, isolated HOME, throwaway git repos
+# whose origins claim campaign names, and a stub `codex` on PATH. No network,
+# no real reviewer, no shared state. One caveat: the hook also scans the REAL
+# campaign roots for index locks, so a genuinely held lock on this box fails
+# legs spuriously - rerun after the lock clears.
+#
+# Legs A and F drive the REAL post-write tracker rather than fabricating its
+# ledger: a fabricated ledger tests only the Stop hook and lets tracker
+# defects (like the nested-repo ancestor-prefix bug) pass unseen.
 #
 #   leg A  commit-mid-turn write     -> the diff MUST reach the reviewer
 #                                       (the #625 hole: HEAD-diffing sends nothing)
@@ -16,6 +20,9 @@
 #   leg C  unmeasurable baseline     -> block (cannot-measure is not pass)
 #   leg D  CHANGES_REQUESTED verdict -> block carries the findings
 #   leg E  no-net-change write       -> allow, with the explicit no-net-change note
+#   leg F  outer repo, then NESTED repo committed mid-turn -> both get
+#          baselines and the nested diff reaches the reviewer (migration
+#          nests inside the dbatools worktree in production)
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -68,15 +75,24 @@ run_hook() {    # <leg-id>  -> $OUT (stdout), $RC
     RC=$?
 }
 
+track() {    # <leg-id> <file-path> - the REAL post-write tracker, not a fabrication
+    printf '{"session_id":"%s","tool_input":{"file_path":"%s"}}' "$1" "$2" \
+        | bash "$HOOK_DIR/post-write-track-session-files.sh"
+}
+
 FAILED=0
 fail() { echo "FAIL $1"; FAILED=1; }
 pass() { echo "ok   $1"; }
 
 # ---- leg A: committed-mid-turn change must reach the reviewer ---------------
 printf 'function Get-Thing { 2 } # SENTINEL_A\n' > "$REPO/thing.ps1"
+track legA "$REPO/thing.ps1"
 git -C "$REPO" commit -qam "mid-turn commit"
-printf '%s\n' "$REPO/thing.ps1" > "$STATE/legA.txt"
-printf '%s\t%s\t%s\n' "$BASE" "$ORIGIN_URL" "$REPO" > "$STATE/legA.repos"
+if [[ "$(cut -f1 "$STATE/legA.repos" 2>/dev/null)" == "$BASE" ]]; then
+    pass "leg A: tracker recorded the pre-commit HEAD as baseline"
+else
+    fail "leg A: tracker did not record the pre-commit baseline"
+fi
 export CODEX_STUB_PROMPT_FILE="$WORK/promptA.txt"
 export CODEX_STUB_VERDICT=CLEAN
 run_hook legA
@@ -156,6 +172,39 @@ if [[ -e "$WORK/promptE.txt" ]]; then
     fail "leg E: codex was invoked with nothing to review"
 else
     pass "leg E: no codex call with nothing to review"
+fi
+
+# ---- leg F: nested repo written after its ancestor must still be measured ---
+NEST="$REPO/nested"
+mkdir -p "$NEST"
+git -C "$NEST" init -q -b main
+git -C "$NEST" config user.email fixture@test
+git -C "$NEST" config user.name fixture
+git -C "$NEST" remote add origin https://github.com/potatoqualitee/migration.git
+printf 'inner = 1\n' > "$NEST/inner.ps1"
+git -C "$NEST" add inner.ps1
+git -C "$NEST" commit -qm init
+track legF "$REPO/thing.ps1"
+printf 'inner = 2 # SENTINEL_F\n' > "$NEST/inner.ps1"
+track legF "$NEST/inner.ps1"
+git -C "$NEST" commit -qam "nested mid-turn commit"
+if cut -f3 "$STATE/legF.repos" 2>/dev/null | grep -qxF "$NEST"; then
+    pass "leg F: tracker gave the nested repo its own baseline"
+else
+    fail "leg F: nested repo baseline suppressed by its ancestor's entry"
+fi
+export CODEX_STUB_PROMPT_FILE="$WORK/promptF.txt"
+export CODEX_STUB_VERDICT=CLEAN
+run_hook legF
+if grep -q 'SENTINEL_F' "$WORK/promptF.txt" 2>/dev/null; then
+    pass "leg F: nested repo's committed-mid-turn diff reached the reviewer"
+else
+    fail "leg F: nested repo's committed-mid-turn diff vanished from review"
+fi
+if [[ "$OUT" == *'"decision":"block"'* ]]; then
+    fail "leg F: CLEAN verdict still blocked the turn"
+else
+    pass "leg F: CLEAN verdict allowed the turn"
 fi
 
 exit "$FAILED"
