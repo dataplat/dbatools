@@ -21,7 +21,10 @@ $assemblyModule = Import-Module -Name $assemblyPath -PassThru
 # explicit re-export they never surface - most visibly on PS 3/4, where the manifest cannot
 # compensate. The wildcard here is safe because the manifest's explicit CmdletsToExport list
 # (maintained by the flip tool) is the authoritative filter that auto-loading reads.
-Export-ModuleMember -Cmdlet *
+# -Alias carries the same argument: a cmdlet class declaring [Alias()] gets that alias created in
+# the nested module, and naming only -Cmdlet here would silently drop it, taking the
+# back-compatibility name with it. AliasesToExport in the manifest is the authoritative filter.
+Export-ModuleMember -Cmdlet * -Alias *
 
 # TEPP bridge (P0-012): register this module's OWN Database-domain completer mappings.
 # Single-owner rule (specs/modules.md, contracts section 2): a satellite maps only the commands

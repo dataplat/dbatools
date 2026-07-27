@@ -20,15 +20,17 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Copy-DbaSsisCatalog',
-        'Get-DbaSsisExecutionHistory',
         'Get-DbaSsisEnvironment',
         'Get-DbaSsisEnvironmentVariable',
+        'Get-DbaSsisExecution',
         'Get-DbaSsisFolder',
         'Get-DbaSsisProject',
         'New-DbaSsisCatalog'
     )
     VariablesToExport      = @()
-    AliasesToExport        = @()
+    # Get-DbaSsisExecutionHistory was superseded by Get-DbaSsisExecution and is kept as a command
+    # alias so existing scripts keep binding, positionally included.
+    AliasesToExport        = @('Get-DbaSsisExecutionHistory')
 
     PrivateData            = @{
         PSData = @{
