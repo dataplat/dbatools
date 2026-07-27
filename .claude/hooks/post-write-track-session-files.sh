@@ -49,17 +49,35 @@ if [[ -L "$STATE_DIR" || ! -d "$STATE_DIR" || ! -O "$STATE_DIR" ]]; then
 fi
 TXT="$STATE_DIR/${SESSION_ID}.txt"
 BASELINES="$STATE_DIR/${SESSION_ID}.repos"
-if [[ -L "$TXT" || -L "$BASELINES" ]]; then
-    echo "post-write-track-session-files: session state file is a symlink - refusing to follow it" >&2
+FAILMARK="$STATE_DIR/${SESSION_ID}.fail"
+
+# Every persistence failure below leaves a durable .fail marker that the Stop
+# gate blocks on. Exit 2 alone is not enough: a failed append can still leave
+# an empty or partial ledger, and a ledger that undercounts reads as a small
+# quiet session - the writes that failed to record are exactly the ones that
+# would ship unreviewed. If even the marker cannot be written, the Stop gate's
+# empty-ledger check is the remaining backstop.
+persist_failure() {
+    : >> "$FAILMARK" 2>/dev/null
+    chmod 600 "$FAILMARK" 2>/dev/null
+    echo "post-write-track-session-files: $1" >&2
     exit 2
+}
+
+if [[ -L "$TXT" || -L "$BASELINES" ]]; then
+    persist_failure "session state file is a symlink - refusing to follow it"
 fi
 if ! : >> "$BASELINES" 2>/dev/null; then
-    echo "post-write-track-session-files: cannot create $BASELINES - the review gate cannot measure this turn" >&2
-    exit 2
+    persist_failure "cannot create $BASELINES - the review gate cannot measure this turn"
 fi
 if ! printf '%s\n' "$FILE_PATH" >> "$TXT" 2>/dev/null; then
-    echo "post-write-track-session-files: cannot append to $TXT - the review gate cannot measure this turn" >&2
-    exit 2
+    persist_failure "cannot append to $TXT - the review gate cannot measure this turn"
+fi
+# A reported-successful append can still land short (disk full mid-write):
+# trust the ledger only after reading the path back out of it. Any line, not
+# the last one - hooks from parallel tool calls in one message can interleave.
+if ! grep -qxF -- "$FILE_PATH" "$TXT" 2>/dev/null; then
+    persist_failure "append to $TXT did not persist intact - the review gate cannot measure this turn"
 fi
 chmod 600 "$TXT" "$BASELINES" 2>/dev/null
 
@@ -77,11 +95,9 @@ if cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
 fi
 SHA=$(git -C "$TOP" rev-parse HEAD 2>/dev/null)
 if [[ -z "$SHA" ]]; then
-    echo "post-write-track-session-files: cannot read HEAD of $TOP - no baseline recorded, so the review gate will refuse to measure files there" >&2
-    exit 2
+    persist_failure "cannot read HEAD of $TOP - no baseline recorded, so the review gate will refuse to measure files there"
 fi
 if ! printf '%s\t-\t%s\n' "$SHA" "$TOP" >> "$BASELINES" 2>/dev/null; then
-    echo "post-write-track-session-files: baseline append failed for $TOP - the review gate will refuse to measure files there" >&2
-    exit 2
+    persist_failure "baseline append failed for $TOP - the review gate will refuse to measure files there"
 fi
 exit 0

@@ -151,6 +151,19 @@ fi
 # 2. Scope to THIS session's writes only.
 SESSION_STATE="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.txt"
 SESSION_BASELINES="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.repos"
+SESSION_FAIL="$HOOK_STATE_ROOT/session-files/${SESSION_ID}.fail"
+# The tracker leaves a durable .fail marker when it could not persist a write
+# record, and it never leaves the ledger empty (the first path is appended in
+# the same operation that creates it). Either state means the ledger
+# undercounts NO MATTER what else it says - block before reading it.
+if [[ -n "$SESSION_ID" && -e "$SESSION_FAIL" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write tracker recorded a persistence failure for this session (${SESSION_ID}.fail exists), so the write ledger is incomplete regardless of its contents. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill, remove the marker, and end the turn again."
+    exit 0
+fi
+if [[ -n "$SESSION_ID" && -f "$SESSION_STATE" && ! -s "$SESSION_STATE" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: the write ledger ${SESSION_ID}.txt exists but is empty - a persistence failure, not a quiet session. Inspect $HOOK_STATE_ROOT/session-files; if this turn's work is already committed, cite those commits in a gocodex review issue for backfill - then end the turn again."
+    exit 0
+fi
 if [[ -z "$SESSION_ID" || ! -f "$SESSION_STATE" ]]; then
     # No ledger can mean "the session wrote nothing" OR "the tracker that
     # records writes is gone" - and those must not read the same (#625). The
@@ -181,16 +194,16 @@ if [[ -z "$SESSION_FILES" ]]; then
 fi
 
 # campaign_file_root <realpath> - echo the campaign repo root containing the
-# file. The literal CAMPAIGN_ROOTS fast path first; when the file sits on a
-# different mount spelling of the same trees, its own git toplevel is accepted
-# iff origin names a campaign repo. The literal list never shrinks (see
-# surface_mincounts); this only widens the same scope to other mounts.
-# Returns: 0 root printed / 1 not in any git repo / 2 in a non-campaign repo.
+# file. The file's OWN git toplevel decides: it must equal a literal campaign
+# root, or carry a campaign origin (the same trees on another mount spelling).
+# A literal-path prefix is never sufficient by itself - it let a foreign repo
+# NESTED under a campaign root ride the outer repo's baseline into the review
+# payload. The literal list never shrinks (see surface_mincounts); the origin
+# check only widens the same scope to other mounts.
+# Returns: 0 root printed / 1 not in any git repo / 2 in a non-campaign repo /
+# 3 under a campaign root but unresolvable (cannot-measure, never skip).
 campaign_file_root() {
     local rf="$1" root _dir _top _origin
-    for root in "${CAMPAIGN_ROOTS[@]}"; do
-        if [[ "$rf" == "$root/"* ]]; then printf '%s' "$root"; return 0; fi
-    done
     _dir=$(dirname "$rf")
     # A deleted file may have taken its directory with it; walk up to the
     # nearest surviving parent so the deletion is still attributed to a repo.
@@ -199,8 +212,16 @@ campaign_file_root() {
     done
     _top=$(git -C "$_dir" rev-parse --show-toplevel 2>/dev/null)
     if [[ -z "$_top" ]]; then
+        # Unresolvable but sitting under a campaign root by path: that is a
+        # broken measurement, not a scratchpad file to skip.
+        for root in "${CAMPAIGN_ROOTS[@]}"; do
+            if [[ "$rf" == "$root/"* ]]; then return 3; fi
+        done
         return 1
     fi
+    for root in "${CAMPAIGN_ROOTS[@]}"; do
+        if [[ "$_top" == "$root" ]]; then printf '%s' "$_top"; return 0; fi
+    done
     # Exact identity, not a suffix: *[/:]dataplat/dbatools also matched
     # https://evil.example/dataplat/dbatools.git, which would pull a foreign
     # repo's content into the review payload. Userinfo is stripped before
@@ -253,6 +274,7 @@ build_session_payload() {
         case $? in
             1) continue ;;                          # not in any git repo (scratchpad, memory) - not code under review
             2) DROPPED=$((DROPPED+1)); continue ;;  # a git repo outside the campaign - counted, never silent
+            3) MEASURE_FAIL+="$rf (under a campaign root but git cannot resolve its repo)"$'\n'; continue ;;
         esac
         rel="${rf#$file_root/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a

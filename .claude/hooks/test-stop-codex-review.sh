@@ -26,16 +26,22 @@
 #   leg G  a repo whose origin merely ENDS in a campaign name
 #          (evil.example/dataplat/dbatools.git) -> dropped from the payload,
 #          out loud - suffix matching let lookalikes into the review
-#   leg H  .repos exists but .txt does not (write ledger lost after the
-#          tracker ran) -> block, partial tracker state is not a quiet session
-#   leg I  the state ROOT is a symlink -> tracker refuses (exit 2, nothing
-#          written through it) and the Stop gate blocks rather than trusting
-#          ledgers under an attacker-controlled root
+#   leg H  partial tracker state -> block, four shapes: .repos without .txt;
+#          an EMPTY .txt; a real failed append (unwritable ledger -> exit 2
+#          plus a durable .fail marker); the .fail marker alone over an
+#          otherwise-healthy ledger
+#   leg I  the state ROOT is a symlink -> tracker refuses (exit 2), the Stop
+#          gate blocks rather than trusting ledgers under an
+#          attacker-controlled root, and the symlink TARGET stays entirely
+#          untouched - no ledgers, caches, or stop-guard markers leak through
 #   leg J  the reviewed file is mutated DURING the review -> the CLEAN verdict
 #          must block, not merely skip the cache (approval-of-vanished-code)
 #   leg K  a CLEAN approval is cached, then a foreign-repo file joins the
 #          ledger with the diff unchanged -> the cache must miss (scope is
 #          part of the key) and the drop warning must surface
+#   leg L  a foreign repo NESTED UNDER a campaign root -> the file's own git
+#          toplevel decides (dropped), never the outer root's path prefix;
+#          campaign-root files still resolve (function-level, extracted)
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -275,6 +281,38 @@ if [[ -e "$WORK/promptH.txt" ]]; then
 else
     pass "leg H: no codex call over partial tracker state"
 fi
+# H-b: an EMPTY .txt is a persistence failure, not a small quiet session
+: > "$STATE/legHb.txt"
+printf '%s\t-\t%s\n' "$BASE" "$REPO" > "$STATE/legHb.repos"
+run_hook legHb
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
+    pass "leg H: empty write ledger blocked the turn"
+else
+    fail "leg H: empty write ledger read as a quiet session (failed append passed)"
+fi
+# H-c: a real failed append (unwritable ledger) must exit 2 AND leave a
+# durable marker - exit codes evaporate, the Stop gate needs the marker
+: > "$STATE/legHc.txt"
+chmod 400 "$STATE/legHc.txt"
+track legHc "$REPO/thing.ps1"
+TRACK_RC=$?
+if [[ $TRACK_RC -eq 2 && -e "$STATE/legHc.fail" ]]; then
+    pass "leg H: failed append left a durable failure marker (exit 2)"
+else
+    fail "leg H: failed append left no durable marker (rc=$TRACK_RC) - Stop cannot see the loss"
+fi
+chmod 600 "$STATE/legHc.txt"
+# H-d: the marker ALONE must block, even over an otherwise-healthy ledger
+HD_HEAD=$(git -C "$REPO" rev-parse HEAD)
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legHd.txt"
+printf '%s\t-\t%s\n' "$HD_HEAD" "$REPO" > "$STATE/legHd.repos"
+: > "$STATE/legHd.fail"
+run_hook legHd
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
+    pass "leg H: failure marker blocked despite a healthy-looking ledger"
+else
+    fail "leg H: failure marker ignored - an undercounting ledger was trusted"
+fi
 
 # ---- leg I: a symlinked state ROOT must be refused, not written through -----
 HOSTILE="$WORK/hostile"
@@ -296,6 +334,14 @@ if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT TRUST'* ]]; then
     pass "leg I: Stop gate refused to trust state under a symlinked root"
 else
     fail "leg I: Stop gate trusted ledgers under an attacker-controlled root"
+fi
+# Refusing the ledger is not enough: parser caches, codex probes, and
+# stop-guard markers must not leak through the hostile root either.
+LEAKED=$(find "$HTARGET" -mindepth 1 2>/dev/null)
+if [[ -z "$LEAKED" ]]; then
+    pass "leg I: hostile target entirely untouched"
+else
+    fail "leg I: state leaked through the hostile root: $(printf '%s' "$LEAKED" | head -3 | tr '\n' ' ')"
 fi
 
 # ---- leg J: mutation during the review must block, not just skip the cache --
@@ -348,5 +394,40 @@ else
     fail "leg K: approval swallowed the foreign-repo scope warning"
 fi
 git -C "$REPO" checkout -q -- thing.ps1
+
+# ---- leg L: a nested foreign repo must not ride a campaign root's path ------
+# Function-level: campaign_file_root is extracted verbatim from the hook and
+# called with a test-owned literal root, because the production literals
+# cannot safely host a foreign repo in a fixture.
+FAKE="$WORK/fakecampaign"
+mkdir -p "$FAKE"
+git -C "$FAKE" init -q -b main
+git -C "$FAKE" config user.email fixture@test
+git -C "$FAKE" config user.name fixture
+printf 'ok = 1\n' > "$FAKE/ok.ps1"
+git -C "$FAKE" add ok.ps1
+git -C "$FAKE" commit -qm init
+NESTEVIL="$FAKE/vendor/evil"
+mkdir -p "$NESTEVIL"
+git -C "$NESTEVIL" init -q -b main
+git -C "$NESTEVIL" config user.email fixture@test
+git -C "$NESTEVIL" config user.name fixture
+printf 'x = 1\n' > "$NESTEVIL/x.ps1"
+git -C "$NESTEVIL" add x.ps1
+git -C "$NESTEVIL" commit -qm init
+eval "$(awk '/^campaign_file_root\(\) \{/,/^\}$/' "$HOOK_DIR/stop-codex-review.sh")"
+CAMPAIGN_ROOTS=("$FAKE")
+campaign_file_root "$NESTEVIL/x.ps1" >/dev/null
+if [[ $? -eq 2 ]]; then
+    pass "leg L: nested foreign repo under a campaign root is dropped, not reviewed"
+else
+    fail "leg L: nested foreign repo rode the campaign root's path into review scope"
+fi
+LROOT=$(campaign_file_root "$FAKE/ok.ps1")
+if [[ $? -eq 0 && "$LROOT" == "$FAKE" ]]; then
+    pass "leg L: campaign-root file still resolves to its root"
+else
+    fail "leg L: campaign-root file no longer resolves (scope regression)"
+fi
 
 exit "$FAILED"

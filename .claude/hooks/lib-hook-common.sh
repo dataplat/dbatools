@@ -29,7 +29,9 @@ mkdir -p "$HOOK_STATE_ROOT" 2>/dev/null
 # attacker's symlink or foreign-owned dir that redirects every cache, marker,
 # and session ledger below it. A sourced lib must not kill its host hook, so
 # this only sets a flag; consumers that persist trust decisions (the write
-# tracker, the Stop review gate) fail closed on it.
+# tracker, the Stop review gate) fail closed on it, and every cache in this
+# file is bypassed - neither read nor written - while the root is unsafe, so
+# nothing touches an attacker-chosen target and no poisoned cache is honored.
 if [[ ! -L "$HOOK_STATE_ROOT" && -d "$HOOK_STATE_ROOT" && -O "$HOOK_STATE_ROOT" ]]; then
     HOOK_STATE_ROOT_UNSAFE=""
     chmod 700 "$HOOK_STATE_ROOT" 2>/dev/null
@@ -55,7 +57,7 @@ hook_detect_parser() {
         return 0
     fi
     local cache="$HOOK_STATE_ROOT/json-parser.cached" cand
-    if [[ -f "$cache" ]]; then
+    if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" && -f "$cache" ]]; then
         cand=$(cat "$cache" 2>/dev/null)
         case "$cand" in
             jq|python|python3|py|node)
@@ -78,7 +80,9 @@ hook_detect_parser() {
     elif printf '{"a":1}' | node -e "JSON.parse(require('fs').readFileSync(0,'utf8'))" >/dev/null 2>&1; then
         HOOK_JSON_PARSER="node"
     fi
-    [[ -n "$HOOK_JSON_PARSER" ]] && printf '%s' "$HOOK_JSON_PARSER" > "$cache" 2>/dev/null
+    if [[ -n "$HOOK_JSON_PARSER" && -z "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+        printf '%s' "$HOOK_JSON_PARSER" > "$cache" 2>/dev/null
+    fi
     [[ -n "$HOOK_JSON_PARSER" ]]
 }
 
@@ -196,7 +200,7 @@ hook_verify_powershell() {
 
 hook_find_powershell() {
     local cache="$HOOK_STATE_ROOT/powershell.cached" c
-    if [[ -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
+    if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" && -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
         c=$(cat "$cache" 2>/dev/null)
         if [[ -n "$c" ]] && command -v "$c" >/dev/null 2>&1; then
             printf '%s' "$c"
@@ -206,11 +210,15 @@ hook_find_powershell() {
     for c in pwsh powershell.exe powershell; do
         command -v "$c" >/dev/null 2>&1 || continue
         hook_verify_powershell "$c" || continue
-        printf '%s' "$c" > "$cache" 2>/dev/null
+        if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+            printf '%s' "$c" > "$cache" 2>/dev/null
+        fi
         printf '%s' "$c"
         return 0
     done
-    rm -f "$cache" 2>/dev/null
+    if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+        rm -f "$cache" 2>/dev/null
+    fi
     return 1
 }
 
@@ -224,7 +232,7 @@ hook_find_powershell() {
 hook_find_codex() {
     command -v codex >/dev/null 2>&1 || return 1
     local cache="$HOOK_STATE_ROOT/codex.cached"
-    if [[ -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
+    if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" && -n "$(find "$cache" -mmin -60 2>/dev/null)" ]]; then
         printf 'codex'
         return 0
     fi
@@ -233,7 +241,9 @@ hook_find_codex() {
     else
         codex --version >/dev/null 2>&1 || return 1
     fi
-    touch "$cache" 2>/dev/null
+    if [[ -z "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+        touch "$cache" 2>/dev/null
+    fi
     printf 'codex'
     return 0
 }

@@ -104,6 +104,14 @@ if [[ -z "$_TRANSCRIPT" ]]; then
     return 0
 fi
 
+# A hostile state root (lib-hook-common's flag) must be neither written
+# through nor read from: leave the marker context unset so stop_guard_emit
+# degrades to emitting every block verbatim - fail toward enforcement - and
+# nothing below creates, touches, or expires files under that root.
+if [[ -n "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+    return 0
+fi
+
 # Derive a unique marker per hook per session
 _HOOK_NAME=$(basename "${BASH_SOURCE[1]:-unknown}" .sh)
 _MARKER_DIR="$HOOK_STATE_ROOT/stop-guards"
