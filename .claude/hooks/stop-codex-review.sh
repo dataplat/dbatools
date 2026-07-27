@@ -64,6 +64,15 @@ source "$(dirname "$0")/lib-codex-review-memory.sh"
 source "$(dirname "$0")/lib-codex-review-prompt.sh"
 source "$(dirname "$0")/lib-codex-review-exec.sh"
 
+# The state root lives under a world-writable temp dir; if it is a symlink or
+# not ours (lib-hook-common validates at creation), every session ledger,
+# clean-cache marker, and strike counter below it is attacker-writable, so
+# nothing this gate reads can be trusted. Fail closed, out loud.
+if [[ -n "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+    stop_guard_emit "CODEX AUTO-REVIEW CANNOT TRUST ITS STATE: $HOOK_STATE_ROOT is a symlink, missing, or not owned by this user, so session ledgers and review markers under it cannot be trusted. Remove the hostile entry from the temp root and end the turn again."
+    exit 0
+fi
+
 # Extensions worth reviewing, PLUS markdown — docs are deliverables, reviewed
 # for accuracy rather than code style.
 CODE_EXT_RE='\.(ps1|psm1|psd1|cs|sql|js|ts|html|go|py|sh|md)$'
@@ -149,6 +158,14 @@ if [[ -z "$SESSION_ID" || ! -f "$SESSION_STATE" ]]; then
     # settings.json wiring drift is stop-checker-integrity.sh's job.
     if [[ ! -f "$(dirname "$0")/post-write-track-session-files.sh" ]]; then
         stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: post-write-track-session-files.sh is missing, so 'no tracked writes' is indistinguishable from 'the write tracker is gone'. Restore the tracker (git checkout of .claude/hooks) and end the turn again."
+        exit 0
+    fi
+    # The tracker touches .repos before appending .txt, so .repos WITHOUT .txt
+    # means the tracker ran this session and the write ledger failed to
+    # persist. That is partial tracker state, not a quiet session - allowing
+    # it would ship exactly the writes that failed to record.
+    if [[ -n "$SESSION_ID" && -e "$SESSION_BASELINES" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW CANNOT MEASURE: ${SESSION_ID}.repos exists but the write ledger ${SESSION_ID}.txt does not, so this session's writes were tracked and then lost. Inspect $HOOK_STATE_ROOT/session-files (disk full? deleted mid-turn?); if the writes are unrecoverable, cite this turn's commits in a gocodex review issue for backfill - then end the turn again."
         exit 0
     fi
     stop_guard_emit ""    # tracker intact and recorded nothing -> nothing to review
@@ -318,9 +335,15 @@ if [[ -z "$PAYLOAD" ]]; then
     exit 0
 fi
 
-# Convergence hash is taken from the FULL diff, BEFORE any truncation, and
-# uses sha256: this hash authorizes the CLEAN cache and per-diff budget.
-PAYLOAD_HASH=$(printf '%s' "$PAYLOAD" | sha256sum | cut -d' ' -f1)
+# Convergence hash is taken from the FULL diff BEFORE any truncation, PLUS
+# the scope state (file list, dropped count, legacy gap): an approval keyed on
+# the diff alone would transfer to a later turn whose payload matches but
+# whose scope shifted - a newly tracked foreign-repo file or a legacy
+# measurement gap is reviewable state, not noise.
+payload_scope_hash() {
+    printf '%s\n--scope--\n%s\n%s\n%s' "$PAYLOAD" "$CODE_FILES" "$DROPPED" "$LEGACY_NOTE" | sha256sum | cut -d' ' -f1
+}
+PAYLOAD_HASH=$(payload_scope_hash)
 
 # Bound the prompt, but NEVER silently: a CLEAN verdict on a truncated diff
 # would bless unseen hunks. Mark truncation so the verdict guard in step 8
@@ -339,8 +362,12 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
     CLEAN_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.clean"
     COUNT_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_${_HOOK_NAME}.count"
 
-    # Already approved this exact diff? Don't re-spend a codex call or re-block.
+    # Already approved this exact diff+scope? Don't re-spend a codex call or
+    # re-block - but the cached allow must not swallow the scope warnings,
+    # which describe files the approval does NOT cover.
     if [[ -f "$CLEAN_FILE" && "$(cat "$CLEAN_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]]; then
+        [[ -n "$DROPPED_NOTE" ]] && emit_system_message "$DROPPED_NOTE"
+        [[ -n "$LEGACY_NOTE" ]] && emit_system_message "$LEGACY_NOTE"
         codex_memory_clear_prev
         stop_guard_emit ""
         exit 0
@@ -472,17 +499,28 @@ if [[ "$VERDICT" == "CLEAN" && -n "$TRUNCATED" ]]; then
 fi
 
 if [[ "$VERDICT" == "CLEAN" ]]; then
-    codex_memory_clear_prev
-    # TOCTOU guard: cache the approval ONLY if the reviewed code is
-    # byte-for-byte unchanged since codex approved it — the long review run is
-    # a window in which the bytes on disk could have changed.
+    # TOCTOU guard, fail CLOSED: the minutes-long review run is a window in
+    # which the bytes on disk can change. A CLEAN verdict stands only if the
+    # payload re-measures cleanly and hashes identically - an approval that
+    # merely skipped the cache still shipped code the reviewer never saw.
     build_session_payload
-    if [[ "$(printf '%s' "$PAYLOAD" | sha256sum | cut -d' ' -f1)" == "$PAYLOAD_HASH" && -n "$CLEAN_FILE" ]]; then
-        printf '%s' "$PAYLOAD_HASH" > "$CLEAN_FILE" 2>/dev/null
+    if [[ -n "$MEASURE_FAIL" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW COULD NOT CONFIRM ITS VERDICT: the reviewed files failed to re-measure after the review ran, so the CLEAN cannot be tied to what is on disk:
+
+$MEASURE_FAIL
+Fix the measurement and end the turn again."
+        exit 0
     fi
-    # A clean verdict must not swallow the scope warning: files in foreign
+    if [[ "$(payload_scope_hash)" != "$PAYLOAD_HASH" ]]; then
+        stop_guard_emit "CODEX AUTO-REVIEW: this session's changes or review scope shifted while the reviewer was running, so its CLEAN verdict no longer describes what is on disk. End the turn again to review the current state."
+        exit 0
+    fi
+    [[ -n "$CLEAN_FILE" ]] && printf '%s' "$PAYLOAD_HASH" > "$CLEAN_FILE" 2>/dev/null
+    # A clean verdict must not swallow the scope warnings: files in foreign
     # repos were still not reviewed, and silence here is how scope loss hides.
     [[ -n "$DROPPED_NOTE" ]] && emit_system_message "$DROPPED_NOTE"
+    [[ -n "$LEGACY_NOTE" ]] && emit_system_message "$LEGACY_NOTE"
+    codex_memory_clear_prev
     stop_guard_emit ""    # approved -> reset streak, allow
     exit 0
 fi

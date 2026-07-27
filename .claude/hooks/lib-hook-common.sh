@@ -25,6 +25,17 @@ _LIB_HOOK_COMMON_LOADED=1
 # ---------------------------------------------------------------- state root
 HOOK_STATE_ROOT="${TMPDIR:-/tmp}/claude-dbatools-hooks"
 mkdir -p "$HOOK_STATE_ROOT" 2>/dev/null
+# The root lives under a world-writable temp dir, so it can pre-exist as an
+# attacker's symlink or foreign-owned dir that redirects every cache, marker,
+# and session ledger below it. A sourced lib must not kill its host hook, so
+# this only sets a flag; consumers that persist trust decisions (the write
+# tracker, the Stop review gate) fail closed on it.
+if [[ ! -L "$HOOK_STATE_ROOT" && -d "$HOOK_STATE_ROOT" && -O "$HOOK_STATE_ROOT" ]]; then
+    HOOK_STATE_ROOT_UNSAFE=""
+    chmod 700 "$HOOK_STATE_ROOT" 2>/dev/null
+else
+    HOOK_STATE_ROOT_UNSAFE=1
+fi
 
 # ---------------------------------------------------------------- stdin (once)
 # Reads stdin exactly once, no matter how many libs/hooks ask for it.

@@ -20,6 +20,9 @@
 # failure here exits 2, out loud - a tracker that cannot record is a blocker,
 # not a no-op.
 
+# umask precedes the source: lib-hook-common creates the state root AT SOURCE
+# TIME, and creating it group/world-readable is the race this closes.
+umask 077
 source "$(dirname "$0")/lib-hook-common.sh"
 hook_read_input
 
@@ -30,8 +33,13 @@ FILE_PATH=$(hook_field_first '.tool_input.file_path' '.tool_response.filePath')
 
 # The state root sits under a world-writable temp dir, so trust nothing about
 # it: owner-only perms, no symlinks, and refuse to write through anything that
-# fails those checks rather than recording into an attacker-chosen file.
-umask 077
+# fails those checks rather than recording into an attacker-chosen file. The
+# root itself is validated first (lib-hook-common sets the flag at creation) -
+# checking only the subdir missed a symlinked PARENT, which mkdir -p follows.
+if [[ -n "${HOOK_STATE_ROOT_UNSAFE:-}" ]]; then
+    echo "post-write-track-session-files: $HOOK_STATE_ROOT is a symlink, missing, or not owned by this user - refusing to record session state through it" >&2
+    exit 2
+fi
 STATE_DIR="$HOOK_STATE_ROOT/session-files"
 mkdir -p "$STATE_DIR" 2>/dev/null
 chmod 700 "$STATE_DIR" 2>/dev/null

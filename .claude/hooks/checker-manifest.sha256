@@ -5,18 +5,18 @@
 # stop-checker-integrity.sh, so silently re-baselining a weakened checker
 # does not go unrecorded - which is the whole point of the file.
 #
-# Generated from HEAD ba8341598
+# Generated from HEAD 6306ec30d
 3f368c88538596eb37cc023905d2bec70425b7d6ad1eec37d075eaa38ece34d6  .claude/hooks/hooks-doctor.sh
 abe4c845ae6f5dd974d323503e5b190c80720c8310921f08f7751409201d352c  .claude/hooks/jscpd-baseline.sh
 7a0221328269aae82c94f23ecebd1aa4f9cf503fe3d3de77c63a464634f38694  .claude/hooks/lib-codex-review-exec.sh
 df8d89b1ff31663bfd74b9ed86ffa6bfa5a1b27ccb97a25fc20a7ac45f01cc54  .claude/hooks/lib-codex-review-memory.sh
 f7109763962752a95cb41c84dc6b682d692de94a3d5a103232b9e9f90b65901b  .claude/hooks/lib-codex-review-prompt.sh
 af5b3902d5dfad03c0114cf7bd9538bd6ecf6ed623a4375f057e5cc922183fc4  .claude/hooks/lib-git-changes.sh
-98384422cbdb975856dfbed02416f36f295b07b8b6be2ef19e2a2fc4eb59870f  .claude/hooks/lib-hook-common.sh
+ce0aaba9a5aeb5de284e88a5e3ff82f1e21b267e9489f52b0b05e173c61ef14b  .claude/hooks/lib-hook-common.sh
 c991d699cddc90b94381894d2cfff213b0dc93e2d16c7217b4abda7de7936d45  .claude/hooks/lib-protected-surface.sh
 f155da722c6f311b89dc794fdd038085ff98cd68651661256f88956ce317d250  .claude/hooks/lib-stop-guard.sh
 04908283d3241330fb1d1f3e7d462910bdf16975e8c52c9c0cc8d14a16208d2e  .claude/hooks/post-read-track.sh
-5c95610ce7ec7f4a55391eccced2a47c0f6b3b1d77cdde66d7f91a50db76f991  .claude/hooks/post-write-track-session-files.sh
+ea83ce19df72a1ddfad3a47a753d1bab2311d3cfd52fc701dece8ddc1b0a869e  .claude/hooks/post-write-track-session-files.sh
 f9b74ed4b35aff933071763ebe335fbaca6d25cb069195b8a7a8a10c0a2ff769  .claude/hooks/pre-bash-commit-do.sh
 e8bff93e6cf1bb2dd4b71a525df250dbeef4d53d535c75f547a8d4c29b218d05  .claude/hooks/pre-bash-guard.sh
 5576f13dcb675f62025d95149961ce1d2dc6e37d8df29fcb7991434e58b30f12  .claude/hooks/pre-bash-pwsh-script.sh
@@ -28,14 +28,14 @@ f0c2c5fdc35d3e1b07aa3556fcb1e58ce8f1ac541cbb77affaf8c152e64feb27  .claude/hooks/
 c2ba9fab5936eab9b5213c14b7f6b015660f0a17481fb0fb5a04deafa37e55a4  .claude/hooks/session-compact-reset-reads.sh
 99311b70c19c5d1f64998ab8184ce1aa5ccac37c8ee64a3c48a5c63e92cfedb2  .claude/hooks/session-context.sh
 e005c196beff7e6bf8b230094de8902cfd9619fc59cbeed5d4ac685ad730c4c3  .claude/hooks/stop-checker-integrity.sh
-d91e85aaf4c33b3a5fc58122a30246cd04e323c583272e98916634a2febfb764  .claude/hooks/stop-codex-review.sh
+3bb3c0c6c92e3c8e99fe532c679fa8398804af65b1314e647390af8e98f94cd6  .claude/hooks/stop-codex-review.sh
 da4e4ec2265076ac4f16333073d8522950d4614bf38d54f71d7d131ee66b1555  .claude/hooks/stop-jscpd-ratchet.sh
 274c047f1bb917123e08c3826bd4225e45503a673d61f669142bfbcf3924cb95  .claude/hooks/stop-no-deflection.sh
 7123ac90e34cff86e7cd770edd4a17a26831bf60616f5b0550a7400e79df2411  .claude/hooks/stop-registration-check.sh
 e6f5b722a1465f7258b35fff58fd5ebae62030237c2df29dc1359e9979b49706  .claude/hooks/stop-todo-report.sh
 fe64cd6bed46c05e7392b36fe74b6cc8387aba3722586a9fe72cffeda6889234  .claude/hooks/stop-verify.sh
 6466333c98d60f6fb1aa54fcfda85e45dcaf37fbd7b4b923f90112aa5b771f89  .claude/hooks/test-jscpd-ratchet.sh
-d7f7f05caa1e66ce1d921454984bcff9e03527c2d7dc4072cd9ae566e599a2d0  .claude/hooks/test-stop-codex-review.sh
+994da0112fd169de3abfeecf9637b6f59cd7ef995ff221a1594b0a79e6a8209a  .claude/hooks/test-stop-codex-review.sh
 010ca5e3d5b90f51660d6ffb7aa0d9d4c88404e790b3f863f6f3e9782a2ea172  .claude/hooks/verify-checker-integrity.sh
 bf209d10005cf9fcb0d6ece52e37952a9a7348a82b994a4c64d1f92fda2806b3  .claude/settings.json
 03ccd71e9261cde26a1c676c796cf27f28e77f6858a13e70fdebee29fc82c12c  .claude/skills/reviewme/SKILL.md

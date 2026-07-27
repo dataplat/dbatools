@@ -26,6 +26,16 @@
 #   leg G  a repo whose origin merely ENDS in a campaign name
 #          (evil.example/dataplat/dbatools.git) -> dropped from the payload,
 #          out loud - suffix matching let lookalikes into the review
+#   leg H  .repos exists but .txt does not (write ledger lost after the
+#          tracker ran) -> block, partial tracker state is not a quiet session
+#   leg I  the state ROOT is a symlink -> tracker refuses (exit 2, nothing
+#          written through it) and the Stop gate blocks rather than trusting
+#          ledgers under an attacker-controlled root
+#   leg J  the reviewed file is mutated DURING the review -> the CLEAN verdict
+#          must block, not merely skip the cache (approval-of-vanished-code)
+#   leg K  a CLEAN approval is cached, then a foreign-repo file joins the
+#          ledger with the diff unchanged -> the cache must miss (scope is
+#          part of the key) and the drop warning must surface
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -52,6 +62,9 @@ for a in "$@"; do
 done
 cat > "${CODEX_STUB_PROMPT_FILE:-/dev/null}"
 printf '%s\n' "$@" > "${CODEX_STUB_ARGS_FILE:-/dev/null}"
+if [[ -n "${CODEX_STUB_MUTATE_FILE:-}" ]]; then
+    printf '# mutated-while-the-reviewer-ran\n' >> "$CODEX_STUB_MUTATE_FILE"
+fi
 printf 'stub finding: fixture\nVERDICT: %s\n' "${CODEX_STUB_VERDICT:-CLEAN}" > "${out:-/dev/null}"
 exit 0
 STUB
@@ -247,5 +260,93 @@ if [[ "$OUT" == *'non-campaign'* ]]; then
 else
     fail "leg G: foreign-repo drop was silent"
 fi
+
+# ---- leg H: .repos without .txt is partial tracker state, not a quiet session
+printf '%s\t-\t%s\n' "$BASE" "$REPO" > "$STATE/legH.repos"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptH.txt"
+run_hook legH
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT MEASURE'* ]]; then
+    pass "leg H: lost write ledger blocked the turn"
+else
+    fail "leg H: .repos-without-.txt read as a quiet session (partial state passed)"
+fi
+if [[ -e "$WORK/promptH.txt" ]]; then
+    fail "leg H: codex was invoked with no write ledger"
+else
+    pass "leg H: no codex call over partial tracker state"
+fi
+
+# ---- leg I: a symlinked state ROOT must be refused, not written through -----
+HOSTILE="$WORK/hostile"
+HTARGET="$WORK/hostile-target"
+mkdir -p "$HOSTILE" "$HTARGET"
+ln -s "$HTARGET" "$HOSTILE/claude-dbatools-hooks"
+printf '{"session_id":"legI","tool_input":{"file_path":"%s"}}' "$REPO/thing.ps1" \
+    | TMPDIR="$HOSTILE" bash "$HOOK_DIR/post-write-track-session-files.sh" 2>"$WORK/err-legI-track.log"
+TRACK_RC=$?
+if [[ $TRACK_RC -eq 2 && ! -e "$HTARGET/session-files/legI.txt" ]]; then
+    pass "leg I: tracker refused the symlinked state root (exit 2, nothing written)"
+else
+    fail "leg I: tracker wrote session state through a symlinked root (rc=$TRACK_RC)"
+fi
+export CODEX_STUB_PROMPT_FILE="$WORK/promptI.txt"
+OUT=$(printf '{"session_id":"legI","transcript_path":"%s/transcript-legI.jsonl"}' "$WORK" \
+    | TMPDIR="$HOSTILE" bash "$HOOK_DIR/stop-codex-review.sh" 2>"$WORK/err-legI-stop.log")
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'CANNOT TRUST'* ]]; then
+    pass "leg I: Stop gate refused to trust state under a symlinked root"
+else
+    fail "leg I: Stop gate trusted ledgers under an attacker-controlled root"
+fi
+
+# ---- leg J: mutation during the review must block, not just skip the cache --
+printf 'function Get-Thing { 9 } # SENTINEL_J\n' > "$REPO/thing.ps1"
+JHEAD=$(git -C "$REPO" rev-parse HEAD)
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legJ.txt"
+printf '%s\t-\t%s\n' "$JHEAD" "$REPO" > "$STATE/legJ.repos"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptJ.txt"
+export CODEX_STUB_VERDICT=CLEAN
+export CODEX_STUB_MUTATE_FILE="$REPO/thing.ps1"
+run_hook legJ
+export CODEX_STUB_MUTATE_FILE=""
+if [[ "$OUT" == *'"decision":"block"'* && "$OUT" == *'while the reviewer was running'* ]]; then
+    pass "leg J: CLEAN over mutated-during-review code blocked the turn"
+else
+    fail "leg J: approval survived a mid-review mutation (reviewer never saw the shipped bytes)"
+fi
+git -C "$REPO" checkout -q -- thing.ps1
+
+# ---- leg K: a cached approval must not transfer to a changed review scope ---
+printf 'function Get-Thing { 5 } # SENTINEL_K\n' > "$REPO/thing.ps1"
+KHEAD=$(git -C "$REPO" rev-parse HEAD)
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legK.txt"
+printf '%s\t-\t%s\n' "$KHEAD" "$REPO" > "$STATE/legK.repos"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptK1.txt"
+run_hook legK
+if [[ -e "$WORK/promptK1.txt" && "$OUT" != *'"decision":"block"'* ]]; then
+    pass "leg K: first run reviewed and approved"
+else
+    fail "leg K: first run did not produce a reviewed approval (leg setup broken)"
+fi
+export CODEX_STUB_PROMPT_FILE="$WORK/promptK2.txt"
+run_hook legK
+if [[ -e "$WORK/promptK2.txt" ]]; then
+    fail "leg K: identical diff+scope was re-reviewed (clean cache never engages, so leg K proves nothing)"
+else
+    pass "leg K: identical diff+scope hit the clean cache"
+fi
+printf '%s\n' "$EVIL/evil.ps1" >> "$STATE/legK.txt"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptK3.txt"
+run_hook legK
+if [[ -e "$WORK/promptK3.txt" ]]; then
+    pass "leg K: scope change busted the cached approval (re-reviewed)"
+else
+    fail "leg K: stale approval transferred to a changed review scope"
+fi
+if [[ "$OUT" == *'non-campaign'* ]]; then
+    pass "leg K: the scope warning surfaced on the approval path"
+else
+    fail "leg K: approval swallowed the foreign-repo scope warning"
+fi
+git -C "$REPO" checkout -q -- thing.ps1
 
 exit "$FAILED"
