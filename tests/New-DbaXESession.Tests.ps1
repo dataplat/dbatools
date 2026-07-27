@@ -27,6 +27,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         $sessionName = "dbatoolsci_xesession_$(Get-Random)"
         $whatIfName = "dbatoolsci_xesession_$(Get-Random)"
+        $pipelineName = "dbatoolsci_xesession_pipeline_$(Get-Random)"
+        $pipelineInstances = @($TestConfig.InstanceSingle, $TestConfig.InstanceMulti1)
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -41,6 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         # left on the server. Drop anyway, SilentlyContinue, in case a future change starts deploying.
         Remove-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $sessionName -ErrorAction SilentlyContinue
         Remove-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $whatIfName -ErrorAction SilentlyContinue
+        Remove-DbaXESession -SqlInstance $pipelineInstances -Session $pipelineName -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -53,6 +56,16 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Should -Not -BeNullOrEmpty
             $results | Should -BeOfType Microsoft.SqlServer.Management.XEvent.Session
             $results.Name | Should -Be $sessionName
+        }
+
+        It "emits attributable output for every piped instance" {
+            $results = @($pipelineInstances | New-DbaXESession -Name $pipelineName)
+
+            $results.Count | Should -Be 2
+            @($results | Where-Object Name -ne $pipelineName).Count | Should -Be 0
+            foreach ($expectedInstance in $pipelineInstances) {
+                @($results | Where-Object { $PSItem.Parent.Name -eq "$expectedInstance" }).Count | Should -Be 1
+            }
         }
 
         It "does not deploy the session to the server (creation is deferred to Session.Create())" {

@@ -45,4 +45,24 @@ Describe $CommandName -Tag IntegrationTests {
             $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
         }
     }
+
+    Context "Multiple pipeline records are processed without repeating computers" {
+        BeforeAll {
+            $uniqueComputerNames = @($env:COMPUTERNAME, "localhost")
+            $uniquePipelineResults = @($uniqueComputerNames | Get-DbaDiskSpace -EnableException)
+
+            $repeatedComputerNames = @($env:COMPUTERNAME, "localhost", $env:COMPUTERNAME)
+            $repeatedPipelineResults = @($repeatedComputerNames | Get-DbaDiskSpace -EnableException)
+        }
+
+        It "Returns output for every distinct piped computer name" {
+            foreach ($computerName in $uniqueComputerNames) {
+                $repeatedPipelineResults.ComputerName | Should -Contain $computerName
+            }
+        }
+
+        It "Does not emit duplicate disk objects for a repeated computer name" {
+            $repeatedPipelineResults.Count | Should -Be $uniquePipelineResults.Count
+        }
+    }
 }
