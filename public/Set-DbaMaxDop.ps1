@@ -157,8 +157,15 @@ function Set-DbaMaxDop {
         $instances = $InputObject | Select-Object SqlInstance -Unique | Select-Object -ExpandProperty SqlInstance
 
         foreach ($instance in $instances) {
+            # Reuse the connection that Test-DbaMaxDop already established, so that a server object passed
+            # to SqlInstance (or piped in) keeps its credentials instead of being rebuilt from its name only.
+            $connectTarget = ($InputObject | Where-Object { $_.SqlInstance -eq $instance } | Select-Object -First 1).Server
+            if ($null -eq $connectTarget) {
+                $connectTarget = $instance
+            }
+
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $connectTarget -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

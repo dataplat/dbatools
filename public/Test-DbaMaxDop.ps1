@@ -65,6 +65,7 @@ function Test-DbaMaxDop {
         - InstanceVersion: The full version of SQL Server (e.g., "11.0.1234.56")
         - NumaNodes: The number of NUMA nodes detected on the instance
         - NumberOfCores: The total number of logical processor cores visible to SQL Server
+        - Server: The SMO server object of the established connection, so that Set-DbaMaxDop can reuse it instead of reconnecting
 
     .EXAMPLE
         PS C:\> Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
@@ -83,7 +84,7 @@ function Test-DbaMaxDop {
 
     #>
     [CmdletBinding()]
-    [OutputType([System.Collections.ArrayList])]
+    [OutputType([PSCustomObject])]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
@@ -194,6 +195,7 @@ function Test-DbaMaxDop {
                 NumaNodes             = $NumaNodes
                 NumberOfCores         = $numberOfCores
                 Notes                 = $notes
+                Server                = $server # This allows piping the established connection to Set-DbaMaxDop
             } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 
             # On SQL Server 2016 and higher, MaxDop can be set on a per-database level
@@ -225,6 +227,7 @@ function Test-DbaMaxDop {
                         NumaNodes             = $NumaNodes
                         NumberOfCores         = $numberOfCores
                         Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
+                        Server                = $server # This allows piping the established connection to Set-DbaMaxDop
                     } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
                 }
             }
