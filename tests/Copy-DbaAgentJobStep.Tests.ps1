@@ -71,6 +71,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created jobs
         $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobName, $pipelineJobName -ErrorAction SilentlyContinue
         $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $sourceJobName, $pipelineJobName -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command synchronizes job steps properly" {

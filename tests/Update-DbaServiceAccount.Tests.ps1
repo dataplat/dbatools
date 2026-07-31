@@ -59,6 +59,9 @@ Describe $CommandName -Tag IntegrationTests {
         $newLogin.LoginType = "WindowsUser"
         $newLogin.Create()
         $server.Roles["sysadmin"].AddMember($winLogin)
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
