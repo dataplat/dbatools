@@ -115,7 +115,7 @@ function Export-DbaCredential {
                 if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
                 # Do we have a dedicated admin connection already?
-                $dacConnected = $instance.Type -eq 'Server' -and $instance.InputObject.Name -match '^ADMIN:'
+                $dacConnected = Test-DacConnection -InputObject $instance
 
                 $dacOpened = $false
                 if ($dacNeeded) {
