@@ -74,6 +74,8 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         $server.query($mailAccountSettings)
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Updates mail account properties" {
