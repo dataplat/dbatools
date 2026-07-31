@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 1, 2026
+-- Last Modified: July 14, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -56,8 +56,9 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajor
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2019 fell out of Mainstream Support on Feb 28, 2025
--- SQL Server 2019 will fall out of Extended Support on Jan 8, 2030
+-- @@SERVERNAME - Returns the name of the local server
+-- @@VERSION - Returns a detailed string containing the SQL Server product version, the build number, the architecture (e.g., x64), and the operating system version/build information
+
 
 -- SQL Server 2019 Builds																		
 -- Build			Description							Release Date	URL to KB Article								
@@ -120,7 +121,12 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4460.4		CU32 + GDR							3-10-2026		https://support.microsoft.com/en-us/topic/kb5077469-description-of-the-security-update-for-sql-server-2019-cu32-march-10-2026-5ec2c609-35cb-483d-aa80-5e66821e5c97
 -- 15.0.4465.1		CU32 + GDR							4-14-2026		https://support.microsoft.com/en-us/topic/kb5084816-description-of-the-security-update-for-sql-server-2019-cu32-april-14-2026-b135e76b-1601-4477-9185-0520debd95a6
 -- 15.0.4470.1		CU32 + GDR							5-12-2026		https://support.microsoft.com/en-us/topic/kb5090407-description-of-the-security-update-for-sql-server-2019-cu32-may-12-2026-3551e15f-b89c-4255-bb6a-97f745e642af
+-- 15.0.4480.2      CU32 + GDR							7-14-2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2019/general-distribution-release/kb5102335-july
 
+
+-- SQL Server 2019 fell out of Mainstream Support on Feb 28, 2025
+-- SQL Server 2019 will fall out of Extended Support on Jan 8, 2030
+-- https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2019
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 

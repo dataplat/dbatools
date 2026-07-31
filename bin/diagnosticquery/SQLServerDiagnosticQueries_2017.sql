@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 1, 2026
+-- Last Modified: July 14, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -56,8 +56,9 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductMajor
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2017 fell out of Mainstream Support on Oct 11, 2022
--- SQL Server 2017 will fall out of Extended Support on Oct 12, 2027
+-- @@SERVERNAME - Returns the name of the local server
+-- @@VERSION - Returns a detailed string containing the SQL Server product version, the build number, the architecture (e.g., x64), and the operating system version/build information
+
 
 -- SQL Server 2017 Builds																		
 -- Build			Description							Release Date	URL to KB Article								
@@ -110,12 +111,17 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3515.1		CU31 + GDR						   11/11/2025		https://support.microsoft.com/en-us/topic/kb5068402-description-of-the-security-update-for-sql-server-2017-cu31-november-11-2025-1be08efe-ad14-4b95-a0de-ecbbf2703114
 -- 14.0.3520.4		CU31 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077471-description-of-the-security-update-for-sql-server-2017-cu31-march-10-2026-f020d5eb-e356-42e8-a9ba-0ef061430b15
 -- 14.0.3525.1		CU31 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5084818-description-of-the-security-update-for-sql-server-2017-cu31-april-14-2026-0ddfecfe-673e-4f3e-8ffd-8dfeb66f97e4
--- 14.0.3530.2		CU31 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5090354-description-of-the-security-update-for-sql-server-2017-cu31-may-12-2026-278c1395-f4e4-42d3-ba28-4b03067a9656	
+-- 14.0.3530.2		CU31 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5090354-description-of-the-security-update-for-sql-server-2017-cu31-may-12-2026-278c1395-f4e4-42d3-ba28-4b03067a9656
+-- 14.0.3540.1		CU31 + GDR						    7/12/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2017/general-distribution-release/kb5102337-july
 
 
 -- SQL Server 2017 Azure Connect Pack builds
 -- Azure Connect Feature Pack is optional and should be installed only if you intend to connect SQL Server with Azure SQL Managed Instance
 -- 14.0.3490.10		Azure Connect Pack					3/6/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2017/azureconnect
+
+-- SQL Server 2017 fell out of Mainstream Support on Oct 11, 2022
+-- SQL Server 2017 will fall out of Extended Support on Oct 12, 2027
+-- https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2017
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
