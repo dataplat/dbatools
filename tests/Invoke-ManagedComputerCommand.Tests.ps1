@@ -6,6 +6,26 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            # This is a private command, so we have to ask the module for it.
+            # We must not do this inside of InModuleScope, because $TestConfig is not available there.
+            $commandInfo = & (Get-Module dbatools) { Get-Command -Name Invoke-ManagedComputerCommand }
+            $hasParameters = $commandInfo.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "ComputerName",
+                "Credential",
+                "ScriptBlock",
+                "ArgumentList",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
         BeforeAll {
             Mock -CommandName Test-ElevationRequirement -MockWith { $true }
@@ -14,21 +34,6 @@ Describe $CommandName -Tag UnitTests {
                     IpAddress        = "10.0.0.1"
                     FullComputerName = "mockedserver.contoso.com"
                 }
-            }
-        }
-
-        Context "Parameter validation" {
-            It "Should have the expected parameters" {
-                $hasParameters = (Get-Command Invoke-ManagedComputerCommand).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-                $expectedParameters = $TestConfig.CommonParameters
-                $expectedParameters += @(
-                    "ComputerName",
-                    "Credential",
-                    "ScriptBlock",
-                    "ArgumentList",
-                    "EnableException"
-                )
-                Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
             }
         }
 
