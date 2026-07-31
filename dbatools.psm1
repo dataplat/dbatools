@@ -385,10 +385,11 @@ foreach ($command in $replAliases.GetEnumerator()) {
 }
 #endregion Aliases
 
-# apparently this is no longer required? :O
-if ($PSVersionTable.PSVersion.Major -lt 5) {
-    # region Commands
-    $script:xplat = @(
+# These lists are not just used for Export-ModuleMember below - Get-DbaHelp reads them
+# to work out the Availability of each command, which ends up in bin/dbatools-index.json
+# and on dbatools.io. They must be defined on every PowerShell version.
+# region Commands
+$script:xplat = @(
         'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
@@ -1126,6 +1127,8 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaErrorLog'
     )
 
+# apparently this is no longer required? :O
+if ($PSVersionTable.PSVersion.Major -lt 5) {
     # If a developer or appveyor calls the psm1 directly, they want all functions
     # So do not explicitly export because everything else is then implicitly excluded
     if (-not $script:serialimport) {
