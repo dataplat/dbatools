@@ -63,5 +63,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should have only one result for database name of dbatoolsci_testMaxDop" -Skip:(-not $setupSuccessful) {
             @($testResults | Where-Object Database -eq $testDbName).Count | Should -Be 1
         }
+
+        It "Should expose the established connection so Set-DbaMaxDop can reuse it" -Skip:(-not $setupSuccessful) {
+            foreach ($result in $testResults) {
+                $result.Server | Should -BeOfType Microsoft.SqlServer.Management.Smo.Server
+            }
+        }
     }
 }

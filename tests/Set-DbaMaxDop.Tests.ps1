@@ -105,6 +105,24 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Reuses a connection passed as SqlInstance" {
+        BeforeAll {
+            $connectedServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $currentMaxDop = $connectedServer.Configuration.MaxDegreeOfParallelism.ConfigValue
+            $targetMaxDop = if ($currentMaxDop -eq 6) { 5 } else { 6 }
+            $results = Set-DbaMaxDop -SqlInstance $connectedServer -MaxDop $targetMaxDop
+        }
+
+        It "Command returns output" {
+            $results.CurrentInstanceMaxDop | Should -Be $targetMaxDop
+        }
+
+        It "Alters the passed connection instead of building a new one" {
+            # If a second connection had been opened, the passed object would still hold the old cached value.
+            $connectedServer.Configuration.MaxDegreeOfParallelism.ConfigValue | Should -Be $targetMaxDop
+        }
+    }
+
     Context "Piping SqlInstance name works" {
         BeforeAll {
             $results = $TestConfig.InstanceMulti2 | Set-DbaMaxDop -MaxDop 2
