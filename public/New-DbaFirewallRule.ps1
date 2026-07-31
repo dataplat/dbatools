@@ -402,9 +402,21 @@ function New-DbaFirewallRule {
                 # As we create firewall rules, we probably don't have access to the instance yet. So we have to get the port of the DAC via Invoke-Command2.
                 # Get-DbaStartupParameter also uses Invoke-Command2 to get the location of ERRORLOG.
                 # We only scan the current log because this command is typically run shortly after the installation and should include the needed information.
+                $errorLogPath = $null
                 try {
                     $errorLogPath = Get-DbaStartupParameter -SqlInstance $instance -Credential $Credential -Simple -EnableException | Select-Object -ExpandProperty ErrorLog
-                    $dacMessage = Invoke-Command2 -Raw -ComputerName $instance.ComputerName -ArgumentList $errorLogPath -ScriptBlock {
+                } catch {
+                    Stop-Function -Message "Failed to get the path to ERRORLOG on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                }
+
+                # Get-DbaStartupParameter can return no object at all or an object with an empty property ErrorLog.
+                # We have to test for that here, because otherwise we would fail later with a misleading message about a parameter that must not be null.
+                if (-not $errorLogPath) {
+                    Stop-Function -Message "Failed to get the path to ERRORLOG on $($instance.ComputerName) for instance $($instance.InstanceName), so the firewall rule for DAC cannot be created." -Target $instance -Continue
+                }
+
+                try {
+                    $dacMessage = Invoke-Command2 -Raw -ComputerName $instance.ComputerName -Credential $Credential -ArgumentList $errorLogPath -ScriptBlock {
                         Get-Content -Path $args[0] |
                             Select-String -Pattern 'Dedicated admin connection support was established for listening.+' |
                             Select-Object -Last 1 |
