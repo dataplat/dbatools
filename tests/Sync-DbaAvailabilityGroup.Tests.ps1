@@ -33,7 +33,7 @@ Describe $CommandName -Tag UnitTests {
     }
 
     Context "Connection behavior" {
-        It "Should let Copy-DbaCredential manage dedicated admin connections" {
+        It "Should open one dedicated admin connection and share it with all password-aware copy commands" {
             InModuleScope "dbatools" {
                 function Test-FunctionInterrupt { $false }
                 function Write-ProgressHelper { }
@@ -45,12 +45,27 @@ Describe $CommandName -Tag UnitTests {
                     )
 
                     if ($DedicatedAdminConnection) {
-                        $script:dacConnections += $SqlInstance.ToString()
+                        $script:dacConnections += $SqlInstance.Name
+                        [PSCustomObject]@{
+                            Name               = "ADMIN:$($SqlInstance.Name)"
+                            DomainInstanceName = $SqlInstance.DomainInstanceName
+                        }
+                    } else {
+                        [PSCustomObject]@{
+                            Name               = $SqlInstance.ToString()
+                            DomainInstanceName = $SqlInstance.ToString()
+                        }
                     }
+                }
+                function Disconnect-DbaInstance {
+                    [CmdletBinding(SupportsShouldProcess)]
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject
+                    )
 
-                    [PSCustomObject]@{
-                        Name               = $SqlInstance.ToString()
-                        DomainInstanceName = $SqlInstance.ToString()
+                    process {
+                        $script:disconnectedConnections += $InputObject.Name
                     }
                 }
                 function Copy-DbaCredential {
@@ -69,8 +84,136 @@ Describe $CommandName -Tag UnitTests {
                         ExcludePassword = $ExcludePassword.IsPresent
                     }
                 }
+                function Copy-DbaDbMail {
+                    param(
+                        $Source,
+                        $Destination,
+                        $Credential,
+                        [switch]$ExcludePassword,
+                        [switch]$Force
+                    )
+
+                    $script:copyDbMailCall = [PSCustomObject]@{
+                        Source = $Source
+                    }
+                }
+                function Copy-DbaLinkedServer {
+                    param(
+                        $Source,
+                        $Destination,
+                        $Credential,
+                        [switch]$ExcludePassword,
+                        [switch]$Force
+                    )
+
+                    $script:copyLinkedServerCall = [PSCustomObject]@{
+                        Source = $Source
+                    }
+                }
 
                 $script:dacConnections = @()
+                $script:disconnectedConnections = @()
+                $script:copyCredentialCall = $null
+                $script:copyDbMailCall = $null
+                $script:copyLinkedServerCall = $null
+
+                $exclude = @(
+                    "AgentAlert",
+                    "AgentCategory",
+                    "AgentJob",
+                    "AgentOperator",
+                    "AgentProxy",
+                    "AgentSchedule",
+                    "CustomErrors",
+                    "DatabaseOwner",
+                    "LoginPermissions",
+                    "Logins",
+                    "SpConfigure",
+                    "SystemTriggers"
+                )
+                $securePassword = ConvertTo-SecureString "Password1!" -AsPlainText -Force
+                $credential = New-Object System.Management.Automation.PSCredential("contoso\syncuser", $securePassword)
+
+                $null = Sync-DbaAvailabilityGroup -Primary "sql1" -Secondary "sql2" -Credential $credential -Exclude $exclude
+
+                $script:dacConnections.Count | Should -Be 1
+                $script:dacConnections[0] | Should -Be "sql1"
+                $script:copyCredentialCall.Source.Name | Should -Be "ADMIN:sql1"
+                $script:copyDbMailCall.Source.Name | Should -Be "ADMIN:sql1"
+                $script:copyLinkedServerCall.Source.Name | Should -Be "ADMIN:sql1"
+                $script:disconnectedConnections.Count | Should -Be 1
+                $script:disconnectedConnections[0] | Should -Be "ADMIN:sql1"
+                $script:copyCredentialCall.Credential.UserName | Should -Be "contoso\syncuser"
+                $script:copyCredentialCall.ExcludePassword | Should -BeFalse
+            }
+        }
+
+        It "Should reuse a dedicated admin connection that is already open and use a normal connection for the other commands" {
+            InModuleScope "dbatools" {
+                function Test-FunctionInterrupt { $false }
+                function Write-ProgressHelper { }
+                function Connect-DbaInstance {
+                    param(
+                        $SqlInstance,
+                        $SqlCredential,
+                        [switch]$DedicatedAdminConnection
+                    )
+
+                    if ($DedicatedAdminConnection) {
+                        $script:dacConnections += $SqlInstance.Name
+                    }
+
+                    if ($SqlInstance.ToString() -eq "sql1") {
+                        # Simulates a primary that the user has already connected to with -DedicatedAdminConnection
+                        [PSCustomObject]@{
+                            Name               = "ADMIN:sql1"
+                            DomainInstanceName = "sql1.contoso.com"
+                        }
+                    } else {
+                        [PSCustomObject]@{
+                            Name               = $SqlInstance.ToString()
+                            DomainInstanceName = $SqlInstance.ToString()
+                        }
+                    }
+                }
+                function Disconnect-DbaInstance {
+                    [CmdletBinding(SupportsShouldProcess)]
+                    param(
+                        [Parameter(ValueFromPipeline)]
+                        $InputObject
+                    )
+
+                    process {
+                        $script:disconnectedConnections += $InputObject.Name
+                    }
+                }
+                function Copy-DbaSpConfigure {
+                    param(
+                        $Source,
+                        $Destination
+                    )
+
+                    $script:copySpConfigureCall = [PSCustomObject]@{
+                        Source = $Source
+                    }
+                }
+                function Copy-DbaCredential {
+                    param(
+                        $Source,
+                        $Destination,
+                        $Credential,
+                        [switch]$ExcludePassword,
+                        [switch]$Force
+                    )
+
+                    $script:copyCredentialCall = [PSCustomObject]@{
+                        Source = $Source
+                    }
+                }
+
+                $script:dacConnections = @()
+                $script:disconnectedConnections = @()
+                $script:copySpConfigureCall = $null
                 $script:copyCredentialCall = $null
 
                 $exclude = @(
@@ -86,17 +229,15 @@ Describe $CommandName -Tag UnitTests {
                     "LinkedServers",
                     "LoginPermissions",
                     "Logins",
-                    "SpConfigure",
                     "SystemTriggers"
                 )
-                $securePassword = ConvertTo-SecureString "Password1!" -AsPlainText -Force
-                $credential = New-Object System.Management.Automation.PSCredential("contoso\syncuser", $securePassword)
 
-                $null = Sync-DbaAvailabilityGroup -Primary "sql1" -Secondary "sql2" -Credential $credential -Exclude $exclude
+                $null = Sync-DbaAvailabilityGroup -Primary "sql1" -Secondary "sql2" -Exclude $exclude
 
                 $script:dacConnections | Should -BeNullOrEmpty
-                $script:copyCredentialCall.Credential.UserName | Should -Be "contoso\syncuser"
-                $script:copyCredentialCall.ExcludePassword | Should -BeFalse
+                $script:copyCredentialCall.Source.Name | Should -Be "ADMIN:sql1"
+                $script:copySpConfigureCall.Source.Name | Should -Be "sql1.contoso.com"
+                $script:disconnectedConnections | Should -BeNullOrEmpty
             }
         }
 

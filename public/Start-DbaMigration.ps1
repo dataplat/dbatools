@@ -367,7 +367,7 @@ function Start-DbaMigration {
             if ($ExcludePassword) { $dacNeeded = $false }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq "Server" -and $Source.InputObject.ConnectionContext.ServerInstance -match "^ADMIN:"
+            $dacConnected = Test-DacConnection -InputObject $Source
 
             $dacOpened = $false
             if ($dacNeeded) {

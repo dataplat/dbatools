@@ -390,7 +390,7 @@ function Copy-DbaDbMail {
             if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
             # Do we have a dedicated admin connection already?
-            $dacConnected = $Source.Type -eq 'Server' -and $Source.InputObject.Name -match '^ADMIN:'
+            $dacConnected = Test-DacConnection -InputObject $Source
 
             $dacOpened = $false
             if ($dacNeeded) {

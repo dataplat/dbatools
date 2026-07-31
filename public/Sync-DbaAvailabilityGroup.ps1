@@ -28,6 +28,8 @@ function Sync-DbaAvailabilityGroup {
 
         The command copies ALL objects of each enabled type - it doesn't filter based on which objects are actually used by the availability group databases. Use the exclusion parameters to limit scope when needed.
 
+        Copying credentials, database mail accounts and linked servers includes the stored passwords, and decrypting those requires a dedicated admin connection (DAC) to the primary. As SQL Server only allows one DAC per instance, this command opens a single DAC and hands it to all three of those copy operations instead of letting each of them open its own. Use -ExcludePassword if no DAC should be opened at all.
+
     .PARAMETER Primary
         The primary replica SQL Server instance for the availability group. This is the source server from which all server-level objects will be copied.
         Required when not using InputObject parameter. Server version must be SQL Server 2012 or higher.
@@ -199,6 +201,21 @@ function Sync-DbaAvailabilityGroup {
             }
         }
 
+        # If we already got a dedicated admin connection, we reuse it for the commands that need it.
+        # As the DAC is a single restricted session, we open an additional normal connection for all the other commands.
+        $serverDac = $null
+        if (Test-DacConnection -InputObject $server) {
+            Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+            $serverDac = $server
+            try {
+                Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require a dedicated admin connection."
+                $server = Connect-DbaInstance -SqlInstance $serverDac.DomainInstanceName -SqlCredential $PrimarySqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $serverDac.DomainInstanceName
+                return
+            }
+        }
+
         if ($AvailabilityGroup) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
         }
@@ -220,8 +237,9 @@ function Sync-DbaAvailabilityGroup {
         }
 
         $thiscombo = [PSCustomObject]@{
-            PrimaryServer   = $server
-            SecondaryServer = $secondaries
+            PrimaryServer    = $server
+            PrimaryServerDac = $serverDac
+            SecondaryServer  = $secondaries
         }
 
         # In the event that someone pipes in an availability group, this will keep the sync from running a bunch of times
@@ -245,6 +263,7 @@ function Sync-DbaAvailabilityGroup {
         # now that all combinations have been figured out, begin sync without duplicating work
         foreach ($ag in $allcombos) {
             $server = $ag.PrimaryServer
+            $serverDac = $ag.PrimaryServerDac
             $secondaries = $ag.SecondaryServer
 
             $stepCounter = 0
@@ -282,19 +301,47 @@ function Sync-DbaAvailabilityGroup {
                 Copy-DbaCustomError -Source $server -Destination $secondaries -Force:$Force
             }
 
+            # Do we need a dedicated admin connection to the primary for password retrieval?
+            # If not all of the three are excluded, we do. If passwords are excluded, we don't.
+            $dacNeeded = -not $ExcludePassword -and ($Exclude -notcontains "Credentials" -or $Exclude -notcontains "DatabaseMail" -or $Exclude -notcontains "LinkedServers")
+
+            # We open the DAC as late as possible and close it as early as possible, because SQL Server only allows one DAC per instance.
+            $dacOpened = $false
+            if ($dacNeeded -and -not $serverDac) {
+                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                $serverDac = Connect-DbaInstance -SqlInstance $server -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                if ($serverDac) {
+                    $dacOpened = $true
+                } else {
+                    Write-Message -Level Warning -Message "Could not establish dedicated admin connection to $server, so the commands that copy passwords will try to open their own. Use -ExcludePassword to skip the passwords."
+                }
+            }
+
+            # The commands that copy passwords use the dedicated admin connection, all the others use the normal connection.
+            if ($serverDac) {
+                $passwordServer = $serverDac
+            } else {
+                $passwordServer = $server
+            }
+
             if ($Exclude -notcontains "Credentials") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
-                Copy-DbaCredential -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                Copy-DbaCredential -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
             }
 
             if ($Exclude -notcontains "DatabaseMail") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
-                Copy-DbaDbMail -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                Copy-DbaDbMail -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
             }
 
             if ($Exclude -notcontains "LinkedServers") {
                 Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
-                Copy-DbaLinkedServer -Source $server -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                Copy-DbaLinkedServer -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+            }
+
+            # Disconnect is important because it is a DAC, but only if we opened it ourselves.
+            if ($dacOpened) {
+                $null = $serverDac | Disconnect-DbaInstance -WhatIf:$false
             }
 
             if ($Exclude -notcontains "SystemTriggers") {
