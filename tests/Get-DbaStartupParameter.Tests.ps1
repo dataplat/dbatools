@@ -38,7 +38,7 @@ Describe $CommandName -Tag UnitTests {
                 & $localScriptBlock @ArgumentList
             } -ModuleName dbatools
 
-            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw -ExpectedMessage "*SQL Server service*was not found*"
         }
 
         It "Throws when multiple SQL Server services match the instance name" {
@@ -68,7 +68,7 @@ Describe $CommandName -Tag UnitTests {
                 & $localScriptBlock @ArgumentList
             } -ModuleName dbatools
 
-            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw -ExpectedMessage "*Multiple SQL Server services*were found*"
         }
     }
 
