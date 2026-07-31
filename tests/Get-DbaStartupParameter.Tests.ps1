@@ -32,10 +32,13 @@ Describe $CommandName -Tag UnitTests {
                 $wmi = [PSCustomObject]@{
                     Services = @()
                 }
-                & $ScriptBlock @ArgumentList
+                # $ScriptBlock was created inside the module, so invoking it directly would run it in the module scope, where $wmi is not visible.
+                # Recreating it here binds it to this scope, so it can use the $wmi defined above.
+                $localScriptBlock = [scriptblock]::Create($ScriptBlock.ToString())
+                & $localScriptBlock @ArgumentList
             } -ModuleName dbatools
 
-            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw -ExpectedMessage "*SQL Server service*was not found*"
         }
 
         It "Throws when multiple SQL Server services match the instance name" {
@@ -59,10 +62,88 @@ Describe $CommandName -Tag UnitTests {
                         }
                     )
                 }
-                & $ScriptBlock @ArgumentList
+                # $ScriptBlock was created inside the module, so invoking it directly would run it in the module scope, where $wmi is not visible.
+                # Recreating it here binds it to this scope, so it can use the $wmi defined above.
+                $localScriptBlock = [scriptblock]::Create($ScriptBlock.ToString())
+                & $localScriptBlock @ArgumentList
             } -ModuleName dbatools
 
-            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw
+            { Get-DbaStartupParameter -SqlInstance "localhost" -EnableException } | Should -Throw -ExpectedMessage "*Multiple SQL Server services*were found*"
+        }
+    }
+
+    Context "Startup parameter parsing" {
+        BeforeAll {
+            # The drive letters are lower case on purpose, because those are the ones that got lost in the past.
+            Mock Invoke-ManagedComputerCommand -MockWith {
+                param (
+                    $Server,
+                    $Credential,
+                    $ScriptBlock,
+                    $ArgumentList
+                )
+                $wmi = [PSCustomObject]@{
+                    Services = @(
+                        [PSCustomObject]@{
+                            DisplayName       = "SQL Server ($($ArgumentList[1]))"
+                            StartupParameters = "-dd:\SQLData\master.mdf;-ee:\SQLLog\ERRORLOG;-ll:\SQLLog\mastlog.ldf"
+                        }
+                    )
+                }
+                # $ScriptBlock was created inside the module, so invoking it directly would run it in the module scope, where $wmi is not visible.
+                # Recreating it here binds it to this scope, so it can use the $wmi defined above.
+                $localScriptBlock = [scriptblock]::Create($ScriptBlock.ToString())
+                & $localScriptBlock @ArgumentList
+            } -ModuleName dbatools
+        }
+
+        It "Keeps the drive letter of the paths with Simple" {
+            $simpleResult = Get-DbaStartupParameter -SqlInstance "localhost" -Simple -EnableException
+
+            $simpleResult.MasterData | Should -Be "d:\SQLData\master.mdf"
+            $simpleResult.MasterLog | Should -Be "l:\SQLLog\mastlog.ldf"
+            $simpleResult.ErrorLog | Should -Be "e:\SQLLog\ERRORLOG"
+        }
+
+        It "Keeps the drive letter of the paths without Simple" {
+            $detailedResult = Get-DbaStartupParameter -SqlInstance "localhost" -EnableException
+
+            $detailedResult.MasterData | Should -Be "d:\SQLData\master.mdf"
+            $detailedResult.MasterLog | Should -Be "l:\SQLLog\mastlog.ldf"
+            $detailedResult.ErrorLog | Should -Be "e:\SQLLog\ERRORLOG"
+        }
+    }
+
+    Context "Startup parameters without a path to ERRORLOG" {
+        BeforeAll {
+            Mock Invoke-ManagedComputerCommand -MockWith {
+                param (
+                    $Server,
+                    $Credential,
+                    $ScriptBlock,
+                    $ArgumentList
+                )
+                $wmi = [PSCustomObject]@{
+                    Services = @(
+                        [PSCustomObject]@{
+                            DisplayName       = "SQL Server ($($ArgumentList[1]))"
+                            StartupParameters = "-dd:\SQLData\master.mdf;-ll:\SQLLog\mastlog.ldf"
+                        }
+                    )
+                }
+                # $ScriptBlock was created inside the module, so invoking it directly would run it in the module scope, where $wmi is not visible.
+                # Recreating it here binds it to this scope, so it can use the $wmi defined above.
+                $localScriptBlock = [scriptblock]::Create($ScriptBlock.ToString())
+                & $localScriptBlock @ArgumentList
+            } -ModuleName dbatools
+        }
+
+        It "Returns an object with an empty ErrorLog instead of failing" {
+            $noErrorLogResult = Get-DbaStartupParameter -SqlInstance "localhost" -Simple -EnableException
+
+            $noErrorLogResult | Should -Not -BeNullOrEmpty
+            $noErrorLogResult.MasterData | Should -Be "d:\SQLData\master.mdf"
+            $noErrorLogResult.ErrorLog | Should -BeNullOrEmpty
         }
     }
 }
