@@ -63,7 +63,7 @@ Describe $CommandName -Tag UnitTests {
             }
 
             It "Honors EnableException when xp_fileexist execution fails" {
-                { Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -EnableException } | Should -Throw
+                { Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -EnableException } | Should -Throw -ExpectedMessage "*xp_fileexist*"
             }
         }
     }

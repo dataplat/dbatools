@@ -27,7 +27,7 @@ Describe $CommandName -Tag UnitTests {
     Context "Validate input" {
         It "Cannot resolve hostname of computer" {
             Mock Resolve-DbaNetworkName { $null }
-            { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw
+            { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw -ExpectedMessage "*DNS name DoesNotExist142 not found*"
         }
     }
 }

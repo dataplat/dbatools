@@ -15,13 +15,13 @@ Describe $CommandName -Tag UnitTests {
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
                 #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
-                Mock Connect-DbaInstance { throw }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw
+                Mock Connect-DbaInstance { throw "Mocked connection failure" }
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw -ExpectedMessage "Mocked connection failure"
             }
             It "Should throw if SQL Server can't see the path" {
                 Mock Test-DbaPath { $false }
                 Mock Connect-DbaInstance { [DbaInstanceParameter]"bad\bad" }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw -ExpectedMessage "*cannot access c:\dummy*"
             }
         }
         Context "Non recursive filestructure" {
