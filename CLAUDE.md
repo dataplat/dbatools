@@ -172,9 +172,9 @@ When adding a new command, register it in **TWO places**:
 1. **dbatools.psd1** - In the `FunctionsToExport` array
 2. **dbatools.psm1** - In the explicit command export section
 
-### Commit Messages and Pull Request Naming
+### Commit Messages
 
-**CRITICAL: Always include the `(do ...)` pattern** to limit CI test runs:
+**CRITICAL: Always include the `(do ...)` pattern in the commit message** to limit CI test runs:
 
 ```
 Get-DbaDatabase - Add support for filtering by recovery model
@@ -183,6 +183,14 @@ Get-DbaDatabase - Add support for filtering by recovery model
 ```
 
 For multiple commands: `(do *Login*)` or `(do *Backup*, *Restore*)`
+
+### Pull Request Naming
+
+**Do NOT put the `(do ...)` pattern in pull request titles.** On a pull request, CI derives the tests to run from the files the branch changed, so the marker adds nothing and only makes the title hard to read. Keep the title plain and descriptive:
+
+```
+Sync-DbaAvailabilityGroup - Open one shared dedicated admin connection instead of three
+```
 
 ### Pull Request Integration
 
