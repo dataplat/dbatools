@@ -125,8 +125,8 @@ Describe $CommandName -Tag UnitTests {
         It "Doesn't accept 'Build', 'SqlInstance'" {
             { Get-DbaBuild -Build "10.0.1600" -SqlInstance "localhost" -EnableException -ErrorAction Stop } | Should -Throw
         }
-        It "Doesn't accept 'Build', 'SqlInstance'" {
-            { Get-DbaBuild -Build "10.0.1600" -SqlInstance "localhost" -EnableException -ErrorAction Stop } | Should -Throw
+        It "Does not accept Kb and SqlInstance" {
+            { Get-DbaBuild -Kb "4052908" -SqlInstance "localhost" -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'MajorVersion'" {
             { Get-DbaBuild -Build "10.0.1600" -MajorVersion "2016" -EnableException -ErrorAction Stop } | Should -Throw

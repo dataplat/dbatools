@@ -76,6 +76,66 @@ Describe $CommandName -Tag UnitTests {
                 $result.LocalPort | Should -Be "1434"
             }
         }
+
+        Context "DAC rule when the path to ERRORLOG cannot be determined" {
+            BeforeAll {
+                Mock Invoke-Command2 { }
+                Mock Get-DbaStartupParameter { }
+
+                $dacErrorMessage = $null
+                try {
+                    New-DbaFirewallRule -SqlInstance "sql01\test" -Type DAC -EnableException -Confirm:$false
+                } catch {
+                    $dacErrorMessage = $PSItem.Exception.Message
+                }
+            }
+
+            It "Reports the missing ERRORLOG instead of failing on a null path" {
+                $dacErrorMessage | Should -BeLike "*Failed to get the path to ERRORLOG*"
+            }
+
+            It "Does not try to read the ERRORLOG" {
+                Should -Invoke Invoke-Command2 -Times 0 -Exactly -Scope Context
+            }
+        }
+
+        Context "DAC rule when the path to ERRORLOG is found" {
+            BeforeAll {
+                $dacPassword = ConvertTo-SecureString -String "dbatoolsci_password" -AsPlainText -Force
+                $dacCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsci_user", $dacPassword)
+
+                Mock Get-DbaStartupParameter {
+                    [PSCustomObject]@{
+                        ErrorLog = "C:\SQLLog\ERRORLOG"
+                    }
+                }
+                Mock Invoke-Command2 -ParameterFilter { $Raw } -MockWith {
+                    "Dedicated admin connection support was established for listening remotely on port 1434."
+                }
+                Mock Invoke-Command2 -MockWith {
+                    [PSCustomObject]@{
+                        Successful  = $true
+                        CimInstance = [PSCustomObject]@{
+                            Status = "The rule was parsed successfully from the store"
+                        }
+                        Warning     = $null
+                        Error       = $null
+                        Exception   = $null
+                    }
+                }
+
+                $dacResult = New-DbaFirewallRule -SqlInstance "sql01\test" -Type DAC -Credential $dacCredential -Confirm:$false
+            }
+
+            It "Creates the firewall rule for the DAC port found in ERRORLOG" {
+                $dacResult.Type | Should -Be "DAC"
+                $dacResult.LocalPort | Should -Be "1434"
+            }
+
+            It "Uses the credential to read the ERRORLOG" {
+                Should -Invoke Invoke-Command2 -Times 1 -Exactly -Scope Context -ParameterFilter { $Raw -and $Credential.UserName -eq "dbatoolsci_user" }
+            }
+        }
     }
 }
 

@@ -28,6 +28,9 @@ function Set-DbaMaxMemory {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Credential
+        Windows Credential with permission to log on to the server running the SQL instance
+
     .PARAMETER Max
         Specifies the explicit maximum memory value in megabytes for SQL Server to use. When provided, this overrides the automatic memory recommendation calculation.
         Use this when you need a specific memory allocation that differs from the calculated recommendation, such as reserving memory for other applications or setting conservative limits for shared servers.
@@ -92,6 +95,7 @@ function Set-DbaMaxMemory {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [int]$Max,
         [Parameter(ValueFromPipeline)]
         [PSCustomObject[]]$InputObject,
@@ -104,7 +108,7 @@ function Set-DbaMaxMemory {
     }
     process {
         if ($SqlInstance) {
-            $InputObject += Test-DbaMaxMemory -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $InputObject += Test-DbaMaxMemory -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Credential $Credential
         }
 
         foreach ($result in $InputObject) {

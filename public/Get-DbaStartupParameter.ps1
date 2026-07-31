@@ -138,9 +138,9 @@ function Get-DbaStartupParameter {
                             ComputerName    = $computerName
                             InstanceName    = $instanceName
                             SqlInstance     = $ogInstance
-                            MasterData      = $masterData.TrimStart('-d')
-                            MasterLog       = $masterLog.TrimStart('-l')
-                            ErrorLog        = $errorLog.TrimStart('-e')
+                            MasterData      = $masterData -replace "^-[dD]", ""
+                            MasterLog       = $masterLog -replace "^-[lL]", ""
+                            ErrorLog        = $errorLog -replace "^-[eE]", ""
                             TraceFlags      = $traceFlags
                             DebugFlags      = $debugFlags
                             ParameterString = $wmisvc.StartupParameters
@@ -192,9 +192,9 @@ function Get-DbaStartupParameter {
                             ComputerName         = $computerName
                             InstanceName         = $instanceName
                             SqlInstance          = $ogInstance
-                            MasterData           = $masterData -replace '^-[dD]', ''
-                            MasterLog            = $masterLog -replace '^-[lL]', ''
-                            ErrorLog             = $errorLog -replace '^-[eE]', ''
+                            MasterData           = $masterData -replace "^-[dD]", ""
+                            MasterLog            = $masterLog -replace "^-[lL]", ""
+                            ErrorLog             = $errorLog -replace "^-[eE]", ""
                             TraceFlags           = $traceFlags
                             DebugFlags           = $debugFlags
                             CommandPromptStart   = $commandPrompt

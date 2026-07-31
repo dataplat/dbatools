@@ -96,6 +96,7 @@ function Invoke-ManagedComputerCommand {
         Invoke-Command2 @parms
     } catch {
         # Log the failure and prepare to connect remotely
+        $localException = $PSItem
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed | $PSItem. Connecting remotely."
         $hostname = $resolved.FullComputerName
 
@@ -103,10 +104,15 @@ function Invoke-ManagedComputerCommand {
         # Now, we will attempt to connect remotely with different versions
 
         # Set the maximum and minimum versions for the loop
-        $MaxVersion = 16
+        # This is the major version of the SqlWmiManagement assembly that we try to load on the target computer,
+        # so $MaxVersion has to be raised whenever a new major version of SQL Server is released.
+        # 17 = SQL Server 2025, 16 = SQL Server 2022, 15 = SQL Server 2019, 14 = SQL Server 2017, ...
+        $MaxVersion = 17
         $MinVersion = 8
 
         # Iterate through versions from maximum to minimum
+        $connected = $false
+        $remoteException = $null
         foreach ($version in ($MaxVersion..$MinVersion)) {
             try {
                 # Set the desired version in the ArgumentList
@@ -117,11 +123,18 @@ function Invoke-ManagedComputerCommand {
                 Invoke-Command2 @parms -ComputerName $hostname
 
                 # Operation succeeded, exit the loop
+                $connected = $true
                 break
             } catch {
                 # Log the failure and proceed to the next version
+                $remoteException = $PSItem
                 Write-Message -Level Verbose -Message "Connecting remotely to: '$computer' using version: '$version' failed. | $PSItem"
             }
+        }
+
+        # If we would not throw here, the calling command would silently get no result at all and would not be able to tell the user what went wrong
+        if (-not $connected) {
+            throw "Failed to connect to SQL WMI on $computer. Local connection attempt failed with: $localException | Last remote connection attempt (version $MinVersion) failed with: $remoteException"
         }
     }
 }

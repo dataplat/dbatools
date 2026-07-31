@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 1, 2026
+-- Last Modified: July 14, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -62,8 +62,8 @@ ELSE
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2016 fell out of Mainstream Support on Jul 13, 2021
--- SQL Server 2016 will fall out of Extended Support on Jul 14, 2026
+-- @@SERVERNAME - Returns the name of the local server
+-- @@VERSION - Returns a detailed string containing the SQL Server product version, the build number, the architecture (e.g., x64), and the operating system version/build information
 
 
 -- SQL Server 2016 Builds																		
@@ -124,8 +124,14 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.7065.1		Azure Connect Pack + GDR	9/9/2025		https://support.microsoft.com/en-us/topic/kb5065227-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-september-9-2025-d8b13d39-30cc-4a82-9382-0ecf1b2ff118
 -- 13.0.7070.1		Azure Connect Pack + GDR	11/11/2025		https://support.microsoft.com/en-us/topic/kb5068400-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-november-11-2025-9ea222c4-2d64-4b8d-aaf0-2fae80392540
 -- 13.0.7075.5		Azure Connect Pack + GDR	3/10/2026		https://support.microsoft.com/en-us/topic/kb5077473-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-march-10-2026-037c7860-1e79-4844-aa0d-d6e11449bfa2
--- 13.0.7080.1		Azure Connect Pack + GDR	4/14/2026		https://support.microsoft.com/en-us/topic/kb5084820-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-april-14-2026-bc8bf4cb-40c2-470b-9316-33faefe75916
--- 13.0.7085.1		Azure Connect Pack + GDR	5/12/2026		https://support.microsoft.com/en-us/topic/kb5089270-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-may-12-2026-289f3e3e-a52b-4da2-b733-cf3ddf68a988
+-- 13.0.7080.1		Azure Connect Pack + GDR	4/14/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2016/general-distribution-release/kb5084820-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-apri
+-- 13.0.7085.1		Azure Connect Pack + GDR	5/12/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2016/general-distribution-release/kb5089270-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-may
+-- 13.0.7095.1		Azure Connect Pack + GDR	7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2016/general-distribution-release/kb5102339-july
+
+
+-- SQL Server 2016 fell out of Mainstream Support on Jul 13, 2021
+-- SQL Server 2016 fell out of Extended Support on Jul 14, 2026
+-- https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2016
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 

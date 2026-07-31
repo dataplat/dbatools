@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 1, 2026
+-- Last Modified: July 16, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -66,16 +66,18 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- SQL Server 2025 Builds																		
 -- Build			Description							Release Date	URL to KB Article
 -- 17.0.1000.7		RTM									11/18/2025		https://learn.microsoft.com/en-us/sql/sql-server/sql-server-2025-release-notes
--- 17.0.1050.2		GDR									1/13/2026		https://support.microsoft.com/en-us/topic/kb5073177-description-of-the-security-update-for-sql-server-2025-gdr-january-13-2026-b1f8569f-b2e2-479e-84a4-96e1a9076b77	
+-- 17.0.1050.2		GDR									1/13/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2025/general-distribution-release/kb5073177-description-of-the-security-update-for-sql-server-2025-gdr-january-13-2026	
 -- 17.0.4006.2		CU1									1/29/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate1
 -- 17.0.4015.4		CU2									2/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate2
--- 17.0.4020.2		CU2 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077466-description-of-the-security-update-for-sql-server-2025-cu2-march-10-2026-e09ecd69-b429-47e8-835c-3bcd107330e5
+-- 17.0.4020.2		CU2 + GDR							3/10/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2025/cumulative-update/kb5077466-description-of-the-security-update-for-sql-server-2025-cu2-march-10-2026
 -- 17.0.4025.3		CU3									3/12/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate3
--- 17.0.4030.1		CU3 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5083245-description-of-the-security-update-for-sql-server-2025-cu3-april-14-2026-05c1d543-9323-4484-9b11-23093088cd76
+-- 17.0.4030.1		CU3 + GDR							4/14/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2025/cumulative-update/kb5083245-description-of-the-security-update-for-sql-server-2025-cu3-april-14-2026
 -- 17.0.4035.5		CU4									4/16/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate4
--- 17.0.4040.1		CU4 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089899-description-of-the-security-update-for-sql-server-2025-cu4-may-12-2026-de2c44d3-81c5-46f7-a756-d579a067f24e
+-- 17.0.4040.1		CU4 + GDR							5/12/2026		https://support.microsoft.com/en-US/servicing/SQL/sql-server-2025/cumulative-update/kb5089899-description-of-the-security-update-for-sql-server-2025-cu4-may-12-2026
 -- 17.0.4045.5		CU5									5/20/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate5
 -- 17.0.4055.5		CU6									6/18/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate6
+-- 17.0.4060.2		CU6 + GDR							7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/general-distribution-release/kb5101346-july
+-- 17.0.4065.4		CU7									7/16/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5096981-cu7
 
 
 -- SQL Server 2025 will fall out of Mainstream Support on Jan 6, 2031

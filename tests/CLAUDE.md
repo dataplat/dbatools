@@ -54,7 +54,7 @@ Pester v5 enforces strict organization of test code. Follow these rules:
 - **All setup code** must be in `BeforeAll` or `BeforeEach` blocks
 - **All cleanup code** must be in `AfterAll` or `AfterEach` blocks
 - **All test assertions** must be in `It` blocks
-- **No loose code** is allowed in `Describe` or `Context` blocks
+- **No loose code** is allowed in `Describe` or `Context` blocks, with one exception: computing a value that a `-Skip:` needs, see [Skip Conditions](#skip-conditions)
 - **Never use the `-ForEach` parameter** on any test blocks
 
 ### Standard Test Structure
@@ -269,6 +269,41 @@ It "Should test something" -Skip:"true" {
 }
 ```
 
+#### Computing a skip condition is the one exception to the no loose code rule
+
+Pester evaluates `-Skip:` while it discovers the tests, before any `BeforeAll` runs. A value computed in `BeforeAll` is therefore too late to be used by `-Skip:`. A variable that exists only to feed a `-Skip:` may be computed directly in the `Describe` block:
+
+```powershell
+Describe $CommandName -Tag IntegrationTests {
+    # These tests need the Microsoft Update Catalog. If it does not answer, every one of them waits
+    # 100 seconds for the default timeout of Invoke-WebRequest and then fails for a reason that has
+    # nothing to do with dbatools. So we probe it once here and skip the tests instead.
+    try {
+        $splatCatalog = @{
+            Uri             = "https://www.catalog.update.microsoft.com/Search.aspx?q=KB2992080"
+            UseBasicParsing = $true
+            TimeoutSec      = 30
+            ErrorAction     = "Stop"
+        }
+        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+    } catch {
+        $catalogReachable = $false
+    }
+
+    Context "Downloading from the Microsoft Update Catalog" -Skip:(-not $catalogReachable) {
+        # It blocks
+    }
+}
+```
+
+Keep the exception narrow:
+
+- Compute only what the `-Skip:` needs. Everything else still belongs in `BeforeAll`.
+- Skip only when the precondition is provably missing. If the dependency answers, the tests have to run and a real regression has to fail them. Never skip on a result that a bug could also produce.
+- Write a comment that says what is skipped and why, so the next person does not remove it.
+
+Examples in the tree: `Get-DbaKbUpdate.Tests.ps1` and `Save-DbaKbUpdate.Tests.ps1` test whether the Microsoft Update Catalog answers, `New-DbaFirewallRule.Tests.ps1` tests whether the instance uses dynamic ports.
+
 ### Array Operations
 
 - Use `$results.Status.Count` for accurate counting in dbatools context
@@ -419,7 +454,7 @@ Describe $CommandName -Tag IntegrationTests {
 - [ ] All setup code is in `BeforeAll` or `BeforeEach` blocks
 - [ ] All cleanup code is in `AfterAll` or `AfterEach` blocks
 - [ ] All test assertions are in `It` blocks
-- [ ] No loose code in `Describe` or `Context` blocks
+- [ ] No loose code in `Describe` or `Context` blocks, except computing a `-Skip:` condition
 - [ ] No `-ForEach` parameters used on test blocks
 
 **Variable Scoping:**

@@ -1,5 +1,6 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     $hasAzureServicePrincipal = [bool]($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET)
+    $hasAzureSqlAccess = [bool]($env:AZURE_SQL_ACCESS_TOKEN -or $hasAzureServicePrincipal)
 
     BeforeAll {
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
@@ -269,7 +270,7 @@ exec sp_addrolemember 'userrole','bob';
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
 
-    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "copies table data to Azure SQL using an access token" {
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST -or -not $hasAzureSqlAccess) "copies table data to Azure SQL using an access token" {
         $PSDefaultParameterValues.Clear()
         $sourceInstance = if ($env:DBATOOLS_SQL_SOURCE) { $env:DBATOOLS_SQL_SOURCE } else { "localhost" }
         $sourceTableName = "dbatools_copy_access_token_$([guid]::NewGuid().ToString('N'))"

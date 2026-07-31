@@ -90,13 +90,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Should Throw Error for a DB Connection Error" {
-            Mock Connect-DbaInstance { Throw } -ModuleName dbatools
-            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw
+            # The mock throws a distinctive message, so we can be sure that the command failed while connecting and not somewhere else.
+            Mock Connect-DbaInstance { throw "Mocked connection failure" } -ModuleName dbatools
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw -ExpectedMessage "Mocked connection failure"
         }
 
         It "Should Throw Error for Output Error" {
-            Mock Select-DefaultView { Throw } -ModuleName dbatools
-            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw
+            # The mock throws a distinctive message, so we can be sure that the command really got as far as the output.
+            Mock Select-DefaultView { throw "Mocked output failure" } -ModuleName dbatools
+            { Test-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw -ExpectedMessage "Mocked output failure"
         }
     }
 

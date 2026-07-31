@@ -113,6 +113,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Create a unique role and schema for each test
             $testRole = "dbatoolssci_role_$(Get-Random)"
             $diffSchema = "dbatoolssci_diffsch_$(Get-Random)"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterEach {

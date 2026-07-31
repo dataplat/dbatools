@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 1, 2026
+-- Last Modified: July 16, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -107,6 +107,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4250.1		CU24 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5083252-description-of-the-security-update-for-sql-server-2022-cu24-april-14-2026-0c8d572b-de26-4592-9ddc-09270c2a303c
 -- 16.0.4252.3		CU24 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5089900-description-of-the-security-update-for-sql-server-2022-cu24-may-12-2026-695c0545-c0d1-4341-bb92-2f1037fe09b2
 -- 16.0.4255.1		CU25								5/20/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate25
+-- 16.0.4262.2		CU25 + GDR							7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/general-distribution-release/kb5101347-july
+-- 16.0.4265.3		CU26								7/16/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/cumulative-update/kb5093420-cu26
 
 
 -- SQL Server 2022 will fall out of Mainstream Support on Jan 11, 2028
