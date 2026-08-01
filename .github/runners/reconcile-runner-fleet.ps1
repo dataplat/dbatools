@@ -28,6 +28,7 @@ $maintainerCount = if ($env:BOOST_COUNT) { [int]$env:BOOST_COUNT } else { 10 }
 $maintainerWindowMinutes = if ($env:BOOST_HOURS) { [int]$env:BOOST_HOURS * 60 } else { 60 }
 $communityGraceMinutes = if ($env:COMMUNITY_GRACE_MINUTES) { [int]$env:COMMUNITY_GRACE_MINUTES } else { 20 }
 $maxRunners = if ($env:MAX_RUNNERS) { [int]$env:MAX_RUNNERS } else { 35 }
+$warmFloor = if ($env:WARM_FLOOR) { [int]$env:WARM_FLOOR } else { 0 }
 $maintainers = @($env:BOOST_USERS -split "\s+" | Where-Object { $PSItem })
 $optInPushUsers = @($env:OPT_IN_PUSH_USERS -split "\s+" | Where-Object { $PSItem })
 $ciMarker = if ($env:CI_MARKER) { $env:CI_MARKER } else { "[do ci]" }
@@ -231,6 +232,38 @@ function Remove-FleetVm {
     Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin servedJob=$servedJob reason=$Reason"
 }
 
+function Get-PoolJobDemand {
+    param([object[]]$WorkflowRuns)
+    # I/O only -- the transform lives in runner-policy.ps1, where it is unit tested.
+    # Only live runs are probed: completed runs have no pending jobs, and the live set
+    # is normally zero to two runs, so this adds one cheap API call per run.
+    $jobs = @()
+    foreach ($run in @($WorkflowRuns | Where-Object { [string]$PSItem.status -ne "completed" })) {
+        $jobResponse = Invoke-GhJson -Arguments @(
+            "repos/$repo/actions/runs/$($run.id)/jobs?per_page=100"
+        ) -Operation "read jobs for run $($run.id)"
+        $jobs += @($jobResponse.jobs)
+    }
+    $demand = Get-PoolJobDemandFromJobs -Jobs $jobs -PoolLabelPrefix $poolLabelPrefix
+    # A run can be live before its matrix exists. Measured 2026-08-01: ci-azure's ten
+    # matrix jobs are created only once the `needs: authorize` gate clears, so at the
+    # workflow_run:requested tick that starts this reconcile the jobs API shows only the
+    # ubuntu-hosted authorize job, which carries no pool label. Sizing to zero there
+    # would make every build wait a full reconcile interval for its first VM, so an
+    # eligible live run with no visible pool jobs yet reports full-pool demand; the next
+    # pass replaces the estimate with the real count.
+    foreach ($run in @($WorkflowRuns | Where-Object { [string]$PSItem.status -ne "completed" })) {
+        $pool = Get-CiRunActor -Run $run
+        if ($pool -notin $maintainers) {
+            $pool = "community"
+        }
+        if (-not $demand.ContainsKey($pool)) {
+            $demand[$pool] = $maintainerCount
+        }
+    }
+    $demand
+}
+
 function Get-RunnerDemand {
     $events = @(Invoke-GhJson -Arguments @("repos/$repo/events?per_page=100") -Operation "read repository activity")
     $runResponse = Invoke-GhJson -Arguments @(
@@ -238,6 +271,8 @@ function Get-RunnerDemand {
     ) -Operation "read CI build queue"
     $workflowRuns = @($runResponse.workflow_runs)
     $now = [DateTimeOffset]::UtcNow
+    $poolJobDemand = Get-PoolJobDemand -WorkflowRuns $workflowRuns
+    Write-Host "pending jobs: $(($poolJobDemand.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ", ")"
     $splatPolicy = @{
         Events                  = $events
         WorkflowRuns            = $workflowRuns
@@ -252,6 +287,8 @@ function Get-RunnerDemand {
         Now                     = $now
         DirectTriggerActor      = [string]$env:BOOST_TRIGGER
         DirectTriggerMessage    = [string]$env:BOOST_MESSAGE
+        PoolJobDemand           = $poolJobDemand
+        WarmFloor               = $warmFloor
     }
     $desired = Get-DesiredRunnerPools @splatPolicy
 

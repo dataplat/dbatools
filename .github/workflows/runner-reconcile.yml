@@ -67,6 +67,7 @@ jobs:
       BOOST_USERS: potatoqualitee andreasjordan niphlod
       BOOST_COUNT: 10
       BOOST_HOURS: 1
+      WARM_FLOOR: 3
       OPT_IN_PUSH_USERS: potatoqualitee
       CI_MARKER: "[do ci]"
       BOOST_TRIGGER: ${{ inputs.boost_user }}
