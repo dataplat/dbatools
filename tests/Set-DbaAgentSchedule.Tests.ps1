@@ -99,9 +99,13 @@ Describe $CommandName -Tag IntegrationTests {
             $renameScheduleResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $renameScheduleResults) {
-            It "$($r.name) Should have different name" {
-                $r.name | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).name)"
+        # The results only exist once the setup has talked to the instance, so there is nothing to
+        # hand to -ForEach at discovery time and the loop has to live inside the It block. Written
+        # as a foreach around the It, as it was before, the loop ran while Pester was still
+        # discovering the tests, $renameScheduleResults was empty and no test was created at all.
+        It "Should have renamed every schedule" {
+            foreach ($r in $renameScheduleResults) {
+                $r.name | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).name)" -Because "schedule $($r.id) should have been renamed"
             }
         }
     }
@@ -157,12 +161,15 @@ Describe $CommandName -Tag IntegrationTests {
             $staticFrequencyResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $staticFrequencyResults) {
-            It "$($r.name) Should have a frequency of OnIdle" {
-                $r.FrequencyTypes | Should -Be "OnIdle"
+        It "Should have a frequency of OnIdle on every schedule" {
+            foreach ($r in $staticFrequencyResults) {
+                $r.FrequencyTypes | Should -Be "OnIdle" -Because "schedule $($r.name) was last set to IdleComputer"
             }
-            It "$($r.name) Should be Enabled" {
-                $r.isEnabled | Should -Be "True"
+        }
+
+        It "Should have every schedule Enabled" {
+            foreach ($r in $staticFrequencyResults) {
+                $r.isEnabled | Should -Be "True" -Because "schedule $($r.name) was last set with Enabled"
             }
         }
     }
@@ -222,12 +229,15 @@ Describe $CommandName -Tag IntegrationTests {
             $calendarFrequencyResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $calendarFrequencyResults) {
-            It "$($r.name) Should have a frequency of MonthlyRelative" {
-                $r.FrequencyTypes | Should -Be "MonthlyRelative"
+        It "Should have a frequency of MonthlyRelative on every schedule" {
+            foreach ($r in $calendarFrequencyResults) {
+                $r.FrequencyTypes | Should -Be "MonthlyRelative" -Because "schedule $($r.name) was last set to MonthlyRelative"
             }
-            It "$($r.name) Should have different StartTime" {
-                $r.StartTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).StartTime)"
+        }
+
+        It "Should have a different StartTime on every schedule" {
+            foreach ($r in $calendarFrequencyResults) {
+                $r.StartTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).StartTime)" -Because "schedule $($r.name) was given a new StartTime"
             }
         }
     }
@@ -285,9 +295,9 @@ Describe $CommandName -Tag IntegrationTests {
             $subdayTypeResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $subdayTypeResults) {
-            It "$($r.name) Should have different EndDate" {
-                $r.EndDate | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndDate)"
+        It "Should have a different EndDate on every schedule" {
+            foreach ($r in $subdayTypeResults) {
+                $r.EndDate | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndDate)" -Because "schedule $($r.name) was given a new EndDate"
             }
         }
     }
@@ -343,9 +353,9 @@ Describe $CommandName -Tag IntegrationTests {
             $relativeIntervalResults | Should -Not -BeNullOrEmpty
         }
 
-        foreach ($r in $relativeIntervalResults) {
-            It "$($r.name) Should have different EndTime" {
-                $r.EndTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndTime)"
+        It "Should have a different EndTime on every schedule" {
+            foreach ($r in $relativeIntervalResults) {
+                $r.EndTime | Should -Not -Be "$($schedules.where({$PSItem.id -eq $r.id}).EndTime)" -Because "schedule $($r.name) was given a new EndTime"
             }
         }
     }
