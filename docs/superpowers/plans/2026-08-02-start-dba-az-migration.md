@@ -271,14 +271,14 @@ git commit -m "Start-DbaAzMigration - Implement BACPAC orchestration (do Start-D
 
 - [ ] **Step 1: Add a non-skipping secret-bearing test**
 
-Inside `.github/scripts/gh-actions.ps1`'s `Integration Tests` Describe, add an `It` that:
+Inside a source-only `.github/scripts/gh-azmigration-actions.ps1` integration file, add an `It` that:
 
 - Throws immediately if `TENANTID`, `CLIENTID`, or `CLIENTSECRET` is empty.
 - Generates a database name by appending the first eight characters of a GUID to `dbatoolsci_azmigration_`.
 - Creates the source database on the SQL Server container and creates `dbo.MigrationProof` with deterministic rows.
-- Builds the destination connection string in memory with `Authentication=Active Directory Service Principal`, `User Id=$env:CLIENTID`, and `Password=$env:CLIENTSECRET`; never writes it to output.
+- Builds the destination connection string for `dbatoolstestmigration.database.windows.net` in memory with `Authentication=Active Directory Service Principal`, `User Id=$env:CLIENTID`, and `Password=$env:CLIENTSECRET`; never writes it to output. The dedicated logical server is hosted in a subscription where DacFx can create and drop databases through T-SQL.
 - Uses a unique `/tmp` directory for BACPAC artifacts.
-- Invokes `Start-DbaAzMigration -Source localhost -Destination dbatoolstest.database.windows.net -Database $databaseName -Path $testPath -Confirm:$false -EnableException` using the established source and destination connection objects/credentials supported by the workflow.
+- Invokes `Start-DbaAzMigration -Source localhost -Destination dbatoolstestmigration.database.windows.net -Database $databaseName -Path $testPath -Confirm:$false -EnableException` using the established source and destination connection objects/credentials supported by the workflow.
 - Asserts `Status` is `Successful`, `Type` is `Database`, and `BacpacPath` no longer exists.
 - Connects independently to the created Azure database and asserts exact schema/data values.
 - In `finally`, removes the Azure database, source database, and local directory.
@@ -300,7 +300,7 @@ In the real scenario (or its local equivalent), invoke the command again without
 - [ ] **Step 5: Commit the Azure scenario**
 
 ```powershell
-git add .github/scripts/gh-actions.ps1 public/Start-DbaAzMigration.ps1 tests/Start-DbaAzMigration.Tests.ps1
+git add .github/scripts/gh-azmigration-actions.ps1 .github/workflows/integration-tests.yml public/Start-DbaAzMigration.ps1 tests/Start-DbaAzMigration.Tests.ps1
 git commit -m "Start-DbaAzMigration - Cover real Azure SQL migration (do Start-DbaAzMigration)"
 ```
 
@@ -315,11 +315,11 @@ git commit -m "Start-DbaAzMigration - Cover real Azure SQL migration (do Start-D
 
 - [ ] **Step 1: Resolve exact Azure targets**
 
-Use `az account show` and `az group show --name dbatools-ci` to record the active subscription and resource group. Generate a globally unique lowercase server name and a cryptographically random SQL administrator password without printing the password.
+Use `az account show` and `az group show` to record the exact authorized subscription and resource group. Prefer an available subscription where the `block-tsql-crud` feature is not registered, because DacFx BACPAC import creates and drops databases through T-SQL. Generate a globally unique lowercase server name and a cryptographically random SQL administrator password without printing the password.
 
 - [ ] **Step 2: Create the isolated logical server**
 
-Use `az sql server create` in `dbatools-ci`, then resolve the caller public IP and add one firewall rule scoped exactly to that address. Do not alter the shared `dbatoolstest` server.
+Use `az sql server create` in the resolved test resource group, then add one firewall rule scoped exactly to the caller's already resolved public IP. Do not alter the shared `dbatoolstest` server.
 
 - [ ] **Step 3: Run end-to-end migration**
 

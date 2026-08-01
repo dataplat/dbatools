@@ -42,7 +42,7 @@ The default paths in `Export-DbaDacPackage` and `Publish-DbaDacPackage` use the 
 
 If DacFx is unavailable, normal dbatools module loading or the delegated DAC commands will produce the existing actionable dependency error. The migration command will not attempt an interactive installation during an automation workflow.
 
-Azure CLI is used only by the local integration-test setup to create and later remove an isolated Azure SQL logical server. It is not a product dependency.
+Azure CLI is used only by the local integration-test setup to create and later remove an isolated Azure SQL logical server in a subscription where T-SQL resource CRUD is not blocked. It is not a product dependency.
 
 ## Public Interface
 
@@ -71,7 +71,7 @@ The command uses `SupportsShouldProcess` with medium confirm impact and exposes:
 2. Validate the option object types before opening database connections.
 3. Connect once to the source with `Connect-DbaInstance`.
 4. Connect once to the destination with a `master` database context so DacFx can create target databases.
-5. Require the destination engine edition to be Azure SQL Database. A hostname-only Azure check is insufficient because Managed Instance also uses Azure hostnames. The error directs Managed Instance users to `Copy-DbaDatabase`.
+5. Require the destination engine type to be `SqlAzureDatabase` and the engine edition to be `SqlDatabase`. The combined check excludes Managed Instance and Azure SQL variants such as data warehouse. A hostname-only Azure check is insufficient because Managed Instance also uses Azure hostnames. The error directs Managed Instance users to `Copy-DbaDatabase`.
 6. Enumerate accessible, online user databases from the source.
 7. Apply the requested include and exclude filters and fail clearly when an explicitly requested database is missing or inaccessible.
 8. Process databases sequentially. BACPAC export and import are resource-intensive, and parallel behavior is outside this version's scope.
@@ -147,8 +147,9 @@ Mocks may supplement validation tests but do not count as behavioral coverage.
 The secret-bearing Linux GitHub Actions integration workflow will execute the real command against:
 
 - A separately running SQL Server container as the source.
-- `dbatoolstest.database.windows.net` as the Azure SQL destination.
+- `dbatoolstestmigration.database.windows.net` as the dedicated Azure SQL destination in a subscription where T-SQL resource CRUD is not blocked.
 - Existing `TENANTID`, `CLIENTID`, and `CLIENTSECRET` encrypted secrets for Microsoft Entra service-principal authentication.
+- The existing `dbatools-test` service principal as the dedicated logical server's Microsoft Entra administrator, so no SQL password is stored in the repository or workflow.
 
 The test will:
 
@@ -165,7 +166,7 @@ The positive test is not a skipped placeholder. Missing credentials or an unavai
 
 ### Local Azure Verification
 
-For local verification, Azure CLI will create an isolated logical server in the authorized `dbatools-ci` resource group with a random administrator password and a firewall rule limited to the caller's public IP. The test will migrate one small database, verify it independently, and then remove the entire logical server in cleanup. No persistent password or database is retained.
+For local verification, Azure CLI will create an isolated logical server in an authorized test resource group and a subscription where `block-tsql-crud` is not registered, with a random administrator password and a firewall rule limited to the caller's public IP. The test will migrate one small database, verify it independently, and then remove the entire logical server in cleanup. No persistent password or database is retained.
 
 ### Regression and Compatibility Verification
 
