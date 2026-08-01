@@ -400,84 +400,156 @@ if (-not $Finalize) {
         TestRuns = @()
     }
 
-    $TestConfig = Get-TestConfig
-    $Counter = 0
-    foreach ($f in $AllTestsWithinScenario) {
-        $Counter += 1
+    # A native call that blocks with no timeout (certreq, SMO ManagedComputer/WMI, WinRM) wedges
+    # this process for good, because nothing running inside it can interrupt a blocked thread.
+    # Without a guard the run stays silent until the 90 minute job timeout and never says which
+    # file was stuck. The watchdog runs out of process, so it can name the file and kill this one.
+    # The PID keeps two runs that share a workspace from clobbering the same heartbeat
+    $heartbeatPath = "$ModuleBase\pester-heartbeat-$PID.txt"
+    $splatRemoveHeartbeat = @{
+        Path        = $heartbeatPath
+        Force       = $true
+        ErrorAction = "SilentlyContinue"
+    }
+    Remove-Item @splatRemoveHeartbeat
 
-        $pester5Config = New-PesterConfiguration
-        $pester5Config.Run.Path = $f.FullName
-        $pester5config.Run.PassThru = $true
-        $pester5config.Output.Verbosity = "None"
-
-        #opt-in
-        if ($IncludeCoverage) {
-            $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
-            $pester5Config.CodeCoverage.Enabled = $true
-            $pester5Config.CodeCoverage.Path = $CoverFiles
-            $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
-            $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
+    # A bad value here would either disable the guard or kill every test on sight, so it is
+    # rejected now rather than discovered once the suite is already running
+    $testFileTimeoutMinutes = 15
+    if ($env:DBATOOLS_TEST_FILE_TIMEOUT_MINUTES) {
+        [int]$parsedTimeoutMinutes = 0
+        if (-not [System.Int32]::TryParse($env:DBATOOLS_TEST_FILE_TIMEOUT_MINUTES, [ref]$parsedTimeoutMinutes)) {
+            throw "DBATOOLS_TEST_FILE_TIMEOUT_MINUTES is not a number: $env:DBATOOLS_TEST_FILE_TIMEOUT_MINUTES"
         }
+        if ($parsedTimeoutMinutes -lt 1 -or $parsedTimeoutMinutes -gt 1440) {
+            throw "DBATOOLS_TEST_FILE_TIMEOUT_MINUTES must be between 1 and 1440, got $parsedTimeoutMinutes"
+        }
+        $testFileTimeoutMinutes = $parsedTimeoutMinutes
+    }
 
-        $trialNo = 1
-        while ($trialNo -le 3) {
-            if ($trialNo -eq 1) {
-                $appvTestName = $f.Name
-            } else {
-                $appvTestName = "$($f.Name), attempt #$trialNo"
+    $splatWatchdog = @{
+        FilePath     = "powershell.exe"
+        ArgumentList = @(
+            "-NoProfile"
+            "-NonInteractive"
+            "-ExecutionPolicy", "Bypass"
+            "-File", "`"$ModuleBase\tests\appveyor.watchdog.ps1`""
+            "-ParentProcessId", $PID
+            "-HeartbeatPath", "`"$heartbeatPath`""
+            "-TimeoutMinutes", $testFileTimeoutMinutes
+        )
+        NoNewWindow  = $true
+        PassThru     = $true
+    }
+    $watchdogProcess = Start-Process @splatWatchdog
+
+    try {
+        $TestConfig = Get-TestConfig
+        $Counter = 0
+        foreach ($f in $AllTestsWithinScenario) {
+            $Counter += 1
+
+            $pester5Config = New-PesterConfiguration
+            $pester5Config.Run.Path = $f.FullName
+            $pester5config.Run.PassThru = $true
+            $pester5config.Output.Verbosity = "None"
+
+            #opt-in
+            if ($IncludeCoverage) {
+                $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
+                $pester5Config.CodeCoverage.Enabled = $true
+                $pester5Config.CodeCoverage.Path = $CoverFiles
+                $pester5Config.CodeCoverage.OutputFormat = "JaCoCo"
+                $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
             }
-            Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
-            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
-            $PesterRun = Invoke-Pester -Configuration $pester5config
-            Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
-            $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
 
-            # Export failure summary for easier retrieval
-            Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
-
-            if ($PesterRun.FailedCount -gt 0) {
-                $trialno += 1
-
-                # Create detailed error message for AppVeyor with comprehensive extraction
-                $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
-                    $path = $PSItem.Path -join " > "
-                    $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
-                    "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
-                }
-                $errorMessageDetail = $failedTestsList -join " | "
-
-                if ($trialNo -le 3) {
-                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
-                    # Restarting all used instances to avoid state issues
-                    $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
-                    Start-Sleep -Seconds 10
+            $trialNo = 1
+            while ($trialNo -le 3) {
+                if ($trialNo -eq 1) {
+                    $appvTestName = $f.Name
                 } else {
-                    Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
-                    Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                    $appvTestName = "$($f.Name), attempt #$trialNo"
                 }
+                Write-Host -Object "Running $($f.FullName) ..." -ForegroundColor Cyan -NoNewLine
+                Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+                # Tell the watchdog what is running now, so a wedge is reported against the right file.
+                # Written per attempt, so a retry gets its own budget rather than sharing the first one.
+                $splatHeartbeat = @{
+                    Path        = $heartbeatPath
+                    Value       = "$((Get-Date).Ticks)|$appvTestName"
+                    ErrorAction = "SilentlyContinue"
+                }
+                Set-Content @splatHeartbeat
+                $PesterRun = Invoke-Pester -Configuration $pester5config
+                Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
+                $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
 
-                # Add to summary
-                $allTestsSummary.TestRuns += @{
-                    TestFile      = $f.Name
-                    Attempt       = $trialNo
-                    Outcome       = "Failed"
-                    FailedCount   = $PesterRun.FailedCount
-                    Duration      = $PesterRun.Duration.TotalMilliseconds
-                    PesterVersion = '5'
-                }
-            } else {
-                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+                # Export failure summary for easier retrieval
+                Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
 
-                # Add to summary
-                $allTestsSummary.TestRuns += @{
-                    TestFile      = $f.Name
-                    Attempt       = $trialNo
-                    Outcome       = "Passed"
-                    Duration      = $PesterRun.Duration.TotalMilliseconds
-                    PesterVersion = '5'
+                if ($PesterRun.FailedCount -gt 0) {
+                    $trialno += 1
+
+                    # Create detailed error message for AppVeyor with comprehensive extraction
+                    $failedTestsList = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
+                        $path = $PSItem.Path -join " > "
+                        $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
+                        "$path > $($PSItem.Name): $($errorInfo.ErrorMessage)"
+                    }
+                    $errorMessageDetail = $failedTestsList -join " | "
+
+                    if ($trialNo -le 3) {
+                        Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
+                        # Restarting all used instances to avoid state issues
+                        $null = Get-DbaService -Type Engine | Where-Object State -eq "Running" | Restart-DbaService -Force -Confirm:$false
+                        Start-Sleep -Seconds 10
+                    } else {
+                        Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
+                        Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Duration.TotalMilliseconds -ErrorMessage $errorMessageDetail
+                    }
+
+                    # Add to summary
+                    $allTestsSummary.TestRuns += @{
+                        TestFile      = $f.Name
+                        Attempt       = $trialNo
+                        Outcome       = "Failed"
+                        FailedCount   = $PesterRun.FailedCount
+                        Duration      = $PesterRun.Duration.TotalMilliseconds
+                        PesterVersion = "5"
+                    }
+                } else {
+                    Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
+
+                    # Add to summary
+                    $allTestsSummary.TestRuns += @{
+                        TestFile      = $f.Name
+                        Attempt       = $trialNo
+                        Outcome       = "Passed"
+                        Duration      = $PesterRun.Duration.TotalMilliseconds
+                        PesterVersion = "5"
+                    }
+                    break
                 }
-                break
             }
+        }
+    } finally {
+        # Removing the heartbeat first puts the watchdog back to idle, so the summary and log
+        # work below is never mistaken for a wedged test file. This runs even when the loop
+        # throws, so a failed run can never leave a live watchdog aimed at a later stage.
+        $splatRemoveHeartbeatAfter = @{
+            Path        = $heartbeatPath
+            Force       = $true
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Item @splatRemoveHeartbeatAfter
+
+        if ($watchdogProcess -and -not $watchdogProcess.HasExited) {
+            $splatStopWatchdog = @{
+                Id          = $watchdogProcess.Id
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Stop-Process @splatStopWatchdog
         }
     }
 

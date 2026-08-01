@@ -29,8 +29,11 @@ param(
 - **All setup code** must be in `BeforeAll` or `BeforeEach` blocks
 - **All cleanup code** must be in `AfterAll` or `AfterEach` blocks
 - **All test assertions** must be in `It` blocks
-- **No loose code** allowed in `Describe` or `Context` blocks
-- **Never use `-ForEach` parameter** on any test blocks
+- **All discovery-time code** must be in a `BeforeDiscovery` block
+- **No loose code** allowed in `Describe` or `Context` blocks, with one exception: computing a value that a `-Skip:` needs
+- **Only use `-ForEach`** with cases built in `BeforeDiscovery`
+
+A v4 file that builds tests with a `foreach` loop around `It` needs particular attention. In v5 the loop runs during discovery and the `It` bodies run afterwards, so the loop variables are gone and every generated test quietly asserts nothing - the test names still look right, which is what makes it hard to spot. Convert those to `-ForEach` with an array of hashtables built in `BeforeDiscovery`, and move every value the body reads into the hashtable.
 
 ```powershell
 # Pester v5 Structure
@@ -122,8 +125,9 @@ Only use script blocks when direct property comparison is not possible.
 - [ ] Added mandatory `#Requires` header
 - [ ] Replaced dynamic command name derivation with static command name
 - [ ] Stripped out old `knownParameters` validation code
-- [ ] Moved all loose code into appropriate `BeforeAll`/`AfterAll` blocks
-- [ ] Removed any `-ForEach` parameters from test blocks
+- [ ] Moved all loose code into appropriate `BeforeAll`/`AfterAll`/`BeforeDiscovery` blocks
+- [ ] Converted every `foreach` loop around `It` into `-ForEach` with cases from `BeforeDiscovery`
+- [ ] Confirmed each converted test still asserts something - run it once with a deliberately wrong expectation
 - [ ] All test assertions properly placed in `It` blocks
 
 **Variable Scoping:**

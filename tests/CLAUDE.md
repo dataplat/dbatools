@@ -109,8 +109,9 @@ Pester v5 enforces strict organization of test code. Follow these rules:
 - **All setup code** must be in `BeforeAll` or `BeforeEach` blocks
 - **All cleanup code** must be in `AfterAll` or `AfterEach` blocks
 - **All test assertions** must be in `It` blocks
+- **All discovery-time code** must be in a `BeforeDiscovery` block, see [Discovery Time vs Run Time](#discovery-time-vs-run-time)
 - **No loose code** is allowed in `Describe` or `Context` blocks, with one exception: computing a value that a `-Skip:` needs, see [Skip Conditions](#skip-conditions)
-- **Never use the `-ForEach` parameter** on any test blocks
+- **Only use the `-ForEach` parameter** with cases built in `BeforeDiscovery`, see [Data-Driven Tests](#data-driven-tests)
 
 ### Standard Test Structure
 
@@ -392,6 +393,60 @@ Keep the exception narrow:
 
 Examples in the tree: `Get-DbaKbUpdate.Tests.ps1` and `Save-DbaKbUpdate.Tests.ps1` test whether the Microsoft Update Catalog answers, `New-DbaFirewallRule.Tests.ps1` tests whether the instance uses dynamic ports.
 
+A `BeforeDiscovery` block inside the `Describe` is the tidier home for the same code and is preferred when the `-Skip:` sits on a `Context` or an `It`. It only fails to help when the `-Skip:` sits on the `Describe` itself, because there is no place inside a block to compute a value the block header already needs.
+
+### Discovery Time vs Run Time
+
+Pester reads a test file twice. First it **discovers** the tests: it runs the file top to bottom, evaluates every `Describe`, `Context` and `It` *header*, and builds the tree. Only then does it **run** the tests: the `BeforeAll`, `BeforeEach`, `It` and `AfterAll` *bodies*.
+
+Anything a header needs - `-Skip:`, `-ForEach`, the test name - has to exist at discovery time. Anything a body needs has to exist at run time. The two do not share variables, and this is the single biggest source of confusion left over from Pester v4.
+
+`BeforeDiscovery` is the block for discovery-time code. It keeps that code out of the `Describe` body while still running early enough:
+
+```powershell
+Describe $CommandName -Tag UnitTests {
+    BeforeDiscovery {
+        # Runs during discovery. Its variables are visible to -ForEach and -Skip: on the blocks below.
+        $editions = @("Standard", "Enterprise")
+    }
+
+    BeforeAll {
+        # Runs during the test run. Its variables are visible inside It bodies.
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+    }
+}
+```
+
+### Data-Driven Tests
+
+Use `-ForEach` when the same assertions apply to a list of cases. It is the only correct way to do this - a `foreach` loop that emits `It` blocks looks like it works, but the loop variables are gone by the time the bodies run, so every generated test silently tests nothing. `Update-DbaInstance.Tests.ps1` carried 44 such tests for years.
+
+The rules:
+
+- **Build the cases in `BeforeDiscovery`.** A `BeforeAll` runs after discovery, so `-ForEach` would see an empty array.
+- **Use an array of hashtables.** Pester turns each key into a variable inside the `It` body and expands `<Key>` in the test name. `$_` holds the whole hashtable.
+- **Everything the body needs must be a key.** A variable from `BeforeDiscovery` is not visible inside the body. Scriptblocks survive in a hashtable, so mock bodies can travel this way too.
+- **Name the test from the case**, so a failure identifies itself.
+
+```powershell
+Describe $CommandName -Tag UnitTests {
+    BeforeDiscovery {
+        $recoveryCases = @(
+            @{ ModelName = "Full"; ExpectedLogReuse = "LogBackup" }
+            @{ ModelName = "Simple"; ExpectedLogReuse = "Nothing" }
+        )
+    }
+
+    It "reports <ExpectedLogReuse> for a database in <ModelName> recovery" -ForEach $recoveryCases {
+        $result = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
+        $result.RecoveryModel | Should -Be $ModelName
+        $result.LogReuseWaitStatus | Should -Be $ExpectedLogReuse
+    }
+}
+```
+
+Do not reach for `-ForEach` when there are two or three cases and the assertions differ between them - separate `It` blocks read better. It earns its place when the case list is long or generated from a table.
+
 ### Array Operations
 
 - Use `$results.Status.Count` for accurate counting in dbatools context
@@ -592,7 +647,9 @@ When making changes:
 - [ ] All cleanup code is in `AfterAll` or `AfterEach` blocks
 - [ ] All test assertions are in `It` blocks
 - [ ] No loose code in `Describe` or `Context` blocks, except computing a `-Skip:` condition
-- [ ] No `-ForEach` parameters used on test blocks
+- [ ] Discovery-time code is in `BeforeDiscovery`, not in `BeforeAll` and not loose
+- [ ] Every `-ForEach` gets its cases from `BeforeDiscovery`, and every value an `It` body uses is a key of the case hashtable
+- [ ] No `foreach` loop emits `It` blocks - use `-ForEach` instead
 
 **Variable Scoping:**
 - [ ] `$global:` used for variables that persist across Pester blocks
