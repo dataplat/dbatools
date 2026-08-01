@@ -8,12 +8,7 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            # Test-DbaLsnChain is private, so Get-Command cannot see it from here. Reaching into the
-            # module for just that one call keeps the rest of the test outside InModuleScope, where
-            # $TestConfig is readable - inside it the lookup chains to global only, so $TestConfig
-            # comes back empty in CI and every common parameter is reported as unexpected. That is
-            # also why the common parameters used to be written out by hand here.
-            $hasParameters = (& (Get-Module dbatools) { Get-Command -Name Test-DbaLsnChain }).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "FilteredRestoreFiles",
