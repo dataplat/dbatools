@@ -26,7 +26,7 @@ The first version does not:
 - Convert login-mapped users into contained SQL or Microsoft Entra users.
 - Rename databases during migration.
 - Fan out one migration to multiple Azure destinations.
-- support Azure SQL Managed Instance as a special case; `Copy-DbaDatabase` remains the purpose-built path for Managed Instance migrations.
+- Support Azure SQL Managed Instance as a special case; `Copy-DbaDatabase` remains the purpose-built path for Managed Instance migrations.
 
 ## Why a New Public Command
 
@@ -71,7 +71,7 @@ The command uses `SupportsShouldProcess` with medium confirm impact and exposes:
 2. Validate the option object types before opening database connections.
 3. Connect once to the source with `Connect-DbaInstance`.
 4. Connect once to the destination with a `master` database context so DacFx can create target databases.
-5. Reject a destination that is not detected as Azure SQL Database. The error directs Managed Instance users to `Copy-DbaDatabase`.
+5. Require the destination engine edition to be Azure SQL Database. A hostname-only Azure check is insufficient because Managed Instance also uses Azure hostnames. The error directs Managed Instance users to `Copy-DbaDatabase`.
 6. Enumerate accessible, online user databases from the source.
 7. Apply the requested include and exclude filters and fail clearly when an explicitly requested database is missing or inaccessible.
 8. Process databases sequentially. BACPAC export and import are resource-intensive, and parallel behavior is outside this version's scope.
@@ -92,7 +92,7 @@ For every selected database:
 8. Pipe or pass that path to `Publish-DbaDacPackage` with `-Type Bacpac`, the destination connection string, the same database name, the optional import settings, and exceptions enabled.
 9. Confirm that publish returned one result for the target database.
 10. Emit `Successful` when import completes.
-11. On failure, remove a partially created Azure SQL database when it did not exist before this attempt, then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.
+11. When import fails after the target was absent or removed by `-Force`, remove any partially created Azure SQL database. Then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.
 12. In `finally`, delete the local BACPAC unless `-KeepBacpac` was supplied.
 
 Cleanup operations use the already connected destination and tolerate a target that DacFx never created. Cleanup failure is reported without hiding the original migration failure.
