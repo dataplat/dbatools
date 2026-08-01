@@ -176,6 +176,21 @@ function Set-VmPool {
     Write-Host "assigned $VmName to pool $Pool"
 }
 
+function Set-VmRegisteredAt {
+    param([string]$VmName)
+    # Records when bootstrap finished registering the runner. Paired with the VM's
+    # creation time in Remove-FleetVm, this separates boot overhead from hot-idle
+    # time -- the two are indistinguishable in Azure cost data alone.
+    $vmId = Invoke-AzJson -Arguments @(
+        "vm", "show", "--resource-group", $resourceGroup, "--name", $VmName, "--query", "id"
+    ) -Operation "read resource ID for $VmName"
+    $stamp = [DateTimeOffset]::UtcNow.ToString("o")
+    $null = Invoke-NativeText -Tool "az" -Arguments @(
+        "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
+        "--tags", "registeredAt=$stamp", "--only-show-errors", "--output", "none"
+    ) -Operation "stamp $VmName registration time"
+}
+
 function Remove-FleetVm {
     param($State, $Vm, [string]$Reason)
     if (-not $deletedVms.Add($Vm.name)) {
@@ -206,6 +221,14 @@ function Remove-FleetVm {
         "vm", "delete", "--resource-group", $resourceGroup, "--name", $Vm.name,
         "--yes", "--only-show-errors", "--output", "none"
     ) -Operation "delete VM $($Vm.name)"
+    $bootMin = "unknown"
+    if ($Vm.tags -and $Vm.tags.registeredAt) {
+        $registered = [DateTimeOffset]::Parse([string]$Vm.tags.registeredAt)
+        $created = [DateTimeOffset]::Parse([string]$Vm.created)
+        $bootMin = [int]($registered - $created).TotalMinutes
+    }
+    $servedJob = ($null -ne $Vm.tags) -and ($null -ne $Vm.tags.registeredAt) -and (-not $runner)
+    Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin servedJob=$servedJob reason=$Reason"
 }
 
 function Get-RunnerDemand {
@@ -357,6 +380,14 @@ function Register-PoolVms {
             continue
         }
         Write-Host (($result.Output -split "`r?`n" | Select-Object -Last 3) -join [Environment]::NewLine)
+        # Only the first successful registration is stamped. Register-PoolVms re-probes
+        # any VM whose runner is still offline (:309), and bootstrap short-circuits with
+        # "runner already configured" (:33-36) -- which is also exit 0. Re-stamping there
+        # would overwrite the real registration time for exactly the VMs still inside the
+        # boot window, i.e. the whole population bootMin is meant to measure.
+        if ($result.Output -notmatch "already configured" -and $result.Output -notmatch "SPENT-VM") {
+            Set-VmRegisteredAt -VmName $result.VmName
+        }
         if ($result.Output -match "SPENT-VM") {
             $vm = @($State.Vms | Where-Object name -EQ $result.VmName | Select-Object -First 1)[0]
             Remove-FleetVm -State $State -Vm $vm -Reason "ephemeral runner already served a job"
