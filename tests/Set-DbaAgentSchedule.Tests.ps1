@@ -349,4 +349,74 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Should keep the frequency settings when they are not part of the change" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatNewKeepSchedule = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                Schedule                = "dbatoolsci_keepfrequency"
+                Job                     = "dbatoolsci_setschedule1"
+                FrequencyType           = "Daily"
+                FrequencyInterval       = "EveryDay"
+                FrequencySubdayType     = "Hours"
+                FrequencySubdayInterval = 4
+                StartTime               = "060000"
+                Force                   = $true
+            }
+            $null = New-DbaAgentSchedule @splatNewKeepSchedule
+
+            # Changing only the start time must not touch the recurrence (#10461)
+            $splatSetStartTime = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = "dbatoolsci_setschedule1"
+                Schedule    = "dbatoolsci_keepfrequency"
+                StartTime   = "235900"
+            }
+            $null = Set-DbaAgentSchedule @splatSetStartTime
+            $startTimeResult = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule "dbatoolsci_keepfrequency"
+
+            # The same is true for a call that only enables the schedule
+            $splatSetEnabled = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Job         = "dbatoolsci_setschedule1"
+                Schedule    = "dbatoolsci_keepfrequency"
+                Enabled     = $true
+            }
+            $null = Set-DbaAgentSchedule @splatSetEnabled
+            $enabledResult = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule "dbatoolsci_keepfrequency"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle |
+                Where-Object Name -like "dbatools*" |
+                Remove-DbaAgentSchedule -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should have changed the start time" {
+            $startTimeResult.ActiveStartTimeOfDay | Should -Be ([TimeSpan]"23:59:00")
+        }
+
+        It "Should have kept the frequency settings after changing the start time" {
+            $startTimeResult.FrequencyTypes | Should -Be "Daily"
+            $startTimeResult.FrequencyInterval | Should -Be 1
+            $startTimeResult.FrequencySubDayTypes | Should -Be "Hour"
+            $startTimeResult.FrequencySubDayInterval | Should -Be 4
+        }
+
+        It "Should have kept the frequency settings after enabling the schedule" {
+            $enabledResult.IsEnabled | Should -BeTrue
+            $enabledResult.FrequencyTypes | Should -Be "Daily"
+            $enabledResult.FrequencyInterval | Should -Be 1
+            $enabledResult.FrequencySubDayTypes | Should -Be "Hour"
+            $enabledResult.FrequencySubDayInterval | Should -Be 4
+        }
+    }
 }
