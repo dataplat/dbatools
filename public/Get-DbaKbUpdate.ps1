@@ -18,6 +18,10 @@ function Get-DbaKbUpdate {
         Filters results to show only updates for a specific language when multiple language versions exist. Service Packs typically have separate files per language, while Cumulative Updates usually include all languages in one file.
         Use this when you need updates for non-English environments or want to download language-specific packages. Accepts standard language codes like "en" for English, "de" for German, or "ja" for Japanese.
 
+    .PARAMETER TimeoutSec
+        Specifies how many seconds each request to the Microsoft Update Catalog may take before it is abandoned. Defaults to 30 seconds.
+        Use this when the catalog is slow or unreachable. Invoke-WebRequest has no timeout of its own by default, so a catalog that accepts the connection but never answers used to hang the command forever, and a single call makes one request per update plus one per detail page.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -113,6 +117,8 @@ function Get-DbaKbUpdate {
         [string[]]$Name,
         [switch]$Simple,
         [string]$Language,
+        [ValidateRange(1, [int]::MaxValue)]
+        [int]$TimeoutSec = 30,
         [switch]$EnableException
     )
     begin {
@@ -145,9 +151,9 @@ function Get-DbaKbUpdate {
             }
 
             if ($script:websession -and $script:websession.Headers."Accept-Language" -eq $Language) {
-                Invoke-WebRequest @Args -WebSession $script:websession -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest @Args -WebSession $script:websession -UseBasicParsing -TimeoutSec $TimeoutSec -ErrorAction Stop
             } else {
-                Invoke-WebRequest @Args -SessionVariable websession -Headers @{ "accept-language" = $Language } -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest @Args -SessionVariable websession -Headers @{ "accept-language" = $Language } -UseBasicParsing -TimeoutSec $TimeoutSec -ErrorAction Stop
                 $script:websession = $websession
             }
 
