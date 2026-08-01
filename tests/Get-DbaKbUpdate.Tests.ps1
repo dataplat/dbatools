@@ -63,6 +63,11 @@ Describe $CommandName -Tag IntegrationTests {
     #
     # We have to probe the search page and not the start page: on 2026-07-31 the start page answered
     # in one second while every search timed out, so a probe of the start page would not have helped.
+    # And we have to probe for a download button and not for the status code: on 2026-08-01 the search
+    # page answered 200 in about a second but rendered no results table for any query, so a probe of
+    # the status code let the tests run and fail. The download button is what the command itself looks
+    # for, so this probe is true exactly when the command can work.
+    # The same probe is used in Save-DbaKbUpdate.Tests.ps1.
     try {
         $splatCatalog = @{
             Uri             = "https://www.catalog.update.microsoft.com/Search.aspx?q=KB4057119"
@@ -70,7 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
             TimeoutSec      = 30
             ErrorAction     = "Stop"
         }
-        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+        $catalogResponse = Invoke-WebRequest @splatCatalog
+        $catalogReachable = [bool]($catalogResponse.InputFields | Where-Object { $PSItem.type -eq "Button" -and $PSItem.class -eq "flatBlueButtonDownload focus-only" })
     } catch {
         $catalogReachable = $false
     }

@@ -5,25 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-class MockAgentServer {
-    [string]$Name
-    [string]$ComputerName
-    [string]$ServiceName
-    [string]$DomainInstanceName
-    [object]$JobServer
-
-    MockAgentServer([string]$Name) {
-        $this.Name = $Name
-        $this.ComputerName = $Name
-        $this.ServiceName = "MSSQLSERVER"
-        $this.DomainInstanceName = $Name
-    }
-
-    [string] ToString() {
-        return $this.Name
-    }
-}
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -94,7 +75,18 @@ Describe $CommandName -Tag UnitTests {
                 }
                 $jobs | Add-Member -MemberType ScriptProperty -Name Name -Value { $this.Keys } -Force
 
-                $server = [MockAgentServer]::new("sql1")
+                # The command passes the server to $PSCmdlet.ShouldProcess, which only binds if the
+                # object converts to a string. So the mock server is a string carrying the properties
+                # the command reads, and not a PSCustomObject with an added ToString - PowerShell does
+                # not use an added ToString when binding a method argument. A class would work as well,
+                # but classes can only be declared at the top level of a file and only Describe blocks
+                # are allowed there.
+                $server = Add-Member -InputObject "sql1" -MemberType NoteProperty -Name Name -Value "sql1" -PassThru
+                $server = Add-Member -InputObject $server -MemberType NoteProperty -Name ComputerName -Value "sql1" -PassThru
+                $server = Add-Member -InputObject $server -MemberType NoteProperty -Name ServiceName -Value "MSSQLSERVER" -PassThru
+                $server = Add-Member -InputObject $server -MemberType NoteProperty -Name DomainInstanceName -Value "sql1" -PassThru
+                $server = Add-Member -InputObject $server -MemberType NoteProperty -Name JobServer -Value $null -PassThru
+
                 $jobServer = [PSCustomObject]@{
                     Parent = $server
                     Jobs   = $jobs
