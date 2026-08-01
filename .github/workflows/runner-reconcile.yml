@@ -1,12 +1,21 @@
 # The single VMSS fleet controller. CI requests, per-job completion nudges, maintainer
 # pushes, and the five-minute safety tick all reconcile the same desired state.
 #
-# AppVeyor-style pool policy:
-#   - potatoqualitee: 10 dedicated workers for one hour after a PR or [do ci]
-#   - andreasjordan:  10 dedicated workers for one hour after activity
-#   - niphlod:         10 dedicated workers for one hour after activity
-#   - community:       5 shared workers while CI is live and for 20 minutes after
+# AppVeyor-style pool policy. Activity makes a lane HOT; the lane is then SIZED to the
+# jobs actually pending in it, so a hot-but-idle lane costs WARM_FLOOR, not a full pool.
+# Demand never heats a cold lane -- a community PR cannot size a maintainer's.
+#   - potatoqualitee: hot for one hour after a PR or [do ci], up to 10 dedicated workers
+#   - andreasjordan:  hot for one hour after activity,        up to 10 dedicated workers
+#   - niphlod:        hot for one hour after activity,        up to 10 dedicated workers
+#   - community:      hot while CI is live and 20 minutes after, up to 5 shared workers
+#   - hot lane, nothing pending: WARM_FLOOR workers
 #   - no activity or queued work: zero workers
+#
+# ci-azure's matrix jobs are not created until the `needs: authorize` gate clears, so on
+# the workflow_run:requested tick the jobs API shows only the ubuntu-hosted authorize
+# job. The controller estimates a full pool for a live run with no visible pool jobs and
+# corrects it on the next pass; without that, every build would wait a reconcile
+# interval for its first VM.
 #
 # Each Flexible VMSS instance stores its pool in the runnerPool Azure tag and the
 # matching GitHub runner label. Ephemeral agents take one job, unregister, and the

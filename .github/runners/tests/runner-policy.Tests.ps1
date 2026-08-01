@@ -454,6 +454,16 @@ Describe "Runner workflow policy wiring" {
         $script:Janitor | Should -Match 'MAX_RUNNERS is 35'
     }
 
+    It "keeps the janitor warm floor aligned with the reconcile workflow" {
+        # Explicit -match, not Should -Match: Pester's assertion does not publish
+        # $Matches into the test scope, so capturing the captured group needs the
+        # operator itself. Each -match overwrites $Matches, hence the interleaving.
+        ($script:ReconcileWorkflow -match "WARM_FLOOR: (\d+)") | Should -BeTrue
+        $workflowFloor = [int]$Matches[1]
+        ($script:Janitor -match "\`$warmFloor = (\d+)") | Should -BeTrue
+        [int]$Matches[1] | Should -Be $workflowFloor
+    }
+
     It "documents that targeting and activation markers are unrelated" {
         $script:Readme | Should -Match '\(do <cmd>\).*\[do ci\].*compatible and unrelated'
     }

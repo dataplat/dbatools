@@ -14,9 +14,13 @@
       - STALE (no eligible activity, checked through anonymous GitHub APIs):
         no runner capacity is preserved; runners older than 1 hour
         are deleted.
-      - ACTIVE: ten runners are preserved for each active maintainer and five
-        while community CI is live or within its 20-minute grace period; excess
-        runners older than 1 hour die.
+      - ACTIVE: ten runners are preserved for each maintainer with a LIVE
+        ci-azure run (a full matrix may be executing right now) and the warm
+        floor for each maintainer that is merely hot -- recent activity, no run
+        yet. Community is five while its CI is live, the warm floor within the
+        20-minute grace period. Excess runners older than 4 hours die: VM age
+        runs from creation, so 45m to register + 60m hot-idle + a 90m job
+        timeout is ~3.25h of legitimate life, and a tighter cap kills busy VMs.
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
         apply to all capacity -- 3 hours on nights and weekends, 13 hours on
         weekday daytime (06-17 UTC).
@@ -47,12 +51,16 @@ $communityGraceMinutes = 20
 $ciMarker = "[do ci]"
 $communityPoolSize = 5
 $maintainerPoolSize = 10
+# Mirrors WARM_FLOOR in runner-reconcile.yml -- kept aligned by a test in
+# tests/runner-policy.Tests.ps1. Held only for lanes that are hot but have no live run.
+$warmFloor = 3
 $utcNow = (Get-Date).ToUniversalTime()
 
 # ---- recent pool activity (anonymous API, public repo) -------------------------
 $mode = "github-unreachable"
 $lastActivityAgeHours = $null
 $activeMaintainers = @( )
+$liveMaintainers = @( )
 $communityActive = $false
 
 function Invoke-GitHubGet {
@@ -144,6 +152,9 @@ try {
                 Test-JanitorMaintainerEvent -ActivityEvent $PSItem -Maintainer $maintainer -Cutoff $maintainerCutoff
             }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-JanitorRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
+        if ($liveCi) {
+            $liveMaintainers += $maintainer
+        }
         if ($recentActivity -or $liveCi) {
             $activeMaintainers += $maintainer
         }
@@ -176,15 +187,26 @@ try {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
 }
 
-$desiredPoolSize = ($activeMaintainers.Count * $maintainerPoolSize)
-if ($communityActive) {
+# A lane with a live ci-azure run may have ten jobs executing right now, so it keeps a
+# full matrix's worth of capacity. A lane that is merely hot -- a recent push, no run
+# yet -- has nothing executing, so the warm floor is enough. This is the closest thing
+# to a busy check the anonymous GitHub API can answer.
+$idleHotMaintainers = @($activeMaintainers | Where-Object { $PSItem -notin $liveMaintainers })
+$desiredPoolSize = ($liveMaintainers.Count * $maintainerPoolSize) + ($idleHotMaintainers.Count * $warmFloor)
+if ($communityLive) {
     $desiredPoolSize += $communityPoolSize
+} elseif ($communityActive) {
+    $desiredPoolSize += $warmFloor
 }
 
 switch ($mode) {
     "active" {
-        $runnerMaxHours = 1
-        Write-Output "mode=active: maintainers=[$($activeMaintainers -join ', ')] community=$communityActive -- preserving $desiredPoolSize runners; excess runners past ${runnerMaxHours}h die"
+        # 4h clears the worst legitimate VM lifetime: 45m to register (:403-404) + 60m
+        # hot-idle (BOOST_HOURS) + 90m job timeout (ci-azure.yml) = ~3.25h. Age is
+        # measured from VM creation, not from job start, so a cap merely above the job
+        # timeout would delete VMs mid-job.
+        $runnerMaxHours = 4
+        Write-Output "mode=active: maintainers=[$($activeMaintainers -join ", ")] live=[$($liveMaintainers -join ", ")] community=$communityActive -- preserving $desiredPoolSize runners; excess runners past ${runnerMaxHours}h die"
     }
     "stale" {
         $runnerMaxHours = 1
