@@ -38,8 +38,12 @@ jobs:
           # subprocess under bubblewrap with secrets (OAuth token, GITHUB_TOKEN, cloud
           # creds) scrubbed from its environment. The CLI refuses to start if bubblewrap
           # is missing, so install it on the runner before invoking the action.
+          # socat is the second half of the pair: it relays sandboxed network traffic
+          # through the sandbox proxy. Without it every Bash command that touches the
+          # network (gh, git push) dies on sandbox init. Neither package ships in the
+          # ubuntu-latest image. Ref: https://code.claude.com/docs/en/sandboxing
           sudo apt-get update
-          sudo apt-get install -y bubblewrap
+          sudo apt-get install -y bubblewrap socat
           # Ubuntu 24.04 (ubuntu-latest) blocks unprivileged user namespaces via AppArmor,
           # which bubblewrap needs. Rather than globally disabling the kernel restriction
           # (kernel.apparmor_restrict_unprivileged_userns), load a dedicated AppArmor profile
