@@ -14,9 +14,43 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "Simple",
                 "Language",
+                "TimeoutSec",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    # The timeout only shows up in the call to Invoke-WebRequest, so there is nothing an integration
+    # test could assert without an unreachable host. We mock inside the module - a mock without
+    # -ModuleName never applies to the code under test and would silently test nothing.
+    Context "Passing the timeout to the web request" {
+        BeforeAll {
+            Mock -CommandName Invoke-WebRequest -ModuleName dbatools -MockWith { }
+        }
+
+        It "Uses 30 seconds when TimeoutSec is not specified" {
+            $null = Get-DbaKbUpdate -Name KB4057119 -WarningAction SilentlyContinue
+            $splatShouldInvoke = @{
+                CommandName     = "Invoke-WebRequest"
+                ModuleName      = "dbatools"
+                ParameterFilter = { $TimeoutSec -eq 30 }
+            }
+            Should -Invoke @splatShouldInvoke
+        }
+
+        It "Uses the value of TimeoutSec when it is specified" {
+            $null = Get-DbaKbUpdate -Name KB4057119 -TimeoutSec 7 -WarningAction SilentlyContinue
+            $splatShouldInvoke = @{
+                CommandName     = "Invoke-WebRequest"
+                ModuleName      = "dbatools"
+                ParameterFilter = { $TimeoutSec -eq 7 }
+            }
+            Should -Invoke @splatShouldInvoke
+        }
+
+        It "Rejects a timeout of zero" {
+            { Get-DbaKbUpdate -Name KB4057119 -TimeoutSec 0 } | Should -Throw -ExpectedMessage "*minimum allowed range*"
         }
     }
 }
