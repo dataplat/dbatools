@@ -511,7 +511,7 @@ function Register-PoolVms {
         }
         Write-Host (($result.Output -split "`r?`n" | Select-Object -Last 3) -join [Environment]::NewLine)
         # Only the first successful registration is stamped. Register-PoolVms re-probes
-        # any VM whose runner is still offline (:309), and bootstrap short-circuits with
+        # any VM whose runner is still offline (:462), and bootstrap short-circuits with
         # "runner already configured" (:33-36) -- which is also exit 0. Re-stamping there
         # would overwrite the real registration time for exactly the VMs still inside the
         # boot window, i.e. the whole population bootMin is meant to measure.
