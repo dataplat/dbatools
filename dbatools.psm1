@@ -391,6 +391,7 @@ foreach ($command in $replAliases.GetEnumerator()) {
 # region Commands
 $script:xplat = @(
         'Start-DbaMigration',
+        'Start-DbaAzMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
         'Copy-DbaAgentServer',
