@@ -12,12 +12,12 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable' -Value $false -Initialize -V
         if ($stoptepp) {
             $stoptepp.Stop()
         }
-    } else {
-        $starttepp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
-        if ($starttepp) {
-            $starttepp.Start()
-        }
     }
+    # Re-enabling deliberately does not start the runspace. The first tab completion starts it, so a
+    # session that never completes anything never runs it. See Register-DbaTeppArgumentCompleter.
+    # A session that imported dbatools with TEPP already switched off has no runspace registered at
+    # all, because updateTeppAsync.ps1 skips registration in that case, and re-enabling here cannot
+    # conjure one. That predates this change and is unchanged by it.
 } -Description 'Globally disables all TEPP functionality by dbatools'
 Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -Initialize -Validation bool -Handler {
     [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled = $args[0]
@@ -28,11 +28,8 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -
         if ($stoptapp) {
             $stoptapp.Stop()
         }
-    } else {
-        $starttapp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
-        if ($starttapp) {
-            $starttapp.Start()
-        }
     }
+    # Re-enabling deliberately does not start the runspace. The first tab completion starts it, so a
+    # session that never completes anything never runs it. See Register-DbaTeppArgumentCompleter.
 } -Description 'Globally disables asynchronous TEPP updates in the background'
 Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Synchronous' -Value $true -Initialize -Validation bool -Handler { [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $args[0] } -Description 'Globally disables synchronous TEPP updates, performed whenever connecting o the server. If this is not disabled, it will only perform updates that are fast to perform, in order to minimize performance impact. This may lead to some TEPP functionality loss if asynchronous updates are disabled.'
