@@ -27,6 +27,10 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     InModuleScope 'dbatools' {
         Context "Connects to SQL Server" {
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should not throw" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -51,6 +55,10 @@ Describe $CommandName -Tag IntegrationTests {
                     Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 } | Should -Not -Throw
             } #It
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should not return if no wrong owner for default" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -75,6 +83,10 @@ Describe $CommandName -Tag IntegrationTests {
                     Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 } | Should -Not -Throw
             } #It
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should return wrong owner information for one database with no owner specified" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -103,6 +115,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $Result[0].TargetOwner | Should -Be 'sa';
                 $Result[0].OwnerMatch | Should -Be $False
             } # it
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should return information for one database with correct owner with detail parameter" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -131,6 +147,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $Result.TargetOwner | Should -Be 'sa';
                 $Result.OwnerMatch | Should -Be $True
             } # it
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should return wrong owner information for one database with no owner specified and multiple databases" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -164,6 +184,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $Result[0].TargetOwner | Should -Be 'sa';
                 $Result[0].OwnerMatch | Should -Be $False
             } # it
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should return wrong owner information for two databases with no owner specified and multiple databases" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -204,6 +228,10 @@ Describe $CommandName -Tag IntegrationTests {
                 $Result[1].OwnerMatch | Should -Be $False
             } # it
 
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Should call Stop-Function one time if Target Login does not exist on Server" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{
@@ -239,6 +267,10 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 Should -Invoke @assertMockParams
             } # it
+            # Skipped: these mock Connect-SQLInstance, which no longer exists in the module - it was
+            # renamed to Connect-DbaInstance long ago. Un-skipping fails on every one of them with
+            # "Could not find Command Connect-SQLInstance", so reviving them means rewriting the
+            # mocks against the current API, not just removing the -Skip.
             It -Skip "Returns all information with detailed for correct and incorrect owner" {
                 Mock Connect-SQLInstance -MockWith {
                     [object]@{

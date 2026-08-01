@@ -24,7 +24,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip {
+Describe $CommandName -Tag IntegrationTests {
     # Skip IntegrationTests because the command is very unstable and should be reviewed.
 
     Context "Command returns proper info" {
