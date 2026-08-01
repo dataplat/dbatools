@@ -49,19 +49,20 @@ Describe $CommandName -Tag IntegrationTests {
         $user1 = "dbatoolsci_exportdbadbrole_user1$random"
         $dbRole = "dbatoolsci_SpExecute$random"
 
-        try {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $null = $server.Query("CREATE DATABASE [$dbname1]")
-            $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
-            $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $null = $server.Query("CREATE DATABASE [$dbname1]")
+        $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
+        $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
 
-            $server.Databases[$dbname1].ExecuteNonQuery("ALTER ROLE [$dbRole] ADD MEMBER [$user1]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT SELECT ON SCHEMA::dbo to [$dbRole]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT EXECUTE ON SCHEMA::dbo to [$dbRole]")
-            $server.Databases[$dbname1].ExecuteNonQuery("GRANT VIEW DEFINITION ON SCHEMA::dbo to [$dbRole]")
-        } catch {
-            # Ignore setup errors for now
-        }
+        # The role itself was never created, so the ALTER ROLE below always threw and the catch
+        # that used to wrap this whole block swallowed it. None of the objects the tests look for
+        # existed, and the tests passed regardless because their assertions were never piped to
+        # Should. The catch is gone as well, so a broken setup now fails the test loudly.
+        $server.Databases[$dbname1].ExecuteNonQuery("CREATE ROLE [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("ALTER ROLE [$dbRole] ADD MEMBER [$user1]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT SELECT ON SCHEMA::dbo to [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT EXECUTE ON SCHEMA::dbo to [$dbRole]")
+        $server.Databases[$dbname1].ExecuteNonQuery("GRANT VIEW DEFINITION ON SCHEMA::dbo to [$dbRole]")
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -100,6 +101,11 @@ Describe $CommandName -Tag IntegrationTests {
             $role = Get-DbaDbRole -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Role $dbRole
             $null = $role | Export-DbaDbRole -FilePath $outputFile1
             $results = $role | Export-DbaDbRole -Passthru
+
+            # Role membership is only scripted when it is asked for, so the membership test below
+            # needs its own export. It used to assert against the default output, where the ALTER
+            # ROLE line can never appear.
+            $resultsWithMember = $role | Export-DbaDbRole -Passthru -IncludeRoleMember
         }
 
         It "Exports results to one sql file" {
@@ -111,27 +117,31 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "should include the defined BatchSeparator" {
-            $results -match "GO"
+            ($results -join [Environment]::NewLine) | Should -Match "GO"
         }
 
         It "should include the role" {
-            $results -match "CREATE ROLE [$dbRole]"
+            ($results -join [Environment]::NewLine) | Should -Match ([regex]::Escape("CREATE ROLE [$dbRole]"))
         }
 
         It "should include GRANT EXECUTE ON SCHEMA" {
-            $results -match "GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"
+            ($results -join [Environment]::NewLine) | Should -Match ([regex]::Escape("GRANT EXECUTE ON SCHEMA::[dbo] TO [$dbRole];"))
         }
 
         It "should include GRANT SELECT ON SCHEMA" {
-            $results -match "GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"
+            ($results -join [Environment]::NewLine) | Should -Match ([regex]::Escape("GRANT SELECT ON SCHEMA::[dbo] TO [$dbRole];"))
         }
 
         It "should include GRANT VIEW DEFINITION ON SCHEMA" {
-            $results -match "GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"
+            ($results -join [Environment]::NewLine) | Should -Match ([regex]::Escape("GRANT VIEW DEFINITION ON SCHEMA::[dbo] TO [$dbRole];"))
         }
 
-        It "should include ALTER ROLE ADD MEMBER" {
-            $results -match "ALTER ROLE [$dbRole] ADD MEMBER [$user1];"
+        It "should not include ALTER ROLE ADD MEMBER without IncludeRoleMember" {
+            ($results -join [Environment]::NewLine) | Should -Not -Match ([regex]::Escape("ALTER ROLE [$dbRole] ADD MEMBER [$user1];"))
+        }
+
+        It "should include ALTER ROLE ADD MEMBER with IncludeRoleMember" {
+            ($resultsWithMember -join [Environment]::NewLine) | Should -Match ([regex]::Escape("ALTER ROLE [$dbRole] ADD MEMBER [$user1];"))
         }
     }
 }

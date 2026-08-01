@@ -84,12 +84,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Downloading from the Microsoft Update Catalog" -Skip:(-not $catalogReachable) {
         It "downloads a small update" {
             $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath
-            $results.Name -match "aspnet"
+            $results.Name | Should -Match "aspnet"
         }
 
         It "supports piping" {
             $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Architecture All -Path $tempPath
-            $results.Name -match "aspnet"
+            $results.Name | Should -Match "aspnet"
         }
 
         It "Download multiple updates" {

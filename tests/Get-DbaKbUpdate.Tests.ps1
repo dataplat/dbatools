@@ -84,15 +84,15 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Querying the Microsoft Update Catalog" -Skip:(-not $catalogReachable) {
         It "successfully connects and parses link and title" {
             $results = Get-DbaKbUpdate -Name KB4057119
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
             $results.KBLevel | Should -Be 4057119
         }
 
         It "test with the -Simple param" {
             $results = Get-DbaKbUpdate -Name KB4577194 -Simple
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
             $results.KBLevel | Should -Be 4577194
         }
 
@@ -102,8 +102,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Get-DbaKbUpdate -Name KB4564903
             $results.KBLevel | Should -Be 4564903
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
         }
 
         It "Call with multiple KBs" {
@@ -124,15 +124,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Call without specific language" {
             $results = Get-DbaKbUpdate -Name KB5003279
             $results.KBLevel | Should -Be 5003279
-            $results.Classification -match "Service Packs"
-            $results.Link -match "-enu_"
+            $results.Classification | Should -Match "Service Packs"
+            $results.Link | Should -Match "-enu_"
         }
 
         It "Call with specific language" {
             $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
             $results.KBLevel | Should -Be 5003279
-            $results.Classification -match "Service Packs"
-            $results.Link -match "-jpn_"
+            $results.Classification | Should -Match "Service Packs"
+            $results.Link | Should -Match "-jpn_"
         }
     }
 }
