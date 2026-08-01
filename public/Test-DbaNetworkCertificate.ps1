@@ -155,7 +155,8 @@ function Test-DbaNetworkCertificate {
             $networkName = if ($vsname) { $vsname } else { hostname }
 
             # Find the certificate by thumbprint in LocalMachine\My
-            $cert = Get-ChildItem -Path Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint
+            # -Force is needed to also find archived certificates, as SQL Server keeps using a certificate that has been archived.
+            $cert = Get-ChildItem -Path Cert:\LocalMachine\My -Force -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint
 
             if ($null -eq $cert) {
                 [PSCustomObject]@{

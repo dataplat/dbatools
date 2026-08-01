@@ -177,7 +177,8 @@ function Set-DbaNetworkCertificate {
                 if ($thumbprint) {
                     $verbose += "Certificate thumbprint to set: $thumbprint"
 
-                    $cert = Get-ChildItem Cert:\LocalMachine\My -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $thumbprint }
+                    # -Force is needed to also find archived certificates, as SQL Server can use a certificate that has been archived.
+                    $cert = Get-ChildItem Cert:\LocalMachine\My -Force -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $thumbprint }
                     $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
                     if ($PSVersionTable.PSVersion.Major -ge 6) {
                         $keyName = $cert.PrivateKey.Key.UniqueName

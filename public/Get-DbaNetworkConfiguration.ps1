@@ -200,7 +200,8 @@ function Get-DbaNetworkConfiguration {
                 try {
                     $acceptedSPNs = (Get-ItemProperty -Path $regPath -Name AcceptedSPNs).AcceptedSPNs
                     $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
-                    $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+                    # -Force is needed to also find archived certificates, as SQL Server keeps using a certificate that has been archived.
+                    $cert = Get-ChildItem Cert:\LocalMachine -Recurse -Force -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
                     $extendedProtection = switch ((Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection) { 0 { $false } 1 { $true } }
                     $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
                     $hideInstance = switch ((Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance) { 0 { $false } 1 { $true } }
