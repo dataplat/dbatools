@@ -459,7 +459,7 @@ if (-not $Finalize) {
                 $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
                 $pester5Config.CodeCoverage.Enabled = $true
                 $pester5Config.CodeCoverage.Path = $CoverFiles
-                $pester5Config.CodeCoverage.OutputFormat = 'JaCoCo'
+                $pester5Config.CodeCoverage.OutputFormat = "JaCoCo"
                 $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
             }
 
@@ -501,7 +501,7 @@ if (-not $Finalize) {
                     if ($trialNo -le 3) {
                         Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. Retrying (attempt $trialNo of 3)..." -ForegroundColor Yellow
                         # Restarting all used instances to avoid state issues
-                        $null = Get-DbaService -Type Engine | Where-Object State -eq 'Running' | Restart-DbaService -Force -Confirm:$false
+                        $null = Get-DbaService -Type Engine | Where-Object State -eq "Running" | Restart-DbaService -Force -Confirm:$false
                         Start-Sleep -Seconds 10
                     } else {
                         Write-Host -Object "appveyor.pester: Test failed with $($PesterRun.FailedCount) failed tests. No more retries left." -ForegroundColor Red
@@ -515,7 +515,7 @@ if (-not $Finalize) {
                         Outcome       = "Failed"
                         FailedCount   = $PesterRun.FailedCount
                         Duration      = $PesterRun.Duration.TotalMilliseconds
-                        PesterVersion = '5'
+                        PesterVersion = "5"
                     }
                 } else {
                     Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
@@ -526,7 +526,7 @@ if (-not $Finalize) {
                         Attempt       = $trialNo
                         Outcome       = "Passed"
                         Duration      = $PesterRun.Duration.TotalMilliseconds
-                        PesterVersion = '5'
+                        PesterVersion = "5"
                     }
                     break
                 }
