@@ -6,6 +6,8 @@ function Get-DbaDbFile {
     .DESCRIPTION
         Retrieves detailed information about database files (data and log files) from SQL Server instances using direct T-SQL queries for optimal performance. This function provides comprehensive file metadata including current size, used space, growth settings, I/O statistics, and volume free space information that DBAs need for capacity planning, performance analysis, and storage management. Unlike SMO-based approaches, this command avoids costly enumeration operations and provides faster results when analyzing file configurations across multiple databases.
 
+        Databases that cannot be opened - RESTORING, RECOVERY_PENDING, SUSPECT or OFFLINE - are read from sys.master_files in master instead of from inside the database, so a database left in NORECOVERY between a full and a differential restore still reports its logical and physical file names. Only the configured file layout is authoritative there: used space, available space, filegroup metadata, the I/O counters and volume free space are returned as null for those databases, and reading them needs CREATE DATABASE, ALTER ANY DATABASE or VIEW ANY DEFINITION permission on the instance.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
 
@@ -94,6 +96,12 @@ function Get-DbaDbFile {
 
         Note: Size-related properties (Size, UsedSpace, MaxSize, etc.) are returned as dbasize objects which automatically format as human-readable units (KB, MB, GB, TB) when displayed.
 
+        Note: For a database that cannot be opened the file layout is read from sys.master_files, and FileGroupName, UsedSpace, AvailableSpace, NumberOfDiskWrites, NumberOfDiskReads, ReadFromDisk, WrittenToDisk, VolumeFreeSpace, FileGroupType, FileGroupTypeDescription, FileGroupDefault and FileGroupReadOnly are NULL because they have no authoritative value outside the database.
+
+        Note: State and IsOffline describe the file, not the database. sys.master_files reports the files of a database that was taken offline as ONLINE, so a database in that state is recognised by its own status and not by these two properties. A database left in NORECOVERY does report its files as RESTORING.
+
+        Note: For a database that cannot be opened, Size is the size recorded in sys.master_files. For an accessible database Size is instead taken from sys.dm_io_virtual_file_stats where that is available, so the two differ for sparse files, database snapshots and FILESTREAM containers, where the recorded size is not the space allocated on disk.
+
     .EXAMPLE
         PS C:\> Get-DbaDbFile -SqlInstance sql2016
 
@@ -118,6 +126,11 @@ function Get-DbaDbFile {
         PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index
 
         Return any files that are in the Index filegroup of the AdventureWorks2017 database.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Staging | Select-Object LogicalName, PhysicalName
+
+        Returns the logical and physical file names of Staging even while it sits in NORECOVERY between a full and a differential restore, by reading them from sys.master_files.
     #>
     [CmdletBinding()]
     param (
@@ -194,6 +207,62 @@ function Get-DbaDbFile {
             CAST(fg.status & 0x8 AS BIT) AS FileGroupReadOnly
             FROM sysfiles df
             LEFT OUTER JOIN  sysfilegroups fg ON df.groupid=fg.groupid"
+
+        # Looked up by database_id and not by name, because a database name may contain an apostrophe
+        # and would then either break this query or carry arbitrary T-SQL into it.
+        $sqlCompatibilityLevel = @"
+SELECT compatibility_level FROM sys.databases WHERE database_id = {0}
+"@
+
+        # A database that is RESTORING, RECOVERY_PENDING, SUSPECT or OFFLINE cannot be opened, so
+        # sys.database_files and everything else that lives inside it is out of reach. sys.master_files
+        # in master still carries the configured file layout, which is what restore and file mapping
+        # workflows need. Only the columns that are authoritative there are selected: used space,
+        # filegroup metadata, the I/O counters and volume free space have no equivalent and are
+        # reported as null rather than as zero.
+        $sqlMasterFiles = @"
+SELECT
+    mf.file_id AS 'ID',
+    mf.Type,
+    mf.type_desc AS TypeDescription,
+    mf.name AS LogicalName,
+    mf.physical_name AS PhysicalName,
+    mf.state_desc AS State,
+    mf.max_size AS MaxSize,
+    CASE mf.is_percent_growth WHEN 1 THEN mf.growth ELSE mf.Growth*8 END AS Growth,
+    mf.size AS Size,
+    CASE mf.state_desc WHEN 'OFFLINE' THEN 'True' ELSE 'False' END AS IsOffline,
+    CASE mf.is_read_only WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnly,
+    CASE mf.is_media_read_only WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnlyMedia,
+    CASE mf.is_sparse WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsSparse,
+    CASE mf.is_percent_growth WHEN 1 THEN 'Percent' WHEN 0 THEN 'kb' END AS GrowthType,
+    NULLIF(mf.data_space_id, 0) AS FileGroupDataSpaceId
+FROM sys.master_files mf
+WHERE mf.database_id = {0}
+"@
+
+        # sys.master_files does not exist before SQL Server 2005. master.dbo.sysaltfiles is the
+        # server wide equivalent there and carries the same status bits that $sql2000 decodes.
+        $sqlMasterFiles2000 = @"
+SELECT
+    df.fileid AS ID,
+    CONVERT(INT,df.status & 0x40) / 64 AS Type,
+    CASE CONVERT(INT,df.status & 0x40) / 64 WHEN 1 THEN 'LOG' ELSE 'ROWS' END AS TypeDescription,
+    df.name AS LogicalName,
+    df.filename AS PhysicalName,
+    'Existing' AS State,
+    df.maxsize AS MaxSize,
+    CASE CONVERT(INT,df.status & 0x100000) / 1048576 WHEN 1 THEN df.growth WHEN 0 THEN df.growth*8 END AS Growth,
+    df.size AS Size,
+    CASE CONVERT(INT,df.status & 0x20000000) / 536870912 WHEN 1 THEN 'True' ELSE 'False' END AS IsOffline,
+    CASE CONVERT(INT,df.status & 0x1000) / 4096 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnly,
+    CASE CONVERT(INT,df.status & 0x1000) / 4096 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsReadOnlyMedia,
+    CASE CONVERT(INT,df.status & 0x10000000) / 268435456 WHEN 1 THEN 'True' WHEN 0 THEN 'False' END AS IsSparse,
+    CASE CONVERT(INT,df.status & 0x100000) / 1048576 WHEN 1 THEN 'Percent' WHEN 0 THEN 'kb' END AS GrowthType,
+    NULLIF(df.groupid, 0) AS FileGroupDataSpaceId
+FROM master.dbo.sysaltfiles df
+WHERE df.dbid = {0}
+"@
         #endregion Sql Query Generation
     }
 
@@ -207,27 +276,57 @@ function Get-DbaDbFile {
 
             Write-Message -Level Verbose -Message "Querying database $db"
 
-            try {
-                $version = $server.Query("SELECT compatibility_level FROM sys.databases WHERE name = '$($db.Name)'")
-                $version = [int]($version.compatibility_level / 10)
-            } catch {
-                $version = 8
-            }
+            # An inaccessible database cannot be set as the query context, so its file layout is read
+            # from master instead of from inside the database.
+            $useMasterFiles = -not $db.IsAccessible
 
-            if ($version -ge 11) {
-                $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
-            } elseif ($version -ge 9) {
-                $query = ($sql, $sqlfrom) -Join "`n"
+            if ($useMasterFiles) {
+                Write-Message -Level Verbose -Message "Database $db is not accessible, reading the file layout from master instead"
+
+                if (Test-Bound -ParameterName FileGroup) {
+                    Write-Message -Level Warning -Message "Skipping database $db because filegroup names cannot be read for an inaccessible database, so -FileGroup cannot be honored"
+                    continue
+                }
+
+                if ($server.VersionMajor -le 8) {
+                    $query = $sqlMasterFiles2000 -f [int]$db.ID
+                } else {
+                    $query = $sqlMasterFiles -f [int]$db.ID
+                }
             } else {
-                $query = $sql2000
+                try {
+                    $version = $server.Query($sqlCompatibilityLevel -f [int]$db.ID)
+                    $version = [int]($version.compatibility_level / 10)
+                } catch {
+                    $version = 8
+                }
+
+                if ($version -ge 11) {
+                    $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
+                } elseif ($version -ge 9) {
+                    $query = ($sql, $sqlfrom) -Join "`n"
+                } else {
+                    $query = $sql2000
+                }
             }
 
             Write-Message -Level Debug -Message "SQL Statement: $query"
 
             try {
-                $results = $server.Query($query, $db.Name)
+                if ($useMasterFiles) {
+                    $results = $server.Query($query)
+                } else {
+                    $results = $server.Query($query, $db.Name)
+                }
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+
+            # A row in sys.master_files is only visible to a login with CREATE DATABASE, ALTER ANY
+            # DATABASE or VIEW ANY DEFINITION, so an empty result here is a permission problem and not
+            # a database that went missing.
+            if ($useMasterFiles -and -not $results) {
+                Stop-Function -Message "No file information returned for the inaccessible database $db on $server. Reading it needs CREATE DATABASE, ALTER ANY DATABASE or VIEW ANY DEFINITION permission on the instance." -Target $db -Continue
             }
 
             if (Test-Bound -ParameterName FileGroup) {
@@ -237,13 +336,20 @@ function Get-DbaDbFile {
 
             foreach ($result in $results) {
                 $size = [dbasize]($result.Size * 8192)
-                $usedspace = [dbasize]($result.UsedSpace * 8192)
                 $maxsize = $result.MaxSize
-                # calculation is done here because for snapshots or sparse files size is not the "virtual" size
-                # (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
-                $AvailableSpace = $size - $usedspace
-                if ($result.size_on_disk_bytes) {
-                    $size = [dbasize]($result.size_on_disk_bytes)
+                if ($useMasterFiles) {
+                    # master knows the configured file layout but nothing about what is used inside the
+                    # database, so these stay null instead of being reported as zero
+                    $usedspace = $null
+                    $AvailableSpace = $null
+                } else {
+                    $usedspace = [dbasize]($result.UsedSpace * 8192)
+                    # calculation is done here because for snapshots or sparse files size is not the "virtual" size
+                    # (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
+                    $AvailableSpace = $size - $usedspace
+                    if ($result.size_on_disk_bytes) {
+                        $size = [dbasize]($result.size_on_disk_bytes)
+                    }
                 }
                 if ($maxsize -gt -1) {
                     $maxsize = [dbasize]($result.MaxSize * 8192)
@@ -251,12 +357,36 @@ function Get-DbaDbFile {
                     $maxsize = [dbasize]($result.MaxSize)
                 }
 
-                if ($result.VolumeFreeSpace) {
-                    $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
+                if ($useMasterFiles) {
+                    # the I/O counters and the volume statistics come from DMVs that are keyed on a
+                    # database that can be opened, so there is nothing authoritative to report here
+                    $VolumeFreeSpace = $null
+                    $numberOfDiskWrites = $null
+                    $numberOfDiskReads = $null
+                    $readFromDisk = $null
+                    $writtenToDisk = $null
+                    $fileGroupName = $null
+                    $fileGroupType = $null
+                    $fileGroupTypeDescription = $null
+                    $fileGroupDefault = $null
+                    $fileGroupReadOnly = $null
                 } else {
-                    # to get drive free space for each drive that a database has files on
-                    # when database compatibility lower than 110. Lets do this with query2
-                    $query2 = @'
+                    $numberOfDiskWrites = $result.NumberOfDiskWrites
+                    $numberOfDiskReads = $result.NumberOfDiskReads
+                    $readFromDisk = [dbasize]$result.BytesReadFromDisk
+                    $writtenToDisk = [dbasize]$result.BytesWrittenToDisk
+                    $fileGroupName = $result.FileGroupName
+                    $fileGroupType = $result.FileGroupType
+                    $fileGroupTypeDescription = $result.FileGroupTypeDescription
+                    $fileGroupDefault = $result.FileGroupDefault
+                    $fileGroupReadOnly = $result.FileGroupReadOnly
+
+                    if ($result.VolumeFreeSpace) {
+                        $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
+                    } else {
+                        # to get drive free space for each drive that a database has files on
+                        # when database compatibility lower than 110. Lets do this with query2
+                        $query2 = @'
 -- to get drive free space for each drive that a database has files on
 DECLARE @FixedDrives TABLE(Drive CHAR(1), MB_Free BIGINT);
 INSERT @FixedDrives EXEC sys.xp_fixeddrives;
@@ -266,63 +396,64 @@ FROM @FixedDrives AS fd
 INNER JOIN sys.database_files AS df
 ON fd.Drive = LEFT(df.physical_name, 1);
 '@
-                    # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
-                    if ($server.VersionMajor -gt 8) {
-                        $disks = @($server.Query($query2, $db.Name))
-                        $MbFreeColName = $disks[0].psobject.Properties.Name
-                        # get the free MB value for the drive in question
-                        $free = $disks | Where-Object {
-                            $_.drive -eq $result.PhysicalName.Substring(0, 1)
-                        } | Select-Object $MbFreeColName
+                        # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
+                        if ($server.VersionMajor -gt 8) {
+                            $disks = @($server.Query($query2, $db.Name))
+                            $MbFreeColName = $disks[0].psobject.Properties.Name
+                            # get the free MB value for the drive in question
+                            $free = $disks | Where-Object {
+                                $_.drive -eq $result.PhysicalName.Substring(0, 1)
+                            } | Select-Object $MbFreeColName
 
-                    $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                            $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                        }
+                    }
                 }
-            }
-            if ($result.GrowthType -eq "Percent") {
-                $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
-            } else {
-                $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
-            }
-            if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
-                [dbasize]$nextgrowtheventadd = 0
-            }
+                if ($result.GrowthType -eq "Percent") {
+                    $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
+                } else {
+                    $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
+                }
+                if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
+                    [dbasize]$nextgrowtheventadd = 0
+                }
 
-            [PSCustomObject]@{
-                ComputerName             = $server.ComputerName
-                InstanceName             = $server.ServiceName
-                SqlInstance              = $server.DomainInstanceName
-                Database                 = $db.name
-                DatabaseID               = $db.ID
-                FileGroupName            = $result.FileGroupName
-                ID                       = $result.ID
-                Type                     = $result.Type
-                TypeDescription          = $result.TypeDescription
-                LogicalName              = $result.LogicalName.Trim()
-                PhysicalName             = $result.PhysicalName.Trim()
-                State                    = $result.State
-                MaxSize                  = $maxsize
-                Growth                   = $result.Growth
-                GrowthType               = $result.GrowthType
-                NextGrowthEventSize      = $nextgrowtheventadd
-                Size                     = $size
-                UsedSpace                = $usedspace
-                AvailableSpace           = $AvailableSpace
-                IsOffline                = $result.IsOffline
-                IsReadOnly               = $result.IsReadOnly
-                IsReadOnlyMedia          = $result.IsReadOnlyMedia
-                IsSparse                 = $result.IsSparse
-                NumberOfDiskWrites       = $result.NumberOfDiskWrites
-                NumberOfDiskReads        = $result.NumberOfDiskReads
-                ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
-                WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
-                VolumeFreeSpace          = $VolumeFreeSpace
-                FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
-                FileGroupType            = $result.FileGroupType
-                FileGroupTypeDescription = $result.FileGroupTypeDescription
-                FileGroupDefault         = $result.FileGroupDefault
-                FileGroupReadOnly        = $result.FileGroupReadOnly
+                [PSCustomObject]@{
+                    ComputerName             = $server.ComputerName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Database                 = $db.name
+                    DatabaseID               = $db.ID
+                    FileGroupName            = $fileGroupName
+                    ID                       = $result.ID
+                    Type                     = $result.Type
+                    TypeDescription          = $result.TypeDescription
+                    LogicalName              = $result.LogicalName.Trim()
+                    PhysicalName             = $result.PhysicalName.Trim()
+                    State                    = $result.State
+                    MaxSize                  = $maxsize
+                    Growth                   = $result.Growth
+                    GrowthType               = $result.GrowthType
+                    NextGrowthEventSize      = $nextgrowtheventadd
+                    Size                     = $size
+                    UsedSpace                = $usedspace
+                    AvailableSpace           = $AvailableSpace
+                    IsOffline                = $result.IsOffline
+                    IsReadOnly               = $result.IsReadOnly
+                    IsReadOnlyMedia          = $result.IsReadOnlyMedia
+                    IsSparse                 = $result.IsSparse
+                    NumberOfDiskWrites       = $numberOfDiskWrites
+                    NumberOfDiskReads        = $numberOfDiskReads
+                    ReadFromDisk             = $readFromDisk
+                    WrittenToDisk            = $writtenToDisk
+                    VolumeFreeSpace          = $VolumeFreeSpace
+                    FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
+                    FileGroupType            = $fileGroupType
+                    FileGroupTypeDescription = $fileGroupTypeDescription
+                    FileGroupDefault         = $fileGroupDefault
+                    FileGroupReadOnly        = $fileGroupReadOnly
+                }
             }
         }
     }
-}
 }
