@@ -202,8 +202,16 @@ function Set-DbaAgentSchedule {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
+        # Only touch the frequency of an existing schedule if the user asked for it.
+        # An unbound -FrequencyType is $null, which is "-notin" the list below, so it used to fall
+        # through to the default of 1 (OneTime) and silently overwrite the recurrence of the schedule.
+        # SQL Server then clears the interval and subday values, because they carry no meaning for a
+        # one-time schedule, so a call that only changed the start time destroyed the whole pattern.
+        $frequencyTypeBound = Test-Bound -ParameterName FrequencyType
+        $frequencyIntervalBound = Test-Bound -ParameterName FrequencyInterval
+
         # Check of the FrequencyType value is of type string and set the integer value
-        if ($FrequencyType -notin 1, 4, 8, 16, 32, 64, 128) {
+        if ($frequencyTypeBound -and $FrequencyType -notin 1, 4, 8, 16, 32, 64, 128) {
             [int]$FrequencyType =
             switch ($FrequencyType) {
                 "Once" { 1 }
@@ -262,10 +270,13 @@ function Set-DbaAgentSchedule {
             return
         }
 
+        # Create the interval to hold the value(s)
+        # This has to be initialized outside of the block below, because that block is skipped
+        # when no frequency type was passed in and the interval is still read further down.
+        [int]$Interval = 0
+
         # Check of the FrequencyInterval value is of type string and set the integer value
         if (($null -ne $FrequencyType)) {
-            # Create the interval to hold the value(s)
-            [int]$Interval = 0
 
             # If the FrequencyInterval is set for the daily FrequencyType
             if ($FrequencyType -eq 4) {
@@ -434,7 +445,9 @@ function Set-DbaAgentSchedule {
                         $JobSchedule = $server.JobServer.Jobs[$j].JobSchedules[$Schedule][0]
 
                         # Set the frequency interval to make up for newly created schedules without an interval
-                        if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
+                        # Only when the user is changing the frequency at all - otherwise a call that just
+                        # changes the start time would write an interval the user never asked for.
+                        if (($frequencyTypeBound -or $frequencyIntervalBound) -and $JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {
                             $Interval = 1
                         }
 
