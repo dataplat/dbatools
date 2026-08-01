@@ -104,7 +104,7 @@ Verify at minimum that every changed file parses:
 [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errors)
 ```
 
-Run the real tests through the project's test harness when the fixture is available. Never hand-roll an `Invoke-Pester` call.
+Run the real tests through the project's test harness when the fixture is available - see [Reproduce it before theorising about it](#reproduce-it-before-theorising-about-it) for the lab and how to leave it clean. Never hand-roll an `Invoke-Pester` call.
 
 ## 8. Quality gates
 
@@ -148,6 +148,27 @@ When the issue is a question, a support request, or user error, the deliverable 
 Connection and environment reports usually turn on a comparison the reporter made: "it works here but not there". Check how many variables that comparison changes at once. A test that works in Windows PowerShell with `System.Data.SqlClient` and fails in PowerShell 7 with `Microsoft.Data.SqlClient` has changed both the host and the client library, and proves nothing about either. The most useful thing a comment can offer is usually not another workaround but **the one experiment that isolates a single variable** - it either sends the issue upstream cleanly or brings it back with evidence worth acting on.
 
 Read the whole thread before adding to it, including earlier bot analyses. If a previous answer asserted a mechanism that turns out to be wrong, say so plainly and correct it. Workarounds derived from a wrong mechanism cannot work, and a reporter who has already tried three of them has earned a straight answer rather than a fourth.
+
+### Reproduce it before theorising about it
+
+**Check for a lab first.** If `C:\GitHub\testing-dbatools` exists, read its `CLAUDE.md`: it describes a live multi-instance lab and the harness that drives it. Reproducing the reporter's exact steps against a real instance beats any amount of static analysis, and it is what turns "someone should test this" into a closed issue in a single pass.
+
+```powershell
+# one PowerShell call - session state does not persist between tool invocations,
+# so dot-sourcing and the repro have to happen together
+Set-Location -Path "C:\GitHub\testing-dbatools"
+. .\Initialize-LabSession.ps1     # imports dbatools from source, loads $TestConfig
+```
+
+Rules for touching the lab:
+
+- **Reproduce on the version the reporter used** when the instances allow it, and on the current one, so "fixed" versus "never reproduced here" can be told apart
+- **Clean up in a `finally`.** `TestEnvironment.Tests.ps1` asserts the lab is pristine - no user databases, no leftover logins or endpoints - and the next test run fails if it is not. Name objects `dbatoolsci_*` and drop them, then confirm nothing is left
+- **Assert the data, not just the row count.** A copy that reports success while writing corrupt values is a different bug, not a fix
+- `Reset-TestEnvironment.ps1 -WhatIf` first if a run dies halfway through, since the real thing drops databases
+- The lab is real infrastructure someone pays for. Reproduce the issue, then stop; do not go exploring
+
+The lab is built from two public repositories - [testing-dbatools](https://github.com/andreasjordan/testing-dbatools) for the harness and [MyAzureLab](https://github.com/andreasjordan/MyAzureLab) for the environment (see [HyperVLab](https://github.com/andreasjordan/MyAzureLab/tree/main/HyperVLab) for the current multi-machine setup). It is mainly used by Andreas Jordan (@andreasjordan), so treat it as his machine: it is not a shared resource that any contributor can be assumed to have, and an issue must never be closed on the basis that "it works in the lab" without saying which versions were tested.
 
 ## Output
 
