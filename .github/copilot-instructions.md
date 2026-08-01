@@ -25,7 +25,7 @@
 
 3. **Pester v5.7.1** - Required for running tests
    - Install: `Install-Module Pester -RequiredVersion 5.7.1`
-   - Tests MUST use Pester v5 syntax (no `-ForEach` parameter, strict scoping)
+   - Tests MUST use Pester v5 syntax (strict scoping, `-ForEach` cases built in `BeforeDiscovery`)
 
 ## PR Summary Guidelines
 
@@ -334,8 +334,9 @@ param(
 - ALL setup code in `BeforeAll` blocks
 - ALL cleanup code in `AfterAll` blocks
 - ALL assertions in `It` blocks
-- NO loose code in `Describe` or `Context` blocks
-- NEVER use `-ForEach` parameter
+- ALL discovery-time code in `BeforeDiscovery` blocks
+- NO loose code in `Describe` or `Context` blocks, except computing a value a `-Skip:` needs
+- `-ForEach` ONLY with cases built in `BeforeDiscovery`, never a `foreach` loop around `It`
 
 ### When to Add/Update Tests
 

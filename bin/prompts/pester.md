@@ -29,8 +29,29 @@ Pester v5 enforces strict organization of test code. Follow these rules:
 - **All setup code** must be in `BeforeAll` or `BeforeEach` blocks
 - **All cleanup code** must be in `AfterAll` or `AfterEach` blocks
 - **All test assertions** must be in `It` blocks
-- **No loose code** is allowed in `Describe` or `Context` blocks
-- **Never use the `-ForEach` parameter** on any test blocks
+- **All discovery-time code** must be in a `BeforeDiscovery` block
+- **No loose code** is allowed in `Describe` or `Context` blocks, with one exception: computing a value that a `-Skip:` needs
+- **Only use the `-ForEach` parameter** with cases built in `BeforeDiscovery`
+
+Pester reads a test file twice: it discovers the tests first (block headers, so `-Skip:` and `-ForEach`), then runs them (block bodies). The two do not share variables. `BeforeDiscovery` is the block for discovery-time code, `BeforeAll` for run-time setup.
+
+A `foreach` loop that emits `It` blocks is always wrong: the loop variables no longer exist when the bodies run, so the tests pass while asserting nothing. Use `-ForEach` with an array of hashtables built in `BeforeDiscovery`, and put every value the body needs into the hashtable - Pester turns each key into a variable in the body and expands `<Key>` in the test name.
+
+```powershell
+Describe $CommandName -Tag UnitTests {
+    BeforeDiscovery {
+        $recoveryCases = @(
+            @{ ModelName = "Full"; ExpectedLogReuse = "LogBackup" }
+            @{ ModelName = "Simple"; ExpectedLogReuse = "Nothing" }
+        )
+    }
+
+    It "reports <ExpectedLogReuse> for a database in <ModelName> recovery" -ForEach $recoveryCases {
+        $result.RecoveryModel | Should -Be $ModelName
+        $result.LogReuseWaitStatus | Should -Be $ExpectedLogReuse
+    }
+}
+```
 
 ### Standard Test Structure
 
@@ -248,8 +269,10 @@ Use script blocks only when:
 - [ ] All setup code is in `BeforeAll` or `BeforeEach` blocks
 - [ ] All cleanup code is in `AfterAll` or `AfterEach` blocks
 - [ ] All test assertions are in `It` blocks
-- [ ] No loose code in `Describe` or `Context` blocks
-- [ ] No `-ForEach` parameters used on test blocks
+- [ ] No loose code in `Describe` or `Context` blocks, except computing a `-Skip:` condition
+- [ ] Discovery-time code is in `BeforeDiscovery`, not in `BeforeAll` and not loose
+- [ ] Every `-ForEach` gets its cases from `BeforeDiscovery`, and every value an `It` body uses is a key of the case hashtable
+- [ ] No `foreach` loop emits `It` blocks - use `-ForEach` instead
 
 **Variable Scoping:**
 - [ ] `$global:` used for variables that persist across Pester blocks
