@@ -5,19 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-if ($null -eq $PSDefaultParameterValues) {
-    $PSDefaultParameterValues = @{ }
-}
-
-$hasIntegrationConfig = $false
-if ($TestConfig -and $TestConfig.appveyorlabrepo -and $TestConfig.InstanceMulti1) {
-    $parquetFixturePath = Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet"
-    $pathEcdc = Join-Path -Path $parquetFixturePath -ChildPath "ecdc_cases.parquet"
-    $pathBoundaries = Join-Path -Path $parquetFixturePath -ChildPath "world-administrative-boundaries.parquet"
-    $pathMixedTypes = Join-Path -Path $parquetFixturePath -ChildPath "mixed_types.parquet"
-    $hasIntegrationConfig = (Test-Path $pathEcdc) -and (Test-Path $pathBoundaries) -and (Test-Path $pathMixedTypes)
-}
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -91,7 +78,19 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
+# These tests need the three Parquet fixtures from the appveyor lab repo. Pester evaluates -Skip:
+# during discovery, so the check cannot move into BeforeAll and is written out here instead of being
+# computed into a variable, because only Describe blocks are allowed at the top level of a test file.
+Describe $CommandName -Tag IntegrationTests -Skip:(
+    -not (
+        $TestConfig -and
+        $TestConfig.appveyorlabrepo -and
+        $TestConfig.InstanceMulti1 -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\ecdc_cases.parquet")) -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\world-administrative-boundaries.parquet")) -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\mixed_types.parquet"))
+    )
+) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 

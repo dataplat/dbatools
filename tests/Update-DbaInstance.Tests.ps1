@@ -7,10 +7,10 @@ param(
 
 # TODO: This test needs a lot of care
 
-$exeDir = "C:\Temp\dbatools_$CommandName"
-
 Describe -skip $CommandName -Tag UnitTests {
     BeforeAll {
+        $exeDir = "C:\Temp\dbatools_$CommandName"
+
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
         Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
@@ -853,6 +853,8 @@ Describe -skip $CommandName -Tag UnitTests {
 
 Describe -Skip "$CommandName Integration Tests" -Tag IntegrationTests {
     BeforeAll {
+        $exeDir = "C:\Temp\dbatools_$CommandName"
+
         #ignore restart requirements
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
         #ignore elevation requirements
