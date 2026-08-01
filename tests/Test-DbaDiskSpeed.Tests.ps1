@@ -225,7 +225,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Separate test to run against a Linux-hosted SQL instance.
         # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
-        It "aggregate by file and check column names returned on a Linux instance" -Skip {
+        It "aggregate by file and check column names returned on a Linux instance" -Skip:(-not $TestConfig.InstanceLinux) {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "Database", "SizeGB", "FileName", "FileID", "FileType", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
@@ -265,7 +265,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Separate test to run against a Linux-hosted SQL instance.
         # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
-        It "aggregate by database and check column names returned on a Linux instance" -Skip {
+        It "aggregate by database and check column names returned on a Linux instance" -Skip:(-not $TestConfig.InstanceLinux) {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "Database", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
@@ -305,7 +305,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Separate test to run against a Linux-hosted SQL instance.
         # To run this test ensure you have specified the InstanceLinux values for a Linux-hosted SQL instance in the Get-TestConfig
-        It "aggregate by disk and check column names returned on a Linux instance" -Skip {
+        It "aggregate by disk and check column names returned on a Linux instance" -Skip:(-not $TestConfig.InstanceLinux) {
             # check returned columns
             [object[]]$expectedColumnArray = "ComputerName", "InstanceName", "SqlInstance", "DiskLocation", "Reads", "AverageReadStall", "ReadPerformance", "Writes", "AverageWriteStall", "WritePerformance", "Avg Overall Latency", "Avg Bytes/Read", "Avg Bytes/Write", "Avg Bytes/Transfer"
 
