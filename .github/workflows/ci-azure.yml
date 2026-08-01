@@ -215,6 +215,36 @@ jobs:
             }
           }
 
+      - name: Bootstrap dbatools.library PR dependency
+        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265'
+        shell: powershell
+        run: |
+          $assetUrl = "https://github.com/dataplat/dbatools.library/releases/download/v2026.8.1-preview-codexissue10265sqlclient7-20260801225230/dbatools.library.zip"
+          $downloadRoot = Join-Path $env:TEMP "dbatools-library-issue-10265"
+          if (Test-Path $downloadRoot) { Remove-Item $downloadRoot -Recurse -Force }
+          $null = New-Item -Path $downloadRoot -ItemType Directory -Force
+          $zipPath = Join-Path $downloadRoot "dbatools.library.zip"
+          Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -UseBasicParsing
+          Expand-Archive -Path $zipPath -DestinationPath $downloadRoot -Force
+
+          $sourcePath = Join-Path $downloadRoot "dbatools.library"
+          $manifestPath = Join-Path $sourcePath "dbatools.library.psd1"
+          $moduleVersion = (Test-ModuleManifest -Path $manifestPath -ErrorAction Stop).Version.ToString()
+          $modulePath = Join-Path $env:ProgramFiles "WindowsPowerShell\Modules\dbatools.library\$moduleVersion"
+          $splatDirectory = @{
+              ItemType = "Directory"
+              Path     = $modulePath
+              Force    = $true
+          }
+          $null = New-Item @splatDirectory
+          $splatCopy = @{
+              Path        = Join-Path $sourcePath "*"
+              Destination = $modulePath
+              Recurse     = $true
+              Force       = $true
+          }
+          Copy-Item @splatCopy
+
       - name: Run CI pipeline (prep, instances, pester, post)
         shell: powershell
         run: |
@@ -229,6 +259,47 @@ jobs:
           Invoke-GhaStage -Script "tests\appveyor.pester.ps1"
           Invoke-GhaStage -Script "tests\appveyor.pester.ps1" -Arguments @{ Finalize = $true }
           Invoke-GhaStage -Script "tests\appveyor.post.ps1"
+
+      - name: Install PowerShell 7 for Windows SSPI integration test
+        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265' && matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        shell: powershell
+        run: |
+          $assetUrl = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.18/PowerShell-7.4.18-win-x64.zip"
+          $pwshRoot = "C:\Temp\powershell-7.4.18"
+          if (Test-Path $pwshRoot) { Remove-Item $pwshRoot -Recurse -Force }
+          $null = New-Item -Path $pwshRoot -ItemType Directory -Force
+          $zipPath = Join-Path $env:TEMP "PowerShell-7.4.18-win-x64.zip"
+          $ProgressPreference = "SilentlyContinue"
+          Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -UseBasicParsing
+          Expand-Archive -Path $zipPath -DestinationPath $pwshRoot -Force
+          & "$pwshRoot\pwsh.exe" -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+          if ($LASTEXITCODE -ne 0) { throw "The portable PowerShell 7 runtime did not start successfully." }
+
+      - name: Run PowerShell 7 Windows SSPI integration test
+        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265' && matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        shell: powershell
+        run: |
+          $scriptPath = Join-Path $env:RUNNER_TEMP "Invoke-WindowsSspiTest.ps1"
+          @'
+          . C:\github\dbatools\private\testing\Invoke-ManualPester.ps1
+          $splatPester = @{
+              Path            = "C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1"
+              TestIntegration = $true
+              PassThru        = $true
+              Show            = "Detailed"
+          }
+          $result = @(Invoke-ManualPester @splatPester) |
+              Where-Object { $null -ne $PSItem.PSObject.Properties["FailedCount"] } |
+              Select-Object -Last 1
+          if ($null -eq $result) {
+              throw "The Windows SSPI integration test returned no Pester result."
+          }
+          if ($result.TotalCount -ne 1 -or $result.PassedCount -ne 1 -or $result.FailedCount -ne 0 -or $result.SkippedCount -ne 0 -or $result.NotRunCount -ne 0) {
+              throw "Unexpected Windows SSPI result: Total=$($result.TotalCount), Passed=$($result.PassedCount), Failed=$($result.FailedCount), Skipped=$($result.SkippedCount), NotRun=$($result.NotRunCount)."
+          }
+          '@ | Set-Content -Path $scriptPath -Encoding UTF8
+          & "C:\Temp\powershell-7.4.18\pwsh.exe" -NoProfile -File $scriptPath
+          if ($LASTEXITCODE -ne 0) { throw "The Windows SSPI integration test failed under PowerShell 7." }
 
       - name: Stage artifacts summary
         if: always()
