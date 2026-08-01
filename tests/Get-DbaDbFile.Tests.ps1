@@ -257,5 +257,46 @@ Describe $CommandName -Tag IntegrationTests {
             $allResults.Database | Should -Contain $restoringDbName
             $allResults.Database | Should -Contain $offlineDbName
         }
+
+        It "Reads the same file layout through the SQL Server 2000 query as through sys.master_files" {
+            # The SQL Server 2000 branch itself cannot be dispatched here, because that needs an
+            # instance reporting VersionMajor 8 and SQL Server 2000 runs on no host still available.
+            # master.dbo.sysaltfiles does still resolve on a modern instance though, so the query the
+            # command actually ships is pulled out of its own AST, executed, and compared against the
+            # sys.master_files query it stands in for. That covers the column names and the status bit
+            # arithmetic, which is where this query realistically breaks.
+            $commandAst = (Get-Command Get-DbaDbFile).ScriptBlock.Ast
+            $queryAssignments = $commandAst.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left.VariablePath.UserPath -in "sqlMasterFiles", "sqlMasterFiles2000"
+                }, $true)
+
+            $modernQuery = ($queryAssignments | Where-Object { $PSItem.Left.VariablePath.UserPath -eq "sqlMasterFiles" }).Right.Expression.Value
+            $legacyQuery = ($queryAssignments | Where-Object { $PSItem.Left.VariablePath.UserPath -eq "sqlMasterFiles2000" }).Right.Expression.Value
+            $modernQuery | Should -Not -BeNullOrEmpty
+            $legacyQuery | Should -Not -BeNullOrEmpty
+
+            $restoringDbId = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoringDbName).ID
+            $modernRows = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query ($modernQuery -f $restoringDbId)) | Sort-Object ID
+            $legacyRows = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query ($legacyQuery -f $restoringDbId)) | Sort-Object ID
+
+            $comparedProperties = @(
+                "ID",
+                "Type",
+                "TypeDescription",
+                "LogicalName",
+                "PhysicalName",
+                "MaxSize",
+                "Size",
+                "Growth",
+                "GrowthType",
+                "FileGroupDataSpaceId"
+            )
+            # Anchored, because Compare-Object of two empty sets is also empty.
+            $modernRows.Count | Should -BeExactly 2
+            $legacyRows.Count | Should -BeExactly 2
+            Compare-Object -ReferenceObject $modernRows -DifferenceObject $legacyRows -Property $comparedProperties | Should -BeNullOrEmpty
+        }
     }
 }

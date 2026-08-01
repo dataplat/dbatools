@@ -386,7 +386,7 @@ WHERE df.dbid = {0}
                     } else {
                         # to get drive free space for each drive that a database has files on
                         # when database compatibility lower than 110. Lets do this with query2
-                        $query2 = @'
+                        $query2 = @"
 -- to get drive free space for each drive that a database has files on
 DECLARE @FixedDrives TABLE(Drive CHAR(1), MB_Free BIGINT);
 INSERT @FixedDrives EXEC sys.xp_fixeddrives;
@@ -395,7 +395,7 @@ SELECT DISTINCT fd.MB_Free, LEFT(df.physical_name, 1) AS [Drive]
 FROM @FixedDrives AS fd
 INNER JOIN sys.database_files AS df
 ON fd.Drive = LEFT(df.physical_name, 1);
-'@
+"@
                         # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
                         if ($server.VersionMajor -gt 8) {
                             $disks = @($server.Query($query2, $db.Name))
