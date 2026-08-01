@@ -192,6 +192,35 @@ function Set-VmRegisteredAt {
     ) -Operation "stamp $VmName registration time"
 }
 
+function Set-VmOnlineAt {
+    param($State, $Vms)
+    # Records when a runner first shows online, i.e. when the VM finished rebooting into
+    # the autologon session and the listener came up. registeredAt alone cannot separate
+    # the reboot from hot-idle waiting: the span from registration to the job's start is
+    # reboot PLUS however long GitHub left the runner sitting idle, and for a warm-floor
+    # VM the idle part dominates. Stamping the online transition splits the two.
+    #
+    # The controller does this rather than the VM because runner VMs hold no Azure
+    # identity and must not gain one. Resolution is therefore the reconcile interval.
+    foreach ($vm in $Vms) {
+        if (-not $vm.tags -or -not $vm.tags.registeredAt -or $vm.tags.onlineAt) {
+            continue
+        }
+        $runner = Get-RunnerForVm -State $State -VmName $vm.name
+        if (-not $runner -or $runner.status -ne "online") {
+            continue
+        }
+        $vmId = Invoke-AzJson -Arguments @(
+            "vm", "show", "--resource-group", $resourceGroup, "--name", $vm.name, "--query", "id"
+        ) -Operation "read resource ID for $($vm.name)"
+        $stamp = [DateTimeOffset]::UtcNow.ToString("o")
+        $null = Invoke-NativeText -Tool "az" -Arguments @(
+            "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
+            "--tags", "onlineAt=$stamp", "--only-show-errors", "--output", "none"
+        ) -Operation "stamp $($vm.name) online time"
+    }
+}
+
 function Remove-FleetVm {
     param($State, $Vm, [string]$Reason)
     if (-not $deletedVms.Add($Vm.name)) {
@@ -222,14 +251,23 @@ function Remove-FleetVm {
         "vm", "delete", "--resource-group", $resourceGroup, "--name", $Vm.name,
         "--yes", "--only-show-errors", "--output", "none"
     ) -Operation "delete VM $($Vm.name)"
+    # bootMin is creation to runner registration; rebootMin is registration to the
+    # listener coming up after the reboot -- the span Task 4 actually removes. Keep them
+    # separate: their sum is the VM's unavoidable overhead, while everything between the
+    # listener and the job start is hot-idle waiting, which is Task 2's target instead.
     $bootMin = "unknown"
+    $rebootMin = "unknown"
     if ($Vm.tags -and $Vm.tags.registeredAt) {
         $registered = [DateTimeOffset]::Parse([string]$Vm.tags.registeredAt)
         $created = [DateTimeOffset]::Parse([string]$Vm.created)
         $bootMin = [int]($registered - $created).TotalMinutes
+        if ($Vm.tags.onlineAt) {
+            $online = [DateTimeOffset]::Parse([string]$Vm.tags.onlineAt)
+            $rebootMin = [int]($online - $registered).TotalMinutes
+        }
     }
     $servedJob = ($null -ne $Vm.tags) -and ($null -ne $Vm.tags.registeredAt) -and (-not $runner)
-    Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin servedJob=$servedJob reason=$Reason"
+    Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin rebootMin=$rebootMin servedJob=$servedJob reason=$Reason"
 }
 
 function Get-OrphanedNetworking {
@@ -514,6 +552,7 @@ try {
     $state = Get-FleetState
     Register-PoolVms -State $state -Desired $desired
     $state = Get-FleetState
+    Set-VmOnlineAt -State $state -Vms $state.Vms
 
     # Remove dead runners and trim pools whose hot window has ended.
     foreach ($vm in $state.Vms) {
@@ -581,6 +620,7 @@ try {
     $state = Get-FleetState
     Register-PoolVms -State $state -Desired $desired
     $state = Get-FleetState
+    Set-VmOnlineAt -State $state -Vms $state.Vms
     foreach ($pool in $desired.Keys) {
         $poolVms = @($state.Vms | Where-Object { (Get-VmPool -Vm $PSItem) -eq $pool })
         $poolRunners = @($state.Runners | Where-Object { (Get-RunnerPool -Runner $PSItem) -eq $pool })
