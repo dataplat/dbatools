@@ -77,11 +77,13 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Keep public-triggered Claude runs read-only. Use a maintainer-run
-          # local session or a separate protected workflow for code-writing tasks.
+          # The job-level if: gates this workflow to named maintainers, so Claude is
+          # trusted to change code here. Edit and Write are what let it act on that:
+          # the action already grants git add/commit/rm/push, so without them Claude
+          # could commit but never author, and burned a whole run finding that out.
           claude_args: >-
             --max-turns 100
-            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
