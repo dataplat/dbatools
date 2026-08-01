@@ -110,6 +110,45 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -BeNullOrEmpty
     }
 
+    It "Still finds the configured certificate after it has been archived" {
+        # Auto-renewed certificates are archived as soon as the successor is issued, but SQL Server keeps using
+        # them until it is reconfigured. Archived certificates are hidden from Get-ChildItem without -Force.
+        $configuredThumbprint = (Get-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -EnableException).Thumbprint
+        $configuredThumbprint | Should -Not -BeNullOrEmpty
+
+        $setArchived = {
+            param ($Thumbprint, $Archived)
+            (Get-ChildItem -Path "Cert:\LocalMachine\My\$Thumbprint" -Force).Archived = $Archived
+        }
+
+        try {
+            $splatArchive = @{
+                ComputerName = $computerName
+                ScriptBlock  = $setArchived
+                ArgumentList = $configuredThumbprint, $true
+            }
+            $null = Invoke-Command2 @splatArchive
+
+            $archivedCertificate = Get-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -EnableException
+            $archivedCertificate.Thumbprint | Should -Be $configuredThumbprint
+
+            $splatTestArchived = @{
+                SqlInstance     = $TestConfig.InstanceRestart
+                Thumbprint      = $configuredThumbprint
+                EnableException = $true
+            }
+            $archivedSuitability = Test-DbaNetworkCertificate @splatTestArchived
+            $archivedSuitability.CertificateFound | Should -BeTrue
+        } finally {
+            $splatUnarchive = @{
+                ComputerName = $computerName
+                ScriptBlock  = $setArchived
+                ArgumentList = $configuredThumbprint, $false
+            }
+            $null = Invoke-Command2 @splatUnarchive
+        }
+    }
+
     It "Unsets the certificate" {
         $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -UnsetCertificate -RestartService
         $result.CertificateThumbprint | Should -BeNullOrEmpty
