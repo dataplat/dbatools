@@ -30,6 +30,7 @@ GitHub (public repo)                          Azure (eastus)
 | CI markers | `(do <cmd>)` selects CI tests (the existing campaign convention); `[do ci]` activates the runner pool. They are compatible and unrelated. |
 | Build queue | Workflow concurrency uses `queue: max`: one matrix build per lane consumes that lane's workers while later builds wait FIFO, matching AppVeyor account concurrency |
 | Pool sizes | `potatoqualitee`, `andreasjordan`, and `niphlod` receive ten dedicated workers each; non-maintainers share five |
+| Outbound | Instance public IPs are the fleet's egress -- the subnet has no NAT gateway, no load balancer and no route table, and `defaultOutboundAccess` is unset, so implicit egress is not something to rely on. ~$8.31/mo and scales to zero with the fleet; a NAT gateway bills 24/7 against a fleet that is at zero capacity most of the day. Do not remove the IPs as a cost measure. |
 | Azure auth | OIDC only — Entra app `dbatools-ci-github`, federated for the default branch, custom role `dbatools-ci-operator` scoped to RG `dbatools-ci` |
 | Runner registration | `CI_RUNNER_PAT` secret mints single-use tokens; tokens are never stored on VMs |
 

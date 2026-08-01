@@ -232,6 +232,61 @@ function Remove-FleetVm {
     Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin servedJob=$servedJob reason=$Reason"
 }
 
+function Get-OrphanedNetworking {
+    # Unattached NICs and instance public IPs matching the CI naming convention. The
+    # filters mirror the janitor's own patterns (janitor-runbook.ps1:255, :265) so both
+    # sweepers agree on what counts as garbage.
+    #
+    # Here-strings because JMESPath needs both single quotes (its string-literal form --
+    # double quotes there mean identifier quoting, not a literal) and literal backticks
+    # around null. A bare null parses as an identifier rather than the null literal; it
+    # happens to evaluate correctly, but only by accident, and the next person to edit
+    # the filter should not have to rediscover that.
+    $nicQuery = @'
+[?virtualMachine==`null` && contains(name, 'Nic-')].name
+'@
+    $pipQuery = @'
+[?ipConfiguration==`null` && starts_with(name, 'instancepublicip-')].name
+'@
+    $nics = @(Invoke-AzJson -Arguments @(
+            "network", "nic", "list", "--resource-group", $resourceGroup,
+            "--query", $nicQuery
+        ) -Operation "list orphaned NICs")
+    $pips = @(Invoke-AzJson -Arguments @(
+            "network", "public-ip", "list", "--resource-group", $resourceGroup,
+            "--query", $pipQuery
+        ) -Operation "list orphaned public IPs")
+    [pscustomobject]@{ Nics = $nics; Pips = $pips }
+}
+
+function Remove-OrphanedNetworking {
+    param($Snapshot)
+    # The VM delete leaves its NIC and instance public IP behind; the 6-hourly janitor
+    # was the only thing reaping them, and they bill the whole time. July: 1661 IP-hours
+    # against 949 VM-hours.
+    #
+    # Only resources orphaned BOTH at the start of this run and now are deleted. A NIC
+    # created by this run's vmss scale reads virtualMachine==null for a moment before
+    # its VM attaches, and deleting it would break that VM's creation.
+    $current = Get-OrphanedNetworking
+    $staleNics = @($current.Nics | Where-Object { $PSItem -in $Snapshot.Nics })
+    $stalePips = @($current.Pips | Where-Object { $PSItem -in $Snapshot.Pips })
+    foreach ($nicName in $staleNics) {
+        $null = Invoke-NativeText -Tool "az" -Arguments @(
+            "network", "nic", "delete", "--resource-group", $resourceGroup,
+            "--name", $nicName, "--only-show-errors", "--output", "none"
+        ) -Operation "delete orphaned NIC $nicName"
+    }
+    # NICs first: a public IP still bound to a NIC cannot be deleted.
+    foreach ($pipName in $stalePips) {
+        $null = Invoke-NativeText -Tool "az" -Arguments @(
+            "network", "public-ip", "delete", "--resource-group", $resourceGroup,
+            "--name", $pipName, "--only-show-errors", "--output", "none"
+        ) -Operation "delete orphaned public IP $pipName"
+    }
+    Write-Host "reaped orphans: nics=$($staleNics.Count) pips=$($stalePips.Count)"
+}
+
 function Get-PoolJobDemand {
     param([object[]]$WorkflowRuns)
     # I/O only -- the transform lives in runner-policy.ps1, where it is unit tested.
@@ -434,6 +489,7 @@ function Register-PoolVms {
 
 try {
     $demand = Get-RunnerDemand
+    $orphanSnapshot = Get-OrphanedNetworking
     if ($demand.Dispatch) {
         Invoke-MarkedCiDispatch -Request $demand.Dispatch
     }
@@ -532,6 +588,8 @@ try {
         $busy = @($poolRunners | Where-Object busy).Count
         Write-Host "pool=$pool desired=$($desired[$pool]) vms=$($poolVms.Count) online=$online busy=$busy"
     }
+
+    Remove-OrphanedNetworking -Snapshot $orphanSnapshot
 } catch [TransientFleetException] {
     Write-Warning "$($PSItem.Exception.Message) No further fleet changes will be attempted; a job-completion nudge or scheduled reconcile will retry."
     exit 0
