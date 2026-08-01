@@ -80,23 +80,13 @@ git checkout -b <short-kebab-description> origin/development
 
 ## 6. Fix
 
-Follow `CLAUDE.md`. The rules that matter most in bug-fix diffs:
-
-- No backticks; splat at 3+ parameters with `$splat<Purpose>` naming
-- No `= $true` in parameter attributes, no `::new()` (PowerShell v3 support)
-- Double quotes, aligned hashtables, every existing comment preserved
-- Add a short comment saying **why** the fix is needed. A bare `-Force` or an extra `-not` reads as noise to the next maintainer; one line explaining the failure mode does not.
+Follow the repository-wide PowerShell style and workflow conventions in root `CLAUDE.md`. Update that file rather than copying its rules into this workflow.
 
 ## 7. Test
 
-Read `tests/CLAUDE.md` first — Pester v5 block rules and the `$TestConfig` instance fixture table are there.
+Read `tests/CLAUDE.md` first — the ongoing Pester 6 test policy and `$TestConfig` instance fixture table are there.
 
-Add 1-3 focused tests that fail without the fix. For a bug fix specifically:
-
-- Prefer extending an existing test file that already builds the fixture you need over standing up a new one
-- Pick the **lightest** `$TestConfig` instance that can show the bug; the fixture decides which AppVeyor scenario the test lands in
-- If the test mutates machine state (certificates, services, registry), restore it in a `try`/`finally` inside the `It`, because `AfterAll` cleanup may not be able to undo it
-- If the defect only reproduces on a fixture the CI does not have, say so plainly rather than writing a test that cannot fail
+Apply its regression and real-boundary coverage requirements. Update that guide rather than copying test policy into this workflow.
 
 Verify at minimum that every changed file parses:
 

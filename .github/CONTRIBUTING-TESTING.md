@@ -2,6 +2,8 @@
 
 This tutorial explains how to run dbatools tests locally against your SQL Server lab. It covers the test infrastructure, configuration, and best practices based on recent improvements by Andreas Jordan.
 
+This is an operational tutorial. [`tests/CLAUDE.md`](../tests/CLAUDE.md) is the authoritative source for ongoing test policy and the supported Pester runtime.
+
 ---
 
 ## Table of Contents
@@ -94,7 +96,7 @@ This script:
 ### 1.2 Install Pester (Testing Framework)
 
 ```powershell
-Install-Module Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
 ```
 
 ### 1.3 Install PSScriptAnalyzer (Code Formatting)
@@ -535,7 +537,7 @@ Get-ChildItem $TestConfig.Temp -Recurse |
 
 # === INITIAL SETUP (one time) ===
 .\.github\scripts\install-dbatools-library.ps1
-Install-Module Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
 Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2 -Force
 Copy-Item .\tests\constants.local.ps1.example .\tests\constants.local.ps1
 # Edit constants.local.ps1 with your instances
@@ -568,4 +570,4 @@ Invoke-ManualPester -Path "*Backup*" -TestIntegration
 | [private/testing/Invoke-ManualPester.ps1](../private/testing/Invoke-ManualPester.ps1) | Local test runner helper |
 | [tests/pester.groups.ps1](../tests/pester.groups.ps1) | Scenario definitions |
 | [tests/appveyor.common.ps1](../tests/appveyor.common.ps1) | CI test discovery logic |
-| [tests/CLAUDE.md](../tests/CLAUDE.md) | Pester v5 test standards |
+| [tests/CLAUDE.md](../tests/CLAUDE.md) | Ongoing test policy and Pester 6 standards |

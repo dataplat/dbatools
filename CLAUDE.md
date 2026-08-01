@@ -1,6 +1,6 @@
-# dbatools PowerShell Style Guide for Claude Code
+# dbatools PowerShell Style Guide
 
-This style guide provides coding standards for dbatools PowerShell development to ensure consistency, readability, and maintainability across the project.
+This is the single source for repository-wide PowerShell style and workflow conventions. It applies to every PowerShell file under `public/`, `private/`, `tests/`, and the repository scripts, regardless of which agent or contributor makes the change.
 
 ## CRITICAL COMMAND SYNTAX RULES
 
@@ -59,7 +59,7 @@ $database = Get-DbaDatabase -SqlInstance $instance -Name "master"
 # CORRECT - 5 parameters, must use splat
 $splatConnection = @{
     SqlInstance     = $instance
-    SqlCredential   = $TestConfig.SqlCredential
+    SqlCredential   = $credential
     Database        = $dbName
     EnableException = $true
     Confirm         = $false
@@ -126,6 +126,31 @@ $message = "Database `"$dbName`" created successfully"
 $database = 'master'
 ```
 
+### ARRAY FORMATTING
+
+Format multi-line arrays with one value per line:
+
+```powershell
+$expectedParameters = @(
+    "SqlInstance",
+    "SqlCredential",
+    "Database",
+    "EnableException"
+)
+```
+
+### MULTI-LINE STRINGS
+
+Use here-strings for multi-line strings instead of concatenation:
+
+```powershell
+$query = @"
+SELECT name, database_id
+FROM sys.databases
+WHERE name = 'master'
+"@
+```
+
 ## HASHTABLE ALIGNMENT (MANDATORY)
 
 **CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned:
@@ -133,8 +158,8 @@ $database = 'master'
 ```powershell
 # REQUIRED FORMAT - Aligned = signs
 $splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
+    SqlInstance     = $instance
+    SqlCredential   = $credential
     Database        = $dbName
     EnableException = $true
 }
@@ -150,6 +175,16 @@ $splat = @{
 
 - Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
 - Create unique variable names across all scopes to prevent collisions
+
+## WHERE-OBJECT USAGE
+
+Prefer direct property comparison for simple filters. Use a script block only for complex boolean logic, unsupported operators, or nested property and method access.
+
+```powershell
+$master = $databases | Where-Object Name -eq "master"
+$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
+$hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+```
 
 ## FORMATTING RULES
 
@@ -207,13 +242,7 @@ When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not
 
 ## TEST GUIDELINES
 
-**For test style requirements**, read `tests/CLAUDE.md`. It is the single source for test standards.
-**For Pester v5 migration**, read `.github/prompts/migration.md`.
-
-Key points:
-- ALWAYS update parameter validation tests when parameters change
-- Add 1-3 focused tests for new functionality
-- Use EnableException in BeforeAll/AfterAll blocks
+`tests/CLAUDE.md` is the single source for ongoing test policy, including Pester structure, real-boundary behavioral and integration coverage, regression tests, instance selection, fixtures, cleanup, and assertions. Read it before changing command behavior or any test file.
 
 ## VERIFICATION CHECKLIST
 
