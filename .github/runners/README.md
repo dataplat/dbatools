@@ -103,13 +103,15 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   queued holds only `WARM_FLOOR` (3) rather than its full five or ten. This is the
   largest single cost lever in the fleet -- July 2026 ran at 14.6% utilization (138.1
   job-hours against 948.9 billed VM-hours), and replaying that month's real job
-  timeline through the policy attributes the waste as 57% hot-idle lanes (what this
-  fixes) and 27% per-VM boot and delete lag (what it cannot).
-- **Boot overhead is a floor that pool sizing cannot reach.** Runners are single-use,
-  so July billed 1,726 VMs for 1,668 jobs -- job count, not pool size, decides how many
-  boots get paid for. At ~9 min of non-job overhead per VM that is ~$106/month no matter
-  how low `WARM_FLOOR` goes. Lowering the floor buys *latency* (how many jobs of a matrix
-  start on an already-booted VM), not boot savings.
+  timeline through the policy attributes the waste as roughly 57% hot-idle lanes (what
+  this fixes) and 27% per-VM boot and delete lag (what it cannot). That split is
+  modelled, not measured; the `FLEETSTAT` lines exist to measure it.
+- **Boot overhead is a floor that pool sizing cannot reach.** Runners are single-use, so
+  July billed 1,726 VMs for 1,668 jobs -- job count, not pool size, decides how many
+  boots get paid for. At an estimated ~9 min of non-job overhead per VM that is roughly
+  $106/month no matter how low `WARM_FLOOR` goes. Lowering the floor buys *latency*, not
+  boot savings -- and only for lanes that are already hot with idle registered VMs, since
+  a cold lane provisions from zero whatever the floor is.
 - Community CI heats a shared lane while live and for 20 minutes after; it is zero
   otherwise. Each maintainer's lane heats independently.
 - Maximum capacity is 35 only when all three maintainers and community are simultaneously
