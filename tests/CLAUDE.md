@@ -1,27 +1,32 @@
-# dbatools Pester v5 Test Guide
+# dbatools Pester 6 Test Guide
 
-This guide provides the standards and best practices for writing Pester v5 tests in the dbatools project.
+This guide provides the ongoing standards and best practices for running and writing dbatools tests with Pester 6.0.0.
+
+**This file is the single source for test policy.** General PowerShell style remains authoritative in the repository's root `CLAUDE.md` and applies to test files too.
 
 ## Local (not appveyor) Testing Setup
 
 To test commands locally during development:
 
 ```powershell
-# 1. Import the module directly from the psm1 file
+# 1. Install the supported test runtime
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
+
+# 2. Import the module directly from the psm1 file
 Import-Module .\dbatools.psm1
-# 1a. ONLY IF any errors about dbatools.library
+# 2a. ONLY IF any errors about dbatools.library
 Import-Module C:\gallery\dbatools.library
 
-# 2. Get the test configuration (private command)
+# 3. Get the test configuration (private command)
 $TestConfig = Get-TestConfig
 
-# 3. Now you can use $TestConfig properties in your tests
+# 4. Now you can use $TestConfig properties in your tests
 $TestConfig.InstanceSingle    # Test SQL instance for tests that only need one instance
 $TestConfig.InstanceMulti1    # First test SQL instance for tests that need multiple instances
 $TestConfig.InstanceMulti2    # Second test SQL instance for tests that need multiple instances
 $TestConfig.SqlCred           # Test credentials, all connections need this
 $TestConfig.Temp              # Temp directory for test files
-# 4. Set the default paras for sqlcred
+# 5. Set the default params for SqlCredential
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 ```
 
@@ -41,8 +46,32 @@ This allows you to manually test commands against actual SQL Server instances be
 
 Two consequences worth knowing before you write the test:
 
-- **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. If a fix cannot be demonstrated on any instance the CI provides, say so rather than writing a test that can never fail.
+- **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. For new or changed command behavior, the required real-boundary coverage must also run on GitHub Actions or an Azure test runner; provision the needed boundary instead of omitting the regression test.
 - **`InstanceRestart` tests share machine state.** They run in file order within a `Describe`, and one test's leftovers become the next test's fixture. If a test mutates machine state that `AfterAll` cannot reliably undo - archived certificates, service accounts, registry values - restore it in a `try`/`finally` inside the `It` itself.
+
+## TESTING FOR WARNINGS
+
+`Get-TestConfig` sets a global warning variable, so every test can assert on what a command warned about:
+
+```powershell
+$config = [ordered]@{
+    CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        # We want the tests as readable as possible so we want to set Confirm globally to $false.
+        "*-Dba*:Confirm"         = $false
+        # We use a global warning variable so that we can always test
+        # that the command does not write a warning
+        # or that the command does write the expected warning.
+        "*-Dba*:WarningVariable" = "WarnVar"
+    }
+    # We want all the tests to only write to this location.
+    # When testing a remote SQL Server instance this must be a network share
+    # where both the SQL Server instance and the test script can write to.
+    Temp             = "C:\Temp"
+}
+```
+
+So `$WarnVar` can be used with `$WarnVar | Should -Be` to test for warnings.
 
 ## MANDATORY HEADER STRUCTURE
 
@@ -57,6 +86,8 @@ param(
 )
 ```
 
+The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header because `Invoke-ManualPester` uses it to select the Pester 6 execution path. Converting the headers and runner together is separate behavior-changing work.
+
 **Critical Requirements:**
 - Use a **static command name** as a string literal (e.g., "Get-DbaDatabase")
 - NEVER derive the command name dynamically from file paths or directory structures
@@ -64,7 +95,7 @@ param(
 
 ## TEST BLOCK ORGANIZATION
 
-Pester v5 enforces strict organization of test code. Follow these rules:
+Pester 6 enforces strict organization of test code. Follow these rules:
 
 ### Code Placement Rules
 
@@ -107,7 +138,7 @@ Describe $CommandName -Tag IntegrationTests {
         $testDbName = "dbatoolsci_testdb_$(Get-Random)"
 
         # Create the objects.
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -118,7 +149,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -134,7 +165,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should do something specific" {
             # Test assertions only
-            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $result | Should -Not -BeNullOrEmpty
         }
     }
@@ -143,7 +174,7 @@ Describe $CommandName -Tag IntegrationTests {
 
 ## VARIABLE SCOPING
 
-Pester v5 has strict variable scoping rules:
+Pester 6 has strict variable scoping rules:
 
 ### Scope Modifiers
 
@@ -156,7 +187,7 @@ Pester v5 has strict variable scoping rules:
 Describe $CommandName {
     BeforeAll {
         # This variable is available in all It blocks within this Describe
-        $instanceName = $TestConfig.instance2
+        $instanceName = $TestConfig.InstanceSingle
 
         # For cross-block persistence, use $global: if needed
         $global:sharedResource = New-DbaDatabase -SqlInstance $instanceName -Name "testdb"
@@ -170,94 +201,11 @@ Describe $CommandName {
 }
 ```
 
-## DBATOOLS STYLE REQUIREMENTS
+## REPOSITORY-WIDE POWERSHELL STYLE
 
-### String and Quote Standards
-- **Always use double quotes** for strings (SQL Server module standard)
-- Properly escape quotes when needed
-- Convert all single quotes to double quotes for string literals
+All test code follows the repository-wide style in root `CLAUDE.md`. This guide adds only test-specific policy.
 
-### Hashtable Alignment (MANDATORY)
-
-**CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned using spaces:
-
-```powershell
-# REQUIRED FORMAT - Aligned = signs
-$splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
-    Database        = $dbName
-    EnableException = $true
-    Confirm         = $false
-}
-
-# FORBIDDEN - Misaligned hashtables
-$splat = @{
-    SqlInstance = $instance
-    Database = $db
-    EnableException = $true
-}
-```
-
-The equals signs must line up vertically to create clean, professional-looking code.
-
-### Variable Naming Conventions
-
-- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
-- Use direct parameters for 1-2 parameters
-- Create unique variable names across all scopes to prevent collisions
-
-```powershell
-# Good - descriptive splat names with aligned formatting
-$splatPrimary = @{
-    Primary      = $TestConfig.instance3
-    Name         = $primaryAgName
-    ClusterType  = "None"
-    FailoverMode = "Manual"
-    Certificate  = "dbatoolsci_AGCert"
-    Confirm      = $false
-}
-
-$splatReplica = @{
-    Secondary   = $TestConfig.instance2
-    Name        = $replicaAgName
-    ClusterType = "None"
-    Confirm     = $false
-}
-
-# Direct parameters for 1-2 parameters
-$ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
-```
-
-### Unique Names Across Scopes
-
-Use unique, descriptive variable names across scopes to avoid collisions:
-
-```powershell
-Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $primaryAgName = "dbatoolsci_agroup"
-        $splatPrimary = @{
-            Primary = $TestConfig.instance3
-            Name    = $primaryAgName
-        }
-        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
-    }
-
-    Context "When adding AG replicas" {
-        BeforeAll {
-            $replicaAgName = "dbatoolsci_add_replicagroup"
-            $splatRepAg = @{
-                Primary = $TestConfig.instance3
-                Name    = $replicaAgName
-            }
-            $replicaAg = New-DbaAvailabilityGroup @splatRepAg
-        }
-    }
-}
-```
-
-## PESTER v5 SYNTAX STANDARDS
+## PESTER 6 SYNTAX STANDARDS
 
 ### Variable References
 
@@ -409,26 +357,6 @@ Describe "$CommandName" -Tag "IntegrationTests" {
 }
 ```
 
-## WHERE-OBJECT USAGE
-
-Prefer direct property comparison over script blocks when possible:
-
-```powershell
-# PREFERRED - Direct property comparison
-$master = $databases | Where-Object Name -eq "master"
-$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
-$largeDbs = $databases | Where-Object Size -gt 1024
-
-# REQUIRED - Script block only for complex filtering
-$hasParameters = (Get-Command $CommandName).Parameters.Values.Name |
-    Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-```
-
-Use script blocks only when:
-- Performing complex boolean logic
-- Using operators not supported by direct comparison
-- Accessing nested properties or methods
-
 ## RESOURCE MANAGEMENT
 
 Always manage test resources properly with cleanup code:
@@ -449,7 +377,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create test resources
         $testDb = "dbatoolsci_test_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDb
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb
         $databasesToCleanup += $testDb
 
         # Disable exceptions for actual tests
@@ -463,7 +391,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up all resources with error suppression
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databasesToCleanup -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databasesToCleanup -ErrorAction SilentlyContinue
     }
 
     # Test code here
@@ -502,7 +430,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         BeforeAll {
             $allResults = @()
-            foreach ($instance in $TestConfig.Instances) {
+            foreach ($instance in $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) {
                 $allResults += Get-DbaDatabase -SqlInstance $instance
             }
         }
@@ -519,6 +447,67 @@ Describe $CommandName -Tag IntegrationTests {
     }
 }
 ```
+
+## BEHAVIORAL AND INTEGRATION COVERAGE
+
+A boundary is an external system such as SQL Server, S3, Azure Storage, SMTP, LDAP, or a file share.
+
+- Every new or changed command behavior must have at least one behavioral or integration test that executes the real implementation against a separately running boundary on GitHub Actions or an Azure test runner.
+- The boundary may be the real dependency, a production-grade compatible service, or an official emulator, but not an in-process fake or purpose-built test double.
+- Pester mocks, fabricated SMO objects, source, AST, or text assertions, and call-count assertions do not substitute for behavioral coverage unless the user explicitly approves that exception.
+- Pure unit tests may accompany behavioral coverage, but do not count as it and must not use mocks or fakes to stand in for external behavior.
+- S3-compatible tests must provision a separately running production-grade compatible service such as MinIO.
+- Azure Storage tests must provision the official Azurite emulator or use the repository's configured Azure Storage credentials and runners.
+- A skipped placeholder is not coverage. If a required dependency was not provisioned, the behavioral test and runner setup must fail rather than skip. Skipping remains appropriate when the tested server version does not support the targeted feature.
+- Regression integration tests are expected when a bug crosses a boundary. Add the smallest focused test that fails for the old behavior and passes for the fix.
+
+## TEST MANAGEMENT GUIDELINES
+
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.
+
+### When to Add or Update Tests
+
+- **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ALWAYS add focused tests for your changes** - New parameters, features, and bug fixes need tests that verify the changed behavior
+- **Use the smallest sufficient set** - Prefer a few focused tests, but add every case needed to demonstrate the behavior and regression
+- **For new commands, ALWAYS create tests** - Follow this guide
+
+### Parameter Validation Updates
+
+When you add or remove parameters from a command, you MUST update the parameter validation test:
+
+```powershell
+Context "Parameter validation" {
+    It "Should have the expected parameters" {
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "NewParameter",  # ADD new parameters here
+            "EnableException"
+            # REMOVE deleted parameters from this list
+        )
+        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    }
+}
+```
+
+### What Makes a Good Test
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Proportionate** - The smallest set that proves the behavior and important regression cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+### Balance is Key
+
+When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and the required behavioral or integration coverage
+- Refactoring without behavior changes? Existing tests may be sufficient
 
 ## VERIFICATION CHECKLIST
 
@@ -547,12 +536,13 @@ Describe $CommandName -Tag IntegrationTests {
 - [ ] Where-Object uses direct property comparison where possible
 
 **Style Requirements:**
-- [ ] Double quotes used for all strings
-- [ ] **MANDATORY**: Hashtable assignments perfectly aligned
-- [ ] Splat variables use descriptive `$splat<Purpose>` format
-- [ ] Variable names are unique across scopes
-- [ ] OTBS formatting applied throughout
-- [ ] No trailing spaces anywhere
+- [ ] File follows the repository-wide PowerShell style in root `CLAUDE.md`
+
+**Behavioral Coverage:**
+- [ ] Every new or changed command behavior has real-boundary coverage on GitHub Actions or an Azure test runner
+- [ ] Unit tests and mocks supplement rather than replace real behavioral coverage
+- [ ] Required boundaries are provisioned and missing dependencies fail instead of producing skipped placeholders
+- [ ] Bug fixes include a focused regression test when the behavior crosses a boundary
 
 **Resource Management:**
 - [ ] Cleanup code with error suppression in `AfterAll`/`AfterEach` blocks

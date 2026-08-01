@@ -23,9 +23,7 @@
    - Install: `Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2`
    - Used by: `Invoke-DbatoolsFormatter` command and CI builds
 
-3. **Pester v5.7.1** - Required for running tests
-   - Install: `Install-Module Pester -RequiredVersion 5.7.1`
-   - Tests MUST use Pester v5 syntax (strict scoping, `-ForEach` cases built in `BeforeDiscovery`)
+3. **Pester** - Follow `tests/CLAUDE.md` for the supported runtime, installation, and test policy
 
 ## PR Summary Guidelines
 
@@ -150,8 +148,7 @@ When generating PR summaries:
 # 2. Install PSScriptAnalyzer (for formatting)
 Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2 -Force
 
-# 3. Install Pester (for testing)
-Install-Module Pester -RequiredVersion 5.7.1 -Force
+# 3. Install Pester as specified in tests/CLAUDE.md
 
 # 4. Import the module to verify setup
 Import-Module .\dbatools.psd1
@@ -211,9 +208,9 @@ dbatools/
 │   ├── functions/       # Helper functions
 │   ├── configurations/  # Module config/settings
 │   └── scripts/         # Initialization scripts
-├── tests/               # Pester v5 tests (one per public command)
+├── tests/               # Pester 6 tests (one per public command)
+│   └── CLAUDE.md        # Single source for test standards
 ├── bin/                 # Build assets, SQL scripts, templates
-│   └── prompts/         # CLAUDE.md references style.md and pester.md here
 ├── xml/                 # Type and format definitions
 ├── .github/
 │   ├── workflows/       # GitHub Actions (integration tests, CI/CD)
@@ -224,9 +221,8 @@ dbatools/
 ```
 
 ### Configuration Files
-- **CLAUDE.md** - Comprehensive style guide (backticks banned, splatting rules, hashtable alignment)
-- **bin/prompts/style.md** - Test style requirements
-- **bin/prompts/pester.md** - Pester v5 standards
+- **CLAUDE.md** - Single source for repository-wide PowerShell style and workflow conventions
+- **tests/CLAUDE.md** - Single source for ongoing test policy and Pester 6 rules
 - **appveyor.yml** - AppVeyor CI (Windows testing with SQL Server 2008-2017)
 - **.github/workflows/integration-tests.yml** - GitHub Actions (cross-platform testing)
 
@@ -280,173 +276,18 @@ Runs on every push, 5 scenarios in parallel:
 - **Solution:** Check dbatools.psd1 and dbatools.psm1 have matching function lists
 - **Check:** All dependencies in RequiredModules are available
 
-## Code Style Requirements (NON-NEGOTIABLE)
+## Authoritative Development Instructions
 
-### **READ CLAUDE.md FIRST** - It contains ALL style requirements
-
-Key rules from CLAUDE.md that cause PR rejections:
-
-1. **NO BACKTICKS** - Use splatting for 3+ parameters, never use `` ` `` for line continuation
-2. **NO `= $true` in attributes** - Use `[Parameter(Mandatory)]` NOT `[Parameter(Mandatory = $true)]`
-3. **PowerShell v3 compatibility** - NO `::new()` syntax, use `New-Object` instead
-4. **Hashtable alignment** - Equals signs MUST align vertically (spaces, not tabs)
-5. **Double quotes** - Always use `"string"` never `'string'`
-6. **Descriptive splat names** - Use `$splatConnection`, never generic `$splat`
-7. **Preserve ALL comments** - Do not delete any comments, even temporary ones
-
-### Example - Correct Style
-```powershell
-# CORRECT - Aligned hashtable, descriptive name, double quotes
-$splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
-    Database        = "master"
-    EnableException = $true
-}
-$result = Get-DbaDatabase @splatConnection
-```
-
-### Example - Incorrect Style (Will Fail CI)
-```powershell
-# WRONG - Backticks, misaligned, generic name, single quotes
-$splat = @{
-    SqlInstance = $instance `
-    Database = 'master' `
-    EnableException = $true
-}
-```
-
-## Test Requirements
-
-### Test Structure (Pester v5 - Strict Rules)
-
-**Header (MANDATORY):**
-```powershell
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Get-DbaDatabase",  # Static string, never dynamic
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
-```
-
-**Structure:**
-- ALL setup code in `BeforeAll` blocks
-- ALL cleanup code in `AfterAll` blocks
-- ALL assertions in `It` blocks
-- ALL discovery-time code in `BeforeDiscovery` blocks
-- NO loose code in `Describe` or `Context` blocks, except computing a value a `-Skip:` needs
-- `-ForEach` ONLY with cases built in `BeforeDiscovery`, never a `foreach` loop around `It`
-
-### When to Add/Update Tests
-
-1. **ALWAYS update parameter validation** when parameters change
-2. **ALWAYS add 1-3 tests** for new features/parameters
-3. **ALWAYS add regression test** for bug fixes
-4. **ALWAYS create tests** for new commands (see bin/prompts/pester.md)
-
-### Parameter Validation Test (Update This When Parameters Change)
-```powershell
-Context "Parameter validation" {
-    It "Should have the expected parameters" {
-        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name |
-            Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-        $expectedParameters = @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database",
-            "EnableException"
-        )
-        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters |
-            Should -BeNullOrEmpty
-    }
-}
-```
-
-## Command Naming Conventions
-
-**CRITICAL RULES:**
-1. Use **singular** nouns: `Get-DbaDatabase` NOT `Get-DbaDatabases`
-2. Use approved verbs: Get, Set, New, Remove, Invoke, etc.
-3. Follow pattern: `<Verb>-Dba<Noun>`
-4. Author as: "the dbatools team + Claude" in .NOTES section
-
-## Common Mistakes to Avoid
-
-### Top 10 PR Rejection Causes
-
-1. **Not reading CLAUDE.md** - Read it first, it overrides default PowerShell style guides
-2. **Using backticks** - Use splatting instead for 3+ parameters
-3. **Module won't import** - Missing dbatools.library or function not registered
-4. **Tests fail** - Didn't run tests locally before pushing
-5. **Formatting errors** - Didn't run `Invoke-DbatoolsFormatter`
-6. **Hashtable misalignment** - Equals signs not vertically aligned
-7. **Using `= $true`** - Use modern parameter attribute syntax
-8. **Breaking v3 compatibility** - Used `::new()` or other v5+ features
-9. **Missing parameter validation test** - Didn't update when adding parameters
-10. **Deleting comments** - Comments must be preserved exactly
-
-### PowerShell v3 Compatibility
-
-**Banned (v5+ only):**
-- `[ClassName]::new()` - Use `New-Object ClassName` instead
-- Class definitions - Not supported
-- Certain type accelerators
-
-**Required:**
-- `New-Object -TypeName System.Collections.Hashtable`
-- PowerShell v3-compatible syntax throughout
-
-## Quick Reference - Common Tasks
-
-### Adding a New Parameter
-```powershell
-# 1. Add parameter to function
-# 2. Update parameter validation test in tests\CommandName.Tests.ps1
-# 3. Add 1-2 tests demonstrating the parameter works
-# 4. Run Invoke-DbatoolsFormatter on the function file
-# 5. Run Invoke-Pester on the test file
-```
-
-### Creating a New Command
-```powershell
-# 1. Create public\Verb-DbaNoun.ps1 (singular noun!)
-# 2. Add author as "the dbatools team + Claude"
-# 3. Add to FunctionsToExport in dbatools.psd1 (alphabetically)
-# 4. Add to Export-ModuleMember in dbatools.psm1 (alphabetically)
-# 5. Create tests\Verb-DbaNoun.Tests.ps1 (see bin/prompts/pester.md)
-# 6. Format: Invoke-DbatoolsFormatter -Path public\Verb-DbaNoun.ps1
-# 7. Test: Invoke-Pester tests\Verb-DbaNoun.Tests.ps1
-```
-
-### Fixing a Bug
-```powershell
-# 1. Reproduce the bug with a test
-# 2. Fix the code in public\CommandName.ps1
-# 3. Add regression test to tests\CommandName.Tests.ps1
-# 4. Format: Invoke-DbatoolsFormatter -Path public\CommandName.ps1
-# 5. Verify: Invoke-Pester tests\CommandName.Tests.ps1
-# 6. Commit with descriptive message
-```
-
-## Environment Variables & Test Config
-
-**AppVeyor test instances:**
-- `$TestConfig.InstanceSingle` = SQL Server 2022
-- `$TestConfig.InstanceMulti1` = SQL Server 2022
-- `$TestConfig.InstanceMulti2` = SQL Server 2017
-
-**GitHub Actions:**
-- Linux: `localhost`, `localhost:14333` (Docker containers)
-- Windows: `(localdb)\MSSQLLocalDB`, `localhost` with SQL auth
+- Read root `CLAUDE.md` for repository-wide PowerShell style and workflow conventions. Those rules apply under `public/`, `private/`, `tests/`, and the repository scripts.
+- Read `tests/CLAUDE.md` before changing command behavior or tests. It is the single source for Pester 6 structure, real-boundary behavioral and integration coverage, regression tests, test instances, fixtures, cleanup, and assertions.
+- Do not restate these rules in Copilot-specific instructions; update the authoritative file instead.
 
 ## Trust These Instructions
 
 **Important:** These instructions are maintained and validated. When in doubt:
 1. Check CLAUDE.md first (comprehensive style guide)
-2. Check bin/prompts/style.md for test styles
-3. Check bin/prompts/pester.md for Pester v5 requirements
-4. Only search codebase if instructions are incomplete or incorrect
+2. Check tests/CLAUDE.md for ongoing test policy and Pester 6 requirements
+3. Only search codebase if instructions are incomplete or incorrect
 
 **This guide is accurate as of the repository state.** If you find inaccuracies, the repository may have changed - verify with a search only when instructions don't work as described.
 
@@ -455,14 +296,8 @@ Context "Parameter validation" {
 ## Summary Checklist
 
 Before submitting any PR, verify:
-- [ ] Read CLAUDE.md completely
+- [ ] Read root `CLAUDE.md`
+- [ ] If command behavior or tests changed, read `tests/CLAUDE.md`
 - [ ] Installed dbatools.library (module imports successfully)
-- [ ] Code formatted with `Invoke-DbatoolsFormatter`
-- [ ] No backticks used for line continuation
-- [ ] Hashtables properly aligned
-- [ ] PowerShell v3 compatible (no `::new()`)
-- [ ] All parameter validation tests updated
-- [ ] New features have 1-3 tests
-- [ ] Tests pass: `Invoke-Pester .\tests\CommandName.Tests.ps1`
-- [ ] New commands registered in both .psd1 and .psm1
-- [ ] Comments preserved exactly
+- [ ] Applied the relevant authoritative checklists from those files
+- [ ] Ran the verification appropriate to the changed files
