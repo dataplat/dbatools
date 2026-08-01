@@ -146,10 +146,18 @@ Describe $CommandName -Tag UnitTests {
     }
     Context "Passing just -Update works, see #6823" {
         It "works with -Update" {
-            function Get-DbaBuildReferenceIndexOnline { }
-            Mock Get-DbaBuildReferenceIndexOnline -MockWith { }
+            # This used to declare a dummy Get-DbaBuildReferenceIndexOnline and mock that. The real
+            # one is a nested function inside Update-DbaBuildReference, so it cannot be mocked at
+            # all, and the mock here bound to the dummy instead. The test therefore ran the real
+            # update: a live download of the build reference index, which also rewrites
+            # bin\dbatools-buildref-index.json. Update-DbaBuildReference is what Get-DbaBuild calls
+            # and it is a real command, so it is the boundary that can actually be intercepted.
+            Mock Update-DbaBuildReference -ModuleName dbatools -MockWith { }
+
             Get-DbaBuild -Update -WarningVariable warnings 3>$null
+
             $warnings | Should -BeNullOrEmpty
+            Should -Invoke -CommandName Update-DbaBuildReference -ModuleName dbatools -Exactly 1 -Scope It
         }
     }
     Context "Retired KBs" {
