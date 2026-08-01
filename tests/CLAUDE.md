@@ -276,8 +276,9 @@ Pester evaluates `-Skip:` while it discovers the tests, before any `BeforeAll` r
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     # These tests need the Microsoft Update Catalog. If it does not answer, every one of them waits
-    # 100 seconds for the default timeout of Invoke-WebRequest and then fails for a reason that has
-    # nothing to do with dbatools. So we probe it once here and skip the tests instead.
+    # for the timeout of Invoke-WebRequest and then fails for a reason that has nothing to do with
+    # dbatools. So we probe it once here and skip the tests instead. We probe for the download button
+    # the command itself looks for, because the catalog also answers 200 with an empty results page.
     try {
         $splatCatalog = @{
             Uri             = "https://www.catalog.update.microsoft.com/Search.aspx?q=KB2992080"
@@ -285,7 +286,8 @@ Describe $CommandName -Tag IntegrationTests {
             TimeoutSec      = 30
             ErrorAction     = "Stop"
         }
-        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+        $catalogResponse = Invoke-WebRequest @splatCatalog
+        $catalogReachable = [bool]($catalogResponse.InputFields | Where-Object { $PSItem.type -eq "Button" -and $PSItem.class -eq "flatBlueButtonDownload focus-only" })
     } catch {
         $catalogReachable = $false
     }

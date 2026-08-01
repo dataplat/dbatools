@@ -52,6 +52,10 @@ Describe $CommandName -Tag IntegrationTests {
     #
     # We have to probe the search page and not the start page: on 2026-07-31 the start page answered
     # in one second while every search timed out, so a probe of the start page would not have helped.
+    # And we have to probe for a download button and not for the status code: on 2026-08-01 the search
+    # page answered 200 in about a second but rendered no results table for any query, so a probe of
+    # the status code let the tests run and fail. The download button is what the command itself looks
+    # for, so this probe is true exactly when the command can work.
     # The same probe is used in Get-DbaKbUpdate.Tests.ps1.
     try {
         $splatCatalog = @{
@@ -60,7 +64,8 @@ Describe $CommandName -Tag IntegrationTests {
             TimeoutSec      = 30
             ErrorAction     = "Stop"
         }
-        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+        $catalogResponse = Invoke-WebRequest @splatCatalog
+        $catalogReachable = [bool]($catalogResponse.InputFields | Where-Object { $PSItem.type -eq "Button" -and $PSItem.class -eq "flatBlueButtonDownload focus-only" })
     } catch {
         $catalogReachable = $false
     }
@@ -80,13 +85,11 @@ Describe $CommandName -Tag IntegrationTests {
         It "downloads a small update" {
             $results = Save-DbaKbUpdate -Name KB2992080 -Architecture All -Path $tempPath
             $results.Name -match "aspnet"
-            $filesToRemove += $results.FullName
         }
 
         It "supports piping" {
             $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Architecture All -Path $tempPath
             $results.Name -match "aspnet"
-            $filesToRemove += $results.FullName
         }
 
         It "Download multiple updates" {
@@ -95,15 +98,11 @@ Describe $CommandName -Tag IntegrationTests {
             # basic retry logic in case the first download didn't get all of the files
             if ($null -eq $results -or $results.Count -ne 2) {
                 Write-Message -Level Warning -Message "Retrying..."
-                if ($results.Count -gt 0) {
-                    $filesToRemove += $results.FullName
-                }
                 Start-Sleep -s 30
                 $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Architecture All -Path $tempPath
             }
 
             $results.Count | Should -Be 2
-            $filesToRemove += $results.FullName
 
             # download multiple updates via piping
             $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
@@ -111,15 +110,11 @@ Describe $CommandName -Tag IntegrationTests {
             # basic retry logic in case the first download didn't get all of the files
             if ($null -eq $results -or $results.Count -ne 2) {
                 Write-Message -Level Warning -Message "Retrying..."
-                if ($results.Count -gt 0) {
-                    $filesToRemove += $results.FullName
-                }
                 Start-Sleep -s 30
                 $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Architecture All -Path $tempPath
             }
 
             $results.Count | Should -Be 2
-            $filesToRemove += $results.FullName
         }
 
         # see https://github.com/dataplat/dbatools/issues/6745
@@ -128,7 +123,6 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Save-DbaKbUpdate -Name KB4513696 -Architecture All -Path $tempPath
             $results.Count | Should -Be 1
-            $filesToRemove += $results.FullName
         }
     }
 }
