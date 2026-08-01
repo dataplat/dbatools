@@ -40,7 +40,7 @@ function Install-DbaFirstResponderKit {
         Specifies specific script files to install instead of the entire First Responder Kit. Accepts multiple script names and wildcards.
         Use this to install only the procedures you need (like sp_Blitz.sql, sp_BlitzCache.sql) or to run official install scripts (Install-All-Scripts.sql, Install-Azure.sql). Also supports Uninstall.sql to remove the toolkit.
 
-    .PARAMETER LetPublicExecute
+    .PARAMETER PublicExecute
         Signs the specified stored procedures with a certificate called "FirstResponderKitCertificate" that lets members of the public server role (that is, everyone) execute those procedures as if they have the CONTROL SERVER permission.
         This follows the pattern set in the "How to Grant Permissions to Non-DBAs" example at https://www.brentozar.com/askbrent/
         If you are installing to a non-master database, then the public server role will be given GRANT CONNECT in that database.
@@ -139,7 +139,7 @@ function Install-DbaFirstResponderKit {
 
         Uninstalls the First Responder Kit by running the official uninstall script.
     .EXAMPLE
-        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -LetPublicExecute sp_BlitzFirst, sp_BlitzIndex
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -PublicExecute sp_BlitzFirst, sp_BlitzIndex
 
         Installs all scripts, but lets the everyone execute sp_BlitzFirst and sp_BlitzIndex even if they do not have high permissions.
     #>
@@ -158,7 +158,7 @@ function Install-DbaFirstResponderKit {
             'sp_DatabaseRestore.sql', 'sp_ineachdb.sql', 'sp_kill.sql',
             'SqlServerVersions.sql', 'Uninstall.sql')]
         [string[]]$OnlyScript,
-        [string[]]$LetPublicExecute,
+        [string[]]$PublicExecute,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -254,8 +254,8 @@ function Install-DbaFirstResponderKit {
                         $baseres
                     }
                 }
-                if ($LetPublicExecute) {
-                    Write-Message -Level Verbose -Message "Signing $LetPublicExecute for $database on $instance."
+                if ($PublicExecute) {
+                    Write-Message -Level Verbose -Message "Signing $PublicExecute for $database on $instance."
                     try {
                         # For idempotency.
                         # Cannot use Get-DbaDbUser here. It does not see certificate-mapped users.
@@ -267,7 +267,7 @@ function Install-DbaFirstResponderKit {
                         "
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $userDrop -EnableException
                         Get-DbaLogin -SqlInstance $server -Login FirstResponderKitLogin | Remove-DbaLogin
-                        foreach ($proc in $LetPublicExecute) {
+                        foreach ($proc in $PublicExecute) {
                             $signatureDrop = "
                             IF EXISTS (SELECT 1 FROM sys.crypt_properties WHERE major_id = OBJECT_ID('$proc') AND crypt_type = 'SPVC')
                             BEGIN
@@ -296,7 +296,7 @@ function Install-DbaFirstResponderKit {
                         START_DATE = '20010101', EXPIRY_DATE = '21000101';
                         "
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $certMake -EnableException
-                        foreach ($proc in $LetPublicExecute) {
+                        foreach ($proc in $PublicExecute) {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "ADD SIGNATURE TO $proc BY CERTIFICATE FirstResponderKitCertificate WITH PASSWORD = '5OClockSomewhere-Dr0ppedSoon';" -EnableException
                         }
                         Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "ALTER CERTIFICATE FirstResponderKitCertificate REMOVE PRIVATE KEY;" -EnableException
@@ -319,7 +319,7 @@ function Install-DbaFirstResponderKit {
                         if ($Database -ne 'master') {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "GRANT CONNECT TO [public];" -EnableException
                         }
-                        foreach ($proc in $LetPublicExecute) {
+                        foreach ($proc in $PublicExecute) {
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "GRANT EXECUTE ON $proc TO [public];" -EnableException
                         }
                     } catch {

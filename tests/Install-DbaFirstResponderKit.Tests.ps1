@@ -17,7 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "Database",
                 "LocalFile",
                 "OnlyScript",
-                "LetPublicExecute",
+                "PublicExecute",
                 "Force",
                 "EnableException"
             )
@@ -153,11 +153,11 @@ CREATE LOGIN [$loginName] WITH PASSWORD = '<enterStrongPasswordHere>';
             $public = New-Object System.Management.Automation.PSCredential($loginName, $password)
 
             $splatFirstResponderKit = @{
-                SqlInstance      = $TestConfig.InstanceMulti1
-                Database         = $database
-                Branch           = "main"
-                Force            = $true
-                LetPublicExecute = @("sp_BlitzFirst", "sp_BlitzIndex")
+                SqlInstance   = $TestConfig.InstanceMulti1
+                Database      = $database
+                Branch        = "main"
+                Force         = $true
+                PublicExecute = @("sp_BlitzFirst", "sp_BlitzIndex")
             }
             $null = Install-DbaFirstResponderKit @splatFirstResponderKit
 
@@ -194,7 +194,7 @@ CREATE LOGIN [$loginName] WITH PASSWORD = '<enterStrongPasswordHere>';
                 SqlCredential   = $public
                 EnableException = $true
             }
-            # The login can connect to the database because LetPublicExecute granted CONNECT to public,
+            # The login can connect to the database because PublicExecute granted CONNECT to public,
             # so the only thing that may stop it is the missing EXECUTE permission on the unsigned procedure.
             { Invoke-DbaQuery @splatPublicBlitz } | Should -Throw -ExpectedMessage "*EXECUTE permission*"
         }
@@ -250,7 +250,7 @@ CREATE LOGIN [$loginName] WITH PASSWORD = '<enterStrongPasswordHere>';
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        # Without LetPublicExecute the command never grants CONNECT to public, so the login is stopped
+        # Without PublicExecute the command never grants CONNECT to public, so the login is stopped
         # one step earlier than in the signing contexts: it cannot open the database at all.
         # Asserting that message still proves the login exists and authenticated, which a bare
         # Should -Throw would not - a wrong password fails with "Login failed for user" instead.
@@ -305,11 +305,11 @@ CREATE LOGIN [$loginName] WITH PASSWORD = '<enterStrongPasswordHere>';
             $public = New-Object System.Management.Automation.PSCredential($loginName, $password)
 
             $splatFirstResponderKit = @{
-                SqlInstance      = $TestConfig.InstanceMulti1
-                Database         = $database
-                Branch           = "main"
-                Force            = $true
-                LetPublicExecute = @("sp_BlitzFirst", "sp_BlitzIndex")
+                SqlInstance   = $TestConfig.InstanceMulti1
+                Database      = $database
+                Branch        = "main"
+                Force         = $true
+                PublicExecute = @("sp_BlitzFirst", "sp_BlitzIndex")
             }
             $null = Install-DbaFirstResponderKit @splatFirstResponderKit
 
