@@ -4,7 +4,6 @@ param(
     $CommandName = "Test-PSRemoting",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
-. "$PSScriptRoot\..\private\functions\Test-PSRemoting.ps1"
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
