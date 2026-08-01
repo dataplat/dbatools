@@ -27,6 +27,23 @@ $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 
 This allows you to manually test commands against actual SQL Server instances before running the full test suite using `Invoke-ManualPester`
 
+## CHOOSING A TEST INSTANCE
+
+`$TestConfig` exposes several SQL Server instances, defined in `private/testing/Get-TestConfig.ps1`. The choice is not cosmetic: `pester.groups.ps1` autodetects which `$TestConfig.Instance*` variable a test file references and assigns the file to that AppVeyor scenario. **Always pick the lightest instance that can demonstrate the behaviour** - reaching for a heavier one moves the test into a scarcer, slower scenario for no benefit.
+
+| Instance | Use it for | Scenario |
+|---|---|---|
+| `InstanceSingle` | Anything needing one instance. The default choice by a wide margin. | SINGLE |
+| `InstanceMulti1` / `InstanceMulti2` | Behaviour that needs two instances but does not copy between them. | MULTI |
+| `InstanceCopy1` / `InstanceCopy2` | `Copy-Dba*` commands and anything that moves objects between instances. | COPY |
+| `InstanceHadr` | Availability groups, mirroring, log shipping. | HADR |
+| `InstanceRestart` | Anything that restarts the service or changes service-level configuration: network certificates, TCP ports, extended protection, filestream, service accounts. | RESTART |
+
+Two consequences worth knowing before you write the test:
+
+- **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. If a fix cannot be demonstrated on any instance the CI provides, say so rather than writing a test that can never fail.
+- **`InstanceRestart` tests share machine state.** They run in file order within a `Describe`, and one test's leftovers become the next test's fixture. If a test mutates machine state that `AfterAll` cannot reliably undo - archived certificates, service accounts, registry values - restore it in a `try`/`finally` inside the `It` itself.
+
 ## MANDATORY HEADER STRUCTURE
 
 Every test file MUST include this exact header:
