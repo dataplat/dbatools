@@ -5,8 +5,6 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-. "$PSScriptRoot\..\private\functions\Get-ObjectNameParts.ps1"
-
 Describe $CommandName -Tag UnitTests {
     Context 'Parameter validation' {
         BeforeAll {
