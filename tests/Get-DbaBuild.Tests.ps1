@@ -174,45 +174,50 @@ Describe $CommandName -Tag UnitTests {
     }
     # These are groups by major release (aka "Name")
     Context "Properties Check for major releases" {
-        BeforeAll {
-            $OrderedKeys = $OrderedKeys
-            $Groups = $Groups
+        # The groups have to be built here and not in a BeforeAll. -ForEach is read while Pester
+        # discovers the tests, and $OrderedKeys and $Groups were only ever built in the BeforeAll of
+        # a sibling Context, so the foreach that used to stand here ran over nothing and none of the
+        # tests below existed. The "$OrderedKeys = $OrderedKeys" that used to be here was an attempt
+        # to import them into this scope and could never work.
+        # Everything an It block reads has to be a key of the case, so the version list travels with
+        # the release name instead of being looked up again at run time.
+        BeforeDiscovery {
+            $moduleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -NotMatch net).ModuleBase
+            $indexReference = Get-Content "$moduleBase\bin\dbatools-buildref-index.json" -Raw | ConvertFrom-Json
+            $majorReleaseCase = $indexReference.Data |
+                Group-Object -Property { $PSItem.Version.Split(".")[0 .. 1] -join "." } |
+                ForEach-Object { @{ MajorRelease = $PSItem.Name; Versions = $PSItem.Group } }
         }
 
-        foreach ($g in $OrderedKeys) {
-            Context "Properties Check, for major release $g" {
-                BeforeAll {
-                    $Versions = $Groups[$g]
+        Context "Properties Check, for major release <MajorRelease>" -ForEach $majorReleaseCase {
+            It "has the first element with a Name" {
+                $Versions[0].Name | Should -BeLike "20*"
+            }
+            It "No multiple Names around" {
+                ($Versions.Name | Where-Object { $PSItem }).Count | Should -Be 1
+            }
+            It "SP Property is formatted correctly" {
+                $Versions.SP | Where-Object { $PSItem } | Should -Match "^RTM$|^SP[\d]+$|^RC"
+            }
+            It "CU Property is formatted correctly" {
+                $CUMatch = $Versions.CU | Where-Object { $PSItem }
+                if ($CUMatch) {
+                    $CUMatch | Should -Match "^CU[\d]+$"
                 }
-                It "has the first element with a Name" {
-                    $Versions[0].Name | Should -BeLike "20*"
-                }
-                It "No multiple Names around" {
-                    ($Versions.Name | Where-Object { $PSItem }).Count | Should -Be 1
-                }
-                It "SP Property is formatted correctly" {
-                    $Versions.SP | Where-Object { $PSItem } | Should -Match "^RTM$|^SP[\d]+$|^RC"
-                }
-                It "CU Property is formatted correctly" {
-                    $CUMatch = $Versions.CU | Where-Object { $PSItem }
-                    if ($CUMatch) {
-                        $CUMatch | Should -Match "^CU[\d]+$"
-                    }
-                }
-                It "SPs are ordered correctly" {
-                    $SPs = $Versions.SP | Where-Object { $PSItem }
-                    ($SPs | Select-Object -First 1) | Should -BeIn "RTM", "RC"
-                    $ActualSPs = $SPs | Where-Object { $PSItem -match "^SP[\d]+$" }
-                    $OrderedActualSPs = $ActualSPs | Sort-Object
-                    ($ActualSPs -join ",") | Should -Be ($OrderedActualSPs -join ",")
-                }
-                # see https://github.com/dataplat/dbatools/pull/2466
-                It "KBList has only numbers on it" {
-                    $NotNumbers = $Versions.KBList | Where-Object { $PSItem } | Where-Object { $PSItem -notmatch "^[\d]+$" }
-                    if ($NotNumbers.Count -ne 0) {
-                        foreach ($Nn in $NotNumbers) {
-                            $Nn | Should -Be "Composed by integers"
-                        }
+            }
+            It "SPs are ordered correctly" {
+                $SPs = $Versions.SP | Where-Object { $PSItem }
+                ($SPs | Select-Object -First 1) | Should -BeIn "RTM", "RC"
+                $ActualSPs = $SPs | Where-Object { $PSItem -match "^SP[\d]+$" }
+                $OrderedActualSPs = $ActualSPs | Sort-Object
+                ($ActualSPs -join ",") | Should -Be ($OrderedActualSPs -join ",")
+            }
+            # see https://github.com/dataplat/dbatools/pull/2466
+            It "KBList has only numbers on it" {
+                $NotNumbers = $Versions.KBList | Where-Object { $PSItem } | Where-Object { $PSItem -notmatch "^[\d]+$" }
+                if ($NotNumbers.Count -ne 0) {
+                    foreach ($Nn in $NotNumbers) {
+                        $Nn | Should -Be "Composed by integers"
                     }
                 }
             }
