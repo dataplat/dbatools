@@ -212,8 +212,9 @@ dbatools/
 │   ├── configurations/  # Module config/settings
 │   └── scripts/         # Initialization scripts
 ├── tests/               # Pester v5 tests (one per public command)
+│   └── CLAUDE.md        # Single source for test standards
 ├── bin/                 # Build assets, SQL scripts, templates
-│   └── prompts/         # CLAUDE.md references style.md and pester.md here
+│   └── prompts/         # Stubs pointing at tests/CLAUDE.md
 ├── xml/                 # Type and format definitions
 ├── .github/
 │   ├── workflows/       # GitHub Actions (integration tests, CI/CD)
@@ -225,8 +226,7 @@ dbatools/
 
 ### Configuration Files
 - **CLAUDE.md** - Comprehensive style guide (backticks banned, splatting rules, hashtable alignment)
-- **bin/prompts/style.md** - Test style requirements
-- **bin/prompts/pester.md** - Pester v5 standards
+- **tests/CLAUDE.md** - Test standards, the single source (style, Pester v5 rules, instance selection)
 - **appveyor.yml** - AppVeyor CI (Windows testing with SQL Server 2008-2017)
 - **.github/workflows/integration-tests.yml** - GitHub Actions (cross-platform testing)
 
@@ -342,7 +342,7 @@ param(
 1. **ALWAYS update parameter validation** when parameters change
 2. **ALWAYS add 1-3 tests** for new features/parameters
 3. **ALWAYS add regression test** for bug fixes
-4. **ALWAYS create tests** for new commands (see bin/prompts/pester.md)
+4. **ALWAYS create tests** for new commands (see tests/CLAUDE.md)
 
 ### Parameter Validation Test (Update This When Parameters Change)
 ```powershell
@@ -413,7 +413,7 @@ Context "Parameter validation" {
 # 2. Add author as "the dbatools team + Claude"
 # 3. Add to FunctionsToExport in dbatools.psd1 (alphabetically)
 # 4. Add to Export-ModuleMember in dbatools.psm1 (alphabetically)
-# 5. Create tests\Verb-DbaNoun.Tests.ps1 (see bin/prompts/pester.md)
+# 5. Create tests\Verb-DbaNoun.Tests.ps1 (see tests/CLAUDE.md)
 # 6. Format: Invoke-DbatoolsFormatter -Path public\Verb-DbaNoun.ps1
 # 7. Test: Invoke-Pester tests\Verb-DbaNoun.Tests.ps1
 ```
@@ -443,8 +443,7 @@ Context "Parameter validation" {
 
 **Important:** These instructions are maintained and validated. When in doubt:
 1. Check CLAUDE.md first (comprehensive style guide)
-2. Check bin/prompts/style.md for test styles
-3. Check bin/prompts/pester.md for Pester v5 requirements
+2. Check tests/CLAUDE.md for test standards and Pester v5 requirements
 4. Only search codebase if instructions are incomplete or incorrect
 
 **This guide is accurate as of the repository state.** If you find inaccuracies, the repository may have changed - verify with a search only when instructions don't work as described.

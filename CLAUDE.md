@@ -207,7 +207,7 @@ When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not
 
 ## TEST GUIDELINES
 
-**For test style requirements**, read `.github/prompts/style.md`.
+**For test style requirements**, read `tests/CLAUDE.md`. It is the single source for test standards.
 **For Pester v5 migration**, read `.github/prompts/migration.md`.
 
 Key points:

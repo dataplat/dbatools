@@ -1,5 +1,9 @@
 # Pester v4 to v5 Migration Guide
 
+This document covers the mechanics of converting an existing Pester v4 test file. The standards a
+finished test file has to meet live in [tests/CLAUDE.md](../../tests/CLAUDE.md), which is the single
+source for them - where the two overlap, tests/CLAUDE.md wins.
+
 ## CORE PESTER v5 REQUIREMENTS
 
 ### Mandatory Header Structure

@@ -2,6 +2,8 @@
 
 This guide provides the standards and best practices for writing Pester v5 tests in the dbatools project.
 
+**This file is the single source for test standards.** `bin/prompts/pester.md`, `bin/prompts/style.md` and `.github/prompts/style.md` used to carry their own copies of these rules and had drifted apart; they now point here. `.github/prompts/migration.md` is still its own document, but only for the mechanics of converting a Pester v4 file - the rules themselves live here.
+
 ## Local (not appveyor) Testing Setup
 
 To test commands locally during development:
@@ -43,6 +45,42 @@ Two consequences worth knowing before you write the test:
 
 - **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. If a fix cannot be demonstrated on any instance the CI provides, say so rather than writing a test that can never fail.
 - **`InstanceRestart` tests share machine state.** They run in file order within a `Describe`, and one test's leftovers become the next test's fixture. If a test mutates machine state that `AfterAll` cannot reliably undo - archived certificates, service accounts, registry values - restore it in a `try`/`finally` inside the `It` itself.
+
+## COMMENT PRESERVATION REQUIREMENT
+
+**ABSOLUTE MANDATE**: ALL COMMENTS MUST BE PRESERVED EXACTLY as they appear in the original code. This includes:
+- Development notes and temporary comments
+- End-of-file comments
+- CI/CD system comments (especially AppVeyor)
+- Seemingly unrelated comments
+- Any comment that appears to be a note or reminder
+- Do not delete anything that says #$TestConfig.instance...
+
+**NO EXCEPTIONS** - Every single comment must remain intact in its original location and format.
+
+## TESTING FOR WARNINGS
+
+`Get-TestConfig` sets a global warning variable, so every test can assert on what a command warned about:
+
+```powershell
+$config = [ordered]@{
+    CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        # We want the tests as readable as possible so we want to set Confirm globally to $false.
+        '*-Dba*:Confirm'         = $false
+        # We use a global warning variable so that we can always test
+        # that the command does not write a warning
+        # or that the command does write the expected warning.
+        '*-Dba*:WarningVariable' = 'WarnVar'
+    }
+    # We want all the tests to only write to this location.
+    # When testing a remote SQL Server instance this must be a network share
+    # where both the SQL Server instance and the test script can write to.
+    Temp             = 'C:\Temp'
+}
+```
+
+So `$WarnVar` can be used with `$WarnVar | Should -Be` to test for warnings.
 
 ## MANDATORY HEADER STRUCTURE
 
@@ -106,7 +144,7 @@ Describe $CommandName -Tag IntegrationTests {
         $testDbName = "dbatoolsci_testdb_$(Get-Random)"
 
         # Create the objects.
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -117,7 +155,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -133,7 +171,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should do something specific" {
             # Test assertions only
-            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $result | Should -Not -BeNullOrEmpty
         }
     }
@@ -155,7 +193,7 @@ Pester v5 has strict variable scoping rules:
 Describe $CommandName {
     BeforeAll {
         # This variable is available in all It blocks within this Describe
-        $instanceName = $TestConfig.instance2
+        $instanceName = $TestConfig.InstanceSingle
 
         # For cross-block persistence, use $global: if needed
         $global:sharedResource = New-DbaDatabase -SqlInstance $instanceName -Name "testdb"
@@ -176,6 +214,37 @@ Describe $CommandName {
 - Properly escape quotes when needed
 - Convert all single quotes to double quotes for string literals
 
+### Array Formatting
+
+Multi-line arrays must be formatted consistently:
+
+```powershell
+$expectedParameters = @(
+    "SqlInstance",
+    "SqlCredential",
+    "Database",
+    "EnableException"
+)
+```
+
+### String Formatting
+
+Use here-strings for multi-line strings instead of concatenation:
+
+```powershell
+# CORRECT - Here-string
+$query = @"
+SELECT name, database_id
+FROM sys.databases
+WHERE name = 'master'
+"@
+
+# WRONG - Concatenated strings, and backticks are banned anyway
+$query = "SELECT name, database_id" +
+         "FROM sys.databases" +
+         "WHERE name = 'master'"
+```
+
 ### Hashtable Alignment (MANDATORY)
 
 **CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned using spaces:
@@ -183,8 +252,8 @@ Describe $CommandName {
 ```powershell
 # REQUIRED FORMAT - Aligned = signs
 $splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
+    SqlInstance     = $TestConfig.InstanceSingle
+    SqlCredential   = $TestConfig.SqlCred
     Database        = $dbName
     EnableException = $true
     Confirm         = $false
@@ -209,7 +278,7 @@ The equals signs must line up vertically to create clean, professional-looking c
 ```powershell
 # Good - descriptive splat names with aligned formatting
 $splatPrimary = @{
-    Primary      = $TestConfig.instance3
+    Primary      = $TestConfig.InstanceHadr
     Name         = $primaryAgName
     ClusterType  = "None"
     FailoverMode = "Manual"
@@ -218,7 +287,7 @@ $splatPrimary = @{
 }
 
 $splatReplica = @{
-    Secondary   = $TestConfig.instance2
+    Secondary   = $TestConfig.InstanceHadr
     Name        = $replicaAgName
     ClusterType = "None"
     Confirm     = $false
@@ -237,7 +306,7 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $primaryAgName = "dbatoolsci_agroup"
         $splatPrimary = @{
-            Primary = $TestConfig.instance3
+            Primary = $TestConfig.InstanceHadr
             Name    = $primaryAgName
         }
         $primaryAg = New-DbaAvailabilityGroup @splatPrimary
@@ -247,7 +316,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $replicaAgName = "dbatoolsci_add_replicagroup"
             $splatRepAg = @{
-                Primary = $TestConfig.instance3
+                Primary = $TestConfig.InstanceHadr
                 Name    = $replicaAgName
             }
             $replicaAg = New-DbaAvailabilityGroup @splatRepAg
@@ -394,7 +463,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create test resources
         $testDb = "dbatoolsci_test_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDb
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb
         $databasesToCleanup += $testDb
 
         # Disable exceptions for actual tests
@@ -408,7 +477,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up all resources with error suppression
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databasesToCleanup -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databasesToCleanup -ErrorAction SilentlyContinue
     }
 
     # Test code here
@@ -447,7 +516,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         BeforeAll {
             $allResults = @()
-            foreach ($instance in $TestConfig.Instances) {
+            foreach ($instance in $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) {
                 $allResults += Get-DbaDatabase -SqlInstance $instance
             }
         }
@@ -464,6 +533,55 @@ Describe $CommandName -Tag IntegrationTests {
     }
 }
 ```
+
+## TEST MANAGEMENT GUIDELINES
+
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.
+
+### When to Add or Update Tests
+
+- **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ALWAYS add reasonable tests for your changes** - When adding new parameters, features, or fixing bugs, include tests that verify the changes work correctly
+- **BE REASONABLE** - Add 1-3 focused tests for your changes, not 100 tests
+- **For new commands, ALWAYS create tests** - Follow this guide and `.github/prompts/migration.md`
+
+### Parameter Validation Updates
+
+When you add or remove parameters from a command, you MUST update the parameter validation test:
+
+```powershell
+Context "Parameter validation" {
+    It "Should have the expected parameters" {
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "NewParameter",  # ADD new parameters here
+            "EnableException"
+            # REMOVE deleted parameters from this list
+        )
+        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    }
+}
+```
+
+### What Makes a Good Test
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Reasonable** - 1-3 tests per feature, not exhaustive edge cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+### Balance is Key
+
+When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and 1-3 integration tests
+- Refactoring without behavior changes? Existing tests may be sufficient
+- Do not invent new integration tests - if they don't exist, there's a reason
 
 ## VERIFICATION CHECKLIST
 
