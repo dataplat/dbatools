@@ -88,4 +88,10 @@ if (-not ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -
     # it runs. Register-DbaTeppArgumentCompleter starts it when someone actually completes a
     # parameter, so an unattended session never opens those connections at all.
     Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
+
+    # Anyone who would rather have the cache warm from the moment the module loads can say so and
+    # get the old behaviour back, paying the cost the default now avoids.
+    if (Get-DbatoolsConfigValue -FullName "TabExpansion.Asynchronous.StartOnImport") {
+        Start-DbaRunspace -Name "dbatools-teppasynccache"
+    }
 }

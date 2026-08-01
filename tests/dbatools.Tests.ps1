@@ -36,7 +36,8 @@ Describe "$ModuleName TEPP asynchronous cache" -Tag UnitTests {
     scheduled task or a build agent never tab completes anything, so it gets those connections for
     nothing. Importing the module must therefore register the runspace without starting it, and the
     first tab completion must start it. Since a tab completion is now what starts it, both opt-outs
-    have to survive one rather than be undone by it.
+    have to survive one rather than be undone by it, and anyone who wants the old start-at-import
+    behaviour back has to be able to ask for it.
 
     These are read out of a fresh PowerShell, because the runspace starts at most once per process.
     Asserting inside this one would depend on whether an earlier test file happened to start it.
@@ -137,6 +138,37 @@ $null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompl
         $stateAfterOptOut = "$teppOptOutLine" -replace "^AfterOptOut=", ""
         $stateAfterOptOutCompletion = "$teppOptOutCompletionLine" -replace "^AfterOptOutCompletion=", ""
         $stateAfterGlobalDisable = "$teppGlobalDisableLine" -replace "^AfterGlobalDisableCompletion=", ""
+
+        # Starting at import is an import-time decision, so the opt-in needs a process of its own.
+        $teppStartProbeScript = Join-Path $teppProbePath "teppasync-startonimport-probe.ps1"
+        Set-Content -Path $teppStartProbeScript -Value @'
+param(
+    $ModulePath
+)
+
+Remove-Item -Path Env:\DBATOOLS_DISABLE_TEPP -ErrorAction SilentlyContinue
+$global:dbatools_config = {
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable" -Value $false
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable.Asynchronous" -Value $false
+    Set-DbatoolsConfig -FullName "TabExpansion.Asynchronous.StartOnImport" -Value $true
+}
+
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+
+Remove-Variable -Name dbatools_config -Scope Global
+
+$asyncCacheRunspace = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+if ($null -eq $asyncCacheRunspace) {
+    "AfterImport=NotRegistered"
+} else {
+    "AfterImport=$($asyncCacheRunspace.State)"
+}
+'@
+
+        $teppStartProbeOutput = & $teppProbeHost -NoProfile -NonInteractive -File $teppStartProbeScript -ModulePath $ModulePath 2>&1
+
+        $teppStartImportLine = $teppStartProbeOutput | Where-Object { $PSItem -match "^AfterImport=" }
+        $stateStartOnImport = "$teppStartImportLine" -replace "^AfterImport=", ""
     }
 
     AfterAll {
@@ -174,6 +206,10 @@ $null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompl
 
     It "does not start the asynchronous cache runspace while TEPP is globally disabled" {
         $stateAfterGlobalDisable | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "starts the asynchronous cache runspace on import when asked to" {
+        $stateStartOnImport | Should -Be "Running" -Because "the probe reported: $teppStartProbeOutput"
     }
 }
 
