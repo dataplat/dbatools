@@ -6,6 +6,8 @@ function Get-DbaDbFileMapping {
     .DESCRIPTION
         Extracts the logical-to-physical file name mappings from an existing database and returns them in a hashtable format compatible with Restore-DbaDatabase. This eliminates the need to manually specify file paths when restoring databases to different servers or locations. The function reads both data files and log files from the database's file groups and creates a complete mapping that preserves the original file structure during restore operations.
 
+        Databases that cannot be opened - RESTORING, RECOVERY_PENDING, SUSPECT or OFFLINE - are read through Get-DbaDbFile, which takes their file layout from sys.master_files. That covers the mapping of a database left in NORECOVERY by a full restore, which is what a following differential restore needs.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
@@ -43,7 +45,7 @@ function Get-DbaDbFileMapping {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per accessible database provided as input. Each object contains the file mapping information needed for restore operations.
+        Returns one object per database provided as input, including databases that are not accessible. Each object contains the file mapping information needed for restore operations.
 
         Properties:
         - ComputerName: The name of the computer where the SQL Server instance is running
@@ -57,6 +59,12 @@ function Get-DbaDbFileMapping {
         PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMapping
 
         Restores test to sql2019 using the file structure built from the existing database on sql2016
+
+    .EXAMPLE
+        PS C:\> $filemap = Get-DbaDbFileMapping -SqlInstance sql2016 -Database test
+        PS C:\> Restore-DbaDatabase -SqlInstance sql2016 -Path \\nas\db\backups\test\test_diff.bak -DatabaseName test -Continue -FileMapping $filemap.FileMapping
+
+        Builds the file mapping of test while it is still in NORECOVERY from an earlier full restore, then applies the differential backup on top of it
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline)]
@@ -78,26 +86,39 @@ function Get-DbaDbFileMapping {
         }
 
         foreach ($db in $InputObject) {
-            if ($db.IsAccessible) {
-                Write-Message -Level Verbose -Message "Processing database: $db"
-                $fileMap = @{ }
+            Write-Message -Level Verbose -Message "Processing database: $db"
+            $fileMap = @{ }
 
+            if ($db.IsAccessible) {
                 foreach ($file in $db.FileGroups.Files) {
                     $fileMap[$file.Name] = $file.FileName
                 }
                 foreach ($file in $db.LogFiles) {
                     $fileMap[$file.Name] = $file.FileName
                 }
-
-                [PSCustomObject]@{
-                    ComputerName = $db.ComputerName
-                    InstanceName = $db.InstanceName
-                    SqlInstance  = $db.SqlInstance
-                    Database     = $db.Name
-                    FileMapping  = $fileMap
-                }
             } else {
-                Write-Message -Level Verbose -Message "Skipping processing of database: $db as database is not accessible"
+                # SMO cannot enumerate the files of a database it cannot open, so take the layout that
+                # Get-DbaDbFile reads out of sys.master_files. This is the case that matters between a
+                # NORECOVERY full restore and the differential that follows it.
+                Write-Message -Level Verbose -Message "Database $db is not accessible, building the mapping from the file layout in master"
+
+                $files = Get-DbaDbFile -InputObject $db -EnableException:$EnableException
+                if (-not $files) {
+                    Write-Message -Level Verbose -Message "Skipping processing of database: $db as no file information was returned for it"
+                    continue
+                }
+
+                foreach ($file in $files) {
+                    $fileMap[$file.LogicalName] = $file.PhysicalName
+                }
+            }
+
+            [PSCustomObject]@{
+                ComputerName = $db.ComputerName
+                InstanceName = $db.InstanceName
+                SqlInstance  = $db.SqlInstance
+                Database     = $db.Name
+                FileMapping  = $fileMap
             }
         }
     }
