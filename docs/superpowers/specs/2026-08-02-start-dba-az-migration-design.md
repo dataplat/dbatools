@@ -85,11 +85,11 @@ For every selected database:
 1. Create a status object with source, destination, source name, destination name, type `Database`, timestamp, empty status, and empty notes.
 2. Check the destination for a database with the same name.
 3. When it exists without `-Force`, emit a `Skipped` status with `Already exists on destination` and continue.
-4. When it exists with `-Force`, ask `ShouldProcess` to drop and recreate it. If approved, call `Remove-DbaDatabase` with exceptions enabled.
-5. Ask `ShouldProcess` to migrate the database. Under `-WhatIf`, do not export, import, delete a destination, or create a package.
-6. Call `Export-DbaDacPackage` for exactly one database with `-Type Bacpac`, the selected path, the optional export settings, and exceptions enabled.
-7. Confirm that export returned one existing BACPAC path. Treat an empty result or missing file as a failed export.
-8. Pipe or pass that path to `Publish-DbaDacPackage` with `-Type Bacpac`, the destination connection string, the same database name, the optional import settings, and exceptions enabled.
+4. When it exists with `-Force`, include both the drop and replacement migration in one `ShouldProcess` decision. Under `-WhatIf`, do not export, import, delete a destination, or create a package.
+5. Call `Export-DbaDacPackage` for exactly one database with `-Type Bacpac`, the selected path, the optional export settings, and exceptions enabled.
+6. Confirm that export returned one existing BACPAC path. Treat an empty result or missing file as a failed export. Export completes before a forced destination drop so an export failure leaves the existing destination intact.
+7. For an approved forced replacement, call `Remove-DbaDatabase` with exceptions enabled and verify the destination is absent.
+8. Pipe or pass the BACPAC path to `Publish-DbaDacPackage` with `-Type Bacpac`, the destination connection string, the same database name, the optional import settings, and exceptions enabled.
 9. Confirm that publish returned one result for the target database.
 10. Emit `Successful` when import completes.
 11. When import fails after the target was absent or removed by `-Force`, remove any partially created Azure SQL database. Then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.

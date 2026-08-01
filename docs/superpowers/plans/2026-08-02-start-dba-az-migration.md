@@ -204,7 +204,7 @@ $migrationStatus | Select-DefaultView -Property DateTime, SourceServer, Destinat
 
 - [ ] **Step 6: Implement existing-target and ShouldProcess behavior**
 
-Check the destination by exact database name. Without `Force`, emit `Skipped` with `Already exists on destination`. With `Force`, call `ShouldProcess` before `Remove-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -Confirm:$false -EnableException`. Call `ShouldProcess` before the migration itself so `WhatIf` creates no package and performs no import.
+Check the destination by exact database name. Without `Force`, emit `Skipped` with `Already exists on destination`. With `Force`, use one `ShouldProcess` decision for the combined drop-and-replacement migration. Under `WhatIf`, create no package and perform no destination mutation. Export and validate the replacement package before dropping the existing destination so an export failure leaves that database intact.
 
 - [ ] **Step 7: Implement BACPAC export and import**
 
@@ -214,14 +214,14 @@ Use explicit splats:
 $exportSplat = @{
     SqlInstance     = $sourceServer
     Database        = $databaseName
-    Path            = $Path
+    FilePath        = $bacpacPath
     Type            = "Bacpac"
     EnableException = $true
 }
 if ($ExportDacOption) { $exportSplat.DacOption = $ExportDacOption }
 ```
 
-Validate that exactly one returned object has an existing `Path`, record that path, then import with:
+Validate that exactly one returned object has an existing `Path`, record that path, then remove and verify the existing destination only for an approved forced replacement. Import with:
 
 ```powershell
 $publishSplat = @{
@@ -266,7 +266,8 @@ git commit -m "Start-DbaAzMigration - Implement BACPAC orchestration (do Start-D
 
 **Files:**
 
-- Modify: `.github/scripts/gh-actions.ps1`
+- Create: `.github/scripts/gh-azmigration-actions.ps1`
+- Modify: `.github/workflows/integration-tests.yml`
 - Modify: `tests/Start-DbaAzMigration.Tests.ps1` only if a locally reusable assertion belongs there
 
 - [ ] **Step 1: Add a non-skipping secret-bearing test**

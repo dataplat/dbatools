@@ -252,7 +252,7 @@ function Start-DbaAzMigration {
             }
 
             if ($destinationDatabase) {
-                if (-not $PSCmdlet.ShouldProcess("$databaseName on $($destinationServer.Name)", "Drop the existing Azure SQL database before migration")) {
+                if (-not $PSCmdlet.ShouldProcess("$databaseName on $($destinationServer.Name)", "Drop the existing Azure SQL database and migrate its replacement")) {
                     continue
                 }
             } elseif (-not $PSCmdlet.ShouldProcess("$databaseName on $($destinationServer.Name)", "Migrate database to Azure SQL Database")) {
@@ -269,21 +269,6 @@ function Start-DbaAzMigration {
             $targetMayNeedCleanup = -not [bool]$destinationDatabase
 
             try {
-                if ($destinationDatabase) {
-                    $failurePhase = "Forced replacement"
-                    $null = Remove-DbaDatabase -InputObject $destinationDatabase -Confirm:$false -EnableException
-                    $destinationServer.Databases.Refresh()
-                    $remainingDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
-                    if ($remainingDatabase) {
-                        throw "The existing destination database could not be dropped."
-                    }
-                    $targetMayNeedCleanup = $true
-
-                    if (-not $PSCmdlet.ShouldProcess("$databaseName on $($destinationServer.Name)", "Migrate database to Azure SQL Database")) {
-                        continue
-                    }
-                }
-
                 $failurePhase = "BACPAC export"
                 $exportSplat = @{
                     SqlInstance     = $sourceServer
@@ -301,6 +286,17 @@ function Start-DbaAzMigration {
                 }
                 $bacpacPath = $exportResult[0].Path
                 $migrationStatus.BacpacPath = $bacpacPath
+
+                if ($destinationDatabase) {
+                    $failurePhase = "Forced replacement"
+                    $null = Remove-DbaDatabase -InputObject $destinationDatabase -Confirm:$false -EnableException
+                    $destinationServer.Databases.Refresh()
+                    $remainingDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
+                    if ($remainingDatabase) {
+                        throw "The existing destination database could not be dropped."
+                    }
+                    $targetMayNeedCleanup = $true
+                }
 
                 $failurePhase = "BACPAC import"
                 $importStarted = $true
