@@ -119,6 +119,38 @@ function Test-MaintainerActivityEvent {
     return Test-CiMarker -Message $message -Marker $Marker
 }
 
+function Get-PoolJobDemandFromJobs {
+    param(
+        [object[]]$Jobs = @(),
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+    # Demand is read from each job's own dbatools-pool-* label rather than from the
+    # run's actor. That is exact: it counts only jobs that actually queue against this
+    # fleet (ci-azure.yml's authorize job runs on ubuntu-latest and carries no pool
+    # label), and it already honours the [pool:...] display-title override, because
+    # the workflow resolved inputs.pool_user into runs-on before the job was created.
+    #
+    # Anything not "completed" needs a runner, so the filter is negative rather than a
+    # whitelist -- GitHub has added job statuses (waiting, pending, requested) since
+    # this fleet was written and will add more.
+    $demand = @{ }
+    foreach ($job in $Jobs) {
+        if ([string]$job.status -eq "completed") {
+            continue
+        }
+        $poolLabel = @($job.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" } | Select-Object -First 1)
+        if (-not $poolLabel) {
+            continue
+        }
+        $pool = ([string]$poolLabel[0]).Substring($PoolLabelPrefix.Length)
+        if (-not $demand.ContainsKey($pool)) {
+            $demand[$pool] = 0
+        }
+        $demand[$pool] += 1
+    }
+    $demand
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
@@ -145,7 +177,10 @@ function Get-DesiredRunnerPools {
         [AllowEmptyString()]
         [string]$DirectTriggerActor = "",
         [AllowEmptyString()]
-        [string]$DirectTriggerMessage = ""
+        [string]$DirectTriggerMessage = "",
+        [hashtable]$PoolJobDemand = @{ },
+        [ValidateRange(0, 35)]
+        [int]$WarmFloor = 0
     )
 
     $maintainerCutoff = $Now.AddMinutes(-$MaintainerWindowMinutes)
@@ -165,10 +200,19 @@ function Get-DesiredRunnerPools {
         if ($directTrigger -and $maintainer -in $OptInPushUsers) {
             $directTrigger = Test-CiMarker -Message $DirectTriggerMessage -Marker $Marker
         }
-        $desired[$maintainer] = if ($recentActivity -or $liveCi -or $directTrigger) {
-            $MaintainerCount
-        } else {
+        # Demand sizes a hot lane; it never heats a cold one. A community PR must not
+        # be able to size a maintainer lane by reporting jobs against it.
+        $hot = $recentActivity -or $liveCi -or $directTrigger
+        $pending = 0
+        if ($PoolJobDemand.ContainsKey($maintainer)) {
+            $pending = [int]$PoolJobDemand[$maintainer]
+        }
+        $desired[$maintainer] = if (-not $hot) {
             0
+        } elseif ($pending -gt 0) {
+            [math]::Min($MaintainerCount, $pending)
+        } else {
+            [math]::Min($MaintainerCount, $WarmFloor)
         }
     }
 
@@ -181,10 +225,17 @@ function Get-DesiredRunnerPools {
             [DateTimeOffset]::Parse([string]$PSItem.updated_at) -gt $communityCutoff
         }).Count -gt 0
     $directCommunityTrigger = $DirectTriggerActor -and $DirectTriggerActor -notin $Maintainers
-    $desired["community"] = if ($communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger) {
-        $CommunityCount
-    } else {
+    $communityHot = $communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger
+    $communityPending = 0
+    if ($PoolJobDemand.ContainsKey("community")) {
+        $communityPending = [int]$PoolJobDemand["community"]
+    }
+    $desired["community"] = if (-not $communityHot) {
         0
+    } elseif ($communityPending -gt 0) {
+        [math]::Min($CommunityCount, $communityPending)
+    } else {
+        [math]::Min($CommunityCount, $WarmFloor)
     }
 
     $total = ($desired.Values | Measure-Object -Sum).Sum
