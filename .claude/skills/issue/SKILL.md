@@ -37,6 +37,24 @@ Reporters cite the version they run, which is usually behind. Before diagnosing 
 
 Take the reporter's analysis seriously — it is often correct and specific — but confirm it in the code yourself before acting on it.
 
+### Check the dependency versions too, not just the dbatools version
+
+For anything touching connections, SMO, authentication, encryption or bulk copy, the module version is the *less* interesting number. The behaviour usually comes from `dbatools.library` and the `Microsoft.Data.SqlClient` it ships, and a report is frequently against a library that is months old.
+
+```powershell
+# what the repo currently requires
+Get-Content .github/dbatools-library-version.json
+
+# what the reporter would get today, and which SqlClient it carries
+$lib = (Get-Module dbatools.library -ListAvailable | Select-Object -First 1).ModuleBase
+Get-ChildItem -Path $lib -Recurse -Filter "Microsoft.Data.SqlClient.dll" |
+    Select-Object -First 1 -ExpandProperty VersionInfo | Select-Object ProductVersion
+```
+
+The issue template asks for both the `dbatools.library` and `Microsoft.Data.SqlClient` versions - use them. If the reporter is behind, "update the library" is a real diagnostic step, not a brush-off, and it belongs before any theorising about runtime internals.
+
+The same files answer questions about *how* the stack behaves, which is often faster and more reliable than reasoning about .NET from memory. `dbatools.library` ships native `Microsoft.Data.SqlClient.SNI.dll` under both `core\` and `desktop\`, for instance, so on Windows the client uses native SSPI on PowerShell 7 exactly as it does on 5.1. Claims about managed-versus-native runtime behaviour are checkable against the shipped files - check them, because a confident wrong mechanism sends a thread chasing workarounds that cannot possibly help.
+
 ## 3. State the diagnosis before editing
 
 Report to the user: the exact file and line, the mechanism, and the observable symptom. Use `file.ps1:42` references so they are clickable.
@@ -126,6 +144,10 @@ gh pr create --base development --head <branch> --title "..." --body "..."
 ## Triage-only mode
 
 When the issue is a question, a support request, or user error, the deliverable is a comment, not a branch. Investigate with the same rigour — steps 1, 2 and 4 — then draft the comment and **show it to the user for approval before posting**. Do not post to a public issue tracker unprompted.
+
+Connection and environment reports usually turn on a comparison the reporter made: "it works here but not there". Check how many variables that comparison changes at once. A test that works in Windows PowerShell with `System.Data.SqlClient` and fails in PowerShell 7 with `Microsoft.Data.SqlClient` has changed both the host and the client library, and proves nothing about either. The most useful thing a comment can offer is usually not another workaround but **the one experiment that isolates a single variable** - it either sends the issue upstream cleanly or brings it back with evidence worth acting on.
+
+Read the whole thread before adding to it, including earlier bot analyses. If a previous answer asserted a mechanism that turns out to be wrong, say so plainly and correct it. Workarounds derived from a wrong mechanism cannot work, and a reporter who has already tried three of them has earned a straight answer rather than a fourth.
 
 ## Output
 
