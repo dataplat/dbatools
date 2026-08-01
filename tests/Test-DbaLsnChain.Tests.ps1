@@ -6,32 +6,21 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    InModuleScope dbatools {
-        Context "Parameter validation" {
-            It "Should have the expected parameters" {
-                $hasParameters = (Get-Command "Test-DbaLsnChain").Parameters.Values.Name | Where-Object {
-                    $PSItem -notin @(
-                        "Verbose",
-                        "Debug",
-                        "ErrorAction",
-                        "WarningAction",
-                        "InformationAction",
-                        "ProgressAction",
-                        "ErrorVariable",
-                        "WarningVariable",
-                        "InformationVariable",
-                        "OutVariable",
-                        "OutBuffer",
-                        "PipelineVariable"
-                    )
-                }
-                $expectedParameters = @(
-                    "FilteredRestoreFiles",
-                    "Continue",
-                    "EnableException"
-                )
-                Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-            }
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            # Test-DbaLsnChain is private, so Get-Command cannot see it from here. Reaching into the
+            # module for just that one call keeps the rest of the test outside InModuleScope, where
+            # $TestConfig is readable - inside it the lookup chains to global only, so $TestConfig
+            # comes back empty in CI and every common parameter is reported as unexpected. That is
+            # also why the common parameters used to be written out by hand here.
+            $hasParameters = (& (Get-Module dbatools) { Get-Command -Name Test-DbaLsnChain }).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "FilteredRestoreFiles",
+                "Continue",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
