@@ -399,14 +399,38 @@ if ($tickBlockers) {
     $settings += "AzureWebJobs.SafetyTick.Disabled=0"
 }
 
-$splatSettingsArgs = @(
-    "functionapp", "config", "appsettings", "set",
-    "--name", $FunctionAppName,
-    "--resource-group", $ResourceGroup,
-    "--subscription", $SubscriptionId,
-    "--settings"
-) + $settings + @("--output", "none")
-az @splatSettingsArgs --only-show-errors
+# Handed to az in a file rather than on the command line. az is az.cmd on Windows, so
+# every argument is re-parsed by cmd.exe, and a Key Vault reference contains parentheses,
+# which cmd reads as grouping -- it rejects the whole line with "was unexpected at this
+# time". Nothing caught it for two runs because the references only appear once the
+# secrets exist, and the exit code was never read. Microsoft's own guidance for these
+# commands is the same: use a file on Windows to avoid the escaping.
+$settingsPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatools-fleet-settings-$([System.Guid]::NewGuid().ToString("N")).json"
+$settingsForFile = foreach ($setting in $settings) {
+    # Split once: values carry their own = signs, in connection strings and SecretUris alike
+    $settingParts = $setting -split "=", 2
+    [pscustomobject]@{
+        name  = $settingParts[0]
+        value = $settingParts[1]
+    }
+}
+try {
+    [System.IO.File]::WriteAllText($settingsPath, (ConvertTo-Json -InputObject @($settingsForFile)))
+    $splatSettingsArgs = @(
+        "functionapp", "config", "appsettings", "set",
+        "--name", $FunctionAppName,
+        "--resource-group", $ResourceGroup,
+        "--subscription", $SubscriptionId,
+        "--settings", "@$settingsPath",
+        "--output", "none"
+    )
+    az @splatSettingsArgs --only-show-errors
+    if ($LASTEXITCODE -ne 0) {
+        throw "could not write the app settings to $FunctionAppName"
+    }
+} finally {
+    Remove-Item -Path $settingsPath -Force -ErrorAction SilentlyContinue
+}
 
 $splatHostArgs = @(
     "functionapp", "show",
