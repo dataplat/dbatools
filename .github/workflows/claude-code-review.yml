@@ -72,6 +72,25 @@ jobs:
           # letting the Claude Code install fail later with a less obvious error.
           bwrap --ro-bind / / --unshare-user true
           echo "bubblewrap ready: $(bwrap --version)"
+          # The sandbox keeps commands from editing config dotfiles by bind-mounting
+          # over each one, and bwrap has to CREATE the mount point when the file does
+          # not exist. One set of those paths resolves under /home, which is root-owned
+          # on the runner, so the create fails and the sandbox aborts before bash ever
+          # starts. Every Bash tool call in the session then dies with
+          #   bwrap: Can't create file at /home/.mcp.json: Permission denied
+          # which reads like a permissions denial on the command but is really sandbox
+          # bootstrap failing. Pre-create the paths so bwrap binds over something that
+          # already exists. Ref: https://github.com/anthropics/claude-code/issues/17258
+          for name in .gitconfig .gitmodules .bashrc .bash_profile .zshrc .zprofile .profile .ripgreprc; do
+            [ -e "/home/$name" ] || sudo install -m 644 /dev/null "/home/$name"
+          done
+          # Valid-but-empty JSON rather than a zero-byte file, in case anything on the
+          # runner parses this one as an MCP config instead of just mounting over it.
+          [ -e /home/.mcp.json ] || printf '{"mcpServers":{}}\n' | sudo tee /home/.mcp.json > /dev/null
+          for name in .vscode .idea .claude/commands .claude/agents; do
+            [ -d "/home/$name" ] || sudo install -d -m 755 "/home/$name"
+          done
+          echo "sandbox mount points ready in /home"
 
       - name: Run Claude Code Review
         id: claude-review
