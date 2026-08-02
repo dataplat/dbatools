@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "PublishXml",
                 "Database",
                 "ConnectionString",
+                "AccessToken",
                 "GenerateDeploymentReport",
                 "ScriptOnly",
                 "Type",
@@ -27,6 +28,21 @@ Describe $CommandName -Tag UnitTests {
                 "DacFxPath"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "Rejects a SQL credential and access token together" {
+            $securePassword = ConvertTo-SecureString "unused" -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "unused", $securePassword
+            $splatConflictingAuthentication = @{
+                SqlInstance     = "not-used"
+                SqlCredential   = $credential
+                AccessToken     = "unused-token"
+                Path            = "not-used.dacpac"
+                Database        = "not-used"
+                EnableException = $true
+            }
+
+            { Publish-DbaDacPackage @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
         }
     }
 }

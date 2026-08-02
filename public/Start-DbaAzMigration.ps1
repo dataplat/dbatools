@@ -22,6 +22,9 @@ function Start-DbaAzMigration {
     .PARAMETER DestinationSqlCredential
         Credential used to connect to the destination Azure SQL logical server.
 
+    .PARAMETER DestinationAccessToken
+        Microsoft Entra access token for https://database.windows.net/ used to connect to the destination Azure SQL logical server and publish the BACPAC.
+
     .PARAMETER Database
         The source databases to migrate. When omitted, all accessible user databases are selected.
 
@@ -99,6 +102,7 @@ function Start-DbaAzMigration {
         [DbaInstanceParameter]$Destination,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
+        [string]$DestinationAccessToken,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName "Path.DbatoolsTemp"),
@@ -110,6 +114,11 @@ function Start-DbaAzMigration {
     )
 
     begin {
+        if ($DestinationSqlCredential -and $DestinationAccessToken) {
+            Stop-Function -Message "DestinationSqlCredential and DestinationAccessToken cannot be used together." -EnableException $EnableException
+            return
+        }
+
         $resolveDatabaseName = {
             param($DatabaseInput)
 
@@ -193,6 +202,8 @@ function Start-DbaAzMigration {
             }
             if ($DestinationSqlCredential) {
                 $splatDestination.SqlCredential = $DestinationSqlCredential
+            } elseif ($DestinationAccessToken) {
+                $splatDestination.AccessToken = $DestinationAccessToken
             }
             $destinationServer = Connect-DbaInstance @splatDestination
         } catch {
@@ -242,6 +253,9 @@ function Start-DbaAzMigration {
         }
         if ($DestinationSqlCredential) {
             $sensitiveValues += $DestinationSqlCredential.GetNetworkCredential().Password
+        }
+        if ($DestinationAccessToken) {
+            $sensitiveValues += $DestinationAccessToken
         }
         foreach ($connectionStringToInspect in @($sourceServer.ConnectionContext.ConnectionString, $destinationPublishConnectionString)) {
             try {
@@ -463,6 +477,9 @@ function Start-DbaAzMigration {
                 }
                 if ($ImportDacOption) {
                     $splatPublish.DacOption = $ImportDacOption
+                }
+                if ($DestinationAccessToken) {
+                    $splatPublish.AccessToken = $DestinationAccessToken
                 }
                 $publishResult = @(Publish-DbaDacPackage @splatPublish)
                 if ($publishResult.Count -ne 1 -or $publishResult[0].Database -ne $stagingDatabaseName) {

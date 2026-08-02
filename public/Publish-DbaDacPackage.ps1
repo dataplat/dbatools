@@ -30,6 +30,9 @@ function Publish-DbaDacPackage {
         Specifies the connection string to connect to the target SQL Server instance. Alternative to using SqlInstance and SqlCredential parameters.
         Use this when you need specific connection properties or when connecting through alternative authentication methods not supported by SqlInstance.
 
+    .PARAMETER AccessToken
+        Microsoft Entra access token used to connect to the target SQL Server instance and by DacFx during publish or import.
+
     .PARAMETER GenerateDeploymentReport
         Creates an XML deployment report showing what changes were made during the deployment. The report is saved to the OutputPath directory.
         Use this for deployment auditing, troubleshooting failed deployments, or documenting changes applied to production databases.
@@ -156,6 +159,7 @@ function Publish-DbaDacPackage {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string[]]$Database,
         [string[]]$ConnectionString,
+        [string]$AccessToken,
         [switch]$GenerateDeploymentReport,
         [Switch]$ScriptOnly,
         [ValidateSet('Dacpac', 'Bacpac')]
@@ -170,6 +174,11 @@ function Publish-DbaDacPackage {
     )
 
     begin {
+        if ($SqlCredential -and $AccessToken) {
+            Stop-Function -Message "SqlCredential and AccessToken cannot be used together." -EnableException $EnableException
+            return
+        }
+
         if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
             Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
             return
@@ -251,7 +260,13 @@ function Publish-DbaDacPackage {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $splatConnect = @{ SqlInstance = $instance }
+                if ($SqlCredential) {
+                    $splatConnect.SqlCredential = $SqlCredential
+                } elseif ($AccessToken) {
+                    $splatConnect.AccessToken = $AccessToken
+                }
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -331,7 +346,16 @@ function Publish-DbaDacPackage {
 
                 #Create services object
                 try {
-                    $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
+                    if ($AccessToken) {
+                        $secureAccessToken = New-Object System.Security.SecureString
+                        foreach ($accessTokenCharacter in $AccessToken.ToCharArray()) {
+                            $secureAccessToken.AppendChar($accessTokenCharacter)
+                        }
+                        $secureAccessToken.MakeReadOnly()
+                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices -ArgumentList $connString, $secureAccessToken
+                    } else {
+                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
+                    }
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }

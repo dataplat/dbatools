@@ -17,8 +17,8 @@ Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        if (-not ($env:TENANTID -and $env:CLIENTID -and $env:CLIENTSECRET)) {
-            throw "Start-DbaAzMigration Azure integration requires TENANTID, CLIENTID, and CLIENTSECRET."
+        if (-not $env:AZMIGRATION_ACCESS_TOKEN) {
+            throw "Start-DbaAzMigration Azure integration requires AZMIGRATION_ACCESS_TOKEN from an authenticated Azure CLI session."
         }
 
         $sourcePassword = New-Object System.Security.SecureString
@@ -79,7 +79,8 @@ Describe $CommandName -Tag IntegrationTests {
         )
         $testPath = "/tmp/dbatools-azmigration-$suffix"
         $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatools" }
-        $destinationConnectionString = "Server=$destinationServerName.database.windows.net;Authentication=Active Directory Service Principal;Database=master;User Id=$env:CLIENTID;Password=$env:CLIENTSECRET;Encrypt=True;TrustServerCertificate=False;"
+        $destinationConnectionString = "Server=$destinationServerName.database.windows.net;Database=master;Encrypt=True;TrustServerCertificate=False;"
+        $script:destinationAccessToken = $env:AZMIGRATION_ACCESS_TOKEN
         $script:verificationConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$databaseName")
         $sourceServer = $null
         $script:destinationMaster = $null
@@ -187,13 +188,14 @@ FROM Numbers;
         $importOptions.DatabaseSpecification.MaximumSize = 1
 
         $script:splatBaseMigration = @{
-            Source          = $sourceServer
-            Destination     = $destinationConnectionString
-            Database        = $databaseName
-            Path            = $testPath
-            ImportDacOption = $importOptions
-            EnableException = $true
-            Confirm         = $false
+            Source                 = $sourceServer
+            Destination            = $destinationConnectionString
+            DestinationAccessToken = $script:destinationAccessToken
+            Database               = $databaseName
+            Path                   = $testPath
+            ImportDacOption        = $importOptions
+            EnableException        = $true
+            Confirm                = $false
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -211,7 +213,7 @@ FROM Numbers;
             $whatIfResult | Should -BeNullOrEmpty
             @(Get-ChildItem -LiteralPath $testPath -Filter "*.bacpac") | Should -BeNullOrEmpty
 
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             Get-DbaDatabase -SqlInstance $script:destinationMaster -Database $databaseName | Should -BeNullOrEmpty
             $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
             $script:destinationMaster = $null
@@ -240,9 +242,10 @@ FROM Numbers;
             $verboseText = $migrationVerbose.Message -join [Environment]::NewLine
             $verboseText.Contains("dbatools.IO") | Should -BeFalse
             $verboseText.Contains($env:CLIENTSECRET) | Should -BeFalse
+            $verboseText.Contains($script:destinationAccessToken) | Should -BeFalse
             $verboseText | Should -Not -Match "Using connection string"
 
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $splatGetExcludedDestination = @{
                 SqlInstance     = $script:destinationMaster
                 Database        = $excludedDatabaseName
@@ -252,7 +255,7 @@ FROM Numbers;
             $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
             $script:destinationMaster = $null
 
-            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString -AccessToken $script:destinationAccessToken
             $splatVerifyRows = @{
                 SqlInstance     = $script:verificationServer
                 Database        = $databaseName
@@ -275,7 +278,7 @@ FROM Numbers;
         }
 
         It "skips an existing destination without modifying it" {
-            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString -AccessToken $script:destinationAccessToken
             $splatChangeProof = @{
                 SqlInstance     = $script:verificationServer
                 Database        = $databaseName
@@ -302,7 +305,7 @@ FROM Numbers;
         It "force replaces an existing destination with the source rows" {
             $forcedResult = Start-DbaAzMigration @splatBaseMigration -Force
             $forcedResult.Status | Should -Be "Successful"
-            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString -AccessToken $script:destinationAccessToken
             $splatVerifyReplacementRows = @{
                 SqlInstance     = $script:verificationServer
                 Database        = $databaseName
@@ -343,7 +346,7 @@ FROM Numbers;
             $splatExceptionMigration = $script:splatBaseMigration.Clone()
             $splatExceptionMigration.Database = @($exceptionFailureDatabaseName, $exceptionNotRunDatabaseName)
             { Start-DbaAzMigration @splatExceptionMigration } | Should -Throw "*BACPAC export failed*"
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $splatGetExceptionDestination = @{
                 SqlInstance     = $script:destinationMaster
                 Database        = $exceptionNotRunDatabaseName
@@ -363,7 +366,7 @@ FROM Numbers;
             $splatInvalidImportMigration.Database = $importFailureDatabaseName
             $splatInvalidImportMigration.ImportDacOption = $invalidImportOptions
             { Start-DbaAzMigration @splatInvalidImportMigration } | Should -Throw "*BACPAC import failed*"
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $failedImportStagingPattern = "dbatools_azmigration_${importFailureDatabaseName}_*"
             $failedImportStagingDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $failedImportStagingPattern)
             $failedImportStagingDatabases | Should -BeNullOrEmpty
@@ -396,6 +399,7 @@ FROM Numbers;
             $null = $script:retainedBacpacPaths.Add($publishFailurePackage.Path)
             $splatDirectPublishFailure = @{
                 ConnectionString = $destinationConnectionString
+                AccessToken      = $script:destinationAccessToken
                 Database         = $publishFailureDatabaseName
                 Path             = $publishFailurePackage.Path
                 DacOption        = $invalidImportOptions
@@ -435,7 +439,7 @@ FROM Numbers;
         It "preserves destination ownership when <Name>" -ForEach $script:raceTestCases {
             $modulePath = (Resolve-Path "./dbatools.psd1").Path
             $raceScript = {
-                param($ModulePath, [PSCredential]$SourceSqlCredential, $ConnectionString, $DatabaseName, $PackagePath, $ReplaceExisting, $BarrierText, $BarrierReadyPath, $BarrierReleasePath, $SecondBarrierText, $SecondBarrierReadyPath, $SecondBarrierReleasePath)
+                param($ModulePath, [PSCredential]$SourceSqlCredential, $ConnectionString, $DestinationAccessToken, $DatabaseName, $PackagePath, $ReplaceExisting, $BarrierText, $BarrierReadyPath, $BarrierReleasePath, $SecondBarrierText, $SecondBarrierReadyPath, $SecondBarrierReleasePath)
 
                 Import-Module $ModulePath -Force
                 $commandPath = Join-Path (Split-Path -Path $ModulePath) "public/Start-DbaAzMigration.ps1"
@@ -490,15 +494,16 @@ FROM Numbers;
                 $jobImportOptions.DatabaseSpecification.ServiceObjective = "Basic"
                 $jobImportOptions.DatabaseSpecification.MaximumSize = 1
                 $splatJobMigration = @{
-                    Source              = "localhost"
-                    Destination         = $ConnectionString
-                    SourceSqlCredential = $SourceSqlCredential
-                    Database            = $DatabaseName
-                    Path                = $PackagePath
-                    ImportDacOption     = $jobImportOptions
-                    Confirm             = $false
-                    EnableException     = $true
-                    Verbose             = $true
+                    Source                 = "localhost"
+                    Destination            = $ConnectionString
+                    SourceSqlCredential    = $SourceSqlCredential
+                    DestinationAccessToken = $DestinationAccessToken
+                    Database               = $DatabaseName
+                    Path                   = $PackagePath
+                    ImportDacOption        = $jobImportOptions
+                    Confirm                = $false
+                    EnableException        = $true
+                    Verbose                = $true
                 }
                 if ($ReplaceExisting) {
                     $splatJobMigration.Force = $true
@@ -549,7 +554,7 @@ FROM Numbers;
                     throw "Unknown race scenario $Scenario."
                 }
             }
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $racePreparationDatabaseNames = @($raceCase.RacerDatabaseName)
             if ($raceCase.StagingRacerDatabaseName) {
                 $racePreparationDatabaseNames += $raceCase.StagingRacerDatabaseName
@@ -591,7 +596,7 @@ FROM Numbers;
             $barrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-release"
             $secondBarrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-ready"
             $secondBarrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-release"
-            $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierText, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierText, $secondBarrierReadyPath, $secondBarrierReleasePath)
+            $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $script:destinationAccessToken, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierText, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierText, $secondBarrierReadyPath, $secondBarrierReleasePath)
             $script:raceJob = Start-Job -ScriptBlock $raceScript -ArgumentList $script:raceJobArguments
             $raceBarrierDeadline = (Get-Date).AddMinutes(15)
             do {
@@ -605,7 +610,7 @@ FROM Numbers;
             }
 
             try {
-                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
                 if ($raceCase.ReplaceExisting) {
                     $splatGetRaceDatabase = @{
                         SqlInstance     = $script:destinationMaster
@@ -657,7 +662,7 @@ FROM Numbers;
                 }
 
                 try {
-                    $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                    $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
                     $stagingDatabasePattern = "dbatools_azmigration_$($raceCase.DatabaseName)_*"
                     $stagingCandidates = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $stagingDatabasePattern)
                     $stagingCandidates.Count | Should -Be 1
@@ -717,7 +722,7 @@ FROM Numbers;
             }
 
             $raceConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$($raceCase.DatabaseName)")
-            $script:verificationServer = Connect-DbaInstance -SqlInstance $raceConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $raceConnectionString -AccessToken $script:destinationAccessToken
             $splatVerifyRaceDatabase = @{
                 SqlInstance     = $script:verificationServer
                 Database        = $raceCase.DatabaseName
@@ -741,7 +746,7 @@ FROM Numbers;
 
             if ($preservedStagingDatabaseName) {
                 $preservedStagingConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$preservedStagingDatabaseName")
-                $script:verificationServer = Connect-DbaInstance -SqlInstance $preservedStagingConnectionString
+                $script:verificationServer = Connect-DbaInstance -SqlInstance $preservedStagingConnectionString -AccessToken $script:destinationAccessToken
                 $splatVerifyPreservedStagingDatabase = @{
                     SqlInstance     = $script:verificationServer
                     Database        = $preservedStagingDatabaseName
@@ -763,7 +768,7 @@ FROM Numbers;
                 $null = Disconnect-DbaInstance -InputObject $script:verificationServer
                 $script:verificationServer = $null
 
-                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
                 $splatGetPreservedStagingDatabase = @{
                     SqlInstance     = $script:destinationMaster
                     Database        = $preservedStagingDatabaseName
@@ -782,7 +787,7 @@ FROM Numbers;
                 $script:destinationMaster = $null
             }
 
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $caseStagingPattern = "dbatools_azmigration_$($raceCase.DatabaseName)_*"
             $remainingCaseStagingDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $caseStagingPattern)
             $remainingCaseStagingDatabases | Should -BeNullOrEmpty
@@ -826,7 +831,7 @@ FROM Numbers;
         }
 
         try {
-            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString -AccessToken $script:destinationAccessToken
             $runDestinationDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object {
                     $PSItem.Name -in $script:destinationDatabaseNames -or $PSItem.Name -like "dbatools_azmigration_*${suffix}*"
                 })

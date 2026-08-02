@@ -15,6 +15,7 @@ Describe $CommandName -Tag UnitTests {
                 "Destination",
                 "SourceSqlCredential",
                 "DestinationSqlCredential",
+                "DestinationAccessToken",
                 "Database",
                 "ExcludeDatabase",
                 "Path",
@@ -49,6 +50,20 @@ Describe $CommandName -Tag UnitTests {
             {
                 Start-DbaAzMigration @splatInvalidImportOption
             } | Should -Throw "*Microsoft.SqlServer.Dac.DacImportOptions*"
+        }
+
+        It "Rejects a destination credential and access token together before connecting" {
+            $securePassword = ConvertTo-SecureString "unused" -AsPlainText -Force
+            $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "unused", $securePassword
+            $splatConflictingAuthentication = @{
+                Source                   = "not-used"
+                Destination              = "not-used"
+                DestinationSqlCredential = $credential
+                DestinationAccessToken   = "unused-token"
+                EnableException          = $true
+            }
+
+            { Start-DbaAzMigration @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
         }
 
         It "Rejects an explicitly bound blank string database selection before connecting" {
