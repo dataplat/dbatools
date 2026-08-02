@@ -240,6 +240,23 @@ All commands should have proper `.OUTPUTS` documentation. **Use the prompt at `.
 
 When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not SQL LIKE or PowerShell wildcards.
 
+## DBATOOLS.LIBRARY VERSION
+
+The dbatools.library version used by CI and local development is pinned in **`.github/dbatools-library-version.json`** - a single JSON file with `version` and `notes` fields. Never hardcode a library version or release URL in a workflow; change this file instead.
+
+```json
+{
+  "version": "2026.8.2-preview-main-20260802114210",
+  "notes": "Version of dbatools.library to use for CI/CD and development"
+}
+```
+
+`.github/scripts/install-dbatools-library.ps1` reads it and installs from PowerShell Gallery, falling back to GitHub releases at `https://github.com/dataplat/dbatools.library/releases/download/v{version}/dbatools.library.zip`. Preview versions (anything with a prerelease suffix) skip the Gallery and go straight to GitHub releases.
+
+**This pin is repo-wide**, so verify the release exists before committing a change to it. It is consumed by `gallery.yml`, `integration-tests.yml`, `integration-tests-external-table.yml`, `integration-tests-s3.yml`, and `xplat-import.yml`, plus `tests/appveyor.prep.ps1` (which the self-hosted Azure matrix runs) and `tests/ps3-smoke.ps1`. Pinning a preview build points all of them at that build; if the preview asset is later deleted, they all fail until the pin moves.
+
+**For full details**, read `.github/DBATOOLS_LIBRARY_VERSION_MANAGEMENT.md`.
+
 ## TEST GUIDELINES
 
 `tests/CLAUDE.md` is the single source for ongoing test policy, including Pester structure, real-boundary behavioral and integration coverage, regression tests, instance selection, fixtures, cleanup, and assertions. Read it before changing command behavior or any test file.
