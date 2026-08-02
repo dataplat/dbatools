@@ -101,23 +101,15 @@ if (-not $storageExists) {
 }
 
 Write-Host "== queue $QueueName" -ForegroundColor Cyan
-$splatKeyArgs = @(
-    "storage", "account", "keys", "list",
-    "--account-name", $StorageAccount,
-    "--resource-group", $ResourceGroup,
-    "--subscription", $SubscriptionId,
-    "--query", "[0].value",
-    "--output", "tsv"
-)
-$storageKey = az @splatKeyArgs --only-show-errors
-$splatQueueArgs = @(
-    "storage", "queue", "create",
-    "--name", $QueueName,
-    "--account-name", $StorageAccount,
-    "--account-key", $storageKey,
-    "--output", "none"
-)
-az @splatQueueArgs --only-show-errors
+# Created through ARM rather than `az storage queue create`, which wants either the account
+# master key or a data-plane role the operator's Owner rights do not imply. Handing the key
+# to the CLI would put it in this process's argv, where anything that can list processes can
+# read it. The control-plane PUT needs no key at all and is idempotent.
+$queueUri = "https://management.azure.com$rgScope/providers/Microsoft.Storage/storageAccounts/$StorageAccount/queueServices/default/queues/$QueueName" + "?api-version=2023-05-01"
+$null = az rest --method put --uri $queueUri --body "{}" --only-show-errors
+if ($LASTEXITCODE -ne 0) {
+    throw "could not create queue $QueueName on $StorageAccount"
+}
 
 Write-Host "== Log Analytics workspace $WorkspaceName" -ForegroundColor Cyan
 $splatWorkspaceArgs = @(
@@ -147,10 +139,15 @@ $insightsJson = @"
   }
 }
 "@
-$insightsPath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatools-fleet-insights.json"
-Set-Content -Path $insightsPath -Value $insightsJson
-$null = az rest --method put --uri $insightsUri --body "@$insightsPath" --only-show-errors
-Remove-Item -Path $insightsPath -Force
+# Unique per run and removed in finally: a fixed name in the shared temp directory is one
+# a concurrent run clobbers and anyone can pre-create as a link to somewhere else
+$insightsPath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatools-fleet-insights-$([System.Guid]::NewGuid().ToString("N")).json"
+try {
+    Set-Content -Path $insightsPath -Value $insightsJson
+    $null = az rest --method put --uri $insightsUri --body "@$insightsPath" --only-show-errors
+} finally {
+    Remove-Item -Path $insightsPath -Force -ErrorAction SilentlyContinue
+}
 $splatConnectionArgs = @(
     "rest", "--method", "get",
     "--uri", $insightsUri,
@@ -328,18 +325,6 @@ if ($GitHubInstallationId) {
     $settings += "GITHUB_INSTALLATION_ID=$GitHubInstallationId"
 }
 
-# Until the GitHub App exists there is nothing for a reconcile to authenticate with, and
-# the timer is the one trigger that fires without being asked: every five minutes it
-# would enqueue a pass that fails initialization, burns its five dequeues and lands in
-# the poison queue. Hold it off until the credentials are here, and release it once they
-# are, so re-running this script always leaves the tick in the state the app can support.
-if ($GitHubAppId -and $GitHubInstallationId) {
-    $settings += "AzureWebJobs.SafetyTick.Disabled=0"
-} else {
-    Write-Warning "no GitHub App yet -- disabling the safety tick so it cannot poison the queue"
-    $settings += "AzureWebJobs.SafetyTick.Disabled=1"
-}
-
 # Key Vault references are wired only once the secrets exist. Pointing a reference at a
 # missing secret leaves the literal @Microsoft.KeyVault(...) string in the environment,
 # which fails HMAC validation silently rather than loudly.
@@ -347,6 +332,7 @@ $settingBySecret = @{
     "github-app-private-key" = "GITHUB_APP_PRIVATE_KEY"
     "github-webhook-secret"  = "GITHUB_WEBHOOK_SECRET"
 }
+$wiredSecrets = @()
 foreach ($secretName in @("github-app-private-key", "github-webhook-secret")) {
     $splatSecretArgs = @(
         "keyvault", "secret", "show",
@@ -364,6 +350,29 @@ foreach ($secretName in @("github-app-private-key", "github-webhook-secret")) {
     # Version-less SecretUri so a rotated secret is picked up without a redeploy.
     $secretUri = $secretId -replace "/[^/]+$", ""
     $settings += "$($settingBySecret[$secretName])=@Microsoft.KeyVault(SecretUri=$secretUri/)"
+    $wiredSecrets += $secretName
+}
+
+# The timer is the one trigger that fires without being asked, so it is the one that can
+# poison the queue unattended: every five minutes it would enqueue a pass that fails
+# initialization, burn its five dequeues and give up. The test is every credential
+# Initialize-FleetContext demands, not just the two IDs -- an App ID with its private key
+# still sitting outside Key Vault fails exactly the same way, which is how this gate read
+# before. Re-running this script therefore always leaves the tick in the state the app
+# can actually support.
+$tickBlockers = @()
+if (-not $GitHubAppId) {
+    $tickBlockers += "GitHubAppId"
+}
+if (-not $GitHubInstallationId) {
+    $tickBlockers += "GitHubInstallationId"
+}
+$tickBlockers += @($settingBySecret.Keys | Where-Object { $PSItem -notin $wiredSecrets } | Sort-Object)
+if ($tickBlockers) {
+    Write-Warning "safety tick stays disabled so it cannot poison the queue -- still missing: $($tickBlockers -join ", ")"
+    $settings += "AzureWebJobs.SafetyTick.Disabled=1"
+} else {
+    $settings += "AzureWebJobs.SafetyTick.Disabled=0"
 }
 
 $splatSettingsArgs = @(

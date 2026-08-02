@@ -120,6 +120,15 @@ function Initialize-FleetContext {
         throw "Missing required fleet settings: $($missingSettings -join ", ")"
     }
 
+    # Fails closed, and refuses anything but the two words. A missing or misspelled DRY_RUN
+    # would otherwise read as "not dry" and let a controller that was only supposed to be
+    # shadowing delete real runners. In the old workflow this arrived from a dispatch input
+    # that could not be absent; here it is an app setting one typo away from armed.
+    $dryRunSetting = [string]$env:DRY_RUN
+    if ($dryRunSetting -notin @("true", "false")) {
+        throw "DRY_RUN must be exactly `"true`" or `"false`"; got `"$dryRunSetting`""
+    }
+
     $bootstrapPath = Resolve-FleetFile -Name "bootstrap-runner.ps1"
 
     $script:Fleet = @{
@@ -140,7 +149,7 @@ function Initialize-FleetContext {
         OptInPushUsers          = @([string]$config["OPT_IN_PUSH_USERS"] -split "\s+" | Where-Object { $PSItem })
         CiMarker                = [string]$config["CI_MARKER"]
         BootstrapPath           = $bootstrapPath
-        DryRun                  = $env:DRY_RUN -eq "true"
+        DryRun                  = $dryRunSetting -eq "true"
         DeletedVms              = New-Object -TypeName "System.Collections.Generic.HashSet[string]" -ArgumentList ([System.StringComparer]::OrdinalIgnoreCase)
         ArmToken                = $null
         ArmTokenExpiry          = [DateTimeOffset]::MinValue
@@ -230,7 +239,7 @@ function Get-ArmToken {
     $expiry = [DateTimeOffset]::UtcNow.AddMinutes(45)
     if ($response.expires_on) {
         $expiresOn = [string]$response.expires_on
-        $parsedSeconds = 0
+        [long]$parsedSeconds = 0
         if ([long]::TryParse($expiresOn, [ref]$parsedSeconds)) {
             $expiry = [DateTimeOffset]::FromUnixTimeSeconds($parsedSeconds)
         } else {
@@ -694,9 +703,9 @@ function Get-OrphanedNetworking {
         Path      = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Network/networkInterfaces?api-version=2024-05-01"
         Operation = "list orphaned NICs"
     }
-    $nicResponse = Invoke-ArmJson @splatNics
+    $nicResponse = @(Invoke-ArmList @splatNics)
     $nics = @(
-        $nicResponse.value |
+        $nicResponse |
             Where-Object { -not $PSItem.properties.virtualMachine -and [string]$PSItem.name -like "*Nic-*" } |
             ForEach-Object { [string]$PSItem.name }
     )
@@ -704,9 +713,9 @@ function Get-OrphanedNetworking {
         Path      = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Network/publicIPAddresses?api-version=2024-05-01"
         Operation = "list orphaned public IPs"
     }
-    $pipResponse = Invoke-ArmJson @splatPips
+    $pipResponse = @(Invoke-ArmList @splatPips)
     $pips = @(
-        $pipResponse.value |
+        $pipResponse |
             Where-Object { -not $PSItem.properties.ipConfiguration -and [string]$PSItem.name -like "instancepublicip-*" } |
             ForEach-Object { [string]$PSItem.name }
     )
@@ -809,9 +818,9 @@ function Confirm-DirectTrigger {
     # A webhook body is a hint about where to look, never the fact itself. The HMAC
     # proves a delivery is authentic but not that it is current, so a captured delivery
     # replayed later would otherwise heat a pool or dispatch an old commit. Asking
-    # GitHub for the ref's head settles both: a replay names a SHA that is no longer
-    # the head and gets dropped, and the sha, message and actor handed downstream come
-    # from the API response rather than from the request body.
+    # GitHub for the ref's head settles that: a replay names a SHA that is no longer
+    # the head and gets dropped, and the sha and message handed downstream come from
+    # the API response rather than from the request body.
     $branch = $Ref -replace "^refs/heads/", ""
     # Conservative because this value reaches a REST path. Real branch names here are
     # well inside it, and anything stranger is dropped rather than escaped. The explicit
@@ -835,15 +844,19 @@ function Confirm-DirectTrigger {
         Write-Host "trigger hint for $branch is stale (head is $([string]$head.sha)); converging from repository activity instead"
         return $empty
     }
+    # The actor stays the one the signed delivery named. What the HMAC could not prove was
+    # freshness, and the sha check above settles that; who pushed was never in doubt, because
+    # the body is GitHub's own statement of it. head.author.login is a different person --
+    # the commit AUTHOR -- whenever someone pushes work they did not write, and the
+    # maintainer and opt-in lists are about the pusher. Attributing to the author would both
+    # miss a maintainer pushing a contributor's commit and hand a maintainer lane to anyone
+    # who pushes a maintainer-authored one.
     $headAuthor = [string]$head.author.login
     if ($headAuthor -and $headAuthor -ne $Actor) {
-        Write-Host "trigger hint actor $Actor does not match commit author $headAuthor; using the commit author"
-    }
-    if (-not $headAuthor) {
-        $headAuthor = $Actor
+        Write-Host "trigger $Sha was authored by $headAuthor and pushed by $Actor; attributing to the pusher"
     }
     [pscustomobject]@{
-        Actor   = $headAuthor
+        Actor   = $Actor
         Message = [string]$head.commit.message
         Sha     = [string]$head.sha
         Ref     = $Ref
@@ -910,7 +923,7 @@ function Get-RunnerDemand {
     $desired = Get-DesiredRunnerPools @splatPolicy
 
     $total = ($desired.Values | Measure-Object -Sum).Sum
-    Write-Host "desired pools: $(($desired.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ', ') total=$total"
+    Write-Host "desired pools: $(($desired.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ", ") total=$total"
     $splatDispatch = @{
         Events               = $events
         WorkflowRuns         = $workflowRuns

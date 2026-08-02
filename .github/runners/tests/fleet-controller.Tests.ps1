@@ -313,6 +313,78 @@ Describe "trigger corroboration" {
             Should -Invoke Invoke-GhJson -Times 0
         }
     }
+
+    It "attributes the trigger to the pusher, not to whoever wrote the commit" {
+        # The maintainer and opt-in lists are about who pushed. Reading the lane from
+        # head.author.login would hand a maintainer lane to anyone who pushes a commit a
+        # maintainer wrote, and deny one to a maintainer pushing a contributor's work.
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson {
+                [pscustomobject]@{
+                    sha    = "5555555555555555555555555555555555555555"
+                    commit = [pscustomobject]@{ message = "Contributed work [do ci]" }
+                    author = [pscustomobject]@{ login = "potatoqualitee" }
+                }
+            }
+            $splatMismatch = @{
+                Actor = "some-drive-by"
+                Sha   = "5555555555555555555555555555555555555555"
+                Ref   = "refs/heads/development"
+            }
+            $trigger = Confirm-DirectTrigger @splatMismatch
+            $trigger.Actor | Should -Be "some-drive-by"
+        }
+    }
+}
+
+Describe "fail-closed settings" {
+    BeforeAll {
+        # Everything Initialize-FleetContext demands before it looks at DRY_RUN, so the
+        # required-settings check is not what fires
+        $script:RequiredForInit = @{
+            REPO                   = "dataplat/dbatools"
+            RG                     = "dbatools-ci"
+            VMSS                   = "dbatools-runners"
+            SUBSCRIPTION_ID        = "00000000-0000-0000-0000-000000000000"
+            GITHUB_APP_ID          = "1234567"
+            GITHUB_INSTALLATION_ID = "7654321"
+            GITHUB_APP_PRIVATE_KEY = "not-a-real-key"
+        }
+        $script:SavedForInit = @{ }
+        foreach ($settingName in $script:RequiredForInit.Keys) {
+            $script:SavedForInit[$settingName] = [Environment]::GetEnvironmentVariable($settingName)
+            [Environment]::SetEnvironmentVariable($settingName, $script:RequiredForInit[$settingName])
+        }
+        $script:SavedDryRun = $env:DRY_RUN
+    }
+
+    AfterAll {
+        foreach ($settingName in $script:SavedForInit.Keys) {
+            [Environment]::SetEnvironmentVariable($settingName, $script:SavedForInit[$settingName])
+        }
+        $env:DRY_RUN = $script:SavedDryRun
+    }
+
+    It "refuses to start unless DRY_RUN says exactly true or false" {
+        # A DRY_RUN that does not parse used to read as "not dry", which arms a controller
+        # that was only meant to be shadowing. The setting is one typo away from that.
+        foreach ($badValue in @($null, "", "yes", "0", "TRUE ")) {
+            $env:DRY_RUN = $badValue
+            $splatRefused = @{
+                ExpectedMessage = "*DRY_RUN*"
+                Because         = "`"$badValue`" is not a value the controller may guess at"
+            }
+            { InModuleScope FleetCore { Initialize-FleetContext } } | Should -Throw @splatRefused
+        }
+    }
+
+    It "accepts the two words it does understand" {
+        foreach ($goodValue in @("true", "false", "TRUE")) {
+            $env:DRY_RUN = $goodValue
+            $context = InModuleScope FleetCore { Initialize-FleetContext }
+            $context.DryRun | Should -Be ($goodValue -eq "true" -or $goodValue -eq "TRUE")
+        }
+    }
 }
 
 Describe "Azure inventory paging" {
@@ -332,6 +404,18 @@ Describe "Azure inventory paging" {
             $found = @(Invoke-ArmList -Path "/subscriptions/x/vms" -Operation "test paging")
             $found.Count | Should -Be 2
             $found.name | Should -Contain "page-two"
+        }
+    }
+
+    It "pages every ARM list, so orphaned NICs and IPs past a page boundary still get reaped" {
+        # az followed nextLink for us and raw REST does not, so a list call that skipped the
+        # helper would leave the tail of the inventory both uncounted and unreaped
+        $source = Get-Content -Path "$script:ControllerRoot/Modules/FleetCore/FleetCore.psm1" -Raw
+        $listPaths = [regex]::Matches($source, "(?m)^\s*Path\s*=\s*`"[^`"]*providers/Microsoft\.(Compute|Network)/[a-zA-Z]+\?api-version[^`"]*`"")
+        $listPaths.Count | Should -BeGreaterThan 0
+        foreach ($listPath in $listPaths) {
+            $tail = $source.Substring($listPath.Index, [math]::Min(400, $source.Length - $listPath.Index))
+            $tail | Should -Match "Invoke-ArmList" -Because "the list at $($listPath.Value.Trim()) has to paginate"
         }
     }
 }
