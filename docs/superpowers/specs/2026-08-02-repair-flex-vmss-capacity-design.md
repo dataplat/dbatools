@@ -1,61 +1,87 @@
-# Repair Flexible VMSS Phantom Capacity
+# Restore Full Maintainer Runner Pools
 
 ## Status
 
-Approved on 2026-08-02. The user approved the diagnosed repair and requested a pull request.
+Approved on 2026-08-02. After seeing six real VMs serve a ten-job maintainer matrix, the user explicitly required all three maintainer lanes to receive ten VMs while CI is active and for 20 minutes after completion, then scale to zero, and requested a pull request.
 
 ## Problem
 
-The Azure-backed GitHub Actions fleet controller compares the requested runner target with the Flexible VMSS `sku.capacity`. Live controller evidence showed `sku.capacity=4` while the actual VM inventory was empty. A one-job target therefore skipped scale-out because the nominal capacity was already greater than the target.
+PR #10493 introduced demand-sized maintainer pools. That policy reduced a hot maintainer lane to its pending job count and held only `WARM_FLOOR` runners when nothing was pending. The resulting lower targets exposed a second, latent defect: the controller compares the target with Flexible VMSS `sku.capacity`, even when nominal capacity is greater than the actual VM inventory.
 
-The next ten-runner request exposed the same mismatch from the other direction: scaling nominal capacity from four to ten created only six VMs. The merged demand-driven sizing change made the latent mismatch visible because normal targets are now often one to three instead of ten.
+Live controller evidence showed two failure modes:
+
+- nominal capacity 4, actual VMs 0, target 1: scale-out was skipped and the job remained queued;
+- nominal capacity 4, actual VMs 0, target 10: Azure created only the six-unit nominal delta, leaving four matrix jobs queued.
+
+The required outcome is ten actual VMs for a hot maintainer lane so the ten-job matrix can execute in parallel.
 
 ## Requirements
 
+- A lane for `potatoqualitee`, `andreasjordan`, or `niphlod` targets ten runners while eligible CI is starting or live and for 20 minutes after eligible CI completes, regardless of pending-job count or `WARM_FLOOR`.
+- A cold maintainer lane still targets zero runners.
+- Maintainer lanes have no three-runner warm floor.
+- The community lane retains demand-driven sizing up to five and uses `WARM_FLOOR` only while hot with no pending work.
+- The independent Azure janitor preserves ten runners for every hot maintainer lane, including recent activity with no live run.
 - Use the controller's freshly read VM inventory as the source of truth for actual capacity.
 - Clear nominal capacity that is greater than the actual VM count before requesting scale-out.
-- Perform the normalization synchronously so the subsequent scale-out is calculated from the repaired baseline.
-- Preserve the existing asynchronous scale-out and provisioning wait behavior.
-- Preserve busy VMs, pool assignment, the 35-runner hard target ceiling, retry behavior, and all existing comments.
-- Add focused regression coverage for both a fully phantom capacity and a partially allocated capacity.
-- Do not add credentials or a pull-request trigger to the fleet controller. Live Azure validation remains a post-merge observation because the credentialed workflow executes only the default-branch copy.
+- Perform capacity normalization synchronously so the subsequent scale-out is calculated from the repaired baseline.
+- Preserve busy VMs, pool isolation, the 35-runner target ceiling, retry behavior, and unrelated comments.
+- Update operator documentation and workflow comments so they describe fixed maintainer pools and demand-driven community capacity.
+- Do not add credentials or a pull-request trigger to the fleet controller. Live Azure validation remains post-merge because the credentialed workflow executes only the default-branch copy.
 
-## Considered Approaches
+## Policy Options Considered
+
+### Ten runners while CI is active and for 20 minutes after completion
+
+This is the selected policy and the user's explicit requirement. It restores full maintainer matrix parallelism, keeps the full pool briefly available for follow-up CI, and then scales directly to zero.
+
+### Set `WARM_FLOOR` to ten
+
+This does not meet the requirement. Pending work would still reduce a lane to the pending count, so a four-job observation could target four instead of ten.
+
+### Keep thirty maintainer VMs online continuously
+
+This guarantees zero cold-start delay but spends continuously even without maintainer activity. The requirement is full capacity for active maintainer lanes, not permanent capacity for cold lanes.
+
+## Capacity Repair Options Considered
 
 ### Normalize nominal capacity, then scale to target
 
-When nominal capacity is above actual inventory, first scale nominal capacity down to the actual count and wait for completion. If actual inventory remains below the target, issue the existing asynchronous scale-out to the target.
+When nominal capacity exceeds actual inventory, first scale nominal capacity down to the actual count and wait for completion. If actual inventory remains below target, issue the existing asynchronous scale-out to the target.
 
-This is the selected approach. It removes phantom capacity, requests the exact missing number of VMs, and retains the existing hard target ceiling.
+This is selected because it removes phantom capacity, requests the exact missing VM count, and retains the existing hard target ceiling.
 
 ### Add the actual deficit to nominal capacity
 
-Request `nominal + (target - actual)`. This would create the missing VM delta, but it deliberately preserves the phantom baseline, can push nominal capacity above the documented ceiling, and risks later over-allocation if delayed capacity materializes.
+Requesting `nominal + (target - actual)` would create the immediate deficit but preserve phantom capacity, allow nominal capacity to exceed the ceiling, and risk later over-allocation.
 
 ### Create Flexible VM instances individually
 
-Use standard VM APIs to add instances to the Flexible scale set. This avoids `sku.capacity`, but duplicates the scale-set model and networking configuration in the controller and is much broader than the observed defect requires.
+Using standard VM APIs would avoid `sku.capacity` but duplicate scale-set image and networking configuration in the controller. It is broader than the defect requires.
 
 ## Design
 
-Add a pure `Get-VmssCapacityPlan` function to `runner-policy.ps1`. It accepts nominal capacity, actual VM count, and target capacity, and emits the ordered capacity values the controller must apply:
+`Get-DesiredRunnerPools` will return `MaintainerCount` when an eligible maintainer run is live, when qualifying activity is waiting for its run to appear, or when an eligible completed run was updated within the last 20 minutes. It returns zero afterward. Pending-job demand and `WARM_FLOOR` continue to size only the community lane.
 
-- emit actual capacity when nominal capacity is greater than actual capacity;
-- emit target capacity when actual capacity is less than target capacity;
-- emit nothing when capacity already satisfies the target.
+The controller workflow will replace the one-hour maintainer window with a 20-minute window. The janitor will recognize live and recently completed maintainer CI and set every active maintainer entry in `desiredPools` to `maintainerPoolSize`.
 
-The controller will calculate actual capacity from the final pre-scale `Get-FleetState` snapshot. It will apply a normalization step without `--no-wait`, then retain `--no-wait` for the final scale-out step. The existing post-scale polling loop will run whenever actual capacity was below target.
+A pure `Get-VmssCapacityPlan` function in `runner-policy.ps1` will accept nominal capacity, actual VM count, and target capacity. It emits actual capacity when nominal exceeds actual, then emits target when actual is below target. The controller applies normalization without `--no-wait`, applies final scale-out with `--no-wait`, and retains its existing provisioning poll.
 
 ## Testing
 
-The regression test will execute the real pure planning function with hand-derived fixtures:
+Focused Pester regressions will prove:
 
-- nominal 4, actual 0, target 1 produces capacity steps 0 then 1;
-- nominal 10, actual 6, target 10 produces capacity steps 6 then 10;
-- nominal 1, actual 1, target 1 produces no steps.
+- a live maintainer with three pending jobs still targets ten;
+- a maintainer remains at ten for nineteen minutes after CI completion;
+- a maintainer drops to zero at twenty minutes after CI completion;
+- a cold maintainer remains zero;
+- the janitor preserves ten recently active maintainer VMs without a live run;
+- nominal/actual/target `4/0/1` produces capacity steps `0,1`;
+- nominal/actual/target `10/6/10` produces capacity steps `6,10`;
+- healthy `1/1/1` capacity produces no scale steps.
 
-The production controller consumes that plan directly. The full `.github/runners/tests` suite must remain green. After merge, the next credentialed default-branch reconcile log must show nominal and actual capacity converging and the Azure VM inventory reaching the requested target.
+The production controller consumes the tested policy and capacity plan directly. The full `.github/runners/tests` suite must remain green.
 
-## Rollout and Risk
+## Rollout
 
-The pull request is safe to review and test without Azure credentials, but it cannot execute the modified credentialed controller. Merge to `development` activates the fix. The next reconcile is the live canary; if Azure rejects normalization, the controller's existing transient-failure handling exits without additional fleet changes and a later reconcile retries.
+The PR verifies deterministic policy and capacity planning without Azure credentials. Merge to `development` activates both changes. The next credentialed reconcile is the live canary and must report a ten-runner maintainer target with actual VM inventory converging to ten.
