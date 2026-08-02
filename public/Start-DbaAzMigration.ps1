@@ -205,7 +205,7 @@ function Start-DbaAzMigration {
             } elseif ($DestinationAccessToken) {
                 if ($Destination.IsConnectionString) {
                     $tokenDestinationBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
-                    $tokenDestinationBuilder.ConnectionString = [string]$Destination.InputObject
+                    $tokenDestinationBuilder.set_ConnectionString([string]$Destination.InputObject)
                     $tokenDestinationServerKey = $tokenDestinationBuilder.Keys | Where-Object { $PSItem -ieq "Data Source" -or $PSItem -ieq "Server" } | Select-Object -First 1
                     $tokenDestinationServer = if ($tokenDestinationServerKey) { $tokenDestinationBuilder[$tokenDestinationServerKey] }
                     if (-not $tokenDestinationServer) {
@@ -245,7 +245,7 @@ function Start-DbaAzMigration {
         }
 
         $connectionBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
-        $connectionBuilder.ConnectionString = $destinationConnectionString
+        $connectionBuilder.set_ConnectionString($destinationConnectionString)
         $null = $connectionBuilder.Remove("Initial Catalog")
         $null = $connectionBuilder.Remove("Database")
         $connectionBuilder["Database"] = "master"
@@ -281,7 +281,7 @@ function Start-DbaAzMigration {
         foreach ($connectionStringToInspect in @($sourceServer.ConnectionContext.ConnectionString, $destinationPublishConnectionString)) {
             try {
                 $secretBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
-                $secretBuilder.ConnectionString = $connectionStringToInspect
+                $secretBuilder.set_ConnectionString($connectionStringToInspect)
                 foreach ($passwordKey in @("Password", "Pwd")) {
                     if ($secretBuilder.ContainsKey($passwordKey) -and $secretBuilder[$passwordKey]) {
                         $sensitiveValues += [string]$secretBuilder[$passwordKey]
