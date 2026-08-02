@@ -821,6 +821,14 @@ function Confirm-DirectTrigger {
     # GitHub for the ref's head settles that: a replay names a SHA that is no longer
     # the head and gets dropped, and the sha and message handed downstream come from
     # the API response rather than from the request body.
+    # Branches only. A push webhook fires for tags too, and both the commits endpoint below
+    # and workflow dispatch accept a tag ref, so without this a maintainer cutting a release
+    # tag would heat a lane and dispatch CI at the tag. Stripping the prefix without first
+    # requiring it also let refs/tags/x through as the "branch" refs/tags/x.
+    if ($Ref -notlike "refs/heads/*") {
+        Write-Warning "Trigger ref $Ref is not a branch; converging from repository activity instead"
+        return $empty
+    }
     $branch = $Ref -replace "^refs/heads/", ""
     # Conservative because this value reaches a REST path. Real branch names here are
     # well inside it, and anything stranger is dropped rather than escaped. The explicit

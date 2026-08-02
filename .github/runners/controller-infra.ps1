@@ -318,11 +318,35 @@ $settings = @(
     # stays above one even though the instance count does not.
     "PSWorkerInProcConcurrencyUpperBound=10"
 )
+
+# What the app already carries. `appsettings set` only touches the names it is given, so a
+# rerun without -GitHubAppId leaves a previously wired ID in place -- and the safety tick
+# below has to judge the app's real state, not just this invocation's parameters, or a
+# routine rerun would switch off a tick that was working fine.
+$splatExistingArgs = @(
+    "functionapp", "config", "appsettings", "list",
+    "--name", $FunctionAppName,
+    "--resource-group", $ResourceGroup,
+    "--subscription", $SubscriptionId,
+    "--output", "json"
+)
+$existingJson = az @splatExistingArgs --only-show-errors 2>$null
+$existingSettings = @{ }
+if ($existingJson) {
+    foreach ($existing in ($existingJson | ConvertFrom-Json)) {
+        $existingSettings[[string]$existing.name] = [string]$existing.value
+    }
+}
+
 if ($GitHubAppId) {
     $settings += "GITHUB_APP_ID=$GitHubAppId"
+} else {
+    $GitHubAppId = $existingSettings["GITHUB_APP_ID"]
 }
 if ($GitHubInstallationId) {
     $settings += "GITHUB_INSTALLATION_ID=$GitHubInstallationId"
+} else {
+    $GitHubInstallationId = $existingSettings["GITHUB_INSTALLATION_ID"]
 }
 
 # Key Vault references are wired only once the secrets exist. Pointing a reference at a

@@ -314,6 +314,24 @@ Describe "trigger corroboration" {
         }
     }
 
+    It "ignores a tag push, because a release tag is not a lane" {
+        # The push webhook fires for tags as well as branches, and refs/tags/v2.1.0 survives
+        # the branch-name check, resolves at the commits endpoint and dispatches. So without
+        # a branch test, cutting a release heated a pool and ran CI at the tag.
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson { throw "GitHub should not have been called" }
+            $splatTag = @{
+                Actor = "potatoqualitee"
+                Sha   = "6666666666666666666666666666666666666666"
+                Ref   = "refs/tags/v2.1.0"
+            }
+            $tagTrigger = Confirm-DirectTrigger @splatTag
+            $tagTrigger.Sha | Should -BeNullOrEmpty
+            $tagTrigger.Actor | Should -BeNullOrEmpty
+            Should -Invoke Invoke-GhJson -Times 0
+        }
+    }
+
     It "attributes the trigger to the pusher, not to whoever wrote the commit" {
         # The maintainer and opt-in lists are about who pushed. Reading the lane from
         # head.author.login would hand a maintainer lane to anyone who pushes a commit a
@@ -416,6 +434,127 @@ Describe "Azure inventory paging" {
         foreach ($listPath in $listPaths) {
             $tail = $source.Substring($listPath.Index, [math]::Min(400, $source.Length - $listPath.Index))
             $tail | Should -Match "Invoke-ArmList" -Because "the list at $($listPath.Value.Trim()) has to paginate"
+        }
+    }
+}
+
+Describe "controller-infra rerun safety" {
+    BeforeAll {
+        # The decision is executed rather than described: the region is lifted verbatim out of
+        # the shipped script and dot-sourced against a stubbed az, so the test breaks if the
+        # script changes. It is anchored on the last committed app setting and on the tick
+        # itself, both of which are load-bearing lines nobody edits by accident.
+        $infraSource = Get-Content -Path "$PSScriptRoot/../controller-infra.ps1" -Raw
+        $splatRegion = @{
+            Input   = $infraSource
+            Pattern = "(?s)PSWorkerInProcConcurrencyUpperBound=10`"\r?\n\)\r?\n(.*?SafetyTick\.Disabled=0`"\r?\n\})"
+        }
+        $regionMatch = [regex]::Match($splatRegion.Input, $splatRegion.Pattern)
+        $regionMatch.Success | Should -BeTrue -Because "the tick decision has to be findable in controller-infra.ps1"
+        $script:TickDecision = [scriptblock]::Create($regionMatch.Groups[1].Value)
+    }
+
+    It "leaves a wired tick running when rerun without the ID parameters" {
+        # Rerunning controller-infra.ps1 is the documented way to finish the wiring, and it
+        # used to recompute the blockers from this invocation's parameters alone. A rerun that
+        # only meant to refresh a Key Vault reference therefore switched off a working tick.
+        function az {
+            if ($args[0] -eq "functionapp") {
+                return "[{`"name`":`"GITHUB_APP_ID`",`"value`":`"1234567`"},{`"name`":`"GITHUB_INSTALLATION_ID`",`"value`":`"7654321`"}]"
+            }
+            "https://dbatools-fleet-kv.vault.azure.net/secrets/a-secret/0123456789abcdef"
+        }
+        $FunctionAppName = "dbatools-fleet-controller"
+        $ResourceGroup = "dbatools-ci"
+        $SubscriptionId = "00000000-0000-0000-0000-000000000000"
+        $KeyVaultName = "dbatools-fleet-kv"
+        $GitHubAppId = ""
+        $GitHubInstallationId = ""
+        $settings = @()
+
+        . $script:TickDecision
+
+        $settings | Should -Contain "AzureWebJobs.SafetyTick.Disabled=0"
+    }
+
+    It "keeps the tick off when the app carries nothing to run on" {
+        function az {
+            if ($args[0] -eq "functionapp") {
+                return "[]"
+            }
+            ""
+        }
+        $FunctionAppName = "dbatools-fleet-controller"
+        $ResourceGroup = "dbatools-ci"
+        $SubscriptionId = "00000000-0000-0000-0000-000000000000"
+        $KeyVaultName = "dbatools-fleet-kv"
+        $GitHubAppId = ""
+        $GitHubInstallationId = ""
+        $settings = @()
+
+        . $script:TickDecision
+
+        $settings | Should -Contain "AzureWebJobs.SafetyTick.Disabled=1"
+    }
+
+    It "keeps the tick off while the private key is still outside Key Vault" {
+        # An App ID with no key fails initialization exactly as a missing App ID does, so the
+        # secrets count as blockers too
+        function az {
+            if ($args[0] -eq "functionapp") {
+                return "[{`"name`":`"GITHUB_APP_ID`",`"value`":`"1234567`"},{`"name`":`"GITHUB_INSTALLATION_ID`",`"value`":`"7654321`"}]"
+            }
+            ""
+        }
+        $FunctionAppName = "dbatools-fleet-controller"
+        $ResourceGroup = "dbatools-ci"
+        $SubscriptionId = "00000000-0000-0000-0000-000000000000"
+        $KeyVaultName = "dbatools-fleet-kv"
+        $GitHubAppId = ""
+        $GitHubInstallationId = ""
+        $settings = @()
+
+        . $script:TickDecision
+
+        $settings | Should -Contain "AzureWebJobs.SafetyTick.Disabled=1"
+    }
+}
+
+Describe "ARM token caching" {
+    BeforeAll {
+        $script:SavedIdentityEndpoint = $env:IDENTITY_ENDPOINT
+        $script:SavedIdentityHeader = $env:IDENTITY_HEADER
+        $env:IDENTITY_ENDPOINT = "http://127.0.0.1:0/msi/token"
+        $env:IDENTITY_HEADER = "not-a-real-identity-header"
+    }
+
+    AfterAll {
+        $env:IDENTITY_ENDPOINT = $script:SavedIdentityEndpoint
+        $env:IDENTITY_HEADER = $script:SavedIdentityHeader
+    }
+
+    It "caches a token whose expiry sits past the Int32 second boundary" {
+        # expires_on arrives as seconds since the epoch, and past 2038-01-19 that number no
+        # longer fits in an Int32. A token that cannot parse its own expiry is one the
+        # controller re-acquires on every ARM call it makes.
+        InModuleScope FleetCore {
+            $script:Fleet = [pscustomobject]@{
+                ArmToken       = $null
+                ArmTokenExpiry = [DateTimeOffset]::MinValue
+            }
+            $script:TokenCalls = 0
+            Mock Invoke-RestMethod {
+                $script:TokenCalls++
+                [pscustomobject]@{
+                    access_token = "arm-token-$script:TokenCalls"
+                    expires_on   = "2200000000"
+                }
+            }
+
+            Get-ArmToken | Should -Be "arm-token-1"
+            $script:Fleet.ArmTokenExpiry | Should -Be ([DateTimeOffset]::FromUnixTimeSeconds(2200000000).AddMinutes(-5))
+            Get-ArmToken | Should -Be "arm-token-1"
+            $script:TokenCalls | Should -Be 1
         }
     }
 }
