@@ -50,7 +50,9 @@ function Invoke-DbaDbIndexRebuild {
 
     .PARAMETER Mode
         Controls which operation is performed. Rebuild issues ALTER INDEX ... REBUILD, Reorganize issues ALTER INDEX ... REORGANIZE, and Auto decides per index from measured fragmentation. Defaults to Rebuild.
+        Reorganize is skipped with a warning for heaps, disabled indexes, and indexes with ALLOW_PAGE_LOCKS = OFF, none of which SQL Server will reorganize.
         Auto is the Ola Hallengren approach: below ReorganizeThreshold the index is left alone, between the two thresholds it is reorganized, and at or above RebuildThreshold it is rebuilt.
+        Reorganize takes none of the rebuild options, so under Reorganize they are listed in a warning and skipped rather than refused. Auto still refuses an invalid rebuild combination, because Auto can decide to rebuild.
 
     .PARAMETER ReorganizeThreshold
         Sets the fragmentation percentage at which Auto mode starts reorganizing an index. Defaults to 5.
@@ -70,7 +72,7 @@ function Invoke-DbaDbIndexRebuild {
 
     .PARAMETER Online
         Performs the rebuild online so the table stays available to other sessions for the duration.
-        Requires Enterprise or Developer edition. Indexes that cannot be rebuilt online are skipped with a warning rather than being rebuilt offline behind your back, columnstore included: only a clustered columnstore index on SQL Server 2019 or later can rebuild online.
+        Requires Enterprise or Developer edition. Indexes that cannot be rebuilt online are skipped with a warning rather than being rebuilt offline behind your back. Columnstore is the exception: which columnstore indexes rebuild online depends on the version and index type in ways SMO does not report, so the request goes to the engine and a rejection comes back as a failed row.
 
     .PARAMETER MaxDop
         Limits the number of processors used for the operation by adding MAXDOP, from 0 to 64.
@@ -90,10 +92,10 @@ function Invoke-DbaDbIndexRebuild {
 
     .PARAMETER Resumable
         Makes the rebuild resumable so it can be paused and continued rather than rolled back.
-        Requires SQL Server 2017 or later, or Azure SQL Database, and must be combined with Online. Does not apply to heaps, columnstore indexes or disabled indexes, which are rebuilt without it.
+        Requires SQL Server 2017 or later, or Azure SQL Database, and must be combined with Online. It is dropped, and the reason recorded in Notes, for everything SQL Server documents as unsupported: heaps, columnstore indexes, disabled indexes, filtered indexes, a computed or rowversion key column, and a computed or LOB included column. Those objects are rebuilt without it rather than being skipped.
 
     .PARAMETER ResumableMaxDuration
-        Sets how many minutes a resumable rebuild runs before it pauses on its own, from 1 to 71582.
+        Sets how many minutes a resumable rebuild runs before it pauses on its own, from 1 to 10080 (7 days).
         Use this to fit index maintenance into a fixed maintenance window without leaving a long rollback behind.
 
     .PARAMETER WaitAtLowPriority
@@ -106,14 +108,14 @@ function Invoke-DbaDbIndexRebuild {
 
     .PARAMETER AbortAfterWait
         Specifies what happens when the low priority wait expires. None lets the operation keep waiting normally, Self aborts the rebuild, and Blockers kills the sessions holding the blocking locks. Defaults to None.
-        Only applies when WaitAtLowPriority is specified. Anything other than None needs MaxDurationMinutes set, because there is otherwise no wait to abort after.
+        Anything other than None needs both WaitAtLowPriority and MaxDurationMinutes, because there is otherwise no wait to abort after.
 
     .PARAMETER IncludeHeap
         Includes heaps, meaning tables with no clustered index, rebuilt with ALTER TABLE ... REBUILD.
-        Heaps fragment through forwarded records and deleted rows but are ignored by most maintenance solutions, so they are opt-in here rather than silently rebuilt. A heap rebuild also rebuilds the table's nonclustered indexes, so those are skipped for the rest of that table.
+        Heaps fragment through forwarded records and deleted rows but are ignored by most maintenance solutions, so they are opt-in here rather than silently rebuilt. A heap rebuild also rebuilds the table's nonclustered indexes, so the rest of that table is skipped for the run: their measured fragmentation is stale from that point on.
 
     .PARAMETER StatementTimeout
-        Sets the command timeout in minutes for each operation. Defaults to 0 (infinite timeout).
+        Sets the command timeout in minutes for each operation, from 0 to 35791394. Defaults to 0 (infinite timeout).
         Large rebuilds can run for hours, so the default lets them finish rather than failing partway through.
 
     .PARAMETER InputObject
@@ -243,8 +245,9 @@ function Invoke-DbaDbIndexRebuild {
         [switch]$PadIndex,
         [switch]$SortInTempdb,
         [switch]$Resumable,
-        # 71582 minutes is the documented ceiling for both MAX_DURATION clauses.
-        [ValidateRange(1, 71582)]
+        # The two MAX_DURATION clauses have different ceilings: 10080 minutes (7 days) for RESUMABLE,
+        # 71582 for WAIT_AT_LOW_PRIORITY. Both were confirmed against SQL Server 2022.
+        [ValidateRange(1, 10080)]
         [int]$ResumableMaxDuration,
         [switch]$WaitAtLowPriority,
         [ValidateRange(0, 71582)]
@@ -252,7 +255,8 @@ function Invoke-DbaDbIndexRebuild {
         [ValidateSet("None", "Self", "Blockers")]
         [string]$AbortAfterWait = "None",
         [switch]$IncludeHeap,
-        [ValidateRange(0, 2147483647)]
+        # The ceiling is int.MaxValue seconds expressed in minutes, because SMO's StatementTimeout is signed 32 bit seconds.
+        [ValidateRange(0, 35791394)]
         [int]$StatementTimeout = 0,
         [Parameter(ValueFromPipeline)]
         [object[]]$InputObject,
@@ -260,26 +264,6 @@ function Invoke-DbaDbIndexRebuild {
     )
 
     begin {
-        if ($Resumable -and -not $Online) {
-            Stop-Function -Message "A resumable index operation requires ONLINE = ON. Add -Online, or drop -Resumable."
-            return
-        }
-
-        if ($WaitAtLowPriority -and -not $Online) {
-            Stop-Function -Message "WAIT_AT_LOW_PRIORITY only applies to online index operations. Add -Online, or drop -WaitAtLowPriority."
-            return
-        }
-
-        if ($Resumable -and $SortInTempdb) {
-            Stop-Function -Message "SORT_IN_TEMPDB = ON cannot be combined with RESUMABLE = ON. Drop -SortInTempdb, or drop -Resumable."
-            return
-        }
-
-        if ($AbortAfterWait -ne "None" -and $MaxDurationMinutes -lt 1) {
-            Stop-Function -Message "AbortAfterWait $AbortAfterWait needs something to wait for. Set -MaxDurationMinutes to at least 1."
-            return
-        }
-
         if ($ReorganizeThreshold -gt $RebuildThreshold) {
             Stop-Function -Message "ReorganizeThreshold ($ReorganizeThreshold) cannot be greater than RebuildThreshold ($RebuildThreshold)."
             return
@@ -288,13 +272,41 @@ function Invoke-DbaDbIndexRebuild {
         if ($Mode -eq "Reorganize") {
             $ignoredByReorganize = @()
             # REORGANIZE is always an online operation, so -Online is not in this list: it is redundant, not ignored.
-            foreach ($optionName in "FillFactor", "PadIndex", "SortInTempdb", "MaxDop", "Resumable", "WaitAtLowPriority") {
+            foreach ($optionName in "FillFactor", "PadIndex", "SortInTempdb", "MaxDop", "Resumable", "ResumableMaxDuration", "WaitAtLowPriority", "MaxDurationMinutes", "AbortAfterWait") {
                 if (Test-Bound -ParameterName $optionName) {
                     $ignoredByReorganize += $optionName
                 }
             }
             if ($ignoredByReorganize) {
                 Write-Message -Level Warning -Message "REORGANIZE ignores these options and they will not be applied: $($ignoredByReorganize -join ", ")"
+            }
+        } else {
+            # Every option below belongs to REBUILD, so these combinations are only wrong when a rebuild can
+            # actually happen. Under -Mode Reorganize the options are already reported as ignored above, and
+            # refusing to run there would be a hard stop over something the caller was told does not apply.
+            if ($Resumable -and -not $Online) {
+                Stop-Function -Message "A resumable index operation requires ONLINE = ON. Add -Online, or drop -Resumable."
+                return
+            }
+
+            if ($WaitAtLowPriority -and -not $Online) {
+                Stop-Function -Message "WAIT_AT_LOW_PRIORITY only applies to online index operations. Add -Online, or drop -WaitAtLowPriority."
+                return
+            }
+
+            if ($Resumable -and $SortInTempdb) {
+                Stop-Function -Message "SORT_IN_TEMPDB = ON cannot be combined with RESUMABLE = ON. Drop -SortInTempdb, or drop -Resumable."
+                return
+            }
+
+            if ($AbortAfterWait -ne "None" -and -not $WaitAtLowPriority) {
+                Stop-Function -Message "AbortAfterWait only has meaning inside a low priority wait. Add -WaitAtLowPriority, or drop -AbortAfterWait."
+                return
+            }
+
+            if ($AbortAfterWait -ne "None" -and $MaxDurationMinutes -lt 1) {
+                Stop-Function -Message "AbortAfterWait $AbortAfterWait needs something to wait for. Set -MaxDurationMinutes to at least 1."
+                return
             }
         }
 
@@ -344,7 +356,12 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                 }
                 $inputObjectByDatabase[$dbKey].Objects += $object
             } else {
-                Stop-Function -Message "InputObject of type $objectType is not supported. Pipe in databases from Get-DbaDatabase, tables from Get-DbaDbTable or views from Get-DbaDbView." -Target $object -Continue
+                $splatBadInput = @{
+                    Message  = "InputObject of type $objectType is not supported. Pipe in databases from Get-DbaDatabase, tables from Get-DbaDbTable or views from Get-DbaDbView."
+                    Target   = $object
+                    Continue = $true
+                }
+                Stop-Function @splatBadInput
             }
         }
 
@@ -360,9 +377,21 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $splatConnection = @{
+                    SqlInstance    = $instance
+                    SqlCredential  = $SqlCredential
+                    MinimumVersion = 9
+                }
+                $server = Connect-DbaInstance @splatConnection
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $PSItem -Target $instance -Continue
+                $splatConnectionFailure = @{
+                    Message     = "Failure"
+                    Category    = "ConnectionError"
+                    ErrorRecord = $PSItem
+                    Target      = $instance
+                    Continue    = $true
+                }
+                Stop-Function @splatConnectionFailure
             }
 
             $dbs = $server.Databases | Where-Object { $PSItem.IsAccessible }
@@ -425,17 +454,33 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
 
             # Azure SQL Database reports version 12 but supports both clauses, so the version floors only apply to the box product.
             if ($Resumable -and $server.VersionMajor -lt 14 -and -not $server.IsAzure) {
-                Stop-Function -Message "Resumable index operations require SQL Server 2017 (version 14) or later. $server is running version $($server.VersionMajor)." -Target $server -Continue
+                $splatOldResumable = @{
+                    Message  = "Resumable index operations require SQL Server 2017 (version 14) or later. $server is running version $($server.VersionMajor)."
+                    Target   = $server
+                    Continue = $true
+                }
+                Stop-Function @splatOldResumable
             }
 
             if ($WaitAtLowPriority -and $server.VersionMajor -lt 12 -and -not $server.IsAzure) {
-                Stop-Function -Message "WAIT_AT_LOW_PRIORITY requires SQL Server 2014 (version 12) or later. $server is running version $($server.VersionMajor)." -Target $server -Continue
+                $splatOldWait = @{
+                    Message  = "WAIT_AT_LOW_PRIORITY requires SQL Server 2014 (version 12) or later. $server is running version $($server.VersionMajor)."
+                    Target   = $server
+                    Continue = $true
+                }
+                Stop-Function @splatOldWait
             }
 
             try {
                 $fragmentationRows = $db.Query($fragmentationSql)
             } catch {
-                Stop-Function -Message "Failed to read index fragmentation for $db on $server" -ErrorRecord $PSItem -Target $db -Continue
+                $splatScanFailure = @{
+                    Message     = "Failed to read index fragmentation for $db on $server"
+                    ErrorRecord = $PSItem
+                    Target      = $db
+                    Continue    = $true
+                }
+                Stop-Function @splatScanFailure
             }
 
             $fragmentation = New-Object -TypeName System.Collections.Hashtable
@@ -462,7 +507,10 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
             }
 
             foreach ($obj in $objects) {
-                if ($obj.IsMemoryOptimized) {
+                # Table.IsMemoryOptimized arrived with SQL Server 2014, and SMO throws rather than returning
+                # false when the property does not exist on the server it is talking to. Nothing before 2014
+                # has memory optimized tables anyway, so the question does not arise there.
+                if ($server.VersionMajor -ge 12 -and $obj.IsMemoryOptimized) {
                     Write-Message -Level Verbose -Message "Skipping memory optimized object $($obj.Schema).$($obj.Name) in $db, ALTER INDEX REBUILD does not apply to it."
                     continue
                 }
@@ -501,6 +549,14 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                 foreach ($target in $targets) {
                     $objectLabel = "$($db.Name).$($obj.Schema).$($obj.Name).$($target.IndexName)"
                     $isColumnstore = $target.IndexType -match "Columnstore"
+
+                    # ALTER TABLE ... REBUILD on a heap moves every row, so SQL Server rebuilds the table's
+                    # nonclustered indexes as part of it. Their measured fragmentation is stale from here on,
+                    # which rules out an Auto decision as much as it rules out a second rebuild.
+                    if ($heapWasRebuilt) {
+                        Write-Message -Level Verbose -Message "Skipping $objectLabel, the heap rebuild on this table already rebuilt it."
+                        continue
+                    }
 
                     if ($isColumnstore) {
                         # sys.dm_db_index_physical_stats only sees a columnstore index's rowstore parts, so a
@@ -557,13 +613,6 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                         $operation = $Mode
                     }
 
-                    # ALTER TABLE ... REBUILD on a heap moves every row, so SQL Server rebuilds the table's
-                    # nonclustered indexes as part of it. Rebuilding them again straight afterwards is pure waste.
-                    if ($heapWasRebuilt -and $operation -eq "Rebuild" -and -not $target.IsHeap) {
-                        Write-Message -Level Verbose -Message "Skipping $objectLabel, the heap rebuild on this table already rebuilt it."
-                        continue
-                    }
-
                     if ($operation -eq "Reorganize") {
                         if ($target.IsHeap) {
                             Write-Message -Level Warning -Message "Skipping heap $objectLabel, a heap cannot be reorganized. Use -Mode Rebuild to defragment it."
@@ -571,6 +620,12 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                         }
                         if ($target.Index.IsDisabled) {
                             Write-Message -Level Warning -Message "Skipping disabled index $objectLabel, REORGANIZE cannot run against a disabled index. Use -Mode Rebuild to re-enable it."
+                            continue
+                        }
+                        # REORGANIZE compacts pages, so ALLOW_PAGE_LOCKS = OFF rules it out. The engine raises
+                        # error 2552 for it, and in Auto mode that would fail an index the caller never singled out.
+                        if (-not $isColumnstore -and $target.Index.DisallowPageLocks) {
+                            Write-Message -Level Warning -Message "Skipping $objectLabel, REORGANIZE needs page level locking and this index has ALLOW_PAGE_LOCKS = OFF. Use -Mode Rebuild to defragment it."
                             continue
                         }
                     }
@@ -581,15 +636,27 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
 
                     if ($operation -eq "Rebuild" -and $useOnline) {
                         # Never quietly downgrade to an offline rebuild: -Online is what stands between the caller
-                        # and a table lock, so an index that cannot honour it gets skipped and said out loud.
-                        # SMO reports IsOnlineRebuildSupported as false for every columnstore index even where the
-                        # engine supports it, so columnstore is decided from the version instead.
-                        if ($isColumnstore) {
-                            if ($target.IndexType -notmatch "^Clustered" -or ($server.VersionMajor -lt 15 -and -not $server.IsAzure)) {
-                                Write-Message -Level Warning -Message "Skipping $objectLabel, an online rebuild of this columnstore index is not supported on $server. Only a clustered columnstore index on SQL Server 2019 or later can rebuild online. Drop -Online to rebuild it offline."
+                        # and a table lock, so anything that cannot honour it is skipped or fails out loud.
+                        if ($target.IsHeap) {
+                            # There is no IsOnlineRebuildSupported for a heap, so ALTER TABLE ... REBUILD WITH (ONLINE = ON)
+                            # gets its own floor: SQL Server 2014, Enterprise or Developer.
+                            if ($server.VersionMajor -lt 12 -and -not $server.IsAzure) {
+                                Write-Message -Level Warning -Message "Skipping heap $objectLabel, an online heap rebuild requires SQL Server 2014 (version 12) or later. $server is running version $($server.VersionMajor). Drop -Online to rebuild it offline."
                                 continue
                             }
-                        } elseif (-not $target.IsHeap -and -not $target.Index.IsOnlineRebuildSupported -and -not $server.IsAzure) {
+                            # A whitelist, not a Standard check: Web, Express and Personal cannot do this either,
+                            # and SMO reports Developer as EnterpriseOrDeveloper.
+                            if ("$($server.EngineEdition)" -ne "EnterpriseOrDeveloper" -and -not $server.IsAzure) {
+                                Write-Message -Level Warning -Message "Skipping heap $objectLabel, an online heap rebuild requires Enterprise or Developer edition and $server is $($server.EngineEdition). Drop -Online to rebuild it offline."
+                                continue
+                            }
+                        } elseif ($isColumnstore) {
+                            # Which columnstore indexes rebuild online moves with the version, the index type and the
+                            # edition, and SMO reports IsOnlineRebuildSupported as false for all of them regardless.
+                            # Guessing here has already been wrong in both directions, so the engine decides: an
+                            # unsupported combination comes back as a failed row, never as a silent offline rebuild.
+                            Write-Message -Level Verbose -Message "Asking $server for an online rebuild of columnstore index $objectLabel. Support depends on the version and index type, so a rejection is reported as a failure."
+                        } elseif (-not $target.Index.IsOnlineRebuildSupported -and -not $server.IsAzure) {
                             Write-Message -Level Warning -Message "Skipping $objectLabel, this index does not support an online rebuild on $server. Drop -Online to rebuild it offline."
                             continue
                         }
@@ -605,6 +672,52 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                         } elseif ($target.Index.IsDisabled) {
                             $useResumable = $false
                             $suppressed += "Resumable, which cannot re-enable a disabled index"
+                        } elseif ($target.Index.HasFilter) {
+                            $useResumable = $false
+                            $suppressed += "Resumable, which is not supported for a filtered index"
+                        } else {
+                            # The documented restrictions, which SQL Server does not always enforce by failing the
+                            # statement: a computed or rowversion key column, and a computed or LOB included column.
+                            # A nonclustered index silently carries the clustered key, so its restrictions apply here too.
+                            $keyColumnNames = @($target.Index.IndexedColumns | Where-Object { -not $PSItem.IsIncluded } | Select-Object -ExpandProperty Name)
+                            if ($target.IndexType -notmatch "^Clustered" -and $obj.HasClusteredIndex) {
+                                $clusteredIndex = $obj.Indexes | Where-Object { $PSItem.IndexType -match "^Clustered" -and $PSItem.IndexType -notmatch "Columnstore" }
+                                $keyColumnNames += @($clusteredIndex.IndexedColumns | Where-Object { -not $PSItem.IsIncluded } | Select-Object -ExpandProperty Name)
+                            }
+
+                            $blockingColumn = $null
+                            foreach ($keyColumnName in $keyColumnNames) {
+                                $keyColumn = $obj.Columns[$keyColumnName]
+                                if ($keyColumn.Computed) {
+                                    $blockingColumn = "key computed column $keyColumnName"
+                                    break
+                                }
+                                if ("$($keyColumn.DataType.SqlDataType)" -eq "Timestamp") {
+                                    $blockingColumn = "key rowversion column $keyColumnName"
+                                    break
+                                }
+                            }
+
+                            if (-not $blockingColumn) {
+                                $includedColumnNames = @($target.Index.IndexedColumns | Where-Object { $PSItem.IsIncluded } | Select-Object -ExpandProperty Name)
+                                foreach ($includedColumnName in $includedColumnNames) {
+                                    $includedColumn = $obj.Columns[$includedColumnName]
+                                    if ($includedColumn.Computed) {
+                                        $blockingColumn = "included computed column $includedColumnName"
+                                        break
+                                    }
+                                    # MaxLength is -1 for the max types, which is what makes a column LOB here.
+                                    if ("$($includedColumn.DataType.SqlDataType)" -in "NVarCharMax", "VarCharMax", "VarBinaryMax", "Text", "NText", "Image", "Xml" -or $includedColumn.DataType.MaximumLength -eq -1) {
+                                        $blockingColumn = "included LOB column $includedColumnName"
+                                        break
+                                    }
+                                }
+                            }
+
+                            if ($blockingColumn) {
+                                $useResumable = $false
+                                $suppressed += "Resumable, which a $blockingColumn rules out"
+                            }
                         }
                     }
 
@@ -641,6 +754,18 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                     if ($suppressed) {
                         $notes = "Suppressed: $($suppressed -join "; ")"
                         Write-Message -Level Verbose -Message "$objectLabel - $notes"
+                    }
+
+                    # These are options for one operation rather than stored index settings, but SMO leaves them
+                    # set on the object afterwards. A caller who pipes the same SMO object in twice would
+                    # otherwise inherit the first run's MAXDOP or SORT_IN_TEMPDB. FillFactor and PadIndex are
+                    # deliberately not in this list: those are stored settings the caller asked to change.
+                    $transientOptions = "OnlineHeapOperation", "OnlineIndexOperation", "ResumableIndexOperation", "ResumableMaxDuration", "SortInTempdb", "MaximumDegreeOfParallelism", "LowPriorityMaxDuration", "LowPriorityAbortAfterWait"
+                    $previousOptions = New-Object -TypeName System.Collections.Hashtable
+                    foreach ($transientOption in $transientOptions) {
+                        if ($null -ne $smoTarget.PSObject.Properties[$transientOption]) {
+                            $previousOptions[$transientOption] = $smoTarget.$transientOption
+                        }
                     }
 
                     $previousStatementTimeout = $server.ConnectionContext.StatementTimeout
@@ -699,11 +824,24 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                             Write-Message -Level Verbose -Message "Could not refresh $objectLabel after the failure."
                         }
                         if ($EnableException) {
-                            Stop-Function -Message $failureMessage -ErrorRecord $PSItem -Target $obj -EnableException $EnableException
+                            $splatOperationFailure = @{
+                                Message         = $failureMessage
+                                ErrorRecord     = $PSItem
+                                Target          = $obj
+                                EnableException = $EnableException
+                            }
+                            Stop-Function @splatOperationFailure
                         }
                         Write-Message -Level Warning -Message $failureMessage
                     } finally {
                         $server.ConnectionContext.StatementTimeout = $previousStatementTimeout
+                        foreach ($previousOption in $previousOptions.Keys) {
+                            try {
+                                $smoTarget.$previousOption = $previousOptions[$previousOption]
+                            } catch {
+                                Write-Message -Level Verbose -Message "Could not restore $previousOption on $objectLabel after the operation."
+                            }
+                        }
                     }
                     $end = Get-Date
 

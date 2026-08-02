@@ -545,7 +545,7 @@ $script:xplat = @(
         'Read-DbaTransactionLog',
         'Get-DbaDbTable',
         'Remove-DbaDbTable',
-        'Invoke-DbaDbIndexRebuild',
+        "Invoke-DbaDbIndexRebuild",
         'Invoke-DbaDbShrink',
         'Get-DbaEstimatedCompletionTime',
         'Get-DbaLinkedServer',

@@ -77,6 +77,19 @@ CREATE NONCLUSTERED INDEX IX_heap2_val ON dbo.heap2 (val);
 INSERT dbo.heap2 (val) SELECT TOP 500 1 FROM sys.all_objects;
 CREATE TABLE dbo.tiny1 (id int IDENTITY(1,1) NOT NULL CONSTRAINT PK_tiny1 PRIMARY KEY CLUSTERED, val int NOT NULL);
 INSERT dbo.tiny1 (val) SELECT TOP 10 1 FROM sys.all_objects;
+CREATE TABLE dbo.calc1 (
+    id int NOT NULL CONSTRAINT PK_calc1 PRIMARY KEY CLUSTERED,
+    num int NOT NULL,
+    doubled AS (num * 2) PERSISTED
+);
+CREATE NONCLUSTERED INDEX IX_calc1_doubled ON dbo.calc1 (doubled);
+INSERT dbo.calc1 (id, num) SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY name), 1 FROM sys.all_objects;
+CREATE TABLE dbo.nopage1 (id int NOT NULL CONSTRAINT PK_nopage1 PRIMARY KEY CLUSTERED, val int NOT NULL);
+INSERT dbo.nopage1 (id, val) SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY name), 1 FROM sys.all_objects;
+CREATE NONCLUSTERED INDEX IX_nopage1_val ON dbo.nopage1 (val) WITH (ALLOW_PAGE_LOCKS = OFF);
+CREATE TABLE dbo.filtered1 (id int NOT NULL CONSTRAINT PK_filtered1 PRIMARY KEY CLUSTERED, val int NOT NULL);
+INSERT dbo.filtered1 (id, val) SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY name), 1 FROM sys.all_objects;
+CREATE NONCLUSTERED INDEX IX_filtered1_val ON dbo.filtered1 (val) WHERE val > 0;
 SET NOCOUNT ON;
 DECLARE @i int = 0;
 WHILE @i < 3000 BEGIN
@@ -149,7 +162,13 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
         } catch {
             Write-Warning "Could not drop dbo.$msdbTableName from msdb. $PSItem"
         }
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Confirm:$false -ErrorAction SilentlyContinue
+        $splatCleanup = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $dbName
+            Confirm     = $false
+            ErrorAction = "SilentlyContinue"
+        }
+        $null = Remove-DbaDatabase @splatCleanup
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -203,6 +222,38 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
         It "Reports the reorganize as online, because REORGANIZE always is" {
             $reorganizeResult.Online | Should -Be $true
         }
+
+        It "Skips an index that has page level locking disabled" {
+            $splatNoPageLocks = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Table           = "dbo.nopage1"
+                Index           = "IX_nopage1_val"
+                Mode            = "Reorganize"
+                WarningVariable = "noPageLockWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $noPageLocks = Invoke-DbaDbIndexRebuild @splatNoPageLocks
+            $noPageLocks | Should -BeNullOrEmpty
+            $noPageLockWarning | Should -Match "ALLOW_PAGE_LOCKS"
+        }
+
+        It "Warns about rebuild only options rather than refusing to reorganize" {
+            $splatIgnoredOptions = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Table           = "dbo.frag1"
+                Index           = "PK_frag1"
+                Mode            = "Reorganize"
+                Resumable       = $true
+                WarningVariable = "ignoredWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $ignoredOptions = Invoke-DbaDbIndexRebuild @splatIgnoredOptions
+            $ignoredOptions.Operation | Should -Be "Reorganize"
+            $ignoredOptions.Success | Should -Be $true
+            $ignoredWarning | Should -Match "REORGANIZE ignores these options"
+        }
     }
 
     Context "Auto mode picks the operation from measured fragmentation" {
@@ -246,8 +297,10 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
                 Mode                = "Auto"
                 ReorganizeThreshold = 100
                 RebuildThreshold    = 100
+                WarningVariable     = "autoSkipWarning"
+                WarningAction       = "SilentlyContinue"
             }
-            $autoSkip = Invoke-DbaDbIndexRebuild @splatAutoSkip -WarningVariable autoSkipWarning -WarningAction SilentlyContinue
+            $autoSkip = Invoke-DbaDbIndexRebuild @splatAutoSkip
             $autoSkip | Should -BeNullOrEmpty
             $autoSkipWarning | Should -BeNullOrEmpty
         }
@@ -259,8 +312,10 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
                 Mode                = "Auto"
                 ReorganizeThreshold = 60
                 RebuildThreshold    = 30
+                WarningVariable     = "thresholdWarning"
+                WarningAction       = "SilentlyContinue"
             }
-            $badThresholds = Invoke-DbaDbIndexRebuild @splatBadThresholds -WarningVariable thresholdWarning -WarningAction SilentlyContinue
+            $badThresholds = Invoke-DbaDbIndexRebuild @splatBadThresholds
             $badThresholds | Should -BeNullOrEmpty
             $thresholdWarning | Should -Match "cannot be greater than RebuildThreshold"
         }
@@ -288,13 +343,15 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
 
         It "Warns rather than failing when asked to reorganize a heap" {
             $splatHeapReorganize = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $dbName
-                Table       = "dbo.heap1"
-                IncludeHeap = $true
-                Mode        = "Reorganize"
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Table           = "dbo.heap1"
+                IncludeHeap     = $true
+                Mode            = "Reorganize"
+                WarningVariable = "heapWarning"
+                WarningAction   = "SilentlyContinue"
             }
-            $heapReorganize = Invoke-DbaDbIndexRebuild @splatHeapReorganize -WarningVariable heapWarning -WarningAction SilentlyContinue
+            $heapReorganize = Invoke-DbaDbIndexRebuild @splatHeapReorganize
             $heapReorganize | Should -BeNullOrEmpty
             $heapWarning | Should -Match "cannot be reorganized"
         }
@@ -309,6 +366,21 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
             $heapWithIndex = Invoke-DbaDbIndexRebuild @splatHeapWithIndex
             $heapWithIndex.IndexName | Should -Be "heap2"
             $heapWithIndex.IndexName | Should -Not -Contain "IX_heap2_val"
+        }
+
+        It "Does not decide Auto mode from fragmentation the heap rebuild already invalidated" {
+            $splatHeapAuto = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                Database            = $dbName
+                Table               = "dbo.heap2"
+                IncludeHeap         = $true
+                Mode                = "Auto"
+                ReorganizeThreshold = 0
+                RebuildThreshold    = 0
+            }
+            $heapAuto = Invoke-DbaDbIndexRebuild @splatHeapAuto
+            $heapAuto.IndexName | Should -Be "heap2"
+            $heapAuto.IndexName | Should -Not -Contain "IX_heap2_val"
         }
     }
 
@@ -328,12 +400,14 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
 
         It "Skips a columnstore index in Auto mode and says why" {
             $splatColumnstoreAuto = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $dbName
-                Table       = "dbo.cs1"
-                Mode        = "Auto"
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Table           = "dbo.cs1"
+                Mode            = "Auto"
+                WarningVariable = "columnstoreWarning"
+                WarningAction   = "SilentlyContinue"
             }
-            $columnstoreAuto = Invoke-DbaDbIndexRebuild @splatColumnstoreAuto -WarningVariable columnstoreWarning -WarningAction SilentlyContinue
+            $columnstoreAuto = Invoke-DbaDbIndexRebuild @splatColumnstoreAuto
             $columnstoreAuto | Should -BeNullOrEmpty
             $columnstoreWarning | Should -Match "cannot be measured"
         }
@@ -341,35 +415,69 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
 
     Context "Filters" {
         It "Returns nothing when every index is below MinimumPageCount" {
-            $pageFiltered = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -Database $dbName -MinimumPageCount 100000
+            $splatPageFilter = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                Database         = $dbName
+                MinimumPageCount = 100000
+                WarningAction    = "SilentlyContinue"
+            }
+            $pageFiltered = Invoke-DbaDbIndexRebuild @splatPageFilter
             $pageFiltered | Should -BeNullOrEmpty
         }
 
         It "Returns nothing when every index is below MinimumFragmentation" {
-            $fragFiltered = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -Database $dbName -MinimumFragmentation 100
+            $splatFragFilter = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                Database             = $dbName
+                MinimumFragmentation = 100
+                WarningAction        = "SilentlyContinue"
+            }
+            $fragFiltered = Invoke-DbaDbIndexRebuild @splatFragFilter
             $fragFiltered | Should -BeNullOrEmpty
         }
     }
 
     Context "Database selection" {
         It "Warns when no database was specified" {
-            $noSelector = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -WarningVariable selectorWarning -WarningAction SilentlyContinue
+            $splatNoSelector = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                WarningVariable = "selectorWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $noSelector = Invoke-DbaDbIndexRebuild @splatNoSelector
             $noSelector | Should -BeNullOrEmpty
             $selectorWarning | Should -Match "You must specify databases"
         }
 
         It "Reaches system databases with AllDatabases" {
-            $allDatabases = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -AllDatabases -Table "dbo.$msdbTableName"
+            $splatAllDatabases = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                AllDatabases  = $true
+                Table         = "dbo.$msdbTableName"
+                WarningAction = "SilentlyContinue"
+            }
+            $allDatabases = Invoke-DbaDbIndexRebuild @splatAllDatabases
             $allDatabases.Database | Should -Contain "msdb"
         }
 
         It "Leaves system databases alone with AllUserDatabases" {
-            $allUserDatabases = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -AllUserDatabases -Table "dbo.$msdbTableName"
+            $splatAllUserDatabases = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                AllUserDatabases = $true
+                Table            = "dbo.$msdbTableName"
+                WarningAction    = "SilentlyContinue"
+            }
+            $allUserDatabases = Invoke-DbaDbIndexRebuild @splatAllUserDatabases
             $allUserDatabases | Should -BeNullOrEmpty
         }
 
         It "Warns when there is neither an instance nor pipeline input" {
-            $noInstance = Invoke-DbaDbIndexRebuild -Database $dbName -WarningVariable instanceWarning -WarningAction SilentlyContinue
+            $splatNoInstance = @{
+                Database        = $dbName
+                WarningVariable = "instanceWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $noInstance = Invoke-DbaDbIndexRebuild @splatNoInstance
             $noInstance | Should -BeNullOrEmpty
             $instanceWarning | Should -Match "You must specify -SqlInstance"
         }
@@ -387,19 +495,44 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
             $null = New-DbaDatabase -SqlInstance $server -Name $readOnlyDbName
             $readOnlyDb = Get-DbaDatabase -SqlInstance $server -Database $readOnlyDbName
             $readOnlyDb.Query("CREATE TABLE dbo.ro1 (id int NOT NULL CONSTRAINT PK_ro1 PRIMARY KEY CLUSTERED);")
-            $null = Set-DbaDbState -SqlInstance $server -Database $readOnlyDbName -ReadOnly -Force
+            $splatMakeReadOnly = @{
+                SqlInstance = $server
+                Database    = $readOnlyDbName
+                ReadOnly    = $true
+                Force       = $true
+            }
+            $null = Set-DbaDbState @splatMakeReadOnly
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaDbState -SqlInstance $server -Database $readOnlyDbName -ReadWrite -Force -ErrorAction SilentlyContinue
-            $null = Remove-DbaDatabase -SqlInstance $server -Database $readOnlyDbName -Confirm:$false -ErrorAction SilentlyContinue
+            $splatMakeWritable = @{
+                SqlInstance = $server
+                Database    = $readOnlyDbName
+                ReadWrite   = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Set-DbaDbState @splatMakeWritable
+            $splatReadOnlyCleanup = @{
+                SqlInstance = $server
+                Database    = $readOnlyDbName
+                Confirm     = $false
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatReadOnlyCleanup
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Skips the database once rather than failing once per index" {
-            $readOnlyResult = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -Database $readOnlyDbName -WarningVariable readOnlyWarning -WarningAction SilentlyContinue
+            $splatReadOnly = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $readOnlyDbName
+                WarningVariable = "readOnlyWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $readOnlyResult = Invoke-DbaDbIndexRebuild @splatReadOnly
             $readOnlyResult | Should -BeNullOrEmpty
             $readOnlyWarning | Should -Match "is read only"
         }
@@ -409,7 +542,12 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
         BeforeAll {
             $testDb.Query($fragmentFrag1)
             $fragmentationBeforeWhatIf = ($testDb.Query($measureFrag1)).AvgFragmentation
-            $whatIfResult = Invoke-DbaDbIndexRebuild -SqlInstance $TestConfig.InstanceSingle -Database $dbName -WhatIf
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                WhatIf      = $true
+            }
+            $whatIfResult = Invoke-DbaDbIndexRebuild @splatWhatIf
             $fragmentationAfterWhatIf = ($testDb.Query($measureFrag1)).AvgFragmentation
         }
 
@@ -430,7 +568,12 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
         }
 
         It "Accepts tables from Get-DbaDbTable" {
-            $pipedTable = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Table "dbo.frag1" | Invoke-DbaDbIndexRebuild
+            $splatPipedTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Table       = "dbo.frag1"
+            }
+            $pipedTable = Get-DbaDbTable @splatPipedTable | Invoke-DbaDbIndexRebuild
             $pipedTable.Table | Should -Not -Contain "tiny1"
             ($pipedTable.IndexName | Sort-Object) | Should -Be @("IX_frag1_num", "PK_frag1")
         }
@@ -497,13 +640,73 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
             $resumableResult.Success | Should -Be $true
         }
 
+        It "Suppresses resumable on a filtered index" {
+            if ($server.EngineEdition -ne "EnterpriseOrDeveloper") {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require Enterprise or Developer edition"
+                return
+            }
+            if ($server.VersionMajor -lt 14) {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require SQL Server 2017 or later"
+                return
+            }
+            $splatFilteredResumable = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                Database             = $dbName
+                Table                = "dbo.filtered1"
+                Index                = "IX_filtered1_val"
+                Online               = $true
+                Resumable            = $true
+                ResumableMaxDuration = 5
+            }
+            $filteredResumable = Invoke-DbaDbIndexRebuild @splatFilteredResumable
+            $filteredResumable.Resumable | Should -Be $false
+            $filteredResumable.Success | Should -Be $true
+            $filteredResumable.Notes | Should -Match "filtered index"
+        }
+
+        It "Suppresses resumable on an index whose key column is computed" {
+            if ($server.EngineEdition -ne "EnterpriseOrDeveloper") {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require Enterprise or Developer edition"
+                return
+            }
+            if ($server.VersionMajor -lt 14) {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require SQL Server 2017 or later"
+                return
+            }
+            $splatComputedResumable = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                Database             = $dbName
+                Table                = "dbo.calc1"
+                Index                = "IX_calc1_doubled"
+                Online               = $true
+                Resumable            = $true
+                ResumableMaxDuration = 5
+            }
+            $computedResumable = Invoke-DbaDbIndexRebuild @splatComputedResumable
+            $computedResumable.Resumable | Should -Be $false
+            $computedResumable.Success | Should -Be $true
+        }
+
+        It "Refuses a resumable duration above the seven day ceiling" {
+            $splatOverCeiling = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                Database             = $dbName
+                Online               = $true
+                Resumable            = $true
+                ResumableMaxDuration = 10081
+            }
+            { Invoke-DbaDbIndexRebuild @splatOverCeiling } | Should -Throw
+        }
+
         It "Refuses a resumable rebuild that is not online" {
             $splatBadResumable = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Database    = $dbName
-                Resumable   = $true
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Resumable       = $true
+                WarningVariable = "resumableWarning"
+                WarningAction   = "SilentlyContinue"
             }
-            $badResumable = Invoke-DbaDbIndexRebuild @splatBadResumable -WarningVariable resumableWarning -WarningAction SilentlyContinue
+            $badResumable = Invoke-DbaDbIndexRebuild @splatBadResumable
             $badResumable | Should -BeNullOrEmpty
             $resumableWarning | Should -Match "requires ONLINE"
         }
@@ -513,21 +716,25 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
                 SqlInstance       = $TestConfig.InstanceSingle
                 Database          = $dbName
                 WaitAtLowPriority = $true
+                WarningVariable   = "waitWarning"
+                WarningAction     = "SilentlyContinue"
             }
-            $badWait = Invoke-DbaDbIndexRebuild @splatBadWait -WarningVariable waitWarning -WarningAction SilentlyContinue
+            $badWait = Invoke-DbaDbIndexRebuild @splatBadWait
             $badWait | Should -BeNullOrEmpty
             $waitWarning | Should -Match "WAIT_AT_LOW_PRIORITY"
         }
 
         It "Refuses SortInTempdb combined with Resumable" {
             $splatBadSort = @{
-                SqlInstance  = $TestConfig.InstanceSingle
-                Database     = $dbName
-                Online       = $true
-                Resumable    = $true
-                SortInTempdb = $true
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Online          = $true
+                Resumable       = $true
+                SortInTempdb    = $true
+                WarningVariable = "sortWarning"
+                WarningAction   = "SilentlyContinue"
             }
-            $badSort = Invoke-DbaDbIndexRebuild @splatBadSort -WarningVariable sortWarning -WarningAction SilentlyContinue
+            $badSort = Invoke-DbaDbIndexRebuild @splatBadSort
             $badSort | Should -BeNullOrEmpty
             $sortWarning | Should -Match "SORT_IN_TEMPDB"
         }
@@ -539,10 +746,25 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
                 Online            = $true
                 WaitAtLowPriority = $true
                 AbortAfterWait    = "Blockers"
+                WarningVariable   = "abortWarning"
+                WarningAction     = "SilentlyContinue"
             }
-            $badAbort = Invoke-DbaDbIndexRebuild @splatBadAbort -WarningVariable abortWarning -WarningAction SilentlyContinue
+            $badAbort = Invoke-DbaDbIndexRebuild @splatBadAbort
             $badAbort | Should -BeNullOrEmpty
             $abortWarning | Should -Match "MaxDurationMinutes"
+        }
+
+        It "Refuses AbortAfterWait without WaitAtLowPriority" {
+            $splatLonelyAbort = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                AbortAfterWait  = "Blockers"
+                WarningVariable = "lonelyAbortWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $lonelyAbort = Invoke-DbaDbIndexRebuild @splatLonelyAbort
+            $lonelyAbort | Should -BeNullOrEmpty
+            $lonelyAbortWarning | Should -Match "WaitAtLowPriority"
         }
     }
 }
