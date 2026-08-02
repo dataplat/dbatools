@@ -160,13 +160,25 @@ while ($true) {
         continue
     }
 
-    $splatHeartbeat = @{
-        Path        = $HeartbeatPath
-        TotalCount  = 1
-        ErrorAction = "Stop"
-    }
+    # Opened by hand rather than with Get-Content so the sharing mode is stated here instead of
+    # being whatever the provider happens to pick. Delete is the part that matters: the runner
+    # removes this file before its summary work, and a removal that lands while we hold the
+    # file fails silently, which would leave this watchdog judging a stale heartbeat against
+    # whatever runs next. ReadWrite keeps the runner's own rewrites from being denied.
+    $heartbeatShare = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+    $heartbeat = $null
     try {
-        $heartbeat = Get-Content @splatHeartbeat
+        $heartbeatStream = [System.IO.File]::Open($HeartbeatPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $heartbeatShare)
+        try {
+            $heartbeatReader = New-Object -TypeName System.IO.StreamReader -ArgumentList $heartbeatStream
+            try {
+                $heartbeat = $heartbeatReader.ReadLine()
+            } finally {
+                $heartbeatReader.Dispose()
+            }
+        } finally {
+            $heartbeatStream.Dispose()
+        }
     } catch {
         # The runner rewrites this file before every test, so a read collision just means retry
         continue

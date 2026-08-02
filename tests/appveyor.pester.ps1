@@ -474,12 +474,13 @@ if (-not $Finalize) {
                 Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
                 # Tell the watchdog what is running now, so a wedge is reported against the right file.
                 # Written per attempt, so a retry gets its own budget rather than sharing the first one.
-                $splatHeartbeat = @{
-                    Path        = $heartbeatPath
-                    Value       = "$((Get-Date).Ticks)|$appvTestName"
-                    ErrorAction = "SilentlyContinue"
+                # Caught rather than left to throw, because a missed heartbeat only costs a
+                # little watchdog accuracy while an unhandled throw here fails the whole stage
+                try {
+                    Write-TestHeartbeat -Path $heartbeatPath -Label $appvTestName
+                } catch {
+                    Write-Host -Object "appveyor.pester: could not write the heartbeat. $($PSItem.Exception.Message)" -ForegroundColor Yellow
                 }
-                Set-Content @splatHeartbeat
                 $PesterRun = Invoke-Pester -Configuration $pester5config
                 Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
                 $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"

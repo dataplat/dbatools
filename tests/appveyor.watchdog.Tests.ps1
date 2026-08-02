@@ -198,6 +198,22 @@ Describe $CommandName -Tag UnitTests {
             Wait-ForProcessExit -ProcessId $watchdog.Id -TimeoutSeconds 20 | Should -BeTrue
         }
 
+        It "still reads a heartbeat the runner is holding open" {
+            # The runner keeps a write handle on this file while it records the next test, so a
+            # watchdog that asked for exclusive access would go blind exactly when a run is
+            # active and would never notice the wedge it exists to catch
+            $sacrifice = New-SacrificialProcess
+            $heartbeatFile = New-HeartbeatFile -AgeMinutes 60
+
+            $heldStream = [System.IO.File]::Open($heartbeatFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+            try {
+                $null = Start-TestWatchdog -TargetProcessId $sacrifice.Id -HeartbeatFile $heartbeatFile
+                Wait-ForProcessExit -ProcessId $sacrifice.Id | Should -BeTrue
+            } finally {
+                $heldStream.Dispose()
+            }
+        }
+
         It "rejects a timeout outside the supported range" {
             $sacrifice = New-SacrificialProcess
             $heartbeatFile = New-HeartbeatFile -AgeMinutes 0
