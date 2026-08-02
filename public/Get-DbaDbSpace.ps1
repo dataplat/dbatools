@@ -126,7 +126,7 @@ function Get-DbaDbSpace {
                     ,CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT)/128.0 AS FLOAT) AS [UsedSpaceMB]
                     ,CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS INT)/128.0 AS FLOAT) AS [FreeSpaceMB]
                     ,CAST((f.size/128.0) AS FLOAT) AS [FileSizeMB]
-                    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(f.size/1.0)) * 100 AS FLOAT) AS [PercentUsed]
+                    ,CAST((FILEPROPERTY(f.name, 'SpaceUsed')/(NULLIF(f.size, 0)/1.0)) * 100 AS FLOAT) AS [PercentUsed]
                     ,CAST((f.growth/128.0) AS FLOAT) AS [GrowthMB]
                     ,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
                     ,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS FLOAT) END AS [MaxSizeMB]
@@ -145,8 +145,8 @@ function Get-DbaDbSpace {
                                                     WHEN 1
                                                     THEN    CASE f.max_size
                                                             WHEN (-1)
-                                                            THEN CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],(2147483648.))/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
-                                                            ELSE CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
+                                                            THEN CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],(2147483648.))/NULLIF(CONVERT([FLOAT],f.size),0))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
+                                                            ELSE CAST(CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/NULLIF(CONVERT([FLOAT],f.size),0))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))/128.0 AS FLOAT)
                                                             END
                                                     ELSE (0)
                                                     END
@@ -157,7 +157,7 @@ function Get-DbaDbSpace {
                                                 ELSE    CASE f.is_percent_growth
                                                         WHEN 0
                                                         THEN CAST((f.max_size - f.size - (    CONVERT(FLOAT,FLOOR((f.max_size-f.size)/f.growth)*f.growth)))/128.0 AS FLOAT)
-                                                        ELSE CAST((f.max_size - f.size - (    CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/CONVERT([FLOAT],f.size))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))))/128.0 AS FLOAT)
+                                                        ELSE CAST((f.max_size - f.size - (    CONVERT([INT],f.size*POWER((1)+CONVERT([FLOAT],f.growth)/(100),CONVERT([INT],LOG10(CONVERT([FLOAT],f.max_size)/NULLIF(CONVERT([FLOAT],f.size),0))/LOG10((1)+CONVERT([FLOAT],f.growth)/(100)))))))/128.0 AS FLOAT)
                                                         END
                                                 END
                                     END AS [UnusableSpaceMB]
@@ -183,9 +183,14 @@ function Get-DbaDbSpace {
             }
 
             try {
-                Write-Message -Level Verbose -Message "Querying $instance - $db."
-                If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "$db is not accessible." -Target $db
+                Write-Message -Level Verbose -Message "Querying $server - $db."
+                # Gated on IsAccessible alone. Status is a flags enum, so a database that merely has
+                # AUTO_CLOSE on reports "Normal, AutoClosed" while it is closed, and a standby or
+                # emergency-mode database reports neither Normal nor a fault. All of those answer
+                # this query, and testing the status turned them away with a message saying they
+                # were inaccessible when they were not.
+                if (-not $db.IsAccessible) {
+                    Write-Message -Level Warning -Message "Skipping $db on $server because it is not accessible, so the space used inside its files cannot be read" -Target $db
                     continue
                 }
                 #Execute query against individual database and add to output
@@ -215,6 +220,17 @@ function Get-DbaDbSpace {
                     } else {
                         $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                     }
+                    # A file that reports zero size makes the growth projection divide by zero,
+                    # which aborts the query for the whole database rather than one column. The
+                    # divisors above now use NULLIF so the column comes back NULL instead, and
+                    # this turns that into 0 the way the columns above already do. Seen once
+                    # against a database that had just come online, and not reproducible after
+                    # its files warmed up, so there is no regression test for it.
+                    if ($row.PossibleAutoGrowthMB -is [System.DBNull]) {
+                        $PossibleAutoGrowth = 0
+                    } else {
+                        $PossibleAutoGrowth = $row.PossibleAutoGrowthMB
+                    }
 
                     [PSCustomObject]@{
                         ComputerName       = $server.ComputerName
@@ -232,12 +248,12 @@ function Get-DbaDbSpace {
                         AutoGrowth         = [dbasize]($row.GrowthMB * 1024 * 1024)
                         AutoGrowType       = $row.GrowthType
                         SpaceUntilMaxSize  = [dbasize]($SpaceUntilMax * 1024 * 1024)
-                        AutoGrowthPossible = [dbasize]($row.PossibleAutoGrowthMB * 1024 * 1024)
+                        AutoGrowthPossible = [dbasize]($PossibleAutoGrowth * 1024 * 1024)
                         UnusableSpace      = [dbasize]($UnusableSpace * 1024 * 1024)
                     }
                 }
             } catch {
-                Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
+                Stop-Function -Message "Unable to query $server - $db." -Target $db -ErrorRecord $_ -Continue
             }
         }
     }

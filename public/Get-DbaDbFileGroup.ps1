@@ -119,12 +119,18 @@ function Get-DbaDbFileGroup {
         }
 
         foreach ($db in $InputObject) {
+            # The name filter has to run before the accessibility test. On the pipeline path
+            # $InputObject holds every database the caller piped in, so a database they narrowed
+            # away with -Database would otherwise be reported as skipped.
+            if (Test-Bound -ParameterName Database) {
+                if ($Database -notcontains $db.Name) {
+                    continue
+                }
+            }
+
             if ($db.IsAccessible) {
                 Write-Message -Level Verbose -Message "Processing database: $db"
                 $server = $db.Parent
-                if (Test-Bound -ParameterName Database) {
-                    $db = $db | Where-Object { $Database -contains $_.Name }
-                }
                 $fileGroups = $db.Filegroups
 
                 if (Test-Bound -ParameterName Filegroup) {
@@ -142,7 +148,10 @@ function Get-DbaDbFileGroup {
                     Select-DefaultView -InputObject $fg -Property $defaultprops
                 }
             } else {
-                Write-Message -Level Verbose -Message "Skipping processing of database: $db as database is not accessible"
+                # Filegroup names live in sys.filegroups, which is database scoped, so there is
+                # nothing to read from master for a database that cannot be opened. Say so rather
+                # than returning nothing and leaving the caller to guess why.
+                Write-Message -Level Warning -Message "Skipping database $db on $($db.Parent) because it is not accessible, so its filegroups cannot be read" -Target $db
             }
         }
     }

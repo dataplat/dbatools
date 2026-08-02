@@ -44,6 +44,12 @@ Describe $CommandName -Tag IntegrationTests {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $server.Query("CREATE DATABASE $multifgdb; ALTER DATABASE $multifgdb ADD FILEGROUP [Test1]; ALTER DATABASE $multifgdb ADD FILEGROUP [Test2];")
 
+        # A database that cannot be opened. Taking one offline is the cheapest way to get
+        # IsAccessible false, and the command cannot tell one inaccessible state from another.
+        $offlineDb = "dbatoolsci_offlinefg$random"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineDb
+        $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -Offline -Force
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -54,6 +60,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $multifgdb -ErrorAction SilentlyContinue
+
+        # An offline database has to be brought back online before it can be dropped.
+        $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -Online -Force -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
@@ -102,6 +112,42 @@ Describe $CommandName -Tag IntegrationTests {
         It "Excludes User Databases" {
             $pipedResults.Parent.Name | Should -Not -Contain $multifgdb
             $pipedResults.Parent.Name | Should -Contain "msdb"
+        }
+    }
+
+    Context "Databases that cannot be opened" {
+        It "Warns rather than returning nothing when the database is named" {
+            $offlineResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $offlineResults | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -Match ([regex]::Escape($offlineDb))
+        }
+
+        It "Says the database was skipped because it is not accessible" {
+            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            ($WarnVar -join " ") | Should -Match "not accessible"
+        }
+
+        It "Names the instance in the warning" {
+            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            ($WarnVar -join " ") | Should -Match ([regex]::Escape($TestConfig.InstanceSingle))
+        }
+
+        It "Still returns the accessible databases in a whole instance scan" {
+            $scanResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle
+            $scanResults.Parent.Name | Should -Contain $multifgdb
+            $scanResults.Parent.Name | Should -Not -Contain $offlineDb
+        }
+
+        It "Stays quiet about a piped database that -Database narrowed away" {
+            # On the pipeline path every database the caller piped in arrives in $InputObject, so
+            # the name filter has to run before the accessibility test. Otherwise a database they
+            # narrowed away is still reported as skipped. Collect the databases in their own
+            # statement so the warning variable holds what Get-DbaDbFileGroup wrote, not what
+            # Get-DbaDatabase wrote.
+            $allDbs = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            $narrowedResults = $allDbs | Get-DbaDbFileGroup -Database $multifgdb
+            $narrowedResults.Parent.Name | Should -Contain $multifgdb
+            ($WarnVar -join " ") | Should -Not -Match ([regex]::Escape($offlineDb))
         }
     }
 }
