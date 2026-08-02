@@ -124,6 +124,7 @@ A few notes:
 - If actionlint reports something that is intentional in our workflows, add it to `$ignoredPatterns` in the script **with a comment explaining why**, rather than reshaping the workflow to satisfy the linter.
 - To bump actionlint, update `$Version` and the matching `$knownChecksums` entry together. The checksums come from that release's `checksums.txt`.
 - Already have actionlint installed? Skip the download with `-ToolPath`.
+- The shellcheck integration is turned off. actionlint runs shellcheck against the bash embedded in `run:` steps whenever shellcheck is on `PATH`, which is true on the Ubuntu runners but not on a typical Windows dev box, so leaving it on meant the same commit passed locally and failed in CI. Cleaning up those findings (mostly SC2086 in the integration workflows) is worth doing on its own.
 
 ## Pester 🧪
 

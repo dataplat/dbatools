@@ -172,8 +172,13 @@ $ignoreArguments = @(
 
 Write-Host "Running actionlint against $($workflowFiles.Count) workflow file(s)"
 
+# -shellcheck= (empty) turns off the shellcheck integration. actionlint shells out to
+# shellcheck when it is on PATH, which it is on the Ubuntu runners but not on a typical
+# Windows dev box, so leaving it on makes the same commit pass locally and fail in CI.
+# It also only reports style nits (mostly SC2086) about the bash embedded in our
+# integration workflows, which is a separate cleanup from linting workflow syntax.
 # -color is disabled so the output stays readable in CI logs and when redirected.
-$output = & $actionlint -no-color -oneline @ignoreArguments @relativeFiles 2>&1
+$output = & $actionlint -no-color -oneline -shellcheck= @ignoreArguments @relativeFiles 2>&1
 $actionlintExitCode = $LASTEXITCODE
 
 if ($output) {
