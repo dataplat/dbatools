@@ -75,5 +75,5 @@ modules/**/*.dll
 prompt.md
 .worktrees/
 /bin/prompts/
-docs/superpowers/
+# Local agent planning and research artifacts
 docs/

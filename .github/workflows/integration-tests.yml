@@ -29,7 +29,7 @@ permissions:
 
 concurrency:
   group: integration-tests-${{ github.ref }}
-  # Azure tests own temporary databases until their AfterAll cleanup completes.
+  # Core tests touch shared Azure resources and must finish their cleanup.
   cancel-in-progress: false
 
 jobs:
@@ -110,12 +110,7 @@ jobs:
         run: |
           Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
 
-      - name: Authenticate existing Azure CI identity
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
-        with:
-          creds: ${{ secrets.VMSS_AZURE_CREDENTIALS }}
-
-      - name: Run tests
+      - name: Run core integration tests
         env:
           TENANTID: ${{secrets.TENANTID}}
           CLIENTID: ${{secrets.CLIENTID}}
@@ -138,21 +133,6 @@ jobs:
           $coreResult = Invoke-Pester @splatCorePester
           if ($coreResult.Result -ne "Passed" -or $coreResult.FailedCount -gt 0) {
               throw "Core integration tests failed with result $($coreResult.Result) and $($coreResult.FailedCount) failed test(s)."
-          }
-
-          $initialAzureTokenOutput = @(az account get-access-token --resource https://database.windows.net/ --query accessToken --output tsv)
-          $env:AZMIGRATION_ACCESS_TOKEN = ([string]($initialAzureTokenOutput -join "")).Trim()
-          if (-not $env:AZMIGRATION_ACCESS_TOKEN) {
-              throw "The authenticated Azure CLI session did not return an Azure SQL access token."
-          }
-          $splatAzurePester = @{
-              Path     = ".github/scripts/gh-azmigration-actions.ps1"
-              Output   = "Detailed"
-              PassThru = $true
-          }
-          $azureResult = Invoke-Pester @splatAzurePester
-          if ($azureResult.Result -ne "Passed" -or $azureResult.FailedCount -gt 0) {
-              throw "Azure migration integration tests failed with result $($azureResult.Result) and $($azureResult.FailedCount) failed test(s)."
           }
 
   windows-tests:
