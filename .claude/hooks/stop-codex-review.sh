@@ -302,7 +302,7 @@ build_session_payload() {
     MEASURED=0
     MEASURE_FAIL=""
     LEGACY_NOTE=""
-    local f rf spec d file_root rel base
+    local f rf spec d file_root root_unix rel base
     while IFS= read -r f; do
         [[ -z "$f" ]] && continue
         # Canonicalize before the containment check: a traversal path must not
@@ -317,7 +317,12 @@ build_session_payload() {
             3) MEASURE_FAIL+="$rf (under a campaign root but git cannot resolve its repo)"$'\n'; continue ;;
             4) MEASURE_FAIL+="$rf (its recorded repo is gone - the path resolves only to the outer repo, which cannot see a nested deletion)"$'\n'; continue ;;
         esac
-        rel="${rf#$file_root/}"
+        # rf is POSIX (hook_to_unix_path) but file_root comes from git
+        # rev-parse, which under Git-for-Windows answers C:/... - the prefix
+        # never matched, rel stayed absolute, and every pathspec was rejected
+        # with "Invalid path '/c'", blocking review of every file (#789).
+        root_unix=$(hook_to_unix_path "$file_root")
+        rel="${rf#"$root_unix"/}"
         # Literal, repo-relative pathspec: git pathspecs glob by default, so a
         # file named e.g. `*.ps1` could otherwise pull unrelated files in.
         spec=":(literal)${rel}"
