@@ -94,7 +94,7 @@ BeforeAll {
             Maintainers             = $script:Maintainers
             OptInPushUsers          = $script:OptInPushUsers
             MaintainerCount         = 10
-            MaintainerWindowMinutes = 60
+            MaintainerWindowMinutes = 20
             CommunityCount          = 5
             CommunityGraceMinutes   = 20
             MaxRunners              = $MaxRunners
@@ -106,6 +106,24 @@ BeforeAll {
             WarmFloor               = $WarmFloor
         }
         Get-DesiredRunnerPools @splatPolicy
+    }
+
+    function Get-ControllerCapacityPlanner {
+        $tokens = $null
+        $parseErrors = $null
+        $controllerPath = (Resolve-Path "$PSScriptRoot/../reconcile-runner-fleet.ps1").Path
+        $controllerAst = [System.Management.Automation.Language.Parser]::ParseFile($controllerPath, [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors) {
+            throw "Could not parse $controllerPath"
+        }
+        $capacityPlanner = $controllerAst.Find({
+                param($ast)
+                $ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $ast.Name -eq "Invoke-VmssCapacityPlan"
+            }, $true)
+        if (-not $capacityPlanner) {
+            throw "Invoke-VmssCapacityPlan is not defined in $controllerPath"
+        }
+        [scriptblock]::Create($capacityPlanner.Extent.Text)
     }
 }
 
@@ -185,14 +203,14 @@ Describe "Get-DesiredRunnerPools" {
         $result.potatoqualitee | Should -Be 10
     }
 
-    It "retains Andreas before the sixty-minute boundary" {
-        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-59)
+    It "retains Andreas before the twenty-minute boundary" {
+        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-19)
         $result = Invoke-TestPolicy -Events @($event)
         $result.andreasjordan | Should -Be 10
     }
 
-    It "expires Andreas at the sixty-minute boundary" {
-        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-60)
+    It "expires Andreas at the twenty-minute boundary" {
+        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-20)
         $result = Invoke-TestPolicy -Events @($event)
         $result.andreasjordan | Should -Be 0
     }
@@ -256,7 +274,7 @@ Describe "Get-DesiredRunnerPools" {
 }
 
 Describe "Get-DesiredRunnerPools demand-driven sizing" {
-    It "sizes a maintainer lane to the pending job count" {
+    It "keeps all ten runners for a live maintainer lane regardless of pending demand" {
         $run = New-CiRun -Actor "andreasjordan" -Status "in_progress" -UpdatedAt $script:Now
         $splatDemand = @{
             WorkflowRuns  = @($run)
@@ -264,39 +282,18 @@ Describe "Get-DesiredRunnerPools demand-driven sizing" {
             WarmFloor     = 0
         }
         $result = Invoke-TestPolicy @splatDemand
-        $result.andreasjordan | Should -Be 3
-    }
-
-    It "caps pending job demand at the maintainer pool size" {
-        $run = New-CiRun -Actor "andreasjordan" -Status "in_progress" -UpdatedAt $script:Now
-        $splatDemand = @{
-            WorkflowRuns  = @($run)
-            PoolJobDemand = @{ andreasjordan = 25 }
-            WarmFloor     = 0
-        }
-        $result = Invoke-TestPolicy @splatDemand
         $result.andreasjordan | Should -Be 10
     }
 
-    It "holds a hot lane at the warm floor when nothing is pending" {
-        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-5)
-        $splatDemand = @{
-            Events        = @($event)
-            PoolJobDemand = @{ }
-            WarmFloor     = 2
-        }
-        $result = Invoke-TestPolicy @splatDemand
-        $result.andreasjordan | Should -Be 2
+    It "retains all ten maintainer runners nineteen minutes after CI completion" {
+        $run = New-CiRun -Actor "andreasjordan" -Status "completed" -UpdatedAt $script:Now.AddMinutes(-19)
+        $result = Invoke-TestPolicy -WorkflowRuns @($run) -WarmFloor 0
+        $result.andreasjordan | Should -Be 10
     }
 
-    It "drops a hot lane to zero when the warm floor is zero and nothing is pending" {
-        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-5)
-        $splatDemand = @{
-            Events        = @($event)
-            PoolJobDemand = @{ }
-            WarmFloor     = 0
-        }
-        $result = Invoke-TestPolicy @splatDemand
+    It "drops a maintainer lane to zero twenty minutes after CI completion" {
+        $run = New-CiRun -Actor "andreasjordan" -Status "completed" -UpdatedAt $script:Now.AddMinutes(-20)
+        $result = Invoke-TestPolicy -WorkflowRuns @($run) -WarmFloor 10
         $result.andreasjordan | Should -Be 0
     }
 
@@ -508,6 +505,99 @@ Describe "Get-MarkedPushDispatch" {
     }
 }
 
+Describe "Get-VmssCapacityPlan" {
+    It "repairs phantom capacity before scaling to the requested target" {
+        $splatCapacity = @{
+            NominalCapacity = 4
+            ActualCapacity  = 0
+            TargetCapacity  = 1
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -Be @(0, 1)
+    }
+
+    It "repairs a partial allocation before filling the requested target" {
+        $splatCapacity = @{
+            NominalCapacity = 10
+            ActualCapacity  = 6
+            TargetCapacity  = 10
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -Be @(6, 10)
+    }
+
+    It "does nothing when actual capacity already satisfies the target" {
+        $splatCapacity = @{
+            NominalCapacity = 1
+            ActualCapacity  = 1
+            TargetCapacity  = 1
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -BeNullOrEmpty
+    }
+}
+
+Describe "Flexible VMSS capacity reconciliation" {
+    BeforeEach {
+        $script:ScaleCalls = @()
+        $script:ProvisioningPolls = 0
+        $script:SleepSeconds = @()
+
+        function script:Invoke-NativeText {
+            param(
+                [string]$Tool,
+                [string[]]$Arguments,
+                [string]$Operation
+            )
+
+            $script:ScaleCalls += [pscustomobject]@{
+                Tool      = $Tool
+                Arguments = $Arguments
+                Operation = $Operation
+            }
+        }
+
+        function script:Start-Sleep {
+            param([int]$Seconds)
+
+            $script:SleepSeconds += $Seconds
+        }
+
+        function script:Get-FleetState {
+            $script:ProvisioningPolls += 1
+            [pscustomobject]@{
+                Vms = @([pscustomobject]@{ provisioning = "Succeeded" })
+            }
+        }
+    }
+
+    It "normalizes phantom capacity before async scale-out and polls provisioning" {
+        . (Get-ControllerCapacityPlanner)
+
+        $splatCapacity = @{
+            NominalCapacity = 4
+            ActualCapacity  = 0
+            TargetCapacity  = 1
+            TransitionBusy  = 0
+            ResourceGroup   = "test-rg"
+            Vmss            = "test-vmss"
+        }
+        Invoke-VmssCapacityPlan @splatCapacity
+
+        $script:ScaleCalls.Count | Should -Be 2
+        $script:ScaleCalls[0].Tool | Should -Be "az"
+        $script:ScaleCalls[0].Operation | Should -Be "normalize VMSS capacity to 0"
+        $script:ScaleCalls[0].Arguments | Should -Be @(
+            "vmss", "scale", "--resource-group", "test-rg", "--name", "test-vmss",
+            "--new-capacity", "0", "--only-show-errors", "--output", "none"
+        )
+        $script:ScaleCalls[1].Operation | Should -Be "scale VMSS to 1"
+        $script:ScaleCalls[1].Arguments | Should -Be @(
+            "vmss", "scale", "--resource-group", "test-rg", "--name", "test-vmss",
+            "--new-capacity", "1", "--only-show-errors", "--output", "none", "--no-wait"
+        )
+        $script:SleepSeconds | Should -Be @(20)
+        $script:ProvisioningPolls | Should -Be 1
+    }
+}
+
 Describe "Runner workflow policy wiring" {
     BeforeAll {
         $script:RunnerRoot = (Resolve-Path "$PSScriptRoot/..").Path
@@ -535,7 +625,7 @@ Describe "Runner workflow policy wiring" {
         $script:ReconcileWorkflow | Should -Match 'types: \[requested, completed\]'
         $script:ReconcileWorkflow | Should -Match 'MAX_RUNNERS: 35'
         $script:ReconcileWorkflow | Should -Match 'COMMUNITY_GRACE_MINUTES: 20'
-        $script:ReconcileWorkflow | Should -Match 'BOOST_HOURS: 1'
+        $script:ReconcileWorkflow | Should -Match 'BOOST_MINUTES: 20'
     }
 
     It "skips ordinary potato push nudges at the source" {

@@ -1,15 +1,11 @@
 # The single VMSS fleet controller. CI requests, per-job completion nudges, maintainer
 # pushes, and the five-minute safety tick all reconcile the same desired state.
 #
-# AppVeyor-style pool policy. Activity makes a lane HOT; the lane is then SIZED to the
-# jobs actually pending in it, so a hot-but-idle lane costs WARM_FLOOR, not a full pool.
-# Demand never heats a cold lane -- a community PR cannot size a maintainer's.
-#   - potatoqualitee: hot for one hour after a PR or [do ci], up to 10 dedicated workers
-#   - andreasjordan:  hot for one hour after activity,        up to 10 dedicated workers
-#   - niphlod:        hot for one hour after activity,        up to 10 dedicated workers
-#   - community:      hot while CI is live and 20 minutes after, up to 5 shared workers
-#   - hot lane, nothing pending: WARM_FLOOR workers
-#   - no activity or queued work: zero workers
+# AppVeyor-style pool policy. Each maintainer gets a fixed ten-runner dedicated lane
+# while eligible CI is live and for 20 minutes after it completes, then scales to zero.
+# Only community is demand-sized: it is hot while CI is live and 20 minutes after,
+# capped at five shared workers and held at WARM_FLOOR when hot with nothing pending.
+# Demand never heats a cold community lane or sizes a maintainer's fixed lane.
 #
 # ci-azure's matrix jobs are not created until the `needs: authorize` gate clears, so on
 # the workflow_run:requested tick the jobs API shows only the ubuntu-hosted authorize
@@ -75,7 +71,7 @@ jobs:
       COMMUNITY_GRACE_MINUTES: 20
       BOOST_USERS: potatoqualitee andreasjordan niphlod
       BOOST_COUNT: 10
-      BOOST_HOURS: 1
+      BOOST_MINUTES: 20
       WARM_FLOOR: 3
       OPT_IN_PUSH_USERS: potatoqualitee
       CI_MARKER: "[do ci]"

@@ -123,6 +123,29 @@ Describe "janitor runner protection" {
         @($script:RemovedVms | Where-Object { $PSItem -like "*niph*" }).Count | Should -Be 10
     }
 
+    It "preserves ten maintainer runners for a CI run completed within the grace period" {
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "completed"
+                updated_at    = $script:Now.AddMinutes(-19).ToString("o")
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+
+        . $script:JanitorPath | Out-Null
+
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
     It "deletes only orphaned networking older than the provisioning grace period" {
         $oldNicId = "/subscriptions/test/resourceGroups/dbatools-ci/providers/Microsoft.Network/networkInterfaces/old-Nic-1"
         $youngNicId = "/subscriptions/test/resourceGroups/dbatools-ci/providers/Microsoft.Network/networkInterfaces/young-Nic-1"
