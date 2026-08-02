@@ -99,6 +99,7 @@ runner fleet - Restore full maintainer pool sizing
 
 **Files:**
 - Modify: `.github/workflows/runner-reconcile.yml`
+- Modify: `.github/runners/reconcile-runner-fleet.ps1`
 - Modify: `.github/runners/janitor-runbook.ps1`
 - Modify: `.github/runners/tests/janitor-runbook.Tests.ps1`
 - Modify: `.github/runners/README.md`
