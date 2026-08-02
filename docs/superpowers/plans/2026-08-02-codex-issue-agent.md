@@ -4,7 +4,7 @@
 
 **Goal:** Add a maintainer-only, agentic `@codex` workflow for ordinary GitHub issues that uses the official Codex Action and delivers changes through a new branch and draft pull request targeting `development`.
 
-**Architecture:** One pinned GitHub Actions workflow validates the issue event and maintainer, builds a prompt from structured GitHub API data, and runs `openai/codex-action` with workspace write access and dropped sudo. Deterministic post-agent steps own staging, commit creation, branch push, draft pull-request creation, and the issue response, so Codex never receives checkout credentials or performs GitHub mutations itself.
+**Architecture:** One pinned GitHub Actions workflow validates the issue event and maintainer, builds a prompt from structured GitHub API data, and runs `openai/codex-action` as the final step of a read-only GitHub job with workspace write access and dropped sudo. Codex returns a schema-validated summary, verification status, and bounded patch; a fresh publish job validates and applies the patch before performing deterministic GitHub mutations.
 
 **Tech Stack:** GitHub Actions YAML, `openai/codex-action`, `actions/github-script`, Bash, GitHub CLI, PowerShell pin validation.
 
@@ -13,9 +13,10 @@
 - Use the official `openai/codex-action` pinned to commit `52fe01ec70a42f454c9d2ebd47598f9fd6893d56` (`v1`).
 - Trigger only for new comments on ordinary issues that contain `@codex` and are authored by `potatoqualitee`, `niphlod`, or `andreasjordan`.
 - Use the repository secret `OPENAI_API_KEY`.
-- Run Codex with `safety-strategy: drop-sudo` and `sandbox: workspace-write`.
+- Run Codex with `safety-strategy: drop-sudo` and `permission-profile: ":workspace"`.
 - Do not persist checkout credentials or expose a GitHub token to the Codex execution step.
-- Every changed-file result creates a unique `codex/issue-<number>-<run-id>` branch and draft pull request targeting `development`.
+- Run the official Codex Action as the final step of its job and give that job only read permissions.
+- Every verified changed-file result creates a unique `codex/issue-<number>-<run-id>-<attempt>` branch and draft pull request targeting `development` from a fresh runner.
 - Never push directly or force-push to `development`.
 - Pin every third-party action to an immutable commit SHA.
 - Preserve the user's unrelated `Get-DbaUnusedLogin` working-tree changes.
@@ -30,7 +31,7 @@
 
 **Interfaces:**
 - Consumes: GitHub `issue_comment` event payload, `OPENAI_API_KEY`, repository `AGENTS.md` and `CLAUDE.md`, GitHub-provided token in deterministic mutation steps.
-- Produces: `codex-output.md`, optional branch `codex/issue-<number>-<run-id>`, optional draft pull request against `development`, and one response comment on the originating issue.
+- Produces: a structured job output, optional branch `codex/issue-<number>-<run-id>-<attempt>`, optional draft pull request against `development`, and one response comment on the originating issue.
 
 - [ ] **Step 1: Run the workflow contract check before the file exists**
 
@@ -103,17 +104,30 @@ Add:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: codex-prompt.md
-          output-file: codex-output.md
-          sandbox: workspace-write
+          output-schema: |
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": { "type": "string", "enum": ["completed", "blocked"] },
+                "summary": { "type": "string", "maxLength": 4000 },
+                "verification": { "type": "string", "maxLength": 4000 },
+                "patch": { "type": "string", "maxLength": 60000 }
+              },
+              "required": ["status", "summary", "verification", "patch"]
+            }
+          permission-profile: ":workspace"
           safety-strategy: drop-sudo
           allow-users: potatoqualitee,niphlod,andreasjordan
 ```
 
-Follow it with a Bash check that fails when `codex-output.md` is absent or empty, stages all changes, removes the generated prompt and output files from the index, and writes `changed=true|false` to `$GITHUB_OUTPUT` from `git diff --cached --quiet`.
+Make this the final step of the read-only Codex job and expose only `steps.codex.outputs.final-message` as a job output. The schema must require `status`, `summary`, `verification`, and `patch`; blocked or failed-verification results must contain an empty patch.
 
 - [ ] **Step 5: Create a branch, commit, and draft pull request only when files changed**
 
-Use a Bash step guarded by `steps.changes.outputs.changed == 'true'`. Set `BRANCH_NAME=codex/issue-${{ github.event.issue.number }}-${{ github.run_id }}` and derive the `(do ...)` marker from changed `public/*.ps1` and `tests/*.Tests.ps1` basenames, falling back to `docs`.
+Start a fresh publish job with write permissions. Materialize and validate the structured result, reject blocked results that contain patches, and apply completed patches to a clean `development` checkout with `git apply --check --index --binary` followed by `git apply --index --binary`.
+
+Use a Bash step guarded by `steps.changes.outputs.changed == 'true'`. Set `BRANCH_NAME=codex/issue-${{ github.event.issue.number }}-${{ github.run_id }}-${{ github.run_attempt }}` and derive the `(do ...)` marker from changed `public/*.ps1` and `tests/*.Tests.ps1` basenames. Any other PowerShell change forces `(do *)`; non-code changes fall back to `(do docs)`.
 
 Configure the repository bot identity, create the branch without force, commit with:
 
@@ -127,7 +141,7 @@ Push with an ephemeral HTTPS authorization header supplied only to that step. Th
 
 - [ ] **Step 6: Post the deterministic issue response**
 
-Add a final pinned `actions/github-script` step with `if: success()`. Read `codex-output.md` from disk and append the draft pull-request URL when one was created. Post through `github.rest.issues.createComment` using `context.payload.issue.number`. Pass only the trusted PR URL through an environment variable; read all model output from the file.
+Add a final pinned `actions/github-script` step with `if: success()`. Read the validated structured result from disk and append the draft pull-request URL when one was created. Post through `github.rest.issues.createComment` using `context.payload.issue.number`. Pass only the trusted PR URL through an environment variable.
 
 - [ ] **Step 7: Validate the workflow contract and action pins**
 
@@ -141,7 +155,7 @@ $required = @(
     "potatoqualitee",
     "niphlod",
     "andreasjordan",
-    "sandbox: workspace-write",
+    "permission-profile: `":workspace`"",
     "safety-strategy: drop-sudo",
     "persist-credentials: false",
     "--draft",

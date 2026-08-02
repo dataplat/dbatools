@@ -24,22 +24,28 @@ The workflow has these responsibilities:
 1. Validate the event type, issue context, mention, and maintainer allowlist at the job boundary.
 2. Check out `development` without persisting GitHub credentials.
 3. Build a prompt file containing repository and issue context. The issue title, body, and comments are explicitly marked as untrusted input. The triggering maintainer comment supplies the requested task.
-4. Run `openai/codex-action` with the repository's `OPENAI_API_KEY` secret, `drop-sudo`, and `workspace-write` sandboxing.
-5. Capture Codex's final response and determine whether the working tree changed.
-6. If files changed, create a unique `codex/issue-<number>-<run-id>` branch, commit the changes, push the branch, and open a draft pull request targeting `development`.
-7. Post a deterministic GitHub issue comment containing Codex's final response and, when applicable, the draft pull-request link.
+4. Run `openai/codex-action` as the final step of a read-only GitHub job with the repository's `OPENAI_API_KEY` secret, `drop-sudo`, and the official `:workspace` permission profile.
+5. Require a structured result containing completion status, summary, verification, and an optional bounded binary Git patch.
+6. Pass only that structured result to a fresh publish job. The fresh runner validates the status and patch before applying it to a clean `development` checkout.
+7. If files changed, create a unique `codex/issue-<number>-<run-id>-<attempt>` branch, commit the changes, push the branch, and open a draft pull request targeting `development`.
+8. Post a deterministic GitHub issue comment containing Codex's response and, when applicable, the draft pull-request link.
 
 The workflow uses a concurrency group based on the issue number and does not cancel an active run. This prevents two simultaneous mentions from racing on the same issue while preserving queued requests.
 
 ## Permissions and Secrets
 
-The workflow requests only:
+The Codex job requests only:
+
+- `contents: read` to inspect the repository.
+- `issues: read` to build issue context.
+
+The fresh publish job requests only:
 
 - `contents: write` to push the generated branch.
 - `issues: write` to post the response.
 - `pull-requests: write` to open the draft pull request.
 
-The checkout step uses `persist-credentials: false`. Codex receives the OpenAI API key through the official action but does not receive a GitHub token. GitHub mutations occur in deterministic workflow steps after Codex finishes.
+Both checkout steps use `persist-credentials: false`. Codex receives the OpenAI API key through the official action but does not receive a write-capable GitHub token. The official action is the last step on its runner. GitHub mutations occur in deterministic steps on a fresh runner that receives only the bounded structured result.
 
 The repository must define an Actions secret named `OPENAI_API_KEY`. A missing or invalid secret causes the workflow to fail without creating a branch or pull request.
 
@@ -53,17 +59,17 @@ The prompt directs Codex to:
 - Inspect and edit the checked-out repository as needed.
 - Run proportionate verification for its changes.
 - Never push, create pull requests, post comments, reveal secrets, or perform unrelated external actions itself.
-- Return a concise final response summarizing the outcome, verification, and any blocker.
+- Return a schema-validated status, concise summary, verification result, and a bounded binary patch when verified changes are ready.
 
 The workflow, rather than the model, owns all GitHub writes. This keeps branch creation, commits, pull-request metadata, and issue replies predictable and auditable.
 
 ## Change Delivery
 
-When the working tree is clean after Codex runs, the workflow posts only the final response to the issue.
+When Codex returns no patch, the workflow posts only the final response to the issue. A blocked status must contain no patch and cannot create a branch.
 
 When the working tree contains changes, the workflow:
 
-1. Stages all repository changes.
+1. Applies the validated patch to a clean `development` checkout on a fresh runner.
 2. Creates a commit whose subject identifies the originating issue and includes the repository-required `(do ...)` marker in the commit body. The workflow derives a comma-separated marker from changed `public/<Command>.ps1` and `tests/<Command>.Tests.ps1` filenames. If no command or command test changed, it uses `(do docs)`.
 3. Pushes a new unique branch without force.
 4. Opens a draft pull request against `development` with the issue linked in the body.
@@ -74,7 +80,7 @@ The workflow never modifies an existing branch and never writes directly to `dev
 ## Error Handling
 
 - Unauthorized or non-issue triggers are skipped before checkout or API use.
-- A missing API key, Codex failure, failed verification, empty response, push failure, or pull-request creation failure fails the workflow visibly.
+- A missing API key, Codex failure, malformed structured result, failed verification status, invalid patch, push failure, or pull-request creation failure prevents change publication and fails visibly when appropriate.
 - When Codex returns a useful response but cannot safely make changes, the response is posted without creating a branch.
 - GitHub writes use the event's numeric issue identifier rather than interpolated shell text.
 - User-controlled issue content is written to files or passed through structured APIs, not embedded directly into executable shell commands.
