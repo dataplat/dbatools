@@ -7,6 +7,26 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
+        BeforeDiscovery {
+            $emptySecureToken = New-Object System.Security.SecureString
+            $emptySecureToken.MakeReadOnly()
+            $scriptMethodToken = [pscustomobject]@{}
+            $splatAddScriptMethodTokenMember = @{
+                InputObject = $scriptMethodToken
+                MemberType  = "ScriptMethod"
+                Name        = "GetAccessToken"
+                Value       = { "not-a-clr-renewable-token" }
+            }
+            Add-Member @splatAddScriptMethodTokenMember
+            $script:invalidAccessTokenCases = @(
+                @{ Name = "numeric zero"; Value = 0 }
+                @{ Name = "boolean false"; Value = $false }
+                @{ Name = "an empty SecureString"; Value = $emptySecureToken }
+                @{ Name = "an object with a blank Token property"; Value = [pscustomobject]@{ Token = "" } }
+                @{ Name = "an object with only a PowerShell GetAccessToken script method"; Value = $scriptMethodToken }
+            )
+        }
+
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -90,6 +110,17 @@ Describe $CommandName -Tag UnitTests {
             }
 
             { Start-DbaAzMigration @splatNullAccessToken } | Should -Throw "*DestinationAccessToken*non-empty*"
+        }
+
+        It "Rejects <Name> as a destination access token before connecting" -ForEach $script:invalidAccessTokenCases {
+            $splatInvalidAccessToken = @{
+                Source                 = "not-used"
+                Destination            = "not-used"
+                DestinationAccessToken = $Value
+                EnableException        = $true
+            }
+
+            { Start-DbaAzMigration @splatInvalidAccessToken } | Should -Throw "*DestinationAccessToken*non-empty*"
         }
 
         It "Accepts established access token shapes" {

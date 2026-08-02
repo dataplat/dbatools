@@ -7,6 +7,26 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
+        BeforeDiscovery {
+            $emptySecureToken = New-Object System.Security.SecureString
+            $emptySecureToken.MakeReadOnly()
+            $scriptMethodToken = [pscustomobject]@{}
+            $splatAddScriptMethodTokenMember = @{
+                InputObject = $scriptMethodToken
+                MemberType  = "ScriptMethod"
+                Name        = "GetAccessToken"
+                Value       = { "not-a-clr-renewable-token" }
+            }
+            Add-Member @splatAddScriptMethodTokenMember
+            $script:invalidAccessTokenCases = @(
+                @{ Name = "numeric zero"; Value = 0 }
+                @{ Name = "boolean false"; Value = $false }
+                @{ Name = "an empty SecureString"; Value = $emptySecureToken }
+                @{ Name = "an object with a blank Token property"; Value = [pscustomobject]@{ Token = "" } }
+                @{ Name = "an object with only a PowerShell GetAccessToken script method"; Value = $scriptMethodToken }
+            )
+        }
+
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -73,6 +93,18 @@ Describe $CommandName -Tag UnitTests {
             { Publish-DbaDacPackage @splatNullAccessToken } | Should -Throw "*AccessToken*non-empty*"
         }
 
+        It "Rejects <Name> as an access token before connecting" -ForEach $script:invalidAccessTokenCases {
+            $splatInvalidAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = $Value
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatInvalidAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
         It "Accepts established access token shapes" {
             (Get-Command Publish-DbaDacPackage).Parameters["AccessToken"].ParameterType | Should -Be ([PSObject])
         }
@@ -81,18 +113,31 @@ Describe $CommandName -Tag UnitTests {
             InModuleScope dbatools {
                 if (-not ("DbaTestRenewableAccessToken" -as [type])) {
                     $renewableTokenSource = @"
-public sealed class DbaTestRenewableAccessToken
+using Microsoft.SqlServer.Management.Common;
+
+public sealed class DbaTestRenewableAccessToken : IRenewableToken
 {
     public int CallCount { get; private set; }
+    public System.DateTimeOffset TokenExpiry { get; set; }
+    public string Resource { get; set; }
+    public string Tenant { get; set; }
+    public string UserId { get; set; }
 
-    public string GetAccessToken()
+    string IRenewableToken.GetAccessToken()
     {
         CallCount++;
         return "renewed-token-" + CallCount;
     }
 }
 "@
-                    Add-Type -TypeDefinition $renewableTokenSource -ErrorAction Stop
+                    $splatRenewableTokenType = @{
+                        TypeDefinition       = $renewableTokenSource
+                        ReferencedAssemblies = [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.Location
+                        IgnoreWarnings       = $true
+                        WarningAction        = "SilentlyContinue"
+                        ErrorAction          = "Stop"
+                    }
+                    Add-Type @splatRenewableTokenType
                 }
                 $renewableToken = New-Object DbaTestRenewableAccessToken
                 $services = New-DbaDacService -ConnectionString "Server=unused.database.windows.net;Database=master;Encrypt=True" -AccessToken $renewableToken
@@ -275,11 +320,11 @@ Describe $CommandName -Tag IntegrationTests {
             $badConnectionString = New-DbaConnectionString @splatBadConnection
             $splatPublishFailure = @{
                 ConnectionString = $badConnectionString
-                Database        = $dbname
-                Path            = $script:bacpac.Path
-                Type            = "Bacpac"
-                EnableException = $true
-                Confirm         = $false
+                Database         = $dbname
+                Path             = $script:bacpac.Path
+                Type             = "Bacpac"
+                EnableException  = $true
+                Confirm          = $false
             }
 
             $publishOutput = New-Object System.Collections.ArrayList

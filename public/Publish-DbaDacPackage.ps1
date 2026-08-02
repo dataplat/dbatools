@@ -31,7 +31,7 @@ function Publish-DbaDacPackage {
         Use this when you need specific connection properties or when connecting through alternative authentication methods not supported by SqlInstance.
 
     .PARAMETER AccessToken
-        Microsoft Entra access token used to connect to the target SQL Server instance and by DacFx during publish or import. Accepts a string, SecureString, or token object returned by Get-AzAccessToken.
+        Microsoft Entra access token used to connect to the target SQL Server instance and by DacFx during publish or import. Accepts a string, SecureString, a token object returned by Get-AzAccessToken, or a renewable Microsoft.SqlServer.Management.Common.IRenewableToken object, such as New-DbaAzAccessToken -Type RenewableServicePrincipal.
 
     .PARAMETER GenerateDeploymentReport
         Creates an XML deployment report showing what changes were made during the deployment. The report is saved to the OutputPath directory.
@@ -175,7 +175,7 @@ function Publish-DbaDacPackage {
 
     begin {
         $accessTokenWasBound = Test-Bound -ParameterName AccessToken
-        if ($accessTokenWasBound -and ($null -eq $AccessToken -or ($AccessToken -is [string] -and [string]::IsNullOrWhiteSpace($AccessToken)))) {
+        if ($accessTokenWasBound -and -not (Test-DbaAccessToken -AccessToken $AccessToken)) {
             Stop-Function -Message "AccessToken must be a non-empty access token when explicitly supplied." -EnableException $EnableException
             return
         }
@@ -185,7 +185,10 @@ function Publish-DbaDacPackage {
             return
         }
 
-        $connectionAccessToken = $AccessToken
+        $renewableConnectionAccessToken = $null
+        if ($accessTokenWasBound -and $AccessToken.PSObject.BaseObject -is [Microsoft.SqlServer.Management.Common.IRenewableToken]) {
+            $renewableConnectionAccessToken = [Microsoft.SqlServer.Management.Common.IRenewableToken]($AccessToken.PSObject.BaseObject)
+        }
 
         if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
             Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
@@ -270,8 +273,13 @@ function Publish-DbaDacPackage {
             try {
                 if ($SqlCredential) {
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                } elseif ($connectionAccessToken) {
-                    $server = Connect-DbaInstance -SqlInstance $instance -AccessToken $connectionAccessToken
+                } elseif ($accessTokenWasBound) {
+                    $currentConnectionAccessToken = if ($renewableConnectionAccessToken) {
+                        $renewableConnectionAccessToken.GetAccessToken()
+                    } else {
+                        $AccessToken
+                    }
+                    $server = Connect-DbaInstance -SqlInstance $instance -AccessToken $currentConnectionAccessToken
                 } else {
                     $server = Connect-DbaInstance -SqlInstance $instance
                 }
@@ -360,7 +368,7 @@ function Publish-DbaDacPackage {
 
                     #Create services object
                     try {
-                        if ($AccessToken) {
+                        if ($accessTokenWasBound) {
                             $dacServices = New-DbaDacService -ConnectionString $connString -AccessToken $AccessToken
                         } else {
                             $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString

@@ -43,6 +43,7 @@ Describe $CommandName -Tag IntegrationTests {
         $exceptionNotRunDatabaseName = "dbatoolsci_azexceptionnotrun_$suffix"
         $importFailureDatabaseName = "dbatoolsci_azimportfail_$suffix"
         $publishFailureDatabaseName = "dbatoolsci_azpublishfail_$suffix"
+        $renameReconciliationDatabaseName = "dbatoolsci_azrename_$suffix"
         $appearanceRaceDatabaseName = "dbatoolsci_azappear_$suffix"
         $appearanceRacerDatabaseName = "dbatoolsci_azappear_racer_$suffix"
         $raceDatabaseName = "dbatoolsci_azrace_$suffix"
@@ -60,6 +61,7 @@ Describe $CommandName -Tag IntegrationTests {
             $exceptionFailureDatabaseName
             $exceptionNotRunDatabaseName
             $importFailureDatabaseName
+            $renameReconciliationDatabaseName
             $appearanceRaceDatabaseName
             $raceDatabaseName
             $promotionRaceDatabaseName
@@ -74,6 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
             $exceptionNotRunDatabaseName
             $importFailureDatabaseName
             $publishFailureDatabaseName
+            $renameReconciliationDatabaseName
             $appearanceRaceDatabaseName
             $appearanceRacerDatabaseName
             $raceDatabaseName
@@ -90,10 +93,31 @@ Describe $CommandName -Tag IntegrationTests {
         $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatools" }
         $script:destinationSqlInstance = "$destinationServerName.database.windows.net"
         $destinationConnectionString = "Server=$script:destinationSqlInstance;Database=master;Encrypt=True;TrustServerCertificate=False;"
-        $script:destinationAccessToken = $env:AZMIGRATION_ACCESS_TOKEN
+        $script:getDestinationAccessToken = {
+            $freshAccessToken = $null
+            if (Get-Command az -ErrorAction SilentlyContinue) {
+                try {
+                    $azureCliTokenOutput = @(& az account get-access-token --resource https://database.windows.net/ --query accessToken --output tsv 2>$null)
+                    if ($LASTEXITCODE -eq 0 -and $azureCliTokenOutput.Count -gt 0) {
+                        $freshAccessToken = ([string]($azureCliTokenOutput -join "")).Trim()
+                    }
+                } catch {
+                    Write-Verbose "Azure CLI token refresh failed; checking the workflow-provided token."
+                }
+            }
+            if (-not $freshAccessToken) {
+                $freshAccessToken = $env:AZMIGRATION_ACCESS_TOKEN
+            }
+            if (-not $freshAccessToken) {
+                throw "The authenticated Azure CLI session did not return an Azure SQL access token."
+            }
+            $freshAccessToken
+        }
+        $script:destinationAccessToken = & $script:getDestinationAccessToken
         $script:connectDestinationDatabase = {
             param($DatabaseName)
 
+            $script:destinationAccessToken = & $script:getDestinationAccessToken
             $splatDestinationConnection = @{
                 SqlInstance = $script:destinationSqlInstance
                 Database    = $DatabaseName
@@ -148,6 +172,7 @@ Describe $CommandName -Tag IntegrationTests {
             $friendlySuccessDatabaseName
             $exceptionNotRunDatabaseName
             $importFailureDatabaseName
+            $renameReconciliationDatabaseName
         )
         $proofQuery = @"
 CREATE TABLE dbo.MigrationProof
@@ -226,11 +251,17 @@ FROM Numbers;
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    BeforeEach {
+        $script:destinationAccessToken = & $script:getDestinationAccessToken
+        $script:splatBaseMigration.DestinationAccessToken = $script:destinationAccessToken
+    }
+
     Context "Selection and successful migration" {
         It "rejects a requested database that is not accessible" {
             $splatMissingMigration = $script:splatBaseMigration.Clone()
             $splatMissingMigration.Database = "${databaseName}_missing"
-            { Start-DbaAzMigration @splatMissingMigration } | Should -Throw "*not found or are not accessible*"
+            $missingMigration = { Start-DbaAzMigration @splatMissingMigration }
+            $missingMigration | Should -Throw "*not found or are not accessible*"
         }
 
         It "honors WhatIf without creating a package or destination database" {
@@ -292,6 +323,42 @@ FROM Numbers;
             $rows = Invoke-DbaQuery @splatVerifyRows
             ($rows.Id -join ",") | Should -Be "1,2,3"
             ($rows.Value -join ",") | Should -Be "10,20,30"
+            $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+            $script:verificationServer = $null
+        }
+
+        It "reconciles a committed promotion when post-rename processing reports an error" {
+            $splatRenameReconciliationMigration = $script:splatBaseMigration.Clone()
+            $splatRenameReconciliationMigration.Database = $renameReconciliationDatabaseName
+            & (Get-Module dbatools) {
+                $script:StartDbaAzMigrationCallback = {
+                    param($Name)
+
+                    if ($Name -eq "AfterDestinationPromotionRename") {
+                        throw "Induced post-rename verification interruption."
+                    }
+                }
+            }
+            try {
+                $reconciledResult = Start-DbaAzMigration @splatRenameReconciliationMigration
+            } finally {
+                & (Get-Module dbatools) {
+                    $script:StartDbaAzMigrationCallback = $null
+                }
+            }
+
+            $reconciledResult.Status | Should -Be "Successful"
+            $reconciledResult.Notes | Should -BeLike "*verified after the rename operation reported an error*"
+            $script:verificationServer = & $script:connectDestinationDatabase $renameReconciliationDatabaseName
+            $splatVerifyReconciledRows = @{
+                SqlInstance     = $script:verificationServer
+                Database        = $renameReconciliationDatabaseName
+                Query           = "SELECT Id, Value FROM dbo.MigrationProof ORDER BY Id"
+                EnableException = $true
+            }
+            $reconciledRows = Invoke-DbaQuery @splatVerifyReconciledRows
+            ($reconciledRows.Id -join ",") | Should -Be "1,2,3"
+            ($reconciledRows.Value -join ",") | Should -Be "10,20,30"
             $null = Disconnect-DbaInstance -InputObject $script:verificationServer
             $script:verificationServer = $null
         }
@@ -400,7 +467,8 @@ FROM Numbers;
             $splatInvalidImportMigration = $script:splatBaseMigration.Clone()
             $splatInvalidImportMigration.Database = $importFailureDatabaseName
             $splatInvalidImportMigration.ImportDacOption = $invalidImportOptions
-            { Start-DbaAzMigration @splatInvalidImportMigration } | Should -Throw "*BACPAC import failed*"
+            $invalidImportMigration = { Start-DbaAzMigration @splatInvalidImportMigration }
+            $invalidImportMigration | Should -Throw "*BACPAC import failed*"
             $script:destinationMaster = & $script:connectDestinationDatabase "master"
             $failedImportStagingPattern = "dbatools_azmigration_${importFailureDatabaseName}_*"
             $failedImportStagingDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $failedImportStagingPattern)
@@ -458,12 +526,12 @@ FROM Numbers;
         AfterEach {
             if ($script:raceJob) {
                 Stop-Job -Job $script:raceJob -ErrorAction SilentlyContinue
-                $splatRemoveRaceJob = @{
+                $splatRemoveRaceJobAfterEach = @{
                     Job         = $script:raceJob
                     Force       = $true
                     ErrorAction = "SilentlyContinue"
                 }
-                Remove-Job @splatRemoveRaceJob
+                Remove-Job @splatRemoveRaceJobAfterEach
                 $script:raceJob = $null
             }
             if ($script:verificationServer) {
@@ -838,12 +906,12 @@ FROM Numbers;
         if ($script:raceJob) {
             try {
                 Stop-Job -Job $script:raceJob -ErrorAction Stop
-                $splatRemoveRaceJob = @{
+                $splatRemoveRaceJobAfterAll = @{
                     Job         = $script:raceJob
                     Force       = $true
                     ErrorAction = "Stop"
                 }
-                Remove-Job @splatRemoveRaceJob
+                Remove-Job @splatRemoveRaceJobAfterAll
             } catch {
                 $cleanupErrors += $PSItem
             }

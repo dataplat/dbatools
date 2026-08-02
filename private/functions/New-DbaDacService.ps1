@@ -13,9 +13,9 @@ function New-DbaDacService {
         $accessTokenProviderSource = @"
 using System;
 using System.Net;
-using System.Reflection;
 using System.Security;
 using Microsoft.SqlServer.Dac;
+using Microsoft.SqlServer.Management.Common;
 
 namespace Dataplat.Dbatools.Utility
 {
@@ -23,6 +23,7 @@ namespace Dataplat.Dbatools.Utility
     {
         private readonly object accessToken;
         private readonly bool renewable;
+        private readonly IRenewableToken renewableAccessToken;
 
         public DacAccessTokenProvider(object accessToken, bool renewable)
         {
@@ -33,6 +34,14 @@ namespace Dataplat.Dbatools.Utility
 
             this.accessToken = accessToken;
             this.renewable = renewable;
+            if (renewable)
+            {
+                this.renewableAccessToken = accessToken as IRenewableToken;
+                if (this.renewableAccessToken == null)
+                {
+                    throw new ArgumentException("A renewable access token must implement IRenewableToken.", "accessToken");
+                }
+            }
         }
 
         public string GetValidAccessToken()
@@ -40,12 +49,7 @@ namespace Dataplat.Dbatools.Utility
             object token = accessToken;
             if (renewable)
             {
-                MethodInfo getAccessToken = accessToken.GetType().GetMethod("GetAccessToken", Type.EmptyTypes);
-                if (getAccessToken == null)
-                {
-                    throw new InvalidOperationException("The renewable access token object does not expose GetAccessToken().");
-                }
-                token = getAccessToken.Invoke(accessToken, null);
+                token = renewableAccessToken.GetAccessToken();
             }
 
             SecureString secureToken = token as SecureString;
@@ -68,6 +72,7 @@ namespace Dataplat.Dbatools.Utility
             TypeDefinition       = $accessTokenProviderSource
             ReferencedAssemblies = @(
                 [Microsoft.SqlServer.Dac.DacServices].Assembly.Location
+                [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.Location
                 [System.Net.NetworkCredential].Assembly.Location
             )
             IgnoreWarnings       = $true
@@ -85,7 +90,7 @@ namespace Dataplat.Dbatools.Utility
         $accessTokenProviderType = "Dataplat.Dbatools.Utility.DacAccessTokenProvider" -as [type]
     }
 
-    $isRenewable = [bool]$AccessToken.PSObject.Methods["GetAccessToken"]
+    $isRenewable = $AccessToken.PSObject.BaseObject -is [Microsoft.SqlServer.Management.Common.IRenewableToken]
     $providerToken = if ($isRenewable) {
         $AccessToken.PSObject.BaseObject
     } else {
@@ -99,7 +104,7 @@ namespace Dataplat.Dbatools.Utility
         } elseif ($accessTokenValue -is [string]) {
             $accessTokenValue
         } else {
-            throw "AccessToken must be a string, SecureString, object with a Token property, or object with a GetAccessToken() method."
+            throw "AccessToken must be a string, SecureString, object with a Token property, or IRenewableToken object."
         }
     }
 

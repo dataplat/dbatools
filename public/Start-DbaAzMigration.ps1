@@ -23,7 +23,7 @@ function Start-DbaAzMigration {
         Credential used to connect to the destination Azure SQL logical server.
 
     .PARAMETER DestinationAccessToken
-        Microsoft Entra access token for https://database.windows.net/ used to connect to the destination Azure SQL logical server and publish the BACPAC. Accepts a string, SecureString, or token object returned by Get-AzAccessToken.
+        Microsoft Entra access token for https://database.windows.net/ used to connect to the destination Azure SQL logical server and publish the BACPAC. Accepts a string, SecureString, a token object returned by Get-AzAccessToken, or a renewable Microsoft.SqlServer.Management.Common.IRenewableToken object, such as New-DbaAzAccessToken -Type RenewableServicePrincipal.
 
     .PARAMETER Database
         The source databases to migrate. When omitted, all accessible user databases are selected.
@@ -115,7 +115,7 @@ function Start-DbaAzMigration {
 
     begin {
         $destinationAccessTokenWasBound = Test-Bound -ParameterName DestinationAccessToken
-        if ($destinationAccessTokenWasBound -and ($null -eq $DestinationAccessToken -or ($DestinationAccessToken -is [string] -and [string]::IsNullOrWhiteSpace($DestinationAccessToken)))) {
+        if ($destinationAccessTokenWasBound -and -not (Test-DbaAccessToken -AccessToken $DestinationAccessToken)) {
             Stop-Function -Message "DestinationAccessToken must be a non-empty access token when explicitly supplied." -EnableException $EnableException
             return
         }
@@ -123,6 +123,11 @@ function Start-DbaAzMigration {
         if ($DestinationSqlCredential -and $destinationAccessTokenWasBound) {
             Stop-Function -Message "DestinationSqlCredential and DestinationAccessToken cannot be used together." -EnableException $EnableException
             return
+        }
+
+        $renewableDestinationAccessToken = $null
+        if ($destinationAccessTokenWasBound -and $DestinationAccessToken.PSObject.BaseObject -is [Microsoft.SqlServer.Management.Common.IRenewableToken]) {
+            $renewableDestinationAccessToken = [Microsoft.SqlServer.Management.Common.IRenewableToken]($DestinationAccessToken.PSObject.BaseObject)
         }
 
         $resolveDatabaseName = {
@@ -208,7 +213,7 @@ function Start-DbaAzMigration {
             }
             if ($DestinationSqlCredential) {
                 $splatDestination.SqlCredential = $DestinationSqlCredential
-            } elseif ($DestinationAccessToken) {
+            } elseif ($destinationAccessTokenWasBound) {
                 if ($Destination.IsConnectionString) {
                     $tokenDestinationBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
                     $tokenDestinationBuilder.set_ConnectionString([string]$Destination.InputObject)
@@ -219,9 +224,16 @@ function Start-DbaAzMigration {
                     }
                     $splatDestination.SqlInstance = $tokenDestinationServer
                 }
-                $splatDestination.AccessToken = $DestinationAccessToken
+                $splatDestination.AccessToken = if ($renewableDestinationAccessToken) {
+                    $renewableDestinationAccessToken.GetAccessToken()
+                } else {
+                    $DestinationAccessToken
+                }
             }
             $destinationServer = Connect-DbaInstance @splatDestination
+            if ($renewableDestinationAccessToken) {
+                $destinationServer.ConnectionContext.AccessToken = $renewableDestinationAccessToken
+            }
         } catch {
             $splatStopDestinationConnection = @{
                 Message         = "Failure connecting to destination $Destination"
@@ -260,7 +272,7 @@ function Start-DbaAzMigration {
             $null = $connectionBuilder.Remove("Trusted_Connection")
             $connectionBuilder["User ID"] = $DestinationSqlCredential.UserName
             $connectionBuilder["Password"] = $DestinationSqlCredential.GetNetworkCredential().Password
-        } elseif ($DestinationAccessToken) {
+        } elseif ($destinationAccessTokenWasBound) {
             foreach ($authenticationKey in @("Integrated Security", "Trusted_Connection", "User ID", "Password", "Pwd", "Authentication")) {
                 $null = $connectionBuilder.Remove($authenticationKey)
             }
@@ -274,7 +286,7 @@ function Start-DbaAzMigration {
         if ($DestinationSqlCredential) {
             $sensitiveValues += $DestinationSqlCredential.GetNetworkCredential().Password
         }
-        if ($DestinationAccessToken) {
+        if ($destinationAccessTokenWasBound) {
             $destinationAccessTokenValue = if ($DestinationAccessToken.PSObject.Properties["Token"]) {
                 $DestinationAccessToken.Token
             } else {
@@ -410,7 +422,10 @@ function Start-DbaAzMigration {
             try {
                 $destinationServer.Databases.Refresh()
                 $destinationDatabase = Get-DbaDatabase @splatGetDestinationDatabase
-                $destinationDatabaseIdentity = & $getDatabaseIdentity $destinationDatabase
+                $destinationDatabaseIdentity = $null
+                if ($destinationDatabase -and $Force) {
+                    $destinationDatabaseIdentity = & $getDatabaseIdentity $destinationDatabase
+                }
             } catch {
                 $stopwatch.Stop()
                 $migrationStatus.Status = "Failed"
@@ -507,7 +522,7 @@ function Start-DbaAzMigration {
                 if ($ImportDacOption) {
                     $splatPublish.DacOption = $ImportDacOption
                 }
-                if ($DestinationAccessToken) {
+                if ($destinationAccessTokenWasBound) {
                     $splatPublish.AccessToken = $DestinationAccessToken
                 }
                 $publishResult = @(Publish-DbaDacPackage @splatPublish)
@@ -642,13 +657,47 @@ function Start-DbaAzMigration {
                         throw $promotionError
                     }
                 } else {
-                    $stagingDatabase.Rename($databaseName)
-                    $destinationServer.Databases.Refresh()
-                    $promotedDatabase = Get-DbaDatabase @splatGetDestinationDatabase
-                    if (-not $promotedDatabase -or (& $getDatabaseIdentity $promotedDatabase) -ne $stagingDatabaseIdentity) {
-                        throw "The staging database could not be verified after promotion to $databaseName."
+                    try {
+                        $stagingDatabase.Rename($databaseName)
+                        Invoke-DbaAzMigrationCallback -Name "AfterDestinationPromotionRename"
+                        $destinationServer.Databases.Refresh()
+                        $promotedDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if (-not $promotedDatabase -or (& $getDatabaseIdentity $promotedDatabase) -ne $stagingDatabaseIdentity) {
+                            throw "The staging database could not be verified after promotion to $databaseName."
+                        }
+                        $stagingDatabaseMayNeedCleanup = $false
+                    } catch {
+                        $promotionError = $PSItem
+                        $promotionReachedFinalName = $false
+                        $promotionReconciliationError = $null
+                        for ($reconciliationAttempt = 1; $reconciliationAttempt -le 3 -and -not $promotionReachedFinalName; $reconciliationAttempt++) {
+                            try {
+                                $destinationServer.Databases.Refresh()
+                                $splatGetDestinationDatabase.Database = $stagingDatabaseName
+                                $remainingStagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                                $splatGetDestinationDatabase.Database = $databaseName
+                                $reconciledFinalDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                                $reconciledFinalIdentity = & $getDatabaseIdentity $reconciledFinalDatabase
+                                $promotionReachedFinalName = -not $remainingStagingDatabase -and $reconciledFinalIdentity -eq $stagingDatabaseIdentity
+                                $promotionReconciliationError = $null
+                            } catch {
+                                $promotionReconciliationError = $PSItem
+                            }
+
+                            if (-not $promotionReachedFinalName -and $reconciliationAttempt -lt 3) {
+                                Start-Sleep -Seconds 2
+                            }
+                        }
+
+                        if ($promotionReachedFinalName) {
+                            $stagingDatabaseMayNeedCleanup = $false
+                            $cleanupNotes += "Promotion to $databaseName was verified after the rename operation reported an error."
+                        } elseif ($promotionReconciliationError) {
+                            throw "Promotion to $databaseName failed and its final state could not be reconciled: $($promotionError.Exception.Message) Reconciliation failed: $($promotionReconciliationError.Exception.Message)"
+                        } else {
+                            throw $promotionError
+                        }
                     }
-                    $stagingDatabaseMayNeedCleanup = $false
                 }
                 $migrationStatus.Status = "Successful"
             } catch {

@@ -288,7 +288,7 @@ git commit -m "Start-DbaAzMigration - Implement BACPAC orchestration (do Start-D
 
 Inside a source-only `.github/scripts/gh-azmigration-actions.ps1` integration file, add an `It` that:
 
-- Throws immediately if `AZMIGRATION_ACCESS_TOKEN` is empty after the authenticated `azure/login` step requests an Azure SQL token.
+- Runs the core integration suite first, requests `AZMIGRATION_ACCESS_TOKEN` immediately before the Azure suite, throws if it is empty, and refreshes it through Azure CLI before each Azure test and cleanup connection.
 - Generates a database name by appending the first eight characters of a GUID to `dbatoolsci_azmigration_`.
 - Creates the source database on the SQL Server container and creates `dbo.MigrationProof` with deterministic rows.
 - Builds a credential-free destination connection string for `dbatools.database.windows.net` by default, or the test-only `DBATOOLS_AZMIGRATION_SERVER` override, and passes the short-lived token separately. The existing logical server is hosted in a subscription where DacFx can create and drop databases through T-SQL.
@@ -296,8 +296,8 @@ Inside a source-only `.github/scripts/gh-azmigration-actions.ps1` integration fi
 - Invokes `Start-DbaAzMigration` for `localhost` and the resolved existing Azure SQL server with `DestinationAccessToken`, the selected database, unique package path, `Confirm:$false`, and the required exception mode.
 - Asserts `Status` is `Successful`, `Type` is `Database`, the `dbatools.MigrationObject` type name is present, and `BacpacPath` no longer exists.
 - Connects independently to the created Azure database and asserts exact schema/data values.
-- Covers all-database selection/exclusion, verbose credential redaction, safe skip, staged `Force`, retention, deterministic export failure, friendly continuation, exception-mode stop, induced import failure handling, direct failed-Publish zero-output behavior, and four deterministic lifecycle-callback races: absent-final appearance, forced replacement before promotion, replacement immediately before the forced rename, and staging replacement immediately before failure cleanup.
-- In `finally`, removes every exact run-owned Azure database, source database, staging database, and local directory, then verifies cleanup.
+- Covers all-database selection/exclusion, verbose credential redaction, safe skip, staged `Force`, retention, deterministic export failure, friendly continuation, exception-mode stop, induced import failure handling, direct failed-Publish zero-output behavior, reconciliation after a committed non-Force rename reports an error, and four deterministic lifecycle-callback races: absent-final appearance, forced replacement before promotion, replacement immediately before the forced rename, and staging replacement immediately before failure cleanup.
+- In `finally`, removes every exact run-owned Azure database, source database, staging database, and local directory, then verifies cleanup. Workflow concurrency does not cancel a running test job, so this cleanup path cannot be preempted by a later push.
 
 Do not add `-Skip`, `Set-ItResult -Skipped`, or conditional success. Missing secrets and an unreachable Azure boundary must fail this secret-bearing workflow.
 

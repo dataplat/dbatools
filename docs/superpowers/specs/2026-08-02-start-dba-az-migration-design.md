@@ -54,7 +54,7 @@ The command uses `SupportsShouldProcess` with medium confirm impact and exposes:
 | `Destination` | `DbaInstanceParameter` | Required Azure SQL logical server or reusable connected server object. |
 | `SourceSqlCredential` | `PSCredential` | Optional source credential passed to `Connect-DbaInstance`. |
 | `DestinationSqlCredential` | `PSCredential` | Optional destination credential passed to `Connect-DbaInstance`. SQL authentication and connection-string-based Microsoft Entra service-principal authentication remain available through existing dbatools connection behavior. |
-| `DestinationAccessToken` | `PSObject` | Optional Azure SQL access token. Accepts the established dbatools string, `SecureString`, token-object, and renewable token shapes and is passed to both SMO and DacFx without adding an Azure module dependency. It cannot be combined with `DestinationSqlCredential`. |
+| `DestinationAccessToken` | `PSObject` | Optional Azure SQL access token. Accepts the established dbatools string, `SecureString`, token-object, and `IRenewableToken` shapes without adding an Azure module dependency. Renewable tokens remain attached to the reusable SMO connection and are also passed to DacFx. It cannot be combined with `DestinationSqlCredential`. |
 | `Database` | `object[]` | Optional source database allow-list. When omitted, all accessible user databases are selected. |
 | `ExcludeDatabase` | `object[]` | Optional source database deny-list applied after `Database`. |
 | `Path` | `string` | Directory for generated BACPAC files. Defaults to `Path.DbatoolsTemp`. |
@@ -143,7 +143,7 @@ Credentials and connection strings are never written to the pipeline, verbose st
 - The required Pester 6 header and static command name.
 - A parameter-surface assertion.
 - Focused validation tests for wrong option types and a non-Azure destination.
-- Fourteen focused behavioral tests cover all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging handling, credential and connection-string redaction, concurrent final-name appearance, concurrent final-name replacement, a replacement immediately before the forced rename, and replacement of staging immediately before failure cleanup where those behaviors can run against real boundaries.
+- Focused behavioral tests cover all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging handling, credential and connection-string redaction, reconciliation after a committed rename reports an error, concurrent final-name appearance, concurrent final-name replacement, a replacement immediately before the forced rename, and replacement of staging immediately before failure cleanup where those behaviors can run against real boundaries.
 
 Mocks may supplement validation tests but do not count as behavioral coverage.
 
@@ -153,7 +153,7 @@ The secret-bearing Linux GitHub Actions integration workflow executes the real c
 
 - A separately running SQL Server container as the source.
 - The existing `dbatools.database.windows.net` logical server by default, overridable through `DBATOOLS_AZMIGRATION_SERVER`, in a subscription where T-SQL resource CRUD is not blocked.
-- The existing `VMSS_AZURE_CREDENTIALS` GitHub secret and `azure/login`; the workflow obtains a short-lived Azure SQL token with Azure CLI and passes it through `DestinationAccessToken`.
+- The existing `VMSS_AZURE_CREDENTIALS` GitHub secret and `azure/login`; the workflow obtains a short-lived Azure SQL token immediately before the Azure suite, refreshes it before each Azure test and cleanup connection, and passes it through `DestinationAccessToken`.
 - The existing `github-actions-dbatools-sp` contained user in `master`, granted `dbmanager`. The logical server retains the approved Microsoft Entra administrator `clemaire@gmail.com`; no SQL password is stored in the repository or workflow.
 
 The test will:
@@ -170,7 +170,8 @@ The test will:
 10. At the same barrier, drop the original final and rename a pre-created replacement to the final name during forced migration; verify that the identity change is detected and the replacement is untouched.
 11. Use a barrier immediately before the forced rename to reproduce the narrower check-to-rename race; verify that an accidentally renamed replacement is restored to the final name and staging is not promoted.
 12. Use a second barrier immediately before failed-staging cleanup, replace the owned staging database with an empty database of a different identity, and verify that the replacement is preserved.
-13. Drop every exact run-owned Azure SQL database and source database in `finally` cleanup, and fail the test if cleanup verification fails.
+13. Induce an error after a non-Force rename commits, reconcile both the staging and final names against the captured identity, and verify that the migrated final database is reported as successful.
+14. Drop every exact run-owned Azure SQL database and source database in `finally` cleanup, and fail the test if cleanup verification fails. The workflow disables cancellation of a running job so a later push cannot preempt this cleanup.
 
 The positive test is not a skipped placeholder. Missing credentials or an unavailable Azure boundary fail the upstream secret-bearing workflow.
 
