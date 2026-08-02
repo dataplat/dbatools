@@ -2,8 +2,11 @@ if (-not ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -
     $scriptBlock = {
         $script:___ScriptName = 'dbatools-teppasynccache'
 
+        # A 15 second Start-Sleep used to sit here, under this comment:
         # Defer module import to avoid collisions and reduce CPU impact
-        Start-Sleep -Seconds 15
+        # The runspace is now started by the first tab completion, which cannot happen before the
+        # foreground import has finished, so there is no longer an import to collide with, and
+        # waiting would only delay the cache that someone has just asked for.
         $dbatoolsPath = Join-Path -Path ([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase) -ChildPath "dbatools.psd1"
         Import-Module $dbatoolsPath
         $script:dbatools = Get-Module dbatools
@@ -79,6 +82,16 @@ if (-not ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -
         }
     }
 
+    # Register the runspace but leave it stopped. Starting it here meant that every session paid for
+    # it, including scheduled tasks and build agents that will never tab complete anything, and the
+    # runspace reconnects to every instance the session has touched every few minutes for as long as
+    # it runs. Register-DbaTeppArgumentCompleter starts it when someone actually completes a
+    # parameter, so an unattended session never opens those connections at all.
     Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
-    Start-DbaRunspace -Name "dbatools-teppasynccache"
+
+    # Anyone who would rather have the cache warm from the moment the module loads can say so and
+    # get the old behaviour back, paying the cost the default now avoids.
+    if (Get-DbatoolsConfigValue -FullName "TabExpansion.Asynchronous.StartOnImport") {
+        Start-DbaRunspace -Name "dbatools-teppasynccache"
+    }
 }
