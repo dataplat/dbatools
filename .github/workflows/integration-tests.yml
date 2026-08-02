@@ -136,7 +136,12 @@ jobs:
               ".github/scripts/gh-actions.ps1"
               ".github/scripts/gh-azmigration-actions.ps1"
           )
-          $result = Invoke-Pester -Path $testPaths -Output Detailed -PassThru
+          $splatPester = @{
+              Path     = $testPaths
+              Output   = "Detailed"
+              PassThru = $true
+          }
+          $result = Invoke-Pester @splatPester
           if ($result.Result -ne "Passed" -or $result.FailedCount -gt 0) {
               throw "Integration tests failed with result $($result.Result) and $($result.FailedCount) failed test(s)."
           }

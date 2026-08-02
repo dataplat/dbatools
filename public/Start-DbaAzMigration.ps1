@@ -114,7 +114,13 @@ function Start-DbaAzMigration {
     )
 
     begin {
-        if ($DestinationSqlCredential -and $DestinationAccessToken) {
+        $destinationAccessTokenWasBound = Test-Bound -ParameterName DestinationAccessToken
+        if ($destinationAccessTokenWasBound -and ($null -eq $DestinationAccessToken -or ($DestinationAccessToken -is [string] -and [string]::IsNullOrWhiteSpace($DestinationAccessToken)))) {
+            Stop-Function -Message "DestinationAccessToken must be a non-empty access token when explicitly supplied." -EnableException $EnableException
+            return
+        }
+
+        if ($DestinationSqlCredential -and $destinationAccessTokenWasBound) {
             Stop-Function -Message "DestinationSqlCredential and DestinationAccessToken cannot be used together." -EnableException $EnableException
             return
         }
@@ -413,7 +419,9 @@ function Start-DbaAzMigration {
                     $migrationStatus.Notes = $migrationStatus.Notes.Replace($sensitiveValue, "********")
                 }
                 $migrationStatus.Elapsed = [prettytimespan]$stopwatch.Elapsed
-                $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
+                if (-not $EnableException) {
+                    $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
+                }
                 $splatStopDestinationValidation = @{
                     Message         = "Destination validation failed for database $databaseName"
                     ErrorRecord     = $PSItem
@@ -726,7 +734,9 @@ function Start-DbaAzMigration {
                 $failureMessage = $migrationStatus.Notes
             }
 
-            $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
+            if (-not $failureRecord -or -not $EnableException) {
+                $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
+            }
 
             if ($failureRecord) {
                 $safeException = New-Object System.Exception -ArgumentList $failureMessage

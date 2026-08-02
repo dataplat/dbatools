@@ -70,6 +70,28 @@ Describe $CommandName -Tag UnitTests {
             { Start-DbaAzMigration @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
         }
 
+        It "Rejects an explicitly bound blank destination access token before connecting" {
+            $splatBlankAccessToken = @{
+                Source                 = "not-used"
+                Destination            = "not-used"
+                DestinationAccessToken = ""
+                EnableException        = $true
+            }
+
+            { Start-DbaAzMigration @splatBlankAccessToken } | Should -Throw "*DestinationAccessToken*non-empty*"
+        }
+
+        It "Rejects an explicitly bound null destination access token before connecting" {
+            $splatNullAccessToken = @{
+                Source                 = "not-used"
+                Destination            = "not-used"
+                DestinationAccessToken = $null
+                EnableException        = $true
+            }
+
+            { Start-DbaAzMigration @splatNullAccessToken } | Should -Throw "*DestinationAccessToken*non-empty*"
+        }
+
         It "Accepts established access token shapes" {
             (Get-Command Start-DbaAzMigration).Parameters["DestinationAccessToken"].ParameterType | Should -Be ([PSObject])
         }

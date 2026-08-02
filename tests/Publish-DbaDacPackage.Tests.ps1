@@ -49,6 +49,30 @@ Describe $CommandName -Tag UnitTests {
             { Publish-DbaDacPackage @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
         }
 
+        It "Rejects an explicitly bound blank access token before connecting" {
+            $splatBlankAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = ""
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatBlankAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
+        It "Rejects an explicitly bound null access token before connecting" {
+            $splatNullAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = $null
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatNullAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
         It "Accepts established access token shapes" {
             (Get-Command Publish-DbaDacPackage).Parameters["AccessToken"].ParameterType | Should -Be ([PSObject])
         }

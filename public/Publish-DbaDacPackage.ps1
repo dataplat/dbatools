@@ -174,7 +174,13 @@ function Publish-DbaDacPackage {
     )
 
     begin {
-        if ($SqlCredential -and $AccessToken) {
+        $accessTokenWasBound = Test-Bound -ParameterName AccessToken
+        if ($accessTokenWasBound -and ($null -eq $AccessToken -or ($AccessToken -is [string] -and [string]::IsNullOrWhiteSpace($AccessToken)))) {
+            Stop-Function -Message "AccessToken must be a non-empty access token when explicitly supplied." -EnableException $EnableException
+            return
+        }
+
+        if ($SqlCredential -and $accessTokenWasBound) {
             Stop-Function -Message "SqlCredential and AccessToken cannot be used together." -EnableException $EnableException
             return
         }

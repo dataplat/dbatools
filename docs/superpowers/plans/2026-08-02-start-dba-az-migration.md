@@ -6,7 +6,19 @@
 
 **Architecture:** Implement a thin public orchestrator over the existing DacFx-backed `Export-DbaDacPackage` and `Publish-DbaDacPackage` commands. Connect once to each endpoint, validate the Azure SQL Database boundary before mutation, process databases sequentially, and isolate friendly-mode failures per database. Import into a unique run-owned staging database and promote it only after a final name recheck, so failure cleanup never touches a racing database. Do not add an installer, module dependency, Azure control-plane runtime dependency, or server-object migration.
 
-**Tech Stack:** PowerShell 3+, dbatools, Microsoft DacFx from `dbatools.library`, Pester 6, Azure SQL Database, Azure CLI for local test provisioning only.
+**Tech Stack:** PowerShell 3+, dbatools, Microsoft DacFx from `dbatools.library`, Pester 6, Azure SQL Database, and Azure CLI in integration infrastructure only.
+
+## Implemented Integration Outcome
+
+The implementation retained the no-extra-module product design and adapted the planned Azure boundary to the resources explicitly approved during execution:
+
+- `Start-DbaAzMigration` and `Publish-DbaDacPackage` accept the established dbatools access-token shapes. A private DacFx universal-auth provider renews tokens when supported and converts a `SecureString` only when DacFx requests the token.
+- GitHub Actions reuses `VMSS_AZURE_CREDENTIALS` with `azure/login`, obtains an Azure SQL token with Azure CLI, and passes it through `DestinationAccessToken`; the product command does not depend on Azure CLI or `Az.*` modules.
+- The real boundary reuses `dbatools.database.windows.net` by default and supports `DBATOOLS_AZMIGRATION_SERVER` as a test-only override. The approved `clemaire@gmail.com` Entra administrator and contained `github-actions-dbatools-sp` `dbmanager` user remain on the shared server.
+- Deterministic race tests use a module-scoped lifecycle callback with file barriers from a child job instead of line breakpoints, which do not persist in the hosted Linux job process.
+- Tests create only uniquely named Basic databases, verify all ownership and failure paths, and remove every exact run-owned database and local artifact. They do not create or delete the shared logical server.
+
+The task steps below preserve the original execution sequence; where a planned isolated server, client-secret connection, or line breakpoint is mentioned, this implemented-outcome section is authoritative.
 
 ## Global Constraints
 
@@ -54,6 +66,7 @@ Describe $CommandName -Tag UnitTests {
                 "Destination",
                 "SourceSqlCredential",
                 "DestinationSqlCredential",
+                "DestinationAccessToken",
                 "Database",
                 "ExcludeDatabase",
                 "Path",
@@ -98,6 +111,7 @@ param (
     [DbaInstanceParameter]$Destination,
     [PSCredential]$SourceSqlCredential,
     [PSCredential]$DestinationSqlCredential,
+    [PSObject]$DestinationAccessToken,
     [object[]]$Database,
     [object[]]$ExcludeDatabase,
     [string]$Path = (Get-DbatoolsConfigValue -FullName "Path.DbatoolsTemp"),
@@ -274,15 +288,15 @@ git commit -m "Start-DbaAzMigration - Implement BACPAC orchestration (do Start-D
 
 Inside a source-only `.github/scripts/gh-azmigration-actions.ps1` integration file, add an `It` that:
 
-- Throws immediately if `TENANTID`, `CLIENTID`, or `CLIENTSECRET` is empty.
+- Throws immediately if `AZMIGRATION_ACCESS_TOKEN` is empty after the authenticated `azure/login` step requests an Azure SQL token.
 - Generates a database name by appending the first eight characters of a GUID to `dbatoolsci_azmigration_`.
 - Creates the source database on the SQL Server container and creates `dbo.MigrationProof` with deterministic rows.
-- Builds the destination connection string for `dbatoolstestmigration.database.windows.net` in memory with `Authentication=Active Directory Service Principal`, `User Id=$env:CLIENTID`, and `Password=$env:CLIENTSECRET`; never writes it to output. The dedicated logical server is hosted in a subscription where DacFx can create and drop databases through T-SQL.
+- Builds a credential-free destination connection string for `dbatools.database.windows.net` by default, or the test-only `DBATOOLS_AZMIGRATION_SERVER` override, and passes the short-lived token separately. The existing logical server is hosted in a subscription where DacFx can create and drop databases through T-SQL.
 - Uses a unique `/tmp` directory for BACPAC artifacts.
-- Invokes `Start-DbaAzMigration -Source localhost -Destination dbatoolstestmigration.database.windows.net -Database $databaseName -Path $testPath -Confirm:$false -EnableException` using the established source and destination connection objects/credentials supported by the workflow.
+- Invokes `Start-DbaAzMigration` for `localhost` and the resolved existing Azure SQL server with `DestinationAccessToken`, the selected database, unique package path, `Confirm:$false`, and the required exception mode.
 - Asserts `Status` is `Successful`, `Type` is `Database`, the `dbatools.MigrationObject` type name is present, and `BacpacPath` no longer exists.
 - Connects independently to the created Azure database and asserts exact schema/data values.
-- Covers all-database selection/exclusion, verbose credential redaction, safe skip, staged `Force`, retention, deterministic export failure, friendly continuation, exception-mode stop, induced import failure handling, direct failed-Publish zero-output behavior, and four deterministic breakpoint-barrier races: absent-final appearance, forced replacement before promotion, replacement immediately before the forced rename, and staging replacement immediately before failure cleanup.
+- Covers all-database selection/exclusion, verbose credential redaction, safe skip, staged `Force`, retention, deterministic export failure, friendly continuation, exception-mode stop, induced import failure handling, direct failed-Publish zero-output behavior, and four deterministic lifecycle-callback races: absent-final appearance, forced replacement before promotion, replacement immediately before the forced rename, and staging replacement immediately before failure cleanup.
 - In `finally`, removes every exact run-owned Azure database, source database, staging database, and local directory, then verifies cleanup.
 
 Do not add `-Skip`, `Set-ItResult -Skipped`, or conditional success. Missing secrets and an unreachable Azure boundary must fail this secret-bearing workflow.
@@ -308,32 +322,32 @@ git commit -m "Start-DbaAzMigration - Cover real Azure SQL migration (do Start-D
 
 ---
 
-## Task 4: Provision an isolated Azure boundary and verify locally
+## Task 4: Authorize and verify the existing Azure boundary
 
 **Files:**
 
 - No tracked product file is created solely for provisioning.
-- Temporary credentials and names stay in process memory or ignored temporary files under the worktree and are removed afterward.
+- Access tokens and names stay in process memory or ignored temporary files under the worktree and are removed afterward.
 
 - [ ] **Step 1: Resolve exact Azure targets**
 
-Use `az account show` and `az group show` to record the exact authorized subscription and resource group. Prefer an available subscription where the `block-tsql-crud` feature is not registered, because DacFx BACPAC import creates and drops databases through T-SQL. Generate a globally unique lowercase server name and a cryptographically random SQL administrator password without printing the password.
+Use `az account show`, `az group show`, and `az sql server show` to record the exact authorized subscription, `dbatools` resource group, and existing `dbatools` logical server. Confirm the subscription permits the T-SQL database create/drop operations required by DacFx.
 
-- [ ] **Step 2: Create the isolated logical server**
+- [ ] **Step 2: Authorize the approved Microsoft Entra identities**
 
-Use `az sql server create` in the resolved test resource group, then add one firewall rule scoped exactly to the caller's already resolved public IP. Do not alter the shared `dbatoolstest` server.
+Retain the explicitly approved `clemaire@gmail.com` logical-server Entra administrator and create the `github-actions-dbatools-sp` contained `master` user with `dbmanager`. For local verification only, add a temporary firewall rule scoped exactly to the resolved caller IP and remove it afterward.
 
 - [ ] **Step 3: Run end-to-end migration**
 
-Create a small local SQL source database and proof table. Create an `ImportDacOption` with a low-cost Azure edition/service objective appropriate for the test. Invoke `Start-DbaAzMigration` using SQL authentication to the isolated destination. Independently connect to the new Azure database and verify exact rows.
+Create a small local SQL source database and proof table. Create an `ImportDacOption` for the low-cost Basic service objective. Invoke `Start-DbaAzMigration` with a short-lived Azure SQL access token against the existing destination. Independently connect to the new Azure database and verify exact rows.
 
 - [ ] **Step 4: Verify skip, force, default cleanup, and retention**
 
 Run the same database migration again without `Force`, then with `Force`, and once with `KeepBacpac`. Assert status, destination contents, and filesystem state after every call. Delete the retained BACPAC explicitly.
 
-- [ ] **Step 5: Remove the isolated server in a guaranteed cleanup path**
+- [ ] **Step 5: Remove run-owned resources in a guaranteed cleanup path**
 
-Delete the exact resolved logical server with Azure CLI. Verify it no longer exists. Remove local source databases and temporary package directories. Never issue a broad resource-group delete.
+Delete every exact run-owned Azure SQL database, local source database, temporary package directory, and temporary firewall rule. Verify the existing logical server, approved Entra administrator, and contained CI user remain available. Never issue a broad server or resource-group delete.
 
 - [ ] **Step 6: Commit any boundary-driven fixes**
 
@@ -395,7 +409,7 @@ Run the repository code-review workflow against `origin/development`. Fix every 
 
 - [ ] **Step 6: Confirm Azure cleanup**
 
-Query Azure CLI for the exact isolated server name and confirm it is absent. Confirm no temporary BACPAC or plaintext credential artifact remains locally.
+Query Azure CLI for the existing server and confirm only `master` remains after the run. Confirm no temporary firewall, BACPAC, or plaintext credential artifact remains locally.
 
 - [ ] **Step 7: Record the final implementation commit if needed**
 

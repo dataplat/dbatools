@@ -1,7 +1,8 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Start-DbaAzMigration"
+    $CommandName = "Start-DbaAzMigration",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
 BeforeDiscovery {
@@ -371,7 +372,15 @@ FROM Numbers;
         It "stops after the first export failure in exception mode" {
             $splatExceptionMigration = $script:splatBaseMigration.Clone()
             $splatExceptionMigration.Database = @($exceptionFailureDatabaseName, $exceptionNotRunDatabaseName)
-            { Start-DbaAzMigration @splatExceptionMigration } | Should -Throw "*BACPAC export failed*"
+            $exceptionOutput = New-Object System.Collections.ArrayList
+            $exceptionRecord = $null
+            try {
+                Start-DbaAzMigration @splatExceptionMigration | ForEach-Object { $null = $exceptionOutput.Add($PSItem) }
+            } catch {
+                $exceptionRecord = $PSItem
+            }
+            $exceptionRecord.Exception.Message | Should -BeLike "*BACPAC export failed*"
+            $exceptionOutput | Should -BeNullOrEmpty
             $script:destinationMaster = & $script:connectDestinationDatabase "master"
             $splatGetExceptionDestination = @{
                 SqlInstance     = $script:destinationMaster
@@ -449,7 +458,12 @@ FROM Numbers;
         AfterEach {
             if ($script:raceJob) {
                 Stop-Job -Job $script:raceJob -ErrorAction SilentlyContinue
-                Remove-Job -Job $script:raceJob -Force -ErrorAction SilentlyContinue
+                $splatRemoveRaceJob = @{
+                    Job         = $script:raceJob
+                    Force       = $true
+                    ErrorAction = "SilentlyContinue"
+                }
+                Remove-Job @splatRemoveRaceJob
                 $script:raceJob = $null
             }
             if ($script:verificationServer) {
@@ -732,8 +746,7 @@ FROM Numbers;
             Remove-Job -Job $script:raceJob -Force
             $script:raceJob = $null
             $raceResult = @($script:raceJobOutput | Where-Object { $PSItem.PSObject.Properties["Name"] -and $PSItem.Name -eq $raceCase.DatabaseName })
-            $raceResult.Count | Should -Be 1
-            $raceResult.Status | Should -Be "Failed"
+            $raceResult | Should -BeNullOrEmpty
             $raceFailureMessage = if ($raceFailure -is [System.Management.Automation.ErrorRecord]) {
                 $raceFailure.Exception.Message
             } elseif ($raceFailure) {
@@ -743,7 +756,7 @@ FROM Numbers;
             }
             $raceFailureMessage | Should -BeLike $raceCase.ExpectedFailure
             if ($raceCase.PreservesStagingReplacement) {
-                $raceResult.Notes | Should -BeLike "*replacement was preserved*"
+                $raceFailureMessage | Should -BeLike "*replacement was preserved*"
             }
 
             $script:verificationServer = & $script:connectDestinationDatabase $raceCase.DatabaseName

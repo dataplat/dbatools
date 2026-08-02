@@ -42,7 +42,7 @@ The default paths in `Export-DbaDacPackage` and `Publish-DbaDacPackage` use the 
 
 If DacFx is unavailable, normal dbatools module loading or the delegated DAC commands will produce the existing actionable dependency error. The migration command will not attempt an interactive installation during an automation workflow.
 
-Azure CLI is used only by the local integration-test setup to create and later remove an isolated Azure SQL logical server in a subscription where T-SQL resource CRUD is not blocked. It is not a product dependency.
+Azure CLI is used only by integration infrastructure to authenticate the existing GitHub Actions identity and obtain an Azure SQL access token. It is not a product dependency and the public command never shells out to it.
 
 ## Public Interface
 
@@ -54,6 +54,7 @@ The command uses `SupportsShouldProcess` with medium confirm impact and exposes:
 | `Destination` | `DbaInstanceParameter` | Required Azure SQL logical server or reusable connected server object. |
 | `SourceSqlCredential` | `PSCredential` | Optional source credential passed to `Connect-DbaInstance`. |
 | `DestinationSqlCredential` | `PSCredential` | Optional destination credential passed to `Connect-DbaInstance`. SQL authentication and connection-string-based Microsoft Entra service-principal authentication remain available through existing dbatools connection behavior. |
+| `DestinationAccessToken` | `PSObject` | Optional Azure SQL access token. Accepts the established dbatools string, `SecureString`, token-object, and renewable token shapes and is passed to both SMO and DacFx without adding an Azure module dependency. It cannot be combined with `DestinationSqlCredential`. |
 | `Database` | `object[]` | Optional source database allow-list. When omitted, all accessible user databases are selected. |
 | `ExcludeDatabase` | `object[]` | Optional source database deny-list applied after `Database`. |
 | `Path` | `string` | Directory for generated BACPAC files. Defaults to `Path.DbatoolsTemp`. |
@@ -148,12 +149,12 @@ Mocks may supplement validation tests but do not count as behavioral coverage.
 
 ### Real Azure SQL Boundary
 
-The secret-bearing Linux GitHub Actions integration workflow will execute the real command against:
+The secret-bearing Linux GitHub Actions integration workflow executes the real command against:
 
 - A separately running SQL Server container as the source.
-- `dbatoolstestmigration.database.windows.net` as the dedicated Azure SQL destination in a subscription where T-SQL resource CRUD is not blocked.
-- Existing `TENANTID`, `CLIENTID`, and `CLIENTSECRET` encrypted secrets for Microsoft Entra service-principal authentication.
-- The existing `dbatools-test` service principal as the dedicated logical server's Microsoft Entra administrator, so no SQL password is stored in the repository or workflow.
+- The existing `dbatools.database.windows.net` logical server by default, overridable through `DBATOOLS_AZMIGRATION_SERVER`, in a subscription where T-SQL resource CRUD is not blocked.
+- The existing `VMSS_AZURE_CREDENTIALS` GitHub secret and `azure/login`; the workflow obtains a short-lived Azure SQL token with Azure CLI and passes it through `DestinationAccessToken`.
+- The existing `github-actions-dbatools-sp` contained user in `master`, granted `dbmanager`. The logical server retains the approved Microsoft Entra administrator `clemaire@gmail.com`; no SQL password is stored in the repository or workflow.
 
 The test will:
 
@@ -165,7 +166,7 @@ The test will:
 6. Verify the schema and row values.
 7. Verify the generated local BACPAC was deleted by default.
 8. Induce export and import failures, verify friendly continuation and exception stop, directly verify that a failed `Publish-DbaDacPackage` import emits no success object, and verify that no run-owned staging database remains.
-9. Use a PowerShell line breakpoint as a deterministic barrier immediately before promotion, rename a pre-created empty racer to an initially absent final name, and verify that migration neither modifies nor removes it.
+9. Inject a module-scoped lifecycle callback as a deterministic barrier immediately before promotion, rename a pre-created empty racer to an initially absent final name, and verify that migration neither modifies nor removes it.
 10. At the same barrier, drop the original final and rename a pre-created replacement to the final name during forced migration; verify that the identity change is detected and the replacement is untouched.
 11. Use a barrier immediately before the forced rename to reproduce the narrower check-to-rename race; verify that an accidentally renamed replacement is restored to the final name and staging is not promoted.
 12. Use a second barrier immediately before failed-staging cleanup, replace the owned staging database with an empty database of a different identity, and verify that the replacement is preserved.
@@ -175,7 +176,7 @@ The positive test is not a skipped placeholder. Missing credentials or an unavai
 
 ### Local Azure Verification
 
-For local verification, Azure CLI will create an isolated logical server in an authorized test resource group and a subscription where `block-tsql-crud` is not registered, with a random administrator password and a firewall rule limited to the caller's public IP. The test will migrate one small database, verify it independently, and then remove the entire logical server in cleanup. No persistent password or database is retained.
+Local verification reuses the approved `dbatools` logical server and Microsoft Entra access-token path. A temporary firewall rule may be scoped to the caller's resolved public IP for the duration of the run, then removed. Every exact run-owned database and local artifact is removed in cleanup; the shared logical server, approved Entra administrator, and contained CI user remain in place.
 
 ### Regression and Compatibility Verification
 
