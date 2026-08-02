@@ -182,7 +182,7 @@ FROM Numbers;
             $null = Invoke-DbaQuery @splatRaceProof
         }
 
-        $importOptions = New-DbaDacOption -Type "Bacpac" -Action "Publish"
+        $importOptions = New-DbaDacOption -Type Bacpac -Action Publish
         $importOptions.DatabaseSpecification.Edition = "Basic"
         $importOptions.DatabaseSpecification.ServiceObjective = "Basic"
         $importOptions.DatabaseSpecification.MaximumSize = 1
@@ -356,7 +356,7 @@ FROM Numbers;
         }
 
         It "reports an induced BACPAC import failure" {
-            $invalidImportOptions = New-DbaDacOption -Type "Bacpac" -Action "Publish"
+            $invalidImportOptions = New-DbaDacOption -Type Bacpac -Action Publish
             $invalidImportOptions.DatabaseSpecification.Edition = "Basic"
             $invalidImportOptions.DatabaseSpecification.ServiceObjective = "DefinitelyInvalid"
             $invalidImportOptions.DatabaseSpecification.MaximumSize = 1
@@ -379,7 +379,7 @@ FROM Numbers;
         }
 
         It "emits no success object when a direct BACPAC publish fails" {
-            $invalidImportOptions = New-DbaDacOption -Type "Bacpac" -Action "Publish"
+            $invalidImportOptions = New-DbaDacOption -Type Bacpac -Action Publish
             $invalidImportOptions.DatabaseSpecification.Edition = "Basic"
             $invalidImportOptions.DatabaseSpecification.ServiceObjective = "DefinitelyInvalid"
             $invalidImportOptions.DatabaseSpecification.MaximumSize = 1
@@ -486,7 +486,7 @@ FROM Numbers;
                     }
                     $null = Set-PSBreakpoint @splatCleanupBreakpoint
                 }
-                $jobImportOptions = New-DbaDacOption -Type "Bacpac" -Action "Publish"
+                $jobImportOptions = New-DbaDacOption -Type Bacpac -Action Publish
                 $jobImportOptions.DatabaseSpecification.Edition = "Basic"
                 $jobImportOptions.DatabaseSpecification.ServiceObjective = "Basic"
                 $jobImportOptions.DatabaseSpecification.MaximumSize = 1
