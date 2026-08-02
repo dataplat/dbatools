@@ -203,6 +203,19 @@ function Start-DbaAzMigration {
             if ($DestinationSqlCredential) {
                 $splatDestination.SqlCredential = $DestinationSqlCredential
             } elseif ($DestinationAccessToken) {
+                if ($Destination.IsConnectionString) {
+                    $tokenDestinationBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
+                    $tokenDestinationBuilder.ConnectionString = [string]$Destination.InputObject
+                    $tokenDestinationServer = if ($tokenDestinationBuilder.ContainsKey("Data Source")) {
+                        $tokenDestinationBuilder["Data Source"]
+                    } elseif ($tokenDestinationBuilder.ContainsKey("Server")) {
+                        $tokenDestinationBuilder["Server"]
+                    }
+                    if (-not $tokenDestinationServer) {
+                        throw "The destination connection string must contain Server or Data Source when DestinationAccessToken is used."
+                    }
+                    $splatDestination.SqlInstance = $tokenDestinationServer
+                }
                 $splatDestination.AccessToken = $DestinationAccessToken
             }
             $destinationServer = Connect-DbaInstance @splatDestination
@@ -244,6 +257,10 @@ function Start-DbaAzMigration {
             $null = $connectionBuilder.Remove("Trusted_Connection")
             $connectionBuilder["User ID"] = $DestinationSqlCredential.UserName
             $connectionBuilder["Password"] = $DestinationSqlCredential.GetNetworkCredential().Password
+        } elseif ($DestinationAccessToken) {
+            foreach ($authenticationKey in @("Integrated Security", "Trusted_Connection", "User ID", "Password", "Pwd", "Authentication")) {
+                $null = $connectionBuilder.Remove($authenticationKey)
+            }
         }
         $destinationPublishConnectionString = $connectionBuilder.ConnectionString
 
