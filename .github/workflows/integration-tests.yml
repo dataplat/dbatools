@@ -130,6 +130,7 @@ jobs:
           }
           Import-Module Pester -RequiredVersion 6.0.0 -Force
           Import-Module ./dbatools.psd1 -Force
+          $TestConfig = & (Get-Module dbatools) { Get-TestConfig }
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
           $testPaths = @(
