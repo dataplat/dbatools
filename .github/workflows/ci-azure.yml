@@ -84,12 +84,22 @@ jobs:
         env:
           CI_ACTOR: ${{ inputs.pool_user || github.actor }}
           CI_EVENT: ${{ github.event_name }}
+          CI_POOL_USER: ${{ inputs.pool_user }}
           CI_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || inputs.message }}
         shell: bash
         run: |
           set -euo pipefail
           run_ci=true
-          if [ "$CI_ACTOR" = "potatoqualitee" ] && [ "$CI_EVENT" != "pull_request" ]; then
+          # The marker exists so a maintainer's ordinary feature-branch push does not
+          # acquire runners. Those pushes only ever reach this workflow as a controller
+          # dispatch, which sets pool_user -- so that is the only path still checked.
+          #
+          # The old condition was "not a pull_request", which also caught push. But push
+          # here only fires on development, so every merge to development was silently
+          # skipped: authorize green, test skipped, run green in ten seconds. Merges are
+          # the one thing that must always run the whole suite. A hand-started dispatch
+          # (no pool_user) is a deliberate act and runs too.
+          if [ "$CI_ACTOR" = "potatoqualitee" ] && [ "$CI_EVENT" = "workflow_dispatch" ] && [ -n "$CI_POOL_USER" ]; then
             message_lower=$(printf '%s' "$CI_MESSAGE" | tr '[:upper:]' '[:lower:]')
             if [[ "$message_lower" != *"[do ci]"* ]]; then
               run_ci=false

@@ -614,6 +614,17 @@ Describe "Runner workflow policy wiring" {
         $script:CiWorkflow | Should -Match "\[do ci\]"
     }
 
+    It "scopes that gate to controller dispatches so every merge to development runs" {
+        # push only fires on development here, so the earlier "not a pull_request" form
+        # skipped the entire suite on every merge -- authorize green, test skipped, run
+        # green in ten seconds. The marker is only meant to stop an ordinary feature-branch
+        # push, and those arrive as a controller dispatch carrying pool_user.
+        $script:CiWorkflow | Should -Match "\`$CI_EVENT`" = `"workflow_dispatch`""
+        $script:CiWorkflow | Should -Match "-n `"\`$CI_POOL_USER`""
+        $script:CiWorkflow | Should -Not -Match "\`$CI_EVENT`" != `"pull_request`""
+        $script:CiWorkflow | Should -Match "CI_POOL_USER: \S+\{\{ inputs\.pool_user \}\}"
+    }
+
     It "defines all four pool labels" {
         foreach ($pool in @("potatoqualitee", "andreasjordan", "niphlod", "community")) {
             $script:CiWorkflow | Should -Match ([regex]::Escape("'$pool'"))
