@@ -108,6 +108,23 @@ We 💘 OTBS with this project. Contributors will find an easier experience with
 
 **We do have a Pester test that will validate the format of the file in any Pull Request.**
 
+## GitHub Actions Workflows ⚙️
+
+If your pull request touches anything under `.github/workflows`, check it locally before you push:
+
+```powershell
+./.github/scripts/Test-ActionlintWorkflows.ps1
+```
+
+This downloads [actionlint](https://github.com/rhysd/actionlint) for your platform (verifying it against a pinned SHA256 checksum, then caching it under your temp directory) and lints every workflow file. The same script runs in the **GitHub Actions Security** workflow, alongside `Test-GitHubActionsPins.ps1`, which enforces that every `uses:` reference is pinned to a full 40-character commit SHA.
+
+A few notes:
+
+- Custom self-hosted runner labels live in `.github/actionlint.yaml`. Add new ones there or actionlint will flag the `runs-on:` that uses them.
+- If actionlint reports something that is intentional in our workflows, add it to `$ignoredPatterns` in the script **with a comment explaining why**, rather than reshaping the workflow to satisfy the linter.
+- To bump actionlint, update `$Version` and the matching `$knownChecksums` entry together. The checksums come from that release's `checksums.txt`.
+- Already have actionlint installed? Skip the download with `-ToolPath`.
+
 ## Pester 🧪
 
 Our project uses [Pester](https://pester.dev) for our testing framework. Appveyor runs a matrix of environments that test against various versions of SQL Server. We do have some commands that cannot be tested easily but the majority we use Pester to ensure the code behaves properly. Appveyor runs these tests for each-and-every commit in our repository.
