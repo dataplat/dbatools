@@ -51,7 +51,7 @@ $ciMarker = "[do ci]"
 $communityPoolSize = 5
 $maintainerPoolSize = 10
 # Mirrors WARM_FLOOR in runner-reconcile.yml -- kept aligned by a test in
-# tests/runner-policy.Tests.ps1. Held only for lanes that are hot but have no live run.
+# tests/runner-policy.Tests.ps1. Held only for the community lane while it is hot without a live run.
 $warmFloor = 3
 $orphanGraceMinutes = 15
 $utcNow = (Get-Date).ToUniversalTime()
