@@ -52,6 +52,48 @@ Describe $CommandName -Tag UnitTests {
         It "Accepts established access token shapes" {
             (Get-Command Publish-DbaDacPackage).Parameters["AccessToken"].ParameterType | Should -Be ([PSObject])
         }
+
+        It "Constructs DacServices with the exact universal authentication provider overload" {
+            InModuleScope dbatools {
+                if (-not ("DbaTestRenewableAccessToken" -as [type])) {
+                    $renewableTokenSource = @"
+public sealed class DbaTestRenewableAccessToken
+{
+    public int CallCount { get; private set; }
+
+    public string GetAccessToken()
+    {
+        CallCount++;
+        return "renewed-token-" + CallCount;
+    }
+}
+"@
+                    Add-Type -TypeDefinition $renewableTokenSource -ErrorAction Stop
+                }
+                $renewableToken = New-Object DbaTestRenewableAccessToken
+                $services = New-DbaDacService -ConnectionString "Server=unused.database.windows.net;Database=master;Encrypt=True" -AccessToken $renewableToken
+                $longTokenServices = New-DbaDacService -ConnectionString "Server=unused.database.windows.net;Database=master;Encrypt=True" -AccessToken ("x" * 129)
+                $providerType = "Dataplat.Dbatools.Utility.DacAccessTokenProvider" -as [type]
+                $provider = New-Object $providerType -ArgumentList $renewableToken, $true
+                $secureToken = New-Object System.Security.SecureString
+                foreach ($secureTokenCharacter in "secure-proof".ToCharArray()) {
+                    $secureToken.AppendChar($secureTokenCharacter)
+                }
+                $secureToken.MakeReadOnly()
+                $secureTokenProvider = New-Object $providerType -ArgumentList $secureToken, $false
+                $constructorTypes = [type[]]@([string], [Microsoft.SqlServer.Dac.IUniversalAuthProvider])
+                $universalAuthConstructor = [Microsoft.SqlServer.Dac.DacServices].GetConstructor($constructorTypes)
+
+                $services | Should -BeOfType ([Microsoft.SqlServer.Dac.DacServices])
+                $longTokenServices | Should -BeOfType ([Microsoft.SqlServer.Dac.DacServices])
+                $universalAuthConstructor.GetParameters()[1].ParameterType | Should -Be ([Microsoft.SqlServer.Dac.IUniversalAuthProvider])
+                $renewableToken.CallCount | Should -Be 0
+                $provider -is [Microsoft.SqlServer.Dac.IUniversalAuthProvider] | Should -BeTrue
+                $provider.GetValidAccessToken() | Should -Be "renewed-token-1"
+                $provider.GetValidAccessToken() | Should -Be "renewed-token-2"
+                $secureTokenProvider.GetValidAccessToken() | Should -Be "secure-proof"
+            }
+        }
     }
 }
 

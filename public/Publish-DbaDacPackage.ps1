@@ -179,28 +179,7 @@ function Publish-DbaDacPackage {
             return
         }
 
-        $connectionAccessToken = $null
-        $dacAccessToken = $null
-        if ($AccessToken) {
-            $connectionAccessToken = $AccessToken
-            $accessTokenValue = if ($AccessToken.PSObject.Properties["Token"]) {
-                $AccessToken.Token
-            } else {
-                $AccessToken
-            }
-            if ($accessTokenValue -is [System.Security.SecureString]) {
-                $dacAccessToken = $accessTokenValue
-            } elseif ($accessTokenValue -is [string]) {
-                $dacAccessToken = New-Object System.Security.SecureString
-                foreach ($accessTokenCharacter in $accessTokenValue.ToCharArray()) {
-                    $dacAccessToken.AppendChar($accessTokenCharacter)
-                }
-                $dacAccessToken.MakeReadOnly()
-            } else {
-                Stop-Function -Message "AccessToken must be a string, SecureString, or object with a Token property." -EnableException $EnableException
-                return
-            }
-        }
+        $connectionAccessToken = $AccessToken
 
         if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
             Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
@@ -369,8 +348,8 @@ function Publish-DbaDacPackage {
 
                 #Create services object
                 try {
-                    if ($dacAccessToken) {
-                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices -ArgumentList $connString, $dacAccessToken
+                    if ($AccessToken) {
+                        $dacServices = New-DbaDacService -ConnectionString $connString -AccessToken $AccessToken
                     } else {
                         $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
                     }
