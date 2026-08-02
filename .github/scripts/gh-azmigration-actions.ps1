@@ -1,8 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
     $ModuleName  = "dbatools",
-    $CommandName = "Start-DbaAzMigration",
-    $PSDefaultParameterValues = $TestConfig.Defaults
+    $CommandName = "Start-DbaAzMigration"
 )
 
 BeforeDiscovery {
