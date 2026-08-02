@@ -74,6 +74,13 @@ $ErrorActionPreference = "Stop"
 $keyVaultSecretsUserRoleId = "4633458b-17de-408a-b874-0445c86b69e6"
 $keyVaultSecretsOfficerRoleId = "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
 $operatorRoleId = "c1ff6fe2-a25f-415b-bfb8-852a9c81cbfc"
+# Built-in role: Cost Management Reader. dbatools-ci-operator carries no cost actions, so
+# without this the weekly spend report gets a 403 and posts "unavailable" forever. The
+# GitHub Actions identity never needed it declared here because it happens to hold the
+# same role at subscription scope; the controller identity holds nothing but the two
+# below, so the grant has to be explicit -- and resource-group scope is enough, because
+# the query itself is scoped to the resource group.
+$costManagementReaderRoleId = "72fafb9e-0641-4937-9268-a91bfd8191a3"
 $rgScope = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup"
 
 Write-Host "== storage account $StorageAccount" -ForegroundColor Cyan
@@ -223,6 +230,13 @@ $assignments = @(
         Role      = $keyVaultSecretsUserRoleId
         Scope     = $vaultScope
         Label     = "controller identity: Key Vault Secrets User on $KeyVaultName"
+    },
+    @{
+        Principal = $principalId
+        Type      = "ServicePrincipal"
+        Role      = $costManagementReaderRoleId
+        Scope     = $rgScope
+        Label     = "controller identity: Cost Management Reader on $ResourceGroup"
     }
 )
 
@@ -312,6 +326,18 @@ if ($GitHubAppId) {
 }
 if ($GitHubInstallationId) {
     $settings += "GITHUB_INSTALLATION_ID=$GitHubInstallationId"
+}
+
+# Until the GitHub App exists there is nothing for a reconcile to authenticate with, and
+# the timer is the one trigger that fires without being asked: every five minutes it
+# would enqueue a pass that fails initialization, burns its five dequeues and lands in
+# the poison queue. Hold it off until the credentials are here, and release it once they
+# are, so re-running this script always leaves the tick in the state the app can support.
+if ($GitHubAppId -and $GitHubInstallationId) {
+    $settings += "AzureWebJobs.SafetyTick.Disabled=0"
+} else {
+    Write-Warning "no GitHub App yet -- disabling the safety tick so it cannot poison the queue"
+    $settings += "AzureWebJobs.SafetyTick.Disabled=1"
 }
 
 # Key Vault references are wired only once the secrets exist. Pointing a reference at a

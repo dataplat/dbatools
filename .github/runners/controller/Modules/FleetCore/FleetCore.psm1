@@ -355,6 +355,34 @@ function Invoke-ArmJson {
     $response.Content | ConvertFrom-Json -Depth 20
 }
 
+function Invoke-ArmList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [Parameter(Mandatory)]
+        [string]$Operation
+    )
+
+    # ARM list operations paginate at the service's discretion, and reading only the
+    # first page silently shrinks the fleet inventory -- VMs past the boundary would
+    # never be counted or reaped. The az CLI followed nextLink for us; raw REST does
+    # not, so every list call in this module has to come through here.
+    $next = $Path
+    while ($next) {
+        $splatPage = @{
+            Path      = $next
+            Operation = $Operation
+        }
+        $page = Invoke-ArmJson @splatPage
+        if (-not $page) {
+            break
+        }
+        $page.value
+        $next = [string]$page.nextLink
+    }
+}
+
 function Get-ResponseHeader {
     [CmdletBinding()]
     param(
@@ -498,9 +526,9 @@ function Get-FleetState {
         Path      = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Compute/virtualMachines?api-version=2024-07-01"
         Operation = "list Azure runner VMs"
     }
-    $vmResponse = Invoke-ArmJson @splatVms
+    $vmResponse = @(Invoke-ArmList @splatVms)
     $vms = @(
-        $vmResponse.value |
+        $vmResponse |
             Where-Object { [string]$PSItem.name -like "$($script:Fleet.Vmss)_*" } |
             ForEach-Object {
                 [pscustomobject]@{
@@ -762,17 +790,91 @@ function Get-PoolJobDemand {
     Get-PoolJobDemandFromRuns @splatDemand
 }
 
+function Confirm-DirectTrigger {
+    [CmdletBinding()]
+    param(
+        [AllowEmptyString()]
+        [string]$Actor = "",
+        [AllowEmptyString()]
+        [string]$Sha = "",
+        [AllowEmptyString()]
+        [string]$Ref = ""
+    )
+
+    $empty = [pscustomobject]@{ Actor = ""; Message = ""; Sha = ""; Ref = "" }
+    if (-not $Actor -or -not $Sha -or -not $Ref) {
+        return $empty
+    }
+
+    # A webhook body is a hint about where to look, never the fact itself. The HMAC
+    # proves a delivery is authentic but not that it is current, so a captured delivery
+    # replayed later would otherwise heat a pool or dispatch an old commit. Asking
+    # GitHub for the ref's head settles both: a replay names a SHA that is no longer
+    # the head and gets dropped, and the sha, message and actor handed downstream come
+    # from the API response rather than from the request body.
+    $branch = $Ref -replace "^refs/heads/", ""
+    # Conservative because this value reaches a REST path. Real branch names here are
+    # well inside it, and anything stranger is dropped rather than escaped. The explicit
+    # ".." check is the point of the whole test: a plain character class still admits
+    # refs/heads/../../etc, which .NET collapses into a request to a different endpoint.
+    if ($branch -notmatch "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$" -or $branch -match "\.\.") {
+        Write-Warning "Trigger ref $Ref is not a plain branch name; converging from repository activity instead"
+        return $empty
+    }
+    $splatHead = @{
+        Path      = "repos/$($script:Fleet.Repo)/commits/$branch"
+        Operation = "corroborate the trigger commit on $branch"
+    }
+    try {
+        $head = Invoke-GhJson @splatHead
+    } catch {
+        Write-Warning "Could not corroborate the trigger on $branch; converging from repository activity instead. $($PSItem.Exception.Message)"
+        return $empty
+    }
+    if ([string]$head.sha -ne $Sha) {
+        Write-Host "trigger hint for $branch is stale (head is $([string]$head.sha)); converging from repository activity instead"
+        return $empty
+    }
+    $headAuthor = [string]$head.author.login
+    if ($headAuthor -and $headAuthor -ne $Actor) {
+        Write-Host "trigger hint actor $Actor does not match commit author $headAuthor; using the commit author"
+    }
+    if (-not $headAuthor) {
+        $headAuthor = $Actor
+    }
+    [pscustomobject]@{
+        Actor   = $headAuthor
+        Message = [string]$head.commit.message
+        Sha     = [string]$head.sha
+        Ref     = $Ref
+    }
+}
+
 function Get-RunnerDemand {
     param(
         [AllowEmptyString()]
         [string]$DirectTriggerActor = "",
         [AllowEmptyString()]
-        [string]$DirectTriggerMessage = "",
-        [AllowEmptyString()]
         [string]$DirectTriggerSha = "",
         [AllowEmptyString()]
         [string]$DirectTriggerRef = ""
     )
+
+    # No DirectTriggerMessage parameter on purpose: the marker test downstream decides
+    # whether CI runs, so the message it reads has to be the one GitHub holds, not the
+    # one the caller was handed.
+    $DirectTriggerMessage = ""
+
+    $splatConfirm = @{
+        Actor = $DirectTriggerActor
+        Sha   = $DirectTriggerSha
+        Ref   = $DirectTriggerRef
+    }
+    $trigger = Confirm-DirectTrigger @splatConfirm
+    $DirectTriggerActor = $trigger.Actor
+    $DirectTriggerMessage = $trigger.Message
+    $DirectTriggerSha = $trigger.Sha
+    $DirectTriggerRef = $trigger.Ref
 
     $splatEvents = @{
         Path      = "repos/$($script:Fleet.Repo)/events?per_page=100"
@@ -991,14 +1093,20 @@ function Register-PoolVms {
     $runCommandDefinition = ${function:Invoke-VmRunCommand}.ToString()
     $results = $tasks | ForEach-Object -Parallel {
         ${function:Invoke-VmRunCommand} = $using:runCommandDefinition
+        # Bind the task to its own name before the try. Inside catch, $PSItem is the
+        # ErrorRecord, not the pipeline item, so reading $PSItem.VmName there yields
+        # $null -- which silently strips the identity off every failed registration
+        # and, on SPENT-VM, hands Remove-FleetVm a null VM. The CLI original had no
+        # try/catch (it read $LASTEXITCODE) and so never hit this.
+        $task = $PSItem
         $parameters = @(
-            @{ name = "Token"; value = $PSItem.Token },
-            @{ name = "RunnerName"; value = $PSItem.VmName },
-            @{ name = "Labels"; value = $PSItem.Labels }
+            @{ name = "Token"; value = $task.Token },
+            @{ name = "RunnerName"; value = $task.VmName },
+            @{ name = "Labels"; value = $task.Labels }
         )
         $splatRunCommand = @{
             ArmToken     = $using:armToken
-            VmResourceId = $PSItem.Vm.id
+            VmResourceId = $task.Vm.id
             ScriptLines  = $using:bootstrapLines
             Parameters   = $parameters
         }
@@ -1006,20 +1114,20 @@ function Register-PoolVms {
         foreach ($attempt in 1..3) {
             try {
                 $outputText = Invoke-VmRunCommand @splatRunCommand
-                $result = [pscustomobject]@{ VmName = $PSItem.VmName; Vm = $PSItem.Vm; Succeeded = $true; Output = $outputText }
+                $result = [pscustomobject]@{ VmName = $task.VmName; Vm = $task.Vm; Succeeded = $true; Output = $outputText }
                 break
             } catch {
                 $outputText = $PSItem.Exception.Message
                 # A bootstrap that reports SPENT-VM has done its job even if the
                 # transport around it stumbled; the caller still needs to see it.
                 if ($outputText -match "SPENT-VM") {
-                    $result = [pscustomobject]@{ VmName = $PSItem.VmName; Vm = $PSItem.Vm; Succeeded = $true; Output = $outputText }
+                    $result = [pscustomobject]@{ VmName = $task.VmName; Vm = $task.Vm; Succeeded = $true; Output = $outputText }
                     break
                 }
                 if ($attempt -lt 3) {
                     Start-Sleep -Seconds (3 * $attempt)
                 } else {
-                    $result = [pscustomobject]@{ VmName = $PSItem.VmName; Vm = $PSItem.Vm; Succeeded = $false; Output = $outputText }
+                    $result = [pscustomobject]@{ VmName = $task.VmName; Vm = $task.Vm; Succeeded = $false; Output = $outputText }
                 }
             }
         }
@@ -1086,12 +1194,18 @@ function Invoke-FleetReconcile {
         Write-Host "DRY_RUN is on: decisions are logged, nothing is mutated"
     }
 
+    if ($DirectTriggerActor -or $DirectTriggerSha) {
+        # Logged as the hint it is. The message is deliberately not passed on; the
+        # reconcile re-reads it from GitHub so a stale or replayed delivery cannot
+        # carry its own marker text into the dispatch decision.
+        Write-Host "trigger hint: actor=$DirectTriggerActor ref=$DirectTriggerRef sha=$DirectTriggerSha message=$($DirectTriggerMessage -replace "`r?`n", " ")"
+    }
+
     try {
         $splatDemand = @{
-            DirectTriggerActor   = $DirectTriggerActor
-            DirectTriggerMessage = $DirectTriggerMessage
-            DirectTriggerSha     = $DirectTriggerSha
-            DirectTriggerRef     = $DirectTriggerRef
+            DirectTriggerActor = $DirectTriggerActor
+            DirectTriggerSha   = $DirectTriggerSha
+            DirectTriggerRef   = $DirectTriggerRef
         }
         $demand = Get-RunnerDemand @splatDemand
         $orphanSnapshot = Get-OrphanedNetworking

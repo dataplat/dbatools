@@ -252,3 +252,98 @@ Describe "webhook event filtering" {
         Get-FleetNudge @splatIssue | Should -BeNullOrEmpty
     }
 }
+
+Describe "trigger corroboration" {
+    BeforeAll {
+        InModuleScope FleetCore {
+            $script:Fleet = [pscustomobject]@{ Repo = "dataplat/dbatools" }
+        }
+    }
+
+    It "drops a hint whose sha is no longer the head of the ref" {
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson {
+                [pscustomobject]@{
+                    sha    = "1111111111111111111111111111111111111111"
+                    commit = [pscustomobject]@{ message = "Newer work [do ci]" }
+                    author = [pscustomobject]@{ login = "potatoqualitee" }
+                }
+            }
+            $splatStale = @{
+                Actor = "potatoqualitee"
+                Sha   = "2222222222222222222222222222222222222222"
+                Ref   = "refs/heads/development"
+            }
+            $trigger = Confirm-DirectTrigger @splatStale
+            $trigger.Sha | Should -BeNullOrEmpty
+            $trigger.Actor | Should -BeNullOrEmpty
+        }
+    }
+
+    It "takes the marker message from GitHub rather than from the caller" {
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson {
+                [pscustomobject]@{
+                    sha    = "3333333333333333333333333333333333333333"
+                    commit = [pscustomobject]@{ message = "Real message, no marker" }
+                    author = [pscustomobject]@{ login = "potatoqualitee" }
+                }
+            }
+            $splatCurrent = @{
+                Actor = "potatoqualitee"
+                Sha   = "3333333333333333333333333333333333333333"
+                Ref   = "refs/heads/development"
+            }
+            $trigger = Confirm-DirectTrigger @splatCurrent
+            $trigger.Sha | Should -Be "3333333333333333333333333333333333333333"
+            $trigger.Message | Should -Be "Real message, no marker"
+        }
+    }
+
+    It "never calls GitHub for an empty or non-branch hint" {
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson { throw "GitHub should not have been called" }
+            (Confirm-DirectTrigger -Actor "" -Sha "" -Ref "").Sha | Should -BeNullOrEmpty
+            $splatOdd = @{
+                Actor = "potatoqualitee"
+                Sha   = "4444444444444444444444444444444444444444"
+                Ref   = "refs/heads/../../etc"
+            }
+            (Confirm-DirectTrigger @splatOdd).Sha | Should -BeNullOrEmpty
+            Should -Invoke Invoke-GhJson -Times 0
+        }
+    }
+}
+
+Describe "Azure inventory paging" {
+    It "follows nextLink so no fleet VM is invisible" {
+        InModuleScope FleetCore {
+            $script:PagingCalls = 0
+            Mock Invoke-ArmJson {
+                $script:PagingCalls++
+                if ($script:PagingCalls -eq 1) {
+                    return [pscustomobject]@{
+                        value    = @([pscustomobject]@{ name = "page-one" })
+                        nextLink = "https://management.azure.com/next"
+                    }
+                }
+                [pscustomobject]@{ value = @([pscustomobject]@{ name = "page-two" }) }
+            }
+            $found = @(Invoke-ArmList -Path "/subscriptions/x/vms" -Operation "test paging")
+            $found.Count | Should -Be 2
+            $found.name | Should -Contain "page-two"
+        }
+    }
+}
+
+Describe "parallel registration" {
+    It "keeps the VM identity on the failure path" {
+        # $PSItem is the ErrorRecord inside catch, so a result built there from $PSItem
+        # would carry a null VM and silently skip the SPENT-VM delete.
+        $source = Get-Content -Path "$script:ControllerRoot/Modules/FleetCore/FleetCore.psm1" -Raw
+        $parallelBlock = [regex]::Match($source, "(?s)\`$results = \`$tasks \| ForEach-Object -Parallel \{.*?\} -ThrottleLimit").Value
+        $parallelBlock | Should -Not -BeNullOrEmpty
+        $parallelBlock | Should -Match "\`$task = \`$PSItem"
+        $parallelBlock | Should -Not -Match "VmName = \`$PSItem\.VmName"
+    }
+}

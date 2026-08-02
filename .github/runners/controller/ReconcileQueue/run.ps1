@@ -4,8 +4,9 @@
 # group used to do in GitHub Actions.
 #
 # The queue message is a hint about why we woke up. Invoke-FleetReconcile re-reads the
-# whole GitHub queue and the whole Azure inventory regardless, so a wrong or forged hint
-# costs one converge pass and changes no decision.
+# whole GitHub queue and the whole Azure inventory regardless, and corroborates the
+# actor/sha/ref against GitHub before any of it reaches a decision, so a wrong, stale or
+# replayed hint costs one converge pass and changes nothing.
 
 param($QueueItem, $TriggerMetadata)
 
