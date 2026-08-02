@@ -184,6 +184,43 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When a login is connected to the instance" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # LastLogin is read from sys.dm_exec_sessions, which lists only the sessions connected at that
+            # moment, so the login has to be holding a connection open while the command runs.
+            $activeLoginName = "dbatoolsci_active_$random"
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $activeLoginName -SecurePassword $loginPassword
+
+            $activeCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $activeLoginName, $loginPassword
+            $splatActiveConnection = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                SqlCredential       = $activeCredential
+                NonPooledConnection = $true
+            }
+            $activeServer = Connect-DbaInstance @splatActiveConnection
+            $null = $activeServer.Query("SELECT 1")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $activeResults = @(Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Login $activeLoginName)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # SQL Server refuses to drop a login while it still has a session, so let go of the connection first.
+            $activeServer.ConnectionContext.Disconnect()
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $activeLoginName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Reports the last login time it matched out of the session list" {
+            $activeResults.Name | Should -Be $activeLoginName
+            $activeResults.LastLogin | Should -Not -BeNullOrEmpty
+        }
+    }
+
     Context "When the results are piped to another login command" {
         It "Removes the unused login it was handed" {
             $null = Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Login $pipeLoginName | Remove-DbaLogin

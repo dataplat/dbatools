@@ -249,8 +249,15 @@ function Get-DbaUnusedLogin {
             if ($server.VersionMajor -ge 9) {
                 Write-Message -Level Verbose -Message "Getting last login times on $instance."
                 $loginTimes = $server.ConnectionContext.ExecuteWithResults($loginTimeSql).Tables[0]
+                # The query groups the sessions by login_name, and SQL Server groups under the server collation.
+                # Matching those groups back to a login with that same comparer is what keeps the lookup below
+                # unambiguous. This is the comparer Compare-DbaCollationSensitiveObject builds internally, but it
+                # builds one per call, so calling the helper per login would construct a throwaway SMO Server
+                # object for every login on the instance. Build it once instead.
+                $loginNameComparer = (New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server).GetStringComparer($server.Collation)
             } else {
                 $loginTimes = $null
+                $loginNameComparer = $null
             }
 
             foreach ($currentLogin in $candidateLogins) {
@@ -267,14 +274,19 @@ function Get-DbaUnusedLogin {
                     continue
                 }
 
-                # -ceq, not -eq: an instance with a case-sensitive server collation can hold both "Bob" and "bob",
-                # and a case-insensitive match returns a row for each. That hands an array to the [DbaDateTime]
-                # cast below, which throws, so the whole instance fails over two logins that differ only in case.
-                $loginTime = $loginTimes | Where-Object { $PSItem.login_name -ceq $currentLogin.Name } | Select-Object -ExpandProperty login_time
-                if ($loginTime) {
-                    $lastLogin = [DbaDateTime]$loginTime
-                } else {
-                    $lastLogin = $null
+                # Compare with the server collation rather than -eq or -ceq, because each of those gets one of
+                # the two collations wrong. -eq matches the separate "Bob" and "bob" groups a case-sensitive
+                # instance returns and hands the resulting two-element array to the [DbaDateTime] cast, which
+                # throws and takes the whole instance down over two logins that differ only in case. -ceq misses
+                # a "LAB\dba" session against a "lab\dba" login on a case-insensitive instance, which reports a
+                # login someone is connected under right now as unused. Since this is the comparer SQL Server
+                # grouped the rows with, at most one group can ever match and the cast always gets one value.
+                $lastLogin = $null
+                if ($null -ne $loginTimes) {
+                    $loginTime = $loginTimes | Where-Object { $loginNameComparer.Compare($PSItem.login_name, $currentLogin.Name) -eq 0 } | Select-Object -ExpandProperty login_time
+                    if ($loginTime) {
+                        $lastLogin = [DbaDateTime]$loginTime
+                    }
                 }
 
                 Add-Member -Force -InputObject $currentLogin -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
