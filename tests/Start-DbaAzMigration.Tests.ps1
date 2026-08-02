@@ -1,4 +1,5 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "", Justification = "Pester lifecycle variables are consumed across test blocks.")]
 param(
     $ModuleName = "dbatools",
     $CommandName = "Start-DbaAzMigration",
@@ -52,36 +53,36 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Rejects an explicitly bound blank string database selection before connecting" {
-            $splatEmptyDatabase = @{
+            $splatBlankDatabase = @{
                 Source          = "not-used"
                 Destination     = "not-used"
                 Database        = ""
                 EnableException = $true
             }
 
-            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+            { Start-DbaAzMigration @splatBlankDatabase } | Should -Throw "*at least one non-blank database name*"
         }
 
         It "Rejects an explicitly bound null database selection before connecting" {
-            $splatEmptyDatabase = @{
+            $splatNullDatabase = @{
                 Source          = "not-used"
                 Destination     = "not-used"
                 Database        = $null
                 EnableException = $true
             }
 
-            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+            { Start-DbaAzMigration @splatNullDatabase } | Should -Throw "*at least one non-blank database name*"
         }
 
         It "Rejects an explicitly bound empty array database selection before connecting" {
-            $splatEmptyDatabase = @{
+            $splatEmptyDatabaseArray = @{
                 Source          = "not-used"
                 Destination     = "not-used"
                 Database        = @()
                 EnableException = $true
             }
 
-            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+            { Start-DbaAzMigration @splatEmptyDatabaseArray } | Should -Throw "*at least one non-blank database name*"
         }
 
         It "Rejects a file path in friendly mode before connecting" {
@@ -106,53 +107,53 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $script:testInstance = if ($TestConfig.InstanceSingle) { $TestConfig.InstanceSingle } else { "localhost" }
+        $testInstance = if ($TestConfig.InstanceSingle) { $TestConfig.InstanceSingle } else { "localhost" }
     }
 
     Context "Boundary validation" {
         It "Rejects an invalid export option before connecting" {
-            $splatMigration = @{
-                Source          = $script:testInstance
-                Destination     = $script:testInstance
+            $splatInvalidExportMigration = @{
+                Source          = $testInstance
+                Destination     = $testInstance
                 ExportDacOption = [pscustomobject]@{ Name = "invalid" }
                 EnableException = $true
             }
             if ($TestConfig.SqlCred) {
-                $splatMigration.SourceSqlCredential = $TestConfig.SqlCred
-                $splatMigration.DestinationSqlCredential = $TestConfig.SqlCred
+                $splatInvalidExportMigration.SourceSqlCredential = $TestConfig.SqlCred
+                $splatInvalidExportMigration.DestinationSqlCredential = $TestConfig.SqlCred
             }
 
-            { Start-DbaAzMigration @splatMigration } | Should -Throw "*Microsoft.SqlServer.Dac.DacExportOptions*"
+            { Start-DbaAzMigration @splatInvalidExportMigration } | Should -Throw "*Microsoft.SqlServer.Dac.DacExportOptions*"
         }
 
         It "Rejects an invalid import option before connecting" {
-            $splatMigration = @{
-                Source          = $script:testInstance
-                Destination     = $script:testInstance
+            $splatInvalidImportMigration = @{
+                Source          = $testInstance
+                Destination     = $testInstance
                 ImportDacOption = [pscustomobject]@{ Name = "invalid" }
                 EnableException = $true
             }
             if ($TestConfig.SqlCred) {
-                $splatMigration.SourceSqlCredential = $TestConfig.SqlCred
-                $splatMigration.DestinationSqlCredential = $TestConfig.SqlCred
+                $splatInvalidImportMigration.SourceSqlCredential = $TestConfig.SqlCred
+                $splatInvalidImportMigration.DestinationSqlCredential = $TestConfig.SqlCred
             }
 
-            { Start-DbaAzMigration @splatMigration } | Should -Throw "*Microsoft.SqlServer.Dac.DacImportOptions*"
+            { Start-DbaAzMigration @splatInvalidImportMigration } | Should -Throw "*Microsoft.SqlServer.Dac.DacImportOptions*"
         }
 
         It "Rejects a destination that is not Azure SQL Database" {
-            $splatMigration = @{
-                Source          = $script:testInstance
-                Destination     = $script:testInstance
+            $splatNonAzureDestinationMigration = @{
+                Source          = $testInstance
+                Destination     = $testInstance
                 Database        = "dbatoolsci_azmigration_validation"
                 EnableException = $true
             }
             if ($TestConfig.SqlCred) {
-                $splatMigration.SourceSqlCredential = $TestConfig.SqlCred
-                $splatMigration.DestinationSqlCredential = $TestConfig.SqlCred
+                $splatNonAzureDestinationMigration.SourceSqlCredential = $TestConfig.SqlCred
+                $splatNonAzureDestinationMigration.DestinationSqlCredential = $TestConfig.SqlCred
             }
 
-            { Start-DbaAzMigration @splatMigration } | Should -Throw "*Azure SQL Database*Copy-DbaDatabase*"
+            { Start-DbaAzMigration @splatNonAzureDestinationMigration } | Should -Throw "*Azure SQL Database*Copy-DbaDatabase*"
         }
     }
 }

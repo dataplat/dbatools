@@ -1,4 +1,5 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "", Justification = "Pester lifecycle variables are consumed across test blocks.")]
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Publish-DbaDacPackage",
@@ -152,7 +153,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results = $bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Updating database (Complete)*"
             $connectionPassword = $TestConfig.SqlCred.GetNetworkCredential().Password
-            $results.ConnectionString | Should -Not -Match ([regex]::Escape($connectionPassword))
+            $results.ConnectionString.Contains($connectionPassword) | Should -BeFalse
             $results.ConnectionString | Should -Match "Password=\*{8}"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty

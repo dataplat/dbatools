@@ -91,12 +91,13 @@ For every selected database:
 7. Generate an unguessable, run-owned staging database name that includes a sanitized source-name prefix.
 8. Pass the BACPAC path to `Publish-DbaDacPackage` with `-Type Bacpac`, the destination connection string, the staging database name, the optional import settings, and exceptions enabled.
 9. Confirm that publish returned one result and that the staging database exists.
-10. Recheck the requested final name. If it was absent initially but appeared during export/import, leave it untouched, fail promotion, and remove only the run-owned staging database.
+10. Recheck the requested final name. If it was absent initially but appeared during export/import, leave it untouched, fail promotion, and clean up staging only when its captured identity still matches; otherwise preserve it.
 11. For an approved forced replacement, verify that the final database still has the identity observed before export. If it disappeared or was replaced, leave the current final name untouched and fail safely.
-12. Rename the verified original to a unique run-owned recovery name, rename staging to the requested final name, and verify that the promoted database has the staging identity.
-13. Remove the recovery database only after promotion verification. If promotion fails, restore the original final name when its identity can be proved; if automatic rollback is unsafe or fails, preserve staging and recovery databases and report their exact names.
-14. On an import or pre-promotion failure, remove only the uniquely named staging database. Then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.
-15. In `finally`, delete the local BACPAC unless `-KeepBacpac` was supplied.
+12. Rename the verified original to a unique run-owned recovery name, then immediately verify that the recovery name still has the original identity. If a concurrent replacement was renamed instead, restore that replacement to the final name when the final name is still free; otherwise preserve all recovery databases and fail without promoting staging.
+13. Rename staging to the requested final name and verify that the promoted database has the staging identity.
+14. Remove the recovery database only after promotion verification. If promotion fails, restore the original final name when its identity can be proved; if automatic rollback is unsafe or fails, preserve staging and recovery databases and report their exact names.
+15. On an import or pre-promotion failure, remove a staging database only when its current identity matches the identity captured after successful import. Preserve an unverified partial import or a concurrent replacement rather than deleting by name. Then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.
+16. In `finally`, delete the local BACPAC unless `-KeepBacpac` was supplied.
 
 Cleanup operations use the already connected destination. Captured database identities plus unique staging and recovery names are the ownership boundary: failure cleanup never removes or modifies an unrelated database that raced into the requested final name. Cleanup or rollback failure is reported without hiding the original migration failure.
 
@@ -141,7 +142,7 @@ Credentials and connection strings are never written to the pipeline, verbose st
 - The required Pester 6 header and static command name.
 - A parameter-surface assertion.
 - Focused validation tests for wrong option types and a non-Azure destination.
-- Behavioral tests for all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging cleanup, credential redaction, concurrent final-name appearance, and concurrent final-name replacement where those behaviors can run against real boundaries.
+- Behavioral tests for all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging handling, credential redaction, concurrent final-name appearance, concurrent final-name replacement, a replacement immediately before the forced rename, and replacement of staging immediately before failure cleanup where those behaviors can run against real boundaries.
 
 Mocks may supplement validation tests but do not count as behavioral coverage.
 
@@ -164,9 +165,11 @@ The test will:
 6. Verify the schema and row values.
 7. Verify the generated local BACPAC was deleted by default.
 8. Induce export and import failures, verify friendly continuation and exception stop, directly verify that a failed `Publish-DbaDacPackage` import emits no success object, and verify that no run-owned staging database remains.
-9. Pre-create an empty racer database under a different run-owned name, wait for the command's verbose post-destination-check/pre-export signal, rename the racer to the initially absent final name during export/import, and verify that migration neither modifies nor removes it.
-10. Pre-create an empty replacement under a different run-owned name, wait for the same command-owned signal, drop the original final and rename the replacement to the final name during forced export/import, and verify that migration detects the identity change and neither modifies nor removes the replacement.
-10. Drop every exact run-owned Azure SQL database and source database in `finally` cleanup, and fail the test if cleanup verification fails.
+9. Use a PowerShell line breakpoint as a deterministic barrier immediately before promotion, rename a pre-created empty racer to an initially absent final name, and verify that migration neither modifies nor removes it.
+10. At the same barrier, drop the original final and rename a pre-created replacement to the final name during forced migration; verify that the identity change is detected and the replacement is untouched.
+11. Use a barrier immediately before the forced rename to reproduce the narrower check-to-rename race; verify that an accidentally renamed replacement is restored to the final name and staging is not promoted.
+12. Use a second barrier immediately before failed-staging cleanup, replace the owned staging database with an empty database of a different identity, and verify that the replacement is preserved.
+13. Drop every exact run-owned Azure SQL database and source database in `finally` cleanup, and fail the test if cleanup verification fails.
 
 The positive test is not a skipped placeholder. Missing credentials or an unavailable Azure boundary fail the upstream secret-bearing workflow.
 
