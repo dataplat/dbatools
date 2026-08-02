@@ -214,7 +214,8 @@ exec sp_addrolemember 'userrole','bob';
         Get-DbaPermission -Database tempdb | Should -Not -Be $null
     }
 
-    It "rebuilds a fragmented index" {
+    # The gallery job imports the released dbatools, which does not have this command until it ships.
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "rebuilds a fragmented index" {
         $indexDbName = "dbatoolsci_idxrebuild_$(Get-Random)"
         try {
             $null = New-DbaDatabase -Name $indexDbName
