@@ -14,13 +14,12 @@
       - STALE (no eligible activity, checked through anonymous GitHub APIs):
         no runner capacity is preserved; runners older than 1 hour
         are deleted.
-      - ACTIVE: ten runners are preserved for each maintainer with a LIVE
-        ci-azure run (a full matrix may be executing right now) and the warm
-        floor for each maintainer that is merely hot -- recent activity, no run
-        yet. Community is five while its CI is live, the warm floor within the
+      - ACTIVE: ten runners are preserved for every active maintainer -- a LIVE
+        ci-azure run or an eligible completed run updated within 20 minutes.
+        Community is five while its CI is live, the warm floor within the
         20-minute grace period. Excess runners older than 4 hours die: VM age
-        runs from creation, so 45m to register + 60m hot-idle + a 90m job
-        timeout is ~3.25h of legitimate life, and a tighter cap kills busy VMs.
+        runs from creation, so 45m to register + 20m completion grace + a 90m job
+        timeout is ~2.6h of legitimate life, and a tighter cap kills busy VMs.
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
         apply to all capacity -- 3 hours on nights and weekends, 13 hours on
         weekday daytime (06-17 UTC).
@@ -46,13 +45,13 @@ Connect-AzAccount -Identity -WarningAction SilentlyContinue | Out-Null
 $rg = "dbatools-ci"
 $repo = "dataplat/dbatools"
 $maintainers = @("potatoqualitee", "andreasjordan", "niphlod")
-$activityWindowMinutes = 60
+$maintainerWindowMinutes = 20
 $communityGraceMinutes = 20
 $ciMarker = "[do ci]"
 $communityPoolSize = 5
 $maintainerPoolSize = 10
 # Mirrors WARM_FLOOR in runner-reconcile.yml -- kept aligned by a test in
-# tests/runner-policy.Tests.ps1. Held only for lanes that are hot but have no live run.
+# tests/runner-policy.Tests.ps1. Held only for the community lane while it is hot without a live run.
 $warmFloor = 3
 $orphanGraceMinutes = 15
 $utcNow = (Get-Date).ToUniversalTime()
@@ -145,7 +144,7 @@ try {
     $runResponse = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/actions/workflows/ci-azure.yml/runs?per_page=100"
     $runs = @($runResponse.workflow_runs | Where-Object { Test-JanitorRunEligible -Run $PSItem })
     $liveRuns = @($runs | Where-Object { [string]$PSItem.status -ne "completed" })
-    $maintainerCutoff = $utcNow.AddMinutes(-$activityWindowMinutes)
+    $maintainerCutoff = $utcNow.AddMinutes(-$maintainerWindowMinutes)
     $communityCutoff = $utcNow.AddMinutes(-$communityGraceMinutes)
 
     foreach ($maintainer in $maintainers) {
@@ -153,10 +152,15 @@ try {
                 Test-JanitorMaintainerEvent -ActivityEvent $PSItem -Maintainer $maintainer -Cutoff $maintainerCutoff
             }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-JanitorRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
+        $recentlyCompletedCi = @($runs | Where-Object {
+                (Get-JanitorRunActor -Run $PSItem) -eq $maintainer -and
+                [string]$PSItem.status -eq "completed" -and
+                ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $maintainerCutoff
+            }).Count -gt 0
         if ($liveCi) {
             $liveMaintainers += $maintainer
         }
-        if ($recentActivity -or $liveCi) {
+        if ($recentActivity -or $liveCi -or $recentlyCompletedCi) {
             $activeMaintainers += $maintainer
         }
     }
@@ -188,17 +192,12 @@ try {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
 }
 
-# A lane with a live ci-azure run may have ten jobs executing right now, so it keeps a
-# full matrix's worth of capacity. A lane that is merely hot -- a recent push, no run
-# yet -- has nothing executing, so the warm floor is enough. Protection stays per lane;
-# preserving only the fleet-wide total can keep another lane's newer VMs instead.
-$idleHotMaintainers = @($activeMaintainers | Where-Object { $PSItem -notin $liveMaintainers })
+# An active maintainer lane has a fixed ten-runner pool through the 20-minute completion
+# grace period. Protection stays per lane; preserving only the fleet-wide total can keep
+# another lane's newer VMs instead.
 $desiredPools = @{ }
-foreach ($maintainer in $liveMaintainers) {
+foreach ($maintainer in $activeMaintainers) {
     $desiredPools[$maintainer] = $maintainerPoolSize
-}
-foreach ($maintainer in $idleHotMaintainers) {
-    $desiredPools[$maintainer] = $warmFloor
 }
 if ($communityLive) {
     $desiredPools["community"] = $communityPoolSize
@@ -212,8 +211,8 @@ if ($null -eq $desiredPoolSize) {
 
 switch ($mode) {
     "active" {
-        # 4h clears the worst legitimate VM lifetime: 45m to register (:403-404) + 60m
-        # hot-idle (BOOST_HOURS) + 90m job timeout (ci-azure.yml) = ~3.25h. Age is
+        # 4h clears the worst legitimate VM lifetime: 45m to register (:403-404) + 20m
+        # completion grace + 90m job timeout (ci-azure.yml) = ~2.6h. Age is
         # measured from VM creation, not from job start, so a cap merely above the job
         # timeout would delete VMs mid-job.
         $runnerMaxHours = 4

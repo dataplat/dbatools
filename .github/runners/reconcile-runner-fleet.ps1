@@ -25,7 +25,7 @@ $runnerLabel = $env:RUNNER_LABEL
 $poolLabelPrefix = "dbatools-pool-"
 $communityCount = if ($env:COMMUNITY_COUNT) { [int]$env:COMMUNITY_COUNT } else { 5 }
 $maintainerCount = if ($env:BOOST_COUNT) { [int]$env:BOOST_COUNT } else { 10 }
-$maintainerWindowMinutes = if ($env:BOOST_HOURS) { [int]$env:BOOST_HOURS * 60 } else { 60 }
+$maintainerWindowMinutes = if ($env:BOOST_MINUTES) { [int]$env:BOOST_MINUTES } elseif ($env:BOOST_HOURS) { [int]$env:BOOST_HOURS * 60 } else { 20 }
 $communityGraceMinutes = if ($env:COMMUNITY_GRACE_MINUTES) { [int]$env:COMMUNITY_GRACE_MINUTES } else { 20 }
 $maxRunners = if ($env:MAX_RUNNERS) { [int]$env:MAX_RUNNERS } else { 35 }
 $warmFloor = if ($env:WARM_FLOOR) { [int]$env:WARM_FLOOR } else { 0 }
@@ -536,6 +536,62 @@ function Register-PoolVms {
     }
 }
 
+function Invoke-VmssCapacityPlan {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateRange(0, 35)]
+        [int]$NominalCapacity,
+        [Parameter(Mandatory)]
+        [ValidateRange(0, 35)]
+        [int]$ActualCapacity,
+        [Parameter(Mandatory)]
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity,
+        [Parameter(Mandatory)]
+        [int]$TransitionBusy,
+        [Parameter(Mandatory)]
+        [string]$ResourceGroup,
+        [Parameter(Mandatory)]
+        [string]$Vmss
+    )
+
+    Write-Host "capacity=$NominalCapacity actual_capacity=$ActualCapacity target=$TargetCapacity transition_busy=$TransitionBusy"
+    $splatCapacity = @{
+        NominalCapacity = $NominalCapacity
+        ActualCapacity  = $ActualCapacity
+        TargetCapacity  = $TargetCapacity
+    }
+    foreach ($newCapacity in Get-VmssCapacityPlan @splatCapacity) {
+        $scaleArguments = @(
+            "vmss", "scale", "--resource-group", $ResourceGroup, "--name", $Vmss,
+            "--new-capacity", "$newCapacity", "--only-show-errors", "--output", "none"
+        )
+        $operation = "normalize VMSS capacity to $newCapacity"
+        if ($newCapacity -gt $ActualCapacity) {
+            $scaleArguments += "--no-wait"
+            $operation = "scale VMSS to $newCapacity"
+        }
+        $splatScale = @{
+            Tool      = "az"
+            Arguments = $scaleArguments
+            Operation = $operation
+        }
+        $null = Invoke-NativeText @splatScale
+    }
+    if ($ActualCapacity -lt $TargetCapacity) {
+        foreach ($attempt in 1..15) {
+            Start-Sleep -Seconds 20
+            $state = Get-FleetState
+            $notReady = @($state.Vms | Where-Object provisioning -NE "Succeeded").Count
+            if ($state.Vms.Count -ge $TargetCapacity -and $notReady -eq 0) {
+                break
+            }
+            Write-Host "provisioning check $attempt of 15: vms=$($state.Vms.Count)/$TargetCapacity not_ready=$notReady"
+        }
+    }
+}
+
 try {
     $demand = Get-RunnerDemand
     $orphanSnapshot = Get-OrphanedNetworking
@@ -609,22 +665,16 @@ try {
         "--query", "{capacity:sku.capacity}"
     ) -Operation "read VMSS capacity"
     $capacity = [int]$capacityResponse.capacity
-    Write-Host "capacity=$capacity target=$target transition_busy=$transitionBusy"
-    if ($capacity -lt $target) {
-        $null = Invoke-NativeText -Tool "az" -Arguments @(
-            "vmss", "scale", "--resource-group", $resourceGroup, "--name", $vmss,
-            "--new-capacity", "$target", "--no-wait", "--only-show-errors", "--output", "none"
-        ) -Operation "scale VMSS to $target"
-        foreach ($attempt in 1..15) {
-            Start-Sleep -Seconds 20
-            $state = Get-FleetState
-            $notReady = @($state.Vms | Where-Object provisioning -NE "Succeeded").Count
-            if ($state.Vms.Count -ge $target -and $notReady -eq 0) {
-                break
-            }
-            Write-Host "provisioning check $attempt of 15: vms=$($state.Vms.Count)/$target not_ready=$notReady"
-        }
+    $actualCapacity = $state.Vms.Count
+    $splatCapacity = @{
+        NominalCapacity = $capacity
+        ActualCapacity  = $actualCapacity
+        TargetCapacity  = $target
+        TransitionBusy  = $transitionBusy
+        ResourceGroup   = $resourceGroup
+        Vmss            = $vmss
     }
+    Invoke-VmssCapacityPlan @splatCapacity
 
     $state = Get-FleetState
     Assign-UnallocatedVms -State $state -Desired $desired

@@ -13,7 +13,7 @@ jobs:
     if: |
       github.event.issue.pull_request == null &&
       contains(fromJSON('["potatoqualitee","niphlod","andreasjordan"]'), github.actor) &&
-      contains(github.event.comment.body, '@codex')
+      contains(github.event.comment.body, 'azure-codex')
     runs-on: ubuntu-latest
     permissions:
       contents: read
