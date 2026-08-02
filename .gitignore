@@ -84,3 +84,5 @@ node_modules/
 # gocodex sessions created INSIDE this tree. They are registered worktrees, not
 # content - committing them would duplicate the whole coordination repo in here.
 migration-gocodex-*/
+/.worktrees
+/docs
