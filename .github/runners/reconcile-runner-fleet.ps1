@@ -609,12 +609,28 @@ try {
         "--query", "{capacity:sku.capacity}"
     ) -Operation "read VMSS capacity"
     $capacity = [int]$capacityResponse.capacity
-    Write-Host "capacity=$capacity target=$target transition_busy=$transitionBusy"
-    if ($capacity -lt $target) {
-        $null = Invoke-NativeText -Tool "az" -Arguments @(
+    $actualCapacity = $state.Vms.Count
+    Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy"
+    $splatCapacity = @{
+        NominalCapacity = $capacity
+        ActualCapacity  = $actualCapacity
+        TargetCapacity  = $target
+    }
+    foreach ($newCapacity in Get-VmssCapacityPlan @splatCapacity) {
+        $scaleArguments = @(
             "vmss", "scale", "--resource-group", $resourceGroup, "--name", $vmss,
-            "--new-capacity", "$target", "--no-wait", "--only-show-errors", "--output", "none"
-        ) -Operation "scale VMSS to $target"
+            "--new-capacity", "$newCapacity", "--only-show-errors", "--output", "none"
+        )
+        $operation = "normalize VMSS capacity to $newCapacity"
+        if ($newCapacity -gt $actualCapacity) {
+            $scaleArguments += "--no-wait"
+            $operation = "scale VMSS to $newCapacity"
+        }
+        $null = Invoke-NativeText -Tool "az" -Arguments @(
+            $scaleArguments
+        ) -Operation $operation
+    }
+    if ($actualCapacity -lt $target) {
         foreach ($attempt in 1..15) {
             Start-Sleep -Seconds 20
             $state = Get-FleetState

@@ -487,6 +487,35 @@ Describe "Get-MarkedPushDispatch" {
     }
 }
 
+Describe "Get-VmssCapacityPlan" {
+    It "repairs phantom capacity before scaling to the requested target" {
+        $splatCapacity = @{
+            NominalCapacity = 4
+            ActualCapacity  = 0
+            TargetCapacity  = 1
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -Be @(0, 1)
+    }
+
+    It "repairs a partial allocation before filling the requested target" {
+        $splatCapacity = @{
+            NominalCapacity = 10
+            ActualCapacity  = 6
+            TargetCapacity  = 10
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -Be @(6, 10)
+    }
+
+    It "does nothing when actual capacity already satisfies the target" {
+        $splatCapacity = @{
+            NominalCapacity = 1
+            ActualCapacity  = 1
+            TargetCapacity  = 1
+        }
+        @(Get-VmssCapacityPlan @splatCapacity) | Should -BeNullOrEmpty
+    }
+}
+
 Describe "Runner workflow policy wiring" {
     BeforeAll {
         $script:RunnerRoot = (Resolve-Path "$PSScriptRoot/..").Path

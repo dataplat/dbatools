@@ -214,6 +214,25 @@ function Get-PoolJobDemandFromRuns {
     $demand
 }
 
+function Get-VmssCapacityPlan {
+    [CmdletBinding()]
+    param(
+        [ValidateRange(0, 35)]
+        [int]$NominalCapacity,
+        [ValidateRange(0, 35)]
+        [int]$ActualCapacity,
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity
+    )
+
+    if ($NominalCapacity -gt $ActualCapacity) {
+        $ActualCapacity
+    }
+    if ($ActualCapacity -lt $TargetCapacity) {
+        $TargetCapacity
+    }
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
