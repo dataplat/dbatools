@@ -12,7 +12,9 @@
 
 - Use the official `openai/codex-action` pinned to commit `52fe01ec70a42f454c9d2ebd47598f9fd6893d56` (`v1`).
 - Trigger only for new comments on ordinary issues that contain `@codex` and are authored by `potatoqualitee`, `niphlod`, or `andreasjordan`.
-- Use the repository secret `OPENAI_API_KEY`.
+- Use Azure OpenAI through the official Codex Action secure proxy.
+- Read the Azure credential, full Responses API URL, and deployment name from repository secrets named `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_RESPONSES_ENDPOINT`, and `AZURE_OPENAI_MODEL`.
+- Require `AZURE_OPENAI_RESPONSES_ENDPOINT` to be the complete request URL ending in `/openai/v1/responses`; do not hard-code the Azure resource name in the public workflow.
 - Run Codex with `safety-strategy: drop-sudo` and `permission-profile: ":workspace"`.
 - Do not persist checkout credentials or expose a GitHub token to the Codex execution step.
 - Run the official Codex Action as the final step of its job and give that job only read permissions.
@@ -30,7 +32,7 @@
 - Verify: `.github/scripts/Test-GitHubActionsPins.ps1`
 
 **Interfaces:**
-- Consumes: GitHub `issue_comment` event payload, `OPENAI_API_KEY`, repository `AGENTS.md` and `CLAUDE.md`, GitHub-provided token in deterministic mutation steps.
+- Consumes: GitHub `issue_comment` event payload, the three Azure OpenAI repository secrets, repository `AGENTS.md` and `CLAUDE.md`, GitHub-provided token in deterministic mutation steps.
 - Produces: a structured job output, optional branch `codex/issue-<number>-<run-id>-<attempt>`, optional draft pull request against `development`, and one response comment on the originating issue.
 
 - [ ] **Step 1: Run the workflow contract check before the file exists**
@@ -102,7 +104,9 @@ Add:
         id: codex
         uses: openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56 # v1
         with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          openai-api-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          responses-api-endpoint: ${{ secrets.AZURE_OPENAI_RESPONSES_ENDPOINT }}
+          model: ${{ secrets.AZURE_OPENAI_MODEL }}
           prompt-file: codex-prompt.md
           output-schema: |
             {
@@ -151,6 +155,9 @@ Run these focused assertions:
 $content = Get-Content -Raw -LiteralPath ".github/workflows/codex.yml"
 $required = @(
     "openai/codex-action@52fe01ec70a42f454c9d2ebd47598f9fd6893d56",
+    'openai-api-key: ${{ secrets.AZURE_OPENAI_API_KEY }}',
+    'responses-api-endpoint: ${{ secrets.AZURE_OPENAI_RESPONSES_ENDPOINT }}',
+    'model: ${{ secrets.AZURE_OPENAI_MODEL }}',
     "github.event.issue.pull_request == null",
     "potatoqualitee",
     "niphlod",
