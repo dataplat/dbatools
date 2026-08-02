@@ -1,0 +1,64 @@
+# AppVeyor-style rolling builds for the Azure lanes. ci-azure serializes each pool
+# owner's runs in FIFO order (queue: max) and never cancels a superseded run, so a PR
+# that gets three pushes in half an hour grinds the lane through two dead SHAs before
+# reaching the one that matters. This workflow runs on GitHub-hosted compute OUTSIDE
+# the lane, so it fires the moment a new head lands: it cancels every active ci-azure
+# run for the same branch that is not testing the current head SHA. The paths-ignore
+# list mirrors ci-azure's — a docs-only push gets no new ci-azure run, so cancelling
+# its predecessor would leave the PR with no Azure checks at all.
+name: ci-azure-supersede
+run-name: "supersede stale ci-azure runs for ${{ github.head_ref }}"
+
+on:
+  pull_request:
+    branches:
+      - development
+    paths-ignore:
+      - "**/*.md"
+      - ".github/FUNDING.yml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".aider/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
+      - "en-us/**"
+
+permissions:
+  actions: write
+
+concurrency:
+  group: ci-azure-supersede-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  supersede:
+    # Fork PRs get a read-only token that cannot cancel runs; their lanes keep FIFO.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Cancel ci-azure runs superseded by this head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          stale=$(gh api -X GET "repos/${GITHUB_REPOSITORY}/actions/workflows/ci-azure.yml/runs" \
+            -f branch="$HEAD_BRANCH" -f per_page=50 \
+            --jq '.workflow_runs[]
+              | select(.status == "queued" or .status == "in_progress" or .status == "pending" or .status == "waiting" or .status == "requested")
+              | select(.head_sha != env.HEAD_SHA)
+              | .id')
+          if [ -z "$stale" ]; then
+            echo "No superseded ci-azure runs for $HEAD_BRANCH."
+            exit 0
+          fi
+          for id in $stale; do
+            if gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/runs/${id}/cancel" > /dev/null 2>&1; then
+              echo "Cancelled superseded run ${id}."
+            else
+              echo "::warning::Could not cancel run ${id}; it may have just completed."
+            fi
+          done
