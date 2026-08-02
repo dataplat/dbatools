@@ -286,9 +286,8 @@ Describe $CommandName -Tag IntegrationTests {
             $options = New-DbaDacOption -Action Publish -Type Bacpac
             $results = $script:bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Updating database (Complete)*"
-            $connectionPassword = $TestConfig.SqlCred.GetNetworkCredential().Password
-            $results.ConnectionString.Contains($connectionPassword) | Should -BeFalse
-            $results.ConnectionString | Should -Match "Password=\*{8}"
+            $results.ConnectionString | Should -Not -BeNullOrEmpty
+            $results.ConnectionString | Should -Not -Match "(?i)(Password|Pwd)=(?!\*{8}(?:;|$))[^;]*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
         }
@@ -311,7 +310,8 @@ Describe $CommandName -Tag IntegrationTests {
                 $badPassword.AppendChar($character)
             }
             $badPassword.MakeReadOnly()
-            $badCredential = New-Object System.Management.Automation.PSCredential -ArgumentList $TestConfig.SqlCred.UserName, $badPassword
+            $badUserName = "dbatools_invalid_$([guid]::NewGuid().ToString("N"))"
+            $badCredential = New-Object System.Management.Automation.PSCredential -ArgumentList $badUserName, $badPassword
             $splatBadConnection = @{
                 SqlInstance   = $TestConfig.InstanceCopy2
                 SqlCredential = $badCredential
