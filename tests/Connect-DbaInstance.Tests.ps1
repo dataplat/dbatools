@@ -321,37 +321,6 @@ Describe $CommandName -Tag UnitTests {
             $script:lastServerConnection.ConnectAsUser | Should -Be $true
             $script:lastServerConnection.ConnectAsUserName | Should -Be "user@CONTOSO"
         }
-
-        It "does not leak the SSPI provider state onto a later instance in the same call" -Skip:(-not $script:hasCredentialSspiProvider) {
-            $splatPassword = @{
-                String      = "password"
-                AsPlainText = $true
-                Force       = $true
-            }
-            $securePassword = ConvertTo-SecureString @splatPassword
-            $windowsCredential = New-Object System.Management.Automation.PSCredential ("CONTOSO\user", $securePassword)
-
-            # The first instance takes the SSPI provider path, which suppresses connection
-            # caching. The second must not inherit that suppression from the first.
-            $splatFirst = @{
-                SqlInstance       = "sqlauth"
-                SqlCredential     = $windowsCredential
-                SqlConnectionOnly = $true
-            }
-            $null = Connect-DbaInstance @splatFirst
-
-            Should -Invoke Add-ConnectionHashValue -Times 0 -Exactly -ModuleName dbatools
-
-            $sqlCredential = New-Object System.Management.Automation.PSCredential ("sqluser", $securePassword)
-            $splatSecond = @{
-                SqlInstance       = "sqlsecond"
-                SqlCredential     = $sqlCredential
-                SqlConnectionOnly = $true
-            }
-            $null = Connect-DbaInstance @splatSecond
-
-            Should -Invoke Add-ConnectionHashValue -Times 1 -Exactly -ModuleName dbatools
-        }
     }
 }
 

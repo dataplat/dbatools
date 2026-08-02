@@ -253,7 +253,9 @@ The dbatools.library version used by CI and local development is pinned in **`.g
 
 `.github/scripts/install-dbatools-library.ps1` reads it and installs from PowerShell Gallery, falling back to GitHub releases at `https://github.com/dataplat/dbatools.library/releases/download/v{version}/dbatools.library.zip`. Preview versions (anything with a prerelease suffix) skip the Gallery and go straight to GitHub releases.
 
-**This pin is repo-wide**, so verify the release exists before committing a change to it. It is consumed by `gallery.yml`, `integration-tests.yml`, `integration-tests-external-table.yml`, `integration-tests-s3.yml`, and `xplat-import.yml`, plus `tests/appveyor.prep.ps1` (which the self-hosted Azure matrix runs) and `tests/ps3-smoke.ps1`. Pinning a preview build points all of them at that build; if the preview asset is later deleted, they all fail until the pin moves.
+**This pin is repo-wide**, so verify the release exists before committing a change to it. It is consumed through `install-dbatools-library.ps1` by `gallery.yml`, `integration-tests.yml`, `integration-tests-external-table.yml`, `integration-tests-s3.yml`, `xplat-import.yml`, and `tests/appveyor.prep.ps1` (which the self-hosted Azure matrix runs). Pinning a preview build points all of these at that build; if the preview asset is later deleted, they all fail until the pin moves.
+
+`tests/ps3-smoke.ps1` is a deliberate exception: it reads the same file for a version, but skips installing entirely if any dbatools.library is already present, and otherwise downloads from the PowerShell Gallery rather than the GitHub release. A preview pin therefore does **not** reach it, since previews are not published to the Gallery.
 
 **For full details**, read `.github/DBATOOLS_LIBRARY_VERSION_MANAGEMENT.md`.
 

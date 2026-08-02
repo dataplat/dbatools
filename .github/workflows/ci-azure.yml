@@ -275,7 +275,9 @@ jobs:
           if ($null -eq $result) {
               throw "The Windows SSPI integration test returned no Pester result."
           }
-          if ($result.TotalCount -ne 1 -or $result.PassedCount -ne 1 -or $result.FailedCount -ne 0 -or $result.SkippedCount -ne 0 -or $result.NotRunCount -ne 0) {
+          # Count-agnostic so tests can be added, but still refuses a silent skip:
+          # everything discovered has to actually run and pass.
+          if ($result.TotalCount -lt 1 -or $result.PassedCount -ne $result.TotalCount -or $result.FailedCount -ne 0 -or $result.SkippedCount -ne 0 -or $result.NotRunCount -ne 0) {
               throw "Unexpected Windows SSPI result: Total=$($result.TotalCount), Passed=$($result.PassedCount), Failed=$($result.FailedCount), Skipped=$($result.SkippedCount), NotRun=$($result.NotRunCount)."
           }
           '@ | Set-Content -Path $scriptPath -Encoding UTF8

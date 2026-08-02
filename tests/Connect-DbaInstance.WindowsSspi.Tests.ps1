@@ -116,5 +116,63 @@ Describe "$CommandName Windows SSPI" -Tag IntegrationTests {
                 }
             }
         }
+
+        It "still caches a Server input that follows an SSPI connection in the same call" {
+            # The SSPI provider path suppresses connection caching for its own instance.
+            # That suppression is tracked in a single loop variable, so a later element of
+            # the same call must not inherit it. Only the string input path can set the
+            # flag, which is why this needs a real connected Server object as the second
+            # element rather than another string.
+            $splatSeed = @{
+                SqlInstance            = $TestConfig.InstanceSingle
+                SqlCredential          = $TestConfig.SqlCred
+                TrustServerCertificate = $true
+                ErrorAction            = "Stop"
+            }
+            $seedServer = Connect-DbaInstance @splatSeed
+            $servers = $null
+
+            try {
+                $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
+                Clear-DbaConnectionPool
+
+                $splatMixed = @{
+                    SqlInstance            = @($TestConfig.InstanceSingle, $seedServer)
+                    SqlCredential          = $script:sspiCredential
+                    TrustServerCertificate = $true
+                    ErrorAction            = "Stop"
+                }
+                $servers = @(Connect-DbaInstance @splatMixed)
+
+                $servers.Count | Should -Be 2
+
+                # The SSPI element is never cached, so after the pre-call clear any entry
+                # here has to come from the Server element. The leak suppressed it too,
+                # leaving the cache empty.
+                $cached = @(Get-DbaConnectedInstance | Where-Object ConnectionType -match "Smo\.Server$")
+                $cached.Count | Should -Be 1
+            } finally {
+                # The SSPI-backed connection is deliberately kept out of the connection
+                # hash, so Disconnect-DbaInstance cannot reach it. Release it by hand or
+                # the connection and its provider outlive the test.
+                if ($servers -and $servers[0]) {
+                    $sspiConnection = $servers[0].ConnectionContext.SqlConnectionObject
+                    $servers[0].ConnectionContext.Disconnect()
+                    if ($sspiConnection) {
+                        $sspiProvider = $sspiConnection.SspiContextProvider
+                        if ($sspiConnection.State -ne [System.Data.ConnectionState]::Closed) {
+                            $sspiConnection.Close()
+                        }
+                        $sspiConnection.Dispose()
+                        if ($sspiProvider) {
+                            $sspiProvider.Dispose()
+                        }
+                    }
+                }
+                $seedServer.ConnectionContext.Disconnect()
+                $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
+                Clear-DbaConnectionPool
+            }
+        }
     }
 }
