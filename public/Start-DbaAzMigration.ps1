@@ -206,11 +206,8 @@ function Start-DbaAzMigration {
                 if ($Destination.IsConnectionString) {
                     $tokenDestinationBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
                     $tokenDestinationBuilder.ConnectionString = [string]$Destination.InputObject
-                    $tokenDestinationServer = if ($tokenDestinationBuilder.ContainsKey("Data Source")) {
-                        $tokenDestinationBuilder["Data Source"]
-                    } elseif ($tokenDestinationBuilder.ContainsKey("Server")) {
-                        $tokenDestinationBuilder["Server"]
-                    }
+                    $tokenDestinationServerKey = $tokenDestinationBuilder.Keys | Where-Object { $PSItem -ieq "Data Source" -or $PSItem -ieq "Server" } | Select-Object -First 1
+                    $tokenDestinationServer = if ($tokenDestinationServerKey) { $tokenDestinationBuilder[$tokenDestinationServerKey] }
                     if (-not $tokenDestinationServer) {
                         throw "The destination connection string must contain Server or Data Source when DestinationAccessToken is used."
                     }
