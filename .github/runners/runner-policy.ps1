@@ -259,24 +259,17 @@ function Get-DesiredRunnerPools {
                 Test-MaintainerActivityEvent -ActivityEvent $PSItem -Maintainer $maintainer -OptInPushUsers $OptInPushUsers -Marker $Marker -Cutoff $maintainerCutoff
             }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-CiRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
+        $recentlyCompletedCi = @($eligibleRuns | Where-Object {
+                (Get-CiRunActor -Run $PSItem) -eq $maintainer -and
+                [string]$PSItem.status -eq "completed" -and
+                [DateTimeOffset]::Parse([string]$PSItem.updated_at) -gt $maintainerCutoff
+            }).Count -gt 0
         $directTrigger = $DirectTriggerActor -eq $maintainer
         if ($directTrigger -and $maintainer -in $OptInPushUsers) {
             $directTrigger = Test-CiMarker -Message $DirectTriggerMessage -Marker $Marker
         }
-        # Demand sizes a hot lane; it never heats a cold one. A community PR must not
-        # be able to size a maintainer lane by reporting jobs against it.
-        $hot = $recentActivity -or $liveCi -or $directTrigger
-        $pending = 0
-        if ($PoolJobDemand.ContainsKey($maintainer)) {
-            $pending = [int]$PoolJobDemand[$maintainer]
-        }
-        $desired[$maintainer] = if (-not $hot) {
-            0
-        } elseif ($pending -gt 0) {
-            [math]::Min($MaintainerCount, $pending)
-        } else {
-            [math]::Min($MaintainerCount, $WarmFloor)
-        }
+        $hot = $recentActivity -or $liveCi -or $recentlyCompletedCi -or $directTrigger
+        $desired[$maintainer] = if ($hot) { $MaintainerCount } else { 0 }
     }
 
     $communityLive = @($liveRuns | Where-Object {
