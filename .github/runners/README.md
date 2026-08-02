@@ -118,9 +118,9 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
 - Active maintainer CI gets ten dedicated runners and remains at ten for 20 minutes
   after completion, then scales to zero. Community CI remains a shared demand-sized
   lane while live and for its existing 20-minute grace, then is zero.
-- Maximum capacity is 35 only when all three maintainers and community are simultaneously
-  saturated with pending jobs; otherwise the VMSS scales to the sum of the active lanes,
-  including zero.
+- Maximum capacity is 35 only when all three maintainer lanes are active and community
+  demand reaches five jobs; otherwise the VMSS scales to the fixed active maintainer pools
+  plus the demand-sized community pool, including zero.
 - Reconcile reaps orphaned NICs and instance public IPs every pass (snapshot at the start,
   delete only what was orphaned then and still is), so IP-hours track VM-hours instead of
   outliving them.
@@ -130,8 +130,10 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   runs the `Remove-RunawayRunner` runbook every 6 hours, entirely independent
   of GitHub Actions (source: `janitor-runbook.ps1`, deployed manually). It preserves ten
   runners for each active maintainer CI lane and keeps that ten-runner pool for 20 minutes
-  after completion, then scales the lane to zero. Community remains demand-sized with its
-  existing grace and floor. Excess runners older than 4h are deleted -- VM age runs from
+  after completion, then stops protecting the expired lane; the five-minute controller
+  performs exact scale-to-zero. For community, the janitor protects five runners while CI
+  is live and the warm floor during grace, while the controller performs demand sizing.
+  Excess runners older than 4h are deleted -- VM age runs from
   creation, and 45m to register plus 20m completion grace plus a 90m job timeout is ~2.6h
   of legitimate life, so a tighter cap would kill busy VMs.
   If GitHub is unreachable, conservative age caps apply to all capacity.
