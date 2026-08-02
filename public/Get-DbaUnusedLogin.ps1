@@ -267,7 +267,10 @@ function Get-DbaUnusedLogin {
                     continue
                 }
 
-                $loginTime = $loginTimes | Where-Object login_name -eq $currentLogin.Name | Select-Object -ExpandProperty login_time
+                # -ceq, not -eq: an instance with a case-sensitive server collation can hold both "Bob" and "bob",
+                # and a case-insensitive match returns a row for each. That hands an array to the [DbaDateTime]
+                # cast below, which throws, so the whole instance fails over two logins that differ only in case.
+                $loginTime = $loginTimes | Where-Object { $PSItem.login_name -ceq $currentLogin.Name } | Select-Object -ExpandProperty login_time
                 if ($loginTime) {
                     $lastLogin = [DbaDateTime]$loginTime
                 } else {
