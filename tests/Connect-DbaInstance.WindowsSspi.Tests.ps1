@@ -6,11 +6,11 @@ param(
 )
 
 BeforeDiscovery {
-    $unsupportedPlatform = $PSVersionTable.PSEdition -ne "Core" -or -not $IsWindows
+    $script:unsupportedPlatform = $PSVersionTable.PSEdition -ne "Core" -or -not $IsWindows
 }
 
 Describe "$CommandName Windows SSPI" -Tag IntegrationTests {
-    Context "explicit Windows credentials use the SqlClient SSPI provider" -Skip:$unsupportedPlatform {
+    Context "explicit Windows credentials use the SqlClient SSPI provider" -Skip:$script:unsupportedPlatform {
         BeforeAll {
             if (-not ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])) {
                 throw "The PowerShell 7 SSPI integration test requires a dbatools.library build with NetworkCredentialSspiContextProvider."
