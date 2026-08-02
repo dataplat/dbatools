@@ -460,6 +460,7 @@
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaDbDecryptObject',
+        'Invoke-DbaDbIndexRebuild',
         'Invoke-DbaDbLogShipping',
         'Invoke-DbaDbLogShipRecovery',
         'Invoke-DbaDbMirrorFailover',
