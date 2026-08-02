@@ -514,7 +514,7 @@ Describe "Runner workflow policy wiring" {
         $script:ReconcileWorkflow | Should -Match 'types: \[requested, completed\]'
         $script:ReconcileWorkflow | Should -Match 'MAX_RUNNERS: 35'
         $script:ReconcileWorkflow | Should -Match 'COMMUNITY_GRACE_MINUTES: 20'
-        $script:ReconcileWorkflow | Should -Match 'BOOST_HOURS: 1'
+        $script:ReconcileWorkflow | Should -Match 'BOOST_MINUTES: 20'
     }
 
     It "skips ordinary potato push nudges at the source" {
