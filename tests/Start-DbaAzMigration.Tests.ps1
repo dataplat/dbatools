@@ -125,6 +125,28 @@ Describe $CommandName -Tag UnitTests {
             @($warnings | Where-Object Message -Like "*Failure connecting*") | Should -BeNullOrEmpty
         }
     }
+
+    Context "Migration lifecycle callbacks" {
+        It "Invokes an injected callback with the requested lifecycle name" {
+            InModuleScope dbatools {
+                $script:observedMigrationCallbackName = $null
+                $script:StartDbaAzMigrationCallback = {
+                    param($Name)
+
+                    $script:observedMigrationCallbackName = $Name
+                }
+
+                try {
+                    Invoke-DbaAzMigrationCallback -Name "BeforeDestinationPromotion"
+
+                    $script:observedMigrationCallbackName | Should -Be "BeforeDestinationPromotion"
+                } finally {
+                    Remove-Variable StartDbaAzMigrationCallback -Scope Script
+                    Remove-Variable observedMigrationCallbackName -Scope Script
+                }
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

@@ -507,6 +507,7 @@ function Start-DbaAzMigration {
                     throw "BACPAC import did not return a result for staging database $stagingDatabaseName."
                 }
 
+                Invoke-DbaAzMigrationCallback -Name "BeforeDestinationPromotion"
                 $failurePhase = "Destination promotion"
                 $destinationServer.Databases.Refresh()
                 $splatGetDestinationDatabase.Database = $stagingDatabaseName
@@ -534,6 +535,7 @@ function Start-DbaAzMigration {
 
                     try {
                         $backupDatabaseMayNeedRecovery = $true
+                        Invoke-DbaAzMigrationCallback -Name "BeforeForcedPromotionRename"
                         $currentDestinationDatabase.Rename($backupDatabaseName)
                         $destinationServer.Databases.Refresh()
                         $splatGetDestinationDatabase.Database = $backupDatabaseName
@@ -649,6 +651,7 @@ function Start-DbaAzMigration {
                     try {
                         $destinationServer.Databases.Refresh()
                         $splatGetDestinationDatabase.Database = $stagingDatabaseName
+                        Invoke-DbaAzMigrationCallback -Name "BeforeStagingCleanup"
                         $partialStagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
                         if ($partialStagingDatabase) {
                             $partialStagingDatabaseIdentity = & $getDatabaseIdentity $partialStagingDatabase

@@ -451,55 +451,41 @@ FROM Numbers;
         It "preserves destination ownership when <Name>" -ForEach $script:raceTestCases {
             $modulePath = (Resolve-Path "./dbatools.psd1").Path
             $raceScript = {
-                param($ModulePath, [PSCredential]$SourceSqlCredential, $Destination, $DestinationAccessToken, $DatabaseName, $PackagePath, $ReplaceExisting, $BarrierText, $BarrierReadyPath, $BarrierReleasePath, $SecondBarrierText, $SecondBarrierReadyPath, $SecondBarrierReleasePath)
+                param($ModulePath, [PSCredential]$SourceSqlCredential, $Destination, $DestinationAccessToken, $DatabaseName, $PackagePath, $ReplaceExisting, $BarrierName, $BarrierReadyPath, $BarrierReleasePath, $SecondBarrierName, $SecondBarrierReadyPath, $SecondBarrierReleasePath)
 
                 Import-Module $ModulePath -Force
-                $commandPath = Join-Path (Split-Path -Path $ModulePath) "public/Start-DbaAzMigration.ps1"
-                $barrierMatch = Select-String -LiteralPath $commandPath -SimpleMatch $BarrierText | Select-Object -First 1
-                if (-not $barrierMatch) {
-                    throw "The race test could not locate its promotion barrier in Start-DbaAzMigration."
-                }
+                $env:DBATOOLS_AZMIGRATION_BARRIER_NAME = $BarrierName
                 $env:DBATOOLS_AZMIGRATION_BARRIER_READY_PATH = $BarrierReadyPath
                 $env:DBATOOLS_AZMIGRATION_BARRIER_RELEASE_PATH = $BarrierReleasePath
-                $barrierAction = {
-                    Set-Content -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_READY_PATH -Value "ready"
-                    $promotionBarrierDeadline = (Get-Date).AddMinutes(5)
-                    while (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_RELEASE_PATH) -and (Get-Date) -lt $promotionBarrierDeadline) {
-                        Start-Sleep -Milliseconds 50
-                    }
-                    if (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_RELEASE_PATH)) {
-                        throw "The race test promotion barrier was not released before timeout."
-                    }
-                }
-                $splatPromotionBreakpoint = @{
-                    Script = $commandPath
-                    Line   = $barrierMatch.LineNumber
-                    Action = $barrierAction
-                }
-                $null = Set-PSBreakpoint @splatPromotionBreakpoint
-                if ($SecondBarrierText) {
-                    $secondBarrierMatch = Select-String -LiteralPath $commandPath -SimpleMatch $SecondBarrierText | Select-Object -First 1
-                    if (-not $secondBarrierMatch) {
-                        throw "The race test could not locate its cleanup barrier in Start-DbaAzMigration."
-                    }
-                    $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_READY_PATH = $SecondBarrierReadyPath
-                    $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH = $SecondBarrierReleasePath
-                    $secondBarrierAction = {
-                        Set-Content -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_READY_PATH -Value "ready"
-                        $cleanupBarrierDeadline = (Get-Date).AddMinutes(5)
-                        while (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH) -and (Get-Date) -lt $cleanupBarrierDeadline) {
-                            Start-Sleep -Milliseconds 50
+                $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_NAME = $SecondBarrierName
+                $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_READY_PATH = $SecondBarrierReadyPath
+                $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH = $SecondBarrierReleasePath
+                & (Get-Module dbatools) {
+                    $script:StartDbaAzMigrationCallback = {
+                        param($Name)
+
+                        if ($Name -eq $env:DBATOOLS_AZMIGRATION_BARRIER_NAME) {
+                            Set-Content -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_READY_PATH -Value "ready"
+                            $promotionBarrierDeadline = (Get-Date).AddMinutes(5)
+                            while (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_RELEASE_PATH) -and (Get-Date) -lt $promotionBarrierDeadline) {
+                                Start-Sleep -Milliseconds 50
+                            }
+                            if (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_BARRIER_RELEASE_PATH)) {
+                                throw "The race test promotion barrier was not released before timeout."
+                            }
                         }
-                        if (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH)) {
-                            throw "The race test cleanup barrier was not released before timeout."
+
+                        if ($env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_NAME -and $Name -eq $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_NAME) {
+                            Set-Content -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_READY_PATH -Value "ready"
+                            $cleanupBarrierDeadline = (Get-Date).AddMinutes(5)
+                            while (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH) -and (Get-Date) -lt $cleanupBarrierDeadline) {
+                                Start-Sleep -Milliseconds 50
+                            }
+                            if (-not (Test-Path -LiteralPath $env:DBATOOLS_AZMIGRATION_SECOND_BARRIER_RELEASE_PATH)) {
+                                throw "The race test cleanup barrier was not released before timeout."
+                            }
                         }
                     }
-                    $splatCleanupBreakpoint = @{
-                        Script = $commandPath
-                        Line   = $secondBarrierMatch.LineNumber
-                        Action = $secondBarrierAction
-                    }
-                    $null = Set-PSBreakpoint @splatCleanupBreakpoint
                 }
                 $jobImportOptions = New-DbaDacOption -Type Bacpac -Action Publish
                 $jobImportOptions.DatabaseSpecification.Edition = "Basic"
@@ -528,7 +514,7 @@ FROM Numbers;
                         DatabaseName      = $appearanceRaceDatabaseName
                         RacerDatabaseName = $appearanceRacerDatabaseName
                         ReplaceExisting   = $false
-                        BarrierText       = [string]::Concat("failurePhase = ", [char]34, "Destination promotion", [char]34)
+                        BarrierName       = "BeforeDestinationPromotion"
                         ExpectedFailure   = "*appeared while the BACPAC was being imported*"
                     }
                 }
@@ -537,7 +523,7 @@ FROM Numbers;
                         DatabaseName      = $raceDatabaseName
                         RacerDatabaseName = $replacementRacerDatabaseName
                         ReplaceExisting   = $true
-                        BarrierText       = [string]::Concat("failurePhase = ", [char]34, "Destination promotion", [char]34)
+                        BarrierName       = "BeforeDestinationPromotion"
                         ExpectedFailure   = "*was replaced while the BACPAC was being imported*"
                     }
                 }
@@ -546,7 +532,7 @@ FROM Numbers;
                         DatabaseName      = $promotionRaceDatabaseName
                         RacerDatabaseName = $promotionRacerDatabaseName
                         ReplaceExisting   = $true
-                        BarrierText       = "currentDestinationDatabase.Rename"
+                        BarrierName       = "BeforeForcedPromotionRename"
                         ExpectedFailure   = "*was replaced during forced promotion*"
                     }
                 }
@@ -556,8 +542,8 @@ FROM Numbers;
                         RacerDatabaseName           = $stagingCleanupFinalRacerDatabaseName
                         StagingRacerDatabaseName    = $stagingCleanupReplacementDatabaseName
                         ReplaceExisting             = $false
-                        BarrierText                 = [string]::Concat("failurePhase = ", [char]34, "Destination promotion", [char]34)
-                        SecondBarrierText           = "partialStagingDatabase = Get-DbaDatabase"
+                        BarrierName                 = "BeforeDestinationPromotion"
+                        SecondBarrierName           = "BeforeStagingCleanup"
                         ExpectedFailure             = "*appeared while the BACPAC was being imported*"
                         PreservesStagingReplacement = $true
                     }
@@ -608,7 +594,7 @@ FROM Numbers;
             $barrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-release"
             $secondBarrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-ready"
             $secondBarrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-release"
-            $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $script:destinationAccessToken, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierText, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierText, $secondBarrierReadyPath, $secondBarrierReleasePath)
+            $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $script:destinationAccessToken, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierName, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierName, $secondBarrierReadyPath, $secondBarrierReleasePath)
             $script:raceJob = Start-Job -ScriptBlock $raceScript -ArgumentList $script:raceJobArguments
             $raceBarrierDeadline = (Get-Date).AddMinutes(15)
             do {
@@ -661,7 +647,7 @@ FROM Numbers;
             }
 
             $preservedStagingDatabaseName = $null
-            if ($raceCase.SecondBarrierText) {
+            if ($raceCase.SecondBarrierName) {
                 $secondRaceBarrierDeadline = (Get-Date).AddMinutes(5)
                 do {
                     $secondBarrierObserved = Test-Path -LiteralPath $secondBarrierReadyPath
