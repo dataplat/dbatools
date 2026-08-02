@@ -99,7 +99,7 @@ For every selected database:
 15. On an import or pre-promotion failure, remove a staging database only when its current identity matches the identity captured after successful import. Preserve an unverified partial import or a concurrent replacement rather than deleting by name. Then emit `Failed` with the underlying error in friendly mode or rethrow through `Stop-Function` in exception mode.
 16. In `finally`, delete the local BACPAC unless `-KeepBacpac` was supplied.
 
-Cleanup operations use the already connected destination. Captured database identities plus unique staging and recovery names are the ownership boundary: failure cleanup never removes or modifies an unrelated database that raced into the requested final name. Cleanup or rollback failure is reported without hiding the original migration failure.
+Cleanup operations use the already connected destination. The command reads each database identity from Azure SQL's `sys.databases.service_broker_guid` plus the logical-server-unique `database_id`, values that live Azure validation confirms follow a database across rename and distinguish a same-name replacement. Captured identities combine with cryptographically unguessable GUID staging and recovery names as the ownership boundary. The command rereads identity immediately before name-based deletion and preserves the database on mismatch or uncertainty. Azure SQL exposes no atomic identity-conditional delete: `DROP DATABASE` and the control-plane delete API both target a database name only. A privileged principal deliberately enumerating and hijacking a run-owned GUID name is therefore outside the command's threat model; such a principal already has direct database deletion authority. Cleanup or rollback failure is reported without hiding the original migration failure.
 
 ## Output
 
@@ -142,7 +142,7 @@ Credentials and connection strings are never written to the pipeline, verbose st
 - The required Pester 6 header and static command name.
 - A parameter-surface assertion.
 - Focused validation tests for wrong option types and a non-Azure destination.
-- Behavioral tests for all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging handling, credential redaction, concurrent final-name appearance, concurrent final-name replacement, a replacement immediately before the forced rename, and replacement of staging immediately before failure cleanup where those behaviors can run against real boundaries.
+- Fourteen focused behavioral tests cover all-database selection and exclusion, safe existing-target skip, `-Force`, package cleanup, package retention, status output, `WhatIf`, friendly continuation, exception-mode stop, failed-import staging handling, credential and connection-string redaction, concurrent final-name appearance, concurrent final-name replacement, a replacement immediately before the forced rename, and replacement of staging immediately before failure cleanup where those behaviors can run against real boundaries.
 
 Mocks may supplement validation tests but do not count as behavioral coverage.
 

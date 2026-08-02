@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "", Justification = "Pester lifecycle variables are consumed across test blocks.")]
 param(
-    $ModuleName = "dbatools",
+    $ModuleName  = "dbatools",
     $CommandName = "Start-DbaAzMigration",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )

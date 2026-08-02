@@ -169,13 +169,11 @@ function Start-DbaAzMigration {
         }
 
         try {
-            $splatSource = @{
-                SqlInstance = $Source
-            }
             if ($SourceSqlCredential) {
-                $splatSource.SqlCredential = $SourceSqlCredential
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            } else {
+                $sourceServer = Connect-DbaInstance -SqlInstance $Source
             }
-            $sourceServer = Connect-DbaInstance @splatSource
         } catch {
             $splatStopSourceConnection = @{
                 Message         = "Failure connecting to source $Source"
@@ -267,7 +265,20 @@ function Start-DbaAzMigration {
                 return $null
             }
 
-            "$($DatabaseObject.ID)|$($DatabaseObject.CreateDate.ToUniversalTime().Ticks)"
+            $splatGetDatabaseIdentity = @{
+                SqlInstance     = $destinationServer
+                Database        = "master"
+                Query           = "SELECT CONVERT(nvarchar(36), service_broker_guid) + '|' + CONVERT(nvarchar(11), database_id) FROM sys.databases WHERE name = @DatabaseName"
+                SqlParameter    = @{ DatabaseName = $DatabaseObject.Name }
+                As              = "SingleValue"
+                EnableException = $true
+            }
+            $databaseIdentity = Invoke-DbaQuery @splatGetDatabaseIdentity
+            if (-not $databaseIdentity) {
+                throw "The identity of Azure SQL database $($DatabaseObject.Name) could not be read."
+            }
+
+            [string]$databaseIdentity
         }
 
         try {
@@ -348,10 +359,7 @@ function Start-DbaAzMigration {
                 BacpacPath          = $null
                 Elapsed             = $null
             }
-            $splatMigrationView = @{
-                Property = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
-                TypeName = "MigrationObject"
-            }
+            $migrationViewProperties = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
             $splatGetDestinationDatabase = @{
                 SqlInstance     = $destinationServer
                 Database        = $databaseName
@@ -370,7 +378,7 @@ function Start-DbaAzMigration {
                     $migrationStatus.Notes = $migrationStatus.Notes.Replace($sensitiveValue, "********")
                 }
                 $migrationStatus.Elapsed = [prettytimespan]$stopwatch.Elapsed
-                $migrationStatus | Select-DefaultView @splatMigrationView
+                $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
                 $splatStopDestinationValidation = @{
                     Message         = "Destination validation failed for database $databaseName"
                     ErrorRecord     = $PSItem
@@ -386,7 +394,7 @@ function Start-DbaAzMigration {
                 $migrationStatus.Status = "Skipped"
                 $migrationStatus.Notes = "Already exists on destination"
                 $migrationStatus.Elapsed = [prettytimespan]$stopwatch.Elapsed
-                $migrationStatus | Select-DefaultView @splatMigrationView
+                $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
                 continue
             }
 
@@ -530,6 +538,7 @@ function Start-DbaAzMigration {
                         $splatGetDestinationDatabase.Database = $backupDatabaseName
                         $backupDatabase = Get-DbaDatabase @splatGetDestinationDatabase
                         if ($backupDatabase) {
+                            # Azure SQL only supports name-based deletion. Recheck the GUID-owned name immediately before removal.
                             if ((& $getDatabaseIdentity $backupDatabase) -ne $destinationDatabaseIdentity) {
                                 throw "The recovery database $backupDatabaseName no longer identifies the original destination database."
                             }
@@ -613,6 +622,7 @@ function Start-DbaAzMigration {
                                 $stagingDatabaseMayNeedCleanup = $false
                                 $cleanupNotes += "A database replaced staging database $stagingDatabaseName before cleanup. The replacement was preserved."
                             } else {
+                                # Azure SQL only supports name-based deletion. Recheck the GUID-owned name immediately before removal.
                                 $splatRemoveStaging = @{
                                     InputObject     = $partialStagingDatabase
                                     Confirm         = $false
@@ -676,7 +686,7 @@ function Start-DbaAzMigration {
                 $failureMessage = $migrationStatus.Notes
             }
 
-            $migrationStatus | Select-DefaultView @splatMigrationView
+            $migrationStatus | Select-DefaultView -Property $migrationViewProperties -TypeName "MigrationObject"
 
             if ($failureRecord) {
                 $safeException = New-Object System.Exception -ArgumentList $failureMessage
