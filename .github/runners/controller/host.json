@@ -1,0 +1,34 @@
+{
+  "version": "2.0",
+  "functionTimeout": "00:30:00",
+  "managedDependency": {
+    "enabled": false
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  },
+  "extensions": {
+    "queues": {
+      "batchSize": 1,
+      "newBatchThreshold": 0,
+      "maxDequeueCount": 5,
+      "visibilityTimeout": "00:01:00",
+      "maxPollingInterval": "00:00:02"
+    }
+  },
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": false
+      }
+    },
+    "logLevel": {
+      "default": "Information",
+      "Azure.Core": "Warning",
+      "Azure.Storage.Blobs": "Warning",
+      "Azure.Storage.Queues": "Warning",
+      "Host.Storage": "Warning"
+    }
+  }
+}
