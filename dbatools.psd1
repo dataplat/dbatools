@@ -402,6 +402,7 @@
         'Get-DbaTopResourceUsage',
         'Get-DbaTrace',
         'Get-DbaTraceFlag',
+        'Get-DbaUnusedLogin',
         'Get-DbaUptime',
         'Get-DbaUserPermission',
         'Get-DbaWaitingTask',
