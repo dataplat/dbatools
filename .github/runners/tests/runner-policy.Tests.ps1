@@ -107,6 +107,24 @@ BeforeAll {
         }
         Get-DesiredRunnerPools @splatPolicy
     }
+
+    function Get-ControllerCapacityPlanner {
+        $tokens = $null
+        $parseErrors = $null
+        $controllerPath = (Resolve-Path "$PSScriptRoot/../reconcile-runner-fleet.ps1").Path
+        $controllerAst = [System.Management.Automation.Language.Parser]::ParseFile($controllerPath, [ref]$tokens, [ref]$parseErrors)
+        if ($parseErrors) {
+            throw "Could not parse $controllerPath"
+        }
+        $capacityPlanner = $controllerAst.Find({
+                param($ast)
+                $ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $ast.Name -eq "Invoke-VmssCapacityPlan"
+            }, $true)
+        if (-not $capacityPlanner) {
+            throw "Invoke-VmssCapacityPlan is not defined in $controllerPath"
+        }
+        [scriptblock]::Create($capacityPlanner.Extent.Text)
+    }
 }
 
 Describe "Test-CiMarker" {
@@ -513,6 +531,70 @@ Describe "Get-VmssCapacityPlan" {
             TargetCapacity  = 1
         }
         @(Get-VmssCapacityPlan @splatCapacity) | Should -BeNullOrEmpty
+    }
+}
+
+Describe "Flexible VMSS capacity reconciliation" {
+    BeforeEach {
+        $script:ScaleCalls = @()
+        $script:ProvisioningPolls = 0
+        $script:SleepSeconds = @()
+
+        function script:Invoke-NativeText {
+            param(
+                [string]$Tool,
+                [string[]]$Arguments,
+                [string]$Operation
+            )
+
+            $script:ScaleCalls += [pscustomobject]@{
+                Tool      = $Tool
+                Arguments = $Arguments
+                Operation = $Operation
+            }
+        }
+
+        function script:Start-Sleep {
+            param([int]$Seconds)
+
+            $script:SleepSeconds += $Seconds
+        }
+
+        function script:Get-FleetState {
+            $script:ProvisioningPolls += 1
+            [pscustomobject]@{
+                Vms = @([pscustomobject]@{ provisioning = "Succeeded" })
+            }
+        }
+    }
+
+    It "normalizes phantom capacity before async scale-out and polls provisioning" {
+        . (Get-ControllerCapacityPlanner)
+
+        $splatCapacity = @{
+            NominalCapacity = 4
+            ActualCapacity  = 0
+            TargetCapacity  = 1
+            TransitionBusy  = 0
+            ResourceGroup   = "test-rg"
+            Vmss            = "test-vmss"
+        }
+        Invoke-VmssCapacityPlan @splatCapacity
+
+        $script:ScaleCalls.Count | Should -Be 2
+        $script:ScaleCalls[0].Tool | Should -Be "az"
+        $script:ScaleCalls[0].Operation | Should -Be "normalize VMSS capacity to 0"
+        $script:ScaleCalls[0].Arguments | Should -Be @(
+            "vmss", "scale", "--resource-group", "test-rg", "--name", "test-vmss",
+            "--new-capacity", "0", "--only-show-errors", "--output", "none"
+        )
+        $script:ScaleCalls[1].Operation | Should -Be "scale VMSS to 1"
+        $script:ScaleCalls[1].Arguments | Should -Be @(
+            "vmss", "scale", "--resource-group", "test-rg", "--name", "test-vmss",
+            "--new-capacity", "1", "--only-show-errors", "--output", "none", "--no-wait"
+        )
+        $script:SleepSeconds | Should -Be @(20)
+        $script:ProvisioningPolls | Should -Be 1
     }
 }
 
