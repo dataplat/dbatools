@@ -295,30 +295,7 @@ jobs:
             }
           }
 
-      # AppVeyor replenishes a worker slot as soon as one matrix job ends. Nudging
-      # per job avoids waiting for the longest matrix row before replacing every VM.
-      - name: Nudge replacement for this worker
-        if: always()
-        shell: powershell
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $splatNudge = @{
-              Method      = "Post"
-              Uri         = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/runner-reconcile.yml/dispatches"
-              Headers     = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = "application/vnd.github+json" }
-              Body        = (ConvertTo-Json -InputObject @{ ref = "development" })
-              TimeoutSec  = 30
-          }
-          foreach ($attempt in 1..3) {
-              try {
-                  $null = Invoke-RestMethod @splatNudge
-                  return
-              } catch {
-                  Write-Warning "Reconcile nudge attempt $attempt of 3 failed. $($PSItem.Exception.Message)"
-                  if ($attempt -lt 3) {
-                      Start-Sleep -Seconds (3 * $attempt)
-                  }
-              }
-          }
-          Write-Warning "Reconcile nudge skipped after bounded retries; the next job completion or scheduled reconcile will recover it."
+      # The replacement nudge that used to live here is gone. Its job was to tell
+      # runner-reconcile.yml a worker slot had freed up, the way AppVeyor replenishes
+      # one as soon as a matrix job ends. The controller learns the same thing from the
+      # workflow_job.completed webhook, without a step in the critical path.
