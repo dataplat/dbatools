@@ -395,6 +395,35 @@ function Get-FunctionNameFromTestFile($testFilePath) {
     return $leaf.Replace(".Tests.ps1", "")
 }
 
+function Write-TestHeartbeat {
+    <#
+        Records the test file the runner is about to run, for appveyor.watchdog.ps1 to read.
+
+        Written by hand rather than with Set-Content because the provider's writer refuses to
+        share the file with a reader that already has it open, and the watchdog reads this file
+        every few seconds by design. That collision surfaces as a TERMINATING error which
+        -ErrorAction SilentlyContinue does not suppress, so it used to fail the whole test
+        stage rather than skip one heartbeat. FileShare.ReadWrite lets the two coexist.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+    param(
+        [string]$Path,
+        [string]$Label
+    )
+
+    $heartbeatStream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+    try {
+        $heartbeatWriter = New-Object -TypeName System.IO.StreamWriter -ArgumentList $heartbeatStream
+        try {
+            $heartbeatWriter.WriteLine("$((Get-Date).Ticks)|$Label")
+        } finally {
+            $heartbeatWriter.Dispose()
+        }
+    } finally {
+        $heartbeatStream.Dispose()
+    }
+}
+
 function Show-DependencyTree {
     # helper function to show the dependency tree for easier debugging
     param (
