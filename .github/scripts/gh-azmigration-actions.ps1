@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
             $stagingCleanupReplacementDatabaseName
         )
         $testPath = "/tmp/dbatools-azmigration-$suffix"
-        $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatoolstestmigration" }
+        $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatools" }
         $destinationConnectionString = "Server=$destinationServerName.database.windows.net;Authentication=Active Directory Service Principal;Database=master;User Id=$env:CLIENTID;Password=$env:CLIENTSECRET;Encrypt=True;TrustServerCertificate=False;"
         $script:verificationConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$databaseName")
         $sourceServer = $null
