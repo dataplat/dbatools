@@ -569,4 +569,30 @@ Describe "parallel registration" {
         $parallelBlock | Should -Match "\`$task = \`$PSItem"
         $parallelBlock | Should -Not -Match "VmName = \`$PSItem\.VmName"
     }
+
+    It "hands the real bootstrap script, blank lines and all, to the run-command binder" {
+        # Mandatory on a [string[]] rejects the whole array when any element is an empty
+        # string, and bootstrap-runner.ps1 is read line by line. Every live registration
+        # failed at the binder with "because it is an empty string", and nothing caught it
+        # because Test-FleetDryRun returns before this call in every non-live pass.
+        $bootstrapLines = @(Get-Content -Path "$PSScriptRoot/../bootstrap-runner.ps1")
+        $blankLines = @($bootstrapLines | Where-Object { $PSItem -eq "" }).Count
+        $blankLines | Should -BeGreaterThan 0 -Because "this only discriminates while the bootstrap still has a blank line"
+        InModuleScope FleetCore -Parameters @{ BootstrapLines = $bootstrapLines } {
+            param($BootstrapLines)
+            Mock Invoke-WebRequest {
+                [pscustomobject]@{
+                    StatusCode = 200
+                    Content    = "{`"value`":[{`"message`":`"runner registered`"}]}"
+                }
+            }
+            $splatRunCommand = @{
+                ArmToken     = "arm-token"
+                VmResourceId = "/subscriptions/s/resourceGroups/dbatools-ci/providers/Microsoft.Compute/virtualMachines/dbatools-runners_abc"
+                ScriptLines  = $BootstrapLines
+                Parameters   = @(@{ name = "Token"; value = "registration-token" })
+            }
+            Invoke-VmRunCommand @splatRunCommand | Should -Be "runner registered"
+        }
+    }
 }

@@ -1001,6 +1001,12 @@ function Invoke-VmRunCommand {
         [Parameter(Mandatory)]
         [string]$VmResourceId,
         [Parameter(Mandatory)]
+        # Mandatory on a [string[]] rejects the whole array when any element is an empty
+        # string, and this one is a PowerShell file read line by line -- bootstrap-runner.ps1
+        # has 16 blank lines. Every registration failed with "because it is an empty string"
+        # until this attribute went on. An empty array and a null still fail, which is what
+        # a missing or truncated bootstrap should do.
+        [AllowEmptyString()]
         [string[]]$ScriptLines,
         [Parameter(Mandatory)]
         [object[]]$Parameters,
