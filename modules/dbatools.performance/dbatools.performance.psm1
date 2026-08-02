@@ -1,4 +1,4 @@
-# Thin shim loader (migration/specs/modules.md section 5.3). Its only jobs: import the
+﻿# Thin shim loader (migration/specs/modules.md section 5.3). Its only jobs: import the
 # edition-appropriate packaged cmdlet assembly and register this module's own TEPP completer
 # mappings. Assembly redirectors and shared-assembly loading belong to dbatools.library,
 # which the manifest's RequiredModules chain has already loaded - DO NOT be tempted to load
@@ -59,6 +59,18 @@ if (($PSVersionTable.PSVersion.Major -ge 5) -and (Get-Command -Name Register-Arg
 
     $teppCommandName = @()
     foreach ($teppCmdlet in $assemblyModule.ExportedCmdlets.Values) {
+        # Parameters is null when PowerShell cannot build the cmdlet's metadata, which happens
+        # whenever a parameter type lives in an assembly this box cannot resolve -- the five RMO
+        # Repl* cmdlets are the standing case, and RMO is not redistributable. Dereferencing it
+        # threw inside the shim, and an error raised while a nested module loads aborts the ROOT
+        # dbatools import: one unresolvable parameter type took the whole module down, on every
+        # edition, for every gate and sweep on the box. A cmdlet whose metadata will not build
+        # cannot be asked whether it has -Database, so it gets no completer and says so under
+        # -Verbose; it is not silently equated with one that has no -Database.
+        if ($null -eq $teppCmdlet.Parameters) {
+            Write-Verbose "TEPP: $($teppCmdlet.Name) has no resolvable parameter metadata; skipping its Database completer"
+            continue
+        }
         if ($teppCmdlet.Parameters.ContainsKey("Database")) {
             $teppCommandName += $teppCmdlet.Name
             [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet($teppCmdlet.Name, "Database", "database")
