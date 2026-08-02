@@ -52,6 +52,7 @@ BeforeAll {
 
     function New-CiRun {
         param(
+            [int]$Id = 1,
             [Parameter(Mandatory)]
             [string]$Actor,
             [Parameter(Mandatory)]
@@ -65,6 +66,7 @@ BeforeAll {
         )
 
         [pscustomobject]@{
+            id          = $Id
             actor       = [pscustomobject]@{ login = $Actor }
             event       = $TriggerEvent
             status      = $Status
@@ -81,7 +83,9 @@ BeforeAll {
             [object[]]$WorkflowRuns = @(),
             [string]$DirectTriggerActor = "",
             [string]$DirectTriggerMessage = "",
-            [int]$MaxRunners = 35
+            [int]$MaxRunners = 35,
+            [hashtable]$PoolJobDemand = @{ },
+            [int]$WarmFloor = 10
         )
 
         $splatPolicy = @{
@@ -98,6 +102,8 @@ BeforeAll {
             Now                     = $script:Now
             DirectTriggerActor      = $DirectTriggerActor
             DirectTriggerMessage    = $DirectTriggerMessage
+            PoolJobDemand           = $PoolJobDemand
+            WarmFloor               = $WarmFloor
         }
         Get-DesiredRunnerPools @splatPolicy
     }
@@ -249,6 +255,218 @@ Describe "Get-DesiredRunnerPools" {
     }
 }
 
+Describe "Get-DesiredRunnerPools demand-driven sizing" {
+    It "sizes a maintainer lane to the pending job count" {
+        $run = New-CiRun -Actor "andreasjordan" -Status "in_progress" -UpdatedAt $script:Now
+        $splatDemand = @{
+            WorkflowRuns  = @($run)
+            PoolJobDemand = @{ andreasjordan = 3 }
+            WarmFloor     = 0
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.andreasjordan | Should -Be 3
+    }
+
+    It "caps pending job demand at the maintainer pool size" {
+        $run = New-CiRun -Actor "andreasjordan" -Status "in_progress" -UpdatedAt $script:Now
+        $splatDemand = @{
+            WorkflowRuns  = @($run)
+            PoolJobDemand = @{ andreasjordan = 25 }
+            WarmFloor     = 0
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.andreasjordan | Should -Be 10
+    }
+
+    It "holds a hot lane at the warm floor when nothing is pending" {
+        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-5)
+        $splatDemand = @{
+            Events        = @($event)
+            PoolJobDemand = @{ }
+            WarmFloor     = 2
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.andreasjordan | Should -Be 2
+    }
+
+    It "drops a hot lane to zero when the warm floor is zero and nothing is pending" {
+        $event = New-PushEvent -Actor "andreasjordan" -CreatedAt $script:Now.AddMinutes(-5)
+        $splatDemand = @{
+            Events        = @($event)
+            PoolJobDemand = @{ }
+            WarmFloor     = 0
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.andreasjordan | Should -Be 0
+    }
+
+    It "sizes the community lane to pending jobs and caps at five" {
+        $run = New-CiRun -Actor "outsider" -Status "in_progress" -UpdatedAt $script:Now
+        $splatDemand = @{
+            WorkflowRuns  = @($run)
+            PoolJobDemand = @{ community = 9 }
+            WarmFloor     = 0
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.community | Should -Be 5
+    }
+
+    It "leaves a cold lane at zero even when demand is reported" {
+        $splatDemand = @{
+            PoolJobDemand = @{ niphlod = 4 }
+            WarmFloor     = 3
+        }
+        $result = Invoke-TestPolicy @splatDemand
+        $result.niphlod | Should -Be 0
+    }
+}
+
+Describe "Get-PoolJobDemandFromJobs" {
+    BeforeAll {
+        # Defined in BeforeAll, not the Describe body: Pester 5 runs the Describe body
+        # during discovery, so a function declared there does not exist when the It
+        # blocks execute. This matches the helper idiom in the top-level BeforeAll.
+        function New-TestJob {
+            param(
+                [string]$Status = "queued",
+                [string[]]$Labels = @("self-hosted", "dbatools-modern", "dbatools-pool-andreasjordan")
+            )
+            [pscustomobject]@{
+                status = $Status
+                labels = $Labels
+            }
+        }
+    }
+
+    It "counts pending jobs per pool label" {
+        $jobs = @((New-TestJob), (New-TestJob), (New-TestJob -Status "in_progress"))
+        $result = Get-PoolJobDemandFromJobs -Jobs $jobs
+        $result.andreasjordan | Should -Be 3
+    }
+
+    It "ignores completed jobs" {
+        $jobs = @((New-TestJob -Status "completed"), (New-TestJob))
+        $result = Get-PoolJobDemandFromJobs -Jobs $jobs
+        $result.andreasjordan | Should -Be 1
+    }
+
+    It "ignores jobs with no pool label" {
+        $jobs = @((New-TestJob -Labels @("ubuntu-latest")), (New-TestJob))
+        $result = Get-PoolJobDemandFromJobs -Jobs $jobs
+        $result.andreasjordan | Should -Be 1
+        $result.Keys.Count | Should -Be 1
+    }
+
+    It "counts job statuses it has never seen as pending" {
+        $jobs = @((New-TestJob -Status "waiting"), (New-TestJob -Status "some_future_status"))
+        $result = Get-PoolJobDemandFromJobs -Jobs $jobs
+        $result.andreasjordan | Should -Be 2
+    }
+
+    It "separates pools within one job list" {
+        $jobs = @(
+            (New-TestJob),
+            (New-TestJob -Labels @("self-hosted", "dbatools-pool-community"))
+        )
+        $result = Get-PoolJobDemandFromJobs -Jobs $jobs
+        $result.andreasjordan | Should -Be 1
+        $result.community | Should -Be 1
+    }
+
+    It "returns an empty hashtable for no jobs" {
+        $result = Get-PoolJobDemandFromJobs -Jobs @()
+        $result.Keys.Count | Should -Be 0
+    }
+}
+
+Describe "Get-PoolJobDemandFromRuns" {
+    BeforeAll {
+        function New-RunJob {
+            param(
+                [string]$Status = "queued",
+                [string[]]$Labels = @("self-hosted", "dbatools-modern", "dbatools-pool-potatoqualitee")
+            )
+            [pscustomobject]@{
+                status = $Status
+                labels = $Labels
+            }
+        }
+    }
+
+    It "ignores an ineligible live run before its matrix is created" {
+        $splatRun = @{
+            Id           = 41
+            Actor        = "potatoqualitee"
+            Status       = "in_progress"
+            UpdatedAt    = $script:Now
+            TriggerEvent = "push"
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "41" = @((New-RunJob -Labels @("ubuntu-latest"))) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.Keys.Count | Should -Be 0
+    }
+
+    It "returns no demand after an eligible run's fleet matrix has completed" {
+        $splatRun = @{
+            Id        = 42
+            Actor     = "potatoqualitee"
+            Status    = "in_progress"
+            UpdatedAt = $script:Now
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "42" = @((New-RunJob -Status "completed")) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.Keys.Count | Should -Be 0
+    }
+
+    It "estimates a full pool only before an eligible run's fleet matrix exists" {
+        $splatRun = @{
+            Id        = 43
+            Actor     = "potatoqualitee"
+            Status    = "in_progress"
+            UpdatedAt = $script:Now
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "43" = @((New-RunJob -Labels @("ubuntu-latest"))) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.potatoqualitee | Should -Be 10
+    }
+}
+
 Describe "Get-MarkedPushDispatch" {
     It "returns a new marked branch and SHA" {
         $event = New-PushEvent -Actor "potatoqualitee" -CreatedAt $script:Now.AddMinutes(-5) -Message "work [do ci]" -Sha "marked123" -Branch "feature"
@@ -327,6 +545,16 @@ Describe "Runner workflow policy wiring" {
     It "keeps the Azure backstop aligned with the four-pool ceiling" {
         $script:Janitor | Should -Match '@\("potatoqualitee", "andreasjordan", "niphlod"\)'
         $script:Janitor | Should -Match 'MAX_RUNNERS is 35'
+    }
+
+    It "keeps the janitor warm floor aligned with the reconcile workflow" {
+        # Explicit -match, not Should -Match: Pester's assertion does not publish
+        # $Matches into the test scope, so capturing the captured group needs the
+        # operator itself. Each -match overwrites $Matches, hence the interleaving.
+        ($script:ReconcileWorkflow -match "WARM_FLOOR: (\d+)") | Should -BeTrue
+        $workflowFloor = [int]$Matches[1]
+        ($script:Janitor -match "\`$warmFloor = (\d+)") | Should -BeTrue
+        [int]$Matches[1] | Should -Be $workflowFloor
     }
 
     It "documents that targeting and activation markers are unrelated" {

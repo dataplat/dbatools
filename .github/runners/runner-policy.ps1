@@ -119,6 +119,101 @@ function Test-MaintainerActivityEvent {
     return Test-CiMarker -Message $message -Marker $Marker
 }
 
+function Get-PoolJobDemandFromJobs {
+    param(
+        [object[]]$Jobs = @(),
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+    # Demand is read from each job's own dbatools-pool-* label rather than from the
+    # run's actor. That is exact: it counts only jobs that actually queue against this
+    # fleet (ci-azure.yml's authorize job runs on ubuntu-latest and carries no pool
+    # label), and it already honours the [pool:...] display-title override, because
+    # the workflow resolved inputs.pool_user into runs-on before the job was created.
+    #
+    # Anything not "completed" needs a runner, so the filter is negative rather than a
+    # whitelist -- GitHub has added job statuses (waiting, pending, requested) since
+    # this fleet was written and will add more.
+    $demand = @{ }
+    foreach ($job in $Jobs) {
+        if ([string]$job.status -eq "completed") {
+            continue
+        }
+        $poolLabel = @($job.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" } | Select-Object -First 1)
+        if (-not $poolLabel) {
+            continue
+        }
+        $pool = ([string]$poolLabel[0]).Substring($PoolLabelPrefix.Length)
+        if (-not $demand.ContainsKey($pool)) {
+            $demand[$pool] = 0
+        }
+        $demand[$pool] += 1
+    }
+    $demand
+}
+
+function Get-PoolJobDemandFromRuns {
+    [CmdletBinding()]
+    param(
+        [object[]]$WorkflowRuns = @(),
+        [hashtable]$JobsByRun = @{ },
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers,
+        [Parameter(Mandatory)]
+        [string[]]$OptInPushUsers,
+        [Parameter(Mandatory)]
+        [string]$Marker,
+        [Parameter(Mandatory)]
+        [int]$MaintainerCount,
+        [Parameter(Mandatory)]
+        [int]$CommunityCount,
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+
+    $demand = @{ }
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $OptInPushUsers
+                Marker         = $Marker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    foreach ($run in $eligibleLiveRuns) {
+        $runId = [string]$run.id
+        $jobs = @()
+        if ($JobsByRun.ContainsKey($runId)) {
+            $jobs = @($JobsByRun[$runId])
+        }
+        $fleetJobs = @($jobs | Where-Object {
+                @($PSItem.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" }).Count -gt 0
+            })
+        if (-not $fleetJobs) {
+            # The authorization job exists before the fleet matrix. Estimate one full
+            # pool for that short gap; once any fleet-labelled job exists, even a
+            # completed one, the real pending count replaces the estimate.
+            $pool = Get-CiRunActor -Run $run
+            $poolSize = $MaintainerCount
+            if ($pool -notin $Maintainers) {
+                $pool = "community"
+                $poolSize = $CommunityCount
+            }
+            if (-not $demand.ContainsKey($pool) -or $demand[$pool] -lt $poolSize) {
+                $demand[$pool] = $poolSize
+            }
+            continue
+        }
+
+        $runDemand = Get-PoolJobDemandFromJobs -Jobs $fleetJobs -PoolLabelPrefix $PoolLabelPrefix
+        foreach ($pool in $runDemand.Keys) {
+            if (-not $demand.ContainsKey($pool)) {
+                $demand[$pool] = 0
+            }
+            $demand[$pool] += $runDemand[$pool]
+        }
+    }
+    $demand
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
@@ -145,7 +240,10 @@ function Get-DesiredRunnerPools {
         [AllowEmptyString()]
         [string]$DirectTriggerActor = "",
         [AllowEmptyString()]
-        [string]$DirectTriggerMessage = ""
+        [string]$DirectTriggerMessage = "",
+        [hashtable]$PoolJobDemand = @{ },
+        [ValidateRange(0, 35)]
+        [int]$WarmFloor = 0
     )
 
     $maintainerCutoff = $Now.AddMinutes(-$MaintainerWindowMinutes)
@@ -165,10 +263,19 @@ function Get-DesiredRunnerPools {
         if ($directTrigger -and $maintainer -in $OptInPushUsers) {
             $directTrigger = Test-CiMarker -Message $DirectTriggerMessage -Marker $Marker
         }
-        $desired[$maintainer] = if ($recentActivity -or $liveCi -or $directTrigger) {
-            $MaintainerCount
-        } else {
+        # Demand sizes a hot lane; it never heats a cold one. A community PR must not
+        # be able to size a maintainer lane by reporting jobs against it.
+        $hot = $recentActivity -or $liveCi -or $directTrigger
+        $pending = 0
+        if ($PoolJobDemand.ContainsKey($maintainer)) {
+            $pending = [int]$PoolJobDemand[$maintainer]
+        }
+        $desired[$maintainer] = if (-not $hot) {
             0
+        } elseif ($pending -gt 0) {
+            [math]::Min($MaintainerCount, $pending)
+        } else {
+            [math]::Min($MaintainerCount, $WarmFloor)
         }
     }
 
@@ -181,10 +288,17 @@ function Get-DesiredRunnerPools {
             [DateTimeOffset]::Parse([string]$PSItem.updated_at) -gt $communityCutoff
         }).Count -gt 0
     $directCommunityTrigger = $DirectTriggerActor -and $DirectTriggerActor -notin $Maintainers
-    $desired["community"] = if ($communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger) {
-        $CommunityCount
-    } else {
+    $communityHot = $communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger
+    $communityPending = 0
+    if ($PoolJobDemand.ContainsKey("community")) {
+        $communityPending = [int]$PoolJobDemand["community"]
+    }
+    $desired["community"] = if (-not $communityHot) {
         0
+    } elseif ($communityPending -gt 0) {
+        [math]::Min($CommunityCount, $communityPending)
+    } else {
+        [math]::Min($CommunityCount, $WarmFloor)
     }
 
     $total = ($desired.Values | Measure-Object -Sum).Sum
