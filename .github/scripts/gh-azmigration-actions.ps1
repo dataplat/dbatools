@@ -11,6 +11,12 @@ BeforeDiscovery {
         @{ Name = "an existing final name is replaced immediately before rename"; Scenario = "PromotionReplacement" }
         @{ Name = "an owned staging database is replaced immediately before cleanup"; Scenario = "StagingReplacement" }
     )
+    if ($env:DBATOOLS_AZMIGRATION_RACE_SCENARIO) {
+        $script:raceTestCases = @($script:raceTestCases | Where-Object Scenario -eq $env:DBATOOLS_AZMIGRATION_RACE_SCENARIO)
+        if ($script:raceTestCases.Count -ne 1) {
+            throw "Unknown DBATOOLS_AZMIGRATION_RACE_SCENARIO value $($env:DBATOOLS_AZMIGRATION_RACE_SCENARIO)."
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -78,6 +84,8 @@ Describe $CommandName -Tag IntegrationTests {
             $stagingCleanupReplacementDatabaseName
         )
         $testPath = "/tmp/dbatools-azmigration-$suffix"
+        $barrierRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [IO.Path]::GetTempPath() }
+        $barrierPath = Join-Path $barrierRoot "dbatools-azmigration-barrier-$suffix"
         $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatools" }
         $script:destinationSqlInstance = "$destinationServerName.database.windows.net"
         $destinationConnectionString = "Server=$script:destinationSqlInstance;Database=master;Encrypt=True;TrustServerCertificate=False;"
@@ -104,6 +112,12 @@ Describe $CommandName -Tag IntegrationTests {
             Force    = $true
         }
         $null = New-Item @splatNewTestPath
+        $splatNewBarrierPath = @{
+            Path     = $barrierPath
+            ItemType = "Directory"
+            Force    = $true
+        }
+        $null = New-Item @splatNewBarrierPath
         $splatSourceConnection = @{
             SqlInstance   = "localhost"
             SqlCredential = $sourceCredential
@@ -590,10 +604,10 @@ FROM Numbers;
             $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
             $script:destinationMaster = $null
 
-            $barrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-ready"
-            $barrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-release"
-            $secondBarrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-ready"
-            $secondBarrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-release"
+            $barrierReadyPath = Join-Path $barrierPath "$($raceCase.DatabaseName)-barrier-ready"
+            $barrierReleasePath = Join-Path $barrierPath "$($raceCase.DatabaseName)-barrier-release"
+            $secondBarrierReadyPath = Join-Path $barrierPath "$($raceCase.DatabaseName)-second-barrier-ready"
+            $secondBarrierReleasePath = Join-Path $barrierPath "$($raceCase.DatabaseName)-second-barrier-release"
             $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $script:destinationAccessToken, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierName, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierName, $secondBarrierReadyPath, $secondBarrierReleasePath)
             $script:raceJob = Start-Job -ScriptBlock $raceScript -ArgumentList $script:raceJobArguments
             $raceBarrierDeadline = (Get-Date).AddMinutes(15)
@@ -604,7 +618,20 @@ FROM Numbers;
                 }
             } while (-not $barrierObserved -and $script:raceJob.State -in @("Running", "NotStarted") -and (Get-Date) -lt $raceBarrierDeadline)
             if (-not $barrierObserved) {
-                throw "The race test did not reach its deterministic promotion barrier. Job state: $($script:raceJob.State)."
+                $raceJobFailureDetails = @()
+                $raceJobReason = $script:raceJob.ChildJobs[0].JobStateInfo.Reason
+                if ($raceJobReason) {
+                    $raceJobFailureDetails += "Reason: $($raceJobReason.Message)"
+                }
+                foreach ($raceJobError in $script:raceJob.ChildJobs[0].Error) {
+                    $raceJobFailureDetails += "Error: $($raceJobError.ToString())"
+                }
+                $raceJobFailureDescription = if ($raceJobFailureDetails.Count -gt 0) {
+                    " Details: $($raceJobFailureDetails -join " | ")"
+                } else {
+                    ""
+                }
+                throw "The race test did not reach its deterministic promotion barrier. Job state: $($script:raceJob.State).$raceJobFailureDescription"
             }
 
             try {
@@ -919,17 +946,19 @@ FROM Numbers;
             }
         }
 
-        if (Test-Path -LiteralPath $testPath) {
-            try {
-                $splatRemoveTestPath = @{
-                    LiteralPath = $testPath
-                    Recurse     = $true
-                    Force       = $true
-                    ErrorAction = "Stop"
+        foreach ($testArtifactPath in @($testPath, $barrierPath)) {
+            if (Test-Path -LiteralPath $testArtifactPath) {
+                try {
+                    $splatRemoveTestArtifactPath = @{
+                        LiteralPath = $testArtifactPath
+                        Recurse     = $true
+                        Force       = $true
+                        ErrorAction = "Stop"
+                    }
+                    Remove-Item @splatRemoveTestArtifactPath
+                } catch {
+                    $cleanupErrors += $PSItem
                 }
-                Remove-Item @splatRemoveTestPath
-            } catch {
-                $cleanupErrors += $PSItem
             }
         }
 

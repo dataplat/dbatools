@@ -275,177 +275,194 @@ function Publish-DbaDacPackage {
             $ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'") | Convert-ConnectionString
         }
 
-        #Use proper class to load the object
-        if ($Type -eq 'Dacpac') {
-            try {
-                $dacPackage = [Microsoft.SqlServer.Dac.DacPackage]::Load($Path)
-            } catch {
-                Stop-Function -Message "Could not load Dacpac." -ErrorRecord $_
-                return
-            }
-        } elseif ($Type -eq 'Bacpac') {
-            try {
-                $bacPackage = [Microsoft.SqlServer.Dac.BacPackage]::Load($Path)
-            } catch {
-                Stop-Function -Message "Could not load Bacpac." -ErrorRecord $_
-                return
-            }
-        }
-        #Load XML profile when used
-        if (Test-Bound PublishXml) {
-            try {
-                $options = New-DbaDacOption -Type $Type -Action Publish -PublishXml $PublishXml -EnableException
-            } catch {
-                Stop-Function -Message "Could not load profile." -ErrorRecord $_
-                return
-            }
-        }
-        #Create/re-use deployment options object
-        else {
-            if (-not (Test-Bound DacOption)) {
-                $options = New-DbaDacOption -Type $Type -Action Publish
-            } else {
-                $options = $DacOption
-            }
-        }
-        #Replace variables if defined
-        if ($IncludeSqlCmdVars) {
-            Get-SqlCmdVars -SqlCommandVariableValues $options.DeployOptions.SqlCommandVariableValues
-        }
+        $dacPackage = $null
+        $bacPackage = $null
+        $bacPackageStream = $null
 
-        foreach ($connString in $ConnectionString) {
-            $connString = $connString | Convert-ConnectionString
-            $cleaninstance = Get-ServerName $connString
-            $instance = $cleaninstance.ToString().Replace('--', '\')
-
-            # Fix for #7704 to take care that $cleaninstance can be used as a filename:
-            $cleaninstance = $cleaninstance.Replace(':', '_')
-
-            foreach ($dbName in $Database) {
-                $operationCompleted = $false
-                #Set deployment properties when specified
-                if (Test-Bound -ParameterName ScriptOnly) {
-                    $options.GenerateDeploymentScript = $true
-                }
-                if (Test-Bound -ParameterName GenerateDeploymentReport) {
-                    $options.GenerateDeploymentReport = $GenerateDeploymentReport
-                }
-                #Set output file paths when needed
-                $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
-                if ($options.GenerateDeploymentScript) {
-                    if (-not $options.DatabaseScriptPath) {
-                        Write-Message -Level Verbose -Message "DatabaseScriptPath not set, using default path."
-                        $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
-                    }
-                    if (-not $options.MasterDbScriptPath) {
-                        Write-Message -Level Verbose -Message "MasterDbScriptPath not set, using default path."
-                        $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
-                    }
-                }
-                if ($connString -notmatch 'Database=') {
-                    $connString = "$connString;Database=$dbName"
-                }
-
-                #Create services object
+        try {
+            #Use proper class to load the object
+            if ($Type -eq 'Dacpac') {
                 try {
-                    if ($AccessToken) {
-                        $dacServices = New-DbaDacService -ConnectionString $connString -AccessToken $AccessToken
-                    } else {
-                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
-                    }
+                    $dacPackage = [Microsoft.SqlServer.Dac.DacPackage]::Load($Path)
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                    Stop-Function -Message "Could not load Dacpac." -ErrorRecord $_
+                    return
                 }
-
+            } elseif ($Type -eq 'Bacpac') {
                 try {
-                    $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -ErrorAction SilentlyContinue -Action {
-                        $EventArgs.Message.Message
+                    $bacPackageStream = [IO.File]::OpenRead($Path)
+                    $bacPackage = [Microsoft.SqlServer.Dac.BacPackage]::Load($bacPackageStream)
+                } catch {
+                    Stop-Function -Message "Could not load Bacpac." -ErrorRecord $_
+                    return
+                }
+            }
+            #Load XML profile when used
+            if (Test-Bound PublishXml) {
+                try {
+                    $options = New-DbaDacOption -Type $Type -Action Publish -PublishXml $PublishXml -EnableException
+                } catch {
+                    Stop-Function -Message "Could not load profile." -ErrorRecord $_
+                    return
+                }
+            }
+            #Create/re-use deployment options object
+            else {
+                if (-not (Test-Bound DacOption)) {
+                    $options = New-DbaDacOption -Type $Type -Action Publish
+                } else {
+                    $options = $DacOption
+                }
+            }
+            #Replace variables if defined
+            if ($IncludeSqlCmdVars) {
+                Get-SqlCmdVars -SqlCommandVariableValues $options.DeployOptions.SqlCommandVariableValues
+            }
+
+            foreach ($connString in $ConnectionString) {
+                $connString = $connString | Convert-ConnectionString
+                $cleaninstance = Get-ServerName $connString
+                $instance = $cleaninstance.ToString().Replace('--', '\')
+
+                # Fix for #7704 to take care that $cleaninstance can be used as a filename:
+                $cleaninstance = $cleaninstance.Replace(':', '_')
+
+                foreach ($dbName in $Database) {
+                    $operationCompleted = $false
+                    #Set deployment properties when specified
+                    if (Test-Bound -ParameterName ScriptOnly) {
+                        $options.GenerateDeploymentScript = $true
                     }
-                    #Perform proper action depending on the Type
-                    if ($Type -eq 'Dacpac') {
-                        if ($options.GenerateDeploymentScript) {
-                            Write-Message -Level Verbose -Message "Generating the deployment script as requested by the caller."
-                            if (!$options.DatabaseScriptPath) {
-                                Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
-                            }
-                            if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
-                                $result = $dacServices.Script($dacPackage, $dbName, $options)
-                                $operationCompleted = $true
-                            }
+                    if (Test-Bound -ParameterName GenerateDeploymentReport) {
+                        $options.GenerateDeploymentReport = $GenerateDeploymentReport
+                    }
+                    #Set output file paths when needed
+                    $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
+                    if ($options.GenerateDeploymentScript) {
+                        if (-not $options.DatabaseScriptPath) {
+                            Write-Message -Level Verbose -Message "DatabaseScriptPath not set, using default path."
+                            $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
+                        }
+                        if (-not $options.MasterDbScriptPath) {
+                            Write-Message -Level Verbose -Message "MasterDbScriptPath not set, using default path."
+                            $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
+                        }
+                    }
+                    if ($connString -notmatch 'Database=') {
+                        $connString = "$connString;Database=$dbName"
+                    }
+
+                    #Create services object
+                    try {
+                        if ($AccessToken) {
+                            $dacServices = New-DbaDacService -ConnectionString $connString -AccessToken $AccessToken
                         } else {
-                            if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
-                                $result = $dacServices.Publish($dacPackage, $dbName, $options)
-                                $operationCompleted = $true
-                            }
+                            $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
                         }
-                    } elseif ($Type -eq 'Bacpac') {
-                        if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
-                            $dacServices.ImportBacpac($bacPackage, $dbName, $options, $null)
-                            $operationCompleted = $true
-                        }
+                    } catch {
+                        Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                     }
-                } catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    $splatStopDeployment = @{
-                        Message         = "Deployment failed"
-                        ErrorRecord     = $PSItem
-                        EnableException = $EnableException
-                        Continue        = $true
-                    }
-                    Stop-Function @splatStopDeployment
-                } finally {
-                    Unregister-Event -SourceIdentifier "msg"
-                    if ($operationCompleted -and $Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
-                        if ($options.GenerateDeploymentReport) {
-                            $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbName`_Result.DeploymentReport_$timeStamp.xml"
-                            $result.DeploymentReport | Out-File $deploymentReport
-                            Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
-                        }
-                        if ($options.GenerateDeploymentScript) {
-                            Write-Message -Level Verbose -Message "Database change script - $($options.DatabaseScriptPath)."
-                            if ((Test-Path $options.MasterDbScriptPath)) {
-                                Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
-                            }
-                        }
-                        $resultOutput = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
-                        if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
-                            Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
-                        }
 
-                        # Fix for #7704 to take care that named pipe connections to the local host work:
-                        $instance = $instance.Replace('NP:.', '.')
-
-                        $server = [dbainstance]$instance
+                    try {
+                        $null = $output = Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -ErrorAction SilentlyContinue -Action {
+                            $EventArgs.Message.Message
+                        }
+                        #Perform proper action depending on the Type
                         if ($Type -eq 'Dacpac') {
-                            $output = [PSCustomObject]@{
-                                ComputerName         = $server.ComputerName
-                                InstanceName         = $server.InstanceName
-                                SqlInstance          = $server.FullName
-                                Database             = $dbName
-                                Result               = $resultOutput
-                                Dacpac               = $Path
-                                PublishXml           = $PublishXml
-                                ConnectionString     = Hide-ConnectionString -ConnectionString $connString
-                                DatabaseScriptPath   = $options.DatabaseScriptPath
-                                MasterDbScriptPath   = $options.MasterDbScriptPath
-                                DeploymentReport     = $DeploymentReport
-                                DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
-                                SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
+                            if ($options.GenerateDeploymentScript) {
+                                Write-Message -Level Verbose -Message "Generating the deployment script as requested by the caller."
+                                if (!$options.DatabaseScriptPath) {
+                                    Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
+                                }
+                                if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
+                                    $result = $dacServices.Script($dacPackage, $dbName, $options)
+                                    $operationCompleted = $true
+                                }
+                            } else {
+                                if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
+                                    $result = $dacServices.Publish($dacPackage, $dbName, $options)
+                                    $operationCompleted = $true
+                                }
                             }
                         } elseif ($Type -eq 'Bacpac') {
-                            $output = [PSCustomObject]@{
-                                ComputerName     = $server.ComputerName
-                                InstanceName     = $server.InstanceName
-                                SqlInstance      = $server.FullName
-                                Database         = $dbName
-                                Result           = $resultOutput
-                                Bacpac           = $Path
-                                ConnectionString = Hide-ConnectionString -ConnectionString $connString
-                                DeployOptions    = $options
+                            if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
+                                $dacServices.ImportBacpac($bacPackage, $dbName, $options, $null)
+                                $operationCompleted = $true
                             }
                         }
-                        $output | Select-DefaultView -Property $defaultColumns
+                    } catch [Microsoft.SqlServer.Dac.DacServicesException] {
+                        $splatStopDeployment = @{
+                            Message         = "Deployment failed"
+                            ErrorRecord     = $PSItem
+                            EnableException = $EnableException
+                            Continue        = $true
+                        }
+                        Stop-Function @splatStopDeployment
+                    } finally {
+                        Unregister-Event -SourceIdentifier "msg"
+                        if ($operationCompleted -and $Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
+                            if ($options.GenerateDeploymentReport) {
+                                $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbName`_Result.DeploymentReport_$timeStamp.xml"
+                                $result.DeploymentReport | Out-File $deploymentReport
+                                Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
+                            }
+                            if ($options.GenerateDeploymentScript) {
+                                Write-Message -Level Verbose -Message "Database change script - $($options.DatabaseScriptPath)."
+                                if ((Test-Path $options.MasterDbScriptPath)) {
+                                    Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
+                                }
+                            }
+                            $resultOutput = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
+                            if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
+                                Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
+                            }
+
+                            # Fix for #7704 to take care that named pipe connections to the local host work:
+                            $instance = $instance.Replace('NP:.', '.')
+
+                            $server = [dbainstance]$instance
+                            if ($Type -eq 'Dacpac') {
+                                $output = [PSCustomObject]@{
+                                    ComputerName         = $server.ComputerName
+                                    InstanceName         = $server.InstanceName
+                                    SqlInstance          = $server.FullName
+                                    Database             = $dbName
+                                    Result               = $resultOutput
+                                    Dacpac               = $Path
+                                    PublishXml           = $PublishXml
+                                    ConnectionString     = Hide-ConnectionString -ConnectionString $connString
+                                    DatabaseScriptPath   = $options.DatabaseScriptPath
+                                    MasterDbScriptPath   = $options.MasterDbScriptPath
+                                    DeploymentReport     = $DeploymentReport
+                                    DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
+                                    SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
+                                }
+                            } elseif ($Type -eq 'Bacpac') {
+                                $output = [PSCustomObject]@{
+                                    ComputerName     = $server.ComputerName
+                                    InstanceName     = $server.InstanceName
+                                    SqlInstance      = $server.FullName
+                                    Database         = $dbName
+                                    Result           = $resultOutput
+                                    Bacpac           = $Path
+                                    ConnectionString = Hide-ConnectionString -ConnectionString $connString
+                                    DeployOptions    = $options
+                                }
+                            }
+                            $output | Select-DefaultView -Property $defaultColumns
+                        }
                     }
                 }
+            }
+        } finally {
+            if ($dacPackage) {
+                $dacPackage.Dispose()
+            }
+            if ($bacPackage) {
+                $bacPackage.Dispose()
+            }
+            if ($bacPackageStream) {
+                $bacPackageStream.Dispose()
             }
         }
     }
