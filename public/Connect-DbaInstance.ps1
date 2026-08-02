@@ -523,6 +523,10 @@ function Connect-DbaInstance {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
 
+            # Reset per instance, because only the string input path sets this and a mixed
+            # array would otherwise leak the previous instance's value into this iteration
+            $usesCredentialSspiProvider = $false
+
             if ($tryconnstring) {
                 $azureserver = $instance.InputObject
                 if ($Database) {
@@ -1038,8 +1042,6 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "WorkstationId will be set to '$WorkstationId'"
                     $sqlConnectionInfo.WorkstationId = $WorkstationId
                 }
-
-                $usesCredentialSspiProvider = $false
 
                 if ($authType -eq "local ad" -and -not $AuthenticationType -and ($IsLinux -or $IsMacOS)) {
                     Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."

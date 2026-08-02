@@ -215,36 +215,6 @@ jobs:
             }
           }
 
-      - name: Bootstrap dbatools.library PR dependency
-        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265'
-        shell: powershell
-        run: |
-          $assetUrl = "https://github.com/dataplat/dbatools.library/releases/download/v2026.8.1-preview-codexissue10265sqlclient7-20260801225230/dbatools.library.zip"
-          $downloadRoot = Join-Path $env:TEMP "dbatools-library-issue-10265"
-          if (Test-Path $downloadRoot) { Remove-Item $downloadRoot -Recurse -Force }
-          $null = New-Item -Path $downloadRoot -ItemType Directory -Force
-          $zipPath = Join-Path $downloadRoot "dbatools.library.zip"
-          Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -UseBasicParsing
-          Expand-Archive -Path $zipPath -DestinationPath $downloadRoot -Force
-
-          $sourcePath = Join-Path $downloadRoot "dbatools.library"
-          $manifestPath = Join-Path $sourcePath "dbatools.library.psd1"
-          $moduleVersion = (Test-ModuleManifest -Path $manifestPath -ErrorAction Stop).Version.ToString()
-          $modulePath = Join-Path $env:ProgramFiles "WindowsPowerShell\Modules\dbatools.library\$moduleVersion"
-          $splatDirectory = @{
-              ItemType = "Directory"
-              Path     = $modulePath
-              Force    = $true
-          }
-          $null = New-Item @splatDirectory
-          $splatCopy = @{
-              Path        = Join-Path $sourcePath "*"
-              Destination = $modulePath
-              Recurse     = $true
-              Force       = $true
-          }
-          Copy-Item @splatCopy
-
       - name: Run CI pipeline (prep, instances, pester, post)
         shell: powershell
         run: |
@@ -260,10 +230,17 @@ jobs:
           Invoke-GhaStage -Script "tests\appveyor.pester.ps1" -Arguments @{ Finalize = $true }
           Invoke-GhaStage -Script "tests\appveyor.post.ps1"
 
+      # The SSPI provider is .NET 8 only, so this test cannot run under the Windows
+      # PowerShell 5.1 pipeline and needs a portable pwsh 7 alongside it. Gated on the
+      # test file rather than a branch name so it keeps running after this branch is gone.
       - name: Install PowerShell 7 for Windows SSPI integration test
-        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265' && matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        if: matrix.scenario == 'SINGLE' && matrix.part == '1/5'
         shell: powershell
         run: |
+          if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
+              Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
           $assetUrl = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.18/PowerShell-7.4.18-win-x64.zip"
           $pwshRoot = "C:\Temp\powershell-7.4.18"
           if (Test-Path $pwshRoot) { Remove-Item $pwshRoot -Recurse -Force }
@@ -276,9 +253,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "The portable PowerShell 7 runtime did not start successfully." }
 
       - name: Run PowerShell 7 Windows SSPI integration test
-        if: env.DBATOOLS_HEAD_REF == 'codex/issue-10265' && matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        if: matrix.scenario == 'SINGLE' && matrix.part == '1/5'
         shell: powershell
         run: |
+          if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
+              Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
           $scriptPath = Join-Path $env:RUNNER_TEMP "Invoke-WindowsSspiTest.ps1"
           @'
           . C:\github\dbatools\private\testing\Invoke-ManualPester.ps1
