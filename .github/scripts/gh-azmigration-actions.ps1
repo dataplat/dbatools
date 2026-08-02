@@ -1,6 +1,4 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "", Justification = "Uses the public disposable SQL container credential from the integration workflow.")]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "", Justification = "Pester lifecycle variables are consumed across test blocks.")]
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Start-DbaAzMigration",
@@ -8,7 +6,7 @@ param(
 )
 
 BeforeDiscovery {
-    $raceTestCases = @(
+    $script:raceTestCases = @(
         @{ Name = "an absent final name appears before promotion"; Scenario = "Appearance" }
         @{ Name = "an existing final name is replaced before promotion"; Scenario = "Replacement" }
         @{ Name = "an existing final name is replaced immediately before rename"; Scenario = "PromotionReplacement" }
@@ -24,7 +22,11 @@ Describe $CommandName -Tag IntegrationTests {
             throw "Start-DbaAzMigration Azure integration requires TENANTID, CLIENTID, and CLIENTSECRET."
         }
 
-        $sourcePassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $sourcePassword = New-Object System.Security.SecureString
+        foreach ($sourcePasswordCharacter in "dbatools.IO".ToCharArray()) {
+            $sourcePassword.AppendChar($sourcePasswordCharacter)
+        }
+        $sourcePassword.MakeReadOnly()
         $sourceCredential = New-Object System.Management.Automation.PSCredential -ArgumentList "sqladmin", $sourcePassword
         $suffix = ([guid]::NewGuid().ToString("N")).Substring(0, 8)
         $databaseName = "dbatoolsci_azmigration_$suffix"
@@ -57,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests {
             $promotionRaceDatabaseName
             $stagingCleanupRaceDatabaseName
         )
-        $destinationDatabaseNames = @(
+        $script:destinationDatabaseNames = @(
             $databaseName
             $excludedDatabaseName
             $friendlyFailureDatabaseName
@@ -77,13 +79,14 @@ Describe $CommandName -Tag IntegrationTests {
             $stagingCleanupReplacementDatabaseName
         )
         $testPath = "/tmp/dbatools-azmigration-$suffix"
-        $destinationConnectionString = "Server=dbatoolstestmigration.database.windows.net;Authentication=Active Directory Service Principal;Database=master;User Id=$env:CLIENTID;Password=$env:CLIENTSECRET;Encrypt=True;TrustServerCertificate=False;"
-        $verificationConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$databaseName")
+        $destinationServerName = if ($env:DBATOOLS_AZMIGRATION_SERVER) { $env:DBATOOLS_AZMIGRATION_SERVER } else { "dbatoolstestmigration" }
+        $destinationConnectionString = "Server=$destinationServerName.database.windows.net;Authentication=Active Directory Service Principal;Database=master;User Id=$env:CLIENTID;Password=$env:CLIENTSECRET;Encrypt=True;TrustServerCertificate=False;"
+        $script:verificationConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$databaseName")
         $sourceServer = $null
-        $destinationMaster = $null
-        $verificationServer = $null
-        $raceJob = $null
-        $retainedBacpacPaths = New-Object System.Collections.ArrayList
+        $script:destinationMaster = $null
+        $script:verificationServer = $null
+        $script:raceJob = $null
+        $script:retainedBacpacPaths = New-Object System.Collections.ArrayList
 
         $splatNewTestPath = @{
             Path     = $testPath
@@ -103,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests {
             OnlyAccessible  = $true
             EnableException = $true
         }
-        $sourceDatabasesBefore = @(Get-DbaDatabase @splatGetSourceDatabases)
+        $script:sourceDatabasesBefore = @(Get-DbaDatabase @splatGetSourceDatabases)
 
         foreach ($sourceDatabaseName in $sourceDatabaseNames) {
             $splatNewSourceDatabase = @{
@@ -184,7 +187,7 @@ FROM Numbers;
         $importOptions.DatabaseSpecification.ServiceObjective = "Basic"
         $importOptions.DatabaseSpecification.MaximumSize = 1
 
-        $splatBaseMigration = @{
+        $script:splatBaseMigration = @{
             Source          = $sourceServer
             Destination     = $destinationConnectionString
             Database        = $databaseName
@@ -199,7 +202,7 @@ FROM Numbers;
 
     Context "Selection and successful migration" {
         It "rejects a requested database that is not accessible" {
-            $splatMissingMigration = $splatBaseMigration.Clone()
+            $splatMissingMigration = $script:splatBaseMigration.Clone()
             $splatMissingMigration.Database = "${databaseName}_missing"
             { Start-DbaAzMigration @splatMissingMigration } | Should -Throw "*not found or are not accessible*"
         }
@@ -209,16 +212,16 @@ FROM Numbers;
             $whatIfResult | Should -BeNullOrEmpty
             @(Get-ChildItem -LiteralPath $testPath -Filter "*.bacpac") | Should -BeNullOrEmpty
 
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
-            Get-DbaDatabase -SqlInstance $destinationMaster -Database $databaseName | Should -BeNullOrEmpty
-            $null = Disconnect-DbaInstance -InputObject $destinationMaster
-            $destinationMaster = $null
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            Get-DbaDatabase -SqlInstance $script:destinationMaster -Database $databaseName | Should -BeNullOrEmpty
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
         }
 
         It "selects the included database, migrates its rows, returns the output contract, and emits no secrets" {
-            $splatAllDatabasesMigration = $splatBaseMigration.Clone()
+            $splatAllDatabasesMigration = $script:splatBaseMigration.Clone()
             $null = $splatAllDatabasesMigration.Remove("Database")
-            $splatAllDatabasesMigration.ExcludeDatabase = @($sourceDatabasesBefore.Name) + @($sourceDatabaseNames | Where-Object { $PSItem -ne $databaseName })
+            $splatAllDatabasesMigration.ExcludeDatabase = @($script:sourceDatabasesBefore.Name) + @($sourceDatabaseNames | Where-Object { $PSItem -ne $databaseName })
             $initialRecords = @(Start-DbaAzMigration @splatAllDatabasesMigration -Verbose 4>&1)
             $migrationVerbose = @($initialRecords | Where-Object { $PSItem -is [System.Management.Automation.VerboseRecord] })
             $initialResult = @($initialRecords | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] })
@@ -240,19 +243,19 @@ FROM Numbers;
             $verboseText.Contains($env:CLIENTSECRET) | Should -BeFalse
             $verboseText | Should -Not -Match "Using connection string"
 
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
             $splatGetExcludedDestination = @{
-                SqlInstance     = $destinationMaster
+                SqlInstance     = $script:destinationMaster
                 Database        = $excludedDatabaseName
                 EnableException = $true
             }
             Get-DbaDatabase @splatGetExcludedDestination | Should -BeNullOrEmpty
-            $null = Disconnect-DbaInstance -InputObject $destinationMaster
-            $destinationMaster = $null
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
 
-            $verificationServer = Connect-DbaInstance -SqlInstance $verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
             $splatVerifyRows = @{
-                SqlInstance     = $verificationServer
+                SqlInstance     = $script:verificationServer
                 Database        = $databaseName
                 Query           = "SELECT Id, Value FROM dbo.MigrationProof ORDER BY Id"
                 EnableException = $true
@@ -260,20 +263,22 @@ FROM Numbers;
             $rows = Invoke-DbaQuery @splatVerifyRows
             ($rows.Id -join ",") | Should -Be "1,2,3"
             ($rows.Value -join ",") | Should -Be "10,20,30"
-            $null = Disconnect-DbaInstance -InputObject $verificationServer
-            $verificationServer = $null
+            $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+            $script:verificationServer = $null
         }
     }
 
     Context "Existing destination handling" {
         BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $null = Start-DbaAzMigration @splatBaseMigration
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "skips an existing destination without modifying it" {
-            $verificationServer = Connect-DbaInstance -SqlInstance $verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
             $splatChangeProof = @{
-                SqlInstance     = $verificationServer
+                SqlInstance     = $script:verificationServer
                 Database        = $databaseName
                 Query           = "UPDATE dbo.MigrationProof SET Value = 999 WHERE Id = 1"
                 EnableException = $true
@@ -283,7 +288,7 @@ FROM Numbers;
             $skippedResult.Status | Should -Be "Skipped"
             $skippedResult.Notes | Should -Be "Already exists on destination"
             $splatVerifyUnchanged = @{
-                SqlInstance     = $verificationServer
+                SqlInstance     = $script:verificationServer
                 Database        = $databaseName
                 Query           = "SELECT Value FROM dbo.MigrationProof WHERE Id = 1"
                 EnableException = $true
@@ -291,16 +296,16 @@ FROM Numbers;
             $unchangedValue = Invoke-DbaQuery @splatVerifyUnchanged
             $unchangedValue.Value | Should -Be 999
 
-            $null = Disconnect-DbaInstance -InputObject $verificationServer
-            $verificationServer = $null
+            $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+            $script:verificationServer = $null
         }
 
         It "force replaces an existing destination with the source rows" {
             $forcedResult = Start-DbaAzMigration @splatBaseMigration -Force
             $forcedResult.Status | Should -Be "Successful"
-            $verificationServer = Connect-DbaInstance -SqlInstance $verificationConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $script:verificationConnectionString
             $splatVerifyReplacementRows = @{
-                SqlInstance     = $verificationServer
+                SqlInstance     = $script:verificationServer
                 Database        = $databaseName
                 Query           = "SELECT Id, Value FROM dbo.MigrationProof ORDER BY Id"
                 EnableException = $true
@@ -309,43 +314,45 @@ FROM Numbers;
             ($forcedRows.Id -join ",") | Should -Be "1,2,3"
             ($forcedRows.Value -join ",") | Should -Be "10,20,30"
 
-            $null = Disconnect-DbaInstance -InputObject $verificationServer
-            $verificationServer = $null
+            $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+            $script:verificationServer = $null
         }
 
         It "retains the generated BACPAC when requested" {
             $retainedResult = Start-DbaAzMigration @splatBaseMigration -Force -KeepBacpac
             $retainedResult.Status | Should -Be "Successful"
             $retainedBacpacPath = $retainedResult.BacpacPath
-            $null = $retainedBacpacPaths.Add($retainedBacpacPath)
+            $null = $script:retainedBacpacPaths.Add($retainedBacpacPath)
             Test-Path -LiteralPath $retainedBacpacPath | Should -BeTrue
         }
     }
 
     Context "Failure semantics" {
         It "continues to the next database after a friendly-mode export failure" {
-            $splatFriendlyMigration = $splatBaseMigration.Clone()
+            $splatFriendlyMigration = $script:splatBaseMigration.Clone()
             $null = $splatFriendlyMigration.Remove("EnableException")
             $splatFriendlyMigration.Database = @($friendlyFailureDatabaseName, $friendlySuccessDatabaseName)
             $friendlyResults = @(Start-DbaAzMigration @splatFriendlyMigration)
             $friendlyResults.Count | Should -Be 2
-            ($friendlyResults | Where-Object Name -EQ $friendlyFailureDatabaseName).Status | Should -Be "Failed"
+            $friendlyFailedResult = $friendlyResults | Where-Object Name -EQ $friendlyFailureDatabaseName
+            $friendlyFailedResult.Status | Should -Be "Failed"
+            $friendlyFailedResult.BacpacPath | Should -BeNullOrEmpty
             ($friendlyResults | Where-Object Name -EQ $friendlySuccessDatabaseName).Status | Should -Be "Successful"
         }
 
         It "stops after the first export failure in exception mode" {
-            $splatExceptionMigration = $splatBaseMigration.Clone()
+            $splatExceptionMigration = $script:splatBaseMigration.Clone()
             $splatExceptionMigration.Database = @($exceptionFailureDatabaseName, $exceptionNotRunDatabaseName)
             { Start-DbaAzMigration @splatExceptionMigration } | Should -Throw "*BACPAC export failed*"
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
             $splatGetExceptionDestination = @{
-                SqlInstance     = $destinationMaster
+                SqlInstance     = $script:destinationMaster
                 Database        = $exceptionNotRunDatabaseName
                 EnableException = $true
             }
             Get-DbaDatabase @splatGetExceptionDestination | Should -BeNullOrEmpty
-            $null = Disconnect-DbaInstance -InputObject $destinationMaster
-            $destinationMaster = $null
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
         }
 
         It "reports an induced BACPAC import failure" {
@@ -353,10 +360,22 @@ FROM Numbers;
             $invalidImportOptions.DatabaseSpecification.Edition = "Basic"
             $invalidImportOptions.DatabaseSpecification.ServiceObjective = "DefinitelyInvalid"
             $invalidImportOptions.DatabaseSpecification.MaximumSize = 1
-            $splatInvalidImportMigration = $splatBaseMigration.Clone()
+            $splatInvalidImportMigration = $script:splatBaseMigration.Clone()
             $splatInvalidImportMigration.Database = $importFailureDatabaseName
             $splatInvalidImportMigration.ImportDacOption = $invalidImportOptions
             { Start-DbaAzMigration @splatInvalidImportMigration } | Should -Throw "*BACPAC import failed*"
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $failedImportStagingPattern = "dbatools_azmigration_${importFailureDatabaseName}_*"
+            $failedImportStagingDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $failedImportStagingPattern)
+            $failedImportStagingDatabases | Should -BeNullOrEmpty
+            $splatGetFailedImportDestination = @{
+                SqlInstance     = $script:destinationMaster
+                Database        = $importFailureDatabaseName
+                EnableException = $true
+            }
+            Get-DbaDatabase @splatGetFailedImportDestination | Should -BeNullOrEmpty
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
         }
 
         It "emits no success object when a direct BACPAC publish fails" {
@@ -375,7 +394,7 @@ FROM Numbers;
                 EnableException = $true
             }
             $publishFailurePackage = Export-DbaDacPackage @splatExportPublishFailure
-            $null = $retainedBacpacPaths.Add($publishFailurePackage.Path)
+            $null = $script:retainedBacpacPaths.Add($publishFailurePackage.Path)
             $splatDirectPublishFailure = @{
                 ConnectionString = $destinationConnectionString
                 Database         = $publishFailureDatabaseName
@@ -399,22 +418,22 @@ FROM Numbers;
 
     Context "Destination race safety" {
         AfterEach {
-            if ($raceJob) {
-                Stop-Job -Job $raceJob -ErrorAction "SilentlyContinue"
-                Remove-Job -Job $raceJob -Force -ErrorAction "SilentlyContinue"
-                $raceJob = $null
+            if ($script:raceJob) {
+                Stop-Job -Job $script:raceJob -ErrorAction SilentlyContinue
+                Remove-Job -Job $script:raceJob -Force -ErrorAction SilentlyContinue
+                $script:raceJob = $null
             }
-            if ($verificationServer) {
-                $null = Disconnect-DbaInstance -InputObject $verificationServer
-                $verificationServer = $null
+            if ($script:verificationServer) {
+                $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+                $script:verificationServer = $null
             }
-            if ($destinationMaster) {
-                $null = Disconnect-DbaInstance -InputObject $destinationMaster
-                $destinationMaster = $null
+            if ($script:destinationMaster) {
+                $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+                $script:destinationMaster = $null
             }
         }
 
-        It "preserves destination ownership when <Name>" -ForEach $raceTestCases {
+        It "preserves destination ownership when <Name>" -ForEach $script:raceTestCases {
             $modulePath = (Resolve-Path "./dbatools.psd1").Path
             $raceScript = {
                 param($ModulePath, [PSCredential]$SourceSqlCredential, $ConnectionString, $DatabaseName, $PackagePath, $ReplaceExisting, $BarrierText, $BarrierReadyPath, $BarrierReleasePath, $SecondBarrierText, $SecondBarrierReadyPath, $SecondBarrierReleasePath)
@@ -531,7 +550,7 @@ FROM Numbers;
                     throw "Unknown race scenario $Scenario."
                 }
             }
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
             $racePreparationDatabaseNames = @($raceCase.RacerDatabaseName)
             if ($raceCase.StagingRacerDatabaseName) {
                 $racePreparationDatabaseNames += $raceCase.StagingRacerDatabaseName
@@ -541,38 +560,56 @@ FROM Numbers;
             }
             foreach ($racePreparationDatabaseName in $racePreparationDatabaseNames) {
                 $splatCreateRacePreparationDatabase = @{
-                    SqlInstance     = $destinationMaster
+                    SqlInstance     = $script:destinationMaster
                     Database        = "master"
                     Query           = "CREATE DATABASE [$racePreparationDatabaseName] (EDITION = 'Basic', SERVICE_OBJECTIVE = 'Basic', MAXSIZE = 1 GB);"
                     EnableException = $true
                 }
                 $null = Invoke-DbaQuery @splatCreateRacePreparationDatabase
             }
-            $null = Disconnect-DbaInstance -InputObject $destinationMaster
-            $destinationMaster = $null
+            $databaseIdentityQuery = "SELECT CONVERT(nvarchar(36), service_broker_guid) + '|' + CONVERT(nvarchar(11), database_id) FROM sys.databases WHERE name = @DatabaseName"
+            $splatGetExpectedRaceIdentity = @{
+                SqlInstance     = $script:destinationMaster
+                Database        = "master"
+                Query           = $databaseIdentityQuery
+                SqlParameter    = @{ DatabaseName = $raceCase.RacerDatabaseName }
+                As              = "SingleValue"
+                EnableException = $true
+            }
+            $expectedRaceDatabaseIdentity = Invoke-DbaQuery @splatGetExpectedRaceIdentity
+            $expectedRaceDatabaseIdentity | Should -Not -BeNullOrEmpty
+            $expectedStagingRaceDatabaseIdentity = $null
+            if ($raceCase.StagingRacerDatabaseName) {
+                $splatGetExpectedStagingRaceIdentity = $splatGetExpectedRaceIdentity.Clone()
+                $splatGetExpectedStagingRaceIdentity.SqlParameter = @{ DatabaseName = $raceCase.StagingRacerDatabaseName }
+                $expectedStagingRaceDatabaseIdentity = Invoke-DbaQuery @splatGetExpectedStagingRaceIdentity
+                $expectedStagingRaceDatabaseIdentity | Should -Not -BeNullOrEmpty
+            }
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
 
             $barrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-ready"
             $barrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-barrier-release"
             $secondBarrierReadyPath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-ready"
             $secondBarrierReleasePath = Join-Path $testPath "$($raceCase.DatabaseName)-second-barrier-release"
-            $raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierText, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierText, $secondBarrierReadyPath, $secondBarrierReleasePath)
-            $raceJob = Start-Job -ScriptBlock $raceScript -ArgumentList $raceJobArguments
+            $script:raceJobArguments = @($modulePath, $sourceCredential, $destinationConnectionString, $raceCase.DatabaseName, $testPath, $raceCase.ReplaceExisting, $raceCase.BarrierText, $barrierReadyPath, $barrierReleasePath, $raceCase.SecondBarrierText, $secondBarrierReadyPath, $secondBarrierReleasePath)
+            $script:raceJob = Start-Job -ScriptBlock $raceScript -ArgumentList $script:raceJobArguments
             $raceBarrierDeadline = (Get-Date).AddMinutes(15)
             do {
                 $barrierObserved = Test-Path -LiteralPath $barrierReadyPath
-                if (-not $barrierObserved -and $raceJob.State -in @("Running", "NotStarted")) {
+                if (-not $barrierObserved -and $script:raceJob.State -in @("Running", "NotStarted")) {
                     Start-Sleep -Milliseconds 50
                 }
-            } while (-not $barrierObserved -and $raceJob.State -in @("Running", "NotStarted") -and (Get-Date) -lt $raceBarrierDeadline)
+            } while (-not $barrierObserved -and $script:raceJob.State -in @("Running", "NotStarted") -and (Get-Date) -lt $raceBarrierDeadline)
             if (-not $barrierObserved) {
-                throw "The race test did not reach its deterministic promotion barrier. Job state: $($raceJob.State)."
+                throw "The race test did not reach its deterministic promotion barrier. Job state: $($script:raceJob.State)."
             }
 
             try {
-                $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
                 if ($raceCase.ReplaceExisting) {
                     $splatGetRaceDatabase = @{
-                        SqlInstance     = $destinationMaster
+                        SqlInstance     = $script:destinationMaster
                         Database        = $raceCase.DatabaseName
                         EnableException = $true
                     }
@@ -588,9 +625,9 @@ FROM Numbers;
                     $null = Remove-DbaDatabase @splatRemoveInitialRaceDatabase
                 }
 
-                $destinationMaster.Databases.Refresh()
+                $script:destinationMaster.Databases.Refresh()
                 $splatGetRacerDatabase = @{
-                    SqlInstance     = $destinationMaster
+                    SqlInstance     = $script:destinationMaster
                     Database        = $raceCase.RacerDatabaseName
                     EnableException = $true
                 }
@@ -600,9 +637,9 @@ FROM Numbers;
                 }
                 $racerDatabase.Rename($raceCase.DatabaseName)
             } finally {
-                if ($destinationMaster) {
-                    $null = Disconnect-DbaInstance -InputObject $destinationMaster
-                    $destinationMaster = $null
+                if ($script:destinationMaster) {
+                    $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+                    $script:destinationMaster = $null
                 }
                 Set-Content -LiteralPath $barrierReleasePath -Value "release"
             }
@@ -612,18 +649,18 @@ FROM Numbers;
                 $secondRaceBarrierDeadline = (Get-Date).AddMinutes(5)
                 do {
                     $secondBarrierObserved = Test-Path -LiteralPath $secondBarrierReadyPath
-                    if (-not $secondBarrierObserved -and $raceJob.State -in @("Running", "NotStarted")) {
+                    if (-not $secondBarrierObserved -and $script:raceJob.State -in @("Running", "NotStarted")) {
                         Start-Sleep -Milliseconds 50
                     }
-                } while (-not $secondBarrierObserved -and $raceJob.State -in @("Running", "NotStarted") -and (Get-Date) -lt $secondRaceBarrierDeadline)
+                } while (-not $secondBarrierObserved -and $script:raceJob.State -in @("Running", "NotStarted") -and (Get-Date) -lt $secondRaceBarrierDeadline)
                 if (-not $secondBarrierObserved) {
-                    throw "The race test did not reach its deterministic cleanup barrier. Job state: $($raceJob.State)."
+                    throw "The race test did not reach its deterministic cleanup barrier. Job state: $($script:raceJob.State)."
                 }
 
                 try {
-                    $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                    $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
                     $stagingDatabasePattern = "dbatools_azmigration_$($raceCase.DatabaseName)_*"
-                    $stagingCandidates = @(Get-DbaDatabase -SqlInstance $destinationMaster -EnableException | Where-Object Name -Like $stagingDatabasePattern)
+                    $stagingCandidates = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $stagingDatabasePattern)
                     $stagingCandidates.Count | Should -Be 1
                     $ownedStagingDatabase = $stagingCandidates[0]
                     $preservedStagingDatabaseName = $ownedStagingDatabase.Name
@@ -633,9 +670,9 @@ FROM Numbers;
                         EnableException = $true
                     }
                     $null = Remove-DbaDatabase @splatRemoveOwnedStagingDatabase
-                    $destinationMaster.Databases.Refresh()
+                    $script:destinationMaster.Databases.Refresh()
                     $splatGetStagingRacerDatabase = @{
-                        SqlInstance     = $destinationMaster
+                        SqlInstance     = $script:destinationMaster
                         Database        = $raceCase.StagingRacerDatabaseName
                         EnableException = $true
                     }
@@ -645,27 +682,27 @@ FROM Numbers;
                     }
                     $stagingRacerDatabase.Rename($preservedStagingDatabaseName)
                 } finally {
-                    if ($destinationMaster) {
-                        $null = Disconnect-DbaInstance -InputObject $destinationMaster
-                        $destinationMaster = $null
+                    if ($script:destinationMaster) {
+                        $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+                        $script:destinationMaster = $null
                     }
                     Set-Content -LiteralPath $secondBarrierReleasePath -Value "release"
                 }
             }
 
-            $null = Wait-Job -Job $raceJob -Timeout 900
-            if ($raceJob.State -in @("Running", "NotStarted")) {
+            $null = Wait-Job -Job $script:raceJob -Timeout 900
+            if ($script:raceJob.State -in @("Running", "NotStarted")) {
                 throw "The race migration job did not complete before timeout."
             }
-            $raceFailure = $raceJob.ChildJobs[0].JobStateInfo.Reason
-            $raceJobErrors = @($raceJob.ChildJobs[0].Error)
-            $raceJobOutput = @(Receive-Job -Job $raceJob -ErrorAction SilentlyContinue)
-            if (-not $raceFailure -and $raceJobErrors.Count -gt 0) {
-                $raceFailure = $raceJobErrors[0]
+            $raceFailure = $script:raceJob.ChildJobs[0].JobStateInfo.Reason
+            $script:raceJobErrors = @($script:raceJob.ChildJobs[0].Error)
+            $script:raceJobOutput = @(Receive-Job -Job $script:raceJob -ErrorAction SilentlyContinue)
+            if (-not $raceFailure -and $script:raceJobErrors.Count -gt 0) {
+                $raceFailure = $script:raceJobErrors[0]
             }
-            Remove-Job -Job $raceJob -Force
-            $raceJob = $null
-            $raceResult = @($raceJobOutput | Where-Object { $PSItem.PSObject.Properties["Name"] -and $PSItem.Name -eq $raceCase.DatabaseName })
+            Remove-Job -Job $script:raceJob -Force
+            $script:raceJob = $null
+            $raceResult = @($script:raceJobOutput | Where-Object { $PSItem.PSObject.Properties["Name"] -and $PSItem.Name -eq $raceCase.DatabaseName })
             $raceResult.Count | Should -Be 1
             $raceResult.Status | Should -Be "Failed"
             $raceFailureMessage = if ($raceFailure -is [System.Management.Automation.ErrorRecord]) {
@@ -681,35 +718,55 @@ FROM Numbers;
             }
 
             $raceConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$($raceCase.DatabaseName)")
-            $verificationServer = Connect-DbaInstance -SqlInstance $raceConnectionString
+            $script:verificationServer = Connect-DbaInstance -SqlInstance $raceConnectionString
             $splatVerifyRaceDatabase = @{
-                SqlInstance     = $verificationServer
+                SqlInstance     = $script:verificationServer
                 Database        = $raceCase.DatabaseName
                 Query           = "SELECT OBJECT_ID('dbo.MigrationProof') AS MigrationProofObjectId"
                 EnableException = $true
             }
             $raceProof = Invoke-DbaQuery @splatVerifyRaceDatabase
             $raceProof.MigrationProofObjectId | Should -BeOfType System.DBNull
-            $null = Disconnect-DbaInstance -InputObject $verificationServer
-            $verificationServer = $null
+            $splatGetActualRaceIdentity = @{
+                SqlInstance     = $script:verificationServer
+                Database        = $raceCase.DatabaseName
+                Query           = $databaseIdentityQuery
+                SqlParameter    = @{ DatabaseName = $raceCase.DatabaseName }
+                As              = "SingleValue"
+                EnableException = $true
+            }
+            $actualRaceDatabaseIdentity = Invoke-DbaQuery @splatGetActualRaceIdentity
+            $actualRaceDatabaseIdentity | Should -Be $expectedRaceDatabaseIdentity
+            $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+            $script:verificationServer = $null
 
             if ($preservedStagingDatabaseName) {
                 $preservedStagingConnectionString = $destinationConnectionString.Replace("Database=master", "Database=$preservedStagingDatabaseName")
-                $verificationServer = Connect-DbaInstance -SqlInstance $preservedStagingConnectionString
+                $script:verificationServer = Connect-DbaInstance -SqlInstance $preservedStagingConnectionString
                 $splatVerifyPreservedStagingDatabase = @{
-                    SqlInstance     = $verificationServer
+                    SqlInstance     = $script:verificationServer
                     Database        = $preservedStagingDatabaseName
                     Query           = "SELECT OBJECT_ID('dbo.MigrationProof') AS MigrationProofObjectId"
                     EnableException = $true
                 }
                 $preservedStagingProof = Invoke-DbaQuery @splatVerifyPreservedStagingDatabase
                 $preservedStagingProof.MigrationProofObjectId | Should -BeOfType System.DBNull
-                $null = Disconnect-DbaInstance -InputObject $verificationServer
-                $verificationServer = $null
+                $splatGetActualStagingRaceIdentity = @{
+                    SqlInstance     = $script:verificationServer
+                    Database        = $preservedStagingDatabaseName
+                    Query           = $databaseIdentityQuery
+                    SqlParameter    = @{ DatabaseName = $preservedStagingDatabaseName }
+                    As              = "SingleValue"
+                    EnableException = $true
+                }
+                $actualStagingRaceDatabaseIdentity = Invoke-DbaQuery @splatGetActualStagingRaceIdentity
+                $actualStagingRaceDatabaseIdentity | Should -Be $expectedStagingRaceDatabaseIdentity
+                $null = Disconnect-DbaInstance -InputObject $script:verificationServer
+                $script:verificationServer = $null
 
-                $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+                $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
                 $splatGetPreservedStagingDatabase = @{
-                    SqlInstance     = $destinationMaster
+                    SqlInstance     = $script:destinationMaster
                     Database        = $preservedStagingDatabaseName
                     EnableException = $true
                 }
@@ -720,29 +777,29 @@ FROM Numbers;
                     EnableException = $true
                 }
                 $null = Remove-DbaDatabase @splatRemovePreservedStagingDatabase
-                $destinationMaster.Databases.Refresh()
+                $script:destinationMaster.Databases.Refresh()
                 Get-DbaDatabase @splatGetPreservedStagingDatabase | Should -BeNullOrEmpty
-                $null = Disconnect-DbaInstance -InputObject $destinationMaster
-                $destinationMaster = $null
+                $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+                $script:destinationMaster = $null
             }
 
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
             $caseStagingPattern = "dbatools_azmigration_$($raceCase.DatabaseName)_*"
-            $remainingCaseStagingDatabases = @(Get-DbaDatabase -SqlInstance $destinationMaster -EnableException | Where-Object Name -Like $caseStagingPattern)
+            $remainingCaseStagingDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object Name -Like $caseStagingPattern)
             $remainingCaseStagingDatabases | Should -BeNullOrEmpty
-            $null = Disconnect-DbaInstance -InputObject $destinationMaster
-            $destinationMaster = $null
+            $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
+            $script:destinationMaster = $null
         }
     }
 
     AfterAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $cleanupErrors = @()
-        if ($raceJob) {
+        if ($script:raceJob) {
             try {
-                Stop-Job -Job $raceJob -ErrorAction "Stop"
+                Stop-Job -Job $script:raceJob -ErrorAction Stop
                 $splatRemoveRaceJob = @{
-                    Job         = $raceJob
+                    Job         = $script:raceJob
                     Force       = $true
                     ErrorAction = "Stop"
                 }
@@ -752,27 +809,27 @@ FROM Numbers;
             }
         }
 
-        if ($verificationServer) {
+        if ($script:verificationServer) {
             try {
-                $null = Disconnect-DbaInstance -InputObject $verificationServer
+                $null = Disconnect-DbaInstance -InputObject $script:verificationServer
             } catch {
                 $cleanupErrors += $PSItem
             }
         }
 
-        if ($destinationMaster) {
+        if ($script:destinationMaster) {
             try {
-                $null = Disconnect-DbaInstance -InputObject $destinationMaster
+                $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
             } catch {
                 $cleanupErrors += $PSItem
             }
-            $destinationMaster = $null
+            $script:destinationMaster = $null
         }
 
         try {
-            $destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
-            $runDestinationDatabases = @(Get-DbaDatabase -SqlInstance $destinationMaster -EnableException | Where-Object {
-                    $PSItem.Name -in $destinationDatabaseNames -or $PSItem.Name -like "dbatools_azmigration_*${suffix}*"
+            $script:destinationMaster = Connect-DbaInstance -SqlInstance $destinationConnectionString
+            $runDestinationDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object {
+                    $PSItem.Name -in $script:destinationDatabaseNames -or $PSItem.Name -like "dbatools_azmigration_*${suffix}*"
                 })
             foreach ($runDestinationDatabase in $runDestinationDatabases) {
                 try {
@@ -786,9 +843,9 @@ FROM Numbers;
                     $cleanupErrors += $PSItem
                 }
             }
-            $destinationMaster.Databases.Refresh()
-            $remainingDestinationDatabases = @(Get-DbaDatabase -SqlInstance $destinationMaster -EnableException | Where-Object {
-                    $PSItem.Name -in $destinationDatabaseNames -or $PSItem.Name -like "dbatools_azmigration_*${suffix}*"
+            $script:destinationMaster.Databases.Refresh()
+            $remainingDestinationDatabases = @(Get-DbaDatabase -SqlInstance $script:destinationMaster -EnableException | Where-Object {
+                    $PSItem.Name -in $script:destinationDatabaseNames -or $PSItem.Name -like "dbatools_azmigration_*${suffix}*"
                 })
             if ($remainingDestinationDatabases) {
                 throw "Azure cleanup did not drop: $($remainingDestinationDatabases.Name -join ", ")."
@@ -796,9 +853,9 @@ FROM Numbers;
         } catch {
             $cleanupErrors += $PSItem
         } finally {
-            if ($destinationMaster) {
+            if ($script:destinationMaster) {
                 try {
-                    $null = Disconnect-DbaInstance -InputObject $destinationMaster
+                    $null = Disconnect-DbaInstance -InputObject $script:destinationMaster
                 } catch {
                     $cleanupErrors += $PSItem
                 }
@@ -847,7 +904,7 @@ FROM Numbers;
             }
         }
 
-        foreach ($retainedBacpacPathToRemove in @($retainedBacpacPaths)) {
+        foreach ($retainedBacpacPathToRemove in @($script:retainedBacpacPaths)) {
             if ($retainedBacpacPathToRemove -and (Test-Path -LiteralPath $retainedBacpacPathToRemove)) {
                 try {
                     $splatRemoveRetainedBacpac = @{

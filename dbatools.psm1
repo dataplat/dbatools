@@ -390,8 +390,8 @@ foreach ($command in $replAliases.GetEnumerator()) {
 # and on dbatools.io. They must be defined on every PowerShell version.
 # region Commands
 $script:xplat = @(
-        'Start-DbaMigration',
         'Start-DbaAzMigration',
+        'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
         'Copy-DbaAgentServer',

@@ -1,5 +1,4 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "", Justification = "Pester lifecycle variables are consumed across test blocks.")]
 param(
     $ModuleName  = "dbatools",
     $CommandName = "Start-DbaAzMigration",
@@ -107,14 +106,14 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $testInstance = if ($TestConfig.InstanceSingle) { $TestConfig.InstanceSingle } else { "localhost" }
+        $script:testInstance = if ($TestConfig.InstanceSingle) { $TestConfig.InstanceSingle } else { "localhost" }
     }
 
     Context "Boundary validation" {
         It "Rejects an invalid export option before connecting" {
             $splatInvalidExportMigration = @{
-                Source          = $testInstance
-                Destination     = $testInstance
+                Source          = $script:testInstance
+                Destination     = $script:testInstance
                 ExportDacOption = [pscustomobject]@{ Name = "invalid" }
                 EnableException = $true
             }
@@ -128,8 +127,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Rejects an invalid import option before connecting" {
             $splatInvalidImportMigration = @{
-                Source          = $testInstance
-                Destination     = $testInstance
+                Source          = $script:testInstance
+                Destination     = $script:testInstance
                 ImportDacOption = [pscustomobject]@{ Name = "invalid" }
                 EnableException = $true
             }
@@ -143,8 +142,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Rejects a destination that is not Azure SQL Database" {
             $splatNonAzureDestinationMigration = @{
-                Source          = $testInstance
-                Destination     = $testInstance
+                Source          = $script:testInstance
+                Destination     = $script:testInstance
                 Database        = "dbatoolsci_azmigration_validation"
                 EnableException = $true
             }

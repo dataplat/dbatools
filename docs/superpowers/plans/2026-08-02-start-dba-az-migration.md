@@ -369,7 +369,7 @@ Run the repository formatter/analyzer command for:
 
 - `public/Start-DbaAzMigration.ps1`
 - `tests/Start-DbaAzMigration.Tests.ps1`
-- `.github/scripts/gh-actions.ps1`
+- `.github/scripts/gh-azmigration-actions.ps1`
 
 Search changed PowerShell for `::new(`, backtick line continuations, unresolved placeholders, `-Skip` in the new Azure scenario, and accidental credential output.
 
@@ -400,7 +400,7 @@ Query Azure CLI for the exact isolated server name and confirm it is absent. Con
 - [ ] **Step 7: Record the final implementation commit if needed**
 
 ```powershell
-git add public/Start-DbaAzMigration.ps1 tests/Start-DbaAzMigration.Tests.ps1 dbatools.psd1 dbatools.psm1 .github/scripts/gh-actions.ps1
+git add public/Start-DbaAzMigration.ps1 tests/Start-DbaAzMigration.Tests.ps1 dbatools.psd1 dbatools.psm1 .github/scripts/gh-azmigration-actions.ps1
 git commit -m "Start-DbaAzMigration - Complete verification fixes (do Start-DbaAzMigration)"
 ```
 

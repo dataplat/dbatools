@@ -82,6 +82,7 @@ function Publish-DbaDacPackage {
         - Database: The target database name (string)
         - Dacpac: Path to the deployed DACPAC file (string)
         - PublishXml: Path to the publish profile XML file used, if any (string)
+        - ConnectionString: The target connection string with password values redacted (string)
         - Result: Deployment result messages and status output (string)
         - DeployOptions: The deployment options object used for the deployment, excluding SqlCommandVariableValues (object)
         - SqlCmdVariableValues: Array of SqlCmd variable names that were applied (string[])
@@ -97,6 +98,7 @@ function Publish-DbaDacPackage {
         - SqlInstance: The full SQL Server instance name in computer\instance format (string)
         - Database: The target database name (string)
         - Bacpac: Path to the deployed BACPAC file (string)
+        - ConnectionString: The target connection string with password values redacted (string)
         - Result: Deployment result messages and status output (string)
         - DeployOptions: The deployment options object used for the import (object)
 

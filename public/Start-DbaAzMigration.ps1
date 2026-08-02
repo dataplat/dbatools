@@ -410,7 +410,6 @@ function Start-DbaAzMigration {
 
             $safeDatabaseName = $databaseName.Split([IO.Path]::GetInvalidFileNameChars()) -join "$"
             $bacpacPath = Join-DbaPath -Path $Path -Child "$safeDatabaseName-$([guid]::NewGuid().ToString("N")).bacpac"
-            $migrationStatus.BacpacPath = $bacpacPath
             $failureRecord = $null
             $failurePhase = $null
             $cleanupNotes = @()
