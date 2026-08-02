@@ -4,7 +4,7 @@ function Start-DbaAzMigration {
         Migrates SQL Server databases to an existing Azure SQL Database logical server using BACPAC files.
 
     .DESCRIPTION
-        Exports selected accessible user databases from one SQL Server instance as BACPAC files and imports them into an existing Azure SQL Database logical server with the same database names.
+        Exports selected accessible user databases from one SQL Server instance as BACPAC files and imports them into unique staging databases on an existing Azure SQL Database logical server. Each completed staging import is promoted to the source database name after a final collision check.
 
         This command migrates databases only. It does not provision Azure resources or migrate server-level objects such as logins, credentials, SQL Agent jobs, linked servers, or server roles. Azure SQL Managed Instance migrations should use Copy-DbaDatabase instead.
 
@@ -38,7 +38,7 @@ function Start-DbaAzMigration {
         A Microsoft.SqlServer.Dac.DacImportOptions object passed to BACPAC import. Use this option to configure the Azure edition, service objective, maximum size, and DacFx import settings.
 
     .PARAMETER Force
-        Drops and recreates a destination database when a database with the same name already exists.
+        Replaces a destination database when a database with the same name already exists. The existing database remains in place until the replacement has been fully imported into a staging database.
 
     .PARAMETER KeepBacpac
         Keeps generated BACPAC files after migration. BACPAC files contain schema and table data and must be secured appropriately.
@@ -96,18 +96,59 @@ function Start-DbaAzMigration {
     )
 
     begin {
-        if ($ExportDacOption -and $ExportDacOption -isnot [Microsoft.SqlServer.Dac.DacExportOptions]) {
-            Stop-Function -Message "Microsoft.SqlServer.Dac.DacExportOptions object type is expected for ExportDacOption - got $($ExportDacOption.GetType())." -EnableException $EnableException
+        if ((Test-Bound -ParameterName ExportDacOption) -and $ExportDacOption -isnot [Microsoft.SqlServer.Dac.DacExportOptions]) {
+            $exportOptionType = if ($null -eq $ExportDacOption) { "null" } else { $ExportDacOption.GetType() }
+            Stop-Function -Message "Microsoft.SqlServer.Dac.DacExportOptions object type is expected for ExportDacOption - got $exportOptionType." -EnableException $EnableException
             return
         }
 
-        if ($ImportDacOption -and $ImportDacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions]) {
-            Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions object type is expected for ImportDacOption - got $($ImportDacOption.GetType())." -EnableException $EnableException
+        if ((Test-Bound -ParameterName ImportDacOption) -and $ImportDacOption -isnot [Microsoft.SqlServer.Dac.DacImportOptions]) {
+            $importOptionType = if ($null -eq $ImportDacOption) { "null" } else { $ImportDacOption.GetType() }
+            Stop-Function -Message "Microsoft.SqlServer.Dac.DacImportOptions object type is expected for ImportDacOption - got $importOptionType." -EnableException $EnableException
             return
         }
 
-        $null = Test-ExportDirectory -Path $Path
-        if (Test-FunctionInterrupt) { return }
+        $databaseWasBound = Test-Bound -ParameterName Database
+        $requestedDatabaseNames = @()
+        if ($databaseWasBound) {
+            $requestedDatabaseNames = @($Database | ForEach-Object {
+                    if ($null -ne $PSItem -and $PSItem.PSObject.Properties["Name"] -and $PSItem.Name) {
+                        [string]$PSItem.Name
+                    } else {
+                        [string]$PSItem
+                    }
+                })
+            $blankRequestedDatabaseNames = @($requestedDatabaseNames | Where-Object { [string]::IsNullOrWhiteSpace($PSItem) })
+            if ($requestedDatabaseNames.Count -eq 0 -or $blankRequestedDatabaseNames.Count -gt 0) {
+                Stop-Function -Message "Database must contain at least one non-blank database name when explicitly supplied." -EnableException $EnableException
+                return
+            }
+        }
+
+        try {
+            if (Test-Path -LiteralPath $Path) {
+                if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+                    throw "Path ($Path) must be a directory."
+                }
+            } else {
+                $splatNewPath = @{
+                    Path        = $Path
+                    ItemType    = "Directory"
+                    Force       = $true
+                    ErrorAction = "Stop"
+                }
+                $null = New-Item @splatNewPath
+            }
+        } catch {
+            $splatStopPath = @{
+                Message         = "Path ($Path) must be a directory that can be created and written."
+                ErrorRecord     = $PSItem
+                Target          = $Path
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopPath
+            return
+        }
 
         try {
             $sourceSplat = @{
@@ -118,7 +159,14 @@ function Start-DbaAzMigration {
             }
             $sourceServer = Connect-DbaInstance @sourceSplat
         } catch {
-            Stop-Function -Message "Failure connecting to source $Source" -Category ConnectionError -ErrorRecord $PSItem -Target $Source -EnableException $EnableException
+            $splatStopSourceConnection = @{
+                Message         = "Failure connecting to source $Source"
+                Category        = "ConnectionError"
+                ErrorRecord     = $PSItem
+                Target          = $Source
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopSourceConnection
             return
         }
 
@@ -132,12 +180,24 @@ function Start-DbaAzMigration {
             }
             $destinationServer = Connect-DbaInstance @destinationSplat
         } catch {
-            Stop-Function -Message "Failure connecting to destination $Destination" -Category ConnectionError -ErrorRecord $PSItem -Target $Destination -EnableException $EnableException
+            $splatStopDestinationConnection = @{
+                Message         = "Failure connecting to destination $Destination"
+                Category        = "ConnectionError"
+                ErrorRecord     = $PSItem
+                Target          = $Destination
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopDestinationConnection
             return
         }
 
         if ($destinationServer.DatabaseEngineType -ne "SqlAzureDatabase" -or $destinationServer.DatabaseEngineEdition -ne "SqlDatabase") {
-            Stop-Function -Message "$Destination is not an Azure SQL Database logical server. Use Copy-DbaDatabase for Azure SQL Managed Instance migrations." -Target $Destination -EnableException $EnableException
+            $splatStopDestinationType = @{
+                Message         = "$Destination is not an Azure SQL Database logical server. Use Copy-DbaDatabase for Azure SQL Managed Instance migrations."
+                Target          = $Destination
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopDestinationType
             return
         }
 
@@ -160,27 +220,61 @@ function Start-DbaAzMigration {
         }
         $destinationPublishConnectionString = $connectionBuilder.ConnectionString
 
+        $sensitiveValues = @()
+        if ($SourceSqlCredential) {
+            $sensitiveValues += $SourceSqlCredential.GetNetworkCredential().Password
+        }
+        if ($DestinationSqlCredential) {
+            $sensitiveValues += $DestinationSqlCredential.GetNetworkCredential().Password
+        }
+        foreach ($connectionStringToInspect in @($sourceServer.ConnectionContext.ConnectionString, $destinationPublishConnectionString)) {
+            try {
+                $secretBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
+                $secretBuilder.ConnectionString = $connectionStringToInspect
+                foreach ($passwordKey in @("Password", "Pwd")) {
+                    if ($secretBuilder.ContainsKey($passwordKey) -and $secretBuilder[$passwordKey]) {
+                        $sensitiveValues += [string]$secretBuilder[$passwordKey]
+                    }
+                }
+            } catch {
+                Write-Message -Level Debug -Message "Could not inspect a connection string for values that require redaction."
+            }
+        }
+        $sensitiveValues = @($sensitiveValues | Where-Object { $PSItem } | Select-Object -Unique)
+
+        $getDatabaseIdentity = {
+            param($DatabaseObject)
+
+            if (-not $DatabaseObject) {
+                return $null
+            }
+
+            "$($DatabaseObject.ID)|$($DatabaseObject.CreateDate.ToUniversalTime().Ticks)"
+        }
+
         try {
-            $accessibleDatabases = @(Get-DbaDatabase -SqlInstance $sourceServer -ExcludeSystem -OnlyAccessible -EnableException)
+            $splatGetAccessibleDatabase = @{
+                SqlInstance     = $sourceServer
+                ExcludeSystem   = $true
+                OnlyAccessible  = $true
+                EnableException = $true
+            }
+            $accessibleDatabases = @(Get-DbaDatabase @splatGetAccessibleDatabase)
         } catch {
-            Stop-Function -Message "Failure enumerating accessible user databases on source $Source" -ErrorRecord $PSItem -Target $Source -EnableException $EnableException
+            $splatStopDatabaseEnumeration = @{
+                Message         = "Failure enumerating accessible user databases on source $Source"
+                ErrorRecord     = $PSItem
+                Target          = $Source
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopDatabaseEnumeration
             return
         }
 
-        $requestedDatabaseNames = @()
-        if ($Database) {
-            $requestedDatabaseNames = @($Database | ForEach-Object {
-                    if ($PSItem.PSObject.Properties["Name"] -and $PSItem.Name) {
-                        [string]$PSItem.Name
-                    } else {
-                        [string]$PSItem
-                    }
-                })
-        }
         $excludedDatabaseNames = @()
         if ($ExcludeDatabase) {
             $excludedDatabaseNames = @($ExcludeDatabase | ForEach-Object {
-                    if ($PSItem.PSObject.Properties["Name"] -and $PSItem.Name) {
+                    if ($null -ne $PSItem -and $PSItem.PSObject.Properties["Name"] -and $PSItem.Name) {
                         [string]$PSItem.Name
                     } else {
                         [string]$PSItem
@@ -188,14 +282,22 @@ function Start-DbaAzMigration {
                 })
         }
 
-        if ($requestedDatabaseNames.Count -gt 0) {
+        if ($databaseWasBound) {
             $accessibleDatabaseNames = @($accessibleDatabases.Name)
             $missingDatabaseNames = @($requestedDatabaseNames | Where-Object { $PSItem -notin $accessibleDatabaseNames })
             if ($missingDatabaseNames.Count -gt 0) {
-                Stop-Function -Message "The following requested databases were not found or are not accessible on $Source`: $($missingDatabaseNames -join ', ')." -Target $Source -EnableException $EnableException
+                $splatStopMissingDatabase = @{
+                    Message         = "The following requested databases were not found or are not accessible on ${Source}: $($missingDatabaseNames -join ", ")."
+                    Target          = $Source
+                    EnableException = $EnableException
+                }
+                Stop-Function @splatStopMissingDatabase
                 return
             }
-            $selectedDatabases = @($accessibleDatabases | Where-Object { $PSItem.Name -in $requestedDatabaseNames })
+            $selectedDatabases = @($requestedDatabaseNames | Select-Object -Unique | ForEach-Object {
+                    $requestedName = $PSItem
+                    $accessibleDatabases | Where-Object Name -EQ $requestedName | Select-Object -First 1
+                })
         } else {
             $selectedDatabases = @($accessibleDatabases)
         }
@@ -205,7 +307,12 @@ function Start-DbaAzMigration {
         }
 
         if ($selectedDatabases.Count -eq 0) {
-            Stop-Function -Message "No accessible user databases remain on $Source after applying the requested filters." -Target $Source -EnableException $EnableException
+            $splatStopEmptySelection = @{
+                Message         = "No accessible user databases remain on $Source after applying the requested filters."
+                Target          = $Source
+                EnableException = $EnableException
+            }
+            Stop-Function @splatStopEmptySelection
             return
         }
     }
@@ -229,17 +336,37 @@ function Start-DbaAzMigration {
                 BacpacPath          = $null
                 Elapsed             = $null
             }
+            $splatMigrationView = @{
+                Property = @("DateTime", "SourceServer", "DestinationServer", "Name", "Type", "Status", "Notes")
+                TypeName = "MigrationObject"
+            }
+            $splatGetDestinationDatabase = @{
+                SqlInstance     = $destinationServer
+                Database        = $databaseName
+                EnableException = $true
+            }
 
             try {
                 $destinationServer.Databases.Refresh()
-                $destinationDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
+                $destinationDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                $destinationDatabaseIdentity = & $getDatabaseIdentity $destinationDatabase
             } catch {
                 $stopwatch.Stop()
                 $migrationStatus.Status = "Failed"
                 $migrationStatus.Notes = "Destination validation failed: $($PSItem.Exception.Message)"
+                foreach ($sensitiveValue in $sensitiveValues) {
+                    $migrationStatus.Notes = $migrationStatus.Notes.Replace($sensitiveValue, "********")
+                }
                 $migrationStatus.Elapsed = [prettytimespan]$stopwatch.Elapsed
-                $migrationStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                Stop-Function -Message "Destination validation failed for database $databaseName" -ErrorRecord $PSItem -Target $databaseName -EnableException $EnableException -Continue
+                $migrationStatus | Select-DefaultView @splatMigrationView
+                $splatStopDestinationValidation = @{
+                    Message         = "Destination validation failed for database $databaseName"
+                    ErrorRecord     = $PSItem
+                    Target          = $databaseName
+                    EnableException = $EnableException
+                    Continue        = $true
+                }
+                Stop-Function @splatStopDestinationValidation
             }
 
             if ($destinationDatabase -and -not $Force) {
@@ -247,7 +374,7 @@ function Start-DbaAzMigration {
                 $migrationStatus.Status = "Skipped"
                 $migrationStatus.Notes = "Already exists on destination"
                 $migrationStatus.Elapsed = [prettytimespan]$stopwatch.Elapsed
-                $migrationStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                $migrationStatus | Select-DefaultView @splatMigrationView
                 continue
             }
 
@@ -259,14 +386,23 @@ function Start-DbaAzMigration {
                 continue
             }
 
+            Write-Message -Level Verbose -Message "Destination state captured for $databaseName. Starting BACPAC export."
+
             $safeDatabaseName = $databaseName.Split([IO.Path]::GetInvalidFileNameChars()) -join "$"
-            $bacpacPath = Join-DbaPath -Path $Path -Child "$safeDatabaseName-$([guid]::NewGuid().ToString('N')).bacpac"
+            $bacpacPath = Join-DbaPath -Path $Path -Child "$safeDatabaseName-$([guid]::NewGuid().ToString("N")).bacpac"
             $migrationStatus.BacpacPath = $bacpacPath
             $failureRecord = $null
             $failurePhase = $null
             $cleanupNotes = @()
-            $importStarted = $false
-            $targetMayNeedCleanup = -not [bool]$destinationDatabase
+            $destinationExistedBeforeExport = [bool]$destinationDatabase
+            $safeStagingSourceName = $databaseName -replace "[^a-zA-Z0-9_]", "_"
+            if ($safeStagingSourceName.Length -gt 60) {
+                $safeStagingSourceName = $safeStagingSourceName.Substring(0, 60)
+            }
+            $stagingDatabaseName = "dbatools_azmigration_${safeStagingSourceName}_$([guid]::NewGuid().ToString("N"))"
+            $backupDatabaseName = "dbatools_azmigration_backup_${safeStagingSourceName}_$([guid]::NewGuid().ToString("N"))"
+            $stagingDatabaseMayNeedCleanup = $false
+            $backupDatabaseMayNeedRecovery = $false
 
             try {
                 $failurePhase = "BACPAC export"
@@ -287,22 +423,19 @@ function Start-DbaAzMigration {
                 $bacpacPath = $exportResult[0].Path
                 $migrationStatus.BacpacPath = $bacpacPath
 
-                if ($destinationDatabase) {
-                    $failurePhase = "Forced replacement"
-                    $null = Remove-DbaDatabase -InputObject $destinationDatabase -Confirm:$false -EnableException
-                    $destinationServer.Databases.Refresh()
-                    $remainingDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
-                    if ($remainingDatabase) {
-                        throw "The existing destination database could not be dropped."
-                    }
-                    $targetMayNeedCleanup = $true
+                $failurePhase = "Staging database validation"
+                $destinationServer.Databases.Refresh()
+                $splatGetDestinationDatabase.Database = $stagingDatabaseName
+                $unexpectedStagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                if ($unexpectedStagingDatabase) {
+                    throw "The unique staging database name already exists."
                 }
 
                 $failurePhase = "BACPAC import"
-                $importStarted = $true
+                $stagingDatabaseMayNeedCleanup = $true
                 $publishSplat = @{
                     ConnectionString = $destinationPublishConnectionString
-                    Database         = $databaseName
+                    Database         = $stagingDatabaseName
                     Path             = $bacpacPath
                     Type             = "Bacpac"
                     EnableException  = $true
@@ -312,35 +445,162 @@ function Start-DbaAzMigration {
                     $publishSplat.DacOption = $ImportDacOption
                 }
                 $publishResult = @(Publish-DbaDacPackage @publishSplat)
-                if ($publishResult.Count -ne 1 -or $publishResult[0].Database -ne $databaseName) {
-                    throw "BACPAC import did not return a result for $databaseName."
+                if ($publishResult.Count -ne 1 -or $publishResult[0].Database -ne $stagingDatabaseName) {
+                    throw "BACPAC import did not return a result for staging database $stagingDatabaseName."
                 }
 
+                $failurePhase = "Destination promotion"
+                $destinationServer.Databases.Refresh()
+                $splatGetDestinationDatabase.Database = $stagingDatabaseName
+                $stagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                if (-not $stagingDatabase) {
+                    throw "BACPAC import did not create staging database $stagingDatabaseName."
+                }
+                $stagingDatabaseIdentity = & $getDatabaseIdentity $stagingDatabase
+
+                $splatGetDestinationDatabase.Database = $databaseName
+                $currentDestinationDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                if (-not $destinationExistedBeforeExport -and $currentDestinationDatabase) {
+                    throw "A destination database named $databaseName appeared while the BACPAC was being imported. It was not created or removed by this migration."
+                }
+
+                if ($destinationExistedBeforeExport) {
+                    if (-not $currentDestinationDatabase) {
+                        throw "The original destination database $databaseName disappeared while the BACPAC was being imported. Promotion stopped without claiming the final name."
+                    }
+
+                    $currentDestinationDatabaseIdentity = & $getDatabaseIdentity $currentDestinationDatabase
+                    if ($currentDestinationDatabaseIdentity -ne $destinationDatabaseIdentity) {
+                        throw "The destination database $databaseName was replaced while the BACPAC was being imported. The replacement was not modified or removed."
+                    }
+
+                    try {
+                        $backupDatabaseMayNeedRecovery = $true
+                        $currentDestinationDatabase.Rename($backupDatabaseName)
+                        $destinationServer.Databases.Refresh()
+                        $splatGetDestinationDatabase.Database = $backupDatabaseName
+                        $backupDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if (-not $backupDatabase -or (& $getDatabaseIdentity $backupDatabase) -ne $destinationDatabaseIdentity) {
+                            throw "The original destination database could not be verified at recovery name $backupDatabaseName."
+                        }
+
+                        $splatGetDestinationDatabase.Database = $databaseName
+                        $unexpectedFinalDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if ($unexpectedFinalDatabase) {
+                            throw "The final database name $databaseName was claimed during forced promotion."
+                        }
+
+                        $stagingDatabase.Rename($databaseName)
+                        $destinationServer.Databases.Refresh()
+                        $promotedDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if (-not $promotedDatabase -or (& $getDatabaseIdentity $promotedDatabase) -ne $stagingDatabaseIdentity) {
+                            throw "The staging database could not be verified after promotion to $databaseName."
+                        }
+                        $stagingDatabaseMayNeedCleanup = $false
+
+                        $splatGetDestinationDatabase.Database = $backupDatabaseName
+                        $backupDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if ($backupDatabase) {
+                            if ((& $getDatabaseIdentity $backupDatabase) -ne $destinationDatabaseIdentity) {
+                                throw "The recovery database $backupDatabaseName no longer identifies the original destination database."
+                            }
+                            $splatRemoveBackup = @{
+                                InputObject     = $backupDatabase
+                                Confirm         = $false
+                                EnableException = $true
+                            }
+                            $null = Remove-DbaDatabase @splatRemoveBackup
+                        }
+                        $destinationServer.Databases.Refresh()
+                        $remainingBackupDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if ($remainingBackupDatabase) {
+                            throw "The original destination database could not be removed from recovery name $backupDatabaseName."
+                        }
+                        $backupDatabaseMayNeedRecovery = $false
+                    } catch {
+                        $promotionError = $PSItem
+                        if ($backupDatabaseMayNeedRecovery) {
+                            try {
+                                $destinationServer.Databases.Refresh()
+                                $splatGetDestinationDatabase.Database = $databaseName
+                                $recoveryFinalDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                                $splatGetDestinationDatabase.Database = $backupDatabaseName
+                                $recoveryBackupDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+
+                                $recoveryFinalIdentity = & $getDatabaseIdentity $recoveryFinalDatabase
+                                $recoveryBackupIdentity = & $getDatabaseIdentity $recoveryBackupDatabase
+                                if (-not $recoveryFinalDatabase -and $recoveryBackupIdentity -eq $destinationDatabaseIdentity) {
+                                    $recoveryBackupDatabase.Rename($databaseName)
+                                    $destinationServer.Databases.Refresh()
+                                    $splatGetDestinationDatabase.Database = $databaseName
+                                    $restoredDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                                    if (-not $restoredDatabase -or (& $getDatabaseIdentity $restoredDatabase) -ne $destinationDatabaseIdentity) {
+                                        throw "The original destination database could not be verified after rollback."
+                                    }
+                                    $backupDatabaseMayNeedRecovery = $false
+                                    $cleanupNotes += "The original destination database was restored after promotion failed."
+                                } elseif ($recoveryFinalIdentity -eq $stagingDatabaseIdentity) {
+                                    $stagingDatabaseMayNeedCleanup = $false
+                                    $cleanupNotes += "Promotion reached $databaseName, but the original database is retained at $backupDatabaseName because promotion cleanup failed."
+                                } elseif ($recoveryFinalIdentity -eq $destinationDatabaseIdentity -and -not $recoveryBackupDatabase) {
+                                    $backupDatabaseMayNeedRecovery = $false
+                                    $cleanupNotes += "The original destination database was already restored after promotion failed."
+                                } else {
+                                    $stagingDatabaseMayNeedCleanup = $false
+                                    $cleanupNotes += "Automatic rollback was not safe. Recovery databases were preserved as $stagingDatabaseName and $backupDatabaseName where present."
+                                }
+                            } catch {
+                                $stagingDatabaseMayNeedCleanup = $false
+                                $cleanupNotes += "Promotion rollback failed: $($PSItem.Exception.Message) Recovery databases were preserved as $stagingDatabaseName and $backupDatabaseName where present."
+                            }
+                        }
+                        throw $promotionError
+                    }
+                } else {
+                    $stagingDatabase.Rename($databaseName)
+                    $destinationServer.Databases.Refresh()
+                    $promotedDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                    if (-not $promotedDatabase -or (& $getDatabaseIdentity $promotedDatabase) -ne $stagingDatabaseIdentity) {
+                        throw "The staging database could not be verified after promotion to $databaseName."
+                    }
+                    $stagingDatabaseMayNeedCleanup = $false
+                }
                 $migrationStatus.Status = "Successful"
             } catch {
                 $failureRecord = $PSItem
                 $migrationStatus.Status = "Failed"
 
-                if ($importStarted -and $targetMayNeedCleanup) {
+                if ($stagingDatabaseMayNeedCleanup) {
                     try {
                         $destinationServer.Databases.Refresh()
-                        $partialDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
-                        if ($partialDatabase) {
-                            $null = Remove-DbaDatabase -InputObject $partialDatabase -Confirm:$false -EnableException
+                        $splatGetDestinationDatabase.Database = $stagingDatabaseName
+                        $partialStagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                        if ($partialStagingDatabase) {
+                            $splatRemoveStaging = @{
+                                InputObject     = $partialStagingDatabase
+                                Confirm         = $false
+                                EnableException = $true
+                            }
+                            $null = Remove-DbaDatabase @splatRemoveStaging
                             $destinationServer.Databases.Refresh()
-                            $remainingPartialDatabase = Get-DbaDatabase -SqlInstance $destinationServer -Database $databaseName -EnableException
-                            if ($remainingPartialDatabase) {
-                                throw "The partially imported destination database could not be dropped."
+                            $remainingStagingDatabase = Get-DbaDatabase @splatGetDestinationDatabase
+                            if ($remainingStagingDatabase) {
+                                throw "The partially imported staging database could not be dropped."
                             }
                         }
                     } catch {
-                        $cleanupNotes += "Partial destination cleanup failed: $($PSItem.Exception.Message)"
+                        $cleanupNotes += "Partial staging database cleanup failed: $($PSItem.Exception.Message)"
                     }
                 }
             } finally {
                 if (-not $KeepBacpac -and $bacpacPath -and (Test-Path -LiteralPath $bacpacPath)) {
                     try {
-                        Remove-Item -LiteralPath $bacpacPath -Force -ErrorAction Stop
+                        $splatRemoveBacpac = @{
+                            LiteralPath = $bacpacPath
+                            Force       = $true
+                            ErrorAction = "Stop"
+                        }
+                        Remove-Item @splatRemoveBacpac
                     } catch {
                         $cleanupNotes += "BACPAC cleanup failed: $($PSItem.Exception.Message)"
                         if (-not $failureRecord) {
@@ -356,7 +616,7 @@ function Start-DbaAzMigration {
 
             $failureMessage = $null
             if ($failureRecord) {
-                $failureMessage = "$failurePhase failed for database $databaseName`: $($failureRecord.Exception.Message)"
+                $failureMessage = "$failurePhase failed for database ${databaseName}: $($failureRecord.Exception.Message)"
                 if ($failureRecord.Exception.Message -match "TSQL CRUD has been disallowed via policy") {
                     $failureMessage = "$failureMessage The Azure subscription blocks database creation and deletion through T-SQL. DacFx BACPAC import requires those operations; use a destination subscription where block-tsql-crud is not registered or ask the subscription administrator to remove that policy."
                 }
@@ -364,16 +624,32 @@ function Start-DbaAzMigration {
             }
             if ($cleanupNotes.Count -gt 0) {
                 if ($migrationStatus.Notes) {
-                    $migrationStatus.Notes = "$($migrationStatus.Notes) $($cleanupNotes -join ' ')"
+                    $migrationStatus.Notes = "$($migrationStatus.Notes) $($cleanupNotes -join " ")"
                 } else {
                     $migrationStatus.Notes = $cleanupNotes -join " "
                 }
             }
 
-            $migrationStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            if ($failureRecord -and $migrationStatus.Notes) {
+                foreach ($sensitiveValue in $sensitiveValues) {
+                    $migrationStatus.Notes = $migrationStatus.Notes.Replace($sensitiveValue, "********")
+                }
+                $failureMessage = $migrationStatus.Notes
+            }
+
+            $migrationStatus | Select-DefaultView @splatMigrationView
 
             if ($failureRecord) {
-                Stop-Function -Message $failureMessage -Target $databaseName -EnableException $EnableException -Continue
+                $safeException = New-Object System.Exception -ArgumentList $failureMessage
+                $safeErrorRecord = New-Object System.Management.Automation.ErrorRecord -ArgumentList $safeException, $failureRecord.FullyQualifiedErrorId, $failureRecord.CategoryInfo.Category, $databaseName
+                $splatStopMigration = @{
+                    Message         = $failureMessage
+                    ErrorRecord     = $safeErrorRecord
+                    Target          = $databaseName
+                    EnableException = $EnableException
+                    Continue        = $true
+                }
+                Stop-Function @splatStopMigration
             }
         }
     }

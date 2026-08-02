@@ -104,6 +104,11 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           Install-DbaSqlPackage -Force -Verbose
 
+      - name: Install Pester 6
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+
       - name: Run tests
         env:
           TENANTID: ${{secrets.TENANTID}}
@@ -114,6 +119,7 @@ jobs:
           azurepasswd: ${{secrets.AZUREPASSWD}}
           azurelegacypasswd: ${{secrets.AZURELEGACYPASSWD}}
         run: |
+          Import-Module Pester -RequiredVersion 6.0.0 -Force
           Import-Module ./dbatools.psd1 -Force
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning

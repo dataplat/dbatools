@@ -151,6 +151,9 @@ Describe $CommandName -Tag IntegrationTests {
             $options = New-DbaDacOption -Action Publish -Type Bacpac
             $results = $bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Updating database (Complete)*"
+            $connectionPassword = $TestConfig.SqlCred.GetNetworkCredential().Password
+            $results.ConnectionString | Should -Not -Match ([regex]::Escape($connectionPassword))
+            $results.ConnectionString | Should -Match "Password=\*{8}"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
         }
@@ -165,6 +168,42 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should throw when ScriptOnly is used" {
             { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
+        }
+
+        It "Throws and emits no success result when a BACPAC import cannot authenticate" {
+            $badPassword = New-Object System.Security.SecureString
+            foreach ($character in "definitely-wrong".ToCharArray()) {
+                $badPassword.AppendChar($character)
+            }
+            $badPassword.MakeReadOnly()
+            $badCredential = New-Object System.Management.Automation.PSCredential -ArgumentList $TestConfig.SqlCred.UserName, $badPassword
+            $splatBadConnection = @{
+                SqlInstance   = $TestConfig.InstanceCopy2
+                SqlCredential = $badCredential
+                Database      = "master"
+            }
+            $badConnectionString = New-DbaConnectionString @splatBadConnection
+            $splatPublishFailure = @{
+                ConnectionString = $badConnectionString
+                Database        = $dbname
+                Path            = $bacpac.Path
+                Type            = "Bacpac"
+                EnableException = $true
+                Confirm         = $false
+            }
+
+            $publishOutput = New-Object System.Collections.ArrayList
+            $failureRecord = $null
+            try {
+                Publish-DbaDacPackage @splatPublishFailure | ForEach-Object {
+                    $null = $publishOutput.Add($PSItem)
+                }
+            } catch {
+                $failureRecord = $PSItem
+            }
+
+            $failureRecord.Exception.Message | Should -BeLike "*Login failed*"
+            $publishOutput | Should -BeNullOrEmpty
         }
     }
 }

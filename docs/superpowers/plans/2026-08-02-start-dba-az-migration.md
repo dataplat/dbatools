@@ -4,7 +4,7 @@
 
 **Goal:** Add a public, database-only `Start-DbaAzMigration` command that moves selected SQL Server databases into an existing Azure SQL logical server through BACPAC export/import, with safe replacement, cleanup, standard migration output, and a non-skipping real Azure integration test.
 
-**Architecture:** Implement a thin public orchestrator over the existing DacFx-backed `Export-DbaDacPackage` and `Publish-DbaDacPackage` commands. Connect once to each endpoint, validate the Azure SQL Database boundary before mutation, process databases sequentially, and isolate friendly-mode failures per database. Do not add an installer, module dependency, Azure control-plane runtime dependency, or server-object migration.
+**Architecture:** Implement a thin public orchestrator over the existing DacFx-backed `Export-DbaDacPackage` and `Publish-DbaDacPackage` commands. Connect once to each endpoint, validate the Azure SQL Database boundary before mutation, process databases sequentially, and isolate friendly-mode failures per database. Import into a unique run-owned staging database and promote it only after a final name recheck, so failure cleanup never touches a racing database. Do not add an installer, module dependency, Azure control-plane runtime dependency, or server-object migration.
 
 **Tech Stack:** PowerShell 3+, dbatools, Microsoft DacFx from `dbatools.library`, Pester 6, Azure SQL Database, Azure CLI for local test provisioning only.
 
@@ -151,7 +151,7 @@ Add an `IntegrationTests` Describe that uses the configured SQL test instances a
 7. Produces one `MigrationObject` with `SourceServer`, `DestinationServer`, `Name`, `DestinationDatabase`, `Type`, `Status`, `Notes`, `DateTime`, `BacpacPath`, and `Elapsed`.
 8. Deletes the BACPAC after a successful migration by default.
 9. Keeps the BACPAC when `KeepBacpac` is set.
-10. Drops and recreates an existing destination database only with `Force`.
+10. Replaces an existing destination database only with `Force`, after a complete staging import is ready.
 11. Continues to the next selected database after an operational failure in friendly mode and stops with a catchable error under `EnableException`.
 
 Where a behavior genuinely requires Azure SQL semantics, keep its executable assertion in Task 3 rather than weakening it with a mock. The local SQL boundary in this task may validate selection, WhatIf, option types, and missing-database behavior; the real Azure boundary owns success, skip, force, cleanup, retention, and end-to-end output.
@@ -164,7 +164,7 @@ Run the new test file directly through Pester 6 after importing `./dbatools.psm1
 
 In `Start-DbaAzMigration`:
 
-- Call `Test-ExportDirectory -Path $Path`.
+- Validate in the public command scope that `Path` is an existing directory or can be created, then return immediately on friendly-mode failure.
 - Reject `ExportDacOption` unless it is `Microsoft.SqlServer.Dac.DacExportOptions`.
 - Reject `ImportDacOption` unless it is `Microsoft.SqlServer.Dac.DacImportOptions`.
 - Connect to source and destination once using splats and `Connect-DbaInstance`; use destination database context `master`.
@@ -204,7 +204,7 @@ $migrationStatus | Select-DefaultView -Property DateTime, SourceServer, Destinat
 
 - [ ] **Step 6: Implement existing-target and ShouldProcess behavior**
 
-Check the destination by exact database name. Without `Force`, emit `Skipped` with `Already exists on destination`. With `Force`, use one `ShouldProcess` decision for the combined drop-and-replacement migration. Under `WhatIf`, create no package and perform no destination mutation. Export and validate the replacement package before dropping the existing destination so an export failure leaves that database intact.
+Check the destination by exact database name. Without `Force`, emit `Skipped` with `Already exists on destination`. With `Force`, use one `ShouldProcess` decision for the combined staged replacement migration. Under `WhatIf`, create no package and perform no destination mutation. Export and import the replacement into a unique staging database before dropping the existing destination, so export/import failures leave that database intact.
 
 - [ ] **Step 7: Implement BACPAC export and import**
 
@@ -221,12 +221,12 @@ $exportSplat = @{
 if ($ExportDacOption) { $exportSplat.DacOption = $ExportDacOption }
 ```
 
-Validate that exactly one returned object has an existing `Path`, record that path, then remove and verify the existing destination only for an approved forced replacement. Import with:
+Validate that exactly one returned object has an existing `Path`, record that path, generate an unguessable staging database name, and import with:
 
 ```powershell
 $publishSplat = @{
     ConnectionString = $destinationServer.ConnectionContext.ConnectionString
-    Database         = $databaseName
+    Database         = $stagingDatabaseName
     Path             = $bacpacPath
     Type             = "Bacpac"
     EnableException  = $true
@@ -234,11 +234,11 @@ $publishSplat = @{
 if ($ImportDacOption) { $publishSplat.DacOption = $ImportDacOption }
 ```
 
-Require one publish result. Mark the status `Successful` and include phase-specific notes only when needed.
+Require one publish result and verify the staging database exists. Recheck the requested final name. If it appeared after the initial check, leave it untouched and fail safely. For an approved forced replacement, verify the original identity, rename it to the unique recovery name, promote and verify staging, and only then remove recovery. Mark the status `Successful` after that sequence completes.
 
 - [ ] **Step 8: Implement failure isolation and cleanup**
 
-Track whether import began and whether the destination was absent or deliberately removed. On import failure, query for and remove a partial destination database without hiding the original error. In friendly mode emit `Failed` and continue; with `EnableException`, call `Stop-Function` with the original error and stop. In `finally`, remove the BACPAC with `Remove-Item -LiteralPath` unless `KeepBacpac` is set. Record stopwatch elapsed time for every emitted status.
+Track the initial destination identity and unique staging and recovery names as the ownership boundary. Before forced promotion, verify that the current final database still has the initial identity. Rename that original to the recovery name, promote and identity-check staging, and only then remove recovery. On promotion failure, restore the verified original when safe; otherwise preserve staging and recovery with exact recovery notes. On import or pre-promotion failure, remove only the run-owned staging database without hiding the original error. Never remove or modify a same-name database that appeared or was replaced after the initial destination check. In friendly mode emit `Failed` and continue; with `EnableException`, call `Stop-Function` with a sanitized error record and stop. In `finally`, remove the BACPAC with `Remove-Item -LiteralPath` unless `KeepBacpac` is set. Record stopwatch elapsed time for every emitted status.
 
 - [ ] **Step 9: Make Task 2 tests green and refactor**
 
@@ -280,9 +280,10 @@ Inside a source-only `.github/scripts/gh-azmigration-actions.ps1` integration fi
 - Builds the destination connection string for `dbatoolstestmigration.database.windows.net` in memory with `Authentication=Active Directory Service Principal`, `User Id=$env:CLIENTID`, and `Password=$env:CLIENTSECRET`; never writes it to output. The dedicated logical server is hosted in a subscription where DacFx can create and drop databases through T-SQL.
 - Uses a unique `/tmp` directory for BACPAC artifacts.
 - Invokes `Start-DbaAzMigration -Source localhost -Destination dbatoolstestmigration.database.windows.net -Database $databaseName -Path $testPath -Confirm:$false -EnableException` using the established source and destination connection objects/credentials supported by the workflow.
-- Asserts `Status` is `Successful`, `Type` is `Database`, and `BacpacPath` no longer exists.
+- Asserts `Status` is `Successful`, `Type` is `Database`, the `dbatools.MigrationObject` type name is present, and `BacpacPath` no longer exists.
 - Connects independently to the created Azure database and asserts exact schema/data values.
-- In `finally`, removes the Azure database, source database, and local directory.
+- Covers all-database selection/exclusion, verbose credential redaction, safe skip, staged `Force`, retention, deterministic export failure, friendly continuation, exception-mode stop, induced import failure cleanup, direct failed-Publish zero-output behavior, a command-signaled race that renames a pre-created empty racer to an initially absent final name after the initial check, and a command-signaled Force race that replaces the final name with a pre-created database and proves identity protection.
+- In `finally`, removes every exact run-owned Azure database, source database, staging database, and local directory, then verifies cleanup.
 
 Do not add `-Skip`, `Set-ItResult -Skipped`, or conditional success. Missing secrets and an unreachable Azure boundary must fail this secret-bearing workflow.
 

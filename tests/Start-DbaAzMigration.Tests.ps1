@@ -26,6 +26,81 @@ Describe $CommandName -Tag UnitTests {
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+
+        It "Rejects a falsey invalid export option before connecting" {
+            $splatInvalidExportOption = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                ExportDacOption = 0
+                EnableException = $true
+            }
+            {
+                Start-DbaAzMigration @splatInvalidExportOption
+            } | Should -Throw "*Microsoft.SqlServer.Dac.DacExportOptions*"
+        }
+
+        It "Rejects a falsey invalid import option before connecting" {
+            $splatInvalidImportOption = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                ImportDacOption = ""
+                EnableException = $true
+            }
+            {
+                Start-DbaAzMigration @splatInvalidImportOption
+            } | Should -Throw "*Microsoft.SqlServer.Dac.DacImportOptions*"
+        }
+
+        It "Rejects an explicitly bound blank string database selection before connecting" {
+            $splatEmptyDatabase = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                Database        = ""
+                EnableException = $true
+            }
+
+            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+        }
+
+        It "Rejects an explicitly bound null database selection before connecting" {
+            $splatEmptyDatabase = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                Database        = $null
+                EnableException = $true
+            }
+
+            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+        }
+
+        It "Rejects an explicitly bound empty array database selection before connecting" {
+            $splatEmptyDatabase = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                Database        = @()
+                EnableException = $true
+            }
+
+            { Start-DbaAzMigration @splatEmptyDatabase } | Should -Throw "*at least one non-blank database name*"
+        }
+
+        It "Rejects a file path in friendly mode before connecting" {
+            $filePath = Join-Path $TestDrive "not-a-directory.txt"
+            Set-Content -LiteralPath $filePath -Value "not a directory"
+            $warnings = @()
+            $splatInvalidPath = @{
+                Source          = "not-used"
+                Destination     = "not-used"
+                Path            = $filePath
+                WarningVariable = "warnings"
+            }
+
+            $result = Start-DbaAzMigration @splatInvalidPath
+
+            $result | Should -BeNullOrEmpty
+            @($warnings | Where-Object Message -Like "*must be a directory*").Count | Should -BeGreaterOrEqual 1
+            @($warnings | Where-Object Message -Like "*Failure connecting*") | Should -BeNullOrEmpty
+        }
     }
 }
 

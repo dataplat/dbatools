@@ -303,6 +303,7 @@ function Publish-DbaDacPackage {
             $cleaninstance = $cleaninstance.Replace(':', '_')
 
             foreach ($dbName in $Database) {
+                $operationCompleted = $false
                 #Set deployment properties when specified
                 if (Test-Bound -ParameterName ScriptOnly) {
                     $options.GenerateDeploymentScript = $true
@@ -346,22 +347,31 @@ function Publish-DbaDacPackage {
                             }
                             if ($Pscmdlet.ShouldProcess($instance, "Generating script")) {
                                 $result = $dacServices.Script($dacPackage, $dbName, $options)
+                                $operationCompleted = $true
                             }
                         } else {
                             if ($Pscmdlet.ShouldProcess($instance, "Executing Dacpac publish")) {
                                 $result = $dacServices.Publish($dacPackage, $dbName, $options)
+                                $operationCompleted = $true
                             }
                         }
                     } elseif ($Type -eq 'Bacpac') {
                         if ($Pscmdlet.ShouldProcess($instance, "Executing Bacpac import")) {
                             $dacServices.ImportBacpac($bacPackage, $dbName, $options, $null)
+                            $operationCompleted = $true
                         }
                     }
                 } catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    Stop-Function -Message "Deployment failed" -ErrorRecord $_ -Continue
+                    $splatStopDeployment = @{
+                        Message         = "Deployment failed"
+                        ErrorRecord     = $PSItem
+                        EnableException = $EnableException
+                        Continue        = $true
+                    }
+                    Stop-Function @splatStopDeployment
                 } finally {
                     Unregister-Event -SourceIdentifier "msg"
-                    if ($Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
+                    if ($operationCompleted -and $Pscmdlet.ShouldProcess($instance, "Generating deployment report and output")) {
                         if ($options.GenerateDeploymentReport) {
                             $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbName`_Result.DeploymentReport_$timeStamp.xml"
                             $result.DeploymentReport | Out-File $deploymentReport
@@ -391,7 +401,7 @@ function Publish-DbaDacPackage {
                                 Result               = $resultOutput
                                 Dacpac               = $Path
                                 PublishXml           = $PublishXml
-                                ConnectionString     = $connString
+                                ConnectionString     = Hide-ConnectionString -ConnectionString $connString
                                 DatabaseScriptPath   = $options.DatabaseScriptPath
                                 MasterDbScriptPath   = $options.MasterDbScriptPath
                                 DeploymentReport     = $DeploymentReport
@@ -406,7 +416,7 @@ function Publish-DbaDacPackage {
                                 Database         = $dbName
                                 Result           = $resultOutput
                                 Bacpac           = $Path
-                                ConnectionString = $connString
+                                ConnectionString = Hide-ConnectionString -ConnectionString $connString
                                 DeployOptions    = $options
                             }
                         }
