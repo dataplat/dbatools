@@ -31,7 +31,7 @@ function Publish-DbaDacPackage {
         Use this when you need specific connection properties or when connecting through alternative authentication methods not supported by SqlInstance.
 
     .PARAMETER AccessToken
-        Microsoft Entra access token used to connect to the target SQL Server instance and by DacFx during publish or import.
+        Microsoft Entra access token used to connect to the target SQL Server instance and by DacFx during publish or import. Accepts a string, SecureString, or token object returned by Get-AzAccessToken.
 
     .PARAMETER GenerateDeploymentReport
         Creates an XML deployment report showing what changes were made during the deployment. The report is saved to the OutputPath directory.
@@ -159,7 +159,7 @@ function Publish-DbaDacPackage {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string[]]$Database,
         [string[]]$ConnectionString,
-        [string]$AccessToken,
+        [PSObject]$AccessToken,
         [switch]$GenerateDeploymentReport,
         [Switch]$ScriptOnly,
         [ValidateSet('Dacpac', 'Bacpac')]
@@ -177,6 +177,29 @@ function Publish-DbaDacPackage {
         if ($SqlCredential -and $AccessToken) {
             Stop-Function -Message "SqlCredential and AccessToken cannot be used together." -EnableException $EnableException
             return
+        }
+
+        $connectionAccessToken = $null
+        $dacAccessToken = $null
+        if ($AccessToken) {
+            $connectionAccessToken = $AccessToken
+            $accessTokenValue = if ($AccessToken.PSObject.Properties["Token"]) {
+                $AccessToken.Token
+            } else {
+                $AccessToken
+            }
+            if ($accessTokenValue -is [System.Security.SecureString]) {
+                $dacAccessToken = $accessTokenValue
+            } elseif ($accessTokenValue -is [string]) {
+                $dacAccessToken = New-Object System.Security.SecureString
+                foreach ($accessTokenCharacter in $accessTokenValue.ToCharArray()) {
+                    $dacAccessToken.AppendChar($accessTokenCharacter)
+                }
+                $dacAccessToken.MakeReadOnly()
+            } else {
+                Stop-Function -Message "AccessToken must be a string, SecureString, or object with a Token property." -EnableException $EnableException
+                return
+            }
         }
 
         if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
@@ -260,13 +283,13 @@ function Publish-DbaDacPackage {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $splatConnect = @{ SqlInstance = $instance }
                 if ($SqlCredential) {
-                    $splatConnect.SqlCredential = $SqlCredential
-                } elseif ($AccessToken) {
-                    $splatConnect.AccessToken = $AccessToken
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } elseif ($connectionAccessToken) {
+                    $server = Connect-DbaInstance -SqlInstance $instance -AccessToken $connectionAccessToken
+                } else {
+                    $server = Connect-DbaInstance -SqlInstance $instance
                 }
-                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -346,13 +369,8 @@ function Publish-DbaDacPackage {
 
                 #Create services object
                 try {
-                    if ($AccessToken) {
-                        $secureAccessToken = New-Object System.Security.SecureString
-                        foreach ($accessTokenCharacter in $AccessToken.ToCharArray()) {
-                            $secureAccessToken.AppendChar($accessTokenCharacter)
-                        }
-                        $secureAccessToken.MakeReadOnly()
-                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices -ArgumentList $connString, $secureAccessToken
+                    if ($dacAccessToken) {
+                        $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices -ArgumentList $connString, $dacAccessToken
                     } else {
                         $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connString
                     }

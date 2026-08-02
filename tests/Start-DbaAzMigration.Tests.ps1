@@ -53,7 +53,11 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Rejects a destination credential and access token together before connecting" {
-            $securePassword = ConvertTo-SecureString "unused" -AsPlainText -Force
+            $securePassword = New-Object System.Security.SecureString
+            foreach ($passwordCharacter in "unused".ToCharArray()) {
+                $securePassword.AppendChar($passwordCharacter)
+            }
+            $securePassword.MakeReadOnly()
             $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "unused", $securePassword
             $splatConflictingAuthentication = @{
                 Source                   = "not-used"
@@ -64,6 +68,10 @@ Describe $CommandName -Tag UnitTests {
             }
 
             { Start-DbaAzMigration @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
+        }
+
+        It "Accepts established access token shapes" {
+            (Get-Command Start-DbaAzMigration).Parameters["DestinationAccessToken"].ParameterType | Should -Be ([PSObject])
         }
 
         It "Rejects an explicitly bound blank string database selection before connecting" {

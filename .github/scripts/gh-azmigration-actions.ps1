@@ -241,7 +241,9 @@ FROM Numbers;
             Test-Path -LiteralPath $initialResult.BacpacPath | Should -BeFalse
             $verboseText = $migrationVerbose.Message -join [Environment]::NewLine
             $verboseText.Contains("dbatools.IO") | Should -BeFalse
-            $verboseText.Contains($env:CLIENTSECRET) | Should -BeFalse
+            if ($env:CLIENTSECRET) {
+                $verboseText.Contains($env:CLIENTSECRET) | Should -BeFalse
+            }
             $verboseText.Contains($script:destinationAccessToken) | Should -BeFalse
             $verboseText | Should -Not -Match "Using connection string"
 

@@ -23,7 +23,7 @@ function Start-DbaAzMigration {
         Credential used to connect to the destination Azure SQL logical server.
 
     .PARAMETER DestinationAccessToken
-        Microsoft Entra access token for https://database.windows.net/ used to connect to the destination Azure SQL logical server and publish the BACPAC.
+        Microsoft Entra access token for https://database.windows.net/ used to connect to the destination Azure SQL logical server and publish the BACPAC. Accepts a string, SecureString, or token object returned by Get-AzAccessToken.
 
     .PARAMETER Database
         The source databases to migrate. When omitted, all accessible user databases are selected.
@@ -102,7 +102,7 @@ function Start-DbaAzMigration {
         [DbaInstanceParameter]$Destination,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
-        [string]$DestinationAccessToken,
+        [PSObject]$DestinationAccessToken,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string]$Path = (Get-DbatoolsConfigValue -FullName "Path.DbatoolsTemp"),
@@ -255,7 +255,14 @@ function Start-DbaAzMigration {
             $sensitiveValues += $DestinationSqlCredential.GetNetworkCredential().Password
         }
         if ($DestinationAccessToken) {
-            $sensitiveValues += $DestinationAccessToken
+            $destinationAccessTokenValue = if ($DestinationAccessToken.PSObject.Properties["Token"]) {
+                $DestinationAccessToken.Token
+            } else {
+                $DestinationAccessToken
+            }
+            if ($destinationAccessTokenValue -is [string]) {
+                $sensitiveValues += $destinationAccessTokenValue
+            }
         }
         foreach ($connectionStringToInspect in @($sourceServer.ConnectionContext.ConnectionString, $destinationPublishConnectionString)) {
             try {

@@ -31,7 +31,11 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Rejects a SQL credential and access token together" {
-            $securePassword = ConvertTo-SecureString "unused" -AsPlainText -Force
+            $securePassword = New-Object System.Security.SecureString
+            foreach ($passwordCharacter in "unused".ToCharArray()) {
+                $securePassword.AppendChar($passwordCharacter)
+            }
+            $securePassword.MakeReadOnly()
             $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "unused", $securePassword
             $splatConflictingAuthentication = @{
                 SqlInstance     = "not-used"
@@ -43,6 +47,10 @@ Describe $CommandName -Tag UnitTests {
             }
 
             { Publish-DbaDacPackage @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
+        }
+
+        It "Accepts established access token shapes" {
+            (Get-Command Publish-DbaDacPackage).Parameters["AccessToken"].ParameterType | Should -Be ([PSObject])
         }
     }
 }
