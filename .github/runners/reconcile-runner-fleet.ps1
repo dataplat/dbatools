@@ -177,47 +177,52 @@ function Set-VmPool {
     Write-Host "assigned $VmName to pool $Pool"
 }
 
+function Set-VmTimestampTag {
+    param(
+        [string]$VmName,
+        [string]$TagName
+    )
+    $vmId = Invoke-AzJson -Arguments @(
+        "vm", "show", "--resource-group", $resourceGroup, "--name", $VmName, "--query", "id"
+    ) -Operation "read resource ID for $VmName"
+    $stamp = [DateTimeOffset]::UtcNow.ToString("o")
+    $splatTag = @{
+        Tool      = "az"
+        Arguments = @(
+            "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
+            "--tags", "$TagName=$stamp", "--only-show-errors", "--output", "none"
+        )
+        Operation = "stamp $VmName $TagName"
+    }
+    $null = Invoke-NativeText @splatTag
+}
+
 function Set-VmRegisteredAt {
     param([string]$VmName)
     # Records when bootstrap finished registering the runner. Paired with the VM's
     # creation time in Remove-FleetVm, this separates boot overhead from hot-idle
     # time -- the two are indistinguishable in Azure cost data alone.
-    $vmId = Invoke-AzJson -Arguments @(
-        "vm", "show", "--resource-group", $resourceGroup, "--name", $VmName, "--query", "id"
-    ) -Operation "read resource ID for $VmName"
-    $stamp = [DateTimeOffset]::UtcNow.ToString("o")
-    $null = Invoke-NativeText -Tool "az" -Arguments @(
-        "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
-        "--tags", "registeredAt=$stamp", "--only-show-errors", "--output", "none"
-    ) -Operation "stamp $VmName registration time"
+    Set-VmTimestampTag -VmName $VmName -TagName "registeredAt"
 }
 
-function Set-VmOnlineAt {
+function Set-VmOnlineObservedAt {
     param($State, $Vms)
-    # Records when a runner first shows online, i.e. when the VM finished rebooting into
-    # the autologon session and the listener came up. registeredAt alone cannot separate
-    # the reboot from hot-idle waiting: the span from registration to the job's start is
-    # reboot PLUS however long GitHub left the runner sitting idle, and for a warm-floor
-    # VM the idle part dominates. Stamping the online transition splits the two.
+    # Records when the controller first observes a runner online. This is an upper bound
+    # on listener startup, not its exact timestamp: observation is delayed by up to the
+    # five-minute reconcile interval. It still separates startup from longer hot-idle
+    # waiting without granting the runner an Azure identity.
     #
     # The controller does this rather than the VM because runner VMs hold no Azure
     # identity and must not gain one. Resolution is therefore the reconcile interval.
     foreach ($vm in $Vms) {
-        if (-not $vm.tags -or -not $vm.tags.registeredAt -or $vm.tags.onlineAt) {
+        if (-not $vm.tags -or -not $vm.tags.registeredAt -or $vm.tags.onlineObservedAt) {
             continue
         }
         $runner = Get-RunnerForVm -State $State -VmName $vm.name
         if (-not $runner -or $runner.status -ne "online") {
             continue
         }
-        $vmId = Invoke-AzJson -Arguments @(
-            "vm", "show", "--resource-group", $resourceGroup, "--name", $vm.name, "--query", "id"
-        ) -Operation "read resource ID for $($vm.name)"
-        $stamp = [DateTimeOffset]::UtcNow.ToString("o")
-        $null = Invoke-NativeText -Tool "az" -Arguments @(
-            "tag", "update", "--resource-id", $vmId, "--operation", "Merge",
-            "--tags", "onlineAt=$stamp", "--only-show-errors", "--output", "none"
-        ) -Operation "stamp $($vm.name) online time"
+        Set-VmTimestampTag -VmName $vm.name -TagName "onlineObservedAt"
     }
 }
 
@@ -251,23 +256,22 @@ function Remove-FleetVm {
         "vm", "delete", "--resource-group", $resourceGroup, "--name", $Vm.name,
         "--yes", "--only-show-errors", "--output", "none"
     ) -Operation "delete VM $($Vm.name)"
-    # bootMin is creation to runner registration; rebootMin is registration to the
-    # listener coming up after the reboot -- the span Task 4 actually removes. Keep them
-    # separate: their sum is the VM's unavoidable overhead, while everything between the
-    # listener and the job start is hot-idle waiting, which is Task 2's target instead.
+    # bootMin is creation to runner registration. onlineObservedMin is registration to
+    # the controller's first online observation, so it is a reconcile-resolution upper
+    # bound on listener startup rather than an exact reboot duration.
     $bootMin = "unknown"
-    $rebootMin = "unknown"
+    $onlineObservedMin = "unknown"
     if ($Vm.tags -and $Vm.tags.registeredAt) {
         $registered = [DateTimeOffset]::Parse([string]$Vm.tags.registeredAt)
         $created = [DateTimeOffset]::Parse([string]$Vm.created)
         $bootMin = [int]($registered - $created).TotalMinutes
-        if ($Vm.tags.onlineAt) {
-            $online = [DateTimeOffset]::Parse([string]$Vm.tags.onlineAt)
-            $rebootMin = [int]($online - $registered).TotalMinutes
+        if ($Vm.tags.onlineObservedAt) {
+            $onlineObserved = [DateTimeOffset]::Parse([string]$Vm.tags.onlineObservedAt)
+            $onlineObservedMin = [int]($onlineObserved - $registered).TotalMinutes
         }
     }
     $servedJob = ($null -ne $Vm.tags) -and ($null -ne $Vm.tags.registeredAt) -and (-not $runner)
-    Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin rebootMin=$rebootMin servedJob=$servedJob reason=$Reason"
+    Write-Host "FLEETSTAT vm=$($Vm.name) pool=$(Get-VmPool -Vm $Vm) createdAt=$($Vm.created) ageMin=$(Get-VmAgeMinutes -Vm $Vm) bootMin=$bootMin onlineObservedMin=$onlineObservedMin servedJob=$servedJob reason=$Reason"
 }
 
 function Get-OrphanedNetworking {
@@ -275,17 +279,10 @@ function Get-OrphanedNetworking {
     # filters mirror the janitor's own patterns (janitor-runbook.ps1:255, :265) so both
     # sweepers agree on what counts as garbage.
     #
-    # Here-strings because JMESPath needs both single quotes (its string-literal form --
-    # double quotes there mean identifier quoting, not a literal) and literal backticks
-    # around null. A bare null parses as an identifier rather than the null literal; it
-    # happens to evaluate correctly, but only by accident, and the next person to edit
-    # the filter should not have to rediscover that.
-    $nicQuery = @'
-[?virtualMachine==`null` && contains(name, 'Nic-')].name
-'@
-    $pipQuery = @'
-[?ipConfiguration==`null` && starts_with(name, 'instancepublicip-')].name
-'@
+    # JMESPath needs single quotes for string literals and literal backticks around null.
+    # PowerShell therefore escapes each query backtick by doubling it in the string.
+    $nicQuery = "[?virtualMachine==``null`` && contains(name, 'Nic-')].name"
+    $pipQuery = "[?ipConfiguration==``null`` && starts_with(name, 'instancepublicip-')].name"
     $nics = @(Invoke-AzJson -Arguments @(
             "network", "nic", "list", "--resource-group", $resourceGroup,
             "--query", $nicQuery
@@ -294,7 +291,10 @@ function Get-OrphanedNetworking {
             "network", "public-ip", "list", "--resource-group", $resourceGroup,
             "--query", $pipQuery
         ) -Operation "list orphaned public IPs")
-    [pscustomobject]@{ Nics = $nics; Pips = $pips }
+    [pscustomobject]@{
+        Nics = $nics
+        Pips = $pips
+    }
 }
 
 function Remove-OrphanedNetworking {
@@ -310,51 +310,62 @@ function Remove-OrphanedNetworking {
     $staleNics = @($current.Nics | Where-Object { $PSItem -in $Snapshot.Nics })
     $stalePips = @($current.Pips | Where-Object { $PSItem -in $Snapshot.Pips })
     foreach ($nicName in $staleNics) {
-        $null = Invoke-NativeText -Tool "az" -Arguments @(
-            "network", "nic", "delete", "--resource-group", $resourceGroup,
-            "--name", $nicName, "--only-show-errors", "--output", "none"
-        ) -Operation "delete orphaned NIC $nicName"
+        $splatDeleteNic = @{
+            Tool      = "az"
+            Arguments = @(
+                "network", "nic", "delete", "--resource-group", $resourceGroup,
+                "--name", $nicName, "--only-show-errors", "--output", "none"
+            )
+            Operation = "delete orphaned NIC $nicName"
+        }
+        $null = Invoke-NativeText @splatDeleteNic
     }
     # NICs first: a public IP still bound to a NIC cannot be deleted.
     foreach ($pipName in $stalePips) {
-        $null = Invoke-NativeText -Tool "az" -Arguments @(
-            "network", "public-ip", "delete", "--resource-group", $resourceGroup,
-            "--name", $pipName, "--only-show-errors", "--output", "none"
-        ) -Operation "delete orphaned public IP $pipName"
+        $splatDeletePip = @{
+            Tool      = "az"
+            Arguments = @(
+                "network", "public-ip", "delete", "--resource-group", $resourceGroup,
+                "--name", $pipName, "--only-show-errors", "--output", "none"
+            )
+            Operation = "delete orphaned public IP $pipName"
+        }
+        $null = Invoke-NativeText @splatDeletePip
     }
     Write-Host "reaped orphans: nics=$($staleNics.Count) pips=$($stalePips.Count)"
 }
 
 function Get-PoolJobDemand {
     param([object[]]$WorkflowRuns)
-    # I/O only -- the transform lives in runner-policy.ps1, where it is unit tested.
-    # Only live runs are probed: completed runs have no pending jobs, and the live set
-    # is normally zero to two runs, so this adds one cheap API call per run.
-    $jobs = @()
-    foreach ($run in @($WorkflowRuns | Where-Object { [string]$PSItem.status -ne "completed" })) {
+    # I/O only -- eligibility, matrix-state detection and the demand transform live in
+    # runner-policy.ps1, where they are unit tested. Rejected runs are filtered before
+    # I/O so an unmarked push cannot spend an API call or inflate an already-hot lane.
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $optInPushUsers
+                Marker         = $ciMarker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    $jobsByRun = @{ }
+    foreach ($run in $eligibleLiveRuns) {
         $jobResponse = Invoke-GhJson -Arguments @(
             "repos/$repo/actions/runs/$($run.id)/jobs?per_page=100"
         ) -Operation "read jobs for run $($run.id)"
-        $jobs += @($jobResponse.jobs)
+        $jobsByRun[[string]$run.id] = @($jobResponse.jobs)
     }
-    $demand = Get-PoolJobDemandFromJobs -Jobs $jobs -PoolLabelPrefix $poolLabelPrefix
-    # A run can be live before its matrix exists. Measured 2026-08-01: ci-azure's ten
-    # matrix jobs are created only once the `needs: authorize` gate clears, so at the
-    # workflow_run:requested tick that starts this reconcile the jobs API shows only the
-    # ubuntu-hosted authorize job, which carries no pool label. Sizing to zero there
-    # would make every build wait a full reconcile interval for its first VM, so an
-    # eligible live run with no visible pool jobs yet reports full-pool demand; the next
-    # pass replaces the estimate with the real count.
-    foreach ($run in @($WorkflowRuns | Where-Object { [string]$PSItem.status -ne "completed" })) {
-        $pool = Get-CiRunActor -Run $run
-        if ($pool -notin $maintainers) {
-            $pool = "community"
-        }
-        if (-not $demand.ContainsKey($pool)) {
-            $demand[$pool] = $maintainerCount
-        }
+
+    $splatDemand = @{
+        WorkflowRuns    = $eligibleLiveRuns
+        JobsByRun       = $jobsByRun
+        Maintainers     = $maintainers
+        OptInPushUsers  = $optInPushUsers
+        Marker          = $ciMarker
+        MaintainerCount = $maintainerCount
+        CommunityCount  = $communityCount
     }
-    $demand
+    Get-PoolJobDemandFromRuns @splatDemand
 }
 
 function Get-RunnerDemand {
@@ -552,7 +563,7 @@ try {
     $state = Get-FleetState
     Register-PoolVms -State $state -Desired $desired
     $state = Get-FleetState
-    Set-VmOnlineAt -State $state -Vms $state.Vms
+    Set-VmOnlineObservedAt -State $state -Vms $state.Vms
 
     # Remove dead runners and trim pools whose hot window has ended.
     foreach ($vm in $state.Vms) {
@@ -620,7 +631,7 @@ try {
     $state = Get-FleetState
     Register-PoolVms -State $state -Desired $desired
     $state = Get-FleetState
-    Set-VmOnlineAt -State $state -Vms $state.Vms
+    Set-VmOnlineObservedAt -State $state -Vms $state.Vms
     foreach ($pool in $desired.Keys) {
         $poolVms = @($state.Vms | Where-Object { (Get-VmPool -Vm $PSItem) -eq $pool })
         $poolRunners = @($state.Runners | Where-Object { (Get-RunnerPool -Runner $PSItem) -eq $pool })

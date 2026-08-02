@@ -52,6 +52,7 @@ BeforeAll {
 
     function New-CiRun {
         param(
+            [int]$Id = 1,
             [Parameter(Mandatory)]
             [string]$Actor,
             [Parameter(Mandatory)]
@@ -65,6 +66,7 @@ BeforeAll {
         )
 
         [pscustomobject]@{
+            id          = $Id
             actor       = [pscustomobject]@{ login = $Actor }
             event       = $TriggerEvent
             status      = $Status
@@ -329,7 +331,10 @@ Describe "Get-PoolJobDemandFromJobs" {
                 [string]$Status = "queued",
                 [string[]]$Labels = @("self-hosted", "dbatools-modern", "dbatools-pool-andreasjordan")
             )
-            [pscustomobject]@{ status = $Status; labels = $Labels }
+            [pscustomobject]@{
+                status = $Status
+                labels = $Labels
+            }
         }
     }
 
@@ -371,6 +376,94 @@ Describe "Get-PoolJobDemandFromJobs" {
     It "returns an empty hashtable for no jobs" {
         $result = Get-PoolJobDemandFromJobs -Jobs @()
         $result.Keys.Count | Should -Be 0
+    }
+}
+
+Describe "Get-PoolJobDemandFromRuns" {
+    BeforeAll {
+        function New-RunJob {
+            param(
+                [string]$Status = "queued",
+                [string[]]$Labels = @("self-hosted", "dbatools-modern", "dbatools-pool-potatoqualitee")
+            )
+            [pscustomobject]@{
+                status = $Status
+                labels = $Labels
+            }
+        }
+    }
+
+    It "ignores an ineligible live run before its matrix is created" {
+        $splatRun = @{
+            Id           = 41
+            Actor        = "potatoqualitee"
+            Status       = "in_progress"
+            UpdatedAt    = $script:Now
+            TriggerEvent = "push"
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "41" = @((New-RunJob -Labels @("ubuntu-latest"))) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.Keys.Count | Should -Be 0
+    }
+
+    It "returns no demand after an eligible run's fleet matrix has completed" {
+        $splatRun = @{
+            Id        = 42
+            Actor     = "potatoqualitee"
+            Status    = "in_progress"
+            UpdatedAt = $script:Now
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "42" = @((New-RunJob -Status "completed")) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.Keys.Count | Should -Be 0
+    }
+
+    It "estimates a full pool only before an eligible run's fleet matrix exists" {
+        $splatRun = @{
+            Id        = 43
+            Actor     = "potatoqualitee"
+            Status    = "in_progress"
+            UpdatedAt = $script:Now
+        }
+        $run = New-CiRun @splatRun
+        $jobsByRun = @{ "43" = @((New-RunJob -Labels @("ubuntu-latest"))) }
+        $splatDemand = @{
+            WorkflowRuns    = @($run)
+            JobsByRun       = $jobsByRun
+            Maintainers     = $script:Maintainers
+            OptInPushUsers  = $script:OptInPushUsers
+            Marker          = "[do ci]"
+            MaintainerCount = 10
+            CommunityCount  = 5
+        }
+
+        $result = Get-PoolJobDemandFromRuns @splatDemand
+
+        $result.potatoqualitee | Should -Be 10
     }
 }
 

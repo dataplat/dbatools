@@ -109,7 +109,8 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   Lowering `WARM_FLOOR` buys *latency*, not boot savings -- and only for lanes already hot
   with idle registered VMs, since a cold lane provisions from zero whatever the floor is.
   How that 28 minutes splits between idle waiting and boot is not yet measured; the
-  `FLEETSTAT` lines (`bootMin`, `rebootMin`, `ageMin`) exist to settle it.
+  `FLEETSTAT` lines (`bootMin`, `onlineObservedMin`, `ageMin`) exist to settle it.
+  `onlineObservedMin` is an upper bound sampled by reconcile, not an exact reboot timer.
 - Community CI heats a shared lane while live and for 20 minutes after; it is zero
   otherwise. Each maintainer's lane heats independently.
 - Maximum capacity is 35 only when all three maintainers and community are simultaneously
@@ -129,7 +130,8 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   4h are deleted -- VM age runs from creation, and 45m to register plus 60m hot-idle plus
   a 90m job timeout is ~3.25h of legitimate life, so a tighter cap would kill busy VMs.
   If GitHub is unreachable, conservative age caps apply to all capacity.
-  ps3smoke VMs past 2h and orphaned CI NICs/public IPs
+  ps3smoke VMs past 2h and orphaned CI NICs/public IPs older than a 15-minute
+  provisioning grace period
   die in every mode. Its managed identity holds
   only the `dbatools-ci-operator` role on RG `dbatools-ci` -- no storage, no
   other resource groups. There is no all-day baseline; the switch caps runaway cost.

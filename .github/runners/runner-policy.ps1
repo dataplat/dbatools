@@ -151,6 +151,69 @@ function Get-PoolJobDemandFromJobs {
     $demand
 }
 
+function Get-PoolJobDemandFromRuns {
+    [CmdletBinding()]
+    param(
+        [object[]]$WorkflowRuns = @(),
+        [hashtable]$JobsByRun = @{ },
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers,
+        [Parameter(Mandatory)]
+        [string[]]$OptInPushUsers,
+        [Parameter(Mandatory)]
+        [string]$Marker,
+        [Parameter(Mandatory)]
+        [int]$MaintainerCount,
+        [Parameter(Mandatory)]
+        [int]$CommunityCount,
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+
+    $demand = @{ }
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $OptInPushUsers
+                Marker         = $Marker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    foreach ($run in $eligibleLiveRuns) {
+        $runId = [string]$run.id
+        $jobs = @()
+        if ($JobsByRun.ContainsKey($runId)) {
+            $jobs = @($JobsByRun[$runId])
+        }
+        $fleetJobs = @($jobs | Where-Object {
+                @($PSItem.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" }).Count -gt 0
+            })
+        if (-not $fleetJobs) {
+            # The authorization job exists before the fleet matrix. Estimate one full
+            # pool for that short gap; once any fleet-labelled job exists, even a
+            # completed one, the real pending count replaces the estimate.
+            $pool = Get-CiRunActor -Run $run
+            $poolSize = $MaintainerCount
+            if ($pool -notin $Maintainers) {
+                $pool = "community"
+                $poolSize = $CommunityCount
+            }
+            if (-not $demand.ContainsKey($pool) -or $demand[$pool] -lt $poolSize) {
+                $demand[$pool] = $poolSize
+            }
+            continue
+        }
+
+        $runDemand = Get-PoolJobDemandFromJobs -Jobs $fleetJobs -PoolLabelPrefix $PoolLabelPrefix
+        foreach ($pool in $runDemand.Keys) {
+            if (-not $demand.ContainsKey($pool)) {
+                $demand[$pool] = 0
+            }
+            $demand[$pool] += $runDemand[$pool]
+        }
+    }
+    $demand
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
