@@ -550,6 +550,7 @@ $script:xplat = @(
         'Get-DbaLinkedServer',
         'New-DbaAgentJob',
         'Get-DbaLogin',
+        'Get-DbaUnusedLogin',
         'New-DbaScriptingOption',
         'Save-DbaDiagnosticQueryScript',
         'Invoke-DbaDiagnosticQuery',

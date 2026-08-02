@@ -29,10 +29,35 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
         # Set variables. They are available in all the It blocks.
         $dbName = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $null = $server.Query("Create Database [$dbName]")
+
+        # A standby database is the regression fixture. Its Status reads "Normal, Standby" while
+        # IsAccessible stays true and the space query answers normally, so the old status test
+        # turned away a database the command can read perfectly well. A log shipping secondary is
+        # exactly where a DBA wants to watch file space, so this is the case that has to keep working.
+        $standbyDb = "dbatoolsci_standby_$(Get-Random)"
+        $standbyBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Path $backupPath -Type Full
+        $splatStandby = @{
+            SqlInstance         = $TestConfig.InstanceSingle
+            Path                = $standbyBackup.BackupPath
+            DatabaseName        = $standbyDb
+            StandbyDirectory    = $backupPath
+            ReplaceDbNameInFile = $true
+        }
+        $null = Restore-DbaDatabase @splatStandby
+
+        # A database that cannot be opened at all. Taking one offline is the cheapest way to get
+        # IsAccessible false, and the command cannot tell one inaccessible state from another.
+        $offlineDb = "dbatoolsci_offlinespace_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineDb
+        $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -Offline -Force
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -45,6 +70,14 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Cleanup all created objects.
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbName
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $standbyDb -ErrorAction SilentlyContinue
+
+        # An offline database has to be brought back online before it can be dropped.
+        $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -Online -Force -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -ErrorAction SilentlyContinue
+
+        # Remove the backup directory.
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -94,6 +127,43 @@ Describe $CommandName -Tag IntegrationTests {
         It "Gets no results for excluded database" {
             $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
             $excludeResults.Database | Should -Not -Contain $dbName
+        }
+    }
+
+    Context "Databases the command can read but the status test turned away" {
+        It "Returns file space for a standby database" {
+            $standbyResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $standbyDb)
+            $standbyResults | Should -Not -BeNullOrEmpty
+            $standbyResults[0].Database | Should -Be $standbyDb
+        }
+
+        It "Does not claim a standby database is inaccessible" {
+            $null = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $standbyDb
+            ($WarnVar -join " ") | Should -Not -Match "not accessible"
+        }
+
+        It "Includes the standby database in a whole instance scan" {
+            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle
+            $scanResults.Database | Should -Contain $standbyDb
+        }
+    }
+
+    Context "Databases that cannot be opened" {
+        It "Warns rather than returning nothing when the database is named" {
+            $offlineResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $offlineResults | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -Match ([regex]::Escape($offlineDb))
+        }
+
+        It "Says the database was skipped because it is not accessible" {
+            $null = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            ($WarnVar -join " ") | Should -Match "not accessible"
+        }
+
+        It "Still returns the accessible databases in a whole instance scan" {
+            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle
+            $scanResults.Database | Should -Contain $dbName
+            $scanResults.Database | Should -Not -Contain $offlineDb
         }
     }
 }
