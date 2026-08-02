@@ -86,19 +86,21 @@ jobs:
           $sourcePassword.MakeReadOnly()
           $sourceCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $sourcePassword
           $sourceReady = $false
+          $lastSourceReadinessError = "No connection attempt completed."
           for ($attempt = 1; $attempt -le 30; $attempt++) {
               try {
                   $splatSourceReadinessConnection = @{
-                      SqlInstance     = "localhost"
-                      SqlCredential   = $sourceCredential
-                      Database        = "master"
-                      EnableException = $true
+                      SqlInstance   = "localhost"
+                      SqlCredential = $sourceCredential
+                      Database      = "master"
+                      ErrorAction   = "Stop"
                   }
                   $sourceServer = Connect-DbaInstance @splatSourceReadinessConnection
                   $null = Disconnect-DbaInstance -InputObject $sourceServer
                   $sourceReady = $true
                   break
               } catch {
+                  $lastSourceReadinessError = $PSItem.Exception.Message
                   if ($attempt -lt 30) {
                       Start-Sleep -Seconds 2
                   }
@@ -106,7 +108,7 @@ jobs:
           }
           if (-not $sourceReady) {
               docker logs mssql1
-              throw "SQL Server source did not become ready within 60 seconds."
+              throw "SQL Server source did not become ready within 60 seconds. Last probe error: $lastSourceReadinessError"
           }
 
       - name: Install Pester 6
