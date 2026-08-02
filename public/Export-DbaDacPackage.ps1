@@ -276,8 +276,7 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbName"
                 }
-
-                Write-Message -Level Verbose -Message "Using connection string $connstring"
+                Write-Message -Level Verbose -Message "Using DacFx connection to $instance for database $dbName"
 
                 if ($Type -eq 'Dacpac') {
                     $ext = 'dacpac'
@@ -292,7 +291,12 @@ WHERE database_id > 4  -- Exclude system databases (master=1, tempdb=2, model=3,
                     try {
                         $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
                     } catch {
-                        Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
+                        $splatStopDacService = @{
+                            Message  = "Could not create the DacFx service for $instance and database $dbName"
+                            Target   = $instance
+                            Continue = $true
+                        }
+                        Stop-Function @splatStopDacService
                     }
                     if (-not $DacOption) {
                         $opts = New-DbaDacOption -Type $Type -Action Export

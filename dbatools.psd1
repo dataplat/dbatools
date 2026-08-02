@@ -659,6 +659,7 @@
         'Show-DbaDbList',
         'Show-DbaInstanceFileSystem',
         'Start-DbaAgentJob',
+        "Start-DbaAzMigration",
         'Start-DbaEndpoint',
         'Start-DbaMigration',
         'Start-DbaPfDataCollectorSet',

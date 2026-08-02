@@ -65,6 +65,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false
         $results.Result | Should -BeLike '*Update complete.*'
+        if (-not [bool]$env:DBATOOLS_GALLERY_TEST) {
+            $results.ConnectionString.Contains("dbatools.IO") | Should -BeFalse
+            $results.ConnectionString | Should -Match "Password=\*{8}"
+        }
         $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost:14333 -Query 'SELECT id FROM dbo.example'
         $ids.id | Should -Not -BeNullOrEmpty
     }
