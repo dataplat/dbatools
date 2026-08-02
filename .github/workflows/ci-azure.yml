@@ -230,6 +230,60 @@ jobs:
           Invoke-GhaStage -Script "tests\appveyor.pester.ps1" -Arguments @{ Finalize = $true }
           Invoke-GhaStage -Script "tests\appveyor.post.ps1"
 
+      # The SSPI provider is .NET 8 only, so this test cannot run under the Windows
+      # PowerShell 5.1 pipeline and needs a portable pwsh 7 alongside it. Gated on the
+      # test file rather than a branch name so it keeps running after this branch is gone.
+      - name: Install PowerShell 7 for Windows SSPI integration test
+        if: matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        shell: powershell
+        run: |
+          if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
+              Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
+          $assetUrl = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.18/PowerShell-7.4.18-win-x64.zip"
+          $pwshRoot = "C:\Temp\powershell-7.4.18"
+          if (Test-Path $pwshRoot) { Remove-Item $pwshRoot -Recurse -Force }
+          $null = New-Item -Path $pwshRoot -ItemType Directory -Force
+          $zipPath = Join-Path $env:TEMP "PowerShell-7.4.18-win-x64.zip"
+          $ProgressPreference = "SilentlyContinue"
+          Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -UseBasicParsing
+          Expand-Archive -Path $zipPath -DestinationPath $pwshRoot -Force
+          & "$pwshRoot\pwsh.exe" -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+          if ($LASTEXITCODE -ne 0) { throw "The portable PowerShell 7 runtime did not start successfully." }
+
+      - name: Run PowerShell 7 Windows SSPI integration test
+        if: matrix.scenario == 'SINGLE' && matrix.part == '1/5'
+        shell: powershell
+        run: |
+          if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
+              Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
+          $scriptPath = Join-Path $env:RUNNER_TEMP "Invoke-WindowsSspiTest.ps1"
+          @'
+          . C:\github\dbatools\private\testing\Invoke-ManualPester.ps1
+          $splatPester = @{
+              Path            = "C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1"
+              TestIntegration = $true
+              PassThru        = $true
+              Show            = "Detailed"
+          }
+          $result = @(Invoke-ManualPester @splatPester) |
+              Where-Object { $null -ne $PSItem.PSObject.Properties["FailedCount"] } |
+              Select-Object -Last 1
+          if ($null -eq $result) {
+              throw "The Windows SSPI integration test returned no Pester result."
+          }
+          # Count-agnostic so tests can be added, but still refuses a silent skip:
+          # everything discovered has to actually run and pass.
+          if ($result.TotalCount -lt 1 -or $result.PassedCount -ne $result.TotalCount -or $result.FailedCount -ne 0 -or $result.SkippedCount -ne 0 -or $result.NotRunCount -ne 0) {
+              throw "Unexpected Windows SSPI result: Total=$($result.TotalCount), Passed=$($result.PassedCount), Failed=$($result.FailedCount), Skipped=$($result.SkippedCount), NotRun=$($result.NotRunCount)."
+          }
+          '@ | Set-Content -Path $scriptPath -Encoding UTF8
+          & "C:\Temp\powershell-7.4.18\pwsh.exe" -NoProfile -File $scriptPath
+          if ($LASTEXITCODE -ne 0) { throw "The Windows SSPI integration test failed under PowerShell 7." }
+
       - name: Stage artifacts summary
         if: always()
         shell: powershell

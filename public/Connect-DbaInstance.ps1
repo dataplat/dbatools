@@ -523,6 +523,10 @@ function Connect-DbaInstance {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
 
+            # Reset per instance, because only the string input path sets this and a mixed
+            # array would otherwise leak the previous instance's value into this iteration
+            $usesCredentialSspiProvider = $false
+
             if ($tryconnstring) {
                 $azureserver = $instance.InputObject
                 if ($Database) {
@@ -1039,6 +1043,11 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.WorkstationId = $WorkstationId
                 }
 
+                if ($authType -eq "local ad" -and -not $AuthenticationType -and ($IsLinux -or $IsMacOS)) {
+                    Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
+                    return
+                }
+
                 # If we have an AccessToken, we will build a SqlConnection
                 if ($AccessToken) {
                     # Check if token was created by New-DbaAzAccessToken or Get-AzAccessToken
@@ -1084,17 +1093,22 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
                     $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnection
                     Write-Message -Level Debug -Message "ServerConnection was built"
+                } elseif ($authType -eq "local ad" -and -not $AuthenticationType -and ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])) {
+                    Write-Message -Level Debug -Message "Building SqlConnection with explicit Windows credential SSPI provider"
+                    $sqlConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $sqlConnectionInfo.ConnectionString
+                    $networkCredential = $SqlCredential.GetNetworkCredential()
+                    $sspiContextProvider = New-Object -TypeName Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider -ArgumentList $networkCredential
+                    $sqlConnection.SspiContextProvider = $sspiContextProvider
+                    $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnection
+                    $usesCredentialSspiProvider = $true
+                    Write-Message -Level Debug -Message "ServerConnection was built with explicit Windows credential SSPI provider"
                 } else {
                     Write-Message -Level Debug -Message "Building ServerConnection from SqlConnectionInfo"
                     $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
                     Write-Message -Level Debug -Message "ServerConnection was built"
                 }
 
-                if ($authType -eq 'local ad' -and -not $AuthenticationType) {
-                    if ($IsLinux -or $IsMacOS) {
-                        Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
-                        return
-                    }
+                if ($authType -eq "local ad" -and -not $AuthenticationType -and -not $usesCredentialSspiProvider) {
                     Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
                     $serverConnection.ConnectAsUser = $true
 
@@ -1243,7 +1257,9 @@ function Connect-DbaInstance {
             }
 
             if ($SqlConnectionOnly) {
-                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
+                if (-not $usesCredentialSspiProvider) {
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
+                }
                 Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
                 $server.ConnectionContext.SqlConnectionObject
                 continue
@@ -1300,23 +1316,25 @@ function Connect-DbaInstance {
             $server
 
             if ($isNewConnection -and -not $DedicatedAdminConnection) {
-                # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+                if (-not $usesCredentialSspiProvider) {
+                    # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
-                # Update cache for instance names
-                if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
-                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
-                }
+                    # Update cache for instance names
+                    if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                        [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
+                    }
 
-                # Update lots of registered stuff
-                # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
-                # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
-                if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
-                    # Variable $FullSmoName is used inside the script blocks, so we have to set
-                    $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
-                    Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
-                    foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-                        Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                    # Update lots of registered stuff
+                    # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
+                    # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
+                    if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                        # Variable $FullSmoName is used inside the script blocks, so we have to set
+                        $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
+                        Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
+                        foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                            Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                        }
                     }
                 }
 
@@ -1364,7 +1382,9 @@ function Connect-DbaInstance {
                 }
             }
 
-            $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
+            if (-not $usesCredentialSspiProvider) {
+                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
+            }
             Write-Message -Level Debug -Message "We are finished with this instance"
         }
     }

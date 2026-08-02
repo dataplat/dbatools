@@ -5,6 +5,10 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+BeforeDiscovery {
+    $script:hasCredentialSspiProvider = $null -ne ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])
+}
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -207,8 +211,12 @@ Describe $CommandName -Tag UnitTests {
                     $ServerConnection
                 )
 
-                $sqlConnectionObject = [PSCustomObject]@{
-                    ConnectionString = $ServerConnection.ConnectionString
+                if ($ServerConnection.SqlConnectionObject) {
+                    $sqlConnectionObject = $ServerConnection.SqlConnectionObject
+                } else {
+                    $sqlConnectionObject = [PSCustomObject]@{
+                        ConnectionString = $ServerConnection.ConnectionString
+                    }
                 }
                 $connectionContext = [PSCustomObject]@{
                     ConnectionString    = $sqlConnectionObject.ConnectionString
@@ -228,8 +236,14 @@ Describe $CommandName -Tag UnitTests {
             Mock Add-ConnectionHashValue { } -ModuleName dbatools
             Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
             Mock New-Object {
+                $sqlConnectionObject = if ($ArgumentList[0] -is [Microsoft.Data.SqlClient.SqlConnection]) {
+                    $ArgumentList[0]
+                } else {
+                    $null
+                }
                 $script:lastServerConnection = [PSCustomObject]@{
                     ConnectionString      = $ArgumentList[0].ConnectionString
+                    SqlConnectionObject   = $sqlConnectionObject
                     ConnectAsUser         = $false
                     ConnectAsUserName     = $null
                     ConnectAsUserPassword = $null
@@ -264,6 +278,48 @@ Describe $CommandName -Tag UnitTests {
             $result.ConnectionString | Should -Not -Match "Integrated Security=True"
             $script:lastServerConnection.ConnectAsUser | Should -Be $false
             $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+        }
+
+        It "uses the SqlClient SSPI provider for explicit Windows credentials" -Skip:(-not $script:hasCredentialSspiProvider) {
+            $splatPassword = @{
+                String      = "password"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $credential = New-Object System.Management.Automation.PSCredential ("CONTOSO\user", $securePassword)
+            $splatConnect = @{
+                SqlInstance       = "sqlauth"
+                SqlCredential     = $credential
+                SqlConnectionOnly = $true
+            }
+
+            $result = Connect-DbaInstance @splatConnect
+
+            $result.SspiContextProvider | Should -BeOfType Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider
+            $script:lastServerConnection.ConnectAsUser | Should -Be $false
+            $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+            Should -Invoke Add-ConnectionHashValue -Times 0 -Exactly -ModuleName dbatools
+        }
+
+        It "uses SMO impersonation when the SqlClient SSPI provider is unavailable" -Skip:$script:hasCredentialSspiProvider {
+            $splatPassword = @{
+                String      = "password"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $credential = New-Object System.Management.Automation.PSCredential ("user@CONTOSO", $securePassword)
+            $splatConnect = @{
+                SqlInstance       = "sqlauth"
+                SqlCredential     = $credential
+                SqlConnectionOnly = $true
+            }
+
+            $null = Connect-DbaInstance @splatConnect
+
+            $script:lastServerConnection.ConnectAsUser | Should -Be $true
+            $script:lastServerConnection.ConnectAsUserName | Should -Be "user@CONTOSO"
         }
     }
 }
