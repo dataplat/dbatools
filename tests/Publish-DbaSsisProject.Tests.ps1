@@ -203,18 +203,17 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         $PSDefaultParameterValues["*:EnableException"] = $true
 
-        foreach ($leftoverProject in @("dbatoolsci_pubproject1", "dbatoolsci_pubproject2", "dbatoolsci_pubproject3", "dbatoolsci_pubproject4", "dbatoolsci_pubproject5", "dbatoolsci_pubproject6")) {
-            $splatProjectCleanup = @{
-                SqlInstance  = $TestConfig.InstanceSsis
-                Database     = "SSISDB"
-                Query        = "IF EXISTS (SELECT 1 FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project) EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @project;"
-                SqlParameter = @{
-                    folder  = "dbatoolsci_pubfolder1"
-                    project = $leftoverProject
-                }
-            }
-            Invoke-DbaQuery @splatProjectCleanup
+        # Everything in the suite's own folder goes, rather than a list of names to keep in step
+        # with the fixtures - the list fell behind once already, and a surviving project also
+        # blocks the folder from being dropped. The folder literal rather than the variable so
+        # cleanup still runs when BeforeAll died before setting it.
+        $splatProjectCleanup = @{
+            SqlInstance  = $TestConfig.InstanceSsis
+            Database     = "SSISDB"
+            Query        = "DECLARE @name sysname; DECLARE leftovers CURSOR LOCAL FAST_FORWARD FOR SELECT p.name FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder; OPEN leftovers; FETCH NEXT FROM leftovers INTO @name; WHILE @@FETCH_STATUS = 0 BEGIN EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @name; FETCH NEXT FROM leftovers INTO @name; END; CLOSE leftovers; DEALLOCATE leftovers;"
+            SqlParameter = @{ folder = "dbatoolsci_pubfolder1" }
         }
+        Invoke-DbaQuery @splatProjectCleanup
 
         $splatFolderCleanup = @{
             SqlInstance  = $TestConfig.InstanceSsis
