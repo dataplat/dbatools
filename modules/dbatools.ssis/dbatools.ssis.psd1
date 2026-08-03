@@ -30,7 +30,8 @@
         'New-DbaSsisEnvironment',
         'New-DbaSsisEnvironmentVariable',
         'New-DbaSsisFolder',
-        'Publish-DbaSsisProject'
+        'Publish-DbaSsisProject',
+        'Start-DbaSsisExecution'
     )
     VariablesToExport      = @()
     # Get-DbaSsisExecutionHistory was superseded by Get-DbaSsisExecution and is kept as a command
