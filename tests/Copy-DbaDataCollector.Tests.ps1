@@ -49,7 +49,10 @@ Describe $CommandName -Tag IntegrationTests {
         InModuleScope -ModuleName dbatools -ScriptBlock { $script:isWindows = $true }
 
         # Set variables. They are available in all the It blocks.
-        $collectionSetName = "dbatoolsci_dc_$(Get-Random)"
+        # A GUID rather than Get-Random: the cleanup drops this name unconditionally, so a collision
+        # with a concurrent run would destroy that run's fixture. Get-Random draws from a 32-bit
+        # space and repeats often enough on a shared lab to matter.
+        $collectionSetName = "dbatoolsci_dc_$([guid]::NewGuid().ToString("N"))"
         $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
         $readEnabledSql = "SELECT CAST(parameter_value AS int) AS Enabled FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled'"
@@ -84,8 +87,12 @@ END"
         # source crosses over - which makes the source's set list the blast radius. Establish that it
         # is empty before the fixture set is created and those legs provably cannot carry a
         # stranger's set to the destination. Throws rather than skips, and names what is in the way.
-        $preexistingSourceSetNames = @($sourceServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
-            Where-Object { $PSItem -ne $collectionSetName }
+        #
+        # No carve-out for the fixture name: the name is a fresh GUID, so anything already standing
+        # under it belongs to someone else and is exactly what this guard exists to refuse. The
+        # earlier exclusion existed to tolerate a leftover from a previous same-named run, which a
+        # unique name makes impossible.
+        $preexistingSourceSetNames = @($sourceServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
         if (@($preexistingSourceSetNames).Count -gt 0) {
             throw "$($TestConfig.InstanceCopy1) already carries non-system collection sets ($(@($preexistingSourceSetNames) -join ", ")) - the unfiltered legs would copy them, so this suite will not run against it."
         }
@@ -96,7 +103,8 @@ END"
 
         # A non-cached collection set needs one of the stock collector schedules; the item makes the
         # set something ScriptCreate can render into a real create script rather than an empty one.
-        $sourceServer.Query($dropSetSql)
+        # Created outright, with no drop-first: under a unique name there is nothing of ours to
+        # clear, and a drop here would only ever hit somebody else's set.
         $sourceServer.Query("
 DECLARE @setId int;
 EXEC msdb.dbo.sp_syscollector_create_collection_set
