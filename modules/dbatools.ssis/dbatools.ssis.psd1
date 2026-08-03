@@ -27,6 +27,7 @@
         'Get-DbaSsisFolder',
         'Get-DbaSsisProject',
         'New-DbaSsisCatalog',
+        'New-DbaSsisEnvironment',
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject'
     )
