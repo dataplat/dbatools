@@ -654,6 +654,21 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsContinueOnly | Should -BeNullOrEmpty
             ($warnContinueOnly -join "`n") | Should -BeLike "*-Continue cannot be used without -UseLastBackup*"
         }
+
+        It "throws the setup failure itself when -EnableException is used" {
+            # The message is the assertion, not the fact that it threw. Stop-Function defaults its
+            # own EnableException from the caller's variable, so a setup validation that cannot see
+            # one throws a Boolean cast failure instead - which is still a terminating error, and
+            # would satisfy a bare -Throw while proving the opposite of what this leg is for.
+            $splatThrowNoPath = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                Database        = $backuprestoredb
+                BackupRestore   = $true
+                EnableException = $true
+            }
+            { Copy-DbaDatabase @splatThrowNoPath } | Should -Throw -ExpectedMessage "*you must specify -SharedPath or -UseLastBackup*"
+        }
     }
 
     Context "WhatIf leaves the destination untouched" {
@@ -774,7 +789,10 @@ Describe $CommandName -Tag IntegrationTests {
             # cannot work in a dev tree because the satellites are not on PSModulePath.
             $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
             $shellPath = (Get-Process -Id $PID).Path
-            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+            # New-Item -ItemType Directory fails rather than reuses if the name is already taken,
+            # so the probe cannot land on a file someone else planted in the shared temp root.
+            $probeDir = New-Item -Path ([System.IO.Path]::GetTempPath()) -Name "dbatoolsci-resolve-$([guid]::NewGuid().ToString('N'))" -ItemType Directory
+            $probePath = Join-Path -Path $probeDir.FullName -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there.
@@ -786,14 +804,14 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
 "@
-            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+            Set-Content -LiteralPath $probePath -Value $probeBody -Encoding UTF8
 
             $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }
 
         AfterAll {
-            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $probeDir.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
