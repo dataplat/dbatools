@@ -65,6 +65,16 @@ Describe $CommandName -Tag IntegrationTests {
         $testDb = Get-DbaDatabase -SqlInstance $server -Database $dbName
 
         $createFixtures = @"
+CREATE TABLE dbo.lobinc1 (
+    id int NOT NULL CONSTRAINT PK_lobinc1 PRIMARY KEY CLUSTERED,
+    val int NOT NULL,
+    note nvarchar(max) NULL
+);
+INSERT dbo.lobinc1 (id, val, note) SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY name), 1, N'x' FROM sys.all_objects;
+CREATE NONCLUSTERED INDEX IX_lobinc1_val ON dbo.lobinc1 (val) INCLUDE (note);
+CREATE TABLE dbo.xml1 (id int NOT NULL CONSTRAINT PK_xml1 PRIMARY KEY CLUSTERED, doc xml NULL);
+INSERT dbo.xml1 (id, doc) SELECT TOP 200 ROW_NUMBER() OVER (ORDER BY name), '<a/>' FROM sys.all_objects;
+CREATE PRIMARY XML INDEX PXML_xml1_doc ON dbo.xml1 (doc);
 CREATE TABLE dbo.frag1 (
     id uniqueidentifier NOT NULL CONSTRAINT PK_frag1 PRIMARY KEY CLUSTERED,
     filler char(2000) NOT NULL,
@@ -617,6 +627,34 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
             $onlineResult.Success | Should -Be $true
         }
 
+        It "Skips an online rebuild of an XML index rather than letting the engine reject it" {
+            $splatOnlineXml = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbName
+                Table           = "dbo.xml1"
+                Index           = "PXML_xml1_doc"
+                Online          = $true
+                WarningVariable = "xmlOnlineWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $onlineXml = Invoke-DbaDbIndexRebuild @splatOnlineXml
+            $onlineXml | Should -BeNullOrEmpty
+            $xmlOnlineWarning | Should -Match "XML or spatial"
+        }
+
+        It "Rebuilds the same XML index offline" {
+            $splatOfflineXml = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Table       = "dbo.xml1"
+                Index       = "PXML_xml1_doc"
+            }
+            $offlineXml = Invoke-DbaDbIndexRebuild @splatOfflineXml
+            $offlineXml.IndexName | Should -Be "PXML_xml1_doc"
+            $offlineXml.Online | Should -Be $false
+            $offlineXml.Success | Should -Be $true
+        }
+
         It "Rebuilds as a resumable online operation" {
             if ($server.EngineEdition -ne "EnterpriseOrDeveloper") {
                 Set-ItResult -Skipped -Because "resumable index rebuilds require Enterprise or Developer edition"
@@ -685,6 +723,30 @@ INSERT dbo.$msdbTableName (val) SELECT TOP 100 1 FROM sys.all_objects;
             $computedResumable = Invoke-DbaDbIndexRebuild @splatComputedResumable
             $computedResumable.Resumable | Should -Be $false
             $computedResumable.Success | Should -Be $true
+        }
+
+        It "Suppresses resumable on an index with a LOB included column" {
+            if ($server.EngineEdition -ne "EnterpriseOrDeveloper") {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require Enterprise or Developer edition"
+                return
+            }
+            if ($server.VersionMajor -lt 14) {
+                Set-ItResult -Skipped -Because "resumable index rebuilds require SQL Server 2017 or later"
+                return
+            }
+            $splatLobIncludeResumable = @{
+                SqlInstance          = $TestConfig.InstanceSingle
+                Database             = $dbName
+                Table                = "dbo.lobinc1"
+                Index                = "IX_lobinc1_val"
+                Online               = $true
+                Resumable            = $true
+                ResumableMaxDuration = 5
+            }
+            $lobIncludeResumable = Invoke-DbaDbIndexRebuild @splatLobIncludeResumable
+            $lobIncludeResumable.Resumable | Should -Be $false
+            $lobIncludeResumable.Success | Should -Be $true
+            $lobIncludeResumable.Notes | Should -Match "included LOB column note"
         }
 
         It "Refuses a resumable duration above the seven day ceiling" {

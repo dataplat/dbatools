@@ -72,7 +72,7 @@ function Invoke-DbaDbIndexRebuild {
 
     .PARAMETER Online
         Performs the rebuild online so the table stays available to other sessions for the duration.
-        Requires Enterprise or Developer edition. Indexes that cannot be rebuilt online are skipped with a warning rather than being rebuilt offline behind your back. Columnstore is the exception: which columnstore indexes rebuild online depends on the version and index type in ways SMO does not report, so the request goes to the engine and a rejection comes back as a failed row.
+        Requires Enterprise or Developer edition, or Azure SQL Database. Anything that cannot be rebuilt online is skipped with a warning rather than being rebuilt offline behind your back: XML and spatial indexes, which SQL Server never rebuilds online on any version, edition or platform, columnstore indexes before SQL Server 2019, heaps before SQL Server 2014, and disabled clustered indexes and indexed views.
 
     .PARAMETER MaxDop
         Limits the number of processors used for the operation by adding MAXDOP, from 0 to 64.
@@ -452,8 +452,12 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                 continue
             }
 
+            # REORGANIZE takes neither clause, and begin{} already warned that they will be ignored. Failing
+            # the database over a clause that is not going to be sent would contradict that warning.
+            $optionsReachTheEngine = $Mode -ne "Reorganize"
+
             # Azure SQL Database reports version 12 but supports both clauses, so the version floors only apply to the box product.
-            if ($Resumable -and $server.VersionMajor -lt 14 -and -not $server.IsAzure) {
+            if ($optionsReachTheEngine -and $Resumable -and $server.VersionMajor -lt 14 -and -not $server.IsAzure) {
                 $splatOldResumable = @{
                     Message  = "Resumable index operations require SQL Server 2017 (version 14) or later. $server is running version $($server.VersionMajor)."
                     Target   = $server
@@ -462,7 +466,7 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                 Stop-Function @splatOldResumable
             }
 
-            if ($WaitAtLowPriority -and $server.VersionMajor -lt 12 -and -not $server.IsAzure) {
+            if ($optionsReachTheEngine -and $WaitAtLowPriority -and $server.VersionMajor -lt 12 -and -not $server.IsAzure) {
                 $splatOldWait = @{
                     Message  = "WAIT_AT_LOW_PRIORITY requires SQL Server 2014 (version 12) or later. $server is running version $($server.VersionMajor)."
                     Target   = $server
@@ -637,26 +641,46 @@ WHERE s.alloc_unit_type_desc = 'IN_ROW_DATA'
                     if ($operation -eq "Rebuild" -and $useOnline) {
                         # Never quietly downgrade to an offline rebuild: -Online is what stands between the caller
                         # and a table lock, so anything that cannot honour it is skipped or fails out loud.
+
+                        # Online index operations are an Enterprise feature of the box product, and SQL Server 2016
+                        # SP1 did not move them to Standard. A whitelist rather than a Standard check: Web, Express
+                        # and Personal cannot do this either, and SMO reports Developer as EnterpriseOrDeveloper.
+                        # Azure SQL Database and Managed Instance always have them.
+                        if ("$($server.EngineEdition)" -ne "EnterpriseOrDeveloper" -and -not $server.IsAzure) {
+                            Write-Message -Level Warning -Message "Skipping $objectLabel, an online rebuild requires Enterprise or Developer edition and $server is $($server.EngineEdition). Drop -Online to rebuild it offline."
+                            continue
+                        }
+
                         if ($target.IsHeap) {
-                            # There is no IsOnlineRebuildSupported for a heap, so ALTER TABLE ... REBUILD WITH (ONLINE = ON)
-                            # gets its own floor: SQL Server 2014, Enterprise or Developer.
+                            # ALTER TABLE ... REBUILD WITH (ONLINE = ON) arrived with SQL Server 2014.
                             if ($server.VersionMajor -lt 12 -and -not $server.IsAzure) {
                                 Write-Message -Level Warning -Message "Skipping heap $objectLabel, an online heap rebuild requires SQL Server 2014 (version 12) or later. $server is running version $($server.VersionMajor). Drop -Online to rebuild it offline."
                                 continue
                             }
-                            # A whitelist, not a Standard check: Web, Express and Personal cannot do this either,
-                            # and SMO reports Developer as EnterpriseOrDeveloper.
-                            if ("$($server.EngineEdition)" -ne "EnterpriseOrDeveloper" -and -not $server.IsAzure) {
-                                Write-Message -Level Warning -Message "Skipping heap $objectLabel, an online heap rebuild requires Enterprise or Developer edition and $server is $($server.EngineEdition). Drop -Online to rebuild it offline."
+                        } elseif ($target.IndexType -match "Xml|Spatial") {
+                            # ALTER INDEX documents this with no version, edition or platform caveat: for an XML or
+                            # spatial index only ONLINE = OFF is supported, and ONLINE = ON raises an error. Azure
+                            # SQL Database is no exception, so this sits ahead of the Azure allowance below.
+                            Write-Message -Level Warning -Message "Skipping $objectLabel, SQL Server does not support an online rebuild of an XML or spatial index on any version, edition or platform. Drop -Online to rebuild it offline."
+                            continue
+                        } elseif ($isColumnstore) {
+                            # Online rebuild of a columnstore index arrived with SQL Server 2019, and Azure SQL
+                            # Database has it as well.
+                            if ($server.VersionMajor -lt 15 -and -not $server.IsAzure) {
+                                Write-Message -Level Warning -Message "Skipping columnstore index $objectLabel, an online columnstore rebuild requires SQL Server 2019 (version 15) or later. $server is running version $($server.VersionMajor). Drop -Online to rebuild it offline."
                                 continue
                             }
-                        } elseif ($isColumnstore) {
-                            # Which columnstore indexes rebuild online moves with the version, the index type and the
-                            # edition, and SMO reports IsOnlineRebuildSupported as false for all of them regardless.
-                            # Guessing here has already been wrong in both directions, so the engine decides: an
-                            # unsupported combination comes back as a failed row, never as a silent offline rebuild.
-                            Write-Message -Level Verbose -Message "Asking $server for an online rebuild of columnstore index $objectLabel. Support depends on the version and index type, so a rejection is reported as a failure."
-                        } elseif (-not $target.Index.IsOnlineRebuildSupported -and -not $server.IsAzure) {
+                        } elseif ($target.Index.IsDisabled -and ($target.IndexType -match "^Clustered" -or $isView)) {
+                            # The last documented exclusion for ALTER INDEX REBUILD ONLINE: a disabled clustered
+                            # index or a disabled indexed view. A disabled nonclustered index rebuilds online fine.
+                            Write-Message -Level Warning -Message "Skipping $objectLabel, SQL Server does not rebuild a disabled clustered index or indexed view online. Drop -Online to rebuild it offline."
+                            continue
+                        } elseif ($server.VersionMajor -lt 11 -and -not $server.IsAzure -and -not $target.Index.IsOnlineRebuildSupported) {
+                            # SMO decides IsOnlineRebuildSupported from the SQL Server 2008 rules and never caught up:
+                            # it reports false for a nonclustered index with a LOB included column, which SQL Server
+                            # 2012 made legal and SQL Server 2022 rebuilds online happily, and false for every
+                            # columnstore index regardless of version. Below 2012 those rules are still the engine's,
+                            # so the property is worth asking there and nowhere else.
                             Write-Message -Level Warning -Message "Skipping $objectLabel, this index does not support an online rebuild on $server. Drop -Online to rebuild it offline."
                             continue
                         }
