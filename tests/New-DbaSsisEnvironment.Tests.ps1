@@ -59,7 +59,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "SELECT e.environment_id, e.name, e.description FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment"
-                SqlParameter = @{ folder = $Folder; environment = $Environment }
+                SqlParameter = @{
+                    folder      = $Folder
+                    environment = $Environment
+                }
             }
             # The comma keeps the array intact across the return: without it PowerShell unrolls a
             # one-row result to a bare DataRow, and [0] then indexes its first COLUMN, not its
@@ -82,7 +85,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @folder, @environment_name = @environment;"
-                SqlParameter = @{ folder = $environmentFolder; environment = $staleEnvironment }
+                SqlParameter = @{
+                    folder      = $environmentFolder
+                    environment = $staleEnvironment
+                }
             }
             Invoke-DbaQuery @splatStaleCleanup
         }
@@ -91,7 +97,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "EXEC [catalog].[create_environment] @folder_name = @folder, @environment_name = @environment, @environment_description = NULL;"
-            SqlParameter = @{ folder = $environmentFolder; environment = $existingEnvironment }
+            SqlParameter = @{
+                folder      = $environmentFolder
+                environment = $existingEnvironment
+            }
         }
         Invoke-DbaQuery @splatExisting
     }
@@ -104,7 +113,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @folder, @environment_name = @environment;"
-                SqlParameter = @{ folder = "dbatoolsci_envfolder1"; environment = $leftoverEnvironment }
+                SqlParameter = @{
+                    folder      = "dbatoolsci_envfolder1"
+                    environment = $leftoverEnvironment
+                }
             }
             Invoke-DbaQuery @splatEnvironmentCleanup
         }

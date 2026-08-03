@@ -133,6 +133,37 @@ Describe $CommandName -Tag UnitTests {
             }
             { New-DbaSsisEnvironmentVariable @splatUnmappable } | Should -Throw "*Cannot derive an SSIS data type from System.Guid*"
         }
+
+        It "Refuses a null value when -DataType is omitted" {
+            # A bound null passes any guard written as "value is not null", and the type would then
+            # be derived from a type that does not exist. The refusal has to name the null itself.
+            $splatNullValue = @{
+                SqlInstance     = $unreachableInstance
+                Folder          = "dbatoolsci_varfolder1"
+                Environment     = "dbatoolsci_varenv1"
+                Variable        = "dbatoolsci_var1"
+                Value           = $null
+                EnableException = $true
+            }
+            { New-DbaSsisEnvironmentVariable @splatNullValue } | Should -Throw "*Cannot derive an SSIS data type from a null -Value*"
+        }
+
+        It "Refuses -Sensitive with a -DataType other than String" {
+            # The secret is bound as text, and the catalog checks the value's base type against the
+            # declared one - so a sensitive Int32 reaches the server and comes back as "The data
+            # type of the input value is not compatible with the data type of the 'Int32'".
+            $splatSensitiveInt = @{
+                SqlInstance     = $unreachableInstance
+                Folder          = "dbatoolsci_varfolder1"
+                Environment     = "dbatoolsci_varenv1"
+                Variable        = "dbatoolsci_var1"
+                SecureValue     = $secretValue
+                Sensitive       = $true
+                DataType        = "Int32"
+                EnableException = $true
+            }
+            { New-DbaSsisEnvironmentVariable @splatSensitiveInt } | Should -Throw "*-Sensitive requires -DataType String, not Int32*"
+        }
     }
 }
 
@@ -164,7 +195,11 @@ Describe $CommandName -Tag IntegrationTests {
                 Database     = "SSISDB"
                 # base_data_type exists only on the internal table; the catalog view stops at value.
                 Query        = "SELECT v.variable_id, v.name, v.description, v.type, v.sensitive, v.value, v.base_data_type FROM [internal].[environment_variables] v JOIN [catalog].[environments] e ON e.environment_id = v.environment_id JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment AND v.name = @variable"
-                SqlParameter = @{ folder = $Folder; environment = $Environment; variable = $Variable }
+                SqlParameter = @{
+                    folder      = $Folder
+                    environment = $Environment
+                    variable    = $Variable
+                }
             }
             # The comma keeps the array intact across the return: without it PowerShell unrolls a
             # one-row result to a bare DataRow, and [0] then indexes its first COLUMN, not its
@@ -183,7 +218,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "SELECT e.environment_id FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment"
-                SqlParameter = @{ folder = $Folder; environment = $Environment }
+                SqlParameter = @{
+                    folder      = $Folder
+                    environment = $Environment
+                }
             }
             $environmentId = (Invoke-DbaQuery @splatEnvironmentId).environment_id
 
@@ -210,7 +248,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @folder, @environment_name = @environment;"
-            SqlParameter = @{ folder = $variableFolder; environment = $variableEnvironment }
+            SqlParameter = @{
+                folder      = $variableFolder
+                environment = $variableEnvironment
+            }
         }
         Invoke-DbaQuery @splatStaleEnvironment
 
@@ -218,7 +259,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "EXEC [catalog].[create_environment] @folder_name = @folder, @environment_name = @environment, @environment_description = NULL;"
-            SqlParameter = @{ folder = $variableFolder; environment = $variableEnvironment }
+            SqlParameter = @{
+                folder      = $variableFolder
+                environment = $variableEnvironment
+            }
         }
         Invoke-DbaQuery @splatEnvironmentSetup
 
@@ -226,7 +270,11 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "EXEC [catalog].[create_environment_variable] @folder_name = @folder, @environment_name = @environment, @variable_name = @variable, @data_type = N'Int32', @sensitive = 0, @value = 1, @description = NULL;"
-            SqlParameter = @{ folder = $variableFolder; environment = $variableEnvironment; variable = $existingVariable }
+            SqlParameter = @{
+                folder      = $variableFolder
+                environment = $variableEnvironment
+                variable    = $existingVariable
+            }
         }
         Invoke-DbaQuery @splatExistingVariable
     }
@@ -238,7 +286,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $TestConfig.InstanceSsis
             Database     = "SSISDB"
             Query        = "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @folder, @environment_name = @environment;"
-            SqlParameter = @{ folder = "dbatoolsci_varfolder1"; environment = "dbatoolsci_varenv1" }
+            SqlParameter = @{
+                folder      = "dbatoolsci_varfolder1"
+                environment = "dbatoolsci_varenv1"
+            }
         }
         Invoke-DbaQuery @splatEnvironmentCleanup
 

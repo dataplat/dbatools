@@ -59,6 +59,23 @@ Describe $CommandName -Tag UnitTests {
             }
             { Start-DbaSsisExecution @splatTimeoutOnly } | Should -Throw "*-Timeout applies only with -Synchronous*"
         }
+
+        It "Refuses a -Timeout of zero or less" {
+            # Zero would wait exactly one poll of a package that has had no time to finish, so every
+            # run would report a timeout it never really had.
+            foreach ($badTimeout in @(0, -30)) {
+                $splatBadTimeout = @{
+                    SqlInstance     = "dbatoolsci_nosuchhost_ssisexec"
+                    Folder          = "dbatoolsci_execfolder1"
+                    Project         = "dbatoolsci_execproject1"
+                    Package         = "dbatoolsci_execpackage1.dtsx"
+                    Timeout         = $badTimeout
+                    Synchronous     = $true
+                    EnableException = $true
+                }
+                { Start-DbaSsisExecution @splatBadTimeout } | Should -Throw "*-Timeout must be greater than zero seconds, not $badTimeout*"
+            }
+        }
     }
 }
 
@@ -213,7 +230,11 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "SELECT parameter_value FROM [catalog].[execution_parameter_values] WHERE execution_id = @executionId AND object_type = @objectType AND parameter_name = @parameterName"
-                SqlParameter = @{ executionId = $ExecutionId; objectType = $ObjectType; parameterName = $ParameterName }
+                SqlParameter = @{
+                    executionId   = $ExecutionId
+                    objectType    = $ObjectType
+                    parameterName = $ParameterName
+                }
             }
             (Invoke-DbaQuery @splatParameterRead).parameter_value
         }
@@ -224,7 +245,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "DECLARE @rid bigint; SELECT @rid = r.reference_id FROM [catalog].[environment_references] r JOIN [catalog].[projects] p ON p.project_id = r.project_id JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project; IF @rid IS NOT NULL EXEC [catalog].[delete_environment_reference] @reference_id = @rid;"
-            SqlParameter = @{ folder = $executionFolder; project = $executionProject }
+            SqlParameter = @{
+                folder  = $executionFolder
+                project = $executionProject
+            }
         }
         Invoke-DbaQuery @splatStaleReference
 
@@ -238,12 +262,20 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = $staleStatement
-                SqlParameter = @{ folder = $executionFolder; project = $executionProject; environment = $executionEnvironment }
+                SqlParameter = @{
+                    folder      = $executionFolder
+                    project     = $executionProject
+                    environment = $executionEnvironment
+                }
             }
             Invoke-DbaQuery @splatStale
         }
 
-        $projectFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "$executionProject.ispac"
+        # A fresh directory of this run's own, rather than a predictable name in the shared temp
+        # root: two runs at once would otherwise overwrite each other's project file.
+        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_exec_$([guid]::NewGuid().ToString('n'))"
+        $null = New-Item -Path $projectRoot -ItemType Directory -Force
+        $projectFile = Join-Path -Path $projectRoot -ChildPath "$executionProject.ispac"
         New-SsisParameterizedProjectFile -ProjectName $executionProject -PackageName $executionPackage -Path $projectFile
 
         $splatPublish = @{
@@ -259,7 +291,11 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $ssisInstance
             Database     = "SSISDB"
             Query        = "DECLARE @rid bigint; EXEC [catalog].[create_environment_reference] @folder_name = @folder, @project_name = @project, @environment_name = @environment, @reference_type = 'R', @environment_folder_name = NULL, @reference_id = @rid OUTPUT;"
-            SqlParameter = @{ folder = $executionFolder; project = $executionProject; environment = $executionEnvironment }
+            SqlParameter = @{
+                folder      = $executionFolder
+                project     = $executionProject
+                environment = $executionEnvironment
+            }
         }
         Invoke-DbaQuery @splatReference
     }
@@ -271,7 +307,10 @@ Describe $CommandName -Tag IntegrationTests {
             SqlInstance  = $TestConfig.InstanceSsis
             Database     = "SSISDB"
             Query        = "DECLARE @rid bigint; SELECT @rid = r.reference_id FROM [catalog].[environment_references] r JOIN [catalog].[projects] p ON p.project_id = r.project_id JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project; IF @rid IS NOT NULL EXEC [catalog].[delete_environment_reference] @reference_id = @rid;"
-            SqlParameter = @{ folder = "dbatoolsci_execfolder1"; project = "dbatoolsci_execproject1" }
+            SqlParameter = @{
+                folder  = "dbatoolsci_execfolder1"
+                project = "dbatoolsci_execproject1"
+            }
         }
         Invoke-DbaQuery @splatReferenceCleanup
 
@@ -284,9 +323,17 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = $cleanupStatement
-                SqlParameter = @{ folder = "dbatoolsci_execfolder1"; project = "dbatoolsci_execproject1"; environment = "dbatoolsci_execenv1" }
+                SqlParameter = @{
+                    folder      = "dbatoolsci_execfolder1"
+                    project     = "dbatoolsci_execproject1"
+                    environment = "dbatoolsci_execenv1"
+                }
             }
             Invoke-DbaQuery @splatCleanup
+        }
+
+        if ($projectRoot -and (Test-Path -LiteralPath $projectRoot)) {
+            Remove-Item -LiteralPath $projectRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 
@@ -413,7 +460,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "SELECT COUNT(*) AS executions FROM [catalog].[executions] WHERE folder_name = @folder AND project_name = @project"
-                SqlParameter = @{ folder = $executionFolder; project = $executionProject }
+                SqlParameter = @{
+                    folder  = $executionFolder
+                    project = $executionProject
+                }
             }
             $countBefore = (Invoke-DbaQuery @splatBefore).executions
 

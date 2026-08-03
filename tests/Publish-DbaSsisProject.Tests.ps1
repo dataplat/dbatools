@@ -142,7 +142,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "SELECT p.project_id, p.name, p.object_version_lsn FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project"
-                SqlParameter = @{ folder = $Folder; project = $Project }
+                SqlParameter = @{
+                    folder  = $Folder
+                    project = $Project
+                }
             }
             # The comma keeps the array intact across the return: without it PowerShell unrolls a
             # one-row result to a bare DataRow, and [0] then indexes its first COLUMN, not its
@@ -157,7 +160,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "IF EXISTS (SELECT 1 FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project) EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @project;"
-                SqlParameter = @{ folder = $deployFolder; project = $staleProject }
+                SqlParameter = @{
+                    folder  = $deployFolder
+                    project = $staleProject
+                }
             }
             Invoke-DbaQuery @splatStaleProject
         }
@@ -170,21 +176,26 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Invoke-DbaQuery @splatFolderSetup
 
+        # A fresh directory of this run's own, rather than predictable names in the shared temp
+        # root: two runs at once would otherwise write each other's fixture files, and cleaning up
+        # by filter would delete the other run's.
+        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pub_$([guid]::NewGuid().ToString('n'))"
+        $null = New-Item -Path $projectRoot -ItemType Directory -Force
+
         $projectFiles = @{ }
         foreach ($projectName in $createdProjects) {
-            $projectPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "$projectName.ispac"
+            $projectPath = Join-Path -Path $projectRoot -ChildPath "$projectName.ispac"
             New-SsisProjectFile -ProjectName $projectName -PackageName "$projectName`_package" -Path $projectPath
             $projectFiles[$projectName] = $projectPath
         }
 
         # Deliberately not a zip, so the catalog fails to open the stream at all - the second of
         # the two reasons it reports only through its operation log.
-        $corruptPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pubcorrupt.ispac"
+        $corruptPath = Join-Path -Path $projectRoot -ChildPath "dbatoolsci_pubcorrupt.ispac"
         Set-Content -LiteralPath $corruptPath -Value "this is not a project file" -Encoding Ascii
-        $emptyPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pubempty.ispac"
+        $emptyPath = Join-Path -Path $projectRoot -ChildPath "dbatoolsci_pubempty.ispac"
         Set-Content -LiteralPath $emptyPath -Value "" -NoNewline -Encoding Ascii
-        $absentPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pubabsent.ispac"
-        Remove-Item -LiteralPath $absentPath -ErrorAction SilentlyContinue
+        $absentPath = Join-Path -Path $projectRoot -ChildPath "dbatoolsci_pubabsent.ispac"
     }
 
     AfterAll {
@@ -195,7 +206,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "IF EXISTS (SELECT 1 FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project) EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @project;"
-                SqlParameter = @{ folder = "dbatoolsci_pubfolder1"; project = $leftoverProject }
+                SqlParameter = @{
+                    folder  = "dbatoolsci_pubfolder1"
+                    project = $leftoverProject
+                }
             }
             Invoke-DbaQuery @splatProjectCleanup
         }
@@ -208,7 +222,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Invoke-DbaQuery @splatFolderCleanup
 
-        Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Filter "dbatoolsci_pub*.ispac" -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
+        if ($projectRoot -and (Test-Path -LiteralPath $projectRoot)) {
+            Remove-Item -LiteralPath $projectRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     Context "Deploying a project" {
@@ -236,7 +252,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "SELECT k.name FROM [catalog].[packages] k JOIN [catalog].[projects] p ON p.project_id = k.project_id JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project"
-                SqlParameter = @{ folder = $deployFolder; project = $simpleProject }
+                SqlParameter = @{
+                    folder  = $deployFolder
+                    project = $simpleProject
+                }
             }
             $packages = @(Invoke-DbaQuery @splatPackageRead)
             $packages.Count | Should -Be 1
@@ -266,7 +285,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "SELECT COUNT(*) AS deployed FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project"
-                SqlParameter = @{ folder = $deployFolder; project = $aliasProject }
+                SqlParameter = @{
+                    folder  = $deployFolder
+                    project = $aliasProject
+                }
             }
             (Invoke-DbaQuery @splatAliasRead).deployed | Should -Be 1
         }

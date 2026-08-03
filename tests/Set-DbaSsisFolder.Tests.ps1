@@ -208,7 +208,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "-InputObject" {
         It "Refuses an object that is not a catalog folder" {
-            $imposter = [PSCustomObject]@{ SqlInstance = $ssisInstance; Name = $firstFolder }
+            $imposter = [PSCustomObject]@{
+                SqlInstance = $ssisInstance
+                Name        = $firstFolder
+            }
             $splatImposter = @{
                 Description     = "should not land"
                 EnableException = $false

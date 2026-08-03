@@ -115,7 +115,10 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance  = $TestConfig.InstanceSsis
                 Database     = "SSISDB"
                 Query        = "EXEC [catalog].[configure_catalog] @property_name = @propertyName, @property_value = @propertyValue;"
-                SqlParameter = @{ propertyName = $restore[0]; propertyValue = $restore[1] }
+                SqlParameter = @{
+                    propertyName  = $restore[0]
+                    propertyValue = $restore[1]
+                }
             }
             Invoke-DbaQuery @splatRestore
         }
