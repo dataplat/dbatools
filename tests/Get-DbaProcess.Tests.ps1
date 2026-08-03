@@ -35,7 +35,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "matches self as a login at least once" {
-            $matching = $allResults | Where-Object Login -match $env:USERNAME
+            # $env:USERNAME is the machine account under the LocalSystem service runner;
+            # the process login is the real principal, so compare against WindowsIdentity
+            $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            $matching = $allResults | Where-Object Login -eq $currentIdentity
             $matching | Should -Not -BeNullOrEmpty
         }
 
