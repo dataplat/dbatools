@@ -498,7 +498,10 @@ Describe $CommandName -Tag IntegrationTests {
             # cannot work in a dev tree because the satellites are not on PSModulePath.
             $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
             $shellPath = (Get-Process -Id $PID).Path
-            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+            # A GUID rather than Get-Random, and created below with CreateNew rather than written
+            # over whatever is at the path: this file is executed, so an existing file at a
+            # guessable name is something to refuse, not something to overwrite.
+            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("N")).ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there.
@@ -510,12 +513,15 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
 "@
-            $splatProbeFile = @{
-                Path     = $probePath
-                Value    = $probeBody
-                Encoding = "UTF8"
+            # Held open FileShare.Read until the body is written, so nothing can substitute the
+            # script between the write and the run below.
+            $probeStream = New-Object System.IO.FileStream($probePath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+            try {
+                $probeBytes = [System.Text.Encoding]::UTF8.GetBytes($probeBody)
+                $probeStream.Write($probeBytes, 0, $probeBytes.Length)
+            } finally {
+                $probeStream.Dispose()
             }
-            Set-Content @splatProbeFile
 
             $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath)
             $probeOutput = & $shellPath @probeArguments 2>&1
