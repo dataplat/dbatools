@@ -25,9 +25,9 @@ GitHub (public repo)                          Azure (eastus)
 | Runner labels | Base `dbatools-modern` plus exactly one pool label: `dbatools-pool-potatoqualitee`, `dbatools-pool-andreasjordan`, `dbatools-pool-niphlod`, or `dbatools-pool-community` |
 | Golden image | `dbatoolsGallery/dbatools-modern-image` — Server 2022, SQL 2017/2019/2022 Developer (instances `SQL2017/SQL2019/SQL2022`, ports 14334/14335/14336, Manual start, mixed auth sa=AppVeyor convention) |
 | Legacy image | `dbatoolsGallery/dbatools-golden-image` v1.0.0 — Server 2012, PS 3.0, SQL 2008R2/2012/2014/2016/2017 (used by nightly `ps3-smoke.yml`, runnerless); v2.0.0 adds WMF 5.1 (PS 5.1) for a future legacy runner pool |
-| Runner execution | **interactive autologon session** as local admin `appveyor` (AppVeyor parity: BITS transfers, `$env:USERNAME`, `C:\Users\appveyor\Documents\DbatoolsExport`); bootstrap registers the ephemeral runner, arms autologon + a logon task, reboots |
-| Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, pagefile setting on D:, `@@SERVERNAME` repaired per job (all NSG-shielded) |
-| Harness | untouched `tests/appveyor.*.ps1` via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig) |
+| Runner execution | **Windows service as LocalSystem** (`config.cmd --runasservice --windowslogonaccount "NT AUTHORITY\SYSTEM"`). BITS works because LocalSystem is always logged on; no autologon, no plaintext password in the registry, no logon task, no second boot — the service starts during bootstrap and the VM takes its job on its first boot |
+| Instance parity knobs | firewall off, `LocalAccountTokenFilterPolicy=1`, `@@SERVERNAME` repaired per job (all NSG-shielded) |
+| Harness | the same `tests/appveyor.*.ps1` AppVeyor runs, not a fork, via `tests/gha.shim.ps1` (`APPVEYOR=True` drives Get-TestConfig). Changes to them must keep working on AppVeyor |
 | Scaling controls | Active maintainer CI gets ten dedicated runners and remains at ten for 20 minutes after completion, then scales to zero. Community remains demand-sized while CI is live and for its existing 20-minute grace, capped at five and falling back to `WARM_FLOOR` (3) when nothing is pending. Demand never heats a cold community lane or sizes a maintainer lane. `MAX_RUNNERS=35` is the hard VMSS ceiling |
 | CI markers | `(do <cmd>)` selects CI tests (the existing campaign convention); `[do ci]` activates the runner pool. They are compatible and unrelated. |
 | Build queue | Workflow concurrency uses `queue: max`: one matrix build per lane consumes that lane's workers while later builds wait FIFO, matching AppVeyor account concurrency |
@@ -85,9 +85,10 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
    clears, so the first pass estimates a full pool and the next replaces it with the
    real count), tags each Flexible VMSS instance
    with its pool, and registers an ephemeral runner on every new instance via
-   `az vm run-command` + `bootstrap-runner.ps1` (which then reboots the VM into the
-   appveyor autologon session where run.cmd picks up the job). `runner-scale-up.yml`
-   remains as a manual recovery tool.
+   `az vm run-command` + `bootstrap-runner.ps1` (which registers the runner as a
+   LocalSystem Windows service; the service starts immediately and picks up the job on
+   that first boot, with no reboot). `runner-scale-up.yml` remains as a manual recovery
+   tool.
 3. Each job: sync repo at `C:\github\dbatools` → CRLF tests → one PowerShell session
    runs prep → instance setup (`appveyor.SQL*.ps1` set static ports, start services,
    EKM/HADR/master key) → `@@SERVERNAME` repair → Pester 6 → finalize → post.
@@ -114,7 +115,7 @@ pwsh .github/runners/infra.ps1 -ImageId <gallery image id>
   from zero whatever the floor is.
   How that 28 minutes splits between idle waiting and boot is not yet measured; the
   `FLEETSTAT` lines (`bootMin`, `onlineObservedMin`, `ageMin`) exist to settle it.
-  `onlineObservedMin` is an upper bound sampled by reconcile, not an exact reboot timer.
+  `onlineObservedMin` is an upper bound sampled by reconcile, not an exact boot timer.
 - Active maintainer CI gets ten dedicated runners and remains at ten for 20 minutes
   after completion, then scales to zero. Community CI remains a shared demand-sized
   lane while live and for its existing 20-minute grace, then is zero.
