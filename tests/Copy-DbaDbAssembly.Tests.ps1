@@ -397,7 +397,13 @@ Describe $CommandName -Tag IntegrationTests {
             $statusObjects = @($copyResults | Where-Object { $PSItem.Type -eq "Database Assembly" })
 
             $statusObjects.Count | Should -Be 2
-            ($statusObjects | Where-Object SourceDatabase -eq $fixtureDb1).Status | Should -Be "Successful"
+            $successObject = $statusObjects | Where-Object SourceDatabase -eq $fixtureDb1
+            $successObject.Status | Should -Be "Successful"
+            # The IDs are the half of the status object that no other leg can vouch for: the names
+            # are echoes of what was passed in, so a port that never resolved either database still
+            # matches on them, and only the IDs come back from the servers.
+            $successObject.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $sourceInstance -Database $fixtureDb1).ID
+            $successObject.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $destInstance -Database $fixtureDb1).ID
             ($statusObjects | Where-Object SourceDatabase -eq $fixtureDb2).Status | Should -Be "Skipped"
             ($statusObjects | Where-Object SourceDatabase -eq $fixtureDb2).Notes | Should -Be "Destination database does not exist"
             $statusObjects.Name | Select-Object -Unique | Should -Be "resolveDNS"
@@ -534,6 +540,11 @@ Describe $CommandName -Tag IntegrationTests {
             if (Test-Path -LiteralPath $probeDirectory) {
                 throw "$probeDirectory already exists - this run will not execute a script out of a directory it did not create"
             }
+            # Only a directory this block actually created may be deleted in AfterAll. Without the
+            # flag the throw above hands the cleanup a path it just refused to touch, and refusing
+            # to execute out of somebody else's directory while recursively deleting it is worse
+            # than either outcome on its own.
+            $probeDirectoryCreated = $false
             $probeDirectoryInfo = New-Object System.IO.DirectoryInfo($probeDirectory)
             if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
                 # The running identity owns it, not Administrators: only an elevated run can hand
@@ -563,14 +574,12 @@ Describe $CommandName -Tag IntegrationTests {
                 } else {
                     [System.IO.FileSystemAclExtensions]::Create($probeDirectoryInfo, $probeSecurity)
                 }
+                $probeDirectoryCreated = $true
             } else {
                 # DirectorySecurity is Windows-only and throws PlatformNotSupportedException
                 # everywhere else, so the mode carries the same job there. The umask cannot: under a
                 # permissive one the directory comes out group- or world-writable and the executed
-                # script is substitutable. Created WITH 0700 where the runtime offers that overload,
-                # for the same reason the Windows branch creates with a descriptor; where it does
-                # not, the chmod follows immediately, and resolve.ps1 is written with CreateNew
-                # either way, so anything planted in the gap throws instead of being executed.
+                # script is substitutable.
                 # mkdir rather than a .NET call, for the exclusivity: every managed
                 # create-directory API succeeds silently on a directory that already exists and
                 # leaves that directory's permissions alone, so a pre-created one would be used as
@@ -582,6 +591,7 @@ Describe $CommandName -Tag IntegrationTests {
                 if ($LASTEXITCODE -ne 0) {
                     throw "could not create $probeDirectory with owner-only permissions (mkdir exited $LASTEXITCODE)"
                 }
+                $probeDirectoryCreated = $true
             }
             $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
 
@@ -617,13 +627,15 @@ Import-Module -Name (Join-Path -Path `$ModuleBase -ChildPath "dbatools.psm1") -D
         }
 
         AfterAll {
-            $splatRemoveProbeDirectory = @{
-                Path        = $probeDirectory
-                Recurse     = $true
-                Force       = $true
-                ErrorAction = "SilentlyContinue"
+            if ($probeDirectoryCreated) {
+                $splatRemoveProbeDirectory = @{
+                    Path        = $probeDirectory
+                    Recurse     = $true
+                    Force       = $true
+                    ErrorAction = "SilentlyContinue"
+                }
+                Remove-Item @splatRemoveProbeDirectory
             }
-            Remove-Item @splatRemoveProbeDirectory
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
