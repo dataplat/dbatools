@@ -36,18 +36,43 @@ param(
 $ErrorActionPreference = "Stop"
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]3072
 
-if (Test-Path -Path "C:\github-runner\.bootstrapped-once") {
-    # .bootstrapped-once is written before config.cmd runs, so reaching this branch means
-    # a bootstrap was at least attempted. Healthy means the runner is still configured and
+function Get-RunnerVmState {
+    <#
+    .SYNOPSIS
+        Reports whether this VM is fresh, still serving its single job, or spent.
+
+    .DESCRIPTION
+        Kept as a function with no side effects so tests/bootstrap-runner.Tests.ps1 can
+        lift it out of this script and exercise every outcome. It decides the fate of a
+        VM, so it is the one part of the bootstrap that must not be guessed at.
+    #>
+    param(
+        [string]$RunnerRoot = "C:\github-runner"
+    )
+
+    if (-not (Test-Path -Path (Join-Path -Path $RunnerRoot -ChildPath ".bootstrapped-once"))) {
+        return "fresh"
+    }
+
+    # .bootstrapped-once is written before config.cmd runs, so reaching here means a
+    # bootstrap was at least attempted. Healthy means the runner is still configured and
     # its service is running (the single job has not been served yet). Anything else --
     # the ephemeral runner served its job and unregistered itself, or a previous bootstrap
     # died mid-config -- leaves the VM dirty (SQL state, workspace); it must be deleted,
     # never reused.
-    $runnerService = Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue
-    if ((Test-Path -Path "C:\github-runner\.runner") -and $runnerService -and $runnerService.Status -eq "Running") {
-        "runner already configured on $env:COMPUTERNAME"
-        exit 0
+    $runningService = @(Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | Where-Object Status -eq "Running")
+    if ((Test-Path -Path (Join-Path -Path $RunnerRoot -ChildPath ".runner")) -and $runningService.Count -gt 0) {
+        return "healthy"
     }
+    return "spent"
+}
+
+$vmState = Get-RunnerVmState
+if ($vmState -eq "healthy") {
+    "runner already configured on $env:COMPUTERNAME"
+    exit 0
+}
+if ($vmState -eq "spent") {
     "SPENT-VM: $env:COMPUTERNAME already served a job or failed its bootstrap"
     exit 1
 }
@@ -104,9 +129,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 $ErrorActionPreference = "Stop"
 
-$runnerService = Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue
-if (-not $runnerService -or $runnerService.Status -ne "Running") {
+if ((Get-RunnerVmState) -ne "healthy") {
     "runner service is missing or not running after config.cmd"
     exit 1
 }
+$runnerService = @(Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | Where-Object Status -eq "Running")[0]
 "runner configured as a LocalSystem service: $($runnerService.Name) [$($runnerService.Status)]"
