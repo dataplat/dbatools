@@ -227,6 +227,94 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
+        function New-SsisProcessProjectFile {
+            param($ProjectName, $PackageName, $Path, $Executable, $Arguments)
+
+            if (-not ("System.IO.Compression.ZipArchive" -as [type])) {
+                Add-Type -AssemblyName "System.IO.Compression"
+            }
+
+            # An Execute Process task is the one task type that needs no connection manager, so the
+            # package it lives in stays hand-writable. What it runs decides how the execution ends:
+            # a process that takes a known length of time, or one that is not there at all.
+            $packageGuid = [guid]::NewGuid().ToString("B").ToUpper()
+            $taskGuid = [guid]::NewGuid().ToString("B").ToUpper()
+            $packageXml = @"
+<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts" DTS:refId="Package" DTS:CreationName="Microsoft.Package" DTS:DTSID="$packageGuid" DTS:ExecutableType="Microsoft.Package" DTS:LocaleID="1033" DTS:ObjectName="$PackageName" DTS:VersionGUID="$packageGuid">
+  <DTS:Property DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable DTS:refId="Package\ProcessTask" DTS:CreationName="Microsoft.ExecuteProcess" DTS:DTSID="$taskGuid" DTS:ExecutableType="Microsoft.ExecuteProcess" DTS:LocaleID="-1" DTS:ObjectName="ProcessTask">
+      <DTS:ObjectData>
+        <ExecuteProcessData xmlns="www.microsoft.com/sqlserver/dts/tasks/executeprocesstask" Executable="$Executable" Arguments="$Arguments" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+</DTS:Executable>
+"@
+
+            $manifestXml = @"
+<SSIS:Project SSIS:ProtectionLevel="DontSaveSensitive" xmlns:SSIS="www.microsoft.com/SqlServer/SSIS">
+  <SSIS:Properties>
+    <SSIS:Property SSIS:Name="ID">$packageGuid</SSIS:Property>
+    <SSIS:Property SSIS:Name="Name">$ProjectName</SSIS:Property>
+    <SSIS:Property SSIS:Name="VersionMajor">1</SSIS:Property>
+    <SSIS:Property SSIS:Name="VersionMinor">0</SSIS:Property>
+    <SSIS:Property SSIS:Name="VersionBuild">0</SSIS:Property>
+    <SSIS:Property SSIS:Name="VersionComments"></SSIS:Property>
+    <SSIS:Property SSIS:Name="CreationDate">2026-08-03T15:40:56.683402+02:00</SSIS:Property>
+    <SSIS:Property SSIS:Name="CreatorName">dbatools</SSIS:Property>
+    <SSIS:Property SSIS:Name="CreatorComputerName">dbatools</SSIS:Property>
+    <SSIS:Property SSIS:Name="Description"></SSIS:Property>
+    <SSIS:Property SSIS:Name="FormatVersion">1</SSIS:Property>
+  </SSIS:Properties>
+  <SSIS:Packages>
+    <SSIS:Package SSIS:Name="$PackageName.dtsx" SSIS:EntryPoint="1" />
+  </SSIS:Packages>
+  <SSIS:ConnectionManagers />
+  <SSIS:DeploymentInfo>
+    <SSIS:ProjectConnectionParameters />
+    <SSIS:PackageInfo>
+      <SSIS:PackageMetaData SSIS:Name="$PackageName.dtsx">
+        <SSIS:Properties>
+          <SSIS:Property SSIS:Name="ID">$packageGuid</SSIS:Property>
+          <SSIS:Property SSIS:Name="Name">$PackageName</SSIS:Property>
+          <SSIS:Property SSIS:Name="VersionMajor">1</SSIS:Property>
+          <SSIS:Property SSIS:Name="VersionMinor">0</SSIS:Property>
+          <SSIS:Property SSIS:Name="VersionBuild">0</SSIS:Property>
+          <SSIS:Property SSIS:Name="VersionComments"></SSIS:Property>
+          <SSIS:Property SSIS:Name="VersionGUID">$packageGuid</SSIS:Property>
+          <SSIS:Property SSIS:Name="PackageFormatVersion">8</SSIS:Property>
+          <SSIS:Property SSIS:Name="Description"></SSIS:Property>
+          <SSIS:Property SSIS:Name="ProtectionLevel">0</SSIS:Property>
+        </SSIS:Properties>
+        <SSIS:Parameters />
+      </SSIS:PackageMetaData>
+    </SSIS:PackageInfo>
+  </SSIS:DeploymentInfo>
+</SSIS:Project>
+"@
+
+            $processContentTypesXml = "<?xml version=`"1.0`" encoding=`"utf-8`"?><Types xmlns=`"http://schemas.openxmlformats.org/package/2006/content-types`"><Default Extension=`"dtsx`" ContentType=`"text/xml`" /><Default Extension=`"params`" ContentType=`"text/xml`" /><Default Extension=`"manifest`" ContentType=`"text/xml`" /></Types>"
+            $processParametersXml = "<?xml version=`"1.0`"?><SSIS:Parameters xmlns:SSIS=`"www.microsoft.com/SqlServer/SSIS`" />"
+
+            $processStream = New-Object System.IO.FileStream ($Path, [System.IO.FileMode]::Create)
+            $processArchive = New-Object System.IO.Compression.ZipArchive ($processStream, [System.IO.Compression.ZipArchiveMode]::Create)
+            try {
+                foreach ($processPart in @(@("$PackageName.dtsx", $packageXml), @("Project.params", $processParametersXml), @("@Project.manifest", $manifestXml), @("[Content_Types].xml", $processContentTypesXml))) {
+                    $processEntry = $processArchive.CreateEntry($processPart[0])
+                    $processWriter = New-Object System.IO.StreamWriter ($processEntry.Open())
+                    $processWriter.Write($processPart[1])
+                    $processWriter.Flush()
+                    $processWriter.Dispose()
+                }
+            } finally {
+                $processArchive.Dispose()
+                $processStream.Dispose()
+            }
+        }
+
         function Get-SsisExecutionRow {
             param($ExecutionId)
             $splatExecutionRead = @{
@@ -307,6 +395,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = Publish-DbaSsisProject @splatPublish
 
+        # Two more projects in the same folder, for the two ways a synchronous wait can end other
+        # than "it finished". Measured on this catalog: the parameterized package above reaches a
+        # terminal status in about a second, the 25-second one below stays Running for 25, and the
+        # missing-executable one fails in about one - so a -Timeout of 5 can only expire on the
+        # slow project, and can only be reached on it.
+        $slowProject = "dbatoolsci_execslowproject1"
+        $slowPackage = "dbatoolsci_execslowpackage1"
+        $failingProject = "dbatoolsci_execfailproject1"
+        $failingPackage = "dbatoolsci_execfailpackage1"
+        foreach ($processFixture in @(
+                @{ Project = $slowProject; Package = $slowPackage; Executable = "ping.exe"; Arguments = "-n 25 127.0.0.1" },
+                @{ Project = $failingProject; Package = $failingPackage; Executable = "dbatoolsci_nosuchprogram.exe"; Arguments = "" }
+            )) {
+            $processFile = Join-Path -Path $projectRoot -ChildPath "$($processFixture.Project).ispac"
+            $splatProcessFile = @{
+                ProjectName = $processFixture.Project
+                PackageName = $processFixture.Package
+                Path        = $processFile
+                Executable  = $processFixture.Executable
+                Arguments   = $processFixture.Arguments
+            }
+            New-SsisProcessProjectFile @splatProcessFile
+
+            $splatProcessPublish = @{
+                SqlInstance = $ssisInstance
+                Folder      = $executionFolder
+                Project     = $processFixture.Project
+                Path        = $processFile
+            }
+            $null = Publish-DbaSsisProject @splatProcessPublish
+        }
+
         foreach ($decoyStatement in @(
                 "IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = @decoy) EXEC [catalog].[create_folder] @folder_name = @decoy, @folder_id = NULL;",
                 "IF NOT EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @decoy AND e.name = @environment) EXEC [catalog].[create_environment] @folder_name = @decoy, @environment_name = @environment, @environment_description = NULL;"
@@ -373,8 +493,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Invoke-DbaQuery @splatReferenceCleanup
 
+        # One leg deliberately walks away from a run that is still going, and a run still holding
+        # its project stops the folder from being dropped. Waiting on the catalog's own status is
+        # what makes the teardown deterministic instead of a race with a 25-second package.
+        $splatRunningWait = @{
+            SqlInstance  = $TestConfig.InstanceSsis
+            Database     = "SSISDB"
+            Query        = "DECLARE @waited int = 0; WHILE @waited < 60 AND EXISTS (SELECT 1 FROM [catalog].[executions] e WHERE e.folder_name = @folder AND e.status NOT IN (3, 4, 6, 7, 9)) BEGIN WAITFOR DELAY '00:00:02'; SET @waited = @waited + 2; END;"
+            SqlParameter = @{ folder = "dbatoolsci_execfolder1" }
+        }
+        Invoke-DbaQuery @splatRunningWait
+
         foreach ($cleanupStatement in @(
-                "IF EXISTS (SELECT 1 FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project) EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @project;",
+                "DECLARE @name sysname; DECLARE leftovers CURSOR LOCAL FAST_FORWARD FOR SELECT p.name FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder; OPEN leftovers; FETCH NEXT FROM leftovers INTO @name; WHILE @@FETCH_STATUS = 0 BEGIN EXEC [catalog].[delete_project] @folder_name = @folder, @project_name = @name; FETCH NEXT FROM leftovers INTO @name; END; CLOSE leftovers; DEALLOCATE leftovers;",
                 "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @folder AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @folder, @environment_name = @environment;",
                 "IF EXISTS (SELECT 1 FROM [catalog].[environments] e JOIN [catalog].[folders] f ON f.folder_id = e.folder_id WHERE f.name = @decoy AND e.name = @environment) EXEC [catalog].[delete_environment] @folder_name = @decoy, @environment_name = @environment;",
                 "IF EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = @folder) EXEC [catalog].[delete_folder] @folder_name = @folder;",
@@ -386,7 +517,6 @@ Describe $CommandName -Tag IntegrationTests {
                 Query        = $cleanupStatement
                 SqlParameter = @{
                     folder      = "dbatoolsci_execfolder1"
-                    project     = "dbatoolsci_execproject1"
                     environment = "dbatoolsci_execenv1"
                     decoy       = "dbatoolsci_execdecoy1"
                 }
@@ -495,6 +625,74 @@ Describe $CommandName -Tag IntegrationTests {
             # Without the wait the status would still be Pending or Running here, so reading the
             # catalog back is what separates "waited" from "returned a status that was true once".
             (Get-SsisExecutionRow -ExecutionId $finished[0].ExecutionID)[0].status | Should -Be 7
+        }
+
+        It "Gives up at -Timeout and leaves the run alone" {
+            # The wait has to end on its own terms, and it has to end without touching the run:
+            # stopping a package the caller only asked to wait for is a destructive act nobody
+            # requested, and stopping it would also hide the difference between "waited and gave up"
+            # and "waited until it finished".
+            $splatTimedOut = @{
+                SqlInstance = $ssisInstance
+                Folder      = $executionFolder
+                Project     = $slowProject
+                Package     = "$slowPackage.dtsx"
+                Synchronous = $true
+                Timeout     = 5
+            }
+            $timedOut = $null
+            try {
+                Start-DbaSsisExecution @splatTimedOut
+            } catch {
+                $timedOut = $PSItem
+            }
+            $timedOut | Should -Not -BeNullOrEmpty
+            $timedOut.Exception.Message | Should -BeLike "*Timed out after 5 seconds*"
+            $timedOut.Exception.Message | Should -BeLike "*has NOT been stopped*"
+
+            # The id is read out of the message rather than from a return value because there is no
+            # return value: a wait that expired hands the caller nothing, so the message is the only
+            # place the execution can be named - and it has to be, or the run is unreachable.
+            # -match rather than Should -Match: Pester evaluates its own match in its own scope, so
+            # $Matches never reaches here from a Should.
+            ($timedOut.Exception.Message -match "execution (\d+) is still") | Should -BeTrue
+            $abandonedExecutionId = [int64]$Matches[1]
+            # 3 Cancelled and 8 Stopping are what a command that stopped the run would leave behind.
+            (Get-SsisExecutionRow -ExecutionId $abandonedExecutionId)[0].status | Should -BeIn @(1, 2, 5)
+        }
+
+        It "Reports a run that ended Failed, and what the catalog said about it" {
+            # A terminal status is not the same as a successful one, and returning the execution
+            # object for a failed run reads as success to every caller that checks for output. The
+            # cause comes with it: the catalog logs it against the execution, and a caller told only
+            # "Failed" has to go and find that view themselves.
+            #
+            # Reach: Cancelled and Halted take this same branch and differ only in the name the
+            # message carries, and producing either needs a second session to stop the run while
+            # this one is mid-poll, which one Pester runspace cannot do.
+            $splatFailing = @{
+                SqlInstance     = $ssisInstance
+                Folder          = $executionFolder
+                Project         = $failingProject
+                Package         = "$failingPackage.dtsx"
+                Synchronous     = $true
+                Timeout         = 300
+                EnableException = $false
+                WarningVariable = "failureWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            # Not the throwing shape on purpose: without -EnableException the failure is a warning,
+            # and the caller's `if ($result)` is what decides what happens next. So this pins that
+            # a failed run yields no result at all.
+            $emitted = @(Start-DbaSsisExecution @splatFailing)
+            $emitted.Count | Should -Be 0
+
+            $failureText = $failureWarning -join " "
+            $failureText | Should -BeLike "*finished as Failed*"
+            $failureText | Should -BeLike "*dbatoolsci_nosuchprogram.exe*"
+
+            ($failureText -match "execution (\d+)\)") | Should -BeTrue
+            (Get-SsisExecutionRow -ExecutionId ([int64]$Matches[1]))[0].status | Should -Be 4
         }
     }
 

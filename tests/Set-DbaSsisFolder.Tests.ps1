@@ -76,6 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
         $firstFolder = "dbatoolsci_setfolder1"
         $secondFolder = "dbatoolsci_setfolder2"
         $renamedFolder = "dbatoolsci_setfolder2_renamed"
+        $thirdFolder = "dbatoolsci_setfolder3"
 
         function Get-SsisFolderRow {
             param($FolderName)
@@ -100,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
             Invoke-DbaQuery @splatFolderDrop
         }
 
-        foreach ($fixture in @($firstFolder, $secondFolder, $renamedFolder)) {
+        foreach ($fixture in @($firstFolder, $secondFolder, $renamedFolder, $thirdFolder)) {
             Remove-SsisFolderFixture -FolderName $fixture
         }
 
@@ -116,12 +117,18 @@ Describe $CommandName -Tag IntegrationTests {
             Description = "second fixture"
         }
         $null = New-DbaSsisFolder @splatSecondFixture
+        $splatThirdFixture = @{
+            SqlInstance = $ssisInstance
+            Folder      = $thirdFolder
+            Description = "third fixture"
+        }
+        $null = New-DbaSsisFolder @splatThirdFixture
     }
 
     AfterAll {
         $PSDefaultParameterValues["*:EnableException"] = $true
 
-        foreach ($fixture in @($firstFolder, $secondFolder, $renamedFolder)) {
+        foreach ($fixture in @($firstFolder, $secondFolder, $renamedFolder, $thirdFolder)) {
             Remove-SsisFolderFixture -FolderName $fixture
         }
     }
@@ -253,6 +260,51 @@ Describe $CommandName -Tag IntegrationTests {
             $refused.Count | Should -Be 0
             ($imposterWarnings -join " ") | Should -BeLike "*not a dbatools.SsisFolder*"
             (Get-SsisFolderRow -FolderName $firstFolder).description | Should -Be "piped in a batch"
+        }
+    }
+
+    Context "-SqlInstance named while records are also piped in" {
+        It "Acts on the named folder once, not once per piped record" {
+            # -SqlInstance is not pipeline-bound: it is supplied once no matter how many records
+            # arrive, so the folders it names are one selection, not one per record. Expanded on
+            # every record instead, the named folder is updated and emitted as many times as
+            # records were piped - which reads as success and quietly does the work twice.
+            $firstPiped = @(Get-DbaSsisFolder -SqlInstance $ssisInstance -Folder $firstFolder)[0]
+            $secondPiped = @(Get-DbaSsisFolder -SqlInstance $ssisInstance -Folder $renamedFolder)[0]
+            $splatMixed = @{
+                SqlInstance = $ssisInstance
+                Folder      = $thirdFolder
+                Description = "named and piped together"
+            }
+            $mixed = @($firstPiped, $secondPiped | Set-DbaSsisFolder @splatMixed)
+
+            $mixed.Count | Should -Be 3
+            @($mixed | Where-Object Name -EQ $thirdFolder).Count | Should -Be 1
+            foreach ($touched in @($firstFolder, $renamedFolder, $thirdFolder)) {
+                (Get-SsisFolderRow -FolderName $touched).description | Should -Be "named and piped together"
+            }
+        }
+
+        It "Counts the named folder once when it refuses a rename of several" {
+            # The count in the refusal is the selection the command actually built, so it is the
+            # one place the duplication shows even though both a right and a wrong count refuse.
+            $firstPiped = @(Get-DbaSsisFolder -SqlInstance $ssisInstance -Folder $firstFolder)[0]
+            $secondPiped = @(Get-DbaSsisFolder -SqlInstance $ssisInstance -Folder $renamedFolder)[0]
+            $splatMixedRename = @{
+                SqlInstance = $ssisInstance
+                Folder      = $thirdFolder
+                NewName     = "dbatoolsci_setfolder_neverapplied"
+            }
+            $refused = $null
+            try {
+                $firstPiped, $secondPiped | Set-DbaSsisFolder @splatMixedRename
+            } catch {
+                $refused = $PSItem
+            }
+            $refused | Should -Not -BeNullOrEmpty
+            $refused.Exception.Message | Should -BeLike "*resolved to 3 (*"
+            (Get-SsisFolderRow -FolderName "dbatoolsci_setfolder_neverapplied") | Should -BeNullOrEmpty
+            (Get-SsisFolderRow -FolderName $thirdFolder).name | Should -Be $thirdFolder
         }
     }
 
