@@ -249,6 +249,11 @@
     "module": "dbatools.security",
     "retiredPath": "private/retired/Copy-DbaDbCertificate.ps1"
   },
+  "Copy-DbaDbMail": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaDbMail.ps1",
+    "flippedUtc": "2026-08-03T21:42:40Z"
+  },
   "Copy-DbaRegServer": {
     "flippedUtc": "2026-07-16T09:10:46Z",
     "module": "dbatools.core",

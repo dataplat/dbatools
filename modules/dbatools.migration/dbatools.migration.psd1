@@ -27,7 +27,8 @@
         'Copy-DbaCustomError',
         'Copy-DbaDatabase',
         'Copy-DbaDataCollector',
-        'Copy-DbaDbAssembly'
+        'Copy-DbaDbAssembly',
+        'Copy-DbaDbMail'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
