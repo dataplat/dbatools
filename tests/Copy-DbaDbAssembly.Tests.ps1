@@ -324,13 +324,13 @@ Describe $CommandName -Tag IntegrationTests {
         # snapshot of the second instance leaves no entry for it, and the missing entry would hand
         # Set-DbaSpConfigure a $null Value that binds as 0 - switching strict security off on an
         # instance this run never touched.
-        foreach ($instance in @($originalClrConfig.Keys)) {
+        foreach ($restoreInstance in @($originalClrConfig.Keys)) {
             try {
-                if ((Get-DbaSpConfigure -SqlInstance $instance -Name ClrStrictSecurity).ConfiguredValue -ne $originalClrConfig[$instance].ClrStrict) {
+                if ((Get-DbaSpConfigure -SqlInstance $restoreInstance -Name ClrStrictSecurity).ConfiguredValue -ne $originalClrConfig[$restoreInstance].ClrStrict) {
                     $splatRestoreClrStrict = @{
-                        SqlInstance = $instance
+                        SqlInstance = $restoreInstance
                         Name        = "ClrStrictSecurity"
-                        Value       = $originalClrConfig[$instance].ClrStrict
+                        Value       = $originalClrConfig[$restoreInstance].ClrStrict
                     }
                     $null = Set-DbaSpConfigure @splatRestoreClrStrict
                 }
@@ -339,11 +339,11 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             try {
-                if ((Get-DbaSpConfigure -SqlInstance $instance -Name IsSqlClrEnabled).ConfiguredValue -ne $originalClrConfig[$instance].ClrEnabled) {
+                if ((Get-DbaSpConfigure -SqlInstance $restoreInstance -Name IsSqlClrEnabled).ConfiguredValue -ne $originalClrConfig[$restoreInstance].ClrEnabled) {
                     $splatRestoreClrEnabled = @{
-                        SqlInstance = $instance
+                        SqlInstance = $restoreInstance
                         Name        = "IsSqlClrEnabled"
-                        Value       = $originalClrConfig[$instance].ClrEnabled
+                        Value       = $originalClrConfig[$restoreInstance].ClrEnabled
                     }
                     $null = Set-DbaSpConfigure @splatRestoreClrEnabled
                 }
@@ -455,9 +455,9 @@ Describe $CommandName -Tag IntegrationTests {
             # The second leg that cannot be narrowed: naming -Assembly here would test a different
             # branch than the one the title claims. Same live re-check as the leg above, for the
             # same reason - unfiltered means the source's whole assembly inventory is in scope.
-            $foreignSourceAssemblies = @(Get-UserAssemblyInventory -SqlInstance $sourceInstance) |
+            $excludeLegForeignAssemblies = @(Get-UserAssemblyInventory -SqlInstance $sourceInstance) |
                 Where-Object { $PSItem.DatabaseName -notin $fixtureDb1, $fixtureDb2 }
-            @($foreignSourceAssemblies).Count | Should -Be 0 -Because "an unfiltered copy would carry a foreign assembly into a same-named destination database"
+            @($excludeLegForeignAssemblies).Count | Should -Be 0 -Because "an unfiltered copy would carry a foreign assembly into a same-named destination database"
 
             $splatExcludeAssembly = @{
                 Source          = $sourceInstance
@@ -558,17 +558,37 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             } else {
                 # DirectorySecurity is Windows-only and throws PlatformNotSupportedException
-                # everywhere else. A directory created fresh under the default umask is already not
-                # writable by other users, which is the property this needs - nobody else can drop a
-                # replacement resolve.ps1 in between the write and the run.
-                $probeDirectoryInfo.Create()
+                # everywhere else, so the mode carries the same job there. The umask cannot: under a
+                # permissive one the directory comes out group- or world-writable and the executed
+                # script is substitutable. Created WITH 0700 where the runtime offers that overload,
+                # for the same reason the Windows branch creates with a descriptor; where it does
+                # not, the chmod follows immediately, and resolve.ps1 is written with CreateNew
+                # either way, so anything planted in the gap throws instead of being executed.
+                # UnixFileMode arrived in .NET 7, so PowerShell 7.2/7.3 has no managed chmod at all
+                # and reaches it through the shell instead. Resolved as a string rather than written
+                # as a type literal for the same reason: on those versions the literal does not bind.
+                $probeUnixModeType = "System.IO.UnixFileMode" -as [type]
+                $probeUnixCreate = $null
+                if ($probeUnixModeType) {
+                    $probeUnixCreate = [System.IO.Directory].GetMethod("CreateDirectory", [Type[]]@([string], $probeUnixModeType))
+                }
+                if ($probeUnixCreate) {
+                    $probeUnixMode = [Enum]::Parse($probeUnixModeType, "UserRead, UserWrite, UserExecute")
+                    $null = $probeUnixCreate.Invoke($null, @($probeDirectory, $probeUnixMode))
+                } else {
+                    $probeDirectoryInfo.Create()
+                    $null = & /bin/chmod 700 $probeDirectory
+                }
             }
             $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there.
             $probeBody = @"
-Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+param(`$ModuleBase)
+# The module path is an ARGUMENT, not interpolated text: this script is executed, and a
+# path carrying a quote or a $ would otherwise close the string and run as code.
+Import-Module -Name (Join-Path -Path `$ModuleBase -ChildPath "dbatools.psm1") -DisableNameChecking
 `$resolved = Get-Command -Name Copy-DbaDbAssembly -ErrorAction SilentlyContinue
 `$splatResolveAll = @{
     Name        = "Copy-DbaDbAssembly"
@@ -588,7 +608,7 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
                 $probeStream.Dispose()
             }
 
-            $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath)
+            $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath, $moduleBase)
             $probeOutput = & $shellPath @probeArguments 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }

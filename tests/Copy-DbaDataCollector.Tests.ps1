@@ -548,17 +548,37 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
                 }
             } else {
                 # DirectorySecurity is Windows-only and throws PlatformNotSupportedException
-                # everywhere else. A directory created fresh under the default umask is already not
-                # writable by other users, which is the property this needs - nobody else can drop a
-                # replacement resolve.ps1 in between the write and the run.
-                $probeDirectoryInfo.Create()
+                # everywhere else, so the mode carries the same job there. The umask cannot: under a
+                # permissive one the directory comes out group- or world-writable and the executed
+                # script is substitutable. Created WITH 0700 where the runtime offers that overload,
+                # for the same reason the Windows branch creates with a descriptor; where it does
+                # not, the chmod follows immediately, and resolve.ps1 is written with CreateNew
+                # either way, so anything planted in the gap throws instead of being executed.
+                # UnixFileMode arrived in .NET 7, so PowerShell 7.2/7.3 has no managed chmod at all
+                # and reaches it through the shell instead. Resolved as a string rather than written
+                # as a type literal for the same reason: on those versions the literal does not bind.
+                $probeUnixModeType = "System.IO.UnixFileMode" -as [type]
+                $probeUnixCreate = $null
+                if ($probeUnixModeType) {
+                    $probeUnixCreate = [System.IO.Directory].GetMethod("CreateDirectory", [Type[]]@([string], $probeUnixModeType))
+                }
+                if ($probeUnixCreate) {
+                    $probeUnixMode = [Enum]::Parse($probeUnixModeType, "UserRead, UserWrite, UserExecute")
+                    $null = $probeUnixCreate.Invoke($null, @($probeDirectory, $probeUnixMode))
+                } else {
+                    $probeDirectoryInfo.Create()
+                    $null = & /bin/chmod 700 $probeDirectory
+                }
             }
             $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there.
             $probeBody = @"
-Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+param(`$ModuleBase)
+# The module path is an ARGUMENT, not interpolated text: this script is executed, and a
+# path carrying a quote or a $ would otherwise close the string and run as code.
+Import-Module -Name (Join-Path -Path `$ModuleBase -ChildPath "dbatools.psm1") -DisableNameChecking
 `$resolved = Get-Command -Name Copy-DbaDataCollector -ErrorAction SilentlyContinue
 `$splatResolveAll = @{
     Name        = "Copy-DbaDataCollector"
@@ -578,7 +598,7 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
                 $probeStream.Dispose()
             }
 
-            $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath)
+            $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath, $moduleBase)
             $probeOutput = & $shellPath @probeArguments 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }
