@@ -81,6 +81,16 @@ function Test-CiRunEligible {
     if ([string]$Run.event -eq "pull_request") {
         return $true
     }
+    # A push run is a merge: ci-azure.yml only fires on: push for development, and since
+    # #10508 the workflow runs the full matrix for every merge, marker or not. Requiring
+    # the marker here starved merge runs of runners while their jobs sat queued. The
+    # exemption is deliberately run-scoped: a push filtered out by paths-ignore creates
+    # no run, so it heats nothing, and push events and webhook triggers stay marker-gated.
+    # -ceq because GitHub branch names are case-sensitive, and the head_branch check
+    # keeps this honest if the push trigger is ever widened beyond development.
+    if ([string]$Run.event -eq "push" -and [string]$Run.head_branch -ceq "development") {
+        return $true
+    }
     $message = Get-CiRunMessage -Run $Run
     return Test-CiMarker -Message $message -Marker $Marker
 }

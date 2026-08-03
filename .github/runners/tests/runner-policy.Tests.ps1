@@ -62,17 +62,19 @@ BeforeAll {
             [string]$TriggerEvent = "pull_request",
             [string]$Message = "ordinary work",
             [string]$Sha = "run123",
-            [string]$DisplayTitle = ""
+            [string]$DisplayTitle = "",
+            [string]$HeadBranch = "feature"
         )
 
         [pscustomobject]@{
-            id          = $Id
-            actor       = [pscustomobject]@{ login = $Actor }
-            event       = $TriggerEvent
-            status      = $Status
-            updated_at  = $UpdatedAt.ToString("o")
-            head_sha    = $Sha
-            head_commit = [pscustomobject]@{ message = $Message }
+            id            = $Id
+            actor         = [pscustomobject]@{ login = $Actor }
+            event         = $TriggerEvent
+            status        = $Status
+            updated_at    = $UpdatedAt.ToString("o")
+            head_sha      = $Sha
+            head_branch   = $HeadBranch
+            head_commit   = [pscustomobject]@{ message = $Message }
             display_title = $DisplayTitle
         }
     }
@@ -138,8 +140,18 @@ Describe "Test-CiMarker" {
 }
 
 Describe "Test-CiRunEligible" {
-    It "rejects an unmarked potato push run" {
+    It "rejects an unmarked potato push run outside development" {
         $run = New-CiRun -Actor "potatoqualitee" -Status "in_progress" -UpdatedAt $script:Now -TriggerEvent "push"
+        Test-CiRunEligible -Run $run -OptInPushUsers $script:OptInPushUsers -Marker "[do ci]" | Should -BeFalse
+    }
+
+    It "accepts an unmarked potato merge run on development" {
+        $run = New-CiRun -Actor "potatoqualitee" -Status "queued" -UpdatedAt $script:Now -TriggerEvent "push" -HeadBranch "development"
+        Test-CiRunEligible -Run $run -OptInPushUsers $script:OptInPushUsers -Marker "[do ci]" | Should -BeTrue
+    }
+
+    It "rejects an unmarked push run whose branch differs only by case" {
+        $run = New-CiRun -Actor "potatoqualitee" -Status "queued" -UpdatedAt $script:Now -TriggerEvent "push" -HeadBranch "Development"
         Test-CiRunEligible -Run $run -OptInPushUsers $script:OptInPushUsers -Marker "[do ci]" | Should -BeFalse
     }
 
@@ -182,6 +194,18 @@ Describe "Get-DesiredRunnerPools" {
 
     It "activates potato from a marked direct push while event delivery catches up" {
         $result = Invoke-TestPolicy -DirectTriggerActor "potatoqualitee" -DirectTriggerMessage "work [DO CI]"
+        $result.potatoqualitee | Should -Be 10
+    }
+
+    It "does not heat potato from an unmarked development push event with no run" {
+        $event = New-PushEvent -Actor "potatoqualitee" -CreatedAt $script:Now.AddMinutes(-5) -Branch "development"
+        $result = Invoke-TestPolicy -Events @($event)
+        $result.potatoqualitee | Should -Be 0
+    }
+
+    It "retains potato while an unmarked merge run is live" {
+        $run = New-CiRun -Actor "potatoqualitee" -Status "in_progress" -UpdatedAt $script:Now -TriggerEvent "push" -HeadBranch "development"
+        $result = Invoke-TestPolicy -WorkflowRuns @($run)
         $result.potatoqualitee | Should -Be 10
     }
 
