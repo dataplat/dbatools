@@ -32,13 +32,16 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Testing Get-DbaProcess results" {
         BeforeAll {
             $allResults = @(Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle)
+
+            # Ask the instance what it calls this connection instead of guessing from the
+            # environment. $env:USERNAME is the machine account under the LocalSystem
+            # service runner and is not the login at all under SQL authentication, and
+            # WindowsIdentity would tie the test to Windows.
+            $expectedLogin = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "SELECT SYSTEM_USER AS LoginName").LoginName
         }
 
         It "matches self as a login at least once" {
-            # $env:USERNAME is the machine account under the LocalSystem service runner;
-            # the process login is the real principal, so compare against WindowsIdentity
-            $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-            $matching = $allResults | Where-Object Login -eq $currentIdentity
+            $matching = $allResults | Where-Object Login -eq $expectedLogin
             $matching | Should -Not -BeNullOrEmpty
         }
 
