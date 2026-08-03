@@ -81,8 +81,17 @@ END"
         }
 
         # Several legs call the command with no -CollectionSet, so every non-system set on the
-        # source crosses over. Record what the destination already had; AfterAll removes only the
-        # difference, and a set that was there before this run is left alone.
+        # source crosses over - which makes the source's set list the blast radius. Establish that it
+        # is empty before the fixture set is created and those legs provably cannot carry a
+        # stranger's set to the destination. Throws rather than skips, and names what is in the way.
+        $preexistingSourceSetNames = @($sourceServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
+            Where-Object { $PSItem -ne $collectionSetName }
+        if (@($preexistingSourceSetNames).Count -gt 0) {
+            throw "$($TestConfig.InstanceCopy1) already carries non-system collection sets ($(@($preexistingSourceSetNames) -join ", ")) - the unfiltered legs would copy them, so this suite will not run against it."
+        }
+
+        # Recorded so the cleanup can tell what was already on the destination from what appeared
+        # during the run.
         $originalDestSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
 
         # A non-cached collection set needs one of the stock collector schedules; the item makes the
@@ -123,16 +132,18 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
         # too. The failures are re-raised at the end so a broken cleanup still fails the run.
         $cleanupFailures = @()
 
-        # Cleanup all created objects, plus any set an unfiltered leg carried across that the
-        # destination did not already have.
+        # The fixture set is dropped by name below. Any OTHER set that appeared on the destination is
+        # not demonstrably ours - the BeforeAll precondition established the source carried nothing
+        # else to copy, so a set here came from another window - and dropping it on that guess would
+        # destroy a peer's fixture. Report it, leave it standing, let the run go red.
         try {
-            $strayDestSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
-                Where-Object { $PSItem -notin $originalDestSetNames }
-            foreach ($strayDestSetName in $strayDestSetNames) {
-                $destServer.Query((Get-DropCollectionSetSql -SetName $strayDestSetName))
+            $unexpectedDestSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
+                Where-Object { $PSItem -notin $originalDestSetNames -and $PSItem -ne $collectionSetName }
+            if (@($unexpectedDestSetNames).Count -gt 0) {
+                $cleanupFailures += "collection sets appeared on the destination that this run cannot account for and has left in place: $(@($unexpectedDestSetNames) -join ", ")"
             }
         } catch {
-            $cleanupFailures += "stray destination sets: $($PSItem.Exception.Message)"
+            $cleanupFailures += "destination collection set inventory: $($PSItem.Exception.Message)"
         }
 
         try {
@@ -180,7 +191,7 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
         if ($cleanupFailures.Count -gt 0) {
-            throw "AfterAll could not restore: $($cleanupFailures -join ' | ')"
+            throw "AfterAll could not restore: $($cleanupFailures -join " | ")"
         }
     }
 
@@ -385,10 +396,13 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
         }
 
         It "Should skip the named set when -ExcludeCollectionSet names it" {
-            # No -CollectionSet, so every other non-system source set is in scope. Take the
-            # destination's set list before and after: the exclusion is only proven if the named set
-            # is the one thing missing, and whatever else crossed is accounted for rather than left
-            # unmeasured on a shared instance.
+            # No -CollectionSet, so every other non-system source set is in scope. Re-check that
+            # there are none before the call rather than trusting the BeforeAll precondition: the
+            # source is shared, and a set another window created since would be copied by this leg.
+            $foreignSourceSetNames = @($sourceServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
+                Where-Object { $PSItem -ne $collectionSetName }
+            @($foreignSourceSetNames).Count | Should -Be 0 -Because "an unfiltered copy would carry a foreign collection set to the destination"
+
             $beforeExcludeSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
 
             $splatExclude = @{
@@ -402,21 +416,15 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
             @($excludeResults | Where-Object { $PSItem.Name -eq $collectionSetName }).Count | Should -Be 0
             $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Total | Should -Be 0
 
+            # With the excluded set the only one on the source, nothing may cross at all. Asserting
+            # the diff is empty is stronger than reconciling it against the reported names, and it
+            # leaves nothing for this leg to delete - the earlier shape dropped whatever the diff
+            # turned up, which on a shared destination means dropping a set another window had just
+            # created.
             $afterExcludeSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
             $addedSetNames = @($afterExcludeSetNames | Where-Object { $PSItem -notin $beforeExcludeSetNames })
             $addedSetNames | Should -Not -Contain $collectionSetName
-
-            # Every set that appeared is one the call reported. No Status filter: a set the command
-            # also started reports "Successful started Collection", not "Successful", so filtering
-            # on the bare string would drop exactly the sets this assertion has to account for.
-            $reportedSetNames = @($excludeResults | Where-Object { $PSItem.Type -eq "Collection Set" } | Select-Object -ExpandProperty Name)
-            foreach ($addedSetName in $addedSetNames) {
-                $reportedSetNames | Should -Contain $addedSetName
-            }
-
-            foreach ($addedSetName in $addedSetNames) {
-                $destServer.Query((Get-DropCollectionSetSql -SetName $addedSetName))
-            }
+            @($addedSetNames).Count | Should -Be 0
         }
     }
 
