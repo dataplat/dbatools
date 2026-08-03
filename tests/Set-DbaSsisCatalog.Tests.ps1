@@ -55,21 +55,41 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Refuses a retention window outside the catalog's range" {
-            { Set-DbaSsisCatalog -SqlInstance $unreachableInstance -RetentionWindow 3651 -EnableException } | Should -Throw "*between 1 and 3650 days*"
+            $splatRetentionRange = @{
+                SqlInstance     = $unreachableInstance
+                RetentionWindow = 3651
+                EnableException = $true
+            }
+            { Set-DbaSsisCatalog @splatRetentionRange } | Should -Throw "*between 1 and 3650 days*"
         }
 
         It "Refuses a project version count outside the catalog's range" {
-            { Set-DbaSsisCatalog -SqlInstance $unreachableInstance -MaxProjectVersions 10000 -EnableException } | Should -Throw "*between 1 and 9999*"
+            $splatVersionRange = @{
+                SqlInstance        = $unreachableInstance
+                MaxProjectVersions = 10000
+                EnableException    = $true
+            }
+            { Set-DbaSsisCatalog @splatVersionRange } | Should -Throw "*between 1 and 9999*"
         }
 
         It "Refuses a logging level the catalog does not accept" {
             # 100 is a sentinel meaning "use the customized level", not the top of a range, so 5
             # is refused while 100 is not.
-            { Set-DbaSsisCatalog -SqlInstance $unreachableInstance -ServerLoggingLevel 5 -EnableException } | Should -Throw "*0, 1, 2, 3, 4 or 100*"
+            $splatLoggingLevel = @{
+                SqlInstance        = $unreachableInstance
+                ServerLoggingLevel = 5
+                EnableException    = $true
+            }
+            { Set-DbaSsisCatalog @splatLoggingLevel } | Should -Throw "*0, 1, 2, 3, 4 or 100*"
         }
 
         It "Refuses an execution mode the catalog does not accept" {
-            { Set-DbaSsisCatalog -SqlInstance $unreachableInstance -DefaultExecutionMode 2 -EnableException } | Should -Throw "*0 (server) or 1 (Scale Out)*"
+            $splatExecutionMode = @{
+                SqlInstance          = $unreachableInstance
+                DefaultExecutionMode = 2
+                EnableException      = $true
+            }
+            { Set-DbaSsisCatalog @splatExecutionMode } | Should -Throw "*0 (server) or 1 (Scale Out)*"
         }
     }
 }
@@ -190,7 +210,12 @@ Describe $CommandName -Tag IntegrationTests {
     Context "-WhatIf" {
         It "Reports without changing the catalog" {
             $before = Get-SsisCatalogProperty -PropertyName "RETENTION_WINDOW"
-            $whatIfResult = @(Set-DbaSsisCatalog -SqlInstance $ssisInstance -RetentionWindow 123 -WhatIf)
+            $splatWhatIfCatalog = @{
+                SqlInstance     = $ssisInstance
+                RetentionWindow = 123
+                WhatIf          = $true
+            }
+            $whatIfResult = @(Set-DbaSsisCatalog @splatWhatIfCatalog)
             $whatIfResult.Count | Should -Be 0
             Get-SsisCatalogProperty -PropertyName "RETENTION_WINDOW" | Should -Be $before
         }
@@ -232,7 +257,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Throws under -EnableException" {
-            { Set-DbaSsisCatalog -SqlInstance $TestConfig.InstanceSingle -RetentionWindow 30 -EnableException } | Should -Throw "*No SSIS catalog (SSISDB) found*"
+            $splatNoCatalogThrow = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                RetentionWindow = 30
+                EnableException = $true
+            }
+            { Set-DbaSsisCatalog @splatNoCatalogThrow } | Should -Throw "*No SSIS catalog (SSISDB) found*"
         }
     }
 }

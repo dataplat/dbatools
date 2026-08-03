@@ -157,7 +157,12 @@ Describe $CommandName -Tag IntegrationTests {
                 Environment = $simpleEnvironment
             }
             $read = @(Get-DbaSsisEnvironment @splatRead)[0]
-            $created = @(New-DbaSsisEnvironment -SqlInstance $ssisInstance -Folder $environmentFolder -Environment $aliasEnvironment)[0]
+            $splatDecorated = @{
+                SqlInstance = $ssisInstance
+                Folder      = $environmentFolder
+                Environment = $aliasEnvironment
+            }
+            $created = @(New-DbaSsisEnvironment @splatDecorated)[0]
             $created.PSObject.TypeNames[0] | Should -Be "dbatools.SsisEnvironment"
             $created.ComputerName | Should -Not -BeNullOrEmpty
             $created.InstanceName | Should -Not -BeNullOrEmpty
@@ -198,7 +203,12 @@ Describe $CommandName -Tag IntegrationTests {
             # The alias has to be exercised on this command: reading a row back through another
             # command's -Name says nothing about whether this one accepts the alias at all.
             (Get-SsisEnvironmentRow -Folder $environmentFolder -Environment $aliasNameEnvironment).Count | Should -Be 0
-            $viaAlias = @(New-DbaSsisEnvironment -SqlInstance $ssisInstance -Folder $environmentFolder -Name $aliasNameEnvironment)
+            $splatViaAlias = @{
+                SqlInstance = $ssisInstance
+                Folder      = $environmentFolder
+                Name        = $aliasNameEnvironment
+            }
+            $viaAlias = @(New-DbaSsisEnvironment @splatViaAlias)
             $viaAlias.Count | Should -Be 1
             $viaAlias[0].Name | Should -Be $aliasNameEnvironment
             (Get-SsisEnvironmentRow -Folder $environmentFolder -Environment $aliasNameEnvironment).Count | Should -Be 1

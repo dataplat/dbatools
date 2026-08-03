@@ -44,7 +44,12 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Refuses a call that changes nothing" {
-            { Set-DbaSsisFolder -SqlInstance $unreachableInstance -Folder anything -EnableException } | Should -Throw "*You must supply -Description or -NewName*"
+            $splatNoChange = @{
+                SqlInstance     = $unreachableInstance
+                Folder          = "anything"
+                EnableException = $true
+            }
+            { Set-DbaSsisFolder @splatNoChange } | Should -Throw "*You must supply -Description or -NewName*"
         }
 
         It "Refuses a call with no instance and no input object" {
@@ -53,7 +58,12 @@ Describe $CommandName -Tag UnitTests {
 
         It "Refuses -SqlInstance with no folder named" {
             # Without it the selection would be every folder in the catalog.
-            { Set-DbaSsisFolder -SqlInstance $unreachableInstance -Description "anything" -EnableException } | Should -Throw "*You must supply -Folder when connecting with -SqlInstance*"
+            $splatNoFolder = @{
+                SqlInstance     = $unreachableInstance
+                Description     = "anything"
+                EnableException = $true
+            }
+            { Set-DbaSsisFolder @splatNoFolder } | Should -Throw "*You must supply -Folder when connecting with -SqlInstance*"
         }
     }
 }
@@ -94,8 +104,18 @@ Describe $CommandName -Tag IntegrationTests {
             Remove-SsisFolderFixture -FolderName $fixture
         }
 
-        $null = New-DbaSsisFolder -SqlInstance $ssisInstance -Folder $firstFolder -Description "first fixture"
-        $null = New-DbaSsisFolder -SqlInstance $ssisInstance -Folder $secondFolder -Description "second fixture"
+        $splatFirstFixture = @{
+            SqlInstance = $ssisInstance
+            Folder      = $firstFolder
+            Description = "first fixture"
+        }
+        $null = New-DbaSsisFolder @splatFirstFixture
+        $splatSecondFixture = @{
+            SqlInstance = $ssisInstance
+            Folder      = $secondFolder
+            Description = "second fixture"
+        }
+        $null = New-DbaSsisFolder @splatSecondFixture
     }
 
     AfterAll {
@@ -129,7 +149,12 @@ Describe $CommandName -Tag IntegrationTests {
             # emptiness instead of testing bound-parameter presence leaves the old text in place
             # and reports success, which is the trap this leg exists for.
             (Get-SsisFolderRow -FolderName $firstFolder).description | Should -Not -BeNullOrEmpty
-            $cleared = @(Set-DbaSsisFolder -SqlInstance $ssisInstance -Folder $firstFolder -Description "")
+            $splatClearDescription = @{
+                SqlInstance = $ssisInstance
+                Folder      = $firstFolder
+                Description = ""
+            }
+            $cleared = @(Set-DbaSsisFolder @splatClearDescription)
             $cleared.Count | Should -Be 1
             (Get-SsisFolderRow -FolderName $firstFolder).description | Should -Be ""
         }
@@ -150,7 +175,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Reports without changing anything under -WhatIf" {
             $before = (Get-SsisFolderRow -FolderName $secondFolder).description
-            $whatIfResult = @(Set-DbaSsisFolder -SqlInstance $ssisInstance -Folder $secondFolder -Description "not applied" -WhatIf)
+            $splatWhatIfDescription = @{
+                SqlInstance = $ssisInstance
+                Folder      = $secondFolder
+                Description = "not applied"
+                WhatIf      = $true
+            }
+            $whatIfResult = @(Set-DbaSsisFolder @splatWhatIfDescription)
             $whatIfResult.Count | Should -Be 0
             (Get-SsisFolderRow -FolderName $secondFolder).description | Should -Be $before
         }

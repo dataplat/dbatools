@@ -419,6 +419,46 @@ Describe $CommandName -Tag IntegrationTests {
             $catalogRow[0].package_name | Should -Be "$executionPackage.dtsx"
         }
 
+        It "Takes WorkerAgentId from the catalog's own schema" {
+            # catalog.executions is a view inside SSISDB, so whether it exposes worker_agent_id is
+            # a fact about the catalog rather than about the engine hosting it - a catalog restored
+            # from an older instance is older than its server. Naming a column the view does not
+            # have fails the whole SELECT, which would leave the package started and unreportable.
+            $splatColumnPresence = @{
+                SqlInstance  = $ssisInstance
+                Database     = "SSISDB"
+                Query        = "SELECT ColumnCount = COUNT(*) FROM sys.columns catalogColumns JOIN sys.objects catalogObjects ON catalogObjects.object_id = catalogColumns.object_id JOIN sys.schemas catalogSchemas ON catalogSchemas.schema_id = catalogObjects.schema_id WHERE catalogSchemas.name = 'catalog' AND catalogObjects.name = 'executions' AND catalogColumns.name = 'worker_agent_id'"
+            }
+            (Invoke-DbaQuery @splatColumnPresence).ColumnCount | Should -Be 1
+
+            $splatStartWorker = @{
+                SqlInstance = $ssisInstance
+                Folder      = $executionFolder
+                Project     = $executionProject
+                Package     = "$executionPackage.dtsx"
+            }
+            $withWorker = @(Start-DbaSsisExecution @splatStartWorker)
+            $withWorker.Count | Should -Be 1
+            $withWorker[0].PSObject.Properties.Name | Should -Contain "WorkerAgentId"
+
+            # The column is here, so the emitted value has to be the catalog's - a null would mean
+            # the command decided the column was missing and substituted one.
+            $splatWorkerRead = @{
+                SqlInstance  = $ssisInstance
+                Database     = "SSISDB"
+                Query        = "SELECT WorkerAgent = CONVERT(nvarchar(64), worker_agent_id) FROM [catalog].[executions] WHERE execution_id = @executionId"
+                SqlParameter = @{ executionId = $withWorker[0].ExecutionID }
+            }
+            # Whatever the row holds, the command has to report that and not something of its own.
+            # Note the reach: with Scale Out off the row's value is NULL, and a command that had
+            # wrongly concluded the column was absent would substitute NULL too - so this pins the
+            # value against the catalog, not the presence check. Exercising the absent branch needs
+            # a catalog whose view predates the column, which cannot be made here without altering
+            # a shared SSISDB.
+            $catalogWorkerAgent = (Invoke-DbaQuery @splatWorkerRead).WorkerAgent
+            [string]$withWorker[0].WorkerAgentId | Should -Be ([string]$catalogWorkerAgent)
+        }
+
         It "Decorates the execution exactly like the read command does" {
             $splatStartDecorated = @{
                 SqlInstance = $ssisInstance

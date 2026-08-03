@@ -377,6 +377,62 @@ Describe $CommandName -Tag IntegrationTests {
             { Publish-DbaSsisProject @splatCorruptThrow } | Should -Throw "*Failed to deploy project*"
         }
 
+        It "Reports the operation the catalog named and nothing beside it" {
+            # The catalog's refusal carries its own operation id, and the log read is keyed on that.
+            # Keyed on the project name and a time range instead, the read answers with every
+            # deployment of that name in range, so a second window deploying the same name has its
+            # errors handed back as this one's. Reach: a second window cannot be interleaved from
+            # one Pester runspace, so what is pinned here is that the reported reason is exactly the
+            # failing operation's own messages - no more, no fewer.
+            $splatPriorOperation = @{
+                SqlInstance = $TestConfig.InstanceSsis
+                Database    = "SSISDB"
+                Query       = "SELECT PriorId = ISNULL(MAX(operation_id), 0) FROM [catalog].[operations]"
+            }
+            $priorOperationId = (Invoke-DbaQuery @splatPriorOperation).PriorId
+
+            $splatScopedFailure = @{
+                SqlInstance     = $ssisInstance
+                Folder          = $deployFolder
+                Project         = $corruptProject
+                Path            = $corruptPath
+                EnableException = $false
+                WarningVariable = "scopedWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $refused = @(Publish-DbaSsisProject @splatScopedFailure)
+            $refused.Count | Should -Be 0
+
+            $splatFailedOperation = @{
+                SqlInstance  = $TestConfig.InstanceSsis
+                Database     = "SSISDB"
+                Query        = "SELECT operation_id FROM [catalog].[operations] WHERE operation_id > @priorId AND operation_type = 101 AND object_name = @project ORDER BY operation_id"
+                SqlParameter = @{
+                    priorId = $priorOperationId
+                    project = $corruptProject
+                }
+            }
+            $failedOperations = @(Invoke-DbaQuery @splatFailedOperation)
+            $failedOperations.Count | Should -Be 1
+
+            $splatOperationMessages = @{
+                SqlInstance  = $TestConfig.InstanceSsis
+                Database     = "SSISDB"
+                Query        = "SELECT TOP 10 message FROM [catalog].[operation_messages] WHERE operation_id = @operationId AND message IS NOT NULL ORDER BY operation_message_id"
+                SqlParameter = @{ operationId = $failedOperations[0].operation_id }
+            }
+            $ownMessages = @(Invoke-DbaQuery @splatOperationMessages)
+            $ownMessages.Count | Should -BeGreaterThan 0
+
+            # Contains rather than -BeLike: catalog messages carry brackets and quotes, which a
+            # wildcard match would read as syntax.
+            $reported = ($scopedWarning -join " ")
+            foreach ($ownMessage in $ownMessages) {
+                $reported.Contains([string]$ownMessage.message) | Should -BeTrue
+            }
+            ($reported -split " \| ").Count | Should -Be $ownMessages.Count
+        }
+
         It "Refuses a folder that does not exist rather than creating it" {
             $splatMissingFolder = @{
                 SqlInstance = $ssisInstance

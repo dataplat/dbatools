@@ -123,7 +123,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Sets the description when one is supplied" {
-            $described = @(New-DbaSsisFolder -SqlInstance $ssisInstance -Folder $describedFolder -Description $folderComment)
+            $splatDescribedFolder = @{
+                SqlInstance = $ssisInstance
+                Folder      = $describedFolder
+                Description = $folderComment
+            }
+            $described = @(New-DbaSsisFolder @splatDescribedFolder)
             $described.Count | Should -Be 1
             $described[0].Description | Should -Be $folderComment
             (Get-SsisFolderRow -Name $describedFolder)[0].description | Should -Be $folderComment
@@ -145,7 +150,12 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "-WhatIf" {
         It "Reports without creating the folder" {
-            $whatIfResult = @(New-DbaSsisFolder -SqlInstance $ssisInstance -Folder $whatIfFolder -WhatIf)
+            $splatWhatIfFolder = @{
+                SqlInstance = $ssisInstance
+                Folder      = $whatIfFolder
+                WhatIf      = $true
+            }
+            $whatIfResult = @(New-DbaSsisFolder @splatWhatIfFolder)
             $whatIfResult.Count | Should -Be 0
             (Get-SsisFolderRow -Name $whatIfFolder).Count | Should -Be 0
         }
@@ -186,7 +196,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Throws under -EnableException" {
-            { New-DbaSsisFolder -SqlInstance $TestConfig.InstanceSingle -Folder "dbatoolsci_nocatalogfolder" -EnableException } | Should -Throw "*No SSIS catalog (SSISDB) found*"
+            $splatNoCatalogThrow = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Folder          = "dbatoolsci_nocatalogfolder"
+                EnableException = $true
+            }
+            { New-DbaSsisFolder @splatNoCatalogThrow } | Should -Throw "*No SSIS catalog (SSISDB) found*"
         }
     }
 }
