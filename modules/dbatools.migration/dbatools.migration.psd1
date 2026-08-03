@@ -25,7 +25,8 @@
         'Copy-DbaBackupDevice',
         'Copy-DbaCredential',
         'Copy-DbaCustomError',
-        'Copy-DbaDatabase'
+        'Copy-DbaDatabase',
+        'Copy-DbaDataCollector'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

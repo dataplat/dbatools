@@ -234,6 +234,11 @@
     "retiredPath": "private/retired/Copy-DbaDatabase.ps1",
     "flippedUtc": "2026-08-03T12:48:30Z"
   },
+  "Copy-DbaDataCollector": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaDataCollector.ps1",
+    "flippedUtc": "2026-08-03T14:05:23Z"
+  },
   "Copy-DbaDbCertificate": {
     "flippedUtc": "2026-07-17T18:51:50Z",
     "module": "dbatools.security",

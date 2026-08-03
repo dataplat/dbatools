@@ -27,15 +27,348 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    # NOTE ON COVERAGE: the actual copy migrates Data Collector collection sets from a source to a
-    # destination instance, which needs a live Source+Destination pair - that behavior leg is
-    # DEFERRED-TO-COPYPAIR (the standing Source+Destination gate pair for the Copy-* family, per the
-    # coordinator ruling 2026-07-18). What IS characterizable deterministically is the platform
-    # guard the source runs first: on a non-Windows host the command refuses to run because the Core
-    # SMOs are unavailable. Per the coordinator ruling this is pinned by flipping the module-scope
-    # $script:isWindows state (InModuleScope), never by mocking Connect-DbaInstance (that is the
-    # documented mock-coupling latent-red class); the flip is restored in a finally so it cannot
-    # leak into other tests.
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Explain what needs to be set up for the test:
+        # The command reads the source CollectorConfigStore and writes to the destination one, and
+        # it copies only NON-system collection sets - a stock instance has four and all four are
+        # system, so the source needs a user-defined set. It also gives up on any destination whose
+        # store reports Enabled false, so the collector has to be turned on at both ends or every
+        # leg below would pass while copying nothing. Neither instance ships that way, so the suite
+        # builds both and puts the original state back in AfterAll.
+        #
+        # The command refuses to run when the module-scope $script:isWindows flag is not true. That
+        # flag is set while dbatools.psm1 executes, but a Pester run reaches the module with the
+        # flag unset, so every leg below would take the refusal branch and assert nothing. Pin it
+        # to the real platform value for the duration of the suite and put the original back in
+        # AfterAll. The refusal branch itself is covered by its own Context, which flips the same
+        # flag the other way.
+        $originalIsWindows = InModuleScope -ModuleName dbatools -ScriptBlock { $script:isWindows }
+        InModuleScope -ModuleName dbatools -ScriptBlock { $script:isWindows = $true }
+
+        # Set variables. They are available in all the It blocks.
+        $collectionSetName = "dbatoolsci_dc_$(Get-Random)"
+        $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+        $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+        $readEnabledSql = "SELECT CAST(parameter_value AS int) AS Enabled FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled'"
+        $dropSetSql = "
+IF EXISTS (SELECT 1 FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName')
+BEGIN
+    DECLARE @setId int = (SELECT collection_set_id FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName');
+    IF (SELECT is_running FROM msdb.dbo.syscollector_collection_sets WHERE collection_set_id = @setId) = 1
+        EXEC msdb.dbo.sp_syscollector_stop_collection_set @collection_set_id = @setId;
+    EXEC msdb.dbo.sp_syscollector_delete_collection_set @collection_set_id = @setId;
+END"
+
+        # Create the objects.
+        $originalSourceCollector = $sourceServer.Query($readEnabledSql).Enabled
+        $originalDestCollector = $destServer.Query($readEnabledSql).Enabled
+        if ($originalSourceCollector -ne 1) {
+            $sourceServer.Query("EXEC msdb.dbo.sp_syscollector_enable_collector")
+        }
+        if ($originalDestCollector -ne 1) {
+            $destServer.Query("EXEC msdb.dbo.sp_syscollector_enable_collector")
+        }
+
+        # A non-cached collection set needs one of the stock collector schedules; the item makes the
+        # set something ScriptCreate can render into a real create script rather than an empty one.
+        $sourceServer.Query($dropSetSql)
+        $sourceServer.Query("
+DECLARE @setId int;
+EXEC msdb.dbo.sp_syscollector_create_collection_set
+    @name = N'$collectionSetName',
+    @schedule_name = N'CollectorSchedule_Every_15min',
+    @collection_mode = 1,
+    @days_until_expiration = 5,
+    @description = N'dbatools integration test collection set',
+    @collection_set_id = @setId OUTPUT;
+
+DECLARE @typeUid uniqueidentifier = (SELECT collector_type_uid FROM msdb.dbo.syscollector_collector_types WHERE name = N'Generic T-SQL Query Collector Type');
+DECLARE @itemId int;
+EXEC msdb.dbo.sp_syscollector_create_collection_item
+    @name = N'${collectionSetName}_item',
+    @parameters = N'<ns:TSQLQueryCollector xmlns:ns=''DataCollectorType''><Query><Value>SELECT 1 AS probe_value</Value><OutputTable>${collectionSetName}_out</OutputTable></Query></ns:TSQLQueryCollector>',
+    @collection_item_id = @itemId OUTPUT,
+    @frequency = 900,
+    @collection_set_id = @setId,
+    @collector_type_uid = @typeUid;")
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Cleanup all created objects.
+        $destServer.Query($dropSetSql)
+        $sourceServer.Query($dropSetSql)
+        if ($originalDestCollector -ne 1) {
+            $destServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+        }
+        if ($originalSourceCollector -ne 1) {
+            $sourceServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+        }
+
+        $splatRestorePlatform = @{
+            ModuleName  = "dbatools"
+            Parameters  = @{ OriginalValue = $originalIsWindows }
+            ScriptBlock = { $script:isWindows = $OriginalValue }
+        }
+        InModuleScope @splatRestorePlatform
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When previewing the copy with WhatIf" {
+        BeforeAll {
+            $destServer.Query($dropSetSql)
+
+            $splatWhatIf = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WhatIf        = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $whatIfResults = @(Copy-DbaDataCollector @splatWhatIf)
+        }
+
+        It "Should emit no result objects" {
+            $whatIfResults.Count | Should -Be 0
+        }
+
+        It "Should not create the collection set on the destination" {
+            # The absence assertion is the point of the leg: every ShouldProcess branch in the
+            # command wraps a write, so a preview that reached one would leave a row here.
+            $landedSets = $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'")
+            $landedSets.Total | Should -Be 0
+        }
+    }
+
+    Context "When copying a collection set" {
+        BeforeEach {
+            $destServer.Query($dropSetSql)
+        }
+
+        It "Should create the collection set on the destination" {
+            $splatCopy = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $copyResults = @(Copy-DbaDataCollector @splatCopy)
+
+            $landedSets = $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'")
+            $landedSets.Total | Should -Be 1
+
+            $setStatuses = @($copyResults | Where-Object { $PSItem.Type -eq "Collection Set" })
+            $setStatuses.Name | Should -Be @($collectionSetName, $collectionSetName)
+        }
+
+        It "Should report the create and the start against one shared status object" {
+            # Measured behaviour, not intent. The command builds ONE status object per collection
+            # set and emits it twice - once after the create and once after the start - so by the
+            # time the pipeline is read both entries show the second status. A port that built a
+            # fresh object per emission would report "Successful" then "Successful started
+            # Collection" and red here. The null in front of them is the create's unsuppressed
+            # $destServer.Query result set.
+            $splatShared = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $sharedResults = @(Copy-DbaDataCollector @splatShared)
+
+            # Asserted by position: the row the create leaks is a DataRow under Windows PowerShell
+            # and carries none of the status properties, so it can only be identified by where it
+            # sits in the stream. Four objects for one collection set is the count that reds if a
+            # port suppresses the create's result set.
+            $sharedResults.Count | Should -Be 4
+            $sharedResults[0].Type | Should -Be "Data Collection Server Config"
+            $sharedResults[1].Type | Should -BeNullOrEmpty
+            $sharedResults[2].Status | Should -Be "Successful started Collection"
+            $sharedResults[3].Status | Should -Be "Successful started Collection"
+        }
+
+        It "Should skip a collection set that already exists" {
+            $splatSeed = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Copy-DbaDataCollector @splatSeed
+
+            $splatSkip = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $skipResults = @(Copy-DbaDataCollector @splatSkip)
+
+            $setStatuses = @($skipResults | Where-Object { $PSItem.Type -eq "Collection Set" })
+            $setStatuses.Count | Should -Be 1
+            $setStatuses[0].Status | Should -Be "Skipped"
+            $setStatuses[0].Notes | Should -Be "Already exists on destination"
+        }
+
+        It "Should drop and recreate an existing collection set with -Force" {
+            $splatSeed = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Copy-DbaDataCollector @splatSeed
+            $seededId = $destServer.Query("SELECT collection_set_id AS Id FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Id
+
+            $splatForce = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = $collectionSetName
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $forceResults = @(Copy-DbaDataCollector @splatForce)
+
+            $setStatuses = @($forceResults | Where-Object { $PSItem.Type -eq "Collection Set" })
+            $setStatuses.Count | Should -Be 2
+            $setStatuses[0].Status | Should -Be "Successful started Collection"
+
+            # A new collection_set_id is what proves the drop and the recreate both happened - the
+            # row count alone is satisfied by a -Force that quietly did nothing.
+            $recreatedId = $destServer.Query("SELECT collection_set_id AS Id FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Id
+            $recreatedId | Should -Not -Be $seededId
+        }
+    }
+
+    Context "When copying to more than one destination in one call" {
+        BeforeAll {
+            $destServer.Query($dropSetSql)
+
+            # The cross-record leg. The placeholder server-config status is emitted once per
+            # destination, but the same branch latches $NoServerReconfig to true on its way out and
+            # nothing ever resets it, so the second destination in the same call silently loses its
+            # object. Only a multi-record call can see that. InstanceCopy1 is the second
+            # destination on purpose: it already holds the set as the source, so it reports Skipped
+            # and writes nothing, which keeps the leg non-destructive.
+            $splatTwoDestinations = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = @($TestConfig.InstanceCopy2, $TestConfig.InstanceCopy1)
+                CollectionSet = $collectionSetName
+                WarningAction = "SilentlyContinue"
+            }
+            $twoDestinationResults = @(Copy-DbaDataCollector @splatTwoDestinations)
+        }
+
+        It "Should emit the server config placeholder for only the first destination" {
+            $configStatuses = @($twoDestinationResults | Where-Object { $PSItem.Type -eq "Data Collection Server Config" })
+            $configStatuses.Count | Should -Be 1
+            $configStatuses[0].DestinationServer | Should -Be $destServer.Name
+        }
+
+        It "Should still process the second destination" {
+            $secondDestinationStatuses = @($twoDestinationResults | Where-Object { $PSItem.Type -eq "Collection Set" -and $PSItem.DestinationServer -eq $sourceServer.Name })
+            $secondDestinationStatuses.Count | Should -Be 1
+            $secondDestinationStatuses[0].Status | Should -Be "Skipped"
+        }
+    }
+
+    Context "When suppressing the server config placeholder" {
+        BeforeAll {
+            $destServer.Query($dropSetSql)
+
+            $splatNoReconfig = @{
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                CollectionSet    = $collectionSetName
+                NoServerReconfig = $true
+                WarningAction    = "SilentlyContinue"
+            }
+            $noReconfigResults = @(Copy-DbaDataCollector @splatNoReconfig)
+        }
+
+        It "Should emit no server config placeholder" {
+            @($noReconfigResults | Where-Object { $PSItem.Type -eq "Data Collection Server Config" }).Count | Should -Be 0
+        }
+
+        It "Should still copy the collection set" {
+            $landedSets = $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'")
+            $landedSets.Total | Should -Be 1
+        }
+    }
+
+    Context "When filtering collection sets" {
+        BeforeEach {
+            $destServer.Query($dropSetSql)
+        }
+
+        It "Should copy nothing when -CollectionSet matches no set" {
+            $splatMiss = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                CollectionSet = "dbatoolsci_dc_nosuchset"
+                WarningAction = "SilentlyContinue"
+            }
+            $missResults = @(Copy-DbaDataCollector @splatMiss)
+
+            @($missResults | Where-Object { $PSItem.Type -eq "Collection Set" }).Count | Should -Be 0
+            $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Total | Should -Be 0
+        }
+
+        It "Should skip the named set when -ExcludeCollectionSet names it" {
+            $splatExclude = @{
+                Source               = $TestConfig.InstanceCopy1
+                Destination          = $TestConfig.InstanceCopy2
+                ExcludeCollectionSet = $collectionSetName
+                WarningAction        = "SilentlyContinue"
+            }
+            $excludeResults = @(Copy-DbaDataCollector @splatExclude)
+
+            @($excludeResults | Where-Object { $PSItem.Name -eq $collectionSetName }).Count | Should -Be 0
+            $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Total | Should -Be 0
+        }
+    }
+
+    Context "When the destination collector is not enabled" {
+        # The positive control for every live leg above. The command abandons a destination whose
+        # store reports Enabled false, so if the fixture ever stopped enabling the collector the
+        # copy legs would keep passing on absence assertions and prove nothing. This leg turns the
+        # collector off, shows the copy stops, and turns it back on.
+        BeforeAll {
+            $destServer.Query($dropSetSql)
+            $destServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+            try {
+                $splatDisabled = @{
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
+                    CollectionSet = $collectionSetName
+                    WarningAction = "SilentlyContinue"
+                }
+                $disabledResults = @(Copy-DbaDataCollector @splatDisabled)
+                $disabledLandedSets = $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Total
+            } finally {
+                $destServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 0 EXEC msdb.dbo.sp_syscollector_enable_collector")
+            }
+        }
+
+        It "Should copy no collection set" {
+            @($disabledResults | Where-Object { $PSItem.Type -eq "Collection Set" }).Count | Should -Be 0
+            $disabledLandedSets | Should -Be 0
+        }
+
+        It "Should still emit the server config placeholder" {
+            @($disabledResults | Where-Object { $PSItem.Type -eq "Data Collection Server Config" }).Count | Should -Be 1
+        }
+    }
+
     Context "Guarding on a non-Windows platform" {
         It "Warns and returns nothing when the host is not Windows" {
             InModuleScope dbatools {
@@ -63,6 +396,50 @@ Describe $CommandName -Tag IntegrationTests {
                     $script:isWindows = $originalIsWindows
                 }
             }
+        }
+    }
+
+    Context "When resolving the command name in a cold shell" {
+        BeforeAll {
+            # Every other leg runs in a session that imported dbatools long before Pester started,
+            # so none of them can tell the binary cmdlet apart from the retired script function -
+            # whichever got there first answers to the name. This leg starts a shell of the same
+            # edition that has imported nothing, loads the module the way a consumer does, and asks
+            # what the name resolves to. dbatools.psm1 is the import under test on purpose: it is
+            # the loader that pulls the satellite in by path, and importing the manifest by name
+            # cannot work in a dev tree because the satellites are not on PSModulePath.
+            $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
+            $shellPath = (Get-Process -Id $PID).Path
+            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+
+            # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
+            # entry rather than silently winning; the count is what proves it is not there.
+            $probeBody = @"
+Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+`$resolved = Get-Command -Name Copy-DbaDataCollector -ErrorAction SilentlyContinue
+`$allResolved = @(Get-Command -Name Copy-DbaDataCollector -All -ErrorAction SilentlyContinue)
+`$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
+`$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
+"RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
+"@
+            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+
+            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
+        }
+
+        AfterAll {
+            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+        }
+
+        It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
+            $probeFields[1] | Should -Be "Cmdlet"
+            $probeFields[2] | Should -Be "dbatools.migration"
+        }
+
+        It "Should load the satellite and leave no retired function shadowing the name" {
+            $probeFields[4] | Should -Be "True"
+            $probeFields[3] | Should -Be "0"
         }
     }
 }
