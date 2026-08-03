@@ -28,6 +28,7 @@
         'Get-DbaSsisProject',
         'New-DbaSsisCatalog',
         'New-DbaSsisEnvironment',
+        'New-DbaSsisEnvironmentVariable',
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject'
     )
