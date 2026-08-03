@@ -498,10 +498,36 @@ Describe $CommandName -Tag IntegrationTests {
             # cannot work in a dev tree because the satellites are not on PSModulePath.
             $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
             $shellPath = (Get-Process -Id $PID).Path
-            # A GUID rather than Get-Random, and created below with CreateNew rather than written
-            # over whatever is at the path: this file is executed, so an existing file at a
-            # guessable name is something to refuse, not something to overwrite.
-            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("N")).ps1"
+            # This file is EXECUTED, so where it lives matters as much as what is in it. It goes in
+            # a per-invocation directory created with an Administrators/SYSTEM-only descriptor
+            # rather than in the shared temp root, under a GUID name, and created below with
+            # CreateNew rather than written over whatever is at the path. Closing the write handle
+            # before the run is only safe because of the directory: on the shared temp root there is
+            # a window between the write and the run in which anyone can substitute the script.
+            $administratorsSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+            $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+            $probeSecurity = New-Object System.Security.AccessControl.DirectorySecurity
+            $probeSecurity.SetAccessRuleProtection($true, $false)
+            $probeSecurity.SetOwner($administratorsSid)
+            foreach ($trusteeSid in $administratorsSid, $systemSid) {
+                $probeRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trusteeSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                $probeSecurity.AddAccessRule($probeRule)
+            }
+            $probeDirectory = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("N"))"
+            # Created WITH the descriptor, never created and then secured - the gap between those
+            # two calls carries inherited permissions. Which call does it differs by edition:
+            # .NET Framework has DirectoryInfo.Create(DirectorySecurity), .NET moved it out to
+            # FileSystemAclExtensions, and Directory.CreateDirectory(path, security) exists on
+            # neither PowerShell 7 nor v3. Probing for the overload rather than the PSEdition
+            # because it is the overload that decides.
+            $probeDirectoryInfo = New-Object System.IO.DirectoryInfo($probeDirectory)
+            $probeNativeCreate = [System.IO.DirectoryInfo].GetMethod("Create", [Type[]]@([System.Security.AccessControl.DirectorySecurity]))
+            if ($probeNativeCreate) {
+                $probeDirectoryInfo.Create($probeSecurity)
+            } else {
+                [System.IO.FileSystemAclExtensions]::Create($probeDirectoryInfo, $probeSecurity)
+            }
+            $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there.
@@ -513,8 +539,6 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
 "@
-            # Held open FileShare.Read until the body is written, so nothing can substitute the
-            # script between the write and the run below.
             $probeStream = New-Object System.IO.FileStream($probePath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
             try {
                 $probeBytes = [System.Text.Encoding]::UTF8.GetBytes($probeBody)
@@ -529,7 +553,7 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
         }
 
         AfterAll {
-            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+            Remove-Item -Path $probeDirectory -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
