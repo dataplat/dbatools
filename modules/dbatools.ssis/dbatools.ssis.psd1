@@ -26,7 +26,8 @@
         'Get-DbaSsisExecution',
         'Get-DbaSsisFolder',
         'Get-DbaSsisProject',
-        'New-DbaSsisCatalog'
+        'New-DbaSsisCatalog',
+        'New-DbaSsisFolder'
     )
     VariablesToExport      = @()
     # Get-DbaSsisExecutionHistory was superseded by Get-DbaSsisExecution and is kept as a command
