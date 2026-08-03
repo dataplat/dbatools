@@ -32,6 +32,7 @@
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject',
         'Set-DbaSsisCatalog',
+        'Set-DbaSsisFolder',
         'Start-DbaSsisExecution'
     )
     VariablesToExport      = @()
