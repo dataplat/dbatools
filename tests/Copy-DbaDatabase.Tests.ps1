@@ -75,8 +75,16 @@ Describe $CommandName -Tag IntegrationTests {
         $server2.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server2.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server2.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        # The support databases are real names, not dbatoolsci_ fixtures: a lab instance that hosts
+        # replication already owns 'distribution', and creating over it kills the whole Describe.
+        # Only the ones this run creates may be dropped again - see the AfterAll.
+        $createdSupportDbs = @()
         foreach ($db in $supportDbs) {
+            if ($server2.Databases[$db]) {
+                continue
+            }
             $server2.Query("CREATE DATABASE [$db]; ALTER DATABASE [$db] SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE;")
+            $createdSupportDbs += $db
         }
 
         $splatSetOwner = @{
@@ -100,11 +108,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
         Remove-DbaDatabase @splatRemoveFinal -ErrorAction SilentlyContinue
 
-        $splatRemoveSupport = @{
-            SqlInstance = $TestConfig.InstanceCopy1
-            Database    = $supportDbs
+        if ($createdSupportDbs) {
+            $splatRemoveSupport = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = $createdSupportDbs
+            }
+            Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
         }
-        Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -719,12 +729,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "reuses the earlier record's backup and reports the elapsed summary" {
             $carrySourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $carryDb
 
+            # -Source is required even though the databases arrive on the pipeline: the setup guard
+            # runs before any pipeline object is bound, so it always sees an empty -InputObject and
+            # refuses without it. -NoBackupCleanup keeps the first record's backup on disk, which is
+            # what the second record has to find for the reuse to be observable at all.
             $splatCarry = @{
-                Destination   = $TestConfig.InstanceCopy2
-                BackupRestore = $true
-                SharedPath    = $NetworkPath
-                NumberFiles   = 1
-                Force         = $true
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                NumberFiles     = 1
+                Force           = $true
+                NoBackupCleanup = $true
             }
             $carryOutput = $carrySourceDb, $carrySourceDb | Copy-DbaDatabase @splatCarry -Verbose 4>&1
 
