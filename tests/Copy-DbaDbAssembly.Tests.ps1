@@ -335,7 +335,7 @@ Describe $CommandName -Tag IntegrationTests {
                     $null = Set-DbaSpConfigure @splatRestoreClrStrict
                 }
             } catch {
-                $cleanupFailures += "clr strict security on ${instance}: $($PSItem.Exception.Message)"
+                $cleanupFailures += "clr strict security on ${restoreInstance}: $($PSItem.Exception.Message)"
             }
 
             try {
@@ -348,7 +348,7 @@ Describe $CommandName -Tag IntegrationTests {
                     $null = Set-DbaSpConfigure @splatRestoreClrEnabled
                 }
             } catch {
-                $cleanupFailures += "clr enabled on ${instance}: $($PSItem.Exception.Message)"
+                $cleanupFailures += "clr enabled on ${restoreInstance}: $($PSItem.Exception.Message)"
             }
         }
 
@@ -527,6 +527,13 @@ Describe $CommandName -Tag IntegrationTests {
             # there is a window between the write and the run in which anyone can substitute the
             # script.
             $probeDirectory = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("N"))"
+            # A GUID makes this unreachable in practice, but every create-directory API below
+            # succeeds silently on a path that already exists and leaves its permissions
+            # alone, so the one thing that must not happen is adopting somebody else's
+            # directory and executing a script out of it.
+            if (Test-Path -LiteralPath $probeDirectory) {
+                throw "$probeDirectory already exists - this run will not execute a script out of a directory it did not create"
+            }
             $probeDirectoryInfo = New-Object System.IO.DirectoryInfo($probeDirectory)
             if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
                 # The running identity owns it, not Administrators: only an elevated run can hand
@@ -564,20 +571,16 @@ Describe $CommandName -Tag IntegrationTests {
                 # for the same reason the Windows branch creates with a descriptor; where it does
                 # not, the chmod follows immediately, and resolve.ps1 is written with CreateNew
                 # either way, so anything planted in the gap throws instead of being executed.
-                # UnixFileMode arrived in .NET 7, so PowerShell 7.2/7.3 has no managed chmod at all
-                # and reaches it through the shell instead. Resolved as a string rather than written
-                # as a type literal for the same reason: on those versions the literal does not bind.
-                $probeUnixModeType = "System.IO.UnixFileMode" -as [type]
-                $probeUnixCreate = $null
-                if ($probeUnixModeType) {
-                    $probeUnixCreate = [System.IO.Directory].GetMethod("CreateDirectory", [Type[]]@([string], $probeUnixModeType))
-                }
-                if ($probeUnixCreate) {
-                    $probeUnixMode = [Enum]::Parse($probeUnixModeType, "UserRead, UserWrite, UserExecute")
-                    $null = $probeUnixCreate.Invoke($null, @($probeDirectory, $probeUnixMode))
-                } else {
-                    $probeDirectoryInfo.Create()
-                    $null = & /bin/chmod 700 $probeDirectory
+                # mkdir rather than a .NET call, for the exclusivity: every managed
+                # create-directory API succeeds silently on a directory that already exists and
+                # leaves that directory's permissions alone, so a pre-created one would be used as
+                # is. mkdir without -p fails instead, and -m carries the mode in the same call.
+                # It also sidesteps UnixFileMode, which is .NET 7 and absent on PowerShell 7.2/7.3.
+                # A non-zero exit is fatal: carrying on would execute a script out of a directory
+                # whose permissions are unknown.
+                $null = & /bin/mkdir -m 700 $probeDirectory
+                if ($LASTEXITCODE -ne 0) {
+                    throw "could not create $probeDirectory with owner-only permissions (mkdir exited $LASTEXITCODE)"
                 }
             }
             $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
