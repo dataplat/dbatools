@@ -37,7 +37,7 @@ Describe $CommandName -Tag IntegrationTests {
             # environment. $env:USERNAME is the machine account under the LocalSystem
             # service runner and is not the login at all under SQL authentication, and
             # WindowsIdentity would tie the test to Windows.
-            $expectedLogin = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "SELECT SYSTEM_USER AS LoginName").LoginName
+            $expectedLogin = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "SELECT SYSTEM_USER AS LoginName" -EnableException).LoginName
         }
 
         It "matches self as a login at least once" {
