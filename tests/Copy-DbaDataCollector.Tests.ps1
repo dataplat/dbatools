@@ -510,33 +510,48 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
             $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
             $shellPath = (Get-Process -Id $PID).Path
             # This file is EXECUTED, so where it lives matters as much as what is in it. It goes in
-            # a per-invocation directory created with an Administrators/SYSTEM-only descriptor
-            # rather than in the shared temp root, under a GUID name, and created below with
-            # CreateNew rather than written over whatever is at the path. Closing the write handle
-            # before the run is only safe because of the directory: on the shared temp root there is
-            # a window between the write and the run in which anyone can substitute the script.
-            $administratorsSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
-            $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
-            $probeSecurity = New-Object System.Security.AccessControl.DirectorySecurity
-            $probeSecurity.SetAccessRuleProtection($true, $false)
-            $probeSecurity.SetOwner($administratorsSid)
-            foreach ($trusteeSid in $administratorsSid, $systemSid) {
-                $probeRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trusteeSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-                $probeSecurity.AddAccessRule($probeRule)
-            }
+            # a per-invocation directory that only its creator and the machine's administrators can
+            # write to, rather than in the shared temp root, under a GUID name, and created below
+            # with CreateNew rather than written over whatever is at the path. Closing the write
+            # handle before the run is only safe because of the directory: on the shared temp root
+            # there is a window between the write and the run in which anyone can substitute the
+            # script.
             $probeDirectory = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("N"))"
-            # Created WITH the descriptor, never created and then secured - the gap between those
-            # two calls carries inherited permissions. Which call does it differs by edition:
-            # .NET Framework has DirectoryInfo.Create(DirectorySecurity), .NET moved it out to
-            # FileSystemAclExtensions, and Directory.CreateDirectory(path, security) exists on
-            # neither PowerShell 7 nor v3. Probing for the overload rather than the PSEdition
-            # because it is the overload that decides.
             $probeDirectoryInfo = New-Object System.IO.DirectoryInfo($probeDirectory)
-            $probeNativeCreate = [System.IO.DirectoryInfo].GetMethod("Create", [Type[]]@([System.Security.AccessControl.DirectorySecurity]))
-            if ($probeNativeCreate) {
-                $probeDirectoryInfo.Create($probeSecurity)
+            if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
+                # The running identity owns it, not Administrators: only an elevated run can hand
+                # ownership to a group it is not in, and a descriptor that omits the creator locks
+                # the creator out of the directory it just made. Administrators and SYSTEM are on it
+                # because they can reach the file whatever this says, so excluding them buys nothing
+                # and costs the elevated case.
+                $currentSid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User
+                $administratorsSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+                $systemSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+                $probeSecurity = New-Object System.Security.AccessControl.DirectorySecurity
+                $probeSecurity.SetAccessRuleProtection($true, $false)
+                $probeSecurity.SetOwner($currentSid)
+                foreach ($trusteeSid in $currentSid, $administratorsSid, $systemSid) {
+                    $probeRule = New-Object System.Security.AccessControl.FileSystemAccessRule($trusteeSid, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                    $probeSecurity.AddAccessRule($probeRule)
+                }
+                # Created WITH the descriptor, never created and then secured - the gap between
+                # those two calls carries inherited permissions. Which call does it differs by
+                # edition: .NET Framework has DirectoryInfo.Create(DirectorySecurity), .NET moved it
+                # out to FileSystemAclExtensions, and Directory.CreateDirectory(path, security)
+                # exists on neither PowerShell 7 nor v3. Probing for the overload rather than the
+                # PSEdition because it is the overload that decides.
+                $probeNativeCreate = [System.IO.DirectoryInfo].GetMethod("Create", [Type[]]@([System.Security.AccessControl.DirectorySecurity]))
+                if ($probeNativeCreate) {
+                    $probeDirectoryInfo.Create($probeSecurity)
+                } else {
+                    [System.IO.FileSystemAclExtensions]::Create($probeDirectoryInfo, $probeSecurity)
+                }
             } else {
-                [System.IO.FileSystemAclExtensions]::Create($probeDirectoryInfo, $probeSecurity)
+                # DirectorySecurity is Windows-only and throws PlatformNotSupportedException
+                # everywhere else. A directory created fresh under the default umask is already not
+                # writable by other users, which is the property this needs - nobody else can drop a
+                # replacement resolve.ps1 in between the write and the run.
+                $probeDirectoryInfo.Create()
             }
             $probePath = Join-Path -Path $probeDirectory -ChildPath "resolve.ps1"
 
@@ -545,7 +560,12 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
             $probeBody = @"
 Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$resolved = Get-Command -Name Copy-DbaDataCollector -ErrorAction SilentlyContinue
-`$allResolved = @(Get-Command -Name Copy-DbaDataCollector -All -ErrorAction SilentlyContinue)
+`$splatResolveAll = @{
+    Name        = "Copy-DbaDataCollector"
+    All         = `$true
+    ErrorAction = "SilentlyContinue"
+}
+`$allResolved = @(Get-Command @splatResolveAll)
 `$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
 `$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
@@ -564,7 +584,13 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
         }
 
         AfterAll {
-            Remove-Item -Path $probeDirectory -Recurse -Force -ErrorAction SilentlyContinue
+            $splatRemoveProbeDirectory = @{
+                Path        = $probeDirectory
+                Recurse     = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatRemoveProbeDirectory
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
