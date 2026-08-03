@@ -74,32 +74,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # Several legs call the command with no -Assembly, which is the point of them: the filter is
-        # guarded by a boundness test. That also means every source database is scanned and anything
-        # it finds lands in a same-named destination database, so record what the destination held
-        # first and remove only the difference afterwards. Enumerated in T-SQL rather than through
-        # SMO because a single-user database poisons an SMO enumeration for the whole connection.
-        $assemblyInventoryQuery = "
-DECLARE @inventory TABLE (DatabaseName sysname, AssemblyName sysname);
-DECLARE @databaseName sysname, @statement nvarchar(max);
-DECLARE databaseCursor CURSOR LOCAL FAST_FORWARD FOR
-    SELECT name FROM sys.databases WHERE database_id > 4 AND state = 0 AND user_access = 0;
-OPEN databaseCursor;
-FETCH NEXT FROM databaseCursor INTO @databaseName;
-WHILE @@FETCH_STATUS = 0
-BEGIN
-    SET @statement = N'SELECT ' + QUOTENAME(@databaseName, '''') + N', name FROM ' + QUOTENAME(@databaseName) + N'.sys.assemblies WHERE is_user_defined = 1';
-    INSERT INTO @inventory EXEC sp_executesql @statement;
-    FETCH NEXT FROM databaseCursor INTO @databaseName;
-END
-CLOSE databaseCursor;
-DEALLOCATE databaseCursor;
-SELECT DatabaseName, AssemblyName FROM @inventory;"
-        $originalDestAssemblies = @(Invoke-DbaQuery -SqlInstance $destInstance -Query $assemblyInventoryQuery)
+        # guarded by a boundness test. That also means every source database the command considers
+        # accessible is scanned and anything it finds lands in a same-named destination database.
+        #
+        # This enumerates through SMO with the same shape the command uses - Databases filtered on
+        # IsAccessible, assemblies filtered on IsSystemObject, each database in its own try/catch -
+        # because an inventory that reads a different set of databases than the command scans is not
+        # a precondition. The T-SQL cursor this replaced skipped system, single-user and
+        # restricted-user databases, all three of which the command will happily walk. A fresh
+        # connection per call keeps a database that poisons the enumeration away from the connection
+        # the rest of the suite is using.
+        function Get-UserAssemblyInventory {
+            param($SqlInstance)
+            $inventoryServer = Connect-DbaInstance -SqlInstance $SqlInstance
+            foreach ($inventoryDatabase in ($inventoryServer.Databases | Where-Object IsAccessible)) {
+                try {
+                    foreach ($inventoryAssembly in ($inventoryDatabase.Assemblies | Where-Object IsSystemObject -eq $false)) {
+                        [PSCustomObject]@{
+                            DatabaseName = $inventoryDatabase.Name
+                            AssemblyName = $inventoryAssembly.Name
+                        }
+                    }
+                } catch {
+                    # The command swallows this same read the same way, so an inventory that threw
+                    # here would be stricter than the thing it is measuring.
+                    $null = 1
+                }
+            }
+        }
+        $originalDestAssemblies = @(Get-UserAssemblyInventory -SqlInstance $destInstance)
 
         # Copying an external-access assembly flips the destination database's TRUSTWORTHY bit, which
-        # is a security property of a database this suite does not own. Record it for the same
-        # reason.
-        $trustworthyInventoryQuery = "SELECT name AS DatabaseName, CAST(is_trustworthy_on AS int) AS IsTrustworthy FROM sys.databases WHERE database_id > 4"
+        # is a security property of a database this suite does not own. Recorded over every database
+        # rather than user databases alone, for the same scope reason as the assembly inventory.
+        $trustworthyInventoryQuery = "SELECT name AS DatabaseName, CAST(is_trustworthy_on AS int) AS IsTrustworthy FROM sys.databases"
         $originalDestTrustworthy = @(Invoke-DbaQuery -SqlInstance $destInstance -Query $trustworthyInventoryQuery)
 
         # The unfiltered legs hand the command every accessible source database, so what it can reach
@@ -108,7 +116,7 @@ SELECT DatabaseName, AssemblyName FROM @inventory;"
         # into a same-named destination database or flip that database TRUSTWORTHY. This throws
         # rather than skipping: a leg that quietly stops covering the unfiltered path is worth less
         # than a red one, and the message names what is in the way.
-        $preexistingSourceAssemblies = @(Invoke-DbaQuery -SqlInstance $sourceInstance -Query $assemblyInventoryQuery)
+        $preexistingSourceAssemblies = @(Get-UserAssemblyInventory -SqlInstance $sourceInstance)
         if ($preexistingSourceAssemblies.Count -gt 0) {
             $preexistingList = ($preexistingSourceAssemblies | ForEach-Object { "$($PSItem.DatabaseName).$($PSItem.AssemblyName)" }) -join ", "
             throw "$sourceInstance already carries user assemblies ($preexistingList) - the unfiltered legs would copy them, so this suite will not run against it."
@@ -237,7 +245,7 @@ SELECT DatabaseName, AssemblyName FROM @inventory;"
         # cleanup destroys a peer's fixture, so it is reported and re-raised instead - the run goes
         # red, a human reads the names, and the object survives to be looked at.
         try {
-            $unexpectedAssemblies = @(Invoke-DbaQuery -SqlInstance $destInstance -Query $assemblyInventoryQuery) |
+            $unexpectedAssemblies = @(Get-UserAssemblyInventory -SqlInstance $destInstance) |
                 Where-Object { $PSItem.DatabaseName -notin $fixtureDb1, $fixtureDb2 } |
                 Where-Object {
                     $candidate = $PSItem
@@ -352,7 +360,7 @@ SELECT DatabaseName, AssemblyName FROM @inventory;"
             # Re-checked here and not only in BeforeAll: this is the moment the blast radius matters,
             # and the source is shared - another window can have created an assembly since. Asserting
             # before the call means a foreign assembly reds this leg instead of being copied by it.
-            $foreignSourceAssemblies = @(Invoke-DbaQuery -SqlInstance $sourceInstance -Query $assemblyInventoryQuery) |
+            $foreignSourceAssemblies = @(Get-UserAssemblyInventory -SqlInstance $sourceInstance) |
                 Where-Object { $PSItem.DatabaseName -notin $fixtureDb1, $fixtureDb2 }
             @($foreignSourceAssemblies).Count | Should -Be 0 -Because "an unfiltered copy would carry a foreign assembly into a same-named destination database"
 
@@ -418,7 +426,7 @@ SELECT DatabaseName, AssemblyName FROM @inventory;"
             # The second leg that cannot be narrowed: naming -Assembly here would test a different
             # branch than the one the title claims. Same live re-check as the leg above, for the
             # same reason - unfiltered means the source's whole assembly inventory is in scope.
-            $foreignSourceAssemblies = @(Invoke-DbaQuery -SqlInstance $sourceInstance -Query $assemblyInventoryQuery) |
+            $foreignSourceAssemblies = @(Get-UserAssemblyInventory -SqlInstance $sourceInstance) |
                 Where-Object { $PSItem.DatabaseName -notin $fixtureDb1, $fixtureDb2 }
             @($foreignSourceAssemblies).Count | Should -Be 0 -Because "an unfiltered copy would carry a foreign assembly into a same-named destination database"
 
