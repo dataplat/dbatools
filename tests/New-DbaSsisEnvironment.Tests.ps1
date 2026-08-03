@@ -50,8 +50,9 @@ Describe $CommandName -Tag IntegrationTests {
         $aliasEnvironment = "dbatoolsci_env6"
         $multiFirst       = "dbatoolsci_env7"
         $multiSecond      = "dbatoolsci_env8"
+        $aliasNameEnvironment = "dbatoolsci_env9"
         $environmentComment = "dbatools environment create fixture"
-        $createdEnvironments = @($simpleEnvironment, $describedEnvironment, $whatIfEnvironment, $existingEnvironment, $survivorEnvironment, $aliasEnvironment, $multiFirst, $multiSecond)
+        $createdEnvironments = @($simpleEnvironment, $describedEnvironment, $whatIfEnvironment, $existingEnvironment, $survivorEnvironment, $aliasEnvironment, $multiFirst, $multiSecond, $aliasNameEnvironment)
 
         function Get-SsisEnvironmentRow {
             param($Folder, $Environment)
@@ -195,9 +196,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Binds -Name as an alias of -Environment" {
-            (Get-SsisEnvironmentRow -Folder $environmentFolder -Environment $aliasEnvironment).Count | Should -Be 1
-            $viaAlias = @(Get-DbaSsisEnvironment -SqlInstance $ssisInstance -Folder $environmentFolder -Name $aliasEnvironment)
+            # The alias has to be exercised on this command: reading a row back through another
+            # command's -Name says nothing about whether this one accepts the alias at all.
+            (Get-SsisEnvironmentRow -Folder $environmentFolder -Environment $aliasNameEnvironment).Count | Should -Be 0
+            $viaAlias = @(New-DbaSsisEnvironment -SqlInstance $ssisInstance -Folder $environmentFolder -Name $aliasNameEnvironment)
             $viaAlias.Count | Should -Be 1
+            $viaAlias[0].Name | Should -Be $aliasNameEnvironment
+            (Get-SsisEnvironmentRow -Folder $environmentFolder -Environment $aliasNameEnvironment).Count | Should -Be 1
         }
     }
 

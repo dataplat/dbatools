@@ -293,7 +293,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # A fresh directory of this run's own, rather than a predictable name in the shared temp
         # root: two runs at once would otherwise overwrite each other's project file.
-        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_exec_$([guid]::NewGuid().ToString('n'))"
+        $executionRunId = [guid]::NewGuid().ToString("n")
+        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_exec_$executionRunId"
         $null = New-Item -Path $projectRoot -ItemType Directory -Force
         $projectFile = Join-Path -Path $projectRoot -ChildPath "$executionProject.ispac"
         New-SsisParameterizedProjectFile -ProjectName $executionProject -PackageName $executionPackage -Path $projectFile

@@ -48,8 +48,9 @@ Describe $CommandName -Tag IntegrationTests {
         $whatIfProject  = "dbatoolsci_pubproject4"
         $mismatchName   = "dbatoolsci_pubproject5"
         $corruptProject = "dbatoolsci_pubproject6"
+        $aliasNameProject = "dbatoolsci_pubproject7"
         $missingFolder  = "dbatoolsci_pubnosuchfolder"
-        $createdProjects = @($simpleProject, $aliasProject, $versionProject, $whatIfProject, $mismatchName, $corruptProject)
+        $createdProjects = @($simpleProject, $aliasProject, $versionProject, $whatIfProject, $mismatchName, $corruptProject, $aliasNameProject)
 
         # An .ispac is an OPC zip of four text parts, so the suite builds its own rather than
         # depending on a binary fixture or on the SSIS design-time assemblies, which ship only for
@@ -179,7 +180,8 @@ Describe $CommandName -Tag IntegrationTests {
         # A fresh directory of this run's own, rather than predictable names in the shared temp
         # root: two runs at once would otherwise write each other's fixture files, and cleaning up
         # by filter would delete the other run's.
-        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pub_$([guid]::NewGuid().ToString('n'))"
+        $publishRunId = [guid]::NewGuid().ToString("n")
+        $projectRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci_pub_$publishRunId"
         $null = New-Item -Path $projectRoot -ItemType Directory -Force
 
         $projectFiles = @{ }
@@ -281,13 +283,25 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Binds -Name as an alias of -Project" {
+            # Counting a project that was deployed through -Project proves only that -Project
+            # works, so the alias gets a fixture of its own and is the parameter that deploys it.
+            $splatAliasPublish = @{
+                SqlInstance = $ssisInstance
+                Folder      = $deployFolder
+                Name        = $aliasNameProject
+                Path        = $projectFiles[$aliasNameProject]
+            }
+            $viaAlias = @(Publish-DbaSsisProject @splatAliasPublish)
+            $viaAlias.Count | Should -Be 1
+            $viaAlias[0].Name | Should -Be $aliasNameProject
+
             $splatAliasRead = @{
                 SqlInstance  = $ssisInstance
                 Database     = "SSISDB"
                 Query        = "SELECT COUNT(*) AS deployed FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @folder AND p.name = @project"
                 SqlParameter = @{
                     folder  = $deployFolder
-                    project = $aliasProject
+                    project = $aliasNameProject
                 }
             }
             (Invoke-DbaQuery @splatAliasRead).deployed | Should -Be 1
