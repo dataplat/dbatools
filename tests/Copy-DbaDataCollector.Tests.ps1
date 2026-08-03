@@ -53,14 +53,22 @@ Describe $CommandName -Tag IntegrationTests {
         $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
         $destServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
         $readEnabledSql = "SELECT CAST(parameter_value AS int) AS Enabled FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled'"
-        $dropSetSql = "
-IF EXISTS (SELECT 1 FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName')
+        $listUserSetsSql = "SELECT name FROM msdb.dbo.syscollector_collection_sets WHERE is_system = 0"
+
+        # SMO's Query takes no parameters, so the name is quote-doubled instead.
+        function Get-DropCollectionSetSql {
+            param($SetName)
+            $safeSetName = "$SetName".Replace("'", "''")
+            return "
+IF EXISTS (SELECT 1 FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$safeSetName')
 BEGIN
-    DECLARE @setId int = (SELECT collection_set_id FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName');
+    DECLARE @setId int = (SELECT collection_set_id FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$safeSetName');
     IF (SELECT is_running FROM msdb.dbo.syscollector_collection_sets WHERE collection_set_id = @setId) = 1
         EXEC msdb.dbo.sp_syscollector_stop_collection_set @collection_set_id = @setId;
     EXEC msdb.dbo.sp_syscollector_delete_collection_set @collection_set_id = @setId;
 END"
+        }
+        $dropSetSql = Get-DropCollectionSetSql -SetName $collectionSetName
 
         # Create the objects.
         $originalSourceCollector = $sourceServer.Query($readEnabledSql).Enabled
@@ -71,6 +79,11 @@ END"
         if ($originalDestCollector -ne 1) {
             $destServer.Query("EXEC msdb.dbo.sp_syscollector_enable_collector")
         }
+
+        # Several legs call the command with no -CollectionSet, so every non-system set on the
+        # source crosses over. Record what the destination already had; AfterAll removes only the
+        # difference, and a set that was there before this run is left alone.
+        $originalDestSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
 
         # A non-cached collection set needs one of the stock collector schedules; the item makes the
         # set something ScriptCreate can render into a real create script rather than an empty one.
@@ -103,24 +116,72 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup all created objects.
-        $destServer.Query($dropSetSql)
-        $sourceServer.Query($dropSetSql)
-        if ($originalDestCollector -ne 1) {
-            $destServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
-        }
-        if ($originalSourceCollector -ne 1) {
-            $sourceServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+        # Every restoration below is instance-wide or module-wide state on a shared lab box, so each
+        # one runs independently and records its own failure instead of riding on the one before it.
+        # Chaining them meant a set that refused to drop left the collector enabled for every other
+        # user of the instance, and a destination that refused to disable left the source enabled
+        # too. The failures are re-raised at the end so a broken cleanup still fails the run.
+        $cleanupFailures = @()
+
+        # Cleanup all created objects, plus any set an unfiltered leg carried across that the
+        # destination did not already have.
+        try {
+            $strayDestSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name) |
+                Where-Object { $PSItem -notin $originalDestSetNames }
+            foreach ($strayDestSetName in $strayDestSetNames) {
+                $destServer.Query((Get-DropCollectionSetSql -SetName $strayDestSetName))
+            }
+        } catch {
+            $cleanupFailures += "stray destination sets: $($PSItem.Exception.Message)"
         }
 
-        $splatRestorePlatform = @{
-            ModuleName  = "dbatools"
-            Parameters  = @{ OriginalValue = $originalIsWindows }
-            ScriptBlock = { $script:isWindows = $OriginalValue }
+        try {
+            $destServer.Query($dropSetSql)
+        } catch {
+            $cleanupFailures += "destination fixture set: $($PSItem.Exception.Message)"
         }
-        InModuleScope @splatRestorePlatform
+
+        try {
+            $sourceServer.Query($dropSetSql)
+        } catch {
+            $cleanupFailures += "source fixture set: $($PSItem.Exception.Message)"
+        }
+
+        try {
+            if ($originalDestCollector -ne 1) {
+                $destServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+            }
+        } catch {
+            $cleanupFailures += "destination collector: $($PSItem.Exception.Message)"
+        }
+
+        try {
+            if ($originalSourceCollector -ne 1) {
+                $sourceServer.Query("IF (SELECT CAST(parameter_value AS int) FROM msdb.dbo.syscollector_config_store WHERE parameter_name = 'CollectorEnabled') = 1 EXEC msdb.dbo.sp_syscollector_disable_collector")
+            }
+        } catch {
+            $cleanupFailures += "source collector: $($PSItem.Exception.Message)"
+        }
+
+        try {
+            $restoreParameters = @{
+                OriginalValue = $originalIsWindows
+            }
+            $splatRestorePlatform = @{
+                ModuleName  = "dbatools"
+                Parameters  = $restoreParameters
+                ScriptBlock = { $script:isWindows = $OriginalValue }
+            }
+            InModuleScope @splatRestorePlatform
+        } catch {
+            $cleanupFailures += "platform flag: $($PSItem.Exception.Message)"
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+        if ($cleanupFailures.Count -gt 0) {
+            throw "AfterAll could not restore: $($cleanupFailures -join ' | ')"
+        }
     }
 
     Context "When previewing the copy with WhatIf" {
@@ -324,6 +385,12 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
         }
 
         It "Should skip the named set when -ExcludeCollectionSet names it" {
+            # No -CollectionSet, so every other non-system source set is in scope. Take the
+            # destination's set list before and after: the exclusion is only proven if the named set
+            # is the one thing missing, and whatever else crossed is accounted for rather than left
+            # unmeasured on a shared instance.
+            $beforeExcludeSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
+
             $splatExclude = @{
                 Source               = $TestConfig.InstanceCopy1
                 Destination          = $TestConfig.InstanceCopy2
@@ -334,6 +401,22 @@ EXEC msdb.dbo.sp_syscollector_create_collection_item
 
             @($excludeResults | Where-Object { $PSItem.Name -eq $collectionSetName }).Count | Should -Be 0
             $destServer.Query("SELECT COUNT(*) AS Total FROM msdb.dbo.syscollector_collection_sets WHERE name = N'$collectionSetName'").Total | Should -Be 0
+
+            $afterExcludeSetNames = @($destServer.Query($listUserSetsSql) | Select-Object -ExpandProperty name)
+            $addedSetNames = @($afterExcludeSetNames | Where-Object { $PSItem -notin $beforeExcludeSetNames })
+            $addedSetNames | Should -Not -Contain $collectionSetName
+
+            # Every set that appeared is one the call reported. No Status filter: a set the command
+            # also started reports "Successful started Collection", not "Successful", so filtering
+            # on the bare string would drop exactly the sets this assertion has to account for.
+            $reportedSetNames = @($excludeResults | Where-Object { $PSItem.Type -eq "Collection Set" } | Select-Object -ExpandProperty Name)
+            foreach ($addedSetName in $addedSetNames) {
+                $reportedSetNames | Should -Contain $addedSetName
+            }
+
+            foreach ($addedSetName in $addedSetNames) {
+                $destServer.Query((Get-DropCollectionSetSql -SetName $addedSetName))
+            }
         }
     }
 
@@ -422,9 +505,15 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
 "@
-            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+            $splatProbeFile = @{
+                Path     = $probePath
+                Value    = $probeBody
+                Encoding = "UTF8"
+            }
+            Set-Content @splatProbeFile
 
-            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            $probeArguments = @("-NoProfile", "-NonInteractive", "-File", $probePath)
+            $probeOutput = & $shellPath @probeArguments 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }
 
