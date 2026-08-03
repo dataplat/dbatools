@@ -99,6 +99,18 @@ Describe $CommandName -Tag IntegrationTests {
         $originalVersionCleanup = Get-SsisCatalogProperty -PropertyName "VERSION_CLEANUP_ENABLED"
         $originalLoggingLevel = Get-SsisCatalogProperty -PropertyName "SERVER_LOGGING_LEVEL"
         $originalEncryptionAlgorithm = Get-SsisCatalogProperty -PropertyName "ENCRYPTION_ALGORITHM"
+
+        # The leave-it-alone leg needs a property that is TRUE going in, and on a shared catalog
+        # that is not something to assume - an earlier run or a peer window may have left it FALSE,
+        # in which case the leg would fail for a reason that has nothing to do with the command.
+        # Set through the proc rather than through Set-DbaSsisCatalog: a fixture built by the
+        # command under test cannot be evidence about that command.
+        $splatVersionCleanupFixture = @{
+            SqlInstance = $TestConfig.InstanceSsis
+            Database    = "SSISDB"
+            Query       = "EXEC [catalog].[configure_catalog] @property_name = N'VERSION_CLEANUP_ENABLED', @property_value = N'TRUE';"
+        }
+        Invoke-DbaQuery @splatVersionCleanupFixture
     }
 
     AfterAll {
@@ -160,7 +172,9 @@ Describe $CommandName -Tag IntegrationTests {
             # This is the leg the whole switch-through-Test-Bound rule exists for. The previous
             # test left OPERATION_CLEANUP_ENABLED false; a command reading switch truthiness would
             # now rewrite VERSION_CLEANUP_ENABLED to false too, and would leave the false one
-            # false, so only the property that was true before catches it.
+            # false, so only the property that was true before catches it. BeforeAll established
+            # that TRUE through the proc, and this re-reads it: if the setup did not take, the leg
+            # would otherwise pass or fail for a reason unrelated to the command.
             Get-SsisCatalogProperty -PropertyName "VERSION_CLEANUP_ENABLED" | Should -Be "TRUE"
             $null = Set-DbaSsisCatalog -SqlInstance $ssisInstance -RetentionWindow 92
             Get-SsisCatalogProperty -PropertyName "VERSION_CLEANUP_ENABLED" | Should -Be "TRUE"
