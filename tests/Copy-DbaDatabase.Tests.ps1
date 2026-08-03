@@ -763,75 +763,50 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    if ($env:azurepasswd) {
-        Context "Copying via Azure storage" {
-            BeforeAll {
-                $splatStopProcess = @{
-                    SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
-                    Program     = "dbatools PowerShell module - dbatools.io"
-                }
-                Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+    Context "When resolving the command name in a cold shell" {
+        BeforeAll {
+            # Every other leg runs in a session that imported dbatools long before Pester started,
+            # so none of them can tell the binary cmdlet apart from the retired script function -
+            # whichever got there first answers to the name. This leg starts a shell of the same
+            # edition that has imported nothing, loads the module the way a consumer does, and asks
+            # what the name resolves to. dbatools.psm1 is the import under test on purpose: it is
+            # the loader that pulls the satellite in by path, and importing the manifest by name
+            # cannot work in a dev tree because the satellites are not on PSModulePath.
+            $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
+            $shellPath = (Get-Process -Id $PID).Path
+            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
 
-                $splatRemoveDb = @{
-                    SqlInstance = $TestConfig.InstanceCopy2
-                    Database    = $backuprestoredb
-                }
-                Remove-DbaDatabase @splatRemoveDb
+            # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
+            # entry rather than silently winning; the count is what proves it is not there.
+            $probeBody = @"
+Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+`$resolved = Get-Command -Name Copy-DbaDatabase -ErrorAction SilentlyContinue
+`$allResolved = @(Get-Command -Name Copy-DbaDatabase -All -ErrorAction SilentlyContinue)
+`$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
+`$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
+"RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded"
+"@
+            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
 
-                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-                $sql = "CREATE CREDENTIAL [$TestConfig.azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server2.Query($sql)
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$TestConfig.azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
-                $server2.Query($sql)
+            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
+        }
 
-                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-                $sql = "CREATE CREDENTIAL [$TestConfig.azureblob] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-                $server3.Query($sql)
-                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'$TestConfig.azureblobaccount', SECRET = N'$env:azurelegacypasswd'"
-                $server3.Query($sql)
-            }
+        AfterAll {
+            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+        }
 
-            AfterAll {
-                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $backuprestoredb | Remove-DbaDatabase
-                $server2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-                $server2.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
-                $server2.Query("DROP CREDENTIAL dbatools_ci")
-                $server3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-                $server3.Query("DROP CREDENTIAL [$TestConfig.azureblob]")
-                $server3.Query("DROP CREDENTIAL dbatools_ci")
-            }
+        It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
+            $probeFields[1] | Should -Be "Cmdlet"
+            $probeFields[2] | Should -Be "dbatools.migration"
+        }
 
-            It "Should Copy $backuprestoredb via Azure legacy credentials" {
-                $splatAzureLegacy = @{
-                    Source          = $TestConfig.InstanceCopy1
-                    Destination     = $TestConfig.InstanceCopy2
-                    Database        = $backuprestoredb
-                    BackupRestore   = $true
-                    SharedPath      = $TestConfig.azureblob
-                    AzureCredential = "dbatools_ci"
-                }
-                $results = Copy-DbaDatabase @splatAzureLegacy
-                $results[0].Name | Should -Be $backuprestoredb
-                $results[0].Status | Should -BeLike "Successful*"
-            }
-
-            It "Should Copy $backuprestoredb via Azure new credentials" {
-                # Because I think the backup are tripping over each other with the names
-                Start-Sleep -Seconds 60
-
-                $splatAzureNew = @{
-                    Source        = $TestConfig.InstanceCopy1
-                    Destination   = $TestConfig.InstanceCopy2
-                    Database      = $backuprestoredb
-                    NewName       = "djkhgfkjghfdjgd"
-                    BackupRestore = $true
-                    SharedPath    = $TestConfig.azureblob
-                }
-                $results = Copy-DbaDatabase @splatAzureNew
-                $results[0].Name | Should -Be $backuprestoredb
-                $results[0].DestinationDatabase | Should -Be "djkhgfkjghfdjgd"
-                $results[0].Status | Should -BeLike "Successful*"
-            }
+        It "Should load the satellite and leave no retired function shadowing the name" {
+            $probeFields[4] | Should -Be "True"
+            $probeFields[3] | Should -Be "0"
         }
     }
+    # The two Azure storage legs that lived here needed $env:azurepasswd and a reachable storage
+    # account, neither of which this lab has, so they could only ever be declared and never run.
+    # They are preserved verbatim, with the setup they need, on potatoqualitee/migration.
 }

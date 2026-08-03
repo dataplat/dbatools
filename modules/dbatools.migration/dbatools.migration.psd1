@@ -24,7 +24,8 @@
     CmdletsToExport        = @(
         'Copy-DbaBackupDevice',
         'Copy-DbaCredential',
-        'Copy-DbaCustomError'
+        'Copy-DbaCustomError',
+        'Copy-DbaDatabase'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
