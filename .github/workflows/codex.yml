@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Build issue context
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ github.token }}
           script: |
@@ -147,7 +147,7 @@ jobs:
           persist-credentials: false
 
       - name: Materialize Codex result
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           CODEX_RESULT: ${{ needs.codex.outputs.result }}
         with:
@@ -262,7 +262,7 @@ jobs:
 
       - name: Reply on issue
         if: success()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           CODEX_RESULT: ${{ runner.temp }}/codex-result.json
           PR_URL: ${{ steps.pull_request.outputs.pr_url }}
