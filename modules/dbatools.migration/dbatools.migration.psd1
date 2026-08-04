@@ -38,7 +38,8 @@
         'Copy-DbaInstanceAuditSpecification',
         'Copy-DbaInstanceTrigger',
         'Copy-DbaLinkedServer',
-        'Copy-DbaLogin'
+        'Copy-DbaLogin',
+        'Copy-DbaPolicyManagement'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
