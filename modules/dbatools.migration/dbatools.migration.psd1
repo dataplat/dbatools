@@ -31,7 +31,8 @@
         'Copy-DbaDbMail',
         'Copy-DbaDbQueryStoreOption',
         'Copy-DbaDbTableData',
-        'Copy-DbaDbViewData'
+        'Copy-DbaDbViewData',
+        'Copy-DbaEndpoint'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
