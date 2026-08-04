@@ -33,6 +33,7 @@
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject',
         'Set-DbaSsisCatalog',
+        'Set-DbaSsisEnvironment',
         'Set-DbaSsisFolder',
         'Start-DbaSsisExecution'
     )
