@@ -20,6 +20,7 @@
     FunctionsToExport      = @()
     CmdletsToExport        = @(
         'Copy-DbaSsisCatalog',
+        'Export-DbaSsisProject',
         'Get-DbaSsisCatalog',
         'Get-DbaSsisEnvironment',
         'Get-DbaSsisEnvironmentVariable',
