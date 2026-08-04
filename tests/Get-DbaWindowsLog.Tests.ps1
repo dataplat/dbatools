@@ -24,8 +24,14 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip {
-    # Skip IntegrationTests because the command is very unstable and should be reviewed.
+Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:APPVEYOR) {
+    # These were skipped as "very unstable and should be reviewed". Reviewed on 2026-08-01: five
+    # consecutive runs against the lab were all green, so they run again. If the instability comes
+    # back, skip them once more but record what actually failed, not only that it is unstable.
+    # AppVeyor stays skipped: the command reads the error log path out of the Windows Application
+    # log, and the CI runners come back with nothing to parse.
+    # The [bool] cast is load bearing. Pester 5 binds -Skip to a [switch] and PowerShell refuses to
+    # convert the "True" string in $env:APPVEYOR, which fails discovery for the whole file.
 
     Context "Command returns proper info" {
         It "returns results" {
