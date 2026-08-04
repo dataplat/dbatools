@@ -259,6 +259,11 @@
     "retiredPath": "private/retired/Copy-DbaDbQueryStoreOption.ps1",
     "flippedUtc": "2026-08-03T22:53:43Z"
   },
+  "Copy-DbaDbTableData": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaDbTableData.ps1",
+    "flippedUtc": "2026-08-03T23:55:59Z"
+  },
   "Copy-DbaRegServer": {
     "flippedUtc": "2026-07-16T09:10:46Z",
     "module": "dbatools.core",
