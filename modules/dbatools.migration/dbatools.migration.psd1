@@ -30,7 +30,8 @@
         'Copy-DbaDbAssembly',
         'Copy-DbaDbMail',
         'Copy-DbaDbQueryStoreOption',
-        'Copy-DbaDbTableData'
+        'Copy-DbaDbTableData',
+        'Copy-DbaDbViewData'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
