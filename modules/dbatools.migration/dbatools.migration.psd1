@@ -36,7 +36,8 @@
         'Copy-DbaExtendedStoredProcedure',
         'Copy-DbaInstanceAudit',
         'Copy-DbaInstanceAuditSpecification',
-        'Copy-DbaInstanceTrigger'
+        'Copy-DbaInstanceTrigger',
+        'Copy-DbaLinkedServer'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
