@@ -45,4 +45,5 @@ Describe $CommandName -Tag IntegrationTests {
         $results = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
     }
+
 }
