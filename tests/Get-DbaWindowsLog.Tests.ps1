@@ -36,21 +36,38 @@ Describe $CommandName -Tag IntegrationTests {
     # for the event the same way the command does and skip when it is provably missing.
 
     BeforeDiscovery {
+        $instanceParam = [DbaInstanceParameter]$TestConfig.InstanceSingle
+        $eventSource = "MSSQLSERVER"
+        if ($instanceParam.InstanceName -notmatch "^DEFAULT$|^MSSQLSERVER$") {
+            $eventSource = "MSSQL`$" + $instanceParam.InstanceName
+        }
+        $probeScript = {
+            param($Source)
+            $splatStartupEvent = @{
+                FilterHashtable = @{ LogName = "Application"; ID = 17111; ProviderName = $Source }
+                MaxEvents       = 1
+                ErrorAction     = "Stop"
+            }
+            Get-WinEvent @splatStartupEvent
+        }
+        $splatProbe = @{
+            ScriptBlock  = $probeScript
+            ArgumentList = $eventSource
+            ErrorAction  = "Stop"
+        }
+        if (-not $instanceParam.IsLocalhost) { $splatProbe["ComputerName"] = $instanceParam.ComputerName }
         try {
-            $instanceParam = [DbaInstanceParameter]$TestConfig.InstanceSingle
-            $eventSource = "MSSQLSERVER"
-            if ($instanceParam.InstanceName -notmatch "^DEFAULT$|^MSSQLSERVER$") {
-                $eventSource = "MSSQL`$" + $instanceParam.InstanceName
-            }
-            $splatProbe = @{
-                ScriptBlock  = { param($Source) Get-WinEvent -FilterHashtable @{ LogName = "Application"; ID = 17111; ProviderName = $Source } -MaxEvents 1 -ErrorAction SilentlyContinue }
-                ArgumentList = $eventSource
-                ErrorAction  = "Stop"
-            }
-            if (-not $instanceParam.IsLocalhost) { $splatProbe["ComputerName"] = $instanceParam.ComputerName }
             $startupEventFound = [bool](Invoke-Command @splatProbe)
         } catch {
-            $startupEventFound = $false
+            # Skip only on the two confirmed no-match outcomes (both keep their
+            # FullyQualifiedErrorId across the remoting boundary). Anything else - broken
+            # remoting, permissions, an unset TestConfig - must fail discovery loudly instead
+            # of green-skipping the whole context.
+            if ($PSItem.FullyQualifiedErrorId -like "NoMatchingEventsFound*" -or $PSItem.FullyQualifiedErrorId -like "NoMatchingProvidersFound*") {
+                $startupEventFound = $false
+            } else {
+                throw
+            }
         }
     }
 
