@@ -32,6 +32,7 @@
         'New-DbaSsisEnvironmentVariable',
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject',
+        'Remove-DbaSsisCatalog',
         'Remove-DbaSsisFolder',
         'Set-DbaSsisCatalog',
         'Set-DbaSsisEnvironment',
