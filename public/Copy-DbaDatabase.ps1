@@ -720,6 +720,8 @@ function Copy-DbaDatabase {
             return
         }
 
+        $pipelineDbCountedThisRecord = $false
+
         # testing twice for whatif reasons
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
@@ -980,8 +982,13 @@ function Copy-DbaDatabase {
 
             # Track the count across process blocks: piped input arrives one database per
             # invocation, so a per-invocation count never exceeds 1 and the guard below
-            # would otherwise never fire for pipelines (#10512)
-            $pipelineDbCount += $dbCount
+            # would otherwise never fire for pipelines (#10512). Count once per record,
+            # not once per destination, or a single database copied to two destinations
+            # would trip the guard.
+            if (-not $pipelineDbCountedThisRecord) {
+                $pipelineDbCount += $dbCount
+                $pipelineDbCountedThisRecord = $true
+            }
 
             if ((Test-Bound "NewName") -and $pipelineDbCount -gt 1) {
                 Stop-Function -Message "Cannot use NewName when copying multiple databases"
