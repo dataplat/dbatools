@@ -299,6 +299,11 @@
     "retiredPath": "private/retired/Copy-DbaLinkedServer.ps1",
     "flippedUtc": "2026-08-04T04:05:05Z"
   },
+  "Copy-DbaLogin": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaLogin.ps1",
+    "flippedUtc": "2026-08-04T05:16:45Z"
+  },
   "Copy-DbaRegServer": {
     "flippedUtc": "2026-07-16T09:10:46Z",
     "module": "dbatools.core",
