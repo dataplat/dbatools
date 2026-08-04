@@ -34,6 +34,7 @@
         'Publish-DbaSsisProject',
         'Set-DbaSsisCatalog',
         'Set-DbaSsisEnvironment',
+        'Set-DbaSsisEnvironmentVariable',
         'Set-DbaSsisFolder',
         'Start-DbaSsisExecution'
     )
