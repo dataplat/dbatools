@@ -218,6 +218,36 @@ exec sp_addrolemember 'userrole','bob';
         Get-DbaPermission -Database tempdb | Should -Not -Be $null
     }
 
+    # The gallery job imports the released dbatools, which does not have this command until it ships.
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "rebuilds a fragmented index" {
+        $indexDbName = "dbatoolsci_idxrebuild_$(Get-Random)"
+        try {
+            $null = New-DbaDatabase -Name $indexDbName
+            $indexDb = Get-DbaDatabase -Database $indexDbName
+            # Inserted row by row on purpose: the GUID keys then arrive out of order and the clustered index really fragments.
+            $indexFixture = @"
+CREATE TABLE dbo.frag1 (
+    id uniqueidentifier NOT NULL CONSTRAINT PK_frag1 PRIMARY KEY CLUSTERED,
+    filler char(2000) NOT NULL
+);
+SET NOCOUNT ON;
+DECLARE @i int = 0;
+WHILE @i < 2000 BEGIN
+    INSERT dbo.frag1 (id, filler) VALUES (NEWID(), 'x');
+    SET @i += 1;
+END
+"@
+            $indexDb.Query($indexFixture)
+
+            $indexResults = Invoke-DbaDbIndexRebuild -Database $indexDbName -Mode Rebuild
+            $indexResults.Operation | Should -Be "Rebuild"
+            $indexResults.Success | Should -Be $true
+            $indexResults.FragmentationAfter | Should -BeLessThan $indexResults.FragmentationBefore
+        } finally {
+            $null = Remove-DbaDatabase -Database $indexDbName -ErrorAction SilentlyContinue
+        }
+    }
+
     # Takes two minutes in GH, very boring
     It -Skip "returns the master key" {
         (Get-DbaDbMasterKey).Database | Should -Be "master"
