@@ -28,8 +28,48 @@ Describe $CommandName -Tag IntegrationTests {
     # These were skipped as "very unstable and should be reviewed". Reviewed on 2026-08-01: five
     # consecutive runs against the lab were all green, so they run again. If the instability comes
     # back, skip them once more but record what actually failed, not only that it is unstable.
+    #
+    # 2026-08-04, it came back (PR #10510): "returns results" got $null on a CI runner. The command
+    # locates the ERRORLOG only through the newest service startup event 17111 in the Application
+    # event log and silently returns nothing when that event is gone - a busy runner wraps the log
+    # past the last SQL Server startup. That is machine state, not a command defect, so we probe
+    # for the event the same way the command does and skip when it is provably missing.
 
-    Context "Command returns proper info" {
+    BeforeDiscovery {
+        try {
+            $instanceParam = [DbaInstanceParameter]$TestConfig.InstanceSingle
+            $eventSource = "MSSQLSERVER"
+            if ($instanceParam.InstanceName -notmatch "^DEFAULT$|^MSSQLSERVER$") {
+                $eventSource = "MSSQL`$" + $instanceParam.InstanceName
+            }
+            $splatProbe = @{
+                ScriptBlock  = { param($Source) Get-WinEvent -FilterHashtable @{ LogName = "Application"; ID = 17111; ProviderName = $Source } -MaxEvents 1 -ErrorAction SilentlyContinue }
+                ArgumentList = $eventSource
+                ErrorAction  = "Stop"
+            }
+            if (-not $instanceParam.IsLocalhost) { $splatProbe["ComputerName"] = $instanceParam.ComputerName }
+            $startupEventFound = [bool](Invoke-Command @splatProbe)
+        } catch {
+            $startupEventFound = $false
+        }
+    }
+
+    Context "Command returns proper info" -Skip:(-not $startupEventFound) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command only emits ERRORLOG lines that match the "Error: n, Severity: n, State: n"
+            # pattern, and service restarts from earlier tests can cycle every retained ERRORLOG so
+            # that no such line survives. xp_logevent writes exactly that header without raising a
+            # client-side error, so the current log always holds one parseable entry.
+            $queryLogEvent = @"
+EXEC master.dbo.xp_logevent 50001, 'dbatools Get-DbaWindowsLog integration test marker', ERROR
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $queryLogEvent
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
         It "returns results" {
             $results = Get-DbaWindowsLog -SqlInstance $TestConfig.InstanceSingle
             $results | Should -Not -BeNullOrEmpty
