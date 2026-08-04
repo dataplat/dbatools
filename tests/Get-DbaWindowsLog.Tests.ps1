@@ -43,8 +43,13 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $probeScript = {
             param($Source)
+            $filterStartupEvent = @{
+                LogName      = "Application"
+                ID           = 17111
+                ProviderName = $Source
+            }
             $splatStartupEvent = @{
-                FilterHashtable = @{ LogName = "Application"; ID = 17111; ProviderName = $Source }
+                FilterHashtable = $filterStartupEvent
                 MaxEvents       = 1
                 ErrorAction     = "Stop"
             }
@@ -59,11 +64,13 @@ Describe $CommandName -Tag IntegrationTests {
         try {
             $startupEventFound = [bool](Invoke-Command @splatProbe)
         } catch {
-            # Skip only on the two confirmed no-match outcomes (both keep their
-            # FullyQualifiedErrorId across the remoting boundary). Anything else - broken
+            # NoMatchingEventsFound is the one state we skip for: the provider resolves but the
+            # startup event has aged out of the Application log, so the command cannot locate
+            # the ERRORLOG on an otherwise healthy host (the FullyQualifiedErrorId survives the
+            # remoting boundary). Anything else - an unresolvable provider name, broken
             # remoting, permissions, an unset TestConfig - must fail discovery loudly instead
             # of green-skipping the whole context.
-            if ($PSItem.FullyQualifiedErrorId -like "NoMatchingEventsFound*" -or $PSItem.FullyQualifiedErrorId -like "NoMatchingProvidersFound*") {
+            if ($PSItem.FullyQualifiedErrorId -like "NoMatchingEventsFound*") {
                 $startupEventFound = $false
             } else {
                 throw
