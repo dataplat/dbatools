@@ -243,12 +243,19 @@ jobs:
       # The SSPI provider is .NET 8 only, so this test cannot run under the Windows
       # PowerShell 5.1 pipeline and needs a portable pwsh 7 alongside it. Gated on the
       # test file rather than a branch name so it keeps running after this branch is gone.
+      # When the scoped test selection leaves this partition empty, appveyor.prep exits
+      # early without installing the pinned dbatools.library, so the SSPI test would load
+      # whatever stale library the reused runner has - skip on the shim's early-exit flag.
       - name: Install PowerShell 7 for Windows SSPI integration test
         if: matrix.scenario == 'SINGLE' && matrix.part == '1/5'
         shell: powershell
         run: |
           if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
               Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
+          if (Test-Path C:\Temp\gha-exit-build.flag) {
+              Write-Host "CI pipeline exited early without provisioning, skipping."
               exit 0
           }
           $assetUrl = "https://github.com/PowerShell/PowerShell/releases/download/v7.4.18/PowerShell-7.4.18-win-x64.zip"
@@ -268,6 +275,10 @@ jobs:
         run: |
           if (-not (Test-Path C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1)) {
               Write-Host "Connect-DbaInstance.WindowsSspi.Tests.ps1 is not present, skipping."
+              exit 0
+          }
+          if (Test-Path C:\Temp\gha-exit-build.flag) {
+              Write-Host "CI pipeline exited early without provisioning, skipping."
               exit 0
           }
           $scriptPath = Join-Path $env:RUNNER_TEMP "Invoke-WindowsSspiTest.ps1"
