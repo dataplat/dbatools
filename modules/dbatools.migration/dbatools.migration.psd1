@@ -34,7 +34,8 @@
         'Copy-DbaDbViewData',
         'Copy-DbaEndpoint',
         'Copy-DbaExtendedStoredProcedure',
-        'Copy-DbaInstanceAudit'
+        'Copy-DbaInstanceAudit',
+        'Copy-DbaInstanceAuditSpecification'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

@@ -284,6 +284,11 @@
     "retiredPath": "private/retired/Copy-DbaInstanceAudit.ps1",
     "flippedUtc": "2026-08-04T02:18:12Z"
   },
+  "Copy-DbaInstanceAuditSpecification": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaInstanceAuditSpecification.ps1",
+    "flippedUtc": "2026-08-04T02:41:55Z"
+  },
   "Copy-DbaRegServer": {
     "flippedUtc": "2026-07-16T09:10:46Z",
     "module": "dbatools.core",
