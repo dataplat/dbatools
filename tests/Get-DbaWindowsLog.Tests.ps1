@@ -34,6 +34,10 @@ Describe $CommandName -Tag IntegrationTests {
     # event log and silently returns nothing when that event is gone - a busy runner wraps the log
     # past the last SQL Server startup. That is machine state, not a command defect, so we probe
     # for the event the same way the command does and skip when it is provably missing.
+    #
+    # Later the same day the hardened test then WEDGED on the CI runner until the 15-minute
+    # watchdog killed the whole run, so the file is excluded from CI via the appveyor_disabled
+    # group in pester.groups.ps1. These tests remain for manual and lab runs.
 
     BeforeDiscovery {
         $instanceParam = [DbaInstanceParameter]$TestConfig.InstanceSingle

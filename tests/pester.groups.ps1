@@ -345,7 +345,12 @@ $TestsRunGroups = @{
         'Write-DbaDbTableData'
     )
     # do not run on appveyor
-    "appveyor_disabled" = @()
+    "appveyor_disabled" = @(
+        # 2026-08-04: wedges on the CI runner until the 15-minute watchdog kills the run
+        # (native call with no timeout; suspect WMI). Runs fine in the lab - keep it for
+        # manual and lab runs.
+        "Get-DbaWindowsLog"
+    )
     # do not run everywhere
     "disabled"          = @()
 }
