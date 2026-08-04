@@ -78,6 +78,41 @@ Describe $CommandName -Tag IntegrationTests {
             [int](Invoke-DbaQuery @splatReferenceFolder).FolderCount
         }
 
+        function Get-SsisCatalogDeployProbeCount {
+            # Every [catalog] view and every table behind it is plain T-SQL, so they all come back
+            # from a RESTORE whether or not the catalog still works. The deploy path is the only
+            # thing that loads the ISSERVER assembly and the dependencies it pulls in, and that is
+            # exactly what a catalog can silently lose while the row counts stay green. So the
+            # probe redeploys the reference project's own bytes - no SSDT needed to build an
+            # .ispac, they are already in the catalog - into a throwaway folder and drops it again.
+            # The project name has to match the one inside the manifest or the catalog refuses it.
+            $probeQuery = @"
+SET NOCOUNT ON;
+DECLARE @probeFolder sysname = N'dbatoolsci_ssisclrprobe';
+IF EXISTS (SELECT 1 FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @probeFolder)
+    EXEC [catalog].[delete_project] @folder_name = @probeFolder, @project_name = N'dbatoolsci_charproject';
+IF EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = @probeFolder)
+    EXEC [catalog].[delete_folder] @folder_name = @probeFolder;
+DECLARE @stream varbinary(max);
+DECLARE @streams TABLE (project_stream varbinary(max));
+INSERT INTO @streams EXEC [catalog].[get_project] @folder_name = N'dbatoolsci_charfolder', @project_name = N'dbatoolsci_charproject';
+SELECT @stream = project_stream FROM @streams;
+EXEC [catalog].[create_folder] @folder_name = @probeFolder, @folder_id = NULL;
+DECLARE @operationId bigint;
+EXEC [catalog].[deploy_project] @folder_name = @probeFolder, @project_name = N'dbatoolsci_charproject', @project_stream = @stream, @operation_id = @operationId OUTPUT;
+SELECT COUNT(*) AS DeployedCount FROM [catalog].[projects] p JOIN [catalog].[folders] f ON f.folder_id = p.folder_id WHERE f.name = @probeFolder;
+EXEC [catalog].[delete_project] @folder_name = @probeFolder, @project_name = N'dbatoolsci_charproject';
+EXEC [catalog].[delete_folder] @folder_name = @probeFolder;
+"@
+
+            $splatDeployProbe = @{
+                SqlInstance = $TestConfig.InstanceSsis
+                Database    = "SSISDB"
+                Query       = $probeQuery
+            }
+            [int](Invoke-DbaQuery @splatDeployProbe).DeployedCount
+        }
+
         # This suite destroys the lab's SSIS catalog on purpose, and every other SSIS suite reads
         # its fixtures out of that catalog - the reference project's .ispac only exists inside it,
         # because there is no SSDT on the runner to build another one. The backup is the way back,
@@ -152,6 +187,17 @@ Describe $CommandName -Tag IntegrationTests {
             }
             Invoke-DbaQuery @splatTrustworthy
 
+            # RESTORE also hands the database to whoever restored it, and a catalog owned by the
+            # runner account instead of sa was measured on this lab with its CLR dead and every
+            # deploy failing on an assembly load, while everything the usual checklist looks at -
+            # TRUSTWORTHY, clr enabled, the ISSERVER hash in sys.trusted_assemblies - read correct.
+            $splatCatalogOwner = @{
+                SqlInstance = $ssisInstance
+                Database    = "master"
+                Query       = "ALTER AUTHORIZATION ON DATABASE::[SSISDB] TO [sa];"
+            }
+            Invoke-DbaQuery @splatCatalogOwner
+
             # Tidies up executions the drop left mid-flight. Not fatal if it complains - the
             # assertions below are what say whether the fixture is actually back.
             $splatCatalogStartup = @{
@@ -168,6 +214,12 @@ Describe $CommandName -Tag IntegrationTests {
         # reason nothing points at, so this is asserted rather than attempted.
         Get-SsisCatalogCount | Should -Be 1
         Get-SsisReferenceFolderCount | Should -Be 1
+
+        # Those two count rows a RESTORE always brings back, so they are the one thing here that
+        # cannot fail - they stayed green against a catalog whose CLR-backed procedures were all
+        # dead, and the next SSIS suite inherited it with nothing pointing at the cause. This one
+        # actually deploys, so it goes red when the catalog is back in name only.
+        Get-SsisCatalogDeployProbeCount | Should -Be 1
     }
 
     Context "An instance with no SSIS catalog" {
