@@ -33,13 +33,16 @@
         'New-DbaSsisFolder',
         'Publish-DbaSsisProject',
         'Remove-DbaSsisCatalog',
+        'Remove-DbaSsisEnvironment',
+        'Remove-DbaSsisEnvironmentVariable',
         'Remove-DbaSsisFolder',
         'Remove-DbaSsisProject',
         'Set-DbaSsisCatalog',
         'Set-DbaSsisEnvironment',
         'Set-DbaSsisEnvironmentVariable',
         'Set-DbaSsisFolder',
-        'Start-DbaSsisExecution'
+        'Start-DbaSsisExecution',
+        'Stop-DbaSsisExecution'
     )
     VariablesToExport      = @()
     # Get-DbaSsisExecutionHistory was superseded by Get-DbaSsisExecution and is kept as a command
