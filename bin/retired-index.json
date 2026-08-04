@@ -279,6 +279,11 @@
     "retiredPath": "private/retired/Copy-DbaExtendedStoredProcedure.ps1",
     "flippedUtc": "2026-08-04T01:41:09Z"
   },
+  "Copy-DbaInstanceAudit": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaInstanceAudit.ps1",
+    "flippedUtc": "2026-08-04T02:18:12Z"
+  },
   "Copy-DbaRegServer": {
     "flippedUtc": "2026-07-16T09:10:46Z",
     "module": "dbatools.core",
