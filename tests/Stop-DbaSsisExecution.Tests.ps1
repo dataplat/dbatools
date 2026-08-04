@@ -198,11 +198,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         function Start-SsisRunningExecution {
+            # catalog.create_execution keys on the package name AS DEPLOYED, which carries the
+            # .dtsx extension; the bare name buys "Cannot access the package or the package does
+            # not exist" from the server rather than a name error.
             $splatStart = @{
                 SqlInstance = $TestConfig.InstanceSsis
                 Folder      = "dbatoolsci_stopexecfolder1"
                 Project     = "dbatoolsci_stopslowproject1"
-                Package     = "dbatoolsci_stopslowpackage1"
+                Package     = "dbatoolsci_stopslowpackage1.dtsx"
             }
             $execution = Start-DbaSsisExecution @splatStart
             $executionId = [long]$execution.ExecutionID
@@ -427,7 +430,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $ssisInstance
                 Folder      = $executionFolder
                 Project     = $failProject
-                Package     = $failPackage
+                Package     = "$failPackage.dtsx"
             }
             $failing = Start-DbaSsisExecution @splatStartFailing
             $failedId = [long]$failing.ExecutionID
