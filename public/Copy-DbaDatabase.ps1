@@ -301,6 +301,18 @@ function Copy-DbaDatabase {
     begin {
         $CopyOnly = -not $NoCopyOnly
 
+        # An empty name slips through every downstream -Database filter, which then means
+        # "all databases" and lets commands like Set-DbaDbOwner sweep the whole destination (#10512)
+        if ((Test-Bound "NewName") -and [string]::IsNullOrWhiteSpace($NewName)) {
+            Stop-Function -Message "-NewName cannot be empty or whitespace. To copy databases under their original names, omit -NewName."
+            return
+        }
+        if ((Test-Bound "Prefix") -and [string]::IsNullOrWhiteSpace($Prefix)) {
+            Stop-Function -Message "-Prefix cannot be empty or whitespace. To copy databases under their original names, omit -Prefix."
+            return
+        }
+        $pipelineDbCount = 0
+
         if (-not $InputObject -and -not $Source) {
             Stop-Function -Message "With no piped input a -Source must be specified."
             return
@@ -966,7 +978,12 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Performing count."
             $dbCount = $databaseList.Count
 
-            if ((Test-Bound 'NewName') -and $dbCount -gt 1) {
+            # Track the count across process blocks: piped input arrives one database per
+            # invocation, so a per-invocation count never exceeds 1 and the guard below
+            # would otherwise never fire for pipelines (#10512)
+            $pipelineDbCount += $dbCount
+
+            if ((Test-Bound "NewName") -and $pipelineDbCount -gt 1) {
                 Stop-Function -Message "Cannot use NewName when copying multiple databases"
                 return
             }
@@ -1009,6 +1026,13 @@ function Copy-DbaDatabase {
                     if ($(Test-Bound "Prefix")) {
                         $destinationDbName = $prefix + $destinationDbName
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
+                    }
+
+                    # Belt and suspenders: an empty destination name must never reach the
+                    # restore or the post-restore owner/state/property commands, where an
+                    # empty -Database filter means "all databases" (#10512)
+                    if ([string]::IsNullOrWhiteSpace($destinationDbName)) {
+                        Stop-Function -Message "Destination database name for $dbName resolved to an empty string. Skipping this database to protect the destination." -Continue
                     }
 
                     $filestructure.databases[$dbName]['destinationDbName'] = $destinationDbName
@@ -1289,7 +1313,16 @@ function Copy-DbaDatabase {
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
+                                if (-not $msg) {
+                                    $msg = $_.Exception.Message
+                                }
+                                $copyDatabaseStatus.Status = "Failed"
+                                $copyDatabaseStatus.Notes = $msg
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                # -Continue so the interrupt flag is not set: that flag persists
+                                # across process blocks and used to silently discard every database
+                                # piped in after one failed restore (#10512)
+                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException -Continue
                             }
                             $restoreResult = $restoreResultTmp.RestoreComplete
 

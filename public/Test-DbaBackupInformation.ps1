@@ -216,6 +216,17 @@ function Test-DbaBackupInformation {
             $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
             $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
+                # A single scalar path makes Test-DbaPath return a bare boolean instead of
+                # file objects; reading .FileExists off that boolean made a missing single
+                # backup file pass verification unnoticed (#10512)
+                if ($path -is [bool]) {
+                    $singlePath = @($allpaths)[0]
+                    if ($path -eq $false -and ($singlePath -notlike "http*") -and ($singlePath -notlike "s3*")) {
+                        Write-Message -Message "Backup File $singlePath cannot be read by $($RestoreInstance.Name). Does the service account ($($RestoreInstance.ServiceAccount)) have permission?" -Level Warning
+                        $VerificationErrors++
+                    }
+                    continue
+                }
                 if ($path.FileExists -eq $false -and ($path.FilePath -notlike 'http*') -and ($path.FilePath -notlike 's3*')) {
                     Write-Message -Message "Backup File $($path.FilePath) cannot be read by $($RestoreInstance.Name). Does the service account ($($RestoreInstance.ServiceAccount)) have permission?" -Level Warning
                     $VerificationErrors++
