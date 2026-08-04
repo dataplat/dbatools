@@ -54,8 +54,15 @@ Write-Host -Object "appveyor.prep: Install Pester 6" -ForegroundColor DarkGreen
 Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 6.0.0
 
 # Setup DbatoolsConfig Path.DbatoolsExport path
+# derived from the running identity's Documents folder instead of the hardcoded appveyor
+# profile, so it lands where the module's Path.DbatoolsExport default will resolve
+# (C:\Users\<user>\Documents interactively, the systemprofile under the LocalSystem runner)
 Write-Host -Object "appveyor.prep: Create Path.DbatoolsExport" -ForegroundColor DarkGreen
-$null = New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory -Force
+$docsPath = [Environment]::GetFolderPath("MyDocuments")
+if (-not $docsPath) {
+    $docsPath = Join-Path -Path $env:USERPROFILE -ChildPath "Documents"
+}
+$null = New-Item -Path (Join-Path -Path $docsPath -ChildPath "DbatoolsExport") -ItemType Directory -Force
 
 Write-Host -Object "appveyor.prep: Creating temp directory" -ForegroundColor DarkGreen
 $null = New-Item -Path C:\Temp -ItemType Directory -Force

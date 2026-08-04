@@ -10,7 +10,13 @@
     The golden image pre-stages the runner at C:\github-runner, so this only has to:
       1. set the network profile to Private (appveyor.prep.ps1 runs Set-WSManQuickConfig,
          which refuses on Public profiles)
-      2. register the runner as an ephemeral service running as SYSTEM
+      2. register the runner as an ephemeral service running as LocalSystem; config.cmd
+         installs and starts the service immediately, so the VM takes its job on this
+         boot -- no autologon, no logon task, no second boot
+
+    BITS transfers (Copy-DbaBackupDevice among others) work in this service session
+    because LocalSystem is one of the accounts BITS treats as always logged on:
+    https://learn.microsoft.com/windows/win32/bits/users-and-network-connections
 
     The runner takes exactly one job; runner-reconcile deletes the instance afterwards,
     so every job starts on a factory-fresh VM, AppVeyor style.
@@ -30,14 +36,44 @@ param(
 $ErrorActionPreference = "Stop"
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]3072
 
-if (Test-Path -Path "C:\github-runner\.runner") {
+function Get-RunnerVmState {
+    <#
+    .SYNOPSIS
+        Reports whether this VM is fresh, still serving its single job, or spent.
+
+    .DESCRIPTION
+        Kept as a function with no side effects so tests/bootstrap-runner.Tests.ps1 can
+        lift it out of this script and exercise every outcome. It decides the fate of a
+        VM, so it is the one part of the bootstrap that must not be guessed at.
+    #>
+    param(
+        [string]$RunnerRoot = "C:\github-runner"
+    )
+
+    if (-not (Test-Path -Path (Join-Path -Path $RunnerRoot -ChildPath ".bootstrapped-once"))) {
+        return "fresh"
+    }
+
+    # .bootstrapped-once is written before config.cmd runs, so reaching here means a
+    # bootstrap was at least attempted. Healthy means the runner is still configured and
+    # its service is running (the single job has not been served yet). Anything else --
+    # the ephemeral runner served its job and unregistered itself, or a previous bootstrap
+    # died mid-config -- leaves the VM dirty (SQL state, workspace); it must be deleted,
+    # never reused.
+    $runningService = @(Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | Where-Object Status -eq "Running")
+    if ((Test-Path -Path (Join-Path -Path $RunnerRoot -ChildPath ".runner")) -and $runningService.Count -gt 0) {
+        return "healthy"
+    }
+    return "spent"
+}
+
+$vmState = Get-RunnerVmState
+if ($vmState -eq "healthy") {
     "runner already configured on $env:COMPUTERNAME"
     exit 0
 }
-if (Test-Path -Path "C:\github-runner\.bootstrapped-once") {
-    # the ephemeral runner already served its single job and unregistered itself;
-    # this VM is dirty (SQL state, workspace) and must be deleted, never reused
-    "SPENT-VM: $env:COMPUTERNAME already served a job"
+if ($vmState -eq "spent") {
+    "SPENT-VM: $env:COMPUTERNAME already served a job or failed its bootstrap"
     exit 1
 }
 
@@ -48,19 +84,10 @@ Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private
 # still default-denies everything from the internet.
 Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled False
 
-# local accounts (the appveyor runner user) need an unfiltered token over loopback
-# admin shares (Copy-DbaBackupDevice and friends copy via \\COMPUTERNAME\x$)
+# some tests create local user accounts and reach admin shares with them over
+# loopback (\\COMPUTERNAME\x$); local accounts need an unfiltered token for that.
+# The runner itself is LocalSystem and does not depend on this knob.
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name LocalAccountTokenFilterPolicy -Value 1 -Type DWord
-
-# ephemeral-OS VMs come up with no pagefile; the setting object alone satisfies
-# Get-DbaPageFileSetting (activation would need a reboot these VMs never get)
-if (-not (Get-CimInstance -ClassName Win32_PageFileSetting -ErrorAction SilentlyContinue)) {
-    $splatPageFile = @{
-        ClassName = "Win32_PageFileSetting"
-        Property  = @{ Name = "D:\pagefile.sys"; InitialSize = [uint32]4096; MaximumSize = [uint32]8192 }
-    }
-    $null = New-CimInstance @splatPageFile
-}
 
 # the smalldisk base keeps a 30GB partition; harmless no-op when already extended
 $partitionMax = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
@@ -69,7 +96,17 @@ if ($partitionMax - $partitionNow -gt 1GB) {
     Resize-Partition -DriveLetter C -Size $partitionMax
 }
 
+# LocalSystem has no Documents folder by default. The module's Path.DbatoolsExport
+# default resolves from MyDocuments (private/configurations/settings/paths.ps1), and
+# several Export-Dba* tests write below $env:USERPROFILE\Documents.
+$null = New-Item -Path "$env:SystemRoot\System32\config\systemprofile\Documents\DbatoolsExport" -ItemType Directory -Force
+
 Set-Location -Path "C:\github-runner"
+
+# written before config.cmd on purpose: in service mode the runner can take its job the
+# moment config.cmd starts the service, so a bootstrap that dies mid-config must probe
+# as SPENT (delete and replace) rather than be retried onto a half-configured VM
+Set-Content -Path "C:\github-runner\.bootstrapped-once" -Value (Get-Date -Format o)
 
 # native commands write progress to stderr, which must not become terminating errors
 $ErrorActionPreference = "Continue"
@@ -81,34 +118,20 @@ $configArgs = @(
     "--labels", $Labels,
     "--work", "_work",
     "--ephemeral",
-    "--disableupdate"
+    "--disableupdate",
+    "--runasservice",
+    "--windowslogonaccount", "NT AUTHORITY\SYSTEM"
 )
 & .\config.cmd @configArgs 2>&1 | ForEach-Object { "$_" }
 "config exit: $LASTEXITCODE"
 if ($LASTEXITCODE -ne 0) {
     exit 1
 }
-Set-Content -Path "C:\github-runner\.bootstrapped-once" -Value (Get-Date -Format o)
 $ErrorActionPreference = "Stop"
 
-# AppVeyor runs builds in an interactive desktop session (BITS transfers, used by
-# Copy-DbaBackupDevice among others, fail in service sessions). Mirror that: the
-# appveyor user autologs on after a reboot and a logon task starts the runner there.
-$winlogonPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
-Set-ItemProperty -Path $winlogonPath -Name AutoAdminLogon -Value "1" -Type String
-Set-ItemProperty -Path $winlogonPath -Name DefaultUserName -Value "appveyor" -Type String
-Set-ItemProperty -Path $winlogonPath -Name DefaultPassword -Value "Password12!" -Type String
-Set-ItemProperty -Path $winlogonPath -Name DefaultDomainName -Value "." -Type String
-
-$splatTaskPieces = @{
-    Action    = New-ScheduledTaskAction -Execute "C:\github-runner\run.cmd" -WorkingDirectory "C:\github-runner"
-    Trigger   = New-ScheduledTaskTrigger -AtLogOn -User "appveyor"
-    Principal = New-ScheduledTaskPrincipal -UserId "appveyor" -LogonType Interactive -RunLevel Highest
-    Settings  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries
-    TaskName  = "gha-runner-interactive"
-    Force     = $true
+if ((Get-RunnerVmState) -ne "healthy") {
+    "runner service is missing or not running after config.cmd"
+    exit 1
 }
-$null = Register-ScheduledTask @splatTaskPieces
-
-"runner configured; rebooting into the interactive session"
-& shutdown.exe /r /t 8 /c "runner bootstrap reboot"
+$runnerService = @(Get-Service -Name "actions.runner.*" -ErrorAction SilentlyContinue | Where-Object Status -eq "Running")[0]
+"runner configured as a LocalSystem service: $($runnerService.Name) [$($runnerService.Status)]"
