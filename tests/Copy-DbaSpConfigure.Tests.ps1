@@ -450,6 +450,16 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
             # Everything that already differs is therefore excluded by measurement rather than from
             # a hard-coded list, which keeps an unattended run from rewriting a shared lab instance
             # if the two instances drift further apart than they are today.
+            #
+            # Measurement alone would leave the leg standing on that drift existing: two instances
+            # configured identically produce an empty exclusion list and the exclude half is then
+            # never exercised at all. So one setting is deliberately planted apart first, before the
+            # measurement reads either side, which puts a known name in the list on any pair.
+            $excludeOnlySourceLoginTimeout = $suiteSourceConn.Query(($readConfigValueSql -f "remote login timeout (s)")).ConfigValue
+            $excludeOnlyPlantedLoginTimeout = $excludeOnlySourceLoginTimeout + 9
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteLoginTimeout -Value $excludeOnlyPlantedLoginTimeout -WarningAction SilentlyContinue -EnableException:$false
+            $excludeOnlyDestBeforeLoginTimeout = $suiteDestConn.Query(($readConfigValueSql -f "remote login timeout (s)")).ConfigValue
+
             $excludeOnlySourceProps = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy1
             $excludeOnlyDestProps = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2
 
@@ -503,13 +513,18 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $suiteDestQueryTimeout -WarningAction SilentlyContinue -EnableException:$false
+            $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteLoginTimeout -Value $suiteDestLoginTimeout -WarningAction SilentlyContinue -EnableException:$false
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have had something to exclude" {
             # Without this the leg below passes on a run where the exclusion list came out empty,
-            # which would prove nothing about the exclude half of the filter.
-            @($excludeOnlyProtected).Count | Should -BeGreaterThan 0
+            # which would prove nothing about the exclude half of the filter. Naming the planted
+            # setting rather than counting the list is what makes that deterministic - a count is
+            # satisfied by whatever drift the lab happens to be carrying that day.
+            $excludeOnlyDestBeforeLoginTimeout | Should -Be $excludeOnlyPlantedLoginTimeout
+            $excludeOnlyDestBeforeLoginTimeout | Should -Not -Be $excludeOnlySourceLoginTimeout
+            $excludeOnlyProtected | Should -Contain "RemoteLoginTimeout"
         }
 
         It "Should copy only the setting that was not excluded" {
@@ -521,6 +536,7 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
 
         It "Should leave every excluded setting where it was" {
             $excludeOnlyMoved -join ", " | Should -Be ""
+            $excludeOnlyAfterLookup["RemoteLoginTimeout"] | Should -Be $excludeOnlyPlantedLoginTimeout
         }
     }
 
