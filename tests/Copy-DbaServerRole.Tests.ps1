@@ -114,14 +114,20 @@ Describe $CommandName -Tag IntegrationTests {
             $sharedLoginName     = "dbatoolsci_shared_$(Get-Random)"
             $sourceOnlyLoginName = "dbatoolsci_srconly_$(Get-Random)"
 
+            # Generated per run rather than written into the file: these logins are real SQL
+            # principals on two lab instances, and a cleanup that does not complete would
+            # otherwise leave accounts anyone reading this suite could sign in with. Nothing
+            # here ever authenticates as them, so the value only has to be unguessable.
+            $fixtureLoginPassword = "dbatoolsci_$([guid]::NewGuid().ToString("N"))!"
+
             $permSourceConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
             $permDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
 
-            $permSourceConn.Query("CREATE LOGIN [$sharedLoginName] WITH PASSWORD = N'dbatools.IO1', CHECK_POLICY = OFF")
-            $permSourceConn.Query("CREATE LOGIN [$sourceOnlyLoginName] WITH PASSWORD = N'dbatools.IO1', CHECK_POLICY = OFF")
+            $permSourceConn.Query("CREATE LOGIN [$sharedLoginName] WITH PASSWORD = N'$fixtureLoginPassword', CHECK_POLICY = OFF")
+            $permSourceConn.Query("CREATE LOGIN [$sourceOnlyLoginName] WITH PASSWORD = N'$fixtureLoginPassword', CHECK_POLICY = OFF")
             # Only the shared login exists on the destination - the other one is what makes the
             # "login is missing at the destination" branch reachable.
-            $permDestConn.Query("CREATE LOGIN [$sharedLoginName] WITH PASSWORD = N'dbatools.IO1', CHECK_POLICY = OFF")
+            $permDestConn.Query("CREATE LOGIN [$sharedLoginName] WITH PASSWORD = N'$fixtureLoginPassword', CHECK_POLICY = OFF")
 
             $permSourceConn.Query("CREATE SERVER ROLE [$permRoleName]")
             $permSourceConn.Query("GRANT VIEW ANY DEFINITION TO [$permRoleName]")
