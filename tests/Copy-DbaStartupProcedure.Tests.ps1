@@ -204,6 +204,63 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When -WhatIf reports the operations it would perform" {
+        BeforeAll {
+            # ShouldProcess writes its WhatIf line straight to the host and is not reachable by
+            # stream redirection on either edition, so a transcript is the only in-process capture.
+            $transcriptPath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatoolsci_startupproc_whatif_$([guid]::NewGuid().ToString("N")).log"
+
+            Start-Transcript -Path $transcriptPath | Out-Null
+            try {
+                # Gamma is not on the destination yet, so this reaches the create action; alpha is,
+                # so it reaches the already-exists action and, with -Force, the drop-and-recreate one.
+                $splatCreateAction = @{
+                    Source      = $TestConfig.InstanceCopy1
+                    Destination = $TestConfig.InstanceCopy2
+                    Procedure   = $procGamma
+                    WhatIf      = $true
+                }
+                $null = Copy-DbaStartupProcedure @splatCreateAction
+
+                $splatExistsAction = @{
+                    Source      = $TestConfig.InstanceCopy1
+                    Destination = $TestConfig.InstanceCopy2
+                    Procedure   = $procAlpha
+                    WhatIf      = $true
+                }
+                $null = Copy-DbaStartupProcedure @splatExistsAction
+
+                $splatForceAction = @{
+                    Source      = $TestConfig.InstanceCopy1
+                    Destination = $TestConfig.InstanceCopy2
+                    Procedure   = $procAlpha
+                    Force       = $true
+                    WhatIf      = $true
+                }
+                $null = Copy-DbaStartupProcedure @splatForceAction
+            } finally {
+                Stop-Transcript | Out-Null
+            }
+
+            $whatIfTranscript = Get-Content -Path $transcriptPath -Raw
+            Remove-Item -Path $transcriptPath -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Should report the create action verbatim" {
+            $whatIfTranscript | Should -BeLike "*Creating startup procedure dbo.$procGamma*"
+        }
+
+        It "Should report the already-exists action verbatim" {
+            $whatIfTranscript | Should -BeLike "*Startup procedure dbo.$procAlpha exists at destination. Use -Force to drop and migrate.*"
+        }
+
+        It "Should report the force drop-and-recreate action verbatim" {
+            $whatIfTranscript | Should -BeLike "*Dropping startup procedure dbo.$procAlpha and recreating*"
+        }
+    }
+
+    # This Context doubles as the absence control for the one above: it copies gamma for real and
+    # expects Successful, which only holds if the -WhatIf create above did not actually create it.
     Context "When -ExcludeProcedure is used without -Procedure" {
         BeforeAll {
             $splatExclude = @{
