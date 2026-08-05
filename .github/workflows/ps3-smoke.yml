@@ -45,11 +45,27 @@ jobs:
           # no tr|head pipeline here: with pipefail the SIGPIPE would kill the step
           PASS="Db$(openssl rand -hex 10)!5k"
 
+          # an NRP transient (NetworkingInternalOperationError) has leaked a VM before,
+          # and the || true made it invisible: retry each delete, then surface anything
+          # left behind as a warning annotation instead of failing the smoke verdict
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "delete attempt $attempt failed, retrying in 30s: $*"
+              sleep 30
+            done
+            return 1
+          }
+
           cleanup() {
             echo "== cleanup"
-            az vm delete -g "$RG" -n "$VM" --yes || true
-            az network nic delete -g "$RG" -n "${VM}VMNic" || true
-            az network public-ip delete -g "$RG" -n "${VM}PublicIP" || true
+            retry az vm delete -g "$RG" -n "$VM" --yes || true
+            retry az network nic delete -g "$RG" -n "${VM}VMNic" || true
+            retry az network public-ip delete -g "$RG" -n "${VM}PublicIP" || true
+            leaked=$(az resource list -g "$RG" --query "[?contains(name, '$VM')].name" -o tsv 2>/dev/null | paste -sd, - || true)
+            if [ -n "$leaked" ]; then
+              echo "::warning::ps3-smoke cleanup leaked $leaked in $RG -- delete manually"
+            fi
           }
           trap cleanup EXIT
 
