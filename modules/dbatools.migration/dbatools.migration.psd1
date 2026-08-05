@@ -39,7 +39,8 @@
         'Copy-DbaInstanceTrigger',
         'Copy-DbaLinkedServer',
         'Copy-DbaLogin',
-        'Copy-DbaPolicyManagement'
+        'Copy-DbaPolicyManagement',
+        'Copy-DbaResourceGovernor'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
