@@ -40,7 +40,8 @@
         'Copy-DbaLinkedServer',
         'Copy-DbaLogin',
         'Copy-DbaPolicyManagement',
-        'Copy-DbaResourceGovernor'
+        'Copy-DbaResourceGovernor',
+        'Copy-DbaServerRole'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
