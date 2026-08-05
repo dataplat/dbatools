@@ -685,13 +685,41 @@ Describe $CommandName -Tag IntegrationTests {
                 WithReplace     = $true
                 WarningVariable = "warnvar"
             }
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyLastBackup 3> $null
+            # sys.databases rows come back in no guaranteed order, and this test only
+            # proves anything when the failing database is piped FIRST - a failure on the
+            # last record leaves no later record for the old discard bug to suppress.
+            $orderedPipeInput = @(
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb2
+            )
+            $results = $orderedPipeInput | Copy-DbaDatabase @splatCopyLastBackup 3> $null
             ($results | Where-Object Name -eq $pipeDb1 | Measure-Object).Count | Should -Be 1
             ($results | Where-Object Name -eq $pipeDb1).Status | Should -Be "Failed"
             ($results | Where-Object Name -eq $pipeDb2 | Measure-Object).Count | Should -Be 1
             ($results | Where-Object Name -eq $pipeDb2).Status | Should -Be "Successful"
             (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2).Name | Should -Be $pipeDb2
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2 -EnableException
+        }
+
+        It "Keeps retrying when the visibility probe returns no results" {
+            # Test-DbaPath emits nothing at all when its connection attempt fails, so an
+            # empty result set is indeterminate - the visibility retry must wait out the
+            # SMB negative-cache window and warn instead of reading silence as success.
+            # The filter only intercepts probes of the backup file itself; the -SharedPath
+            # folder checks still hit the real command.
+            Mock -CommandName Test-DbaPath -ModuleName dbatools -MockWith { } -ParameterFilter { "$Path" -like "*$pipeDb2*" }
+
+            $splatCopyNoProbe = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                Database        = $pipeDb2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                WithReplace     = $true
+                WarningVariable = "warnvar"
+            }
+            $null = Copy-DbaDatabase @splatCopyNoProbe 3> $null
+            $warnvar | Should -Match "negative-cache window"
         }
     }
 

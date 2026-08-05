@@ -128,7 +128,8 @@ function Copy-DbaDatabase {
     .PARAMETER NewName
         Renames the database during migration when copying a single database.
         The database name and physical file names are updated to use the new name.
-        Cannot be used with multiple databases or together with -Prefix parameter.
+        Cannot be used with multiple databases, with pipeline input, or together with -Prefix parameter.
+        To rename a database, specify it with -Database and provide -NewName.
 
     .PARAMETER Prefix
         Adds a prefix to all migrated database names and their physical file names.
@@ -1304,14 +1305,20 @@ function Copy-DbaDatabase {
                                 $backupPathList = @($backupTmpResult | Select-Object -ExpandProperty FullName -Unique)
                                 $visibilityDeadline = (Get-Date).AddSeconds(8)
                                 do {
-                                    $allBackupsVisible = $true
-                                    foreach ($pathResult in @(Test-DbaPath -SqlInstance $destServer -Path $backupPathList)) {
-                                        if ($pathResult -is [bool]) {
-                                            if (-not $pathResult) {
+                                    # Test-DbaPath emits nothing when its own connection attempt fails, so an
+                                    # empty or incomplete result set is indeterminate - only a conclusive
+                                    # result for every path counts as visible.
+                                    $pathResults = @(Test-DbaPath -SqlInstance $destServer -Path $backupPathList)
+                                    $allBackupsVisible = ($backupPathList.Count -gt 0) -and ($pathResults.Count -eq $backupPathList.Count)
+                                    if ($allBackupsVisible) {
+                                        foreach ($pathResult in $pathResults) {
+                                            if ($pathResult -is [bool]) {
+                                                if (-not $pathResult) {
+                                                    $allBackupsVisible = $false
+                                                }
+                                            } elseif (-not $pathResult.FileExists) {
                                                 $allBackupsVisible = $false
                                             }
-                                        } elseif (-not $pathResult.FileExists) {
-                                            $allBackupsVisible = $false
                                         }
                                     }
                                     if (-not $allBackupsVisible -and (Get-Date) -lt $visibilityDeadline) {
