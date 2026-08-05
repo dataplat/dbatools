@@ -31,17 +31,48 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Set variables. They are available in all the It blocks.
-        $procName = "dbatoolsci_test_startup"
+        $procAlpha = "dbatoolsci_startup_alpha"
+        $procBeta  = "dbatoolsci_startup_beta"
+        $procGamma = "dbatoolsci_startup_gamma"
+        $procPlain = "dbatoolsci_plain_delta"
+        $allProcs  = @($procAlpha, $procBeta, $procGamma, $procPlain)
+
+        # Each body carries its own marker so a definition read off the destination identifies
+        # which source procedure it actually came from.
+        function Get-DestinationProcedureState {
+            param($ProcedureName)
+
+            $splatState = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+                Query       = "SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.$ProcedureName')) AS Definition, (SELECT is_auto_executed FROM sys.procedures WHERE name = '$ProcedureName' AND schema_id = SCHEMA_ID('dbo')) AS IsAutoExecuted"
+            }
+            Invoke-DbaQuery @splatState
+        }
+
+        # Clean both ends first - a leftover startup procedure from an interrupted run would make
+        # the -WhatIf absence assertion pass for the wrong reason.
+        foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
+            foreach ($proc in $allProcs) {
+                Invoke-DbaQuery -SqlInstance $instance -Database "master" -Query "IF OBJECT_ID('dbo.$proc') IS NOT NULL DROP PROCEDURE dbo.$proc"
+            }
+        }
 
         # Create the objects.
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
-        $server.Query("CREATE OR ALTER PROCEDURE $procName
-                        AS
-                        SELECT @@SERVERNAME
-                        GO")
-        $server.Query("EXEC sp_procoption @ProcName = N'$procName'
-                            , @OptionName = 'startup'
-                            , @OptionValue = 'on'")
+        foreach ($proc in $procAlpha, $procBeta, $procGamma, $procPlain) {
+            $marker = "$proc-v1"
+            Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database "master" -Query "CREATE PROCEDURE dbo.$proc AS SELECT '$marker' AS Marker"
+        }
+
+        # Only the first three are flagged for startup - the fourth proves the ExecIsStartup filter.
+        foreach ($proc in $procAlpha, $procBeta, $procGamma) {
+            $splatStartup = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Query       = "EXEC sp_procoption @ProcName = N'$proc', @OptionName = 'startup', @OptionValue = 'on'"
+            }
+            Invoke-DbaQuery @splatStartup
+        }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -51,29 +82,154 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # Cleanup all created objects.
-        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database "master" -Query "DROP PROCEDURE dbatoolsci_test_startup" -ErrorAction SilentlyContinue
+        # Cleanup all created objects. A startup procedure left behind would execute on every
+        # instance restart, so this drops from both ends whether or not the copy legs ran.
+        foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
+            foreach ($proc in $allProcs) {
+                Invoke-DbaQuery -SqlInstance $instance -Database "master" -Query "IF OBJECT_ID('dbo.$proc') IS NOT NULL DROP PROCEDURE dbo.$proc"
+            }
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "When copying startup procedures" {
+    Context "When previewing with -WhatIf" {
         BeforeAll {
-            $splatCopy = @{
+            $splatWhatIf = @{
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
+                Procedure   = $procAlpha
+                WhatIf      = $true
             }
-            $results = Copy-DbaStartupProcedure @splatCopy
+            $whatIfResults = Copy-DbaStartupProcedure @splatWhatIf
+
+            $whatIfState = Get-DestinationProcedureState -ProcedureName $procAlpha
         }
 
-        It "Should include test procedure: $procName" {
-            $copiedProc = $results | Where-Object Name -eq $procName
-            $copiedProc.Name | Should -Be $procName
+        It "Should return no result objects" {
+            $whatIfResults | Should -BeNullOrEmpty
         }
 
-        It "Should be successful" {
-            $copiedProc = $results | Where-Object Name -eq $procName
-            $copiedProc.Status | Should -Be "Successful"
+        It "Should not create the procedure on the destination" {
+            $whatIfState.Definition | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When copying multiple startup procedures in one call" {
+        BeforeAll {
+            $splatMulti = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Procedure   = @($procAlpha, $procBeta)
+            }
+            $multiResults = Copy-DbaStartupProcedure @splatMulti
+
+            $alphaState = Get-DestinationProcedureState -ProcedureName $procAlpha
+            $betaState  = Get-DestinationProcedureState -ProcedureName $procBeta
+        }
+
+        It "Should report both procedures as Successful" {
+            $statuses = $multiResults | Where-Object Name -in $procAlpha, $procBeta | Select-Object -ExpandProperty Status
+            $statuses.Count | Should -Be 2
+            $statuses | Should -Not -Contain "Failed"
+            ($statuses | Sort-Object -Unique) | Should -Be "Successful"
+        }
+
+        It "Should land each procedure with its own body, not the first record's" {
+            $alphaState.Definition | Should -BeLike "*$procAlpha-v1*"
+            $betaState.Definition | Should -BeLike "*$procBeta-v1*"
+        }
+
+        It "Should flag both procedures for startup on the destination" {
+            $alphaState.IsAutoExecuted | Should -Be 1
+            $betaState.IsAutoExecuted | Should -Be 1
+        }
+    }
+
+    Context "When the procedure already exists on the destination" {
+        BeforeAll {
+            $splatSkip = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Procedure   = $procAlpha
+            }
+            $skipResults = Copy-DbaStartupProcedure @splatSkip
+
+            $skipState = Get-DestinationProcedureState -ProcedureName $procAlpha
+        }
+
+        It "Should report the procedure as Skipped" {
+            $skipped = $skipResults | Where-Object Name -eq $procAlpha
+            $skipped.Status | Should -Be "Skipped"
+            $skipped.Notes | Should -Be "Already exists on destination"
+        }
+
+        It "Should leave the destination body untouched" {
+            $skipState.Definition | Should -BeLike "*$procAlpha-v1*"
+        }
+    }
+
+    Context "When -Force overwrites an existing startup procedure" {
+        BeforeAll {
+            $splatAlter = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = "master"
+                Query           = "ALTER PROCEDURE dbo.$procAlpha AS SELECT '$procAlpha-v2' AS Marker"
+                EnableException = $true
+            }
+            Invoke-DbaQuery @splatAlter
+
+            $splatForce = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Procedure   = $procAlpha
+                Force       = $true
+            }
+            $forceResults = Copy-DbaStartupProcedure @splatForce
+
+            $forceState = Get-DestinationProcedureState -ProcedureName $procAlpha
+        }
+
+        It "Should report the procedure as Successful" {
+            $forced = $forceResults | Where-Object Name -eq $procAlpha
+            $forced.Status | Should -Be "Successful"
+        }
+
+        It "Should replace the destination body with the newer source body" {
+            $forceState.Definition | Should -BeLike "*$procAlpha-v2*"
+        }
+
+        It "Should still flag the recreated procedure for startup" {
+            $forceState.IsAutoExecuted | Should -Be 1
+        }
+    }
+
+    Context "When -ExcludeProcedure is used without -Procedure" {
+        BeforeAll {
+            $splatExclude = @{
+                Source           = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                ExcludeProcedure = @($procAlpha, $procBeta)
+            }
+            $excludeResults = Copy-DbaStartupProcedure @splatExclude
+
+            $gammaState = Get-DestinationProcedureState -ProcedureName $procGamma
+            $plainState = Get-DestinationProcedureState -ProcedureName $procPlain
+        }
+
+        It "Should copy the procedure that was not excluded" {
+            ($excludeResults | Where-Object Name -eq $procGamma).Status | Should -Be "Successful"
+            $gammaState.Definition | Should -BeLike "*$procGamma-v1*"
+            $gammaState.IsAutoExecuted | Should -Be 1
+        }
+
+        It "Should report nothing at all for the excluded procedures" {
+            $excludeResults | Where-Object Name -in $procAlpha, $procBeta | Should -BeNullOrEmpty
+        }
+
+        It "Should not copy a procedure that is not flagged for startup" {
+            $excludeResults | Where-Object Name -eq $procPlain | Should -BeNullOrEmpty
+            $plainState.Definition | Should -BeNullOrEmpty
         }
     }
 }
