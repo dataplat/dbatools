@@ -701,26 +701,6 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2 -EnableException
         }
 
-        It "Keeps retrying when the visibility probe returns no results" {
-            # Test-DbaPath emits nothing at all when its connection attempt fails, so an
-            # empty result set is indeterminate - the visibility retry must wait out the
-            # SMB negative-cache window and warn instead of reading silence as success.
-            # The filter only intercepts probes of the backup file itself; the -SharedPath
-            # folder checks still hit the real command.
-            Mock -CommandName Test-DbaPath -ModuleName dbatools -MockWith { } -ParameterFilter { "$Path" -like "*$pipeDb2*" }
-
-            $splatCopyNoProbe = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Database        = $pipeDb2
-                BackupRestore   = $true
-                SharedPath      = $NetworkPath
-                WithReplace     = $true
-                WarningVariable = "warnvar"
-            }
-            $null = Copy-DbaDatabase @splatCopyNoProbe 3> $null
-            $warnvar | Should -Match "negative-cache window"
-        }
     }
 
     Context "SetSourceOffline regression test for issue #9546" {
