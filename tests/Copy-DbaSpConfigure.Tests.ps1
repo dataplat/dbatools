@@ -171,7 +171,16 @@ Describe $CommandName -Tag IntegrationTests {
 
             # fill factor is the non-dynamic setting in this pair: the configured value moves, the
             # running value does not until a restart, which is the state the note reports.
-            $restartPlantedValue = $restartSourceValue + 55
+            #
+            # It is also the one bounded setting this file plants - sys.configurations gives it
+            # min 0, max 100, where the two timeouts run to 2147483647. So the planted value is
+            # picked from inside that range rather than offset from the source's, which would be
+            # refused as out of range on an instance already carrying a high fill factor.
+            if ($restartSourceValue -eq 50) {
+                $restartPlantedValue = 60
+            } else {
+                $restartPlantedValue = 50
+            }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name FillFactor -Value $restartPlantedValue -WarningAction SilentlyContinue -EnableException:$false
             $restartDestValueBefore = $restartDestConn.Query(($readConfigValueSql -f "fill factor (%)")).ConfigValue
 
