@@ -57,7 +57,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validating Database Input" {
         BeforeAll {
-            # The command does not respect -WarningAction SilentlyContinue inside of this pester test - still don't know why, retest with pester 5
+            # The command does not respect -WarningAction SilentlyContinue inside of this pester test - still don't know why, retest after the next Pester upgrade
             $systemWarnVar = $null
             Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database "master" -WarningVariable systemWarnVar 3> $null
         }

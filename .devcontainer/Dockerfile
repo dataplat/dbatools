@@ -23,9 +23,9 @@ RUN echo "export HISTFILE=/commandhistory/.bash_history" >> "/root/.bashrc" \
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
 RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-# Install Pester, has to be 4.4.3 because 4.4.2 has bug in Unix machines
+# Install Pester, pinned to the version the test suite runs on
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
-RUN $ErrorActionPreference='Stop'; Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3;
+RUN $ErrorActionPreference='Stop'; Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 6.0.0;
 
 # Install PSScriptAnalyzer
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]

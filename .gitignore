@@ -21,7 +21,7 @@ msbuild.binlog
 # Local constant file
 tests/constants.local.ps1
 
-# Local coverage file produced by pester5
+# Local coverage file produced by Pester
 coverage.xml
 
 # For those that want to use Docker images for testing

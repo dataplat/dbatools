@@ -93,8 +93,8 @@ function Invoke-ManualPester {
     Every test file has to carry this requirement in its first line:
     #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 
-    A file without it is reported and skipped rather than run, because dbatools no longer has
-    Pester 4 tests and a missing header is a mistake in the test file.
+    A file without it is reported and skipped rather than run, because a missing header is a
+    mistake in the test file and not a request for a different runtime.
 #>
     [CmdletBinding()]
     param (
@@ -171,9 +171,9 @@ function Invoke-ManualPester {
             return (Get-ChildItem @splatCommandFile | Select-Object -First 1).FullName
         }
 
-        # Every test file has to declare the Pester 5 requirement. dbatools has no Pester 4 tests
-        # left, so a file without the header is a mistake in the file and not a request for an
-        # older runtime - it is reported instead of being run with something else.
+        # Every test file has to declare the minimum Pester version it needs. A file without the
+        # header is a mistake in the file and not a request for a different runtime - it is
+        # reported instead of being run with something else.
         function Test-PesterTestHeader($testFilePath) {
             $testFileContent = Get-Content -Path $testFilePath -Raw
             return $testFileContent -match "#Requires\s+-Module\s+@\{\s+ModuleName=`"Pester`";\s+ModuleVersion=`"5\."
@@ -198,10 +198,12 @@ function Invoke-ManualPester {
 
         $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
         $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
-        # Pester 5 introduced the configuration object this function builds, and every test file in
-        # the repository requires it. The CI pins 6.0.0 in tests\appveyor.prep.ps1.
-        $MinimumPesterVersion = [Version] "5.0.0.0"
-        $MaximumPesterVersion = [Version] "7.0.0.0"
+        # The suite runs on Pester 6, which the CI pins to 6.0.0 in tests\appveyor.prep.ps1. A local
+        # run is gated to the same major version so a local pass means the same thing CI does.
+        # Three components, not four: Pester reports itself as 6.0.0, and [Version] treats an absent
+        # revision as -1, so "6.0.0" would compare as lower than "6.0.0.0" and reject the pinned build.
+        $MinimumPesterVersion = [Version] "6.0.0"
+        $MaximumPesterVersion = [Version] "7.0.0"
         $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
         $HasPester = $null -ne $PesterVersion
         $ScriptAnalyzerCorrectVersion = "1.18.2"
@@ -365,7 +367,7 @@ function Invoke-ManualPester {
 
         foreach ($f in $AllTestsWithinScenario) {
             if (-not (Test-PesterTestHeader -testFilePath $f.FullName)) {
-                Write-Warning "$($f.Name) does not declare the mandatory Pester 5 header, skipping it. See tests\CLAUDE.md."
+                Write-Warning "$($f.Name) does not declare the mandatory Pester header, skipping it. See tests\CLAUDE.md."
                 continue
             }
 
@@ -394,40 +396,40 @@ function Invoke-ManualPester {
             }
 
             Write-DetailedMessage "Running tests $($f.Name)"
-            $pester5Config = New-PesterConfiguration
-            $pester5Config.Run.Path = $f.FullName
-            $pester5Config.Run.PassThru = $true
-            $pester5Config.Output.Verbosity = $Show
+            $pesterConfig = New-PesterConfiguration
+            $pesterConfig.Run.Path = $f.FullName
+            $pesterConfig.Run.PassThru = $true
+            $pesterConfig.Output.Verbosity = $Show
             if ($Coverage) {
                 if ($CoverFiles.Count -eq 0) {
                     Write-Warning "Cannot measure coverage for $($f.Name), no command file found for it"
                 } else {
-                    $pester5Config.CodeCoverage.Enabled = $true
+                    $pesterConfig.CodeCoverage.Enabled = $true
                     Write-DetailedMessage "We're going to target these files for coverage:"
                     foreach ($cf in $CoverFiles) {
                         Write-DetailedMessage "$cf"
                     }
-                    $pester5Config.CodeCoverage.Path = $CoverFiles
+                    $pesterConfig.CodeCoverage.Path = $CoverFiles
                 }
             }
             if (!($testInt)) {
-                $pester5Config.Filter.ExcludeTag = "IntegrationTests"
+                $pesterConfig.Filter.ExcludeTag = "IntegrationTests"
             }
-            $pester5Result = Invoke-Pester -Configuration $pester5Config
+            $pesterResult = Invoke-Pester -Configuration $pesterConfig
 
             $runSummary += [PSCustomObject]@{
                 TestFileName    = $f.Name
-                Result          = $pester5Result.Result
-                TotalCount      = $pester5Result.TotalCount
-                PassedCount     = $pester5Result.PassedCount
-                FailedCount     = $pester5Result.FailedCount
-                SkippedCount    = $pester5Result.SkippedCount
-                DurationSeconds = [int]$pester5Result.Duration.TotalSeconds
-                Failed          = $pester5Result.Failed
+                Result          = $pesterResult.Result
+                TotalCount      = $pesterResult.TotalCount
+                PassedCount     = $pesterResult.PassedCount
+                FailedCount     = $pesterResult.FailedCount
+                SkippedCount    = $pesterResult.SkippedCount
+                DurationSeconds = [int]$pesterResult.Duration.TotalSeconds
+                Failed          = $pesterResult.Failed
             }
 
             if ($PassThru) {
-                $pester5Result
+                $pesterResult
             }
 
             if ($ScriptAnalyzer) {

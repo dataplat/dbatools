@@ -61,6 +61,10 @@ $global:dbatools_dotsourcemodule = $true
 # imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -Force
 
+# The one place this script names a Pester version. It has to match tests\appveyor.prep.ps1, which
+# is what actually installs the module on the build worker.
+$PesterRequiredVersion = "6.0.0"
+
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
@@ -179,7 +183,7 @@ function Get-ComprehensiveErrorMessage {
     $debugInfo = @()
 
     try {
-        # Pester 5 error extraction with multiple fallbacks
+        # Pester error extraction with multiple fallbacks
         if ($TestResult.ErrorRecord -and $TestResult.ErrorRecord.Count -gt 0) {
             foreach ($errorRec in $TestResult.ErrorRecord) {
                 if ($errorRec.Exception) {
@@ -244,7 +248,7 @@ function Get-ComprehensiveErrorMessage {
             $errorMessages += "StdErr: $($TestResult.StandardError)"
         }
 
-        # Check Block.ErrorRecord for container-level errors (common in Pester 5)
+        # Check Block.ErrorRecord for container-level errors (common in Pester 6)
         if ($TestResult.Block -and $TestResult.Block.ErrorRecord) {
             foreach ($blockError in $TestResult.Block.ErrorRecord) {
                 if ($blockError.Exception) {
@@ -325,7 +329,7 @@ function Export-TestFailureSummary {
 
     $failedTests = @()
 
-    # Pester 5 format
+    # Pester 6 format
     $failedTests = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
         # Extract line number from stack trace
         $lineNumber = $null
@@ -357,7 +361,7 @@ function Export-TestFailureSummary {
     if ($failedTests.Count -gt 0) {
         $summary = @{
             TestFile      = $TestFile.Name
-            PesterVersion = "5"
+            PesterVersion = $PesterRequiredVersion
             TotalTests    = $PesterRun.TotalCount
             PassedTests   = $PesterRun.PassedCount
             FailedTests   = $PesterRun.FailedCount
@@ -365,9 +369,9 @@ function Export-TestFailureSummary {
             Failures      = $failedTests
         }
 
-        $summaryFile = "$ModuleBase\TestFailureSummary_Pester5_${Counter}.json"
+        $summaryFile = "$ModuleBase\TestFailureSummary_${Counter}.json"
         $summary | ConvertTo-Json -Depth 10 | Out-File $summaryFile -Encoding UTF8
-        Push-AppveyorArtifact $summaryFile -FileName "TestFailureSummary_Pester5_${Counter}.json"
+        Push-AppveyorArtifact $summaryFile -FileName "TestFailureSummary_${Counter}.json"
     }
 }
 
@@ -386,8 +390,7 @@ if (-not $Finalize) {
 
     # Remove any previously loaded pester module
     Remove-Module -Name Pester -ErrorAction SilentlyContinue
-    # Import Pester 6 release candidate
-    Import-Module -Name Pester -RequiredVersion 6.0.0
+    Import-Module -Name Pester -RequiredVersion $PesterRequiredVersion
     Write-Host -Object "appveyor.pester: Running with Pester Version $((Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version)" -ForegroundColor DarkGreen
 
     # invoking a single invoke-pester consumes too much memory, let's go file by file
@@ -449,18 +452,18 @@ if (-not $Finalize) {
         foreach ($f in $AllTestsWithinScenario) {
             $Counter += 1
 
-            $pester5Config = New-PesterConfiguration
-            $pester5Config.Run.Path = $f.FullName
-            $pester5config.Run.PassThru = $true
-            $pester5config.Output.Verbosity = "None"
+            $pesterConfig = New-PesterConfiguration
+            $pesterConfig.Run.Path = $f.FullName
+            $pesterConfig.Run.PassThru = $true
+            $pesterConfig.Output.Verbosity = "None"
 
             #opt-in
             if ($IncludeCoverage) {
                 $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
-                $pester5Config.CodeCoverage.Enabled = $true
-                $pester5Config.CodeCoverage.Path = $CoverFiles
-                $pester5Config.CodeCoverage.OutputFormat = "JaCoCo"
-                $pester5Config.CodeCoverage.OutputPath = "$ModuleBase\Pester5Coverage$PSVersion$Counter.xml"
+                $pesterConfig.CodeCoverage.Enabled = $true
+                $pesterConfig.CodeCoverage.Path = $CoverFiles
+                $pesterConfig.CodeCoverage.OutputFormat = "JaCoCo"
+                $pesterConfig.CodeCoverage.OutputPath = "$ModuleBase\PesterCoverage$PSVersion$Counter.xml"
             }
 
             $trialNo = 1
@@ -481,9 +484,9 @@ if (-not $Finalize) {
                 } catch {
                     Write-Host -Object "appveyor.pester: could not write the heartbeat. $($PSItem.Exception.Message)" -ForegroundColor Yellow
                 }
-                $PesterRun = Invoke-Pester -Configuration $pester5config
+                $PesterRun = Invoke-Pester -Configuration $pesterConfig
                 Write-Host -Object "`rCompleted $($f.FullName) in $([int]$PesterRun.Duration.TotalMilliseconds)ms" -ForegroundColor Cyan
-                $PesterRun | Export-Clixml -Path "$ModuleBase\Pester5Results$PSVersion$Counter.xml"
+                $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
 
                 # Export failure summary for easier retrieval
                 Export-TestFailureSummary -TestFile $f -PesterRun $PesterRun -Counter $Counter -ModuleBase $ModuleBase
@@ -516,7 +519,7 @@ if (-not $Finalize) {
                         Outcome       = "Failed"
                         FailedCount   = $PesterRun.FailedCount
                         Duration      = $PesterRun.Duration.TotalMilliseconds
-                        PesterVersion = "5"
+                        PesterVersion = $PesterRequiredVersion
                     }
                 } else {
                     Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Duration.TotalMilliseconds
@@ -527,7 +530,7 @@ if (-not $Finalize) {
                         Attempt       = $trialNo
                         Outcome       = "Passed"
                         Duration      = $PesterRun.Duration.TotalMilliseconds
-                        PesterVersion = "5"
+                        PesterVersion = $PesterRequiredVersion
                     }
                     break
                 }
@@ -591,7 +594,7 @@ if (-not $Finalize) {
     }
 
     # What failed? How many tests did we run ?
-    $results = @(Get-ChildItem -Path "$ModuleBase\Pester5Results*.xml" | Import-Clixml)
+    $results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
     $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     $faileditems = $results | Select-Object -ExpandProperty Tests | Where-Object { $PSItem.Passed -notlike $True }
     if ($faileditems) {
@@ -616,7 +619,7 @@ if (-not $Finalize) {
 
         # Save detailed failure information as artifact
         $detailedFailureSummary = @{
-            PesterVersion    = "5"
+            PesterVersion    = $PesterRequiredVersion
             TotalFailedTests = $faileditems.Count
             DetailedFailures = $detailedFailures | ForEach-Object {
                 @{
@@ -631,9 +634,9 @@ if (-not $Finalize) {
             }
         }
 
-        $detailedFailureFile = "$ModuleBase\DetailedTestFailures_Pester5.json"
+        $detailedFailureFile = "$ModuleBase\DetailedTestFailures.json"
         $detailedFailureSummary | ConvertTo-Json -Depth 10 | Out-File $detailedFailureFile -Encoding UTF8
-        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures_Pester5.json"
+        Push-AppveyorArtifact $detailedFailureFile -FileName "DetailedTestFailures.json"
 
         throw "$failedcount tests failed."
     }
