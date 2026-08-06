@@ -230,6 +230,45 @@ Describe $CommandName -Tag IntegrationTests {
             @($pipeVerbose -match "\[$sourceDbName\] -> ").Count | Should -Be 3
         }
 
+        It "Should still process the record after one that cannot connect" {
+            # The source's process block reads Test-FunctionInterrupt nowhere, so the connect
+            # failure in the middle must not silence the record behind it. A hop shell that guards
+            # ProcessRecord on the latch its nested Stop-Function sets would emit nothing for the
+            # third record - measured red exactly that way on a sibling row.
+            $splatMixed = @{
+                WarningAction   = "SilentlyContinue"
+                ErrorAction     = "SilentlyContinue"
+                EnableException = $false
+            }
+            $mixedRecords = @(
+                [PSCustomObject]@{
+                    Source              = $TestConfig.InstanceCopy1
+                    Database            = $sourceDbName
+                    Destination         = $TestConfig.InstanceCopy2
+                    DestinationDatabase = $destDbName
+                }
+                [PSCustomObject]@{
+                    Source              = $TestConfig.InstanceUnreachable
+                    Database            = $sourceDbName
+                    Destination         = $TestConfig.InstanceCopy2
+                    DestinationDatabase = $destDbName
+                }
+                [PSCustomObject]@{
+                    Source              = $TestConfig.InstanceCopy1
+                    Database            = $sourceDbName
+                    Destination         = $TestConfig.InstanceCopy2
+                    DestinationDatabase = $destDbName
+                }
+            )
+            $mixedResults = @($mixedRecords | Measure-DbaDiskSpaceRequirement @splatMixed)
+            # Measured against one record of the same shape rather than a literal: records one and
+            # three are identical, so a pipeline that ran both returns exactly twice as many rows,
+            # and one that stopped at the failure returns exactly as many.
+            $baselineResults = @($mixedRecords[0] | Measure-DbaDiskSpaceRequirement @splatMixed)
+            @($baselineResults).Count | Should -BeGreaterThan 0
+            @($mixedResults).Count | Should -Be (@($baselineResults).Count * 2)
+        }
+
         It "Should build the mount point cache only once for the whole pipeline" {
             # The cache is declared in the source's begin block, which runs once for the pipeline.
             # A port that rebuilt it per record would re-query CIM and log this line for records one

@@ -46,7 +46,8 @@
         'Copy-DbaStartupProcedure',
         'Copy-DbaSystemDbUserObject',
         'Export-DbaInstance',
-        'Measure-DbaDiskSpaceRequirement'
+        'Measure-DbaDiskSpaceRequirement',
+        'Test-DbaMigrationConstraint'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

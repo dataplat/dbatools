@@ -74,7 +74,6 @@
         'Set-DbaNetworkCertificate',
         'Start-DbaMigration',
         'Sync-DbaAvailabilityGroup',
-        'Test-DbaMigrationConstraint',
         'Test-DbaReplLatency'
 
         # NEW REPLICATION STUFF

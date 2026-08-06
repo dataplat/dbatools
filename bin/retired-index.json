@@ -3439,6 +3439,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Test-DbaMaxMemory.ps1"
   },
+  "Test-DbaMigrationConstraint": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Test-DbaMigrationConstraint.ps1",
+    "flippedUtc": "2026-08-06T13:25:27Z"
+  },
   "Test-DbaNetworkCertificate": {
     "flippedUtc": "2026-07-10T02:43:36Z",
     "module": "dbatools.computer",
