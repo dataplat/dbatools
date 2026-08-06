@@ -533,16 +533,10 @@ Describe "$ModuleName test file structure" -Tag Compliance {
 
             # A loop that builds test blocks runs while Pester discovers the tests, and its variables
             # no longer exist when the bodies run. The generated tests are either missing entirely or
-            # assert nothing, and in both cases the test report looks healthy.
-            #
-            # InModule.Help.Tests.ps1 is the known exception, and a live one: it loops over
-            # $global:commandsWithHelp, which a BeforeAll fills long after discovery has read it, so
-            # the file produces zero tests in a fresh session - verified, Invoke-Pester reports
-            # TotalCount 0. Rewriting it onto -ForEach turns several thousand help assertions on at
-            # once and is its own piece of work, so it is named here rather than left to fail this
-            # check on every run.
-            $knownLoopExceptions = @("InModule.Help.Tests.ps1")
-            foreach ($loop in $loopNodes | Where-Object { $testFile.Name -notin $knownLoopExceptions }) {
+            # assert nothing, and in both cases the test report looks healthy. InModule.Help.Tests.ps1
+            # was the one file this had to be relaxed for, and it produced zero tests for years - it
+            # is fixed now, so the check applies to every file again.
+            foreach ($loop in $loopNodes) {
                 $blocksInLoop = @($blockNodes | Where-Object {
                         $PSItem.Extent.StartOffset -ge $loop.Extent.StartOffset -and
                         $PSItem.Extent.EndOffset -le $loop.Extent.EndOffset

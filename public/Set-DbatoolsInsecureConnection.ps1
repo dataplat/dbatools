@@ -32,6 +32,8 @@ function Set-DbatoolsInsecureConnection {
 
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection
+
+    .LINK
         https://blog.netnerds.net/2023/03/new-defaults-for-sql-server-connections-encryption-trust-certificate/
 
     .EXAMPLE
