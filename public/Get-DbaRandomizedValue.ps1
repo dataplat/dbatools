@@ -17,7 +17,9 @@ function Get-DbaRandomizedValue {
     .PARAMETER RandomizerType
         Selects the category of realistic fake data to generate using the Bogus library instead of basic SQL data types.
         Use this when you need data that looks realistic for specific domains like names, addresses, or financial information rather than just type-appropriate random values.
-        Available types include Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Name, Person, Phone, Random, Rant, System.
+        Available types include Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Music, Name, Person, Phone, Random, Rant, System and Vehicle.
+        Run Get-DbaRandomizedType for the full list. Only the type and subtype combinations it returns are valid, so a type from one row cannot be paired with a subtype from another.
+        The Static type is listed as well, but it marks a value that the configuration supplies rather than one to generate, so it produces no value here.
 
     .PARAMETER RandomizerSubType
         Defines the specific type of data to generate within a RandomizerType category, such as 'FirstName' under Name or 'ZipCode' under Address.
@@ -48,6 +50,7 @@ function Get-DbaRandomizedValue {
         Applies custom formatting patterns to generated data, such as phone number formats like "(###) ###-####" or ZIP code patterns like "##### ####".
         Use this to ensure generated data matches your application's expected format, making masked data look consistent with production patterns.
         Works with randomizer types that support formatting; use # as placeholders that will be replaced with appropriate random digits or characters.
+        Required by RandomizerSubType "Replace", which also replaces ? with a letter, and by "ReplaceNumbers". Get-DbaRandomizedType reports both in its RequiredParameter column.
 
     .PARAMETER Symbol
         Adds a prefix symbol to generated numeric values, such as "$" for currency amounts or "%" for percentages.
@@ -63,6 +66,7 @@ function Get-DbaRandomizedValue {
         Provides the source data for transformation-based randomization methods, particularly when using the "Shuffle" subtype to rearrange existing values.
         Use this when you want to mask data by scrambling rather than replacing it entirely, preserving some characteristics like character count while making it unrecognizable.
         Required when using RandomizerSubType "Shuffle"; the function will randomize the order of characters while preserving commas and decimal points in their original positions.
+        Also required by RandomizerSubType "ClampString", which shortens the value to between Min and Max characters. Get-DbaRandomizedType reports both in its RequiredParameter column.
 
     .PARAMETER Locale
         Controls the cultural context for generated data, affecting formats for names, addresses, phone numbers, and other locale-specific information.
@@ -237,18 +241,27 @@ function Get-DbaRandomizedValue {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            # Value is a string, so it is an empty string and never $null when it was not passed in.
-            if ($RandomizerSubType.ToLowerInvariant() -eq "shuffle" -and -not $Value) {
-                Stop-Function -Message "Value cannot be empty when using sub type Shuffle" -Continue -Target $RandomizerSubType
+            # The type and the subtype used to be checked against two independent lists, so Name/ZipCode passed
+            # because Name is a type somewhere and ZipCode is a subtype somewhere. The call then failed inside
+            # Bogus with a method not found. Only the combinations in the randomizer types are valid.
+            $randomizerCombination = $script:randomizerTypes.Group | Where-Object { $_.Type -eq $RandomizerType -and $_.SubType -eq $RandomizerSubType } | Select-Object -First 1
+
+            if (-not $randomizerCombination) {
+                Stop-Function -Message "Randomizer type $RandomizerType has no sub type $RandomizerSubType, run Get-DbaRandomizedType to list the valid combinations" -Continue -Target $RandomizerSubType
             }
 
-            # These need an input value or a format to work on, and there is nothing sensible to make up for them.
-            if ($RandomizerSubType.ToLowerInvariant() -eq "clampstring" -and -not $Value) {
-                Stop-Function -Message "Value cannot be empty when using sub type ClampString" -Continue -Target $RandomizerSubType
+            # Some combinations need input that cannot be made up. The randomizer types say which parameter
+            # that is, so the list stays the single place that knows.
+            if ($randomizerCombination.RequiredParameter -eq "Value" -and -not $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type $RandomizerSubType" -Continue -Target $RandomizerSubType
             }
 
-            if ($RandomizerSubType.ToLowerInvariant() -in "replace", "replacenumbers", "replacesymbols" -and -not $Format) {
+            if ($randomizerCombination.RequiredParameter -eq "Format" -and -not $Format) {
                 Stop-Function -Message "Format cannot be empty when using sub type $RandomizerSubType, use something like ###-###" -Continue -Target $RandomizerSubType
+            }
+
+            if ($randomizerCombination.RequiredParameter -eq "StaticValue") {
+                Stop-Function -Message "Randomizer type $RandomizerType does not generate a value, it marks a value that the configuration supplies" -Continue -Target $RandomizerType
             }
         }
 

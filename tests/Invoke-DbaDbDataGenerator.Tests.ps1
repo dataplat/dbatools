@@ -227,5 +227,133 @@ Describe $CommandName -Tag IntegrationTests {
             $personRows.BirthDate.Count | Should -Be 5
             $personRows.BirthDate | Should -BeOfType DateTime
         }
+
+        It "Writes the same dates under a culture that formats them differently" {
+            # DateOfBirth is one of the subtypes Bogus exposes as a property, so it arrives as a DateTime
+            # rather than as a preformatted string. Converting it with ToString() and no culture would build
+            # a SQL literal in the process culture and swap day and month wherever that is not month first.
+            $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+
+            try {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = New-Object System.Globalization.CultureInfo("de-DE")
+
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "truncate table dbo.persondata"
+                $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $personConfigPath
+                $germanRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select BirthDate from dbo.persondata"
+            } finally {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+            }
+
+            $germanRows.BirthDate.Count | Should -Be 5
+        }
+    }
+
+    Context "Config for a column the generator cannot fill" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Random/Replace is a valid combination, but it needs a Format that a data generation
+            # configuration has nowhere to put, so the generator has to reject it up front rather than call
+            # Get-DbaRandomizedValue once per row and insert nothing.
+            $needsFormatConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "people",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "City",
+          "ColumnType": "varchar",
+          "CharacterString": null,
+          "MinValue": null,
+          "MaxValue": 100,
+          "MaskingType": "Random",
+          "SubType": "Replace",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": true
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": false,
+      "Rows": 1
+    }
+  ]
+}
+"@
+            $needsFormatConfigPath = "$backupPath\needsformat.json"
+            Set-Content -Path $needsFormatConfigPath -Value $needsFormatConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Names the parameter the configuration cannot supply" {
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $needsFormatConfigPath
+            ($WarnVar -join " ") | Should -BeLike "*needs a Format*for column City*"
+            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
+        }
+    }
+
+    Context "Config for a table with a unique index" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The values for a unique index are generated before the insert statement is built, so the column
+            # checks have to run before that. While they ran later, an unusable column was invoked anyway and
+            # the failure came from inside the uniqueness loop instead of from the configuration check.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[uniquepeople]([City] [varchar](100) NOT NULL);
+                CREATE UNIQUE INDEX [ix_uniquepeople_city] ON [dbo].[uniquepeople]([City]);"
+
+            $uniqueConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "uniquepeople",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "City",
+          "ColumnType": "varchar",
+          "CharacterString": null,
+          "MinValue": null,
+          "MaxValue": 100,
+          "MaskingType": "Locale",
+          "SubType": "City",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 2
+    }
+  ]
+}
+"@
+            $uniqueConfigPath = "$backupPath\uniqueindex.json"
+            Set-Content -Path $uniqueConfigPath -Value $uniqueConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Rejects the column before generating unique values for it" {
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueConfigPath
+            ($WarnVar -join " ") | Should -BeLike "*Unsupported masking type*Locale*for column City*"
+            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.uniquepeople*"
+        }
+
+        It "Leaves the table empty" {
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select count(*) as c from dbo.uniquepeople").c | Should -Be 0
+        }
     }
 }

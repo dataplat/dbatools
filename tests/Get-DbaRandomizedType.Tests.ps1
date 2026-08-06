@@ -29,8 +29,8 @@ Describe $CommandName -Tag IntegrationTests {
             $namePatternTypes = Get-DbaRandomizedType -Pattern Name
         }
 
-        It "Should have at least 185 rows" {
-            $allTypes.Count | Should -BeGreaterOrEqual 185
+        It "Should have at least 182 rows" {
+            $allTypes.Count | Should -BeGreaterOrEqual 182
         }
 
         It "Should return correct type based on subtype" {

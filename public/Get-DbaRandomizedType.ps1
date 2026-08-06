@@ -48,6 +48,9 @@ function Get-DbaRandomizedType {
         Properties:
         - Type: The main data category for generating test data (e.g., Address, Commerce, Person, Finance, Internet)
         - SubType: The specific data pattern within the main category (e.g., FirstName, LastName, ZipCode, CreditCardNumber)
+        - RequiredParameter: The parameter Get-DbaRandomizedValue needs before this combination can produce a value, or empty when it needs nothing. Random/Replace and Random/ReplaceNumbers need Format, Random/ClampString and Random/Shuffle need Value, and Static/None needs the StaticValue of the config rather than a generated value. Invoke-DbaDbDataGenerator rejects any combination with a RequiredParameter, because its configuration file has nowhere to put one.
+
+        Only the listed Type and SubType combinations are valid. The two columns are not interchangeable, so a Type from one row cannot be paired with a SubType from another: Address/ZipCode is a combination, Name/ZipCode is not.
 
         Results are always sorted by Type and SubType, with duplicate combinations removed using -Unique. Filters specified by -RandomizedType, -RandomizedSubType, or -Pattern parameters only affect which combinations are returned, not the structure of the output objects.
 
@@ -116,7 +119,7 @@ function Get-DbaRandomizedType {
             $types = $types | Where-Object SubType -in $RandomizedSubType
         }
 
-        $types | Select-Object Type, SubType -Unique | Sort-Object Type, SubType
+        $types | Select-Object Type, SubType, RequiredParameter -Unique | Sort-Object Type, SubType
 
     }
 

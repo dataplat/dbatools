@@ -69,6 +69,22 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Combinations of type and sub type" {
+        It "Rejects a sub type that belongs to another type" {
+            # The type and the sub type used to be checked against two independent lists, so this passed
+            # because Name is a type and ZipCode is a sub type, just never together. Bogus then answered with
+            # "[Bogus.DataSets.Name] does not contain a method named ZipCode".
+            $invalidResult = Get-DbaRandomizedValue -RandomizerType Name -RandomizerSubType ZipCode -WarningAction SilentlyContinue -WarningVariable invalidWarning
+
+            $invalidResult | Should -BeNullOrEmpty
+            ($invalidWarning -join " ") | Should -BeLike "*has no sub type ZipCode*"
+        }
+
+        It "Accepts the same sub type under the type it belongs to" {
+            Get-DbaRandomizedValue -RandomizerType Address -RandomizerSubType ZipCode | Should -Not -BeNullOrEmpty
+        }
+    }
+
     Context "Every randomizer type" {
         BeforeAll {
             # A type with no branch in the command returned $null without a word, and one that needs an
@@ -94,9 +110,11 @@ Describe $CommandName -Tag IntegrationTests {
                     WarningAction     = "SilentlyContinue"
                     ErrorAction       = "SilentlyContinue"
                 }
-                $typeValue = Get-DbaRandomizedValue @splatRandomValue
+                # Count the objects instead of testing them for truth. Random/Bool legitimately returns $false
+                # and Random/SByte can return 0, and both are a returned value rather than nothing at all.
+                $typeValue = @(Get-DbaRandomizedValue @splatRandomValue)
 
-                if ($typeValue) {
+                if ($typeValue.Count -gt 0 -and "$($typeValue[0])" -ne "") {
                     $typeResults[$typeKey] = "value"
                 } elseif ($typeWarning) {
                     $typeResults[$typeKey] = "message"

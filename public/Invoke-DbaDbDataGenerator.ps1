@@ -142,16 +142,15 @@ function Invoke-DbaDbDataGenerator {
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-        # These two lists decide which configurations we accept, so they have to predict what
-        # Get-DbaRandomizedValue will accept further down. That command validates its input against the
-        # randomizer types, so we use the same list here, the way Invoke-DbaDbDataMasking always has.
-        # Reflecting over a Bogus.Faker object instead offered subtypes that Get-DbaRandomizedValue then
-        # rejected, hid every subtype that Bogus exposes as a property rather than a method, like
-        # Person.DateOfBirth, and broke whenever a new property was added or was null, as DateTimeReference
-        # is by design (see https://github.com/bchavez/Bogus/issues/612).
-        $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
-        $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object SubType -ExpandProperty SubType -Unique
-        $supportedFakerSubTypes += "Date"
+        # This list decides which configurations we accept, so it has to predict what Get-DbaRandomizedValue
+        # will accept further down. That command validates its input against the randomizer types, so we use
+        # the same list here. Reflecting over a Bogus.Faker object instead offered subtypes that
+        # Get-DbaRandomizedValue then rejected, hid every subtype that Bogus exposes as a property rather than
+        # a method, like Person.DateOfBirth, and broke whenever a new property was added or was null, as
+        # DateTimeReference is by design (see https://github.com/bchavez/Bogus/issues/612).
+        # The whole combination is kept, not two separate lists of types and subtypes, because only the
+        # combinations that appear together are valid.
+        $supportedRandomizerTypes = Get-DbaRandomizedType
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
 
@@ -225,6 +224,55 @@ function Invoke-DbaDbDataGenerator {
 
                     if ($tableobject.Name -notin $db.Tables.Name) {
                         Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
+                    }
+
+                    $tablecolumns = $tableobject.Columns
+
+                    if ($Column) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
+                    }
+
+                    if ($ExcludeColumn) {
+                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
+                    }
+
+                    if (-not $tablecolumns) {
+                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
+                        continue
+                    }
+
+                    # Everything about the columns is checked here, before a single value is generated. The
+                    # insert statement names every column of the table, so skipping one further down left the
+                    # statement with fewer values than columns and SQL Server answered with a syntax error that
+                    # says nothing about the configuration behind it. The unique index values below are
+                    # generated before that statement is built, so this has to come first or an unusable column
+                    # is invoked anyway. The whole table is skipped, because half a row is not useful either.
+                    $unsupportedColumns = @()
+                    foreach ($columnobject in $tablecolumns) {
+                        # The type and the subtype have to be a combination that exists. Checking them against
+                        # two independent lists accepted Name/ZipCode, because Name is a type somewhere and
+                        # ZipCode is a subtype somewhere, and the generating failed later on.
+                        $randomizerCombination = $supportedRandomizerTypes | Where-Object { $PSItem.Type -eq $columnobject.MaskingType -and $PSItem.SubType -eq $columnobject.SubType }
+
+                        if ($columnobject.ColumnType -notin $supportedDataTypes) {
+                            Write-Message -Level Warning -Message "Unsupported data type `"$($columnobject.ColumnType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        } elseif ($columnobject.MaskingType -notin $supportedRandomizerTypes.Type) {
+                            Write-Message -Level Warning -Message "Unsupported masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        } elseif (-not $randomizerCombination) {
+                            Write-Message -Level Warning -Message "Unsupported masking sub type `"$($columnobject.SubType)`" for masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        } elseif ($randomizerCombination.RequiredParameter) {
+                            # A data generation configuration has nowhere to put a Format or a Value, so these
+                            # combinations can be used with Get-DbaRandomizedValue but never from here.
+                            Write-Message -Level Warning -Message "Masking sub type `"$($columnobject.SubType)`" needs a $($randomizerCombination.RequiredParameter) that a data generation configuration cannot supply, for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        }
+                    }
+
+                    if ($unsupportedColumns.Count -gt 0) {
+                        Stop-Function -Message "Skipping table $($tableobject.Schema).$($tableobject.Name) in $($db.Name), no data can be generated for these columns: $($unsupportedColumns -join ", ")" -Target $tableobject -Continue
                     }
 
                     $uniqueValues = @()
@@ -311,44 +359,6 @@ function Invoke-DbaDbDataGenerator {
                     if (-not $server.IsAzure) {
                         $sqlconn.ChangeDatabase($db.Name)
                     }
-                    $tablecolumns = $tableobject.Columns
-
-                    if ($Column) {
-                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
-                    }
-
-                    if ($ExcludeColumn) {
-                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
-                    }
-
-                    if (-not $tablecolumns) {
-                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
-                        continue
-                    }
-
-                    # The columns are checked here and not while the rows are built, because the insert
-                    # statement names every column of the table. Skipping a column further down left the
-                    # statement with fewer values than columns, so it failed with a syntax error that says
-                    # nothing about the configuration that caused it. The whole table is skipped instead,
-                    # since half a row of generated data is not useful either.
-                    $unsupportedColumns = @()
-                    foreach ($columnobject in $tablecolumns) {
-                        if ($columnobject.ColumnType -notin $supportedDataTypes) {
-                            Write-Message -Level Warning -Message "Unsupported data type `"$($columnobject.ColumnType)`" for column $($columnobject.Name)"
-                            $unsupportedColumns += $columnobject.Name
-                        } elseif ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
-                            Write-Message -Level Warning -Message "Unsupported masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
-                            $unsupportedColumns += $columnobject.Name
-                        } elseif ($columnobject.SubType -notin $supportedFakerSubTypes) {
-                            Write-Message -Level Warning -Message "Unsupported masking sub type `"$($columnobject.SubType)`" for column $($columnobject.Name)"
-                            $unsupportedColumns += $columnobject.Name
-                        }
-                    }
-
-                    if ($unsupportedColumns.Count -gt 0) {
-                        Stop-Function -Message "Skipping table $($tableobject.Schema).$($tableobject.Name) in $($db.Name), no data can be generated for these columns: $($unsupportedColumns -join ", ")" -Target $tableobject -Continue
-                    }
-
                     $insertQuery = ""
 
                     if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
@@ -471,6 +481,15 @@ function Invoke-DbaDbDataGenerator {
                                         Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
                                     }
 
+                                }
+
+                                # Most subtypes return a date as a string that is already formatted for SQL
+                                # Server, but the ones Bogus exposes as a property, like Person.DateOfBirth,
+                                # come back as a DateTime. Converting that further down with ToString() and no
+                                # culture writes whatever the process culture uses, which swaps day and month
+                                # everywhere but the invariant culture.
+                                if ($columnValue -is [datetime]) {
+                                    $columnValue = $columnValue.ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                                 }
 
                                 if ($null -eq $columnValue -and $columnobject.Nullable -eq $true) {
