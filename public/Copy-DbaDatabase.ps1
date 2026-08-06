@@ -234,6 +234,11 @@ function Copy-DbaDatabase {
         PS C:\> Copy-DbaDatabase -Source sqlcs -Destination sqlcs -Database t -DetachAttach -NewName t_copy -Reattach
 
         Copies database t from sqlcs to the same server (sqlcs) using the detach/copy/attach method. The new database will be named t_copy and the original database will be reattached.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2014a -Database db1, db2 | Copy-DbaDatabase -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -NewName $rename
+
+        Copies db1 and db2 to sqlcluster under their original names when $rename is an empty string. An empty or whitespace -NewName is treated as not specified, so a script can pass the same variable unconditionally and only set it when a single database should be renamed.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
