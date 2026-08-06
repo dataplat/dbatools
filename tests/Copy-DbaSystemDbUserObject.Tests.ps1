@@ -237,7 +237,11 @@ AS
         }
 
         It "Should report the schema copied successfully" {
-            $schemaRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq $objSchema })
+            # The schema branch puts the SMO Schema OBJECT in Name, not its .Name string, so the
+            # cell stringifies through NamedSmoObject.ToString() and arrives bracket-quoted. Every
+            # other branch builds Name as a string and this one does not; asserting the bare name
+            # here reds against a copy that in fact succeeded.
+            $schemaRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[$objSchema]" })
             $schemaRow.Count | Should -Be 1
             $schemaRow[0].Status | Should -Be "Successful"
             $schemaRow[0].Type | Should -Be "User schema in master"

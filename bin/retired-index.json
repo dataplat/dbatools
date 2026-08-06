@@ -339,6 +339,11 @@
     "retiredPath": "private/retired/Copy-DbaStartupProcedure.ps1",
     "flippedUtc": "2026-08-06T10:45:32Z"
   },
+  "Copy-DbaSystemDbUserObject": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaSystemDbUserObject.ps1",
+    "flippedUtc": "2026-08-06T10:57:32Z"
+  },
   "Copy-DbaXESession": {
     "flippedUtc": "2026-07-18T15:20:54Z",
     "module": "dbatools.xevents",
