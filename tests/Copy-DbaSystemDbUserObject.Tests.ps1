@@ -21,6 +21,27 @@ Describe $CommandName -Tag UnitTests {
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+
+        # Source and Destination carry ValidateNotNullOrEmpty on top of Mandatory. Mandatory alone
+        # already rejects these arguments, so only the FullyQualifiedErrorId tells the two apart:
+        # the validator raises plain ParameterArgumentValidationError, while the binder's own
+        # refusal raises ParameterArgumentValidationErrorNullNotAllowed or ...EmptyArrayNotAllowed.
+        # Comparing the whole id would not work - it ends in the function name before the flip and
+        # the cmdlet type name after it - so the leading token is the assertion.
+        It "Should reject <Name> with a validation error rather than a binder refusal" -ForEach @(
+            @{ Name = "a null Source"; SplatBinding = @{ Source = $null; Destination = "srv" } }
+            @{ Name = "an empty Destination array"; SplatBinding = @{ Source = "srv"; Destination = @() } }
+            @{ Name = "a null element in Destination"; SplatBinding = @{ Source = "srv"; Destination = @($null) } }
+        ) {
+            $caught = $null
+            try {
+                Copy-DbaSystemDbUserObject @SplatBinding -WhatIf
+            } catch {
+                $caught = $PSItem
+            }
+            $caught | Should -Not -BeNullOrEmpty
+            ($caught.FullyQualifiedErrorId -split ",")[0] | Should -Be "ParameterArgumentValidationError"
+        }
     }
 }
 
@@ -304,7 +325,14 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
         It "Should emit no migration status rows" {
             # The whole discriminator between the two branches: the default path emits one
             # MigrationObject per object, the Classic bulk path emits none.
-            @($classicResults | Where-Object { $PSItem.PSObject.Properties.Name -contains "Status" }).Count | Should -Be 0
+            #
+            # Nulls are filtered rather than counted. The Classic path runs each scripted statement
+            # through the Server.Query type extension, which ends in $dataSet.Tables[0]; a DDL batch
+            # comes back with zero tables, so that index yields $null and PowerShell puts it on the
+            # pipeline. @($null).Count is 1, so a bare count assertion here reds on an artifact that
+            # is identical either side of the flip. Filtering keeps the leg strict about real output
+            # - any object at all fails it - without pinning that upstream wart.
+            @($classicResults | Where-Object { $null -ne $PSItem }).Count | Should -Be 0
         }
     }
 
@@ -325,7 +353,7 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
             # if the name is taken, which makes the create the exclusive step. Otherwise a peer
             # window - or anything else on this box - could win the race between the write and the
             # run and decide what this shell executes.
-            $probeRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString('n'))"
+            $probeRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("n"))"
             $null = New-Item -Path $probeRoot -ItemType Directory -ErrorAction Stop
             $probePath = Join-Path -Path $probeRoot -ChildPath "resolve.ps1"
 
