@@ -248,7 +248,7 @@ function Get-ComprehensiveErrorMessage {
             $errorMessages += "StdErr: $($TestResult.StandardError)"
         }
 
-        # Check Block.ErrorRecord for container-level errors (common in Pester 6)
+        # Check Block.ErrorRecord for container-level errors
         if ($TestResult.Block -and $TestResult.Block.ErrorRecord) {
             foreach ($blockError in $TestResult.Block.ErrorRecord) {
                 if ($blockError.Exception) {
@@ -329,7 +329,6 @@ function Export-TestFailureSummary {
 
     $failedTests = @()
 
-    # Pester 6 format
     $failedTests = $PesterRun.Tests | Where-Object { $PSItem.Passed -eq $false } | ForEach-Object {
         # Extract line number from stack trace
         $lineNumber = $null
