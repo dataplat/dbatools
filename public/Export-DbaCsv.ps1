@@ -93,6 +93,12 @@ function Export-DbaCsv {
     .PARAMETER NoClobber
         Prevents overwriting an existing file. Returns an error if the file already exists.
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
