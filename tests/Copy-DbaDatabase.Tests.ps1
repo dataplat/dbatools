@@ -511,6 +511,14 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Multi-database copies regression tests for issue #10512" {
+        BeforeDiscovery {
+            # Both spellings the help documents as "treated as not specified" (#10512)
+            $blankNewNameCases = @(
+                @{ NewNameLabel = "an empty"; NewNameValue = "" }
+                @{ NewNameLabel = "a whitespace"; NewNameValue = "   " }
+            )
+        }
+
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -605,25 +613,30 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
         }
 
-        It "Ignores an empty NewName and copies piped databases under their original names" {
-            # The reporter's pipeline passes -NewName unconditionally and leaves it empty when
-            # no rename is wanted (#10512). An empty name must mean "no rename", never an empty
+        It "Ignores <NewNameLabel> NewName and copies piped databases under their original names" -ForEach $blankNewNameCases {
+            # The reporter's pipeline passes -NewName unconditionally and leaves it blank when
+            # no rename is wanted (#10512). A blank name must mean "no rename", never an empty
             # -Database filter that lets post-restore commands sweep the whole destination.
             $ownerBefore = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner
-            $splatCopyEmptyName = @{
+            $splatCopyBlankName = @{
                 Source        = $TestConfig.InstanceCopy1
                 Destination   = $TestConfig.InstanceCopy2
                 BackupRestore = $true
                 SharedPath    = $NetworkPath
-                NewName       = ""
+                NewName       = $NewNameValue
             }
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyEmptyName
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyBlankName
             ($results | Measure-Object).Count | Should -Be 2
             $results.Status | Should -Be @("Successful", "Successful")
             ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
             ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
             (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $ownerBefore
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
+            $splatRemoveBlankCopies = @{
+                SqlInstance     = $TestConfig.InstanceCopy2
+                Database        = $pipeDb1, $pipeDb2
+                EnableException = $true
+            }
+            $null = Remove-DbaDatabase @splatRemoveBlankCopies
         }
 
         It "Rejects NewName with piped databases before any copy happens" {
