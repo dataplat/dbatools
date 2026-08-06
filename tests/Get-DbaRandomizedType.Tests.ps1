@@ -29,8 +29,8 @@ Describe $CommandName -Tag IntegrationTests {
             $namePatternTypes = Get-DbaRandomizedType -Pattern Name
         }
 
-        It "Should have at least 205 rows" {
-            $allTypes.Count | Should -BeGreaterOrEqual 205
+        It "Should have at least 182 rows" {
+            $allTypes.Count | Should -BeGreaterOrEqual 182
         }
 
         It "Should return correct type based on subtype" {
@@ -38,7 +38,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return values based on pattern" {
-            $namePatternTypes.Count | Should -BeGreaterOrEqual 26
+            $namePatternTypes.Count | Should -BeGreaterOrEqual 22
+        }
+    }
+
+    Context "Every type is backed by Bogus" {
+        BeforeAll {
+            # The types are a static list, so they drift apart from Bogus whenever a dbatools.library bump
+            # brings a version that removed something. A type that Bogus no longer has is accepted by
+            # Test-DbaDbDataMaskingConfig and Test-DbaDbDataGeneratorConfig and then generates nothing at all,
+            # so we check the list against the library instead of waiting for a user to hit it.
+            $faker = New-Object Bogus.Faker("en")
+
+            # Static is not a Bogus data set. It is the marker for a composite item with a fixed value.
+            $missingFromBogus = foreach ($randomizerType in (Get-DbaRandomizedType | Where-Object Type -ne Static)) {
+                $dataSet = $faker.$($randomizerType.Type)
+                if ($null -eq $dataSet -or -not ($dataSet | Get-Member -Name $randomizerType.SubType)) {
+                    "$($randomizerType.Type)/$($randomizerType.SubType)"
+                }
+            }
+        }
+
+        It "Has no type or subtype that Bogus removed" {
+            $missingFromBogus | Should -BeNullOrEmpty
         }
     }
 }

@@ -17,7 +17,9 @@ function Get-DbaRandomizedValue {
     .PARAMETER RandomizerType
         Selects the category of realistic fake data to generate using the Bogus library instead of basic SQL data types.
         Use this when you need data that looks realistic for specific domains like names, addresses, or financial information rather than just type-appropriate random values.
-        Available types include Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Name, Person, Phone, Random, Rant, System.
+        Available types include Address, Commerce, Company, Database, Date, Finance, Hacker, Hashids, Image, Internet, Lorem, Music, Name, Person, Phone, Random, Rant, System and Vehicle.
+        Run Get-DbaRandomizedType for the full list. Only the type and subtype combinations it returns are valid, so a type from one row cannot be paired with a subtype from another.
+        The Static type is listed as well, but it marks a value that the configuration supplies rather than one to generate, so it produces no value here.
 
     .PARAMETER RandomizerSubType
         Defines the specific type of data to generate within a RandomizerType category, such as 'FirstName' under Name or 'ZipCode' under Address.
@@ -48,6 +50,7 @@ function Get-DbaRandomizedValue {
         Applies custom formatting patterns to generated data, such as phone number formats like "(###) ###-####" or ZIP code patterns like "##### ####".
         Use this to ensure generated data matches your application's expected format, making masked data look consistent with production patterns.
         Works with randomizer types that support formatting; use # as placeholders that will be replaced with appropriate random digits or characters.
+        Required by RandomizerSubType "Replace", which also replaces ? with a letter, and by "ReplaceNumbers". Get-DbaRandomizedType reports both in its RequiredParameter column.
 
     .PARAMETER Symbol
         Adds a prefix symbol to generated numeric values, such as "$" for currency amounts or "%" for percentages.
@@ -63,6 +66,7 @@ function Get-DbaRandomizedValue {
         Provides the source data for transformation-based randomization methods, particularly when using the "Shuffle" subtype to rearrange existing values.
         Use this when you want to mask data by scrambling rather than replacing it entirely, preserving some characteristics like character count while making it unrecognizable.
         Required when using RandomizerSubType "Shuffle"; the function will randomize the order of characters while preserving commas and decimal points in their original positions.
+        Also required by RandomizerSubType "ClampString", which shortens the value to between Min and Max characters. Get-DbaRandomizedType reports both in its RequiredParameter column.
 
     .PARAMETER Locale
         Controls the cultural context for generated data, affecting formats for names, addresses, phone numbers, and other locale-specific information.
@@ -193,9 +197,11 @@ function Get-DbaRandomizedValue {
             $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
         }
 
-        if (-not $script:uniquesubtypes) {
-            $script:uniquesubtypes = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
-        }
+        # This one depends on the subtype that was passed in, so unlike the lists below it must not be cached
+        # in the module scope. It used to be, which meant that the first subtype resolved in a session decided
+        # the type for every later call, and "-RandomizerSubType FirstName" followed by "-RandomizerSubType
+        # ZipCode" asked the Name data set for a zip code.
+        $uniqueSubType = $script:randomizerTypes.Group | Where-Object SubType -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
 
         if (-not $script:uniquerandomizertypes) {
             $script:uniquerandomizertypes = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
@@ -215,7 +221,7 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $script:uniquesubtypes
+            $RandomizerType = $uniqueSubType
         }
 
         if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
@@ -235,8 +241,27 @@ function Get-DbaRandomizedValue {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
-                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
+            # The type and the subtype used to be checked against two independent lists, so Name/ZipCode passed
+            # because Name is a type somewhere and ZipCode is a subtype somewhere. The call then failed inside
+            # Bogus with a method not found. Only the combinations in the randomizer types are valid.
+            $randomizerCombination = $script:randomizerTypes.Group | Where-Object { $_.Type -eq $RandomizerType -and $_.SubType -eq $RandomizerSubType } | Select-Object -First 1
+
+            if (-not $randomizerCombination) {
+                Stop-Function -Message "Randomizer type $RandomizerType has no sub type $RandomizerSubType, run Get-DbaRandomizedType to list the valid combinations" -Continue -Target $RandomizerSubType
+            }
+
+            # Some combinations need input that cannot be made up. The randomizer types say which parameter
+            # that is, so the list stays the single place that knows.
+            if ($randomizerCombination.RequiredParameter -eq "Value" -and -not $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type $RandomizerSubType" -Continue -Target $RandomizerSubType
+            }
+
+            if ($randomizerCombination.RequiredParameter -eq "Format" -and -not $Format) {
+                Stop-Function -Message "Format cannot be empty when using sub type $RandomizerSubType, use something like ###-###" -Continue -Target $RandomizerSubType
+            }
+
+            if ($randomizerCombination.RequiredParameter -eq "StaticValue") {
+                Stop-Function -Message "Randomizer type $RandomizerType does not generate a value, it marks a value that the configuration supplies" -Continue -Target $RandomizerType
             }
         }
 
@@ -422,7 +447,7 @@ function Get-DbaRandomizedValue {
                         $formatString = "yyyy-MM-dd HH:mm:ss.fffffff"
                     }
 
-                    if ($randSubType -eq 'between') {
+                    if ($randSubType -in "between", "betweenoffset") {
 
                         if (-not $Min) {
                             Stop-Function -Message "Please set the minimum value for the date" -Continue -Target $Min
@@ -434,10 +459,12 @@ function Get-DbaRandomizedValue {
 
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
+                        } elseif ($randSubType -eq "betweenoffset") {
+                            ($script:faker.Date.BetweenOffset([datetimeoffset]$Min, [datetimeoffset]$Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
                             ($script:faker.Date.Between($Min, $Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
-                    } elseif ($randSubType -eq 'past') {
+                    } elseif ($randSubType -eq "past") {
                         if ($Max) {
                             if ($Min) {
                                 $yearsToGoBack = [math]::round((([datetime]$Max - [datetime]$Min).Days / 365), 0)
@@ -594,14 +621,37 @@ function Get-DbaRandomizedValue {
                         $script:faker.Phone.PhoneNumber()
                     }
                 }
-                'random' {
-                    if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
+                "random" {
+                    if ($randSubType -eq "sbyte") {
+                        # The default minimum and maximum of 1 and 255 do not fit in an sbyte.
+                        if ($Min -lt -128) {
+                            $Min = -128
+                        }
+
+                        if ($Max -gt 127) {
+                            $Max = 127
+                        }
+                    }
+
+                    if ($randSubType -in "byte", "char", "decimal", "double", "even", "float", "int", "long", "number", "odd", "sbyte", "short", "uint", "ulong", "ushort") {
                         $script:faker.Random.$RandomizerSubType($Min, $Max)
-                    } elseif ($randSubType -eq 'bytes') {
+                    } elseif ($randSubType -eq "bytes") {
                         $script:faker.Random.Bytes($Max)
-                    } elseif ($randSubType -in 'string', 'string2') {
+                    } elseif ($randSubType -in "string", "string2") {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
-                    } elseif ($randSubType -eq 'shuffle') {
+                    } elseif ($randSubType -eq "alphanumeric") {
+                        $script:faker.Random.AlphaNumeric([int]$Max)
+                    } elseif ($randSubType -eq "digits") {
+                        $script:faker.Random.Digits([int]$Max) -join ""
+                    } elseif ($randSubType -eq "wordsarray") {
+                        $script:faker.Random.WordsArray([int]$Max) -join " "
+                    } elseif ($randSubType -eq "clampstring") {
+                        $script:faker.Random.ClampString($Value, [int]$Min, [int]$Max)
+                    } elseif ($randSubType -eq "replace") {
+                        $script:faker.Random.Replace($Format)
+                    } elseif ($randSubType -eq "replacenumbers") {
+                        $script:faker.Random.ReplaceNumbers($Format)
+                    } elseif ($randSubType -eq "shuffle") {
                         $commaIndex = $value.IndexOf(",")
                         $dotIndex = $value.IndexOf(".")
 
@@ -622,15 +672,41 @@ function Get-DbaRandomizedValue {
                         $script:faker.Random.$RandomizerSubType()
                     }
                 }
-                'rant' {
-                    if ($randSubType -eq 'reviews') {
+                "rant" {
+                    # Both branches used to test for "reviews", so Review returned nothing at all and Reviews
+                    # returned a single review.
+                    if ($randSubType -eq "review") {
                         $script:faker.Rant.Review($script:faker.Commerce.Product())
-                    } elseif ($randSubType -eq 'reviews') {
-                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max)
+                    } elseif ($randSubType -eq "reviews") {
+                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max) -join " "
                     }
                 }
-                'system' {
+                "system" {
                     $script:faker.System.$RandomizerSubType()
+                }
+                "hashids" {
+                    # The encoders take one or more numbers, the hex ones take a hex string. We make up the
+                    # input when the caller did not pass a value, because the point here is a random hash.
+                    if ($randSubType -in "encodehex", "encrypthex") {
+                        if ($Value) {
+                            $script:faker.Hashids.EncodeHex($Value)
+                        } else {
+                            $script:faker.Hashids.EncodeHex($script:faker.Random.Hexadecimal(24, ""))
+                        }
+                    } elseif ($randSubType -eq "encodelong") {
+                        $script:faker.Hashids.EncodeLong($script:faker.Random.Long(1, 1000000))
+                    } else {
+                        $script:faker.Hashids.Encode($script:faker.Random.Int(1, 1000000))
+                    }
+                }
+                "music" {
+                    $script:faker.Music.$RandomizerSubType()
+                }
+                "vehicle" {
+                    $script:faker.Vehicle.$RandomizerSubType()
+                }
+                default {
+                    Stop-Function -Message "Randomizer type $RandomizerType is not supported, it has no generator" -Continue -Target $RandomizerType
                 }
             }
         }

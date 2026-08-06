@@ -275,7 +275,10 @@ function New-DbaDbDataGeneratorConfig {
                                 $MaxValue = 32767
                             }
                             "smalldatetime" {
-                                $subType = "Date"
+                                # This only set the subtype, so it stayed on the default masking type and
+                                # produced Random/Date, which is not a combination that exists.
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "tinyint" {
