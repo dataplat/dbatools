@@ -142,10 +142,15 @@ function Invoke-DbaDbDataGenerator {
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-        $supportedFakerMaskingTypes = ($script:faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
-        # The value of the property DateTimeReference is currently $null, which causes the next line to throw an exception.
-        # We have to contact the developer of Bogus to solve the issue.
-        $supportedFakerSubTypes = ($script:faker | Get-Member -MemberType Property | Where-Object Name -ne DateTimeReference) | ForEach-Object { ($script:faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
+        # These two lists decide which configurations we accept, so they have to predict what
+        # Get-DbaRandomizedValue will accept further down. That command validates its input against the
+        # randomizer types, so we use the same list here, the way Invoke-DbaDbDataMasking always has.
+        # Reflecting over a Bogus.Faker object instead offered subtypes that Get-DbaRandomizedValue then
+        # rejected, hid every subtype that Bogus exposes as a property rather than a method, like
+        # Person.DateOfBirth, and broke whenever a new property was added or was null, as DateTimeReference
+        # is by design (see https://github.com/bchavez/Bogus/issues/612).
+        $supportedFakerMaskingTypes = Get-DbaRandomizedType | Select-Object Type -ExpandProperty Type -Unique
+        $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object SubType -ExpandProperty SubType -Unique
         $supportedFakerSubTypes += "Date"
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
