@@ -285,7 +285,7 @@ A `BeforeDiscovery` block inside the `Describe` is the tidier home for the same 
 
 Pester reads a test file twice. First it **discovers** the tests: it runs the file top to bottom, evaluates every `Describe`, `Context` and `It` *header*, and builds the tree. Only then does it **run** the tests: the `BeforeAll`, `BeforeEach`, `It` and `AfterAll` *bodies*.
 
-Anything a header needs - `-Skip:`, `-ForEach`, the test name - has to exist at discovery time. Anything a body needs has to exist at run time. The two do not share variables, and this is the single biggest source of confusion left over from Pester v4.
+Anything a header needs - `-Skip:`, `-ForEach`, the test name - has to exist at discovery time. Anything a body needs has to exist at run time. The two do not share variables, and this is the single biggest source of confusion when writing a test file.
 
 `BeforeDiscovery` is the block for discovery-time code. It keeps that code out of the `Describe` body while still running early enough:
 

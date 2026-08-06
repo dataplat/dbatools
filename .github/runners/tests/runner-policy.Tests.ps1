@@ -344,7 +344,7 @@ Describe "Get-DesiredRunnerPools demand-driven sizing" {
 
 Describe "Get-PoolJobDemandFromJobs" {
     BeforeAll {
-        # Defined in BeforeAll, not the Describe body: Pester 5 runs the Describe body
+        # Defined in BeforeAll, not the Describe body: Pester runs the Describe body
         # during discovery, so a function declared there does not exist when the It
         # blocks execute. This matches the helper idiom in the top-level BeforeAll.
         function New-TestJob {
