@@ -329,14 +329,31 @@ Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage
 # Run with full coverage including dependencies
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage -DependencyCoverage
 
-# Run with script analyzer check
+# Run with script analyzer check on the test file and the command
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer
+
+# Run the repository wide style checks that CI enforces
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Compliance
 
 # Run multiple tests matching a pattern
 Invoke-ManualPester -Path "*Backup*" -TestIntegration
 
 # Show less output
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Show None
+```
+
+### Before opening a pull request
+
+`Invoke-ManualPester -Path <command>` runs only that command's test file. Two of the checks CI runs
+belong to no command's test file at all, so a green run of it says nothing about them:
+
+| Switch | What it adds |
+|---|---|
+| `-ScriptAnalyzer` | Checks the test file and the command under test against [tests/PSScriptAnalyzerRules.psd1](../tests/PSScriptAnalyzerRules.psd1), the repository style profile. |
+| `-Compliance` | Runs the `Compliance` tagged tests from [tests/dbatools.Tests.ps1](../tests/dbatools.Tests.ps1) over the whole repository: no UTF-8 BOM, no tabs, no trailing spaces, no ScriptAnalyzer errors. Takes about half a minute. |
+
+```powershell
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer -Compliance
 ```
 
 ### Method 2: Direct Pester Invocation
@@ -568,6 +585,7 @@ Invoke-ManualPester -Path "*Backup*" -TestIntegration
 | [tests/constants.local.ps1.example](../tests/constants.local.ps1.example) | Template for local config |
 | [private/testing/Get-TestConfig.ps1](../private/testing/Get-TestConfig.ps1) | Loads test configuration |
 | [private/testing/Invoke-ManualPester.ps1](../private/testing/Invoke-ManualPester.ps1) | Local test runner helper |
+| [private/testing/Get-TestInstanceUsage.ps1](../private/testing/Get-TestInstanceUsage.ps1) | Reports which `$TestConfig` instances a test file uses, and therefore which CI lane it runs in |
 | [tests/pester.groups.ps1](../tests/pester.groups.ps1) | Scenario definitions |
 | [tests/appveyor.common.ps1](../tests/appveyor.common.ps1) | CI test discovery logic |
 | [tests/CLAUDE.md](../tests/CLAUDE.md) | Ongoing test policy and Pester 6 standards |

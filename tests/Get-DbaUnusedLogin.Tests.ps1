@@ -73,6 +73,10 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $mappedDbName, $ownedDbName, $offlineDbName -ErrorAction SilentlyContinue
         # The pipeline test drops its own login, so this cleanup is deliberately best effort.
         $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $unusedLoginName, $mappedLoginName, $roleLoginName, $ownerLoginName, $pipeLoginName -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+
+        # $PSDefaultParameterValues is the object from $TestConfig.Defaults, so leaving the setting
+        # on would carry EnableException into whatever runs next in the same session.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "When looking for unused logins on an instance" {

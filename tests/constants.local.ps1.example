@@ -12,6 +12,12 @@ $config['InstanceCopy2'] = "localhost\SQLInstance2"
 $config['InstanceHadr'] = "localhost\SQLInstance1"
 $config['InstanceRestart'] = "localhost\SQLInstance1"
 
+# Where the tests write backups, scripts and other temporary files. It defaults to C:\Temp, which
+# has to exist - several tests fail with nothing pointing at the cause if it does not. When the
+# instance under test is remote, this has to be a share that both the instance and this machine can
+# write to, because the instance writes the backups itself.
+$config['Temp'] = "C:\Temp"
+
 # SQL Server credentials
 # Replace 'YourPassword' with your actual password and 'sa' with your username if different
 $securePassword = ConvertTo-SecureString "YourPassword" -AsPlainText -Force
