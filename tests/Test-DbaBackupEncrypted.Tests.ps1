@@ -44,13 +44,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
         It "should detect encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $splat = @{
+            $splatEncryption = @{
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd
                 BackupPath              = $backupPath
                 EnableException         = $true
             }
-            $null = $alldbs | Start-DbaDbEncryption @splat
+            $null = $alldbs | Start-DbaDbEncryption @splatEncryption
             $backups = $alldbs | Select-Object -First 1 | Backup-DbaDatabase -Path $backupPath
             $results = $backups | Test-DbaBackupEncrypted -SqlInstance $TestConfig.InstanceSingle
             $results.Encrypted | Should -Be $true

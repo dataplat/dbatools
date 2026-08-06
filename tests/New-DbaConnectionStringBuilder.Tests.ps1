@@ -63,11 +63,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Build a ConnectionStringBuilder by parameters" {
         BeforeAll {
-            $results = New-DbaConnectionStringBuilder `
-                -DataSource "localhost,1433" `
-                -InitialCatalog "AlwaysEncryptedSample" `
-                -UserName "sa" `
-                -Password "alwaysB3Encrypt1ng"
+            $splatBuilder = @{
+                DataSource     = "localhost,1433"
+                InitialCatalog = "AlwaysEncryptedSample"
+                UserName       = "sa"
+                Password       = "alwaysB3Encrypt1ng"
+            }
+            $results = New-DbaConnectionStringBuilder @splatBuilder
         }
         It "Should be a connection string builder" {
             $results.GetType() | Should -Be Microsoft.Data.SqlClient.SqlConnectionStringBuilder

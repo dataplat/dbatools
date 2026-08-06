@@ -44,6 +44,13 @@ This allows you to manually test commands against actual SQL Server instances be
 | `InstanceHadr` | Availability groups, mirroring, log shipping. | HADR |
 | `InstanceRestart` | Anything that restarts the service or changes service-level configuration: network certificates, TCP ports, extended protection, filestream, service accounts. | RESTART |
 
+`Get-TestInstanceUsage` (private, available after importing the psm1) reports the same autodetection, so you can see which lane a test file lands in without reading `pester.groups.ps1`:
+
+```powershell
+Get-TestInstanceUsage -Command Get-DbaDb*
+Get-TestInstanceUsage | Group-Object -Property InstanceList -NoElement | Sort-Object -Property Count -Descending
+```
+
 Two consequences worth knowing before you write the test:
 
 - **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. For new or changed command behavior, the required real-boundary coverage must also run on GitHub Actions or an Azure test runner; provision the needed boundary instead of omitting the regression test.
@@ -86,7 +93,7 @@ param(
 )
 ```
 
-The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header because `Invoke-ManualPester` uses it to select the Pester 6 execution path. Converting the headers and runner together is separate behavior-changing work.
+The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header: `#Requires` reads it as "5.0 or newer", so it is satisfied by 6.0.0. `Invoke-ManualPester` refuses to run a test file that does not carry it, because dbatools has no Pester 4 tests left and a missing header is a mistake in the file.
 
 **Critical Requirements:**
 - Use a **static command name** as a string literal (e.g., "Get-DbaDatabase")

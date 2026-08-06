@@ -375,6 +375,388 @@ Describe "$ModuleName Function Name" -Tag Compliance {
     }
 }
 
+Describe "$ModuleName test file structure" -Tag Compliance {
+    <#
+    Static checks over tests\*.Tests.ps1, so that a test file that cannot do its job is caught here
+    rather than by someone eventually noticing.
+
+    Several of these are not style. A loop that emits It blocks, a -ForEach fed from a BeforeAll and
+    an assertion that is never piped to Should all produce a green test report while testing nothing
+    at all - Update-DbaInstance.Tests.ps1 carried 44 such tests for years.
+
+    The findings are collected per rule rather than asserted per file. The per-file form produces one
+    test result for every rule and every file, which is 14000 results and two and a half minutes; the
+    failure message still names every file it found.
+
+    The checks tagged Goal are the ones the tree does not meet yet, so they are skipped unless
+    $env:DbatoolsTestFileGoals is set. To work on that backlog:
+        $env:DbatoolsTestFileGoals = 1
+        Invoke-Pester -Path .\tests\dbatools.Tests.ps1 -TagFilter Compliance
+    #>
+    BeforeDiscovery {
+        # -Skip: is read while the tests are discovered, so the switch cannot come from a BeforeAll.
+        $includeGoals = [bool]$env:DbatoolsTestFileGoals
+    }
+
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        # The only files in tests\ that are not the test of a single command, so the only ones that
+        # cannot follow the layout. Everything else - including the tests of private functions like
+        # Stop-Function - can and does.
+        $notACommandTest = @(
+            "appveyor.common.Tests.ps1",
+            "appveyor.watchdog.Tests.ps1",
+            "dbatools.Tests.ps1",
+            "InModule.Commands.Tests.ps1",
+            "InModule.Help.Tests.ps1"
+        )
+
+        $parseErrorFiles = @()
+        $paramBlockFiles = @()
+        $topLevelFiles = @()
+        $noUnitTestFiles = @()
+        $loopBuiltTests = @()
+        $unbalancedEnableException = @()
+        $discardedComparisons = @()
+        $forEachNotFromDiscovery = @()
+        $stringSkips = @()
+        $quotedCommandNames = @()
+        $oldInstanceNames = @()
+        $backtickContinuations = @()
+        $plainSplats = @()
+        $missingEnableException = @()
+        $mocksWithoutModuleName = @()
+        $integrationWithoutCleanup = @()
+        $tempWithoutRandom = @()
+        $underscoreVariables = @()
+        $bareSkips = @()
+
+        $testFiles = Get-ChildItem -Path "$ModulePath\tests\*.Tests.ps1" | Sort-Object -Property Name
+
+        foreach ($testFile in $testFiles) {
+            $isCommandTest = $testFile.Name -notin $notACommandTest
+            # Get-DbaFoo.Tests.ps1 tests Get-DbaFoo, and so does the supplementary
+            # Get-DbaFoo.Something.Tests.ps1 - which is why the command name is the first segment.
+            $commandName = $testFile.Name -replace "^([^.]+)(.+)?\.Tests\.ps1$", "`$1"
+            $isSupplementary = $testFile.Name -notmatch "^[^.]+\.Tests\.ps1$"
+
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($testFile.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors) {
+                $parseErrorFiles += "$($testFile.Name): $($errors.Count) parse errors, first at line $($errors[0].Extent.StartLineNumber)"
+                continue
+            }
+
+            # One walk over the tree rather than one per rule. The walk is what this Describe spends
+            # its time on, so the nodes are collected once and then filtered in memory.
+            $allNodes = $ast.FindAll({
+                    $args[0] -is [System.Management.Automation.Language.CommandAst] -or
+                    $args[0] -is [System.Management.Automation.Language.LoopStatementAst]
+                }, $true)
+            $commandNodes = @($allNodes | Where-Object { $PSItem -is [System.Management.Automation.Language.CommandAst] })
+            $loopNodes = @($allNodes | Where-Object { $PSItem -is [System.Management.Automation.Language.LoopStatementAst] })
+
+            $describeNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "Describe" })
+            $blockNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -in "Describe", "Context", "It" })
+            $itNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "It" })
+            $mockNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "Mock" })
+            $inModuleScopeNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "InModuleScope" })
+            $beforeDiscoveryNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "BeforeDiscovery" })
+
+            # Returns every tag of a block, handling -Tag and its alias -Tags, the -Tag:Value form,
+            # and both a single value and an array literal. Reading only "-Tag <bareword>" missed
+            # "-Tags IntegrationTests" and "-Tag UnitTests, 'Something'", and a block missed here
+            # silently skipped the checks below instead of running them.
+            $tagsOf = {
+                param($CommandAst)
+                $elements = $CommandAst.CommandElements
+                for ($i = 0; $i -lt $elements.Count; $i++) {
+                    if ($elements[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
+                    if ($elements[$i].ParameterName -notin "Tag", "Tags") { continue }
+                    # -Tag:Value binds the value to the parameter itself, -Tag Value puts it next
+                    $value = $elements[$i].Argument
+                    if (-not $value -and $i -lt $elements.Count - 1) { $value = $elements[$i + 1] }
+                    if ($value -is [System.Management.Automation.Language.ArrayLiteralAst]) {
+                        return @($value.Elements.Value)
+                    }
+                    return @($value.Value)
+                }
+            }
+
+            $unitTestBlocks = @($describeNodes | Where-Object { "UnitTests" -in (& $tagsOf $PSItem) })
+            $integrationTestBlocks = @($describeNodes | Where-Object { "IntegrationTests" -in (& $tagsOf $PSItem) })
+
+            if ($isCommandTest) {
+                $paramBlockParameters = $ast.ParamBlock.Parameters
+                $paramNames = $paramBlockParameters.Name.VariablePath.UserPath
+                $declaredCommandName = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "CommandName" }).DefaultValue.Value
+                $declaredModuleName = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "ModuleName" }).DefaultValue.Value
+                $declaredDefaults = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "PSDefaultParameterValues" }).DefaultValue.Extent.Text
+                # A supplementary file may name either the command or its own basename, both of
+                # which are unambiguous - Connect-DbaInstance.WindowsSspi.Tests.ps1 tests
+                # Connect-DbaInstance, appveyor.watchdog.Tests.ps1 tests appveyor.watchdog.
+                $allowedCommandNames = @($commandName, ($testFile.Name -replace "\.Tests\.ps1$", ""))
+                if ($paramBlockParameters.Count -ne 3 -or
+                    "ModuleName" -notin $paramNames -or
+                    "CommandName" -notin $paramNames -or
+                    "PSDefaultParameterValues" -notin $paramNames -or
+                    $declaredModuleName -ne "dbatools" -or
+                    $declaredCommandName -notin $allowedCommandNames -or
+                    $declaredDefaults -ne "`$TestConfig.Defaults") {
+                    $paramBlockFiles += $testFile.Name
+                }
+
+                # No dot sourcing: a private function does not need it, because a checkout has no
+                # dbatools.dat and the psm1 then exports every function, private ones included.
+                $allowedTopLevel = @("Describe", "InModuleScope", "BeforeDiscovery")
+                $topLevelStatements = $ast.EndBlock.Statements
+                $notACommand = @($topLevelStatements | Where-Object { $PSItem.PipelineElements[0] -isnot [System.Management.Automation.Language.CommandAst] })
+                # Note the ForEach-Object: the CommandElements of all statements flatten into a
+                # single list, so indexing [0] into that returns the first element of the first
+                # command and nothing else, and a top level Write-Host passes.
+                $topLevelNames = $topLevelStatements.PipelineElements |
+                    Where-Object { $PSItem -is [System.Management.Automation.Language.CommandAst] } |
+                    ForEach-Object { $PSItem.CommandElements[0].Value }
+                $otherCommands = @($topLevelNames | Where-Object { $PSItem -notin $allowedTopLevel })
+                if ($notACommand -or $otherCommands) {
+                    $topLevelFiles += "$($testFile.Name): $(@($notACommand).Count) statements that are not commands, $(@($otherCommands | Sort-Object -Unique) -join ", ")"
+                }
+
+                # A supplementary file adds integration coverage to a command whose unit tests live
+                # in its own file, so it does not need a UnitTests Describe of its own.
+                if (-not $unitTestBlocks -and -not $isSupplementary) {
+                    $noUnitTestFiles += $testFile.Name
+                }
+            }
+
+            # A loop that builds test blocks runs while Pester discovers the tests, and its variables
+            # no longer exist when the bodies run. The generated tests are either missing entirely or
+            # assert nothing, and in both cases the test report looks healthy.
+            #
+            # InModule.Help.Tests.ps1 is the known exception, and a live one: it loops over
+            # $global:commandsWithHelp, which a BeforeAll fills long after discovery has read it, so
+            # the file produces zero tests in a fresh session - verified, Invoke-Pester reports
+            # TotalCount 0. Rewriting it onto -ForEach turns several thousand help assertions on at
+            # once and is its own piece of work, so it is named here rather than left to fail this
+            # check on every run.
+            $knownLoopExceptions = @("InModule.Help.Tests.ps1")
+            foreach ($loop in $loopNodes | Where-Object { $testFile.Name -notin $knownLoopExceptions }) {
+                $blocksInLoop = @($blockNodes | Where-Object {
+                        $PSItem.Extent.StartOffset -ge $loop.Extent.StartOffset -and
+                        $PSItem.Extent.EndOffset -le $loop.Extent.EndOffset
+                    })
+                if ($blocksInLoop) {
+                    $loopBuiltTests += "$($testFile.Name):$($loop.Extent.StartLineNumber)"
+                }
+            }
+
+            # A statement inside an It that computes a comparison and throws the result away. It
+            # reads like an assertion, it runs, and it can never fail. Only comparisons are flagged,
+            # a bare method call is usually a deliberate side effect.
+            foreach ($itNode in $itNodes) {
+                $body = $itNode.CommandElements | Where-Object { $PSItem -is [System.Management.Automation.Language.ScriptBlockExpressionAst] } | Select-Object -First 1
+                if (-not $body) { continue }
+                foreach ($statement in $body.ScriptBlock.EndBlock.Statements) {
+                    if ($statement -isnot [System.Management.Automation.Language.PipelineAst]) { continue }
+                    if ($statement.PipelineElements.Count -ne 1) { continue }
+                    $element = $statement.PipelineElements[0]
+                    if ($element -isnot [System.Management.Automation.Language.CommandExpressionAst]) { continue }
+                    if ($element.Expression -is [System.Management.Automation.Language.BinaryExpressionAst]) {
+                        $discardedComparisons += "$($testFile.Name):$($statement.Extent.StartLineNumber): $($statement.Extent.Text)"
+                    }
+                }
+            }
+
+            # -ForEach is read at discovery, so its cases have to be built in a BeforeDiscovery. Fed
+            # from a BeforeAll the variable is still empty at discovery and the block produces no
+            # tests at all - the same failure as a foreach loop around It, spelled differently.
+            $discoveryVariables = @()
+            foreach ($beforeDiscovery in $beforeDiscoveryNodes) {
+                $discoveryVariables += $beforeDiscovery.FindAll({ $args[0] -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true) |
+                    ForEach-Object { $PSItem.Left.Extent.Text.TrimStart("`$") }
+            }
+            foreach ($block in $blockNodes) {
+                $elements = $block.CommandElements
+                for ($i = 0; $i -lt $elements.Count; $i++) {
+                    if ($elements[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
+                    if ($elements[$i].ParameterName -ne "ForEach") { continue }
+                    $value = $elements[$i].Argument
+                    if (-not $value -and $i -lt $elements.Count - 1) { $value = $elements[$i + 1] }
+                    if ($value -is [System.Management.Automation.Language.VariableExpressionAst] -and $value.VariablePath.UserPath -notin $discoveryVariables) {
+                        $forEachNotFromDiscovery += "$($testFile.Name):$($block.Extent.StartLineNumber): $($block.CommandElements[0].Value) $($block.CommandElements[1].Extent.Text)"
+                    }
+                }
+            }
+
+            # Blocks switched off with a bare -Skip, so no condition can ever switch them back on.
+            # Not wrong in itself, but nothing makes it visible afterwards, and Update-DbaInstance
+            # hid 69 unit tests behind one for two years.
+            foreach ($block in $blockNodes) {
+                $bareSkip = $block.CommandElements | Where-Object {
+                    $PSItem -is [System.Management.Automation.Language.CommandParameterAst] -and
+                    $PSItem.ParameterName -eq "Skip" -and -not $PSItem.Argument
+                }
+                if ($bareSkip) {
+                    $bareSkips += "$($testFile.Name):$($block.Extent.StartLineNumber): $($block.CommandElements[0].Value) $($block.CommandElements[1].Extent.Text)"
+                }
+            }
+
+            # A Mock without -ModuleName does not apply to the code inside the module, so the command
+            # under test runs unmocked while the test looks like it is isolated. Only mocks inside an
+            # InModuleScope are already in the right scope.
+            foreach ($mockNode in $mockNodes) {
+                $hasModuleName = $mockNode.CommandElements | Where-Object {
+                    $PSItem -is [System.Management.Automation.Language.CommandParameterAst] -and $PSItem.ParameterName -eq "ModuleName"
+                }
+                if ($hasModuleName) { continue }
+                $insideInModuleScope = $inModuleScopeNodes | Where-Object {
+                    $mockNode.Extent.StartOffset -ge $PSItem.Extent.StartOffset -and
+                    $mockNode.Extent.EndOffset -le $PSItem.Extent.EndOffset
+                }
+                if (-not $insideInModuleScope) {
+                    $mocksWithoutModuleName += "$($testFile.Name):$($mockNode.Extent.StartLineNumber)"
+                }
+            }
+
+            # An integration Describe that creates objects on the instance but has no AfterAll
+            # anywhere. A heuristic - some of these clean up in a way this cannot see - so it is a
+            # Goal and only reports.
+            foreach ($describeNode in $integrationTestBlocks) {
+                if ($describeNode.Extent.Text -match "New-Dba|Backup-Dba|New-Item" -and $describeNode.Extent.Text -notmatch "AfterAll") {
+                    $integrationWithoutCleanup += "$($testFile.Name):$($describeNode.Extent.StartLineNumber)"
+                }
+            }
+
+            $content = Get-Content -Path $testFile.FullName
+
+            # The setup of the integration tests has to run with EnableException so that the test
+            # fails loudly if the setup fails, instead of testing against a broken state. Where the
+            # two statements are placed is deliberately not tested - both of these are in use:
+            #   BeforeAll { enable ... remove } and AfterAll { enable ... }
+            #   BeforeAll { enable ... }        and AfterAll { ... remove }
+            # What always has to hold is that every enable is matched by a remove, because
+            # $PSDefaultParameterValues is the object from $TestConfig.Defaults and an enable left
+            # behind carries into whatever runs next in the same session.
+            $enableCount = ($content -match [regex]::Escape("`$PSDefaultParameterValues[`"*-Dba*:EnableException`"] = `$true")).Count
+            $removeCount = ($content -match [regex]::Escape("`$PSDefaultParameterValues.Remove(`"*-Dba*:EnableException`")")).Count
+            if ($integrationTestBlocks) {
+                if ($enableCount -ne $removeCount) {
+                    $unbalancedEnableException += "$($testFile.Name): $enableCount enabled, $removeCount removed"
+                }
+                if ($enableCount -eq 0) {
+                    $missingEnableException += $testFile.Name
+                }
+            }
+
+            # Every one of these is wrapped in @() because -match against $null returns the boolean
+            # $false rather than an empty array, and $false is not empty - the check would then fail
+            # on every file instead of none.
+            if (@($content -match "-Skip:\s*`"(true|false)`"")) {
+                $stringSkips += $testFile.Name
+            }
+            # The dollar signs below are escaped twice on purpose: once for PowerShell, so that the
+            # string is not expanded, and once for the regex, where a bare $ is the end of line
+            # anchor and would make the pattern match nothing.
+            if (@($content -match "^\s*(Describe|Context)\s+`"\`$CommandName`"")) {
+                $quotedCommandNames += $testFile.Name
+            }
+            if (@($content -match "\`$TestConfig\.instance[123]\b")) {
+                $oldInstanceNames += $testFile.Name
+            }
+            if (@($content -match "``\s*`$")) {
+                $backtickContinuations += $testFile.Name
+            }
+            if (@($content -match "^\s*\`$splat\s*=")) {
+                $plainSplats += $testFile.Name
+            }
+            if (@($content -match "\`$_\.")) {
+                $underscoreVariables += $testFile.Name
+            }
+            if (@($content -match [regex]::Escape("`$TestConfig.Temp")) -and -not @($content -match "Get-Random")) {
+                $tempWithoutRandom += $testFile.Name
+            }
+        }
+    }
+
+    It "every test file can be parsed" {
+        $parseErrorFiles | Should -BeNullOrEmpty
+    }
+
+    It "every test file has the expected param block" {
+        $paramBlockFiles | Should -BeNullOrEmpty -Because "the header in tests\CLAUDE.md is mandatory"
+    }
+
+    It "every test file has only Describe, InModuleScope and BeforeDiscovery at the top level" {
+        $topLevelFiles | Should -BeNullOrEmpty
+    }
+
+    It "every test file has at least one Describe block for the unit tests" {
+        $noUnitTestFiles | Should -BeNullOrEmpty
+    }
+
+    It "no test file builds test blocks in a loop" {
+        $loopBuiltTests | Should -BeNullOrEmpty -Because "a loop around It runs at discovery and its variables are gone when the body runs - use -ForEach with cases from BeforeDiscovery"
+    }
+
+    It "no It block computes a comparison and throws it away" {
+        $discardedComparisons | Should -BeNullOrEmpty -Because "an assertion has to be piped to Should, otherwise it runs and can never fail"
+    }
+
+    It "every -ForEach case list is built in a BeforeDiscovery" {
+        $forEachNotFromDiscovery | Should -BeNullOrEmpty -Because "-ForEach is read at discovery, so a case list built in BeforeAll is still empty and the block produces no tests"
+    }
+
+    It "every EnableException that is set is removed again" {
+        $unbalancedEnableException | Should -BeNullOrEmpty -Because "an enable left behind carries into whatever runs next in the same session"
+    }
+
+    It "no test file uses a string for -Skip" {
+        $stringSkips | Should -BeNullOrEmpty -Because "a non-empty string is always true, so -Skip:`"false`" skips the test"
+    }
+
+    It "no test file quotes the command name" {
+        $quotedCommandNames | Should -BeNullOrEmpty -Because "Describe `$CommandName does not need quoting"
+    }
+
+    It "no test file uses the retired TestConfig instance names" {
+        $oldInstanceNames | Should -BeNullOrEmpty -Because "instance1, instance2 and instance3 no longer exist, see the instance table in tests\CLAUDE.md"
+    }
+
+    It "no test file uses backtick line continuation" {
+        $backtickContinuations | Should -BeNullOrEmpty -Because "backticks are banned, use splatting or a natural line break"
+    }
+
+    It "every splat is named after its purpose" {
+        $plainSplats | Should -BeNullOrEmpty -Because "a plain `$splat collides across scopes, the guide asks for `$splat<Purpose>"
+    }
+
+    It "every integration test enables EnableException for its setup" -Tag Goal -Skip:(-not $includeGoals) {
+        $missingEnableException | Should -BeNullOrEmpty
+    }
+
+    It "every Mock outside of InModuleScope uses ModuleName" -Tag Goal -Skip:(-not $includeGoals) {
+        $mocksWithoutModuleName | Should -BeNullOrEmpty -Because "a Mock without -ModuleName never applies to the code inside the module"
+    }
+
+    It "every integration test that creates objects cleans up after itself" -Tag Goal -Skip:(-not $includeGoals) {
+        $integrationWithoutCleanup | Should -BeNullOrEmpty -Because "a Describe that creates objects on the instance needs an AfterAll that removes them"
+    }
+
+    It "every temporary path is made unique with Get-Random" -Tag Goal -Skip:(-not $includeGoals) {
+        $tempWithoutRandom | Should -BeNullOrEmpty -Because "two test files sharing a temp path collide when they run in the same lab"
+    }
+
+    It "every test file uses PSItem rather than the underscore variable" -Tag Goal -Skip:(-not $includeGoals) {
+        $underscoreVariables | Should -BeNullOrEmpty -Because "the guide asks for `$PSItem except where compatibility needs `$_"
+    }
+
+    It "no block is switched off with a bare -Skip" -Tag Goal -Skip:(-not $includeGoals) {
+        $bareSkips | Should -BeNullOrEmpty -Because "a block skipped without a condition can never run again"
+    }
+}
+
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
 <#
 Describe "Manifest" {
