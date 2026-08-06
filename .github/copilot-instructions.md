@@ -223,7 +223,7 @@ dbatools/
 ### Configuration Files
 - **CLAUDE.md** - Single source for repository-wide PowerShell style and workflow conventions
 - **tests/CLAUDE.md** - Single source for ongoing test policy and Pester 6 rules
-- **appveyor.yml** - AppVeyor CI (Windows testing with SQL Server 2008-2017)
+- **.github/workflows/ci-azure.yml** - the test suite of record (Windows testing on self-hosted Azure runners, SQL Server 2017/2019/2022)
 - **.github/workflows/integration-tests.yml** - GitHub Actions (cross-platform testing)
 
 ## CI/CD Validation Pipeline
@@ -249,14 +249,17 @@ dbatools/
 4. Installs SqlPackage
 5. Runs platform-specific test suite (`.github/scripts/gh-actions.ps1` or `gh-winactions.ps1`)
 
-### AppVeyor CI (appveyor.yml)
+### ci-azure (.github/workflows/ci-azure.yml)
 
-Runs on every push, 5 scenarios in parallel:
-- **2008R2:** SQL Server 2008 R2 Express
-- **2016:** SQL Server 2016 Developer
-- **2016_2017:** SQL Server 2016 + 2017 (for Copy-* commands)
-- **service_restarts:** Service restart testing
-- **default:** 2008 R2 + 2016 combo
+The test suite of record. Runs on pushes to `development` and on PRs targeting it, on self-hosted Azure VMSS runners, with these scenarios in parallel:
+- **SINGLE:** SQL Server 2022, split into five parts
+- **MULTI:** SQL Server 2022 + 2017, for tests needing two instances
+- **COPY:** SQL Server 2017 + 2022, for `Copy-*` commands
+- **HADR:** SQL Server 2019 with availability groups configured
+- **RESTART:** SQL Server 2019, for service restart testing
+- **default:** no instance, for tests that don't need a running server
+
+It drives the `tests/appveyor.*.ps1` build scripts, which kept their name when the project moved off AppVeyor; `tests/gha.shim.ps1` supplies the AppVeyor build API they call. There is no `appveyor.yml` in the repository.
 
 **Magic commit commands:**
 - Add `(do Get-DbaFoo)` to commit message to run only `Get-DbaFoo` tests

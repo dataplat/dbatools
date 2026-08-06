@@ -5,4 +5,6 @@
 /.github/CODEOWNERS @potatoqualitee @niphlod @andreasjordan
 /.github/copilot-instructions.md @potatoqualitee @niphlod @andreasjordan
 /.github/dependabot.yml @potatoqualitee @niphlod @andreasjordan
-/appveyor.yml @potatoqualitee @niphlod @andreasjordan
+/tests/appveyor.*.ps1 @potatoqualitee @niphlod @andreasjordan
+/tests/gha.shim.ps1 @potatoqualitee @niphlod @andreasjordan
+/tests/pester.groups.ps1 @potatoqualitee @niphlod @andreasjordan
