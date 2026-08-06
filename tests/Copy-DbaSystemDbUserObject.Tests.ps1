@@ -75,8 +75,10 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
     }
 
     AfterAll {
+        # Fail loudly. These fixtures live in master on a shared instance, so cleanup that failed
+        # quietly would leave them behind for the next suite to copy and miscount.
         foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
-            $null = Invoke-DbaQuery -SqlInstance $instance @splatCleanup -EnableException:$false
+            $null = Invoke-DbaQuery -SqlInstance $instance @splatCleanup -EnableException
         }
     }
 
@@ -317,7 +319,15 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
             # cannot work in a dev tree because the satellites are not on PSModulePath.
             $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
             $shellPath = (Get-Process -Id $PID).Path
-            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+
+            # The probe is written and then executed as a script, so it gets a directory of its
+            # own rather than a guessable name in shared temp: New-Item -ItemType Directory fails
+            # if the name is taken, which makes the create the exclusive step. Otherwise a peer
+            # window - or anything else on this box - could win the race between the write and the
+            # run and decide what this shell executes.
+            $probeRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString('n'))"
+            $null = New-Item -Path $probeRoot -ItemType Directory -ErrorAction Stop
+            $probePath = Join-Path -Path $probeRoot -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
             # entry rather than silently winning; the count is what proves it is not there. The
@@ -339,7 +349,7 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
         }
 
         AfterAll {
-            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+            Remove-Item -Path $probeRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
