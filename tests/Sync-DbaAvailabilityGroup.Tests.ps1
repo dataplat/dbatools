@@ -374,24 +374,36 @@ Describe $CommandName -Tag IntegrationTests {
         $agSecondaryNames = @()
         $primaryInstance = $TestConfig.InstanceSingle
 
-        try {
-            $candidates = @($TestConfig.InstanceSingle, $TestConfig.InstanceHadr, $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Where-Object { $PSItem } | Select-Object -Unique
-            foreach ($candidate in $candidates) {
+        # Each candidate is tried inside its own try, because one unreachable instance must not
+        # end the search for the others. The secondaries are connected too: the sync copies TO
+        # them, so a group whose replicas are listed but not reachable would fail the live legs
+        # rather than skip them, which is the failure this discovery exists to avoid.
+        $candidates = @($TestConfig.InstanceSingle, $TestConfig.InstanceHadr, $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Where-Object { $PSItem } | Select-Object -Unique
+        foreach ($candidate in $candidates) {
+            try {
                 $candidateServer = Connect-DbaInstance -SqlInstance $candidate
                 if (-not $candidateServer.IsHadrEnabled) {
                     continue
                 }
+
                 $candidateAg = Get-DbaAvailabilityGroup -SqlInstance $candidateServer | Where-Object { $PSItem.AvailabilityReplicas.Count -ge 2 } | Select-Object -First 1
-                if ($candidateAg) {
-                    $primaryInstance = $candidate
-                    $agObject = $candidateAg
-                    $agSecondaryNames = @(($candidateAg.AvailabilityReplicas | Where-Object Name -ne $candidateServer.DomainInstanceName).Name | Select-Object -Unique)
-                    $agReady = $true
-                    break
+                if (-not $candidateAg) {
+                    continue
                 }
+
+                $candidateSecondaries = @(($candidateAg.AvailabilityReplicas | Where-Object Name -ne $candidateServer.DomainInstanceName).Name | Select-Object -Unique)
+                foreach ($candidateSecondary in $candidateSecondaries) {
+                    $null = Connect-DbaInstance -SqlInstance $candidateSecondary
+                }
+
+                $primaryInstance = $candidate
+                $agObject = $candidateAg
+                $agSecondaryNames = $candidateSecondaries
+                $agReady = $true
+                break
+            } catch {
+                $agSkipReason = "availability-group discovery failed on $($candidate): $($PSItem.Exception.Message)"
             }
-        } catch {
-            $agSkipReason = "availability-group discovery failed: $($PSItem.Exception.Message)"
         }
 
         # Every object type the command knows about except Logins. The live legs below copy exactly
