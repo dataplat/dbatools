@@ -391,8 +391,14 @@ Describe $CommandName -Tag IntegrationTests {
         )
 
         $loginPassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $primaryInstance -Login $syncLogin -SecurePassword $loginPassword
-        $null = New-DbaLogin -SqlInstance $primaryInstance -Login $dupeLogin -SecurePassword $loginPassword
+        foreach ($fixtureLogin in @($syncLogin, $dupeLogin)) {
+            $splatNewLogin = @{
+                SqlInstance    = $primaryInstance
+                Login          = $fixtureLogin
+                SecurePassword = $loginPassword
+            }
+            $null = New-DbaLogin @splatNewLogin
+        }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
