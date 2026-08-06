@@ -326,6 +326,29 @@ function Invoke-DbaDbDataGenerator {
                         continue
                     }
 
+                    # The columns are checked here and not while the rows are built, because the insert
+                    # statement names every column of the table. Skipping a column further down left the
+                    # statement with fewer values than columns, so it failed with a syntax error that says
+                    # nothing about the configuration that caused it. The whole table is skipped instead,
+                    # since half a row of generated data is not useful either.
+                    $unsupportedColumns = @()
+                    foreach ($columnobject in $tablecolumns) {
+                        if ($columnobject.ColumnType -notin $supportedDataTypes) {
+                            Write-Message -Level Warning -Message "Unsupported data type `"$($columnobject.ColumnType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        } elseif ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
+                            Write-Message -Level Warning -Message "Unsupported masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        } elseif ($columnobject.SubType -notin $supportedFakerSubTypes) {
+                            Write-Message -Level Warning -Message "Unsupported masking sub type `"$($columnobject.SubType)`" for column $($columnobject.Name)"
+                            $unsupportedColumns += $columnobject.Name
+                        }
+                    }
+
+                    if ($unsupportedColumns.Count -gt 0) {
+                        Stop-Function -Message "Skipping table $($tableobject.Schema).$($tableobject.Name) in $($db.Name), no data can be generated for these columns: $($unsupportedColumns -join ", ")" -Target $tableobject -Continue
+                    }
+
                     $insertQuery = ""
 
                     if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
@@ -380,17 +403,8 @@ function Invoke-DbaDbDataGenerator {
 
                             foreach ($columnobject in $tablecolumns) {
 
-                                if ($columnobject.ColumnType -notin $supportedDataTypes) {
-                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
-                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                if ($columnobject.SubType -notin $supportedFakerSubTypes) {
-                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
+                                # The data type, the masking type and the subtype of every column were checked
+                                # before the insert statement was built.
 
                                 # make sure max is good
                                 if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {

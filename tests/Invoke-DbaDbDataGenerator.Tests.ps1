@@ -155,6 +155,14 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkSubTypeConfigPath
             ($WarnVar -join " ") | Should -BeLike "*Unsupported masking sub type*ContainsKey*for column City*"
         }
+
+        It "Skips the table instead of running an insert it cannot fill" {
+            # The insert statement names every column of the table, so skipping a single column further down
+            # left it with fewer values than columns and SQL Server answered with a syntax error.
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath
+            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
+            ($WarnVar -join " ") | Should -Not -BeLike "*Incorrect syntax*"
+        }
     }
 
     Context "Config that uses a subtype Bogus exposes as a property" {
