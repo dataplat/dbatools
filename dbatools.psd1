@@ -72,7 +72,6 @@
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
         'Set-DbaNetworkCertificate',
-        'Sync-DbaAvailabilityGroup',
         'Test-DbaReplLatency'
 
         # NEW REPLICATION STUFF

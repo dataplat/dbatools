@@ -48,7 +48,8 @@
         'Export-DbaInstance',
         'Measure-DbaDiskSpaceRequirement',
         'Test-DbaMigrationConstraint',
-        'Start-DbaMigration'
+        'Start-DbaMigration',
+        'Sync-DbaAvailabilityGroup'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()

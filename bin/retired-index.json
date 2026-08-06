@@ -3264,6 +3264,11 @@
     "retiredPath": "private/retired/Suspend-DbaAgDbDataMovement.ps1",
     "flippedUtc": "2026-07-19T10:18:16Z"
   },
+  "Sync-DbaAvailabilityGroup": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Sync-DbaAvailabilityGroup.ps1",
+    "flippedUtc": "2026-08-06T20:14:57Z"
+  },
   "Sync-DbaLoginPassword": {
     "flippedUtc": "2026-07-18T13:22:52Z",
     "module": "dbatools.security",
