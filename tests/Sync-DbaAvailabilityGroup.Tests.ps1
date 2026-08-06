@@ -362,14 +362,37 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $syncLogin = "dbatoolsci_syncag_$random"
         $dupeLogin = "dbatoolsci_syncdupe_$random"
-        $primaryInstance = $TestConfig.InstanceSingle
 
         # The sync is only meaningful against an availability group that actually has a secondary
         # replica, so the group is discovered rather than created: a single-replica group would
-        # leave the sync with nothing to copy to and the leg would prove nothing.
-        $agObject = Get-DbaAvailabilityGroup -SqlInstance $primaryInstance | Select-Object -First 1
-        $primaryServer = Connect-DbaInstance -SqlInstance $primaryInstance
-        $agSecondaryNames = @(($agObject.AvailabilityReplicas | Where-Object Name -ne $primaryServer.DomainInstanceName).Name | Select-Object -Unique)
+        # leave the sync with nothing to copy to and the leg would prove nothing. Where no reachable
+        # instance hosts one, the AG legs report a skip reason instead of failing setup for the
+        # guard legs too, which need no HADR at all.
+        $agReady = $false
+        $agSkipReason = "no reachable instance hosts a >=2-replica availability group"
+        $agObject = $null
+        $agSecondaryNames = @()
+        $primaryInstance = $TestConfig.InstanceSingle
+
+        try {
+            $candidates = @($TestConfig.InstanceSingle, $TestConfig.InstanceHadr, $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) | Where-Object { $PSItem } | Select-Object -Unique
+            foreach ($candidate in $candidates) {
+                $candidateServer = Connect-DbaInstance -SqlInstance $candidate
+                if (-not $candidateServer.IsHadrEnabled) {
+                    continue
+                }
+                $candidateAg = Get-DbaAvailabilityGroup -SqlInstance $candidateServer | Where-Object { $PSItem.AvailabilityReplicas.Count -ge 2 } | Select-Object -First 1
+                if ($candidateAg) {
+                    $primaryInstance = $candidate
+                    $agObject = $candidateAg
+                    $agSecondaryNames = @(($candidateAg.AvailabilityReplicas | Where-Object Name -ne $candidateServer.DomainInstanceName).Name | Select-Object -Unique)
+                    $agReady = $true
+                    break
+                }
+            }
+        } catch {
+            $agSkipReason = "availability-group discovery failed: $($PSItem.Exception.Message)"
+        }
 
         # Every object type the command knows about except Logins. The live legs below copy exactly
         # one named login and nothing else, so a shared lab instance cannot be reconfigured by them.
@@ -390,14 +413,18 @@ Describe $CommandName -Tag IntegrationTests {
             "SystemTriggers"
         )
 
-        $loginPassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        foreach ($fixtureLogin in @($syncLogin, $dupeLogin)) {
-            $splatNewLogin = @{
-                SqlInstance    = $primaryInstance
-                Login          = $fixtureLogin
-                SecurePassword = $loginPassword
+        # Generated per run rather than a shared literal, so a cleanup that fails cannot leave a
+        # login behind whose password is written down in the repo.
+        $loginPassword = ConvertTo-SecureString -String "$([System.Guid]::NewGuid())aA1!" -AsPlainText -Force
+        if ($agReady) {
+            foreach ($fixtureLogin in @($syncLogin, $dupeLogin)) {
+                $splatNewLogin = @{
+                    SqlInstance    = $primaryInstance
+                    Login          = $fixtureLogin
+                    SecurePassword = $loginPassword
+                }
+                $null = New-DbaLogin @splatNewLogin
             }
-            $null = New-DbaLogin @splatNewLogin
         }
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -408,12 +435,14 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $splatRemoveLogins = @{
-            SqlInstance = @($primaryInstance) + $agSecondaryNames
-            Login       = @($syncLogin, $dupeLogin)
-            ErrorAction = "SilentlyContinue"
+        if ($agReady) {
+            $splatRemoveLogins = @{
+                SqlInstance = @($primaryInstance) + $agSecondaryNames
+                Login       = @($syncLogin, $dupeLogin)
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Get-DbaLogin @splatRemoveLogins | Remove-DbaLogin -ErrorAction SilentlyContinue
         }
-        $null = Get-DbaLogin @splatRemoveLogins | Remove-DbaLogin -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -452,6 +481,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Syncing a login to the secondary replicas" {
         It "Does not create the login on any secondary under -WhatIf" {
+            if (-not $agReady) {
+                Set-ItResult -Skipped -Because $agSkipReason
+                return
+            }
             $splatWhatIfSync = @{
                 Primary           = $primaryInstance
                 AvailabilityGroup = $agObject.Name
@@ -465,6 +498,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Creates the login on every secondary when -WhatIf is not supplied" {
+            if (-not $agReady) {
+                Set-ItResult -Skipped -Because $agSkipReason
+                return
+            }
             $splatRealSync = @{
                 Primary           = $primaryInstance
                 AvailabilityGroup = $agObject.Name
@@ -481,6 +518,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When the same availability group is piped in twice" {
         It "Syncs one combination rather than one per record" {
+            if (-not $agReady) {
+                Set-ItResult -Skipped -Because $agSkipReason
+                return
+            }
             $splatPipedSync = @{
                 Login   = $dupeLogin
                 Exclude = $excludeAllButLogins
