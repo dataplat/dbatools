@@ -57,13 +57,11 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Validating Database Input" {
         BeforeAll {
-            # The command does not respect -WarningAction SilentlyContinue inside of this pester test - still don't know why, retest after the next Pester upgrade
-            $systemWarnVar = $null
-            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database "master" -WarningVariable systemWarnVar 3> $null
+            Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database "master" -WarningAction SilentlyContinue
         }
 
         It "Should not allow you to corrupt system databases." {
-            $systemWarnVar -match "may not corrupt system databases" | Should -Be $true
+            $WarnVar | Should -Match "may not corrupt system databases"
         }
 
         It "Should fail if more than one database is specified" {
