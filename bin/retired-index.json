@@ -324,6 +324,11 @@
     "retiredPath": "private/retired/Copy-DbaServerRole.ps1",
     "flippedUtc": "2026-08-05T09:08:16Z"
   },
+  "Copy-DbaSpConfigure": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Copy-DbaSpConfigure.ps1",
+    "flippedUtc": "2026-08-06T10:37:14Z"
+  },
   "Copy-DbaSsisCatalog": {
     "module": "dbatools.ssis",
     "retiredPath": "private/retired/Copy-DbaSsisCatalog.ps1",
