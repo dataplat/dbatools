@@ -585,6 +585,29 @@ Describe $CommandName -Tag IntegrationTests {
         $results.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
     }
 
+    It "Runs begin and end once across a two-record pipe" {
+        # The per-instance work is function-scoped in the source, but the elapsed-time report lives
+        # in end and the scripting options object is built in begin. Counting the verbose lines is
+        # the only external evidence of how many times each block ran: the elapsed-time line has to
+        # appear once no matter how many instances are piped, and the per-instance line once per
+        # record - a record silently skipped or an end block folded into the record loop moves one
+        # of these counts.
+        $splatTwoRecord = @{
+            Path    = $exportDir
+            Exclude = @("AgentServer", "Audits", "AvailabilityGroups", "BackupDevices", "CentralManagementServer", "Credentials", "CustomErrors", "DatabaseMail", "Databases", "DbCertificates", "Endpoints", "ExtendedEvents", "LinkedServers", "Logins", "PolicyManagement", "ReplicationSettings", "ResourceGovernor", "ServerAuditSpecifications", "ServerRoles", "SysDbUserObjects", "SystemTriggers", "OleDbProvider")
+            Force   = $true
+            Verbose = $true
+        }
+        $twoRecordOutput = @(@($testServer, $testServer) | Export-DbaInstance @splatTwoRecord 4>&1)
+
+        $twoRecordVerbose = @($twoRecordOutput | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] } | ForEach-Object { $_.Message })
+        $results = @($twoRecordOutput | Where-Object { $_ -is [System.IO.FileInfo] })
+
+        @($twoRecordVerbose -match "^Total Elapsed time: ").Count | Should -Be 1
+        @($twoRecordVerbose -match "^Exporting SQL Server Configuration$").Count | Should -Be 2
+        $results.Count | Should -BeGreaterThan 0
+    }
+
     It "Export sp_configure values" {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
