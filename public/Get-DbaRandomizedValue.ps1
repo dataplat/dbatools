@@ -193,9 +193,11 @@ function Get-DbaRandomizedValue {
             $script:randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv") | Group-Object { $_.Type }
         }
 
-        if (-not $script:uniquesubtypes) {
-            $script:uniquesubtypes = $script:randomizerTypes.Group | Where-Object Subtype -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
-        }
+        # This one depends on the subtype that was passed in, so unlike the lists below it must not be cached
+        # in the module scope. It used to be, which meant that the first subtype resolved in a session decided
+        # the type for every later call, and "-RandomizerSubType FirstName" followed by "-RandomizerSubType
+        # ZipCode" asked the Name data set for a zip code.
+        $uniqueSubType = $script:randomizerTypes.Group | Where-Object SubType -eq $RandomizerSubType | Select-Object Type -ExpandProperty Type -First 1
 
         if (-not $script:uniquerandomizertypes) {
             $script:uniquerandomizertypes = ($script:randomizerTypes.Group.Type | Select-Object -Unique)
@@ -215,7 +217,7 @@ function Get-DbaRandomizedValue {
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
             Stop-Function -Message "Please enter a sub type" -Continue
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
-            $RandomizerType = $script:uniquesubtypes
+            $RandomizerType = $uniqueSubType
         }
 
         if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
@@ -235,8 +237,18 @@ function Get-DbaRandomizedValue {
                 Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
             }
 
-            if ($RandomizerSubType.ToLowerInvariant() -eq 'shuffle' -and $null -eq $Value) {
-                Stop-Function -Message "Value cannot be empty when using sub type 'Shuffle'" -Continue -Target $RandomizerSubType
+            # Value is a string, so it is an empty string and never $null when it was not passed in.
+            if ($RandomizerSubType.ToLowerInvariant() -eq "shuffle" -and -not $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type Shuffle" -Continue -Target $RandomizerSubType
+            }
+
+            # These need an input value or a format to work on, and there is nothing sensible to make up for them.
+            if ($RandomizerSubType.ToLowerInvariant() -eq "clampstring" -and -not $Value) {
+                Stop-Function -Message "Value cannot be empty when using sub type ClampString" -Continue -Target $RandomizerSubType
+            }
+
+            if ($RandomizerSubType.ToLowerInvariant() -in "replace", "replacenumbers", "replacesymbols" -and -not $Format) {
+                Stop-Function -Message "Format cannot be empty when using sub type $RandomizerSubType, use something like ###-###" -Continue -Target $RandomizerSubType
             }
         }
 
@@ -422,7 +434,7 @@ function Get-DbaRandomizedValue {
                         $formatString = "yyyy-MM-dd HH:mm:ss.fffffff"
                     }
 
-                    if ($randSubType -eq 'between') {
+                    if ($randSubType -in "between", "betweenoffset") {
 
                         if (-not $Min) {
                             Stop-Function -Message "Please set the minimum value for the date" -Continue -Target $Min
@@ -434,10 +446,12 @@ function Get-DbaRandomizedValue {
 
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
+                        } elseif ($randSubType -eq "betweenoffset") {
+                            ($script:faker.Date.BetweenOffset([datetimeoffset]$Min, [datetimeoffset]$Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
                             ($script:faker.Date.Between($Min, $Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
-                    } elseif ($randSubType -eq 'past') {
+                    } elseif ($randSubType -eq "past") {
                         if ($Max) {
                             if ($Min) {
                                 $yearsToGoBack = [math]::round((([datetime]$Max - [datetime]$Min).Days / 365), 0)
@@ -594,14 +608,37 @@ function Get-DbaRandomizedValue {
                         $script:faker.Phone.PhoneNumber()
                     }
                 }
-                'random' {
-                    if ($randSubType -in 'byte', 'char', 'decimal', 'double', 'even', 'float', 'int', 'long', 'number', 'odd', 'sbyte', 'short', 'uint', 'ulong', 'ushort') {
+                "random" {
+                    if ($randSubType -eq "sbyte") {
+                        # The default minimum and maximum of 1 and 255 do not fit in an sbyte.
+                        if ($Min -lt -128) {
+                            $Min = -128
+                        }
+
+                        if ($Max -gt 127) {
+                            $Max = 127
+                        }
+                    }
+
+                    if ($randSubType -in "byte", "char", "decimal", "double", "even", "float", "int", "long", "number", "odd", "sbyte", "short", "uint", "ulong", "ushort") {
                         $script:faker.Random.$RandomizerSubType($Min, $Max)
-                    } elseif ($randSubType -eq 'bytes') {
+                    } elseif ($randSubType -eq "bytes") {
                         $script:faker.Random.Bytes($Max)
-                    } elseif ($randSubType -in 'string', 'string2') {
+                    } elseif ($randSubType -in "string", "string2") {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
-                    } elseif ($randSubType -eq 'shuffle') {
+                    } elseif ($randSubType -eq "alphanumeric") {
+                        $script:faker.Random.AlphaNumeric([int]$Max)
+                    } elseif ($randSubType -eq "digits") {
+                        $script:faker.Random.Digits([int]$Max) -join ""
+                    } elseif ($randSubType -eq "wordsarray") {
+                        $script:faker.Random.WordsArray([int]$Max) -join " "
+                    } elseif ($randSubType -eq "clampstring") {
+                        $script:faker.Random.ClampString($Value, [int]$Min, [int]$Max)
+                    } elseif ($randSubType -eq "replace") {
+                        $script:faker.Random.Replace($Format)
+                    } elseif ($randSubType -eq "replacenumbers") {
+                        $script:faker.Random.ReplaceNumbers($Format)
+                    } elseif ($randSubType -eq "shuffle") {
                         $commaIndex = $value.IndexOf(",")
                         $dotIndex = $value.IndexOf(".")
 
@@ -622,15 +659,41 @@ function Get-DbaRandomizedValue {
                         $script:faker.Random.$RandomizerSubType()
                     }
                 }
-                'rant' {
-                    if ($randSubType -eq 'reviews') {
+                "rant" {
+                    # Both branches used to test for "reviews", so Review returned nothing at all and Reviews
+                    # returned a single review.
+                    if ($randSubType -eq "review") {
                         $script:faker.Rant.Review($script:faker.Commerce.Product())
-                    } elseif ($randSubType -eq 'reviews') {
-                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max)
+                    } elseif ($randSubType -eq "reviews") {
+                        $script:faker.Rant.Reviews($script:faker.Commerce.Product(), $Max) -join " "
                     }
                 }
-                'system' {
+                "system" {
                     $script:faker.System.$RandomizerSubType()
+                }
+                "hashids" {
+                    # The encoders take one or more numbers, the hex ones take a hex string. We make up the
+                    # input when the caller did not pass a value, because the point here is a random hash.
+                    if ($randSubType -in "encodehex", "encrypthex") {
+                        if ($Value) {
+                            $script:faker.Hashids.EncodeHex($Value)
+                        } else {
+                            $script:faker.Hashids.EncodeHex($script:faker.Random.Hexadecimal(24, ""))
+                        }
+                    } elseif ($randSubType -eq "encodelong") {
+                        $script:faker.Hashids.EncodeLong($script:faker.Random.Long(1, 1000000))
+                    } else {
+                        $script:faker.Hashids.Encode($script:faker.Random.Int(1, 1000000))
+                    }
+                }
+                "music" {
+                    $script:faker.Music.$RandomizerSubType()
+                }
+                "vehicle" {
+                    $script:faker.Vehicle.$RandomizerSubType()
+                }
+                default {
+                    Stop-Function -Message "Randomizer type $RandomizerType is not supported, it has no generator" -Continue -Target $RandomizerType
                 }
             }
         }
