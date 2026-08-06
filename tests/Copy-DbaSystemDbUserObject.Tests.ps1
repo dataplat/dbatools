@@ -26,72 +26,334 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
-        #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
-        $Function = @"
-CREATE FUNCTION dbo.dbatoolscs_ISOweek (@DATE datetime)
-RETURNS int
-WITH EXECUTE AS CALLER
-AS
-BEGIN
-     DECLARE @ISOweek int;
-     SET @ISOweek= DATEPART(wk,@DATE)+1
-          -DATEPART(wk,CAST(DATEPART(yy,@DATE) as CHAR(4))+'0104');
---Special cases: Jan 1-3 may belong to the previous year
-     IF (@ISOweek=0)
-          SET @ISOweek=dbo.dbatoolscs_ISOweek(CAST(DATEPART(yy,@DATE)-1
-               AS CHAR(4))+'12'+ CAST(24+DATEPART(DAY,@DATE) AS CHAR(2)))+1;
---Special case: Dec 29-31 may belong to the next year
-     IF ((DATEPART(mm,@DATE)=12) AND
-          ((DATEPART(dd,@DATE)-DATEPART(dw,@DATE))>= 28))
-          SET @ISOweek=1;
-     RETURN(@ISOweek);
-END;
-GO
-SET DATEFIRST 1;
-SELECT dbo.dbatoolscs_ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
-"@
-        $TableFunction = @"
-CREATE FUNCTION dbo.dbatoolsci_TableFunction (@pid int)
-RETURNS TABLE
-AS
-RETURN
-(
-    select spid,kpid,blocked,waittype,waittime,lastwaittype,waitresource,dbid,uid,cpu,physical_io
-    from sys.sysprocesses where spid = @pid
-);
-GO
-"@
-        $Rule = @"
-CREATE RULE dbo.dbatoolsci_range_rule
-AS
-@range>= 1000 AND @range <20000;
-"@
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $Function
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $TableFunction
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $Rule
+        # Run setup with EnableException so a broken fixture fails the run instead of quietly
+        # leaving the legs below asserting against nothing.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $objSchema = "dbatoolsci_sysobj_schema"
+        $objTable  = "dbatoolsci_sysobj_table"
+        $objProc   = "dbatoolsci_sysobj_proc"
+        $objView   = "dbatoolsci_sysobj_view"
+        $objFunc   = "dbatoolsci_sysobj_fn"
+        # Copied only by the -WhatIf leg, so it must not exist on the destination until the
+        # control leg that follows creates it for real.
+        $objLater  = "dbatoolsci_sysobj_later"
+
+        $procMarker      = "marker-original"
+        $procForceMarker = "marker-after-force"
+
+        # This command copies EVERY user object out of master, model and msdb, so a run picks up
+        # whatever else is sitting in those databases. Every assertion below filters to the names
+        # created here; a bare count would measure the lab, not the command.
+        $splatCleanup = @{
+            Database = "master"
+            Query    = "
+IF OBJECT_ID('dbo.$objView') IS NOT NULL DROP VIEW dbo.$objView;
+IF OBJECT_ID('dbo.$objProc') IS NOT NULL DROP PROCEDURE dbo.$objProc;
+IF OBJECT_ID('dbo.$objLater') IS NOT NULL DROP PROCEDURE dbo.$objLater;
+IF OBJECT_ID('dbo.$objFunc') IS NOT NULL DROP FUNCTION dbo.$objFunc;
+IF OBJECT_ID('dbo.$objTable') IS NOT NULL DROP TABLE dbo.$objTable;
+IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$objSchema];"
+        }
+        foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
+            $null = Invoke-DbaQuery -SqlInstance $instance @splatCleanup
+        }
+
+        # Fixtures live in master on the source only. The schema is separate from the table on
+        # purpose - it exercises the Schemas branch, which scripts through a different SMO Transfer
+        # path than the Tables branch.
+        $splatFixture = @{
+            SqlInstance = $TestConfig.InstanceCopy1
+            Database    = "master"
+        }
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE SCHEMA [$objSchema]"
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE TABLE dbo.$objTable (Id int NOT NULL PRIMARY KEY, Payload nvarchar(50) NULL)"
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE PROCEDURE dbo.$objProc AS SELECT '$procMarker' AS Marker"
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE PROCEDURE dbo.$objLater AS SELECT 'later' AS Marker"
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE VIEW dbo.$objView AS SELECT 1 AS One"
+        $null = Invoke-DbaQuery @splatFixture -Query "CREATE FUNCTION dbo.$objFunc (@n int) RETURNS int AS BEGIN RETURN @n + 1 END"
     }
 
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP FUNCTION dbo.dbatoolscs_ISOweek;"
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP FUNCTION dbo.dbatoolsci_TableFunction;"
-        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "DROP RULE dbo.dbatoolsci_range_rule;"
+        foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
+            $null = Invoke-DbaQuery -SqlInstance $instance @splatCleanup -EnableException:$false
+        }
     }
 
-    Context "When copying objects to the same instance" {
-        It "Should execute successfully with default parameters" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle
-            $results | Should -Not -BeNullOrEmpty
+    Context "When previewing with -WhatIf" {
+        BeforeAll {
+            $splatWhatIf = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                WhatIf      = $true
+            }
+            $whatIfResults = @(Copy-DbaSystemDbUserObject @splatWhatIf)
+
+            $splatProbeLater = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+                Query       = "SELECT OBJECT_ID('dbo.$objLater') AS ObjectId"
+            }
+            $laterAfterWhatIf = (Invoke-DbaQuery @splatProbeLater).ObjectId
         }
 
-        It "Should execute successfully with -Classic parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
-            $results | Should -Not -BeNullOrEmpty
+        It "Should emit nothing" {
+            $whatIfResults.Count | Should -Be 0
         }
 
-        It "Should execute successfully with -Force parameter" {
-            $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Force
-            $results | Should -Not -BeNullOrEmpty
+        It "Should not create the object on the destination" {
+            # The absence assertion is only worth anything because the copy context below runs the
+            # same command against the same fixtures and does create this object.
+            $laterAfterWhatIf | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When copying user objects to another instance" {
+        BeforeAll {
+            $splatCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+            }
+            $copyResults = @(Copy-DbaSystemDbUserObject @splatCopy)
+
+            $splatProbe = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+            }
+            $destProcBody = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.$objProc')) AS Definition").Definition
+            $destTableId  = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.$objTable') AS ObjectId").ObjectId
+            $destLaterId  = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.$objLater') AS ObjectId").ObjectId
+            $destSchemaId = (Invoke-DbaQuery @splatProbe -Query "SELECT schema_id AS SchemaId FROM sys.schemas WHERE name = '$objSchema'").SchemaId
+        }
+
+        It "Should report the schema copied successfully" {
+            $schemaRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq $objSchema })
+            $schemaRow.Count | Should -Be 1
+            $schemaRow[0].Status | Should -Be "Successful"
+            $schemaRow[0].Type | Should -Be "User schema in master"
+        }
+
+        It "Should land the schema on the destination" {
+            $destSchemaId | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should report the table copied successfully" {
+            $tableRow = @($copyResults | Where-Object { "$($PSItem.Name)" -like "*$objTable*" })
+            $tableRow.Count | Should -Be 1
+            $tableRow[0].Status | Should -Be "Successful"
+            $tableRow[0].Type | Should -Be "User table in master"
+        }
+
+        It "Should land the table on the destination" {
+            $destTableId | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should land the procedure body on the destination" {
+            # Matched against this procedure's own marker: the body reuses $sql, $name and $type
+            # across the per-object loop, so a stale capture would write one object's definition
+            # under another object's name, and only a marker read back can see that.
+            $destProcBody | Should -Match $procMarker
+        }
+
+        It "Should create the object the -WhatIf leg declined to create" {
+            $destLaterId | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should map each module type to its friendly type name" {
+            # get-sqltypename lives in the source's begin block. If it goes missing the Type cell
+            # renders as a bare " in master", so these assertions are what pins that helper - and
+            # they cover three different arms of its switch.
+            $procRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objProc]" })
+            $procRow.Count | Should -Be 1
+            $procRow[0].Type | Should -Be "User stored procedure in master"
+
+            $viewRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objView]" })
+            $viewRow.Count | Should -Be 1
+            $viewRow[0].Type | Should -Be "view in master"
+
+            $funcRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objFunc]" })
+            $funcRow.Count | Should -Be 1
+            $funcRow[0].Type | Should -Be "User scalar function in master"
+        }
+
+        It "Should carry both server names on every emitted row" {
+            $mineRows = @($copyResults | Where-Object { "$($PSItem.Name)" -like "*dbatoolsci_sysobj*" })
+            $mineRows.Count | Should -BeGreaterThan 0
+            @($mineRows | Where-Object { -not $PSItem.SourceServer -or -not $PSItem.DestinationServer }).Count | Should -Be 0
+        }
+    }
+
+    Context "When the objects already exist on the destination" {
+        BeforeAll {
+            $splatRecopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+            }
+            $recopyResults = @(Copy-DbaSystemDbUserObject @splatRecopy)
+        }
+
+        It "Should report the procedure skipped rather than copying it again" {
+            $procRow = @($recopyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objProc]" })
+            $procRow.Count | Should -Be 1
+            $procRow[0].Status | Should -Be "Skipped"
+            $procRow[0].Notes | Should -Be "Already exists on destination"
+        }
+
+        It "Should report the table skipped rather than copying it again" {
+            $tableRow = @($recopyResults | Where-Object { "$($PSItem.Name)" -like "*$objTable*" })
+            $tableRow.Count | Should -Be 1
+            $tableRow[0].Status | Should -Be "Skipped"
+            $tableRow[0].Notes | Should -Be "Already exists on destination"
+        }
+    }
+
+    Context "When -Force is used after the source object changed" {
+        BeforeAll {
+            $splatAlter = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Query       = "ALTER PROCEDURE dbo.$objProc AS SELECT '$procForceMarker' AS Marker"
+            }
+            $null = Invoke-DbaQuery @splatAlter
+
+            $splatForce = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Force       = $true
+            }
+            $forceResults = @(Copy-DbaSystemDbUserObject @splatForce)
+
+            $splatProbeForced = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+                Query       = "SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.$objProc')) AS Definition"
+            }
+            $forcedProcBody = (Invoke-DbaQuery @splatProbeForced).Definition
+        }
+
+        It "Should report the procedure copied rather than skipped" {
+            $procRow = @($forceResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objProc]" })
+            $procRow.Count | Should -Be 1
+            $procRow[0].Status | Should -Be "Successful"
+        }
+
+        It "Should replace the destination body with the new one" {
+            # Both halves asserted: the new marker arrived AND the old one is gone. Matching only
+            # the new marker would pass against a destination that still held both definitions.
+            $forcedProcBody | Should -Match $procForceMarker
+            $forcedProcBody | Should -Not -Match $procMarker
+        }
+    }
+
+    Context "When more than one destination is given" {
+        BeforeAll {
+            # The source is also a destination here, which is the only two-destination pair this
+            # lab can build. It still walks the foreach over $Destination twice, and the two passes
+            # take different paths - already present on the source, copied on the other - so a body
+            # that read a destination-scoped variable assigned on the previous pass would surface
+            # as the wrong DestinationServer on one of the rows.
+            $splatMulti = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+            }
+            $multiResults = @(Copy-DbaSystemDbUserObject @splatMulti)
+            $procRows = @($multiResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objProc]" })
+        }
+
+        It "Should emit one row per destination for the same object" {
+            $procRows.Count | Should -Be 2
+        }
+
+        It "Should name a distinct destination server on each row" {
+            @($procRows.DestinationServer | Sort-Object -Unique).Count | Should -Be 2
+        }
+    }
+
+    Context "When -Classic is used" {
+        BeforeAll {
+            $splatClassicCleanup = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+                Query       = "IF OBJECT_ID('dbo.$objProc') IS NOT NULL DROP PROCEDURE dbo.$objProc"
+            }
+            $null = Invoke-DbaQuery @splatClassicCleanup
+
+            $splatClassic = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Classic     = $true
+            }
+            $classicResults = @(Copy-DbaSystemDbUserObject @splatClassic)
+
+            $splatProbeClassic = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = "master"
+                Query       = "SELECT OBJECT_ID('dbo.$objProc') AS ObjectId"
+            }
+            $classicProcId = (Invoke-DbaQuery @splatProbeClassic).ObjectId
+        }
+
+        It "Should still copy the object" {
+            # The positive half. Without it the emit assertion below would also be satisfied by a
+            # branch that did nothing at all.
+            $classicProcId | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should emit no migration status rows" {
+            # The whole discriminator between the two branches: the default path emits one
+            # MigrationObject per object, the Classic bulk path emits none.
+            @($classicResults | Where-Object { $PSItem.PSObject.Properties.Name -contains "Status" }).Count | Should -Be 0
+        }
+    }
+
+    Context "When resolving the command name in a cold shell" {
+        BeforeAll {
+            # Every other leg runs in a session that imported dbatools long before Pester started,
+            # so none of them can tell the binary cmdlet apart from the retired script function -
+            # whichever got there first answers to the name. This leg starts a shell of the same
+            # edition that has imported nothing, loads the module the way a consumer does, and asks
+            # what the name resolves to. dbatools.psm1 is the import under test on purpose: it is
+            # the loader that pulls the satellite in by path, and importing the manifest by name
+            # cannot work in a dev tree because the satellites are not on PSModulePath.
+            $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
+            $shellPath = (Get-Process -Id $PID).Path
+            $probePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$(Get-Random).ps1"
+
+            # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
+            # entry rather than silently winning; the count is what proves it is not there. The
+            # alias is probed in the same shell because the psm1 registers it against the command
+            # NAME, and nothing else in the suite would notice it breaking on the flip.
+            $probeBody = @"
+Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+`$resolved = Get-Command -Name Copy-DbaSystemDbUserObject -ErrorAction SilentlyContinue
+`$allResolved = @(Get-Command -Name Copy-DbaSystemDbUserObject -All -ErrorAction SilentlyContinue)
+`$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
+`$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
+`$aliasTarget = (Get-Command -Name Copy-DbaSysDbUserObject -ErrorAction SilentlyContinue).ResolvedCommand.Name
+"RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded|`$aliasTarget"
+"@
+            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+
+            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
+        }
+
+        AfterAll {
+            Remove-Item -Path $probePath -ErrorAction SilentlyContinue
+        }
+
+        It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
+            $probeFields[1] | Should -Be "Cmdlet"
+            $probeFields[2] | Should -Be "dbatools.migration"
+        }
+
+        It "Should load the satellite and leave no retired function shadowing the name" {
+            $probeFields[4] | Should -Be "True"
+            $probeFields[3] | Should -Be "0"
+        }
+
+        It "Should keep the Copy-DbaSysDbUserObject alias pointing at the command" {
+            $probeFields[5] | Should -Be "Copy-DbaSystemDbUserObject"
         }
     }
 }
