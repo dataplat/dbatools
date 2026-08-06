@@ -119,7 +119,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "PFX certificate with chain is imported properly" -Skip:($env:APPVEYOR) {
+    # The skip on this context recorded no reason at all. Unskipped on 2026-08-06 to find out
+    # whether one still applies: AppVeyor is gone, but tests\gha.shim.ps1 still sets
+    # $env:APPVEYOR, so the gate kept it skipped on the Azure fleet.
+    Context "PFX certificate with chain is imported properly" {
         BeforeAll {
             # Generate unique temp path for this test run
             $script:tempPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"

@@ -42,8 +42,11 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ServiceAccessLevel | Should -Be 1
         }
 
-        It "Should change the FileStream Level to 2" -Skip:$env:APPVEYOR {
-            # Skip this test on AppVeyor because the instance does not support FileStream Level 2.
+        It "Should change the FileStream Level to 2" {
+            # Was skipped on AppVeyor because that instance did not support FileStream Level 2.
+            # Unskipped on 2026-08-06: AppVeyor is gone, but tests\gha.shim.ps1 still sets
+            # $env:APPVEYOR, so the gate kept this skipped on the Azure fleet without anyone
+            # having checked whether those instances support level 2.
             $results = Enable-DbaFilestream -SqlInstance $TestConfig.InstanceRestart -FileStreamLevel 2 -ShareName TestShare -Force
 
             $results.InstanceAccessLevel | Should -Be 2
