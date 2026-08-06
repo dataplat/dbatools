@@ -107,6 +107,9 @@ IF OBJECT_ID('dbo.$objProc') IS NOT NULL DROP PROCEDURE dbo.$objProc;
 IF OBJECT_ID('dbo.$objLater') IS NOT NULL DROP PROCEDURE dbo.$objLater;
 IF OBJECT_ID('dbo.$objFunc') IS NOT NULL DROP FUNCTION dbo.$objFunc;
 IF OBJECT_ID('dbo.$objTable') IS NOT NULL DROP TABLE dbo.$objTable;
+IF OBJECT_ID('dbo.dbatoolscs_ISOweek') IS NOT NULL DROP FUNCTION dbo.dbatoolscs_ISOweek;
+IF OBJECT_ID('dbo.dbatoolsci_TableFunction') IS NOT NULL DROP FUNCTION dbo.dbatoolsci_TableFunction;
+IF OBJECT_ID('dbo.dbatoolsci_range_rule') IS NOT NULL DROP RULE dbo.dbatoolsci_range_rule;
 IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$objSchema];"
         }
         foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
@@ -126,6 +129,55 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
         $null = Invoke-DbaQuery @splatFixture -Query "CREATE PROCEDURE dbo.$objLater AS SELECT 'later' AS Marker"
         $null = Invoke-DbaQuery @splatFixture -Query "CREATE VIEW dbo.$objView AS SELECT 1 AS One"
         $null = Invoke-DbaQuery @splatFixture -Query "CREATE FUNCTION dbo.$objFunc (@n int) RETURNS int AS BEGIN RETURN @n + 1 END"
+
+        # These three carry over from the suite this one replaced. They are the only fixtures that
+        # reach the RULE and SQL_TABLE_VALUED_FUNCTION arms of the type switch, which the command
+        # resolves through Rules.Item and UserDefinedFunctions.Item rather than the paths the
+        # objects above take.
+        #Function Scripts roughly From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-function-transact-sql
+        #Rule Scripts roughly from https://docs.microsoft.com/en-us/sql/t-sql/statements/create-rule-transact-sql
+        $Function = @"
+CREATE FUNCTION dbo.dbatoolscs_ISOweek (@DATE datetime)
+RETURNS int
+WITH EXECUTE AS CALLER
+AS
+BEGIN
+     DECLARE @ISOweek int;
+     SET @ISOweek= DATEPART(wk,@DATE)+1
+          -DATEPART(wk,CAST(DATEPART(yy,@DATE) as CHAR(4))+'0104');
+--Special cases: Jan 1-3 may belong to the previous year
+     IF (@ISOweek=0)
+          SET @ISOweek=dbo.dbatoolscs_ISOweek(CAST(DATEPART(yy,@DATE)-1
+               AS CHAR(4))+'12'+ CAST(24+DATEPART(DAY,@DATE) AS CHAR(2)))+1;
+--Special case: Dec 29-31 may belong to the next year
+     IF ((DATEPART(mm,@DATE)=12) AND
+          ((DATEPART(dd,@DATE)-DATEPART(dw,@DATE))>= 28))
+          SET @ISOweek=1;
+     RETURN(@ISOweek);
+END;
+GO
+SET DATEFIRST 1;
+SELECT dbo.dbatoolscs_ISOweek(CONVERT(DATETIME,'12/26/2004',101)) AS 'ISO Week';
+"@
+        $TableFunction = @"
+CREATE FUNCTION dbo.dbatoolsci_TableFunction (@pid int)
+RETURNS TABLE
+AS
+RETURN
+(
+    select spid,kpid,blocked,waittype,waittime,lastwaittype,waitresource,dbid,uid,cpu,physical_io
+    from sys.sysprocesses where spid = @pid
+);
+GO
+"@
+        $Rule = @"
+CREATE RULE dbo.dbatoolsci_range_rule
+AS
+@range>= 1000 AND @range <20000;
+"@
+        $null = Invoke-DbaQuery @splatFixture -Query $Function
+        $null = Invoke-DbaQuery @splatFixture -Query $TableFunction
+        $null = Invoke-DbaQuery @splatFixture -Query $Rule
     }
 
     AfterAll {
@@ -180,6 +232,8 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
             $destTableId  = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.$objTable') AS ObjectId").ObjectId
             $destLaterId  = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.$objLater') AS ObjectId").ObjectId
             $destSchemaId = (Invoke-DbaQuery @splatProbe -Query "SELECT schema_id AS SchemaId FROM sys.schemas WHERE name = '$objSchema'").SchemaId
+            $destRuleId   = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.dbatoolsci_range_rule') AS ObjectId").ObjectId
+            $destTvfId    = (Invoke-DbaQuery @splatProbe -Query "SELECT OBJECT_ID('dbo.dbatoolsci_TableFunction') AS ObjectId").ObjectId
         }
 
         It "Should report the schema copied successfully" {
@@ -230,6 +284,24 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
             $funcRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[$objFunc]" })
             $funcRow.Count | Should -Be 1
             $funcRow[0].Type | Should -Be "User scalar function in master"
+        }
+
+        It "Should map the rule and inline table valued function arms too" {
+            # The other two arms of the switch that this suite can reach. Measured on sql2017:
+            # sys.objects.type_desc is RULE and SQL_INLINE_TABLE_VALUED_FUNCTION respectively, and
+            # Get-DbaModule reports the same strings, which is what the switch is fed.
+            $ruleRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[dbatoolsci_range_rule]" })
+            $ruleRow.Count | Should -Be 1
+            $ruleRow[0].Type | Should -Be "User rule in master"
+
+            $tvfRow = @($copyResults | Where-Object { "$($PSItem.Name)" -eq "[dbo].[dbatoolsci_TableFunction]" })
+            $tvfRow.Count | Should -Be 1
+            $tvfRow[0].Type | Should -Be "User inline table valued function in master"
+        }
+
+        It "Should land the rule and the inline table valued function on the destination" {
+            $destRuleId | Should -Not -BeNullOrEmpty
+            $destTvfId | Should -Not -BeNullOrEmpty
         }
 
         It "Should carry both server names on every emitted row" {
@@ -415,7 +487,15 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
             }
             Set-Content @splatProbeBody
 
-            $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
+            # An array splat, not a hashtable one: this is a native executable, and PowerShell
+            # renders a splatted hashtable as -key:value pairs, which is not the form -File takes.
+            $splatProbeShell = @(
+                "-NoProfile"
+                "-NonInteractive"
+                "-File"
+                $probePath
+            )
+            $probeOutput = & $shellPath @splatProbeShell 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }
 
