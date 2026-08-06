@@ -42,7 +42,8 @@
         'Copy-DbaPolicyManagement',
         'Copy-DbaResourceGovernor',
         'Copy-DbaServerRole',
-        'Copy-DbaSpConfigure'
+        'Copy-DbaSpConfigure',
+        'Copy-DbaStartupProcedure'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
