@@ -67,7 +67,12 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $singleDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-            $singlePlantedValue = $suiteSourceQueryTimeout + 37
+            # Every planted value in this file is picked from inside the setting's
+            # sys.configurations range and then checked against the source's, rather than offset
+            # from the source's. An offset is only in range for as long as the instance it is
+            # measured from stays low, and a fixture that a lab's own configuration can push out
+            # of range fails in setup, where the failure looks like the command's.
+            $singlePlantedValue = if ($suiteSourceQueryTimeout -eq 4137) { 4138 } else { 4137 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $singlePlantedValue -WarningAction SilentlyContinue -EnableException:$false
             $singleDestValueBefore = $singleDestConn.Query(($readConfigValueSql -f "remote query timeout (s)")).ConfigValue
 
@@ -221,27 +226,46 @@ Describe $CommandName -Tag IntegrationTests {
             # Copied the other way round on purpose: the newer instance carries settings the older
             # one has never heard of, which is the only way to reach this branch without inventing
             # a fixture. Nothing is written, so there is nothing to restore.
-            $absentConfigName = "AllowFilesystemEnumeration"
+            #
+            # Which settings those are is discovered rather than named. It moves with the version
+            # pair, and a literal name quietly stops reaching the branch the day the two copy
+            # instances are the same version or swap order - the call still succeeds, it just
+            # copies a setting that exists on both and the leg proves something else.
             $absentDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
 
-            $splatAbsentCopy = @{
-                Source      = $TestConfig.InstanceCopy2
-                Destination = $TestConfig.InstanceCopy1
-                ConfigName  = $absentConfigName
-            }
-            $absentCopyResults = @(Copy-DbaSpConfigure @splatAbsentCopy)
+            $absentSourceProps = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2
+            $absentDestNames = @((Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy1).ConfigName)
+            $absentCandidate = $absentSourceProps | Where-Object { $PSItem.ConfigName -notin $absentDestNames } | Select-Object -First 1
+            $absentConfigName = $absentCandidate.ConfigName
+            $absentDisplayName = $absentCandidate.DisplayName
 
-            # The same call with the destination named twice: the source loop is walked once per
-            # destination, so a two-element -Destination has to yield two status objects. This is
-            # the one branch that can prove it without writing anything anywhere.
-            $splatAbsentTwoDestinations = @{
-                Source      = $TestConfig.InstanceCopy2
-                Destination = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy1
-                ConfigName  = $absentConfigName
-            }
-            $absentTwoDestinationResults = @(Copy-DbaSpConfigure @splatAbsentTwoDestinations)
+            # Guarded, not skipped. -ConfigName $null does not filter to nothing in the command's
+            # single filter expression - it falls through and copies EVERY setting, which on a
+            # shared lab instance is the last thing an unattended run should do.
+            $absentCopyResults = @()
+            $absentTwoDestinationResults = @()
+            $absentDestRowCount = -1
 
-            $absentDestRowCount = $absentDestConn.Query("SELECT COUNT(*) AS ConfigCount FROM sys.configurations WHERE name = N'allow filesystem enumeration'").ConfigCount
+            if ($absentConfigName) {
+                $splatAbsentCopy = @{
+                    Source      = $TestConfig.InstanceCopy2
+                    Destination = $TestConfig.InstanceCopy1
+                    ConfigName  = $absentConfigName
+                }
+                $absentCopyResults = @(Copy-DbaSpConfigure @splatAbsentCopy)
+
+                # The same call with the destination named twice: the source loop is walked once per
+                # destination, so a two-element -Destination has to yield two status objects. This is
+                # the one branch that can prove it without writing anything anywhere.
+                $splatAbsentTwoDestinations = @{
+                    Source      = $TestConfig.InstanceCopy2
+                    Destination = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy1
+                    ConfigName  = $absentConfigName
+                }
+                $absentTwoDestinationResults = @(Copy-DbaSpConfigure @splatAbsentTwoDestinations)
+
+                $absentDestRowCount = $absentDestConn.Query("SELECT COUNT(*) AS ConfigCount FROM sys.configurations WHERE name = N'$absentDisplayName'").ConfigCount
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -281,7 +305,7 @@ Describe $CommandName -Tag IntegrationTests {
             $failureSecurePassword = ConvertTo-SecureString $failurePassword -AsPlainText -Force
             $failureCredential = New-Object System.Management.Automation.PSCredential($failureLoginName, $failureSecurePassword)
 
-            $failurePlantedValue = $suiteSourceQueryTimeout + 41
+            $failurePlantedValue = if ($suiteSourceQueryTimeout -eq 4141) { 4142 } else { 4141 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $failurePlantedValue -WarningAction SilentlyContinue -EnableException:$false
 
             # A login holding nothing but public can read sys.configurations and cannot change it,
@@ -342,7 +366,7 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $whatIfDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-            $whatIfPlantedValue = $suiteSourceQueryTimeout + 23
+            $whatIfPlantedValue = if ($suiteSourceQueryTimeout -eq 4123) { 4124 } else { 4123 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $whatIfPlantedValue -WarningAction SilentlyContinue -EnableException:$false
 
             $splatWhatIfCopy = @{
@@ -390,8 +414,8 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $filterDestConn = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
-            $filterPlantedQueryTimeout = $suiteSourceQueryTimeout + 19
-            $filterPlantedLoginTimeout = $filterSourceLoginTimeout + 7
+            $filterPlantedQueryTimeout = if ($suiteSourceQueryTimeout -eq 4119) { 4120 } else { 4119 }
+            $filterPlantedLoginTimeout = if ($filterSourceLoginTimeout -eq 317) { 318 } else { 317 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $filterPlantedQueryTimeout -WarningAction SilentlyContinue -EnableException:$false
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteLoginTimeout -Value $filterPlantedLoginTimeout -WarningAction SilentlyContinue -EnableException:$false
 
@@ -465,7 +489,7 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
             # never exercised at all. So one setting is deliberately planted apart first, before the
             # measurement reads either side, which puts a known name in the list on any pair.
             $excludeOnlySourceLoginTimeout = $suiteSourceConn.Query(($readConfigValueSql -f "remote login timeout (s)")).ConfigValue
-            $excludeOnlyPlantedLoginTimeout = $excludeOnlySourceLoginTimeout + 9
+            $excludeOnlyPlantedLoginTimeout = if ($excludeOnlySourceLoginTimeout -eq 309) { 310 } else { 309 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteLoginTimeout -Value $excludeOnlyPlantedLoginTimeout -WarningAction SilentlyContinue -EnableException:$false
             $excludeOnlyDestBeforeLoginTimeout = $suiteDestConn.Query(($readConfigValueSql -f "remote login timeout (s)")).ConfigValue
 
@@ -493,7 +517,7 @@ IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$failureLoginName'
                 $excludeOnlyProtectedBefore[$excludeOnlyProtectedName] = $excludeOnlyDestLookup[$excludeOnlyProtectedName]
             }
 
-            $excludeOnlyPlantedValue = $suiteSourceQueryTimeout + 13
+            $excludeOnlyPlantedValue = if ($suiteSourceQueryTimeout -eq 4113) { 4114 } else { 4113 }
             $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceCopy2 -Name RemoteQueryTimeout -Value $excludeOnlyPlantedValue -WarningAction SilentlyContinue -EnableException:$false
 
             $splatExcludeOnlyCopy = @{
