@@ -2124,6 +2124,11 @@
     "module": "dbatools.performance",
     "retiredPath": "private/retired/Measure-DbaDbVirtualLogFile.ps1"
   },
+  "Measure-DbaDiskSpaceRequirement": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Measure-DbaDiskSpaceRequirement.ps1",
+    "flippedUtc": "2026-08-06T12:24:44Z"
+  },
   "Measure-DbatoolsImport": {
     "flippedUtc": "2026-07-12T03:51:41Z",
     "module": "dbatools.core",

@@ -69,7 +69,6 @@
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
         'Invoke-DbaDbPiiScan',
-        'Measure-DbaDiskSpaceRequirement',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
         'Set-DbaNetworkCertificate',
