@@ -603,8 +603,11 @@ Describe $CommandName -Tag IntegrationTests {
         $twoRecordVerbose = @($twoRecordOutput | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] } | ForEach-Object { $_.Message })
         $results = @($twoRecordOutput | Where-Object { $_ -is [System.IO.FileInfo] })
 
-        @($twoRecordVerbose -match "^Total Elapsed time: ").Count | Should -Be 1
-        @($twoRecordVerbose -match "^Exporting SQL Server Configuration$").Count | Should -Be 2
+        # Not anchored at the start: Write-Message prepends "[HH:mm:ss][Export-DbaInstance] " to the
+        # verbose record whenever the message.* display config asks for it, and that config is a
+        # per-session setting no assertion here should depend on. The tail is still exact.
+        @($twoRecordVerbose -match "Total Elapsed time: \d").Count | Should -Be 1
+        @($twoRecordVerbose -match "Exporting SQL Server Configuration$").Count | Should -Be 2
         $results.Count | Should -BeGreaterThan 0
     }
 
@@ -722,13 +725,29 @@ Describe $CommandName -Tag IntegrationTests {
         $results.Length | Should -BeGreaterThan 0
     }
 
-    It "Export policies" -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
-        # Skip It on pwsh because working with policies is not supported.
+    It "Export policies" {
+        # The command gates its Policy Management branch on $PSVersionTable.PSEdition -ne "Core",
+        # because the PBM classes are not usable under pwsh. That guard is behaviour in its own
+        # right, so this runs on both editions and asserts the edition-appropriate outcome rather
+        # than skipping on pwsh - a leg that never executes on an edition proves nothing about it.
+        $splatPolicies = @{
+            SqlInstance = $testServer
+            Path        = $exportDir
+            Exclude     = @("AgentServer", "Audits", "AvailabilityGroups", "BackupDevices", "CentralManagementServer", "Credentials", "CustomErrors", "DatabaseMail", "Databases", "Endpoints", "ExtendedEvents", "LinkedServers", "Logins", "ReplicationSettings", "ResourceGovernor", "ServerAuditSpecifications", "ServerRoles", "SpConfigure", "SysDbUserObjects", "SystemTriggers", "OleDbProvider")
+        }
+        $results = @(Export-DbaInstance @splatPolicies)
+        $policyFile = @($results | Where-Object { $PSItem.Name -eq "policymanagement.sql" })
 
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
-
-        $results.FullName | Should -Exist
-        $results.Length | Should -BeGreaterThan 0
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            # PolicyManagement is the only object type this call leaves un-excluded, so the guarded
+            # branch not running means the whole call produces nothing.
+            $policyFile.Count | Should -Be 0
+            $results.Count | Should -Be 0
+        } else {
+            $policyFile.Count | Should -Be 1
+            $policyFile[0].FullName | Should -Exist
+            $policyFile[0].Length | Should -BeGreaterThan 0
+        }
     }
 
     It "Export resource governor settings" {
