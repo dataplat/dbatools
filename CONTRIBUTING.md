@@ -18,7 +18,7 @@ As of 2023 the project has been restructured but we also have a few different re
 
 1. [dataplat/appveyor-lab](https://github.com/dataplat/appveyor-lab)
 
-    We use Appveyor for running the Pester tests for each function. We have this repository to store content that is used in our tests. This keeps the current repository clean from excess files just for testing. **Maintainers will determine if tests require files be placed in this repository**.
+    We have this repository to store content that is used in our tests. The name predates the move off AppVeyor; CI still clones it for test fixtures. This keeps the current repository clean from excess files just for testing. **Maintainers will determine if tests require files be placed in this repository**.
 
 1. [dataplat/docs](https://github.com/dataplat/docs)
 
@@ -128,7 +128,7 @@ A few notes:
 
 ## Pester 🧪
 
-Our project uses [Pester](https://pester.dev) for our testing framework. Appveyor runs a matrix of environments that test against various versions of SQL Server. We do have some commands that cannot be tested easily but the majority we use Pester to ensure the code behaves properly. Appveyor runs these tests for each-and-every commit in our repository.
+Our project uses [Pester](https://pester.dev) for our testing framework. CI runs a matrix of environments that test against various versions of SQL Server. We do have some commands that cannot be tested easily but the majority we use Pester to ensure the code behaves properly. CI runs these tests for each-and-every commit in our repository.
 
 We strive to have the Pester tests where any user can pull the project and run the same test in their environment (on a test lab of course or in our Docker image).
 
@@ -146,27 +146,26 @@ Tests make sure a "contract" is made between the code and its behavior: once a t
 
 You can inspect/copy/cannibalize existing tests. You'll see that every test file is named with a simple convention `Verb-Noun*.Tests.ps1`, and this is required by [Pester](https://GitHub.com/pester/Pester), which is the de-facto standard for running tests in PowerShell.
 
-## AppVeyor Environment
+## CI Environment
 
-AppVeyor is hooked up to test any commit, including PRs. Each commit triggers several builds, each referred to as a "scenario". We have the scenarios setup where the dbatools log is published as an artifact should you need to view why test are failing.
+CI is hooked up to test any commit, including PRs. The suite of record is the `ci-azure` GitHub Actions workflow (`.github/workflows/ci-azure.yml`), which runs on self-hosted Azure VMSS runners. Each commit triggers several builds, each referred to as a "scenario". We have the scenarios setup where the dbatools log is published as an artifact should you need to view why test are failing.
 
-- SINGLE: a server with a single SQL Server 2022 instance available ($TestConfig.InstanceSingle)
+- SINGLE: a server with a single SQL Server 2022 instance available ($TestConfig.InstanceSingle), split into five parts that run in parallel
 - MULTI: a server with two instances (SQL Server 2022 and SQL Server 2017) available for tests that need multiple instances ($TestConfig.InstanceMulti1 and $TestConfig.InstanceMulti2)
 - COPY: a server with two instances (SQL Server 2017 and SQL Server 2022) available for tests that need multiple instances ($TestConfig.InstanceCopy1 and $TestConfig.InstanceCopy2)
-- HADR: a single SQL Server 2022 instance available with Hadr configured ($TestConfig.InstanceHadr)
-- RESTART: used to test service restarts ($TestConfig.InstanceRestart)
-- 2008R2SP2Express: a server with a single SQL Server 2008 R2 Express Edition available to test some commands against an old version ($TestConfig.InstanceSingle)
+- HADR: a single SQL Server 2019 instance available with Hadr configured ($TestConfig.InstanceHadr)
+- RESTART: a single SQL Server 2019 instance used to test service restarts ($TestConfig.InstanceRestart)
 - default: a server with no instance for all tests that don't need a running instance
 
-Builds are split among "scenario"(s) because not every test requires everything to be up and running, and resources on AppVeyor are constrained.
-AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of $TestConfig.Instance*.
+Builds are split among "scenario"(s) because not every test requires everything to be up and running, and runner capacity is constrained.
+CI is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of $TestConfig.Instance*.
 
 Most PRs will target `public/*.ps1` files to add functionality or resolve bugs.
 Our test runner will try and figure out what tests needs to be run based on the files modified in the PR, plus all the dependencies.
 
-If the automatic detection doesn't work, and you don't want to wait for the entire test suite to run (i.e. you need to run only `Get-DbaFoo` on AppVeyor), you can use a **_magic command_** within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
+If the automatic detection doesn't work, and you don't want to wait for the entire test suite to run (i.e. you need to run only `Get-DbaFoo` in CI), you can use a **_magic command_** within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
 
-<!-- TODO: how to run your own AppVeyor before pushing a PR -->
+The build scripts CI drives are the `tests/appveyor.*.ps1` files. They keep that name for historical reasons - the harness was carried over unchanged when the project moved off AppVeyor, and `tests/gha.shim.ps1` supplies the AppVeyor build API it still calls.
 
 ## Codecov
 
@@ -174,6 +173,6 @@ We utilize Codecov as many other PowerShell community projects are doing. You ca
 
 [Codecov - dataplat/dbatools](https://app.codecov.io/gh/dataplat/dbatools/tree/development)
 
-This system allows us to see the percentage of the coverage for our tests. A rough goal is getting as close to 80% coverage, some commands we have that are just not achievable due to various limitations. As part of our test framework that runs on Appveyor we upload a coverage file to Codecov so it stays current.
+This system allows us to see the percentage of the coverage for our tests. A rough goal is getting as close to 80% coverage, some commands we have that are just not achievable due to various limitations. As part of our test framework that runs in CI we upload a coverage file to Codecov so it stays current.
 
 If you want to start contributing new tests, choose the ones with no coverage. You can also inspect functions with low coverage and improve existing tests. [See improving test](https://dbatools.io/improving-tests/).

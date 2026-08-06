@@ -446,18 +446,19 @@ git commit -m "Fix login handling (do Get-DbaLogin, Set-DbaLogin)"
 git commit -m "Update comments [skip ci]"
 ```
 
-### AppVeyor Build Matrix
+### CI Build Matrix
 
-The CI runs tests across multiple scenarios in parallel:
+The `ci-azure` workflow runs tests across multiple scenarios in parallel on self-hosted Azure runners:
 
 ```yaml
-# From appveyor.yml
+# From .github/workflows/ci-azure.yml
 matrix:
-  - scenario: SINGLE (split into 3 parts for speed)
-  - scenario: MULTI
-  - scenario: COPY
-  - scenario: HADR
-  - scenario: RESTART
+  - scenario: SINGLE (split into 5 parts for speed, sql2022)
+  - scenario: MULTI (sql2022 + sql2017)
+  - scenario: COPY (sql2017 + sql2022)
+  - scenario: HADR (sql2019)
+  - scenario: RESTART (sql2019)
+  - scenario: default (no instance)
 ```
 
 ---

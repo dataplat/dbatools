@@ -4,7 +4,7 @@ This guide provides the ongoing standards and best practices for running and wri
 
 **This file is the single source for test policy.** General PowerShell style remains authoritative in the repository's root `CLAUDE.md` and applies to test files too.
 
-## Local (not appveyor) Testing Setup
+## Local (not CI) Testing Setup
 
 To test commands locally during development:
 
@@ -34,7 +34,7 @@ This allows you to manually test commands against actual SQL Server instances be
 
 ## CHOOSING A TEST INSTANCE
 
-`$TestConfig` exposes several SQL Server instances, defined in `private/testing/Get-TestConfig.ps1`. The choice is not cosmetic: `pester.groups.ps1` autodetects which `$TestConfig.Instance*` variable a test file references and assigns the file to that AppVeyor scenario. **Always pick the lightest instance that can demonstrate the behaviour** - reaching for a heavier one moves the test into a scarcer, slower scenario for no benefit.
+`$TestConfig` exposes several SQL Server instances, defined in `private/testing/Get-TestConfig.ps1`. The choice is not cosmetic: `pester.groups.ps1` autodetects which `$TestConfig.Instance*` variable a test file references and assigns the file to that CI scenario. **Always pick the lightest instance that can demonstrate the behaviour** - reaching for a heavier one moves the test into a scarcer, slower scenario for no benefit.
 
 | Instance | Use it for | Scenario |
 |---|---|---|
@@ -53,7 +53,7 @@ Get-TestInstanceUsage | Group-Object -Property InstanceList -NoElement | Sort-Ob
 
 Two consequences worth knowing before you write the test:
 
-- **Only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on GitHub Actions.** A test written against `InstanceCopy*`, `InstanceHadr` or `InstanceRestart` runs on AppVeyor only. For new or changed command behavior, the required real-boundary coverage must also run on GitHub Actions or an Azure test runner; provision the needed boundary instead of omitting the regression test.
+- **Every scenario runs on the self-hosted Azure runners** driven by `.github/workflows/ci-azure.yml`, so `InstanceCopy*`, `InstanceHadr` and `InstanceRestart` all get exercised there. The container-based `integration-tests.yml` workflow is narrower: only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on it. For new or changed command behavior, the required real-boundary coverage must run on one of these; provision the needed boundary instead of omitting the regression test.
 - **`InstanceRestart` tests share machine state.** They run in file order within a `Describe`, and one test's leftovers become the next test's fixture. If a test mutates machine state that `AfterAll` cannot reliably undo - archived certificates, service accounts, registry values - restore it in a `try`/`finally` inside the `It` itself.
 
 ## TESTING FOR WARNINGS
