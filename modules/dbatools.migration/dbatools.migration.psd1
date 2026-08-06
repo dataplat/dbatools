@@ -44,7 +44,8 @@
         'Copy-DbaServerRole',
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
-        'Copy-DbaSystemDbUserObject'
+        'Copy-DbaSystemDbUserObject',
+        'Export-DbaInstance'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
