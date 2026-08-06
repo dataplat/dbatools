@@ -525,6 +525,65 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    # This Context has to run before the one that takes a source database offline. Copy-DbaDatabase
+    # throws "Cannot index into a null array" building the file structure of an OFFLINE source
+    # database, so a whole-instance migration - even a dry run - dies once one exists. Measured on
+    # the shipping implementation, so it is upstream behaviour rather than anything this suite can
+    # assert around.
+    Context "When -WhatIf is supplied" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $whatIfDb = "dbatoolsci_whatif$random"
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $whatIfDb -ErrorAction SilentlyContinue
+
+            $splatCreateWhatIfDb = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Query       = "CREATE DATABASE $whatIfDb; ALTER DATABASE $whatIfDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+            }
+            Invoke-DbaQuery @splatCreateWhatIfDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatWhatIf = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $backupPath
+                Force         = $true
+                Exclude       = @(
+                    "Logins", "AgentServer", "Credentials", "LinkedServers", "SpConfigure",
+                    "CentralManagementServer", "DatabaseMail", "SysDbUserObjects", "SystemTriggers",
+                    "BackupDevices", "Audits", "Endpoints", "ExtendedEvents", "PolicyManagement",
+                    "ResourceGovernor", "ServerAuditSpecifications", "CustomErrors", "ServerRoles",
+                    "DataCollector", "StartupProcedures", "ExtendedStoredProcedures",
+                    "AgentServerProperties", "MasterCertificates", "SsisCatalog"
+                )
+            }
+            $null = Start-DbaMigration @splatWhatIf -WhatIf -WarningAction SilentlyContinue
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $whatIfDb -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should leave the source database in place" {
+            # Positive control: without it, the absence assertion below is satisfied by a fixture
+            # that was never created.
+            $sourceDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $whatIfDb
+            $sourceDb.Name | Should -Be $whatIfDb
+        }
+
+        It "Should not create the database on the destination" {
+            # Asserted on the side effect, never on What-if text: What-if lines are emitted by the
+            # gate that was consulted, not by the copies that were skipped.
+            $destDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $whatIfDb
+            $destDb | Should -BeNullOrEmpty
+        }
+    }
+
     Context  "When using backup restore method" {
         BeforeAll {
             $splatMigration = @{
@@ -662,4 +721,108 @@ Describe $CommandName -Tag IntegrationTests {
             $destDb.Status | Should -Be "Normal"
         }
     }
+
+    Context "When every component is excluded" {
+        BeforeAll {
+            # Nothing to migrate, so this run reaches the end block in seconds. It is the positive
+            # control for the two absence assertions in the next Context: the same verbose lines
+            # that must be missing after a validation failure have to be present after a clean run,
+            # or their absence proves nothing.
+            $everyComponent = @(
+                "Databases", "Logins", "AgentServer", "Credentials", "LinkedServers", "SpConfigure",
+                "CentralManagementServer", "DatabaseMail", "SysDbUserObjects", "SystemTriggers",
+                "BackupDevices", "Audits", "Endpoints", "ExtendedEvents", "PolicyManagement",
+                "ResourceGovernor", "ServerAuditSpecifications", "CustomErrors", "ServerRoles",
+                "DataCollector", "StartupProcedures", "ExtendedStoredProcedures",
+                "AgentServerProperties", "MasterCertificates", "SsisCatalog"
+            )
+            $splatExcludeAll = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Exclude     = $everyComponent
+                Force       = $true
+                Verbose     = $true
+            }
+            $excludeAllVerbose = @(Start-DbaMigration @splatExcludeAll 4>&1) -match "\S"
+        }
+
+        It "Should open the normal source connection" {
+            @($excludeAllVerbose | Where-Object { $PSItem -like "*Opening or reusing normal connection*" }).Count | Should -BeGreaterThan 0
+        }
+
+        It "Should report the migration as complete" {
+            @($excludeAllVerbose | Where-Object { $PSItem -like "*SQL Server migration complete.*" }).Count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "When a validation guard in the begin block trips" {
+        BeforeAll {
+            # No migration method and no -Exclude Databases, which is the first begin-block guard.
+            $splatNoMethod = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Force       = $true
+                Verbose     = $true
+            }
+            $noMethodVerbose = @(Start-DbaMigration @splatNoMethod -WarningVariable noMethodWarning -WarningAction SilentlyContinue 4>&1) -match "\S"
+        }
+
+        It "Should warn that a migration method is required" {
+            @($noMethodWarning | Where-Object { $PSItem -like "*must specify a database migration method*" }).Count | Should -BeGreaterThan 0
+        }
+
+        It "Should not reach the process block" {
+            # The guard latches and the process block opens with Test-FunctionInterrupt, so the
+            # source never connects. The latch is set in one scope and read in another, so a port
+            # that dropped the carry would connect and migrate here.
+            @($noMethodVerbose | Where-Object { $PSItem -like "*Opening or reusing normal connection*" }).Count | Should -Be 0
+        }
+
+        It "Should not report the migration as complete" {
+            # The end block reads the same latch, and reads it AFTER closing the admin connection.
+            @($noMethodVerbose | Where-Object { $PSItem -like "*SQL Server migration complete.*" }).Count | Should -Be 0
+        }
+    }
+
+    Context "When a dedicated admin connection is needed" {
+        BeforeAll {
+            # dacNeeded is true unless Credentials, DatabaseMail AND LinkedServers are all excluded.
+            # Leaving LinkedServers in opens the admin connection while keeping the run trivial.
+            $splatDac = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Exclude     = @(
+                    "Databases", "Logins", "AgentServer", "Credentials", "SpConfigure",
+                    "CentralManagementServer", "DatabaseMail", "SysDbUserObjects", "SystemTriggers",
+                    "BackupDevices", "Audits", "Endpoints", "ExtendedEvents", "PolicyManagement",
+                    "ResourceGovernor", "ServerAuditSpecifications", "CustomErrors", "ServerRoles",
+                    "DataCollector", "StartupProcedures", "ExtendedStoredProcedures",
+                    "AgentServerProperties", "MasterCertificates", "SsisCatalog"
+                )
+                Force       = $true
+                Verbose     = $true
+            }
+            $dacVerbose = @(Start-DbaMigration @splatDac -WarningAction SilentlyContinue 4>&1) -match "\S"
+        }
+
+        It "Should open the dedicated admin connection" {
+            # Without this the release assertion below would pass on a run that never opened one.
+            @($dacVerbose | Where-Object { $PSItem -like "*Opening dedicated admin connection*" }).Count | Should -BeGreaterThan 0
+        }
+
+        It "Should release the dedicated admin connection when the migration ends" {
+            # SQL Server allows exactly one DAC session per instance. $dacOpened and the admin
+            # connection itself are process-block locals that only the end block reads, so a port
+            # that dropped that carry leaves the session open and this connect fails outright.
+            $splatSecondDac = @{
+                SqlInstance              = $TestConfig.InstanceCopy1
+                DedicatedAdminConnection = $true
+                EnableException          = $true
+            }
+            $secondDac = Connect-DbaInstance @splatSecondDac
+            $secondDac.Name | Should -BeLike "ADMIN:*"
+            $null = $secondDac | Disconnect-DbaInstance -WhatIf:$false
+        }
+    }
+
 }
