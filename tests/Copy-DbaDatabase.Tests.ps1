@@ -46,24 +46,6 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
-
-    Context "Empty rename parameters are rejected before any work is done" {
-        # An empty name passed to the downstream -Database filters means "all databases"
-        # and used to let post-restore commands sweep the whole destination (#10512)
-        It "Rejects an empty NewName" {
-            $splatEmptyNewName = @{
-                Source          = "fakesourceinstance"
-                Destination     = "fakedestinstance"
-                NewName         = ""
-                BackupRestore   = $true
-                UseLastBackup   = $true
-                WarningVariable = "warnvar"
-            }
-            $results = Copy-DbaDatabase @splatEmptyNewName 3> $null
-            $results | Should -BeNullOrEmpty
-            $warnvar | Should -BeLike "*NewName cannot be empty*"
-        }
-    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -623,21 +605,25 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
         }
 
-        It "Rejects an empty NewName without touching the destination" {
+        It "Ignores an empty NewName and copies piped databases under their original names" {
+            # The reporter's pipeline passes -NewName unconditionally and leaves it empty when
+            # no rename is wanted (#10512). An empty name must mean "no rename", never an empty
+            # -Database filter that lets post-restore commands sweep the whole destination.
             $ownerBefore = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner
             $splatCopyEmptyName = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                BackupRestore   = $true
-                SharedPath      = $NetworkPath
-                NewName         = ""
-                WarningVariable = "warnvar"
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                NewName       = ""
             }
-            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyEmptyName 3> $null
-            $results | Should -BeNullOrEmpty
-            $warnvar | Should -BeLike "*NewName cannot be empty*"
-            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 | Should -BeNullOrEmpty
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyEmptyName
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
+            ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
             (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $ownerBefore
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
         }
 
         It "Rejects NewName with piped databases before any copy happens" {

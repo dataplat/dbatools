@@ -130,6 +130,7 @@ function Copy-DbaDatabase {
         The database name and physical file names are updated to use the new name.
         Cannot be used with multiple databases, with pipeline input, or together with -Prefix parameter.
         To rename a database, specify it with -Database and provide -NewName.
+        An empty or whitespace value is treated as if -NewName was not specified, so scripts can pass a NewName variable unconditionally and leave it empty to copy under the original names.
 
     .PARAMETER Prefix
         Adds a prefix to all migrated database names and their physical file names.
@@ -304,9 +305,11 @@ function Copy-DbaDatabase {
 
         # An empty name slips through every downstream -Database filter, which then means
         # "all databases" and lets commands like Set-DbaDbOwner sweep the whole destination (#10512)
+        # Unbinding the parameter makes every later Test-Bound check treat it as not specified,
+        # so scripts can pass -NewName unconditionally and leave it empty to mean "no rename"
         if ((Test-Bound "NewName") -and [string]::IsNullOrWhiteSpace($NewName)) {
-            Stop-Function -Message "-NewName cannot be empty or whitespace. To copy databases under their original names, omit -NewName."
-            return
+            Write-Message -Level Verbose -Message "Empty -NewName supplied, copying databases under their original names."
+            $null = $PSBoundParameters.Remove("NewName")
         }
 
         if (-not $InputObject -and -not $Source) {
