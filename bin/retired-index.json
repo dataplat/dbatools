@@ -3189,6 +3189,11 @@
     "retiredPath": "private/retired/Start-DbaEndpoint.ps1",
     "flippedUtc": "2026-07-19T10:17:40Z"
   },
+  "Start-DbaMigration": {
+    "module": "dbatools.migration",
+    "retiredPath": "private/retired/Start-DbaMigration.ps1",
+    "flippedUtc": "2026-08-06T19:05:34Z"
+  },
   "Start-DbaPfDataCollectorSet": {
     "flippedUtc": "2026-07-14T18:23:28Z",
     "module": "dbatools.performance",

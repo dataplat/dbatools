@@ -72,7 +72,6 @@
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
         'Set-DbaNetworkCertificate',
-        'Start-DbaMigration',
         'Sync-DbaAvailabilityGroup',
         'Test-DbaReplLatency'
 

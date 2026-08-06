@@ -825,4 +825,87 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When resolving the command name in a cold shell" {
+        BeforeAll {
+            # Every other leg runs in a session that imported dbatools long before Pester started,
+            # so none of them can tell the binary cmdlet apart from the retired script function -
+            # whichever got there first answers to the name. This leg starts a shell of the same
+            # edition that has imported nothing, loads the module the way a consumer does, and asks
+            # what the name resolves to. dbatools.psm1 is the import under test on purpose: it is
+            # the loader that pulls the satellite in by path, and importing the manifest by name
+            # cannot work in a dev tree because the satellites are not on PSModulePath.
+            $moduleBase = @(Get-Module -Name dbatools)[0].ModuleBase
+            $shellPath = (Get-Process -Id $PID).Path
+
+            # The probe is written and then executed as a script, so it gets a directory of its
+            # own rather than a guessable name in shared temp: New-Item -ItemType Directory fails
+            # if the name is taken, which makes the create the exclusive step. Otherwise a peer
+            # window - or anything else on this box - could win the race between the write and the
+            # run and decide what this shell executes.
+            $probeRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("n"))"
+            $splatProbeRoot = @{
+                Path        = $probeRoot
+                ItemType    = "Directory"
+                ErrorAction = "Stop"
+            }
+            $null = New-Item @splatProbeRoot
+            $probePath = Join-Path -Path $probeRoot -ChildPath "resolve.ps1"
+
+            # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
+            # entry rather than silently winning; the count is what proves it is not there.
+            # Start-SqlMigration is reported too: the alias is registered against the command NAME
+            # in dbatools.psm1, so it has to keep resolving once the name is a cmdlet.
+            $probeBody = @"
+Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
+`$resolved = Get-Command -Name Start-DbaMigration -ErrorAction SilentlyContinue
+`$allResolved = @(Get-Command -Name Start-DbaMigration -All -ErrorAction SilentlyContinue)
+`$functionCount = @(`$allResolved | Where-Object { `$PSItem.CommandType -eq "Function" }).Count
+`$satelliteLoaded = [bool](Get-Module -Name dbatools.migration)
+`$aliasTarget = (Get-Command -Name Start-SqlMigration -ErrorAction SilentlyContinue).ResolvedCommand.Name
+"RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded|`$aliasTarget"
+"@
+            $splatProbeBody = @{
+                Path     = $probePath
+                Value    = $probeBody
+                Encoding = "UTF8"
+            }
+            Set-Content @splatProbeBody
+
+            # An array splat, not a hashtable one: this is a native executable, and PowerShell
+            # renders a splatted hashtable as -key:value pairs, which is not the form -File takes.
+            $splatProbeShell = @(
+                "-NoProfile"
+                "-NonInteractive"
+                "-File"
+                $probePath
+            )
+            $probeOutput = & $shellPath @splatProbeShell 2>&1
+            $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
+        }
+
+        AfterAll {
+            $splatProbeCleanup = @{
+                Path        = $probeRoot
+                Recurse     = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatProbeCleanup
+        }
+
+        It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
+            $probeFields[1] | Should -Be "Cmdlet"
+            $probeFields[2] | Should -Be "dbatools.migration"
+        }
+
+        It "Should load the satellite and leave no retired function shadowing the name" {
+            $probeFields[4] | Should -Be "True"
+            $probeFields[3] | Should -Be "0"
+        }
+
+        It "Should keep the Start-SqlMigration alias pointed at the command" {
+            $probeFields[5] | Should -Be "Start-DbaMigration"
+        }
+    }
+
 }
