@@ -28,19 +28,52 @@ Describe $CommandName -Tag UnitTests {
         # refusal raises ParameterArgumentValidationErrorNullNotAllowed or ...EmptyArrayNotAllowed.
         # Comparing the whole id would not work - it ends in the function name before the flip and
         # the cmdlet type name after it - so the leading token is the assertion.
-        It "Should reject <Name> with a validation error rather than a binder refusal" -ForEach @(
-            @{ Name = "a null Source"; SplatBinding = @{ Source = $null; Destination = "srv" } }
-            @{ Name = "an empty Destination array"; SplatBinding = @{ Source = "srv"; Destination = @() } }
-            @{ Name = "a null element in Destination"; SplatBinding = @{ Source = "srv"; Destination = @($null) } }
-        ) {
-            $caught = $null
-            try {
-                Copy-DbaSystemDbUserObject @SplatBinding -WhatIf
-            } catch {
-                $caught = $PSItem
+        It "Should reject a null Source with a validation error rather than a binder refusal" {
+            $splatNullSource = @{
+                Source      = $null
+                Destination = "srv"
+                WhatIf      = $true
             }
-            $caught | Should -Not -BeNullOrEmpty
-            ($caught.FullyQualifiedErrorId -split ",")[0] | Should -Be "ParameterArgumentValidationError"
+            $caughtNullSource = $null
+            try {
+                Copy-DbaSystemDbUserObject @splatNullSource
+            } catch {
+                $caughtNullSource = $PSItem
+            }
+            $caughtNullSource | Should -Not -BeNullOrEmpty
+            ($caughtNullSource.FullyQualifiedErrorId -split ",")[0] | Should -Be "ParameterArgumentValidationError"
+        }
+
+        It "Should reject an empty Destination array with a validation error rather than a binder refusal" {
+            $splatEmptyDestination = @{
+                Source      = "srv"
+                Destination = @()
+                WhatIf      = $true
+            }
+            $caughtEmptyDestination = $null
+            try {
+                Copy-DbaSystemDbUserObject @splatEmptyDestination
+            } catch {
+                $caughtEmptyDestination = $PSItem
+            }
+            $caughtEmptyDestination | Should -Not -BeNullOrEmpty
+            ($caughtEmptyDestination.FullyQualifiedErrorId -split ",")[0] | Should -Be "ParameterArgumentValidationError"
+        }
+
+        It "Should reject a null element in Destination with a validation error rather than a binder refusal" {
+            $splatNullElement = @{
+                Source      = "srv"
+                Destination = @($null)
+                WhatIf      = $true
+            }
+            $caughtNullElement = $null
+            try {
+                Copy-DbaSystemDbUserObject @splatNullElement
+            } catch {
+                $caughtNullElement = $PSItem
+            }
+            $caughtNullElement | Should -Not -BeNullOrEmpty
+            ($caughtNullElement.FullyQualifiedErrorId -split ",")[0] | Should -Be "ParameterArgumentValidationError"
         }
     }
 }
@@ -354,7 +387,12 @@ IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '$objSchema') DROP SCHEMA [$ob
             # window - or anything else on this box - could win the race between the write and the
             # run and decide what this shell executes.
             $probeRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatoolsci-resolve-$([guid]::NewGuid().ToString("n"))"
-            $null = New-Item -Path $probeRoot -ItemType Directory -ErrorAction Stop
+            $splatProbeRoot = @{
+                Path        = $probeRoot
+                ItemType    = "Directory"
+                ErrorAction = "Stop"
+            }
+            $null = New-Item @splatProbeRoot
             $probePath = Join-Path -Path $probeRoot -ChildPath "resolve.ps1"
 
             # Get-Command -All so a retired function shadowing the cmdlet shows up as a second
@@ -370,14 +408,25 @@ Import-Module -Name "$moduleBase\dbatools.psm1" -DisableNameChecking
 `$aliasTarget = (Get-Command -Name Copy-DbaSysDbUserObject -ErrorAction SilentlyContinue).ResolvedCommand.Name
 "RESOLVED|`$(`$resolved.CommandType)|`$(`$resolved.ModuleName)|`$functionCount|`$satelliteLoaded|`$aliasTarget"
 "@
-            Set-Content -Path $probePath -Value $probeBody -Encoding UTF8
+            $splatProbeBody = @{
+                Path     = $probePath
+                Value    = $probeBody
+                Encoding = "UTF8"
+            }
+            Set-Content @splatProbeBody
 
             $probeOutput = & $shellPath -NoProfile -NonInteractive -File $probePath 2>&1
             $probeFields = @("$(@($probeOutput | Where-Object { "$PSItem" -like "RESOLVED|*" })[0])" -split "\|")
         }
 
         AfterAll {
-            Remove-Item -Path $probeRoot -Recurse -Force -ErrorAction SilentlyContinue
+            $splatProbeCleanup = @{
+                Path        = $probeRoot
+                Recurse     = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatProbeCleanup
         }
 
         It "Should resolve to the binary cmdlet shipped by dbatools.migration" {
