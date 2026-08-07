@@ -22,6 +22,57 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Get-FilestreamReturnValue translates the WMI return value" {
+        # The clause for the success codes used to read { 2147021885 -or 2147945411 -or 0 }, a
+        # constant expression that is always true, so it matched every code. Since switch runs
+        # every matching clause, a documented refusal came back as its own message *and* the
+        # success message, and an unrecognized code never reached default and was reported as a
+        # plain success. Enable-DbaFilestream then discarded even that, so a refused call looked
+        # like a successful one that had simply not taken effect yet.
+
+        It "reports a documented refusal as a failure, with only its own message" {
+            InModuleScope dbatools {
+                $result = Get-FilestreamReturnValue -Value 2147024891
+
+                $result.Category | Should -Be "Failure"
+                $result.Message | Should -Be "Access denied"
+                @($result.Message).Count | Should -Be 1
+            }
+        }
+
+        It "reports the success codes as a success" {
+            InModuleScope dbatools {
+                (Get-FilestreamReturnValue -Value 0).Category | Should -Be "Success"
+                (Get-FilestreamReturnValue -Value 2147021885).Category | Should -Be "Success"
+                (Get-FilestreamReturnValue -Value 2147945411).Category | Should -Be "Success"
+            }
+        }
+
+        It "reports an unrecognized code as unknown and keeps the raw value" {
+            InModuleScope dbatools {
+                $result = Get-FilestreamReturnValue -Value 99999
+
+                $result.Category | Should -Be "Unknown"
+                $result.ReturnValue | Should -Be 99999
+                $result.Message | Should -BeLike "*99999*"
+            }
+        }
+
+        It "reports a missing return value as unknown rather than as a success" {
+            InModuleScope dbatools {
+                (Get-FilestreamReturnValue -Value $null).Category | Should -Be "Unknown"
+            }
+        }
+
+        It "matches the return value whatever numeric type the provider used" {
+            # Invoke-CimMethod hands back a UInt32, so a switch that only matched Int32 would send
+            # every real call down the unknown path.
+            InModuleScope dbatools {
+                (Get-FilestreamReturnValue -Value ([uint32]2147024891)).Category | Should -Be "Failure"
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
