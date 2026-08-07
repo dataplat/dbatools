@@ -51,8 +51,10 @@ function Get-DbaDbQueryStoreOption {
         Specifies which user databases to retrieve Query Store configuration from. Accepts database names, wildcards, or arrays for multiple databases.
         Use this when you need to audit Query Store settings for specific databases rather than scanning your entire instance.
 
+        master and tempdb are skipped with a warning, because SQL Server never reports Query Store settings for them. model is skipped with a warning before SQL Server 2022, where sys.database_query_store_options stays empty; from SQL Server 2022 on it reports its configuration like any other database.
+
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from Query Store configuration retrieval. System databases (master, tempdb, model) are automatically excluded.
+        Excludes specific databases from Query Store configuration retrieval. master, tempdb and model are excluded on top of whatever you list here unless model is named explicitly in -Database on SQL Server 2022 or later.
         Useful for skipping databases that you know don't need Query Store monitoring or have restricted access permissions.
 
     .PARAMETER EnableException
@@ -97,10 +99,6 @@ function Get-DbaDbQueryStoreOption {
         [object[]]$ExcludeDatabase,
         [switch]$EnableException
     )
-    begin {
-        # We exclude model because SMO cannot tell if Query Store is enabled there
-        $ExcludeDatabase += 'master', 'tempdb', "model"
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -109,8 +107,22 @@ function Get-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # We have to exclude system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
+            # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
+            # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
+            # caller named on purpose instead of dropping it silently.
+            $splatUnsupported = @{
+                SqlInstance  = $server
+                Database     = $Database
+                FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            }
+            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+
+            $splatGetDatabase = @{
+                SqlInstance     = $server
+                ExcludeDatabase = $skipDatabase
+                Database        = $Database
+            }
+            $dbs = Get-DbaDatabase @splatGetDatabase | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"

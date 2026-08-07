@@ -32,8 +32,10 @@ function Test-DbaDbQueryStore {
         Specifies which databases to test for Query Store best practices. Accepts wildcards for pattern matching.
         Use this when you need to evaluate Query Store settings for specific databases instead of all user databases on the instance.
 
+        master and tempdb are skipped with a warning, because SQL Server never reports Query Store settings for them. model is skipped with a warning before SQL Server 2022, where sys.database_query_store_options stays empty; from SQL Server 2022 on it is evaluated like any other database.
+
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from Query Store evaluation. System databases (master, model, tempdb) are automatically excluded.
+        Excludes specific databases from Query Store evaluation. master, tempdb and model are excluded on top of whatever you list here unless model is named explicitly in -Database on SQL Server 2022 or later.
         Use this when you want to test most databases but skip certain ones like development or temporary databases.
 
     .PARAMETER InputObject
@@ -121,10 +123,6 @@ function Test-DbaDbQueryStore {
         [switch]$EnableException
     )
 
-    begin {
-        $ExcludeDatabase += "master", "model", "tempdb"
-    }
-
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -141,17 +139,17 @@ function Test-DbaDbQueryStore {
             $inputType = $input.GetType().FullName
 
             switch ($inputType) {
-                'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
+                "Dataplat.Dbatools.Parameter.DbaInstanceParameter" {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
+                    $connectTarget = $input
                 }
-                'Microsoft.SqlServer.Management.Smo.Server' {
+                "Microsoft.SqlServer.Management.Smo.Server" {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
+                    $connectTarget = $input
                 }
-                'Microsoft.SqlServer.Management.Smo.Database' {
+                "Microsoft.SqlServer.Management.Smo.Database" {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbDatabases = $input | Where-Object { $_.Name -notin $ExcludeDatabase }
+                    $connectTarget = $input.Parent
                 }
                 default {
                     Stop-Function -Message "InputObject is not a server or database."
@@ -159,23 +157,50 @@ function Test-DbaDbQueryStore {
                 }
             }
 
+            # We connect before filtering, because which databases have to be skipped depends on the version and
+            # because filtering first left nothing to read the server off when every database was excluded.
             try {
-                $server = Connect-DbaInstance -SqlInstance $dbDatabases[0].Parent -SqlCredential $SqlCredential -MinimumVersion 13
+                $server = Connect-DbaInstance -SqlInstance $connectTarget -SqlCredential $SqlCredential -MinimumVersion 13
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $connectTarget -Continue
             }
 
+            # Warn about anything the caller named on purpose that cannot be evaluated instead of dropping it silently.
+            # Piping a database object in is as explicit as naming it in -Database, so it counts as named on purpose.
+            if ($inputType -eq "Microsoft.SqlServer.Management.Smo.Database") {
+                $namedDatabase = @($Database) + $input.Name
+            } else {
+                $namedDatabase = $Database
+            }
+
+            $splatUnsupported = @{
+                SqlInstance  = $server
+                Database     = $namedDatabase
+                FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            }
+            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+
             if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                $ExcludeDatabase += "msdb"
+                $skipDatabase += "msdb"
+            }
+
+            if ($inputType -eq "Microsoft.SqlServer.Management.Smo.Database") {
+                $dbDatabases = $input
+            } else {
+                $splatGetDatabase = @{
+                    SqlInstance     = $server
+                    Database        = $Database
+                    ExcludeDatabase = $skipDatabase
+                    OnlyAccessible  = $true
+                }
+                $dbDatabases = Get-DbaDatabase @splatGetDatabase
             }
 
             if ($Database) {
                 $dbDatabases = $dbDatabases | Where-Object { $Database -contains $_.Name }
             }
 
-            if ($ExcludeDatabase) {
-                $dbDatabases = $dbDatabases | Where-Object Name -NotIn $ExcludeDatabase
-            }
+            $dbDatabases = $dbDatabases | Where-Object Name -NotIn $skipDatabase
 
             $desiredState = [PSCustomObject]@{
                 Property      = 'ActualState'
@@ -224,8 +249,15 @@ function Test-DbaDbQueryStore {
             }
 
             try {
-                Write-Message -Level Verbose -Message "Evaluating Query Store options"
-                $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $server -Database $dbDatabases.name
+                if ($dbDatabases) {
+                    Write-Message -Level Verbose -Message "Evaluating Query Store options"
+                    $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $server -Database $dbDatabases.name
+                } else {
+                    # An empty -Database means "every database" to Get-DbaDbQueryStoreOption, so once the filters have
+                    # left nothing the call has to be skipped rather than evaluating the whole instance.
+                    Write-Message -Level Verbose -Message "No databases left to evaluate on $server"
+                    $currentOptions = @()
+                }
 
                 foreach ($db in $currentOptions) {
                     $props = $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState')

@@ -22,12 +22,14 @@ function Set-DbaDbQueryStoreOption {
         Specifies which databases to configure Query Store options for. Accepts database names, wildcards, or database objects from Get-DbaDatabase.
         Use this when you need to configure Query Store for specific databases instead of all user databases on the instance.
 
+        master and tempdb are skipped with a warning, because SQL Server does not allow Query Store there. model is skipped with a warning before SQL Server 2022, where the ALTER is accepted but nothing can be read back; from SQL Server 2022 on it is configured like any other database, which sets the Query Store defaults for every database created afterwards.
+
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from Query Store configuration changes. System databases (master, tempdb, model) are automatically excluded.
+        Excludes specific databases from Query Store configuration changes. master, tempdb and model are excluded on top of whatever you list here unless model is named explicitly in -Database on SQL Server 2022 or later.
         Useful when you want to configure most databases but skip certain ones like staging or temporary databases.
 
     .PARAMETER AllDatabases
-        Configures Query Store options for all user databases on the instance. System databases are automatically excluded.
+        Configures Query Store options for all user databases on the instance. System databases are automatically excluded, model included, so a sweep never changes the defaults for databases created later.
         Use this switch when you want to apply consistent Query Store settings across all user databases without specifying individual database names.
 
     .PARAMETER State
@@ -188,10 +190,6 @@ function Set-DbaDbQueryStoreOption {
         [int64]$CustomCapturePolicyStaleThresholdHours,
         [switch]$EnableException
     )
-    begin {
-        $ExcludeDatabase += 'master', 'tempdb', "model"
-    }
-
     process {
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllDatabases) {
             Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
@@ -218,8 +216,22 @@ function Set-DbaDbQueryStoreOption {
                 Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
-            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object { $_.IsAccessible -and !$_.IsDatabaseSnapshot }
+            # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
+            # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
+            # caller named on purpose instead of dropping it silently.
+            $splatUnsupported = @{
+                SqlInstance  = $server
+                Database     = $Database
+                FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            }
+            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+
+            $splatGetDatabase = @{
+                SqlInstance     = $server
+                ExcludeDatabase = $skipDatabase
+                Database        = $Database
+            }
+            $dbs = Get-DbaDatabase @splatGetDatabase | Where-Object { $_.IsAccessible -and !$_.IsDatabaseSnapshot }
 
             foreach ($db in $dbs) {
                 $dbName = $db.Name
