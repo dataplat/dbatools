@@ -164,11 +164,14 @@ Describe $CommandName -Tag UnitTests {
             $filePath = Join-Path $TestDrive "not-a-directory.txt"
             Set-Content -LiteralPath $filePath -Value "not a directory"
             $warnings = @()
+            # The warning is what this test is about, so it is silenced on the stream and asserted on
+            # its own warning variable instead. A test run must not print warnings.
             $splatInvalidPath = @{
                 Source          = "not-used"
                 Destination     = "not-used"
                 Path            = $filePath
                 WarningVariable = "warnings"
+                WarningAction   = "SilentlyContinue"
             }
 
             $result = Start-DbaAzMigration @splatInvalidPath

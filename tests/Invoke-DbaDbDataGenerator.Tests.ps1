@@ -147,19 +147,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns about the masking type and names the column" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -BeLike "*Unsupported masking type*Locale*for column City*"
         }
 
         It "Warns about the masking sub type and names the column" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkSubTypeConfigPath
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkSubTypeConfigPath -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -BeLike "*Unsupported masking sub type*ContainsKey*for column City*"
         }
 
         It "Skips the table instead of running an insert it cannot fill" {
             # The insert statement names every column of the table, so skipping a single column further down
             # left it with fewer values than columns and SQL Server answered with a syntax error.
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
             ($WarnVar -join " ") | Should -Not -BeLike "*Incorrect syntax*"
         }
@@ -293,7 +293,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Names the parameter the configuration cannot supply" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $needsFormatConfigPath
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $needsFormatConfigPath -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -BeLike "*needs a Format*for column City*"
             ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
         }
@@ -347,7 +347,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Rejects the column before generating unique values for it" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueConfigPath
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueConfigPath -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -BeLike "*Unsupported masking type*Locale*for column City*"
             ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.uniquepeople*"
         }

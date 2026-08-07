@@ -62,11 +62,17 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "verifying output when running queries" {
-        BeforeAll {
-            $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+        BeforeDiscovery {
+            # -TestCases is read while Pester discovers the tests. Built in the BeforeAll below, as
+            # it was before, this list was still empty at discovery, so the column test did not exist
+            # at all - and with Pester 6 the empty list fails the whole file during discovery.
+            $columnnames = "Item", "RowError", "RowState", "Table", "ItemArray", "HasErrors"
             $TestCases = @()
             $columnnames.ForEach{ $TestCases += @{ columnname = $PSItem } }
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'Memory Clerk Usage'
+        }
+
+        BeforeAll {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName "Memory Clerk Usage"
         }
 
         It "runs a specific query" {

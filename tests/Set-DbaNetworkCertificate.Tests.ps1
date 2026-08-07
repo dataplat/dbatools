@@ -77,12 +77,17 @@ Describe $CommandName -Tag IntegrationTests {
         $suitability = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $unsuitableCertificate.Thumbprint -EnableException
         $suitability.EnhancedKeyUsageValid | Should -BeFalse
 
+        # Forcing an unsuitable certificate warns about the failed checks, and not restarting the
+        # service warns that the certificate is not in effect yet. Both are expected, so they are
+        # silenced here because a test run must not print warnings. They are not asserted on $WarnVar:
+        # this call runs with EnableException, and then the warnings do not reach the warning variable.
         $splatSetUnsuitableCertificate = @{
             SqlInstance     = $TestConfig.InstanceRestart
             Thumbprint      = $unsuitableCertificate.Thumbprint
             Force           = $true
             Confirm         = $false
             EnableException = $true
+            WarningAction   = "SilentlyContinue"
         }
         $result = Set-DbaNetworkCertificate @splatSetUnsuitableCertificate
         $configuredCertificate = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -EnableException
