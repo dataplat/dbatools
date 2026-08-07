@@ -510,6 +510,198 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Multi-database copies regression tests for issue #10512" {
+        BeforeDiscovery {
+            # Both spellings the help documents as "treated as not specified" (#10512)
+            $blankNewNameCases = @(
+                @{ NewNameLabel = "an empty"; NewNameValue = "" }
+                @{ NewNameLabel = "a whitespace"; NewNameValue = "   " }
+            )
+        }
+
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatStopProcess = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Program     = "dbatools PowerShell module - dbatools.io"
+            }
+            Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $randomPipe = Get-Random
+            $pipeDb1 = "dbatoolsci_pipe1$randomPipe"
+            $pipeDb2 = "dbatoolsci_pipe2$randomPipe"
+            $pipeNewName = "dbatoolsci_piperename$randomPipe"
+            $pipeSentinelDb = "dbatoolsci_pipesentinel$randomPipe"
+            $pipeOwnerLogin = "dbatoolsci_owner$randomPipe"
+
+            $serverPipeSource = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverPipeSource.Query("CREATE DATABASE $pipeDb1; ALTER DATABASE $pipeDb1 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $serverPipeSource.Query("CREATE DATABASE $pipeDb2; ALTER DATABASE $pipeDb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            # An unrelated destination database whose owner must survive every copy below:
+            # the #10512 defect swept the owner of every database on the destination. The
+            # sentinel owner is a dedicated login because the sweep sets owners to the
+            # source database owner - if both were sa, a sweep would go undetected.
+            $serverPipeDest = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+            $serverPipeDest.Query("CREATE DATABASE $pipeSentinelDb; ALTER DATABASE $pipeSentinelDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $securePipeOwner = ConvertTo-SecureString "P@ssw0rd$randomPipe!" -AsPlainText -Force
+            $splatOwnerLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $pipeOwnerLogin
+                SecurePassword = $securePipeOwner
+            }
+            $null = New-DbaLogin @splatOwnerLogin
+            $splatSentinelOwner = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = $pipeSentinelDb
+                TargetLogin = $pipeOwnerLogin
+            }
+            $null = Set-DbaDbOwner @splatSentinelOwner
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemovePipeSource = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = $pipeDb1, $pipeDb2
+            }
+            Remove-DbaDatabase @splatRemovePipeSource -ErrorAction SilentlyContinue
+
+            $splatRemovePipeDest = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = $pipeDb1, $pipeDb2, $pipeNewName, $pipeSentinelDb
+            }
+            Remove-DbaDatabase @splatRemovePipeDest -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceCopy2 -Login $pipeOwnerLogin -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Copies every database in a parameter array" {
+            $splatCopyArray = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $pipeDb1, $pipeDb2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Copy-DbaDatabase @splatCopyArray
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
+        }
+
+        It "Copies every piped database" {
+            $splatCopyPiped = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyPiped
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            $results.Name | Should -Contain $pipeDb1
+            $results.Name | Should -Contain $pipeDb2
+            ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
+            ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $pipeOwnerLogin
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
+        }
+
+        It "Ignores <NewNameLabel> NewName and copies piped databases under their original names" -ForEach $blankNewNameCases {
+            # The reporter's pipeline passes -NewName unconditionally and leaves it blank when
+            # no rename is wanted (#10512). A blank name must mean "no rename", never an empty
+            # -Database filter that lets post-restore commands sweep the whole destination.
+            $ownerBefore = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner
+            $splatCopyBlankName = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                NewName       = $NewNameValue
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyBlankName
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
+            ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $ownerBefore
+            $splatRemoveBlankCopies = @{
+                SqlInstance     = $TestConfig.InstanceCopy2
+                Database        = $pipeDb1, $pipeDb2
+                EnableException = $true
+            }
+            $null = Remove-DbaDatabase @splatRemoveBlankCopies
+        }
+
+        It "Rejects NewName with piped databases before any copy happens" {
+            $splatCopyPipedRename = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                NewName         = $pipeNewName
+                WarningVariable = "warnvar"
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyPipedRename 3> $null
+            $results | Should -BeNullOrEmpty
+            $warnvar | Should -BeLike "*Cannot use NewName with piped databases*"
+            # The rejection must be atomic: no renamed database and no partial copies
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeNewName, $pipeDb1, $pipeDb2 | Should -BeNullOrEmpty
+        }
+
+        It "Continues to the next piped database when one restore fails" {
+            # The reported shape (#10512): several piped databases, no -NewName. A backup
+            # gone missing must yield exactly one Failed result for that database and must
+            # not silently discard the databases piped in after it.
+            $splatBackupGone = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $pipeDb1
+                Path            = $NetworkPath
+                EnableException = $true
+            }
+            $backupGone = Backup-DbaDatabase @splatBackupGone
+            $backupGone.FullName | ForEach-Object { Remove-Item -Path $PSItem -Force }
+
+            $splatBackupKeep = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $pipeDb2
+                Path            = $NetworkPath
+                EnableException = $true
+            }
+            $null = Backup-DbaDatabase @splatBackupKeep
+
+            $splatCopyLastBackup = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                UseLastBackup   = $true
+                WithReplace     = $true
+                WarningVariable = "warnvar"
+            }
+            # sys.databases rows come back in no guaranteed order, and this test only
+            # proves anything when the failing database is piped FIRST - a failure on the
+            # last record leaves no later record for the old discard bug to suppress.
+            $orderedPipeInput = @(
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb2
+            )
+            $results = $orderedPipeInput | Copy-DbaDatabase @splatCopyLastBackup 3> $null
+            ($results | Where-Object Name -eq $pipeDb1 | Measure-Object).Count | Should -Be 1
+            ($results | Where-Object Name -eq $pipeDb1).Status | Should -Be "Failed"
+            ($results | Where-Object Name -eq $pipeDb2 | Measure-Object).Count | Should -Be 1
+            ($results | Where-Object Name -eq $pipeDb2).Status | Should -Be "Successful"
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2).Name | Should -Be $pipeDb2
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2 -EnableException
+        }
+
+    }
+
     Context "SetSourceOffline regression test for issue #9546" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

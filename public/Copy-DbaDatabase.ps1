@@ -128,7 +128,9 @@ function Copy-DbaDatabase {
     .PARAMETER NewName
         Renames the database during migration when copying a single database.
         The database name and physical file names are updated to use the new name.
-        Cannot be used with multiple databases or together with -Prefix parameter.
+        Cannot be used with multiple databases, with pipeline input, or together with -Prefix parameter.
+        To rename a database, specify it with -Database and provide -NewName.
+        An empty or whitespace value is treated as if -NewName was not specified, so scripts can pass a NewName variable unconditionally and leave it empty to copy under the original names.
 
     .PARAMETER Prefix
         Adds a prefix to all migrated database names and their physical file names.
@@ -232,6 +234,11 @@ function Copy-DbaDatabase {
         PS C:\> Copy-DbaDatabase -Source sqlcs -Destination sqlcs -Database t -DetachAttach -NewName t_copy -Reattach
 
         Copies database t from sqlcs to the same server (sqlcs) using the detach/copy/attach method. The new database will be named t_copy and the original database will be reattached.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2014a -Database db1, db2 | Copy-DbaDatabase -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -NewName $rename
+
+        Copies db1 and db2 to sqlcluster under their original names when $rename is an empty string. An empty or whitespace -NewName is treated as not specified, so a script can pass the same variable unconditionally and only set it when a single database should be renamed.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -300,6 +307,15 @@ function Copy-DbaDatabase {
     )
     begin {
         $CopyOnly = -not $NoCopyOnly
+
+        # An empty name slips through every downstream -Database filter, which then means
+        # "all databases" and lets commands like Set-DbaDbOwner sweep the whole destination (#10512)
+        # Unbinding the parameter makes every later Test-Bound check treat it as not specified,
+        # so scripts can pass -NewName unconditionally and leave it empty to mean "no rename"
+        if ((Test-Bound "NewName") -and [string]::IsNullOrWhiteSpace($NewName)) {
+            Write-Message -Level Verbose -Message "Empty -NewName supplied, copying databases under their original names."
+            $null = $PSBoundParameters.Remove("NewName")
+        }
 
         if (-not $InputObject -and -not $Source) {
             Stop-Function -Message "With no piped input a -Source must be specified."
@@ -736,6 +752,16 @@ function Copy-DbaDatabase {
             return
         }
 
+        # Piped input arrives one database per process block, so the total count is unknown
+        # until the pipeline ends - by which time the first database would already have been
+        # copied under the new name (#10512). Reject before any work rather than after a
+        # partial migration; a parameter-bound -InputObject array falls through to the
+        # count-based guard below because its full count is known up front.
+        if ((Test-Bound "NewName") -and $InputObject -and $MyInvocation.ExpectingInput) {
+            Stop-Function -Message "Cannot use NewName with piped databases because the total number of piped databases is not known before copying begins. To copy a single database under a new name, use -Database with -NewName."
+            return
+        }
+
         if ($InputObject) {
             $Source = $InputObject[0].Parent
             $Database = $InputObject.Name
@@ -966,7 +992,7 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Performing count."
             $dbCount = $databaseList.Count
 
-            if ((Test-Bound 'NewName') -and $dbCount -gt 1) {
+            if ((Test-Bound "NewName") -and $dbCount -gt 1) {
                 Stop-Function -Message "Cannot use NewName when copying multiple databases"
                 return
             }
@@ -1011,6 +1037,27 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
                     }
 
+                    $copyDatabaseStatus = [PSCustomObject]@{
+                        SourceServer        = $sourceServer.Name
+                        DestinationServer   = $destServer.Name
+                        Name                = $dbName
+                        DestinationDatabase = $destinationDbName
+                        Type                = "Database"
+                        Status              = $null
+                        Notes               = $null
+                        DateTime            = [DbaDateTime](Get-Date)
+                    }
+
+                    # Belt and suspenders: an empty destination name must never reach the
+                    # restore or the post-restore owner/state/property commands, where an
+                    # empty -Database filter means "all databases" (#10512)
+                    if ([string]::IsNullOrWhiteSpace($destinationDbName)) {
+                        $copyDatabaseStatus.Status = "Failed"
+                        $copyDatabaseStatus.Notes = "Destination database name resolved to an empty string"
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Stop-Function -Message "Destination database name for $dbName resolved to an empty string. Skipping this database to protect the destination." -Continue
+                    }
+
                     $filestructure.databases[$dbName]['destinationDbName'] = $destinationDbName
                     ForEach ($key in $filestructure.databases[$dbName].Destination.Keys) {
                         $splitFileName = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename -Leaf
@@ -1027,17 +1074,6 @@ function Copy-DbaDatabase {
                         }
                         $splitFileName = $prefix + $splitFileName
                         $filestructure.databases[$dbName].Destination.$key.physical = Join-DbaPath -Path $SplitPath -ChildPath $splitFileName
-                    }
-
-                    $copyDatabaseStatus = [PSCustomObject]@{
-                        SourceServer        = $sourceServer.Name
-                        DestinationServer   = $destServer.Name
-                        Name                = $dbName
-                        DestinationDatabase = $destinationDbName
-                        Type                = "Database"
-                        Status              = $null
-                        Notes               = $null
-                        DateTime            = [DbaDateTime](Get-Date)
                     }
 
                     Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
@@ -1268,6 +1304,40 @@ function Copy-DbaDatabase {
                                 }
                             }
 
+                            if (-not $UseLastBackup -and $SharedPath -notlike "http*") {
+                                # The destination's SMB client caches a negative lookup for 5 seconds
+                                # (FileNotFoundCacheLifetime), so a freshly written backup probed too
+                                # early can stay "not found" for the restore and fail with OS error 2
+                                # although the file exists (#10512). Poll from the destination until
+                                # the file is visible or the negative-cache window has passed.
+                                $backupPathList = @($backupTmpResult | Select-Object -ExpandProperty FullName -Unique)
+                                $visibilityDeadline = (Get-Date).AddSeconds(8)
+                                do {
+                                    # Test-DbaPath emits nothing when its own connection attempt fails, so an
+                                    # empty or incomplete result set is indeterminate - only a conclusive
+                                    # result for every path counts as visible.
+                                    $pathResults = @(Test-DbaPath -SqlInstance $destServer -Path $backupPathList)
+                                    $allBackupsVisible = ($backupPathList.Count -gt 0) -and ($pathResults.Count -eq $backupPathList.Count)
+                                    if ($allBackupsVisible) {
+                                        foreach ($pathResult in $pathResults) {
+                                            if ($pathResult -is [bool]) {
+                                                if (-not $pathResult) {
+                                                    $allBackupsVisible = $false
+                                                }
+                                            } elseif (-not $pathResult.FileExists) {
+                                                $allBackupsVisible = $false
+                                            }
+                                        }
+                                    }
+                                    if (-not $allBackupsVisible -and (Get-Date) -lt $visibilityDeadline) {
+                                        Start-Sleep -Seconds 1
+                                    }
+                                } while (-not $allBackupsVisible -and (Get-Date) -lt $visibilityDeadline)
+                                if (-not $allBackupsVisible) {
+                                    Write-Message -Level Warning -Message "Backup file(s) for $dbName under $SharedPath are still not visible from $destinstance after waiting out the SMB negative-cache window. The restore will surface the underlying error if they remain inaccessible."
+                                }
+                            }
+
                             # For BackupRestore, set source offline after backup completes but before restore
                             if ($SetSourceOffline) {
                                 Write-Message -Level Verbose -Message "Setting source database $dbName to offline after backup."
@@ -1289,7 +1359,16 @@ function Copy-DbaDatabase {
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
+                                if (-not $msg) {
+                                    $msg = $_.Exception.Message
+                                }
+                                $copyDatabaseStatus.Status = "Failed"
+                                $copyDatabaseStatus.Notes = $msg
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                # -Continue so the interrupt flag is not set: that flag persists
+                                # across process blocks and used to silently discard every database
+                                # piped in after one failed restore (#10512)
+                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException -Continue
                             }
                             $restoreResult = $restoreResultTmp.RestoreComplete
 

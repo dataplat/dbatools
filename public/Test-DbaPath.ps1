@@ -103,7 +103,10 @@ function Test-DbaPath {
                         return
                     }
 
-                    Write-Message -Level Verbose -Message "xp_fileexist execution failed for path(s) on $instance. The SQL Server service account may not have access to the specified path(s). Error: $_"
+                    # Warning, not Verbose: swallowing the real error here made batch-level
+                    # failures (permissions, timeouts) indistinguishable from files that
+                    # genuinely do not exist (#10512)
+                    Write-Message -Level Warning -Message "xp_fileexist execution failed for path(s) on $instance, so existence could not be determined and the path(s) are reported as not found. The SQL Server service account may not have access to the specified path(s). Error: $_"
                     if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                         return $false
                     } else {

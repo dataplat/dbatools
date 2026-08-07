@@ -65,6 +65,14 @@ Describe $CommandName -Tag UnitTests {
             It "Honors EnableException when xp_fileexist execution fails" {
                 { Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -EnableException } | Should -Throw -ExpectedMessage "*xp_fileexist*"
             }
+
+            It "Warns that existence could not be determined instead of silently reporting not found" {
+                # The execution failure used to be demoted to Verbose, making a batch-level
+                # failure indistinguishable from files that genuinely do not exist (#10512)
+                $null = Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -WarningVariable warnvar 3> $null
+
+                $warnvar | Should -BeLike "*could not be determined*"
+            }
         }
     }
 }
