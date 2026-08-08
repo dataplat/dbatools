@@ -1328,9 +1328,10 @@ function Invoke-FleetReconcile {
         # above the number of instances that really exist, and a PATCH computed from the
         # nominal figure alone creates target-minus-nominal VMs instead of
         # target-minus-actual; that gap held a ten-runner lane at six VMs (2026-08-08).
-        # Get-FleetCapacityStep walks capacity down to reality before raising it to the
-        # target, one settled pass at a time, so an in-flight scale-out is never
-        # mistaken for phantom capacity and dependent PATCHes never overlap.
+        # Get-FleetCapacityStep emits at most one mutation per settled pass -- a scale-out
+        # compensated for the drift, or a normalization once demand is met -- so an
+        # in-flight scale-out is never mistaken for phantom capacity, dependent PATCHes
+        # never overlap, and churn-minted drift can never starve creation.
         $splatCapacityStep = @{
             ProvisioningState = $provisioningState
             NominalCapacity   = $capacity

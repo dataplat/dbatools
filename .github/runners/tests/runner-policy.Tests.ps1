@@ -559,21 +559,14 @@ Describe "Get-VmssCapacityPlan" {
 }
 
 Describe "Get-FleetCapacityStep" {
-    It "normalizes phantom capacity on the first settled pass and scales out on the next" {
-        $splatFirstPass = @{
+    It "scales out in one compensated step despite phantom capacity" {
+        $splatPhantom = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 9
             ActualCapacity    = 6
             TargetCapacity    = 10
         }
-        Get-FleetCapacityStep @splatFirstPass | Should -Be 6
-        $splatSecondPass = @{
-            ProvisioningState = "Succeeded"
-            NominalCapacity   = 6
-            ActualCapacity    = 6
-            TargetCapacity    = 10
-        }
-        Get-FleetCapacityStep @splatSecondPass | Should -Be 10
+        Get-FleetCapacityStep @splatPhantom | Should -Be 13
     }
 
     It "does not mistake an in-flight scale-out for phantom capacity" {
@@ -586,14 +579,44 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatInFlight | Should -BeNullOrEmpty
     }
 
-    It "still normalizes a failed scale set so the fleet can recover" {
+    It "keeps scaling out while churn mints fresh phantom capacity" {
+        $splatChurn = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 7
+            ActualCapacity    = 5
+            TargetCapacity    = 20
+        }
+        Get-FleetCapacityStep @splatChurn | Should -Be 22
+    }
+
+    It "reclaims headroom when the compensated step is pinned at the ceiling" {
+        $splatPinned = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 35
+            ActualCapacity    = 20
+            TargetCapacity    = 25
+        }
+        Get-FleetCapacityStep @splatPinned | Should -Be 20
+    }
+
+    It "normalizes phantom capacity once demand is satisfied" {
+        $splatQuiet = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 12
+            ActualCapacity    = 10
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatQuiet | Should -Be 10
+    }
+
+    It "still recovers a failed scale set" {
         $splatFailed = @{
             ProvisioningState = "Failed"
             NominalCapacity   = 9
             ActualCapacity    = 6
             TargetCapacity    = 10
         }
-        Get-FleetCapacityStep @splatFailed | Should -Be 6
+        Get-FleetCapacityStep @splatFailed | Should -Be 13
     }
 
     It "emits nothing when settled capacity already matches the target" {

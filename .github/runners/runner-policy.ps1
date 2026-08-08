@@ -256,25 +256,37 @@ function Get-FleetCapacityStep {
     )
 
     # The Function controller PATCHes capacity fire-and-forget, so unlike the CLI script
-    # it cannot await one mutation before issuing the next. Serialization comes from the
-    # pass structure instead. While the scale set is mid-mutation, a nominal-over-actual
-    # gap is Azure still working, not phantom capacity -- normalizing it away would
-    # cancel the instances being created -- so an unsettled pass emits nothing and a
-    # later pass converges. A settled pass takes only the first step of the plan, so a
-    # normalization and the scale-out it unblocks land on successive passes, each
-    # computed from a settled read. Failed still mutates: a capacity PATCH is how a
+    # it cannot run Get-VmssCapacityPlan's normalize-then-scale sequence: awaiting the
+    # normalization would reintroduce the in-line wait that put the queue 3.3 hours
+    # behind, and taking one plan step per pass starves scale-out entirely, because
+    # ephemeral deletes mint fresh phantom capacity between passes and normalization
+    # wins the slot every time -- the fleet drained from 8 VMs to 3 against a target of
+    # 20 that way (2026-08-08). So the scale-out step compensates for the drift instead
+    # of repairing it first: raising nominal by exactly the shortfall makes Azure create
+    # target-minus-actual instances no matter how stale the bookkeeping is, in a single
+    # mutation. Normalization still happens, but only on settled passes where demand is
+    # already met, or when the compensated step is pinned against the capacity ceiling
+    # and reclaiming headroom is the only way forward. While the scale set is
+    # mid-mutation a nominal-over-actual gap is Azure still working, not phantom
+    # capacity -- normalizing it away would cancel the instances being created -- so an
+    # unsettled pass emits nothing. Failed still mutates: a capacity PATCH is how a
     # stuck scale set recovers, and skipping it would freeze the fleet.
     if ($ProvisioningState -in @("Creating", "Updating", "Deleting", "Migrating")) {
         return $null
     }
-    $splatCapacity = @{
-        NominalCapacity = $NominalCapacity
-        ActualCapacity  = $ActualCapacity
-        TargetCapacity  = $TargetCapacity
+    if ($ActualCapacity -lt $TargetCapacity) {
+        # 35 matches the ValidateRange every capacity function in this file shares.
+        $compensated = [math]::Min(35, $NominalCapacity + ($TargetCapacity - $ActualCapacity))
+        if ($compensated -gt $NominalCapacity) {
+            return $compensated
+        }
+        if ($NominalCapacity -gt $ActualCapacity) {
+            return $ActualCapacity
+        }
+        return $null
     }
-    $plan = @(Get-VmssCapacityPlan @splatCapacity)
-    if ($plan.Count -gt 0) {
-        return $plan[0]
+    if ($NominalCapacity -gt $ActualCapacity) {
+        return $ActualCapacity
     }
     return $null
 }
