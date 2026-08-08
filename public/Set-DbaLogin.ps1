@@ -504,10 +504,9 @@ function Set-DbaLogin {
                         $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
                         $passwordChanged = $true
 
-                        # necessary so that the read only properties PasswordMustChange and IsLocked are
-                        # updated. Changing the password with unlock clears the lock on the instance, but
-                        # without this the login we return still reports itself as locked.
-                        $l.Refresh()
+                        if (Test-Bound PasswordMustChange) {
+                            $l.Refresh()  # necessary so that the read only property PasswordMustChange is updated
+                        }
                     } catch {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
