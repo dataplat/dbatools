@@ -1306,14 +1306,6 @@ function Invoke-FleetReconcile {
             }
         }
 
-        $state = Get-FleetState
-        $transitionBusy = @($state.Vms | Where-Object {
-                $runner = Get-RunnerForVm -State $state -VmName $PSItem.name
-                $pool = Get-VmPool -Vm $PSItem
-                $outsideDesiredPool = -not $pool -or -not $desired.Contains($pool) -or $desired[$pool] -eq 0
-                $outsideDesiredPool -and $runner -and $runner.busy
-            }).Count
-        $target = [math]::Min($script:Fleet.MaxRunners, $desiredTotal + $transitionBusy)
         $vmssPath = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Compute/virtualMachineScaleSets/$($script:Fleet.Vmss)"
         $splatCapacity = @{
             Path      = "$vmssPath`?api-version=2024-07-01"
@@ -1322,6 +1314,18 @@ function Invoke-FleetReconcile {
         $capacityResponse = Invoke-ArmJson @splatCapacity
         $capacity = [int]$capacityResponse.sku.capacity
         $provisioningState = [string]$capacityResponse.properties.provisioningState
+        # The inventory list has to come after the provisioning-state read: a settled
+        # state proves any prior scale-out already finished, so a list taken now cannot
+        # be missing just-created members. Listed first, a stale-low count could send
+        # the normalization PATCH below the real membership and delete live instances.
+        $state = Get-FleetState
+        $transitionBusy = @($state.Vms | Where-Object {
+                $runner = Get-RunnerForVm -State $state -VmName $PSItem.name
+                $pool = Get-VmPool -Vm $PSItem
+                $outsideDesiredPool = -not $pool -or -not $desired.Contains($pool) -or $desired[$pool] -eq 0
+                $outsideDesiredPool -and $runner -and $runner.busy
+            }).Count
+        $target = [math]::Min($script:Fleet.MaxRunners, $desiredTotal + $transitionBusy)
         $actualCapacity = @($state.Vms).Count
         Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy provisioning_state=$provisioningState"
         # On Flexible orchestration, deleting spent VMs one at a time leaves sku.capacity
