@@ -37,6 +37,7 @@ Describe "fleet configuration" {
         $config["WARM_FLOOR"] | Should -Be 3
         $config["RUNNER_LABEL"] | Should -Be "dbatools-modern"
         $config["CI_MARKER"] | Should -Be "[do ci]"
+        $config["STALE_NUDGE_MINUTES"] | Should -Be 5
     }
 
     It "lets an app setting override a committed constant" {
@@ -231,6 +232,20 @@ Describe "webhook event filtering" {
         $nudge.message | Should -Be "Fix a thing [do ci]"
     }
 
+    It "ignores a branch deletion, which arrives as a push naming the null sha" {
+        $splatDeletedPush = $script:SplatNudge + @{
+            EventName = "push"
+            Payload   = [pscustomobject]@{
+                sender      = [pscustomobject]@{ login = "potatoqualitee" }
+                deleted     = $true
+                after       = "0000000000000000000000000000000000000000"
+                ref         = "refs/heads/squash-merged-branch"
+                head_commit = $null
+            }
+        }
+        Get-FleetNudge @splatDeletedPush | Should -BeNullOrEmpty
+    }
+
     It "ignores a push from someone with no lane" {
         $splatStrangerPush = $script:SplatNudge + @{
             EventName = "push"
@@ -332,6 +347,21 @@ Describe "trigger corroboration" {
         }
     }
 
+    It "never calls GitHub for the null-object sha a branch deletion names" {
+        InModuleScope FleetCore {
+            Mock Invoke-GhJson { throw "GitHub should not have been called" }
+            $splatDeleted = @{
+                Actor = "potatoqualitee"
+                Sha   = "0000000000000000000000000000000000000000"
+                Ref   = "refs/heads/squash-merged-branch"
+            }
+            $deletedTrigger = Confirm-DirectTrigger @splatDeleted
+            $deletedTrigger.Sha | Should -BeNullOrEmpty
+            $deletedTrigger.Actor | Should -BeNullOrEmpty
+            Should -Invoke Invoke-GhJson -Times 0
+        }
+    }
+
     It "attributes the trigger to the pusher, not to whoever wrote the commit" {
         # The maintainer and opt-in lists are about who pushed. Reading the lane from
         # head.author.login would hand a maintainer lane to anyone who pushes a commit a
@@ -351,6 +381,36 @@ Describe "trigger corroboration" {
             }
             $trigger = Confirm-DirectTrigger @splatMismatch
             $trigger.Actor | Should -Be "some-drive-by"
+        }
+    }
+}
+
+Describe "registration readiness" {
+    It "does not send a RunCommand to a VM that is still provisioning" {
+        # Scale-out no longer waits for readiness in-pass, so Register-PoolVms now sees
+        # instances mid-build. A RunCommand against one of those fails; the VM keeps its
+        # pool tag and registers on a later pass instead.
+        InModuleScope FleetCore {
+            $script:Fleet = [pscustomobject]@{
+                DryRun          = $false
+                Repo            = "dataplat/dbatools"
+                RunnerLabel     = "dbatools-modern"
+                PoolLabelPrefix = "dbatools-pool-"
+            }
+            Mock Invoke-GhJson { throw "no registration token should have been minted" }
+            $creatingState = [pscustomobject]@{
+                Vms     = @(
+                    [pscustomobject]@{
+                        name         = "runner-000042"
+                        id           = "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/runner-000042"
+                        provisioning = "Creating"
+                        tags         = [pscustomobject]@{ runnerPool = "potatoqualitee" }
+                    }
+                )
+                Runners = @()
+            }
+            Register-PoolVms -State $creatingState -Desired @{ potatoqualitee = 1 }
+            Should -Invoke Invoke-GhJson -Times 0
         }
     }
 }

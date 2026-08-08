@@ -814,6 +814,13 @@ function Confirm-DirectTrigger {
     if (-not $Actor -or -not $Sha -or -not $Ref) {
         return $empty
     }
+    # The all-zeros sha is git's null object -- a branch deletion's "after". Get-FleetNudge
+    # already drops those deliveries; this catches one arriving any other way before it
+    # burns three corroboration retries on a guaranteed 422.
+    if ($Sha -match "^0+$") {
+        Write-Warning "Trigger sha $Sha is the null object; converging from repository activity instead"
+        return $empty
+    }
 
     # A webhook body is a hint about where to look, never the fact itself. The HMAC
     # proves a delivery is authentic but not that it is current, so a captured delivery
@@ -1091,6 +1098,12 @@ function Register-PoolVms {
         if (-not $pool -or $Desired[$pool] -le 0 -or ($runner -and $runner.status -ne "offline")) {
             continue
         }
+        # A VM that has not finished provisioning cannot take a RunCommand yet. Scale-out
+        # no longer waits for readiness in-pass, so fresh instances land here mid-build;
+        # they keep their pool tag and register on a later pass once Succeeded.
+        if ($vm.provisioning -ne "Succeeded") {
+            continue
+        }
         $labels = "$($script:Fleet.RunnerLabel),$($script:Fleet.PoolLabelPrefix)$pool"
         if (Test-FleetDryRun -Decision "register vm=$($vm.name) labels=$labels") {
             continue
@@ -1310,12 +1323,13 @@ function Invoke-FleetReconcile {
         $capacity = [int]$capacityResponse.sku.capacity
         Write-Host "capacity=$capacity target=$target transition_busy=$transitionBusy"
         if ($capacity -lt $target) {
-            if (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$target") {
-                # Nothing was scaled, so the provisioning wait below has nothing to
-                # wait for. Skipping it keeps a shadow pass to seconds, not minutes.
-            } else {
-                # Fire and forget, matching the CLI's --no-wait: the loop below is the
-                # real readiness check.
+            if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$target")) {
+                # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
+                # readiness poll: the queue is serialized, so a pass that sleeps on
+                # provisioning holds up every queued nudge behind it, and a burst of runs
+                # put the fleet 3.3 hours behind demand that way (2026-08-08). New
+                # instances register on a later pass once they report Succeeded, which a
+                # queued nudge or the five-minute safety tick reaches soon enough.
                 $splatScale = @{
                     Path      = "$vmssPath`?api-version=2024-07-01"
                     Method    = "Patch"
@@ -1323,15 +1337,6 @@ function Invoke-FleetReconcile {
                     Operation = "scale VMSS to $target"
                 }
                 $null = Invoke-ArmWeb @splatScale
-                foreach ($attempt in 1..15) {
-                    Start-Sleep -Seconds 20
-                    $state = Get-FleetState
-                    $notReady = @($state.Vms | Where-Object provisioning -NE "Succeeded").Count
-                    if ($state.Vms.Count -ge $target -and $notReady -eq 0) {
-                        break
-                    }
-                    Write-Host "provisioning check $attempt of 15: vms=$($state.Vms.Count)/$target not_ready=$notReady"
-                }
             }
         }
 
@@ -1469,6 +1474,13 @@ function Get-FleetNudge {
         "push" {
             $actor = [string]$Payload.sender.login
             if ($actor -notin $BoostUsers) {
+                return $null
+            }
+            # A branch deletion is a push whose after is the all-zeros sha: nothing to
+            # corroborate, nothing to dispatch, and the commits endpoint answers 422 to
+            # every retry. Squash-merge cleanup fires one of these right behind the
+            # merge push, which wakes a pass on its own.
+            if ($Payload.deleted -eq $true) {
                 return $null
             }
             # The [do ci] gate for opt-in users lives in the policy, not here: it also

@@ -32,4 +32,12 @@
 
     # Workflow the controller reads demand from and dispatches marked pushes to.
     CI_WORKFLOW             = "ci-azure.yml"
+
+    # A queued nudge older than this is dropped unprocessed. Every pass re-reads all
+    # of GitHub and Azure anyway, so a stale wake-up adds nothing -- and when a run
+    # burst backs the queue up (2026-08-08: 3.3 hours behind), replaying old nudges
+    # one serialized pass at a time is exactly what keeps it behind. The safety tick
+    # enqueues a fresh nudge every five minutes, so dropping never strands the fleet.
+    # Zero disables the drop.
+    STALE_NUDGE_MINUTES     = 5
 }
