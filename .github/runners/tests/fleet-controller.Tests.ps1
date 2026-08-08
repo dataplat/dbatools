@@ -463,68 +463,126 @@ Describe "registration readiness" {
 }
 
 Describe "capacity step ordering" {
-    It "prices the capacity step from an inventory listed after the settled-state read" {
-        # A list taken before the provisioning-state read can predate a just-completed
-        # scale-out, and a stale-low count would send the normalization PATCH below the
-        # real membership. The fleet here is empty until the capacity read happens and
-        # holds three VMs afterwards: only the read-then-list order sees all three.
+    BeforeEach {
         InModuleScope FleetCore {
             $script:Fleet = [pscustomobject]@{
-                DryRun         = $true
+                DryRun         = $false
                 SubscriptionId = "sub"
                 ResourceGroup  = "rg"
                 Vmss           = "dbatools-runners"
                 MaxRunners     = 35
             }
-            $script:CapacityReadSeen = $false
-            Mock Initialize-FleetContext { }
-            Mock Get-RunnerDemand {
-                @{
-                    Dispatch = $null
-                    Desired  = @{}
-                }
+        }
+        # These flags parameterize the mock bodies below, which execute in this test
+        # file's scope even though the mocks intercept calls inside FleetCore -- only
+        # $script:Fleet above has to live in the module, because the real reconcile
+        # code reads it there.
+        $script:CapacityReadSeen = $false
+        $script:CapacityReadMalformed = $false
+        $script:FleetListsVms = $true
+        $script:FleetOnlineRunners = @()
+        $script:CapacityStepValue = $null
+        Mock -ModuleName FleetCore Initialize-FleetContext { }
+        Mock -ModuleName FleetCore Get-RunnerDemand {
+            @{
+                Dispatch = $null
+                Desired  = @{}
             }
-            Mock Get-OrphanedNetworking { $null }
-            Mock Get-FleetState {
-                $vms = @()
-                if ($script:CapacityReadSeen) {
-                    $vms = @(foreach ($vmSuffix in "a", "b", "c") {
-                            [pscustomobject]@{
-                                name         = "dbatools-runners_$vmSuffix"
-                                provisioning = "Succeeded"
-                                tags         = $null
-                            }
-                        })
-                }
-                [pscustomobject]@{
-                    Vms     = $vms
-                    Runners = @()
-                }
+        }
+        Mock -ModuleName FleetCore Get-OrphanedNetworking { $null }
+        Mock -ModuleName FleetCore Get-FleetState {
+            $vms = @()
+            if ($script:CapacityReadSeen -and $script:FleetListsVms) {
+                $vms = @(foreach ($vmSuffix in "a", "b", "c") {
+                        [pscustomobject]@{
+                            name         = "dbatools-runners_$vmSuffix"
+                            provisioning = "Succeeded"
+                            tags         = $null
+                        }
+                    })
             }
-            Mock Invoke-ArmJson {
-                $script:CapacityReadSeen = $true
-                [pscustomobject]@{
-                    sku        = [pscustomobject]@{ capacity = 9 }
+            [pscustomobject]@{
+                Vms     = $vms
+                Runners = $script:FleetOnlineRunners
+            }
+        }
+        Mock -ModuleName FleetCore Invoke-ArmJson {
+            $script:CapacityReadSeen = $true
+            if ($script:CapacityReadMalformed) {
+                return [pscustomobject]@{
                     properties = [pscustomobject]@{ provisioningState = "Succeeded" }
                 }
             }
-            Mock Get-FleetCapacityStep { $null }
-            Mock Set-UnallocatedVmPool { }
-            Mock Register-PoolVms { }
-            Mock Set-VmOnlineObservedAt { }
-            Mock Remove-OrphanedNetworking { }
-            Mock Set-FleetHeartbeat { }
-
-            Invoke-FleetReconcile
-
-            $freshInventoryFilter = {
-                $ProvisioningState -eq "Succeeded" -and
-                $NominalCapacity -eq 9 -and
-                $ActualCapacity -eq 3 -and
-                $TargetCapacity -eq 0
+            [pscustomobject]@{
+                sku        = [pscustomobject]@{ capacity = 9 }
+                properties = [pscustomobject]@{ provisioningState = "Succeeded" }
             }
-            Should -Invoke Get-FleetCapacityStep -Times 1 -Exactly -ParameterFilter $freshInventoryFilter
         }
+        Mock -ModuleName FleetCore Get-FleetCapacityStep { $script:CapacityStepValue }
+        Mock -ModuleName FleetCore Invoke-ArmWeb { }
+        Mock -ModuleName FleetCore Set-UnallocatedVmPool { }
+        Mock -ModuleName FleetCore Register-PoolVms { }
+        Mock -ModuleName FleetCore Set-VmOnlineObservedAt { }
+        Mock -ModuleName FleetCore Remove-OrphanedNetworking { }
+        Mock -ModuleName FleetCore Set-FleetHeartbeat { }
+    }
+
+    It "prices the capacity step from an inventory listed after the settled-state read" {
+        # A list taken before the provisioning-state read can predate a just-completed
+        # scale-out, and a stale-low count would send a capacity PATCH below the real
+        # membership. The fleet here is empty until the capacity read happens and
+        # holds three VMs afterwards: only the read-then-list order sees all three.
+        Invoke-FleetReconcile
+
+        $freshInventoryFilter = {
+            $ProvisioningState -eq "Succeeded" -and
+            $NominalCapacity -eq 9 -and
+            $ActualCapacity -eq 3 -and
+            $TargetCapacity -eq 0
+        }
+        Should -Invoke Get-FleetCapacityStep -ModuleName FleetCore -Times 1 -Exactly -ParameterFilter $freshInventoryFilter
+    }
+
+    It "bails out of the pass when the capacity read comes back without a sku" {
+        # [int]$null coerces to 0, and a falsely-zero nominal turns the compensated
+        # scale-out into a down-PATCH from Azure's real figure. The pass has to end
+        # before a step is priced from a guessed number.
+        $script:CapacityReadMalformed = $true
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Get-FleetCapacityStep -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Set-FleetHeartbeat -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "refuses the zero reclaim while GitHub still shows an online runner" {
+        # The reclaim is computed from the ARM VM list, and GitHub is an independent
+        # witness against it: a runner cannot be online without a live VM behind it,
+        # so an online count contradicting an empty list means the list is stale and
+        # the PATCH would delete the instances the list failed to return.
+        $script:FleetListsVms = $false
+        $script:CapacityStepValue = 0
+        $script:FleetOnlineRunners = @(
+            [pscustomobject]@{
+                name   = "dbatools-runners_a"
+                status = "online"
+                busy   = $false
+            }
+        )
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "reclaims to zero once GitHub agrees the fleet is empty" {
+        $script:FleetListsVms = $false
+        $script:CapacityStepValue = 0
+
+        Invoke-FleetReconcile
+
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 1 -Exactly -ParameterFilter { $Body.sku.capacity -eq 0 }
     }
 }
 

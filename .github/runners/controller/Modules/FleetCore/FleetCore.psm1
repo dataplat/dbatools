@@ -1312,6 +1312,13 @@ function Invoke-FleetReconcile {
             Operation = "read VMSS capacity"
         }
         $capacityResponse = Invoke-ArmJson @splatCapacity
+        if ($null -eq $capacityResponse.sku.capacity) {
+            # A missing sku block coerced through [int] reads as capacity 0, and a
+            # falsely-zero nominal turns the compensated scale-out into a down-PATCH
+            # from Azure's real figure -- the delete-live-instances mutation this
+            # controller exists to avoid. No number is safer than a wrong one.
+            throw (New-TransientFleetException -Message "read VMSS capacity returned no sku.capacity; skipping the pass rather than PATCHing from a guessed nominal")
+        }
         $capacity = [int]$capacityResponse.sku.capacity
         $provisioningState = [string]$capacityResponse.properties.provisioningState
         # The inventory list has to come after the provisioning-state read: a settled
@@ -1333,9 +1340,9 @@ function Invoke-FleetReconcile {
         # nominal figure alone creates target-minus-nominal VMs instead of
         # target-minus-actual; that gap held a ten-runner lane at six VMs (2026-08-08).
         # Get-FleetCapacityStep emits at most one mutation per settled pass -- a scale-out
-        # compensated for the drift, or a normalization once demand is met -- so an
-        # in-flight scale-out is never mistaken for phantom capacity, dependent PATCHes
-        # never overlap, and churn-minted drift can never starve creation.
+        # compensated for the drift, or the reclaim to zero once the fleet stands empty --
+        # so an in-flight scale-out is never mistaken for phantom capacity, dependent
+        # PATCHes never overlap, and churn-minted drift can never starve creation.
         $splatCapacityStep = @{
             ProvisioningState = $provisioningState
             NominalCapacity   = $capacity
@@ -1344,7 +1351,15 @@ function Invoke-FleetReconcile {
         }
         $newCapacity = Get-FleetCapacityStep @splatCapacityStep
         if ($null -ne $newCapacity) {
-            if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
+            $onlineRunners = @($state.Runners | Where-Object status -EQ "online").Count
+            if ($newCapacity -lt $capacity -and $onlineRunners -gt 0) {
+                # The only down-step the policy emits is the reclaim to zero, computed
+                # from the ARM VM list. GitHub is an independent witness: a runner
+                # cannot be online without a live VM behind it, so any online count
+                # contradicts an empty list and the PATCH would delete the very
+                # instances the list failed to return.
+                Write-Warning "Skipping capacity reclaim to ${newCapacity}: ARM listed no VMs but $onlineRunners runner(s) are online, so the list is stale."
+            } elseif (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
                 # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
                 # readiness poll: the queue is serialized, so a pass that sleeps on
                 # provisioning holds up every queued nudge behind it, and a burst of runs
