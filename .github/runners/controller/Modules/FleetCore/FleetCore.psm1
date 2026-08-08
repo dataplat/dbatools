@@ -1321,20 +1321,24 @@ function Invoke-FleetReconcile {
         }
         $capacityResponse = Invoke-ArmJson @splatCapacity
         $capacity = [int]$capacityResponse.sku.capacity
+        $provisioningState = [string]$capacityResponse.properties.provisioningState
         $actualCapacity = @($state.Vms).Count
-        Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy"
+        Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy provisioning_state=$provisioningState"
         # On Flexible orchestration, deleting spent VMs one at a time leaves sku.capacity
         # above the number of instances that really exist, and a PATCH computed from the
         # nominal figure alone creates target-minus-nominal VMs instead of
-        # target-minus-actual. Get-VmssCapacityPlan walks capacity down to reality before
-        # raising it to the target, the same normalization reconcile-runner-fleet.ps1
-        # always ran; skipping it here held a ten-runner lane at six VMs (2026-08-08).
-        $splatCapacityPlan = @{
-            NominalCapacity = $capacity
-            ActualCapacity  = $actualCapacity
-            TargetCapacity  = $target
+        # target-minus-actual; that gap held a ten-runner lane at six VMs (2026-08-08).
+        # Get-FleetCapacityStep walks capacity down to reality before raising it to the
+        # target, one settled pass at a time, so an in-flight scale-out is never
+        # mistaken for phantom capacity and dependent PATCHes never overlap.
+        $splatCapacityStep = @{
+            ProvisioningState = $provisioningState
+            NominalCapacity   = $capacity
+            ActualCapacity    = $actualCapacity
+            TargetCapacity    = $target
         }
-        foreach ($newCapacity in @(Get-VmssCapacityPlan @splatCapacityPlan)) {
+        $newCapacity = Get-FleetCapacityStep @splatCapacityStep
+        if ($null -ne $newCapacity) {
             if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
                 # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
                 # readiness poll: the queue is serialized, so a pass that sleeps on

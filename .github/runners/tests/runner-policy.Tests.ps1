@@ -558,6 +558,55 @@ Describe "Get-VmssCapacityPlan" {
     }
 }
 
+Describe "Get-FleetCapacityStep" {
+    It "normalizes phantom capacity on the first settled pass and scales out on the next" {
+        $splatFirstPass = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 9
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatFirstPass | Should -Be 6
+        $splatSecondPass = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 6
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatSecondPass | Should -Be 10
+    }
+
+    It "does not mistake an in-flight scale-out for phantom capacity" {
+        $splatInFlight = @{
+            ProvisioningState = "Updating"
+            NominalCapacity   = 10
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatInFlight | Should -BeNullOrEmpty
+    }
+
+    It "still normalizes a failed scale set so the fleet can recover" {
+        $splatFailed = @{
+            ProvisioningState = "Failed"
+            NominalCapacity   = 9
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatFailed | Should -Be 6
+    }
+
+    It "emits nothing when settled capacity already matches the target" {
+        $splatSettled = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 10
+            ActualCapacity    = 10
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatSettled | Should -BeNullOrEmpty
+    }
+}
+
 Describe "Flexible VMSS capacity reconciliation" {
     BeforeEach {
         $script:ScaleCalls = @()

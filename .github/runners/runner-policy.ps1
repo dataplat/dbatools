@@ -243,6 +243,42 @@ function Get-VmssCapacityPlan {
     }
 }
 
+function Get-FleetCapacityStep {
+    [CmdletBinding()]
+    param(
+        [string]$ProvisioningState,
+        [ValidateRange(0, 35)]
+        [int]$NominalCapacity,
+        [ValidateRange(0, 35)]
+        [int]$ActualCapacity,
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity
+    )
+
+    # The Function controller PATCHes capacity fire-and-forget, so unlike the CLI script
+    # it cannot await one mutation before issuing the next. Serialization comes from the
+    # pass structure instead. While the scale set is mid-mutation, a nominal-over-actual
+    # gap is Azure still working, not phantom capacity -- normalizing it away would
+    # cancel the instances being created -- so an unsettled pass emits nothing and a
+    # later pass converges. A settled pass takes only the first step of the plan, so a
+    # normalization and the scale-out it unblocks land on successive passes, each
+    # computed from a settled read. Failed still mutates: a capacity PATCH is how a
+    # stuck scale set recovers, and skipping it would freeze the fleet.
+    if ($ProvisioningState -in @("Creating", "Updating", "Deleting", "Migrating")) {
+        return $null
+    }
+    $splatCapacity = @{
+        NominalCapacity = $NominalCapacity
+        ActualCapacity  = $ActualCapacity
+        TargetCapacity  = $TargetCapacity
+    }
+    $plan = @(Get-VmssCapacityPlan @splatCapacity)
+    if ($plan.Count -gt 0) {
+        return $plan[0]
+    }
+    return $null
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
