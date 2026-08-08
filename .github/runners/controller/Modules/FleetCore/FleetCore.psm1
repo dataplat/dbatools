@@ -1325,17 +1325,20 @@ function Invoke-FleetReconcile {
             Operation = "read VMSS capacity"
         }
         $capacityResponse = Invoke-ArmJson @splatCapacity
-        if ([string]$capacityResponse.sku.capacity -notmatch "^\d+$") {
+        $capacity = 0
+        if (-not [int]::TryParse([string]$capacityResponse.sku.capacity, [ref]$capacity)) {
             # A missing sku block coerced through [int] reads as capacity 0, and a
             # falsely-zero nominal turns the compensated scale-out into a down-PATCH
             # from Azure's real figure -- the delete-live-instances mutation this
-            # controller exists to avoid. No number is safer than a wrong one. The
-            # regex also refuses non-integral garble: casting that would throw
-            # InvalidCastException, which the TransientFleetException catch does not
-            # cover, and the invocation would crash instead of skipping the pass.
+            # controller exists to avoid. No number is safer than a wrong one.
+            # TryParse also refuses non-integral garble and digit strings past
+            # Int32.MaxValue: casting either through [int] would throw past the
+            # TransientFleetException catch and crash the invocation instead of
+            # skipping the pass. A parsed negative rides through to the policy,
+            # whose negative-telemetry guard skips the pass -- out-of-domain
+            # numbers are its call, unparseable ones are refused here.
             throw (New-TransientFleetException -Message "read VMSS capacity returned no usable sku.capacity; skipping the pass rather than PATCHing from a guessed nominal")
         }
-        $capacity = [int]$capacityResponse.sku.capacity
         $provisioningState = [string]$capacityResponse.properties.provisioningState
         # The inventory list has to come after the provisioning-state read: a settled
         # state proves any prior scale-out already finished, so a list taken now cannot
@@ -1377,10 +1380,12 @@ function Invoke-FleetReconcile {
             $reclaimBlocked = $null
             if ($newCapacity -lt $capacity) {
                 # The only down-step the policy emits is the reclaim to zero, and it
-                # hangs entirely on an empty ARM list, which a single read can fake:
-                # Get-FleetState flattens a garbled 200 into a clean empty array, and
-                # list endpoints are eventually consistent. So emptiness needs two
-                # independent witnesses before capacity may cross below nominal --
+                # hangs entirely on an empty ARM list, which a single read can still
+                # fake: the shape guards in Get-FleetState make a garbled payload
+                # throw, but list endpoints are eventually consistent, so a
+                # well-shaped stale page can report empty while members exist. So
+                # emptiness needs two independent witnesses before capacity may
+                # cross below nominal --
                 # GitHub first, because a runner cannot be online without a live VM
                 # behind it, then a second inventory read that must come back empty
                 # again. The extra ARM call is paid only on this rare empty-fleet

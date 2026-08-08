@@ -480,6 +480,7 @@ Describe "capacity step ordering" {
         $script:CapacityReadSeen = $false
         $script:CapacityReadMalformed = $false
         $script:CapacityReadNonNumeric = $false
+        $script:CapacityReadOverflow = $false
         $script:FleetStateGarbled = $false
         $script:FleetListsVms = $true
         $script:FleetRepopulatesOnConfirm = $false
@@ -540,6 +541,12 @@ Describe "capacity step ordering" {
                     properties = [pscustomobject]@{ provisioningState = "Succeeded" }
                 }
             }
+            if ($script:CapacityReadOverflow) {
+                return [pscustomobject]@{
+                    sku        = [pscustomobject]@{ capacity = "4294967296" }
+                    properties = [pscustomobject]@{ provisioningState = "Succeeded" }
+                }
+            }
             [pscustomobject]@{
                 sku        = [pscustomobject]@{ capacity = 9 }
                 properties = [pscustomobject]@{ provisioningState = "Succeeded" }
@@ -589,6 +596,19 @@ Describe "capacity step ordering" {
         # invocation would crash instead of skipping the pass. The guard has to
         # refuse it the same way it refuses a missing sku.
         $script:CapacityReadNonNumeric = $true
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Get-FleetCapacityStep -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Set-FleetHeartbeat -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "bails out of the pass when the capacity read overflows Int32" {
+        # A digit-only string past Int32.MaxValue survives any digits-shaped
+        # validation and then overflows the [int] cast, which throws past the
+        # TransientFleetException catch. TryParse has to refuse it up front.
+        $script:CapacityReadOverflow = $true
 
         Invoke-FleetReconcile 3>$null
 
