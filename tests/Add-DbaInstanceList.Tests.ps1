@@ -23,10 +23,12 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $instanceName = "dbatoolsci_testinstance_$(Get-Random)"
+        $firstPipedInstanceName = "dbatoolsci_testinstance_$(Get-Random)"
+        $secondPipedInstanceName = "dbatoolsci_testinstance_$(Get-Random)"
     }
 
     AfterAll {
-        $null = Remove-DbaInstanceList -SqlInstance $instanceName -ErrorAction SilentlyContinue
+        $null = Remove-DbaInstanceList -SqlInstance @($instanceName, $firstPipedInstanceName, $secondPipedInstanceName) -ErrorAction SilentlyContinue
     }
 
     Context "adds instances to the list" {
@@ -48,6 +50,20 @@ Describe $CommandName -Tag IntegrationTests {
             Add-DbaInstanceList -SqlInstance $instanceName
             $result = Get-DbaInstanceList
             ($result | Where-Object { $PSItem -eq $instanceName.ToLowerInvariant() }).Count | Should -Be 1
+        }
+
+        It "adds every piped instance to the list and TEPP cache" {
+            @($firstPipedInstanceName, $secondPipedInstanceName) | Add-DbaInstanceList
+            $result = Get-DbaInstanceList
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            foreach ($instanceName in @($firstPipedInstanceName, $secondPipedInstanceName)) {
+                $normalizedName = $instanceName.ToLowerInvariant()
+                ($cache | Where-Object { $PSItem -eq $normalizedName }).Count | Should -Be 1
+            }
+            foreach ($instanceName in @($firstPipedInstanceName, $secondPipedInstanceName)) {
+                $normalizedName = $instanceName.ToLowerInvariant()
+                ($result | Where-Object { $PSItem -eq $normalizedName }).Count | Should -Be 1
+            }
         }
     }
 }
