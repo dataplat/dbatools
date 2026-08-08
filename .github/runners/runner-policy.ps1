@@ -300,7 +300,17 @@ function Get-FleetCapacityStep {
         # scaling entirely. The min bounds what this function emits; a nominal already
         # at or past the ceiling gets no step here and unwinds through the
         # zero-crossing reclaim below.
-        $compensated = [math]::Min(35, $NominalCapacity + ($TargetCapacity - $ActualCapacity))
+        $unclipped = $NominalCapacity + ($TargetCapacity - $ActualCapacity)
+        $compensated = [math]::Min(35, $unclipped)
+        if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0 -and $compensated -lt $unclipped) {
+            # A clipped step on an empty fleet would create fewer than target instances
+            # and then pin there, below target, until the drift unwinds. With zero
+            # members the zero-crossing reclaim is free, so repay the whole drift now
+            # and let the next pass create the full target from a clean nominal. A
+            # clipped step over a nonzero fleet has no such option -- reclaiming would
+            # delete the live members -- so it still takes whatever headroom remains.
+            return 0
+        }
         if ($compensated -gt $NominalCapacity) {
             return $compensated
         }

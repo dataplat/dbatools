@@ -479,6 +479,7 @@ Describe "capacity step ordering" {
         # code reads it there.
         $script:CapacityReadSeen = $false
         $script:CapacityReadMalformed = $false
+        $script:CapacityReadNonNumeric = $false
         $script:FleetStateGarbled = $false
         $script:FleetListsVms = $true
         $script:FleetRepopulatesOnConfirm = $false
@@ -533,6 +534,12 @@ Describe "capacity step ordering" {
                     properties = [pscustomobject]@{ provisioningState = "Succeeded" }
                 }
             }
+            if ($script:CapacityReadNonNumeric) {
+                return [pscustomobject]@{
+                    sku        = [pscustomobject]@{ capacity = "garbled" }
+                    properties = [pscustomobject]@{ provisioningState = "Succeeded" }
+                }
+            }
             [pscustomobject]@{
                 sku        = [pscustomobject]@{ capacity = 9 }
                 properties = [pscustomobject]@{ provisioningState = "Succeeded" }
@@ -568,6 +575,20 @@ Describe "capacity step ordering" {
         # scale-out into a down-PATCH from Azure's real figure. The pass has to end
         # before a step is priced from a guessed number.
         $script:CapacityReadMalformed = $true
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Get-FleetCapacityStep -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Set-FleetHeartbeat -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "bails out of the pass when the capacity read carries a non-numeric sku" {
+        # A non-integral capacity would throw InvalidCastException at the [int]
+        # cast, which the TransientFleetException catch does not cover -- the
+        # invocation would crash instead of skipping the pass. The guard has to
+        # refuse it the same way it refuses a missing sku.
+        $script:CapacityReadNonNumeric = $true
 
         Invoke-FleetReconcile 3>$null
 
@@ -662,6 +683,25 @@ Describe "fleet state shape validation" {
     It "throws on an ARM list page without a value array instead of returning an empty inventory" {
         $script:GhPayload = [pscustomobject]@{ runners = @() }
         $script:ArmPage = [pscustomobject]@{ nextLink = $null }
+
+        { InModuleScope FleetCore { Get-FleetState } } | Should -Throw "*value array*"
+    }
+
+    It "throws on a runners property that is not an array" {
+        # A scalar or object where the array belongs is the same garble as a
+        # missing property: it survives a null check and flattens to an empty
+        # fleet through the label filter.
+        $script:GhPayload = [pscustomobject]@{ runners = "garbled" }
+
+        { InModuleScope FleetCore { Get-FleetState } } | Should -Throw "*runners array*"
+    }
+
+    It "throws on a value property that is not an array" {
+        $script:GhPayload = [pscustomobject]@{ runners = @() }
+        $script:ArmPage = [pscustomobject]@{
+            value    = [pscustomobject]@{ name = "dbatools-runners_a" }
+            nextLink = $null
+        }
 
         { InModuleScope FleetCore { Get-FleetState } } | Should -Throw "*value array*"
     }

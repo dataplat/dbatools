@@ -384,11 +384,13 @@ function Invoke-ArmList {
             Operation = $Operation
         }
         $page = Invoke-ArmJson @splatPage
-        if ($null -eq $page -or $null -eq $page.value) {
+        if ($null -eq $page -or $page.value -isnot [array]) {
             # A list page without a value array is a garbled read, not an empty
-            # result -- ARM always ships value, empty or not. Emitting nothing here
-            # would flatten the garble into a clean empty inventory downstream,
-            # which is exactly the shape a destructive scale decision trusts.
+            # result -- ARM always ships value as an array, empty or not, so a
+            # missing value and a value of any other shape are the same garble.
+            # Emitting nothing here would flatten it into a clean empty inventory
+            # downstream, which is exactly the shape a destructive scale decision
+            # trusts.
             throw (New-TransientFleetException -Message "$Operation returned a page without a value array; failing the pass rather than treating a garbled read as an empty list")
         }
         $page.value
@@ -531,10 +533,11 @@ function Get-FleetState {
         Operation = "list GitHub runners"
     }
     $runnerResponse = Invoke-GhJson @splatRunners
-    if ($null -eq $runnerResponse.runners) {
+    if ($runnerResponse.runners -isnot [array]) {
         # The runners endpoint always ships a runners array, even when it is empty,
-        # so a response without one is a garbled read. Flattening it into an empty
-        # list would erase every runner from the fleet's view in a single pass.
+        # so a response without one -- or with one of any other shape -- is a
+        # garbled read. Flattening it into an empty list would erase every runner
+        # from the fleet's view in a single pass.
         throw (New-TransientFleetException -Message "list GitHub runners returned no runners array; failing the pass rather than treating a garbled read as an empty fleet")
     }
     $runners = @($runnerResponse.runners | Where-Object { $PSItem.labels.name -contains $script:Fleet.RunnerLabel })
@@ -1322,12 +1325,15 @@ function Invoke-FleetReconcile {
             Operation = "read VMSS capacity"
         }
         $capacityResponse = Invoke-ArmJson @splatCapacity
-        if ($null -eq $capacityResponse.sku.capacity) {
+        if ([string]$capacityResponse.sku.capacity -notmatch "^\d+$") {
             # A missing sku block coerced through [int] reads as capacity 0, and a
             # falsely-zero nominal turns the compensated scale-out into a down-PATCH
             # from Azure's real figure -- the delete-live-instances mutation this
-            # controller exists to avoid. No number is safer than a wrong one.
-            throw (New-TransientFleetException -Message "read VMSS capacity returned no sku.capacity; skipping the pass rather than PATCHing from a guessed nominal")
+            # controller exists to avoid. No number is safer than a wrong one. The
+            # regex also refuses non-integral garble: casting that would throw
+            # InvalidCastException, which the TransientFleetException catch does not
+            # cover, and the invocation would crash instead of skipping the pass.
+            throw (New-TransientFleetException -Message "read VMSS capacity returned no usable sku.capacity; skipping the pass rather than PATCHing from a guessed nominal")
         }
         $capacity = [int]$capacityResponse.sku.capacity
         $provisioningState = [string]$capacityResponse.properties.provisioningState

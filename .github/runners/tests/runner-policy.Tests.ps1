@@ -761,6 +761,20 @@ Describe "Get-FleetCapacityStep" {
         }
         Get-FleetCapacityStep @splatPinnedEmpty | Should -Be 0
     }
+
+    It "reclaims an empty fleet to zero instead of taking a ceiling-clipped step" {
+        # Compensating here would PATCH to 35, which creates only five instances
+        # against a target of ten and then pins there. With zero members the
+        # reclaim is free, so the drift is repaid first and the next pass creates
+        # the full target from a clean nominal.
+        $splatClippedEmpty = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 30
+            ActualCapacity    = 0
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatClippedEmpty | Should -Be 0
+    }
 }
 
 Describe "Flexible VMSS capacity reconciliation" {
