@@ -191,4 +191,59 @@ Describe $CommandName -Tag IntegrationTests {
         $results1 = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $dbname
         $results1.Name -contains $loginWindows | Should -Be $false
     }
+
+    Context "Termination boundary" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $stopRandom = Get-Random
+            $stopDbFirst = "dbatoolsci_stopa_$stopRandom"
+            $stopDbSecond = "dbatoolsci_stopb_$stopRandom"
+            $stopLogin = "dbatoolsci_stop_$stopRandom"
+            $stopSchema = "dbatoolsci_stopsch_$stopRandom"
+
+            $null = New-DbaDatabase -SqlInstance $server -Name $stopDbFirst -Owner sa
+            $null = New-DbaDatabase -SqlInstance $server -Name $stopDbSecond -Owner sa
+            $null = New-DbaLogin -SqlInstance $server -Login $stopLogin -Password $securePassword -Force
+            $null = New-DbaDbUser -SqlInstance $server -Database $stopDbFirst -Login $stopLogin -Username $stopLogin
+            $null = New-DbaDbUser -SqlInstance $server -Database $stopDbSecond -Login $stopLogin -Username $stopLogin
+            # The schema has an object, so without -Force the first database only warns and skips.
+            $null = $server.Query("CREATE SCHEMA [$stopSchema] AUTHORIZATION [$stopLogin]", $stopDbFirst)
+            $null = $server.Query("CREATE TABLE [$stopSchema].t1(Id int NULL)", $stopDbFirst)
+            $null = Remove-DbaLogin -SqlInstance $server -Login $stopLogin
+            $server.Refresh()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $server -Database $stopDbFirst, $stopDbSecond
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        # -WarningAction Stop has to convert the warning to a terminating error INSIDE the database
+        # loop, not after it. The first database warns and skips; if the conversion happened outside,
+        # the second database would have been fully processed and its user dropped before the caller
+        # ever saw the terminating error. Measured 2026-08-09 against sql01. -ErrorAction Stop is not
+        # the leg here: this body raises no non-terminating error, so binding it is indistinguishable
+        # from a plain run (also measured).
+        It "Stops inside the database loop under -WarningAction Stop, leaving the second database untouched" {
+            $splatStop = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $stopDbFirst, $stopDbSecond
+                User          = $stopLogin
+                WarningAction = "Stop"
+                Confirm       = $false
+            }
+            { Remove-DbaDbOrphanUser @splatStop } | Should -Throw
+
+            $usersFirst = $server.Query("SELECT name FROM sys.database_principals WHERE name = '$stopLogin'", $stopDbFirst)
+            $usersSecond = $server.Query("SELECT name FROM sys.database_principals WHERE name = '$stopLogin'", $stopDbSecond)
+
+            $usersFirst.name | Should -Be $stopLogin
+            $usersSecond.name | Should -Be $stopLogin
+        }
+    }
 }

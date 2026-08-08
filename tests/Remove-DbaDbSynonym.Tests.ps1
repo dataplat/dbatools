@@ -160,4 +160,50 @@ Describe $CommandName -Tag IntegrationTests {
             $warn | Should -Match "You must pipe in a synonym, database, or server or specify a SqlInstance"
         }
     }
+
+    Context "Termination boundary" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $dbnameStop = "dbatoolsscidb_stop_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbnameStop
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        # -WarningAction Stop has to convert the warning to a terminating error INSIDE the loop, not
+        # after it: the drop of one synonym must not survive a failure on an earlier one. Measured
+        # 2026-08-09 against sql01 - the second element leaves the third unreached, so synStopB is
+        # still there afterwards. -ErrorAction Stop is deliberately not the leg here: this body
+        # raises no non-terminating error at all, so binding it is indistinguishable from a plain
+        # run (also measured).
+        It "Stops inside the loop under -WarningAction Stop, leaving the later synonym in place" {
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -Synonym "synStopA" -BaseObject "objA" -EnableException
+            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -Synonym "synStopB" -BaseObject "objB" -EnableException
+            $synonyms = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -EnableException | Sort-Object Name
+
+            # The same synonym twice - the second DROP fails inside the source's try, which is the
+            # only mid-loop failure this body can reach. One parameter-bound array is one record, so
+            # all three elements share a single invocation.
+            $feed = @($synonyms[0], $synonyms[0], $synonyms[1])
+
+            $splatStop = @{
+                InputObject   = $feed
+                WarningAction = "Stop"
+                Confirm       = $false
+            }
+            { Remove-DbaDbSynonym @splatStop } | Should -Throw
+
+            $remaining = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -EnableException
+            $remaining.Name | Should -Not -Contain "synStopA"
+            $remaining.Name | Should -Contain "synStopB"
+        }
+    }
 }
