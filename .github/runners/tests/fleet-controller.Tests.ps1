@@ -462,6 +462,62 @@ Describe "registration readiness" {
     }
 }
 
+Describe "capacity step ordering" {
+    It "prices the capacity step from an inventory listed after the settled-state read" {
+        # A list taken before the provisioning-state read can predate a just-completed
+        # scale-out, and a stale-low count would send the normalization PATCH below the
+        # real membership. The fleet here is empty until the capacity read happens and
+        # holds three VMs afterwards: only the read-then-list order sees all three.
+        InModuleScope FleetCore {
+            $script:Fleet = [pscustomobject]@{
+                DryRun         = $true
+                SubscriptionId = "sub"
+                ResourceGroup  = "rg"
+                Vmss           = "dbatools-runners"
+                MaxRunners     = 35
+            }
+            $script:CapacityReadSeen = $false
+            Mock Initialize-FleetContext { }
+            Mock Get-RunnerDemand { @{ Dispatch = $null; Desired = @{} } }
+            Mock Get-OrphanedNetworking { $null }
+            Mock Get-FleetState {
+                $vms = @()
+                if ($script:CapacityReadSeen) {
+                    $vms = @(
+                        [pscustomobject]@{ name = "dbatools-runners_a"; provisioning = "Succeeded"; tags = $null },
+                        [pscustomobject]@{ name = "dbatools-runners_b"; provisioning = "Succeeded"; tags = $null },
+                        [pscustomobject]@{ name = "dbatools-runners_c"; provisioning = "Succeeded"; tags = $null }
+                    )
+                }
+                [pscustomobject]@{ Vms = $vms; Runners = @() }
+            }
+            Mock Invoke-ArmJson {
+                $script:CapacityReadSeen = $true
+                [pscustomobject]@{
+                    sku        = [pscustomobject]@{ capacity = 9 }
+                    properties = [pscustomobject]@{ provisioningState = "Succeeded" }
+                }
+            }
+            Mock Get-FleetCapacityStep { $null }
+            Mock Set-UnallocatedVmPool { }
+            Mock Register-PoolVms { }
+            Mock Set-VmOnlineObservedAt { }
+            Mock Remove-OrphanedNetworking { }
+            Mock Set-FleetHeartbeat { }
+
+            Invoke-FleetReconcile 6>$null
+
+            $freshInventoryFilter = {
+                $ProvisioningState -eq "Succeeded" -and
+                $NominalCapacity -eq 9 -and
+                $ActualCapacity -eq 3 -and
+                $TargetCapacity -eq 0
+            }
+            Should -Invoke Get-FleetCapacityStep -Times 1 -Exactly -ParameterFilter $freshInventoryFilter
+        }
+    }
+}
+
 Describe "fail-closed settings" {
     BeforeAll {
         # Everything Initialize-FleetContext demands before it looks at DRY_RUN, so the

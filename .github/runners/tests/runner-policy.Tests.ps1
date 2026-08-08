@@ -710,6 +710,20 @@ Describe "Get-FleetCapacityStep" {
         }
         Get-FleetCapacityStep @splatPinnedSlot | Should -Be 34
     }
+
+    It "normalizes to an actual above the ceiling without clamping it" {
+        # 40 members really exist, so 40 is the only safe normalization value:
+        # clamping to the 35 ceiling would turn a bookkeeping correction into the
+        # deletion of five live runners. The ceiling caps what the controller
+        # creates, never what it acknowledges.
+        $splatOverCeilingActual = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 42
+            ActualCapacity    = 40
+            TargetCapacity    = 20
+        }
+        Get-FleetCapacityStep @splatOverCeilingActual | Should -Be 40
+    }
 }
 
 Describe "Flexible VMSS capacity reconciliation" {
