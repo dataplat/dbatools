@@ -86,7 +86,10 @@ Describe $CommandName -Tag IntegrationTests {
     #Skipping these tests as internals of Get-DbaDbSpace seems to be unreliable in CI
     Context "Gets DbSpace" {
         BeforeAll {
-            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle | Where-Object Database -eq $dbName)
+            # The BeforeAll of this file keeps an offline database around, so every scan over the whole
+            # instance warns about it. That warning is expected and is asserted in the context below,
+            # so it is silenced here to keep the test run free of warnings.
+            $allResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue | Where-Object Database -eq $dbName)
         }
 
         It "Gets results" {
@@ -125,7 +128,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Gets no DbSpace for specific database when using -ExcludeDatabase" {
         It "Gets no results for excluded database" {
-            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName)
+            $excludeResults = @(Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbName -WarningAction SilentlyContinue)
             $excludeResults.Database | Should -Not -Contain $dbName
         }
     }
@@ -143,25 +146,27 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Includes the standby database in a whole instance scan" {
-            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle
+            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
             $scanResults.Database | Should -Contain $standbyDb
         }
     }
 
     Context "Databases that cannot be opened" {
         It "Warns rather than returning nothing when the database is named" {
-            $offlineResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            # The warning is what these tests are about, so it is silenced on the stream and asserted
+            # on $WarnVar instead. A test run must not print warnings.
+            $offlineResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             $offlineResults | Should -BeNullOrEmpty
             ($WarnVar -join " ") | Should -Match ([regex]::Escape($offlineDb))
         }
 
         It "Says the database was skipped because it is not accessible" {
-            $null = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $null = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -Match "not accessible"
         }
 
         It "Still returns the accessible databases in a whole instance scan" {
-            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle
+            $scanResults = Get-DbaDbSpace -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
             $scanResults.Database | Should -Contain $dbName
             $scanResults.Database | Should -Not -Contain $offlineDb
         }

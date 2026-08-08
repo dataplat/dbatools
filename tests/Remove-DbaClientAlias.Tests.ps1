@@ -52,11 +52,17 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         Context "removes an array of aliases" {
-            BeforeAll {
+            BeforeDiscovery {
+                # -TestCases is read while Pester discovers the tests. Built in the BeforeAll below,
+                # as it was before, this list was still empty at discovery, so the alias test did not
+                # exist at all - and with Pester 6 the empty list fails the whole file during discovery.
                 $testCases = @(
                     @{"Alias" = "dbatoolscialias2" },
                     @{"Alias" = "dbatoolscialias3" }
                 )
+            }
+
+            BeforeAll {
                 $aliases = Get-DbaClientAlias
             }
 

@@ -246,7 +246,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns and returns nothing when FileGroup is used on a database that cannot be opened" {
-            $filteredResults = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $restoringDbName -FileGroup PRIMARY -WarningVariable fileGroupWarning
+            # The warning is what this test is about, so it is silenced on the stream and asserted on
+            # its own warning variable instead. A test run must not print warnings.
+            $filteredResults = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $restoringDbName -FileGroup PRIMARY -WarningVariable fileGroupWarning -WarningAction SilentlyContinue
             $filteredResults | Should -BeNullOrEmpty
             $fileGroupWarning | Should -Match "FileGroup cannot be honored"
         }

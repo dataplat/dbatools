@@ -158,7 +158,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Warns about a database that does not exist, because a typo searches nothing and calls every login unused" {
             $typoDbName = "dbatoolsci_nosuchdb_$random"
-            $null = Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Database $typoDbName -WarningVariable typoWarning
+            # The warning is what this test is about, so it is silenced on the stream and asserted on
+            # its own warning variable instead. A test run must not print warnings.
+            $null = Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Database $typoDbName -WarningVariable typoWarning -WarningAction SilentlyContinue
             $typoWarning | Should -Match $typoDbName
         }
     }
@@ -169,7 +171,9 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -Offline -Force
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            $offlineResults = @(Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Login $unusedLoginName -WarningVariable offlineWarning)
+            # The warning is what this context is about, so it is silenced on the stream and asserted
+            # on its own warning variable instead. A test run must not print warnings.
+            $offlineResults = @(Get-DbaUnusedLogin -SqlInstance $TestConfig.InstanceSingle -Login $unusedLoginName -WarningVariable offlineWarning -WarningAction SilentlyContinue)
         }
 
         AfterAll {

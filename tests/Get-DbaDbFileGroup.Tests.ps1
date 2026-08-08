@@ -73,7 +73,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Returns values for Instance" {
         BeforeAll {
-            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle
+            # The BeforeAll of this file keeps an offline database around, so every scan over the whole
+            # instance warns about it. That warning is expected and is asserted in the context below,
+            # so it is silenced here to keep the test run free of warnings.
+            $results = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
         }
 
         It "Results are not empty" {
@@ -117,23 +120,25 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Databases that cannot be opened" {
         It "Warns rather than returning nothing when the database is named" {
-            $offlineResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            # The warning is what these tests are about, so it is silenced on the stream and asserted
+            # on $WarnVar instead. A test run must not print warnings.
+            $offlineResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             $offlineResults | Should -BeNullOrEmpty
             ($WarnVar -join " ") | Should -Match ([regex]::Escape($offlineDb))
         }
 
         It "Says the database was skipped because it is not accessible" {
-            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -Match "not accessible"
         }
 
         It "Names the instance in the warning" {
-            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $null = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -Match ([regex]::Escape($TestConfig.InstanceSingle))
         }
 
         It "Still returns the accessible databases in a whole instance scan" {
-            $scanResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle
+            $scanResults = Get-DbaDbFileGroup -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
             $scanResults.Parent.Name | Should -Contain $multifgdb
             $scanResults.Parent.Name | Should -Not -Contain $offlineDb
         }

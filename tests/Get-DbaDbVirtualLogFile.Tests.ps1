@@ -95,13 +95,15 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Databases that cannot be opened" {
         It "Warns rather than returning nothing when the database is named" {
-            $offlineResults = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            # The warning is what these tests are about, so it is silenced on the stream and asserted
+            # on $WarnVar instead. A test run must not print warnings.
+            $offlineResults = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             $offlineResults | Should -BeNullOrEmpty
             ($WarnVar -join " ") | Should -Match ([regex]::Escape($offlineDb))
         }
 
         It "Says the database was skipped because it is not accessible" {
-            $null = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb
+            $null = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -Database $offlineDb -WarningAction SilentlyContinue
             ($WarnVar -join " ") | Should -Match "not accessible"
         }
 
@@ -114,7 +116,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Still returns the accessible databases in a whole instance scan" {
-            $scanResults = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle
+            $scanResults = Get-DbaDbVirtualLogFile -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
             $scanResults.Database | Should -Contain $testDbName
             $scanResults.Database | Should -Not -Contain $offlineDb
         }
