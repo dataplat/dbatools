@@ -526,12 +526,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "clones when using Backup-DabInstace" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            # The backups have to go to the shared temp folder. Without a path they land in the default
+            # backup folder of the instance, which is a path on the SQL Server, so the Remove-Item below
+            # runs against a path that does not exist on the machine running the tests and silently does
+            # nothing. The backup was then left behind on every remote instance, and because this file
+            # runs early in the suite, every later test file reported it as a leftover of its own.
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp
             if ($results.FullName) {
                 Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
             }
 
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -WarningVariable warn
             $warn | Should -BeNullOrEmpty
 
             if ($results.FullName) {

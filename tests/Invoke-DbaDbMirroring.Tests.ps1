@@ -58,6 +58,10 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $dbName
         $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -EndPoint $endpointName
 
+        # Seeding the mirror leaves the full backup and the log backup in the shared folder, and every
+        # test file that runs afterwards then reports them as leftovers of its own.
+        Get-ChildItem -Path $TestConfig.Temp -Filter "$dbName*" | Remove-Item -Force -ErrorAction SilentlyContinue
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 

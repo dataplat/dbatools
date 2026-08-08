@@ -55,8 +55,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
-        $NetworkPath = $TestConfig.Temp
         $random = Get-Random
+        $NetworkPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_copydatabase$random"
+        $null = New-Item -Path $NetworkPath -ItemType Directory -Force
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
@@ -105,6 +106,10 @@ Describe $CommandName -Tag IntegrationTests {
             Database    = $supportDbs
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
+
+        # The backups taken during the tests stay behind otherwise, and every test file that runs
+        # afterwards then reports them as leftovers of its own.
+        Remove-Item -Path $NetworkPath -Recurse -Force -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
