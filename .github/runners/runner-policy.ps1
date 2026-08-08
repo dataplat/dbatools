@@ -262,9 +262,16 @@ function Get-FleetCapacityStep {
     # 20 that way (2026-08-08). So the scale-out step compensates for the drift instead
     # of repairing it first: raising nominal by exactly the shortfall makes Azure create
     # target-minus-actual instances no matter how stale the bookkeeping is, in a single
-    # mutation. Normalization still happens, but only on settled passes where demand is
-    # already met, or when the compensated step is pinned against the capacity ceiling
-    # and reclaiming headroom is the only way forward. While the scale set is
+    # mutation. Normalization above zero members is gone entirely: production proved
+    # (2026-08-08, six consecutive observations during the drain, then ten busy runners
+    # killed mid-job in one CI run) that a down-PATCH deletes nominal-minus-newValue
+    # LIVE instances, and that every capacity PATCH conserves the nominal-over-actual
+    # gap, so normalizing can never even catch the drift it chases. The gap grows on
+    # per-VM deletes and clears only at the zero-crossing, where a down-PATCH has no
+    # members left to take -- that reclaim to zero is the one down-step this function
+    # emits. A drifted nominal anywhere above it, runaway or pinned at the ceiling or
+    # demand-met surplus, stays untouched and costs at most gap-many slots of ceiling
+    # headroom until the fleet next empties on its own. While the scale set is
     # mid-mutation a nominal-over-actual gap is Azure still working, not phantom
     # capacity -- normalizing it away would cancel the instances being created -- so
     # only the ARM terminal states may mutate: an unknown or missing state is
@@ -290,19 +297,16 @@ function Get-FleetCapacityStep {
         # treats capacity above the ceiling as a real state, and validating it here
         # would crash every pass that observes it -- a ParameterBindingException is not
         # TransientFleetException, so nothing catches it and the controller stops
-        # scaling entirely. The min bounds what this function emits, and a runaway
-        # nominal lands in the reclaim branch below instead.
+        # scaling entirely. The min bounds what this function emits; a nominal already
+        # at or past the ceiling gets no step here and unwinds through the
+        # zero-crossing reclaim below.
         $compensated = [math]::Min(35, $NominalCapacity + ($TargetCapacity - $ActualCapacity))
         if ($compensated -gt $NominalCapacity) {
             return $compensated
         }
-        if ($NominalCapacity -gt $ActualCapacity) {
-            return $ActualCapacity
-        }
-        return $null
     }
-    if ($NominalCapacity -gt $ActualCapacity) {
-        return $ActualCapacity
+    if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0) {
+        return 0
     }
     return $null
 }

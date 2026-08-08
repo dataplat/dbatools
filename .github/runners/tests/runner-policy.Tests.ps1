@@ -609,24 +609,27 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatChurn | Should -Be 22
     }
 
-    It "reclaims headroom when the compensated step is pinned at the ceiling" {
+    It "leaves a ceiling-pinned shortfall alone rather than delete live runners" {
+        # A down-PATCH removes nominal-minus-newValue live members, so "reclaiming
+        # headroom" here would kill 15 running VMs. The drift unwinds only at the
+        # zero-crossing; until then the pinned lane just waits.
         $splatPinned = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 35
             ActualCapacity    = 20
             TargetCapacity    = 25
         }
-        Get-FleetCapacityStep @splatPinned | Should -Be 20
+        Get-FleetCapacityStep @splatPinned | Should -BeNullOrEmpty
     }
 
-    It "normalizes phantom capacity once demand is satisfied" {
+    It "leaves phantom capacity alone once demand is satisfied" {
         $splatQuiet = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 12
             ActualCapacity    = 10
             TargetCapacity    = 10
         }
-        Get-FleetCapacityStep @splatQuiet | Should -Be 10
+        Get-FleetCapacityStep @splatQuiet | Should -BeNullOrEmpty
     }
 
     It "still recovers a failed scale set" {
@@ -691,24 +694,26 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatSurplus | Should -BeNullOrEmpty
     }
 
-    It "reclaims a nominal above the ceiling instead of crashing the pass" {
+    It "tolerates a nominal above the ceiling without crashing or reclaiming" {
         $splatRunaway = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 40
             ActualCapacity    = 16
             TargetCapacity    = 20
         }
-        Get-FleetCapacityStep @splatRunaway | Should -Be 16
+        Get-FleetCapacityStep @splatRunaway | Should -BeNullOrEmpty
     }
 
-    It "reclaims the single drifted slot when pinned one short of the target" {
+    It "waits out a single drifted slot when pinned one short of the target" {
+        # Reclaiming the slot would PATCH 35 down to 34 and delete a live runner to
+        # free it. One target slot lost to drift is cheaper than one killed VM.
         $splatPinnedSlot = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 35
             ActualCapacity    = 34
             TargetCapacity    = 35
         }
-        Get-FleetCapacityStep @splatPinnedSlot | Should -Be 34
+        Get-FleetCapacityStep @splatPinnedSlot | Should -BeNullOrEmpty
     }
 
     It "skips the pass when nominal telemetry arrives negative" {
@@ -731,18 +736,30 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatNegativeActual | Should -BeNullOrEmpty
     }
 
-    It "normalizes to an actual above the ceiling without clamping it" {
-        # 40 members really exist, so 40 is the only safe normalization value:
-        # clamping to the 35 ceiling would turn a bookkeeping correction into the
-        # deletion of five live runners. The ceiling caps what the controller
-        # creates, never what it acknowledges.
+    It "emits nothing for an over-ceiling fleet with drift above it" {
+        # There is no safe move here: 42-to-40 would delete two live members, and
+        # clamping to the 35 ceiling would delete seven. The two-slot drift rides
+        # along until the fleet empties and crosses zero.
         $splatOverCeilingActual = @{
             ProvisioningState = "Succeeded"
             NominalCapacity   = 42
             ActualCapacity    = 40
             TargetCapacity    = 20
         }
-        Get-FleetCapacityStep @splatOverCeilingActual | Should -Be 40
+        Get-FleetCapacityStep @splatOverCeilingActual | Should -BeNullOrEmpty
+    }
+
+    It "unwinds a ceiling-pinned nominal through the zero-crossing" {
+        # With zero members a down-PATCH deletes nothing, so this is the one place
+        # drift can be repaid: nominal drops to 0 and the next pass creates the
+        # whole target from a clean slate.
+        $splatPinnedEmpty = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 35
+            ActualCapacity    = 0
+            TargetCapacity    = 35
+        }
+        Get-FleetCapacityStep @splatPinnedEmpty | Should -Be 0
     }
 }
 
