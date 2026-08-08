@@ -648,6 +648,68 @@ Describe "Get-FleetCapacityStep" {
         }
         Get-FleetCapacityStep @splatSettled | Should -BeNullOrEmpty
     }
+
+    It "still recovers a canceled scale set" {
+        $splatCanceled = @{
+            ProvisioningState = "Canceled"
+            NominalCapacity   = 9
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatCanceled | Should -Be 13
+    }
+
+    It "compensates from nominal even when actual runs ahead of it" {
+        # 7 looks wrong next to 8 real instances, but creation is nominal-delta: Azure
+        # makes newValue-minus-nominal VMs, so 7 creates exactly the 2 the target needs.
+        $splatInverted = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 5
+            ActualCapacity    = 8
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatInverted | Should -Be 7
+    }
+
+    It "normalizes an emptied fleet down to zero" {
+        $splatDrained = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 3
+            ActualCapacity    = 0
+            TargetCapacity    = 0
+        }
+        Get-FleetCapacityStep @splatDrained | Should -Be 0
+    }
+
+    It "emits nothing when actual exceeds nominal and demand is met" {
+        $splatSurplus = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 5
+            ActualCapacity    = 8
+            TargetCapacity    = 8
+        }
+        Get-FleetCapacityStep @splatSurplus | Should -BeNullOrEmpty
+    }
+
+    It "reclaims a nominal above the ceiling instead of crashing the pass" {
+        $splatRunaway = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 40
+            ActualCapacity    = 16
+            TargetCapacity    = 20
+        }
+        Get-FleetCapacityStep @splatRunaway | Should -Be 16
+    }
+
+    It "reclaims the single drifted slot when pinned one short of the target" {
+        $splatPinnedSlot = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 35
+            ActualCapacity    = 34
+            TargetCapacity    = 35
+        }
+        Get-FleetCapacityStep @splatPinnedSlot | Should -Be 34
+    }
 }
 
 Describe "Flexible VMSS capacity reconciliation" {
