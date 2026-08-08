@@ -345,7 +345,20 @@ function New-DbaDacPackage {
                 }
             }
         } catch {
-            $errorMessage = "Model validation failed: $($_.Exception.Message)"
+            # Validate() throws an AggregateException, whose own message is only "One or more errors
+            # occurred." - the reason is in its inner exceptions. Calling it from PowerShell wraps
+            # that in a MethodInvocationException as well, so we unwrap both to report the real cause.
+            $validationException = $_.Exception
+            if ($validationException -is [System.Management.Automation.MethodInvocationException] -and $validationException.InnerException) {
+                $validationException = $validationException.InnerException
+            }
+            if ($validationException -is [System.AggregateException]) {
+                $validationDetail = ($validationException.Flatten().InnerExceptions | ForEach-Object { $PSItem.Message }) -join " | "
+            } else {
+                $validationDetail = $validationException.Message
+            }
+
+            $errorMessage = "Model validation failed: $validationDetail"
             $null = $buildErrors.Add($errorMessage)
             Write-Message -Level Warning -Message $errorMessage
         }
