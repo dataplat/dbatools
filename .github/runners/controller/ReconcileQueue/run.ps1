@@ -19,18 +19,23 @@ Write-Host "reconcile reason=$reason delivery=$($nudge.delivery) attempt=$($Trig
 
 # A nudge that sat in the queue past STALE_NUDGE_MINUTES is dropped here. The pass it
 # would trigger re-reads everything and learns nothing a fresher message will not also
-# learn, and during a backlog those redundant passes are the backlog. Unreadable
-# insertion times count as fresh: the failure mode of dropping too eagerly is a cold
-# fleet, the failure mode of processing is one wasted pass.
+# learn, and during a backlog those redundant passes are the backlog. Missing or
+# unreadable insertion times count as fresh -- explicitly, not by trusting a cast to
+# fail -- because the failure mode of dropping too eagerly is a cold fleet, and the
+# failure mode of processing is one wasted pass.
 $ageMinutes = 0
-try {
-    $insertedOn = $TriggerMetadata.InsertionTime
-    if ($insertedOn -is [string]) {
-        $insertedOn = [DateTimeOffset]::Parse($insertedOn, [System.Globalization.CultureInfo]::InvariantCulture)
+$insertedOn = $TriggerMetadata.InsertionTime
+if ($null -eq $insertedOn) {
+    Write-Warning "The trigger metadata carries no InsertionTime; treating the nudge as fresh."
+} else {
+    try {
+        if ($insertedOn -is [string]) {
+            $insertedOn = [DateTimeOffset]::Parse($insertedOn, [System.Globalization.CultureInfo]::InvariantCulture)
+        }
+        $ageMinutes = ([DateTimeOffset]::UtcNow - [DateTimeOffset]$insertedOn).TotalMinutes
+    } catch {
+        Write-Warning "Could not read the nudge insertion time; treating it as fresh. $($PSItem.Exception.Message)"
     }
-    $ageMinutes = ([DateTimeOffset]::UtcNow - [DateTimeOffset]$insertedOn).TotalMinutes
-} catch {
-    Write-Warning "Could not read the nudge insertion time; treating it as fresh. $($PSItem.Exception.Message)"
 }
 $staleMinutes = [int](Get-FleetConfig)["STALE_NUDGE_MINUTES"]
 if ($staleMinutes -gt 0 -and $ageMinutes -ge $staleMinutes) {

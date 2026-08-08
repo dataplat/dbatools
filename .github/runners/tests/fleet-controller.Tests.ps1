@@ -385,6 +385,53 @@ Describe "trigger corroboration" {
     }
 }
 
+Describe "stale nudge dropping" {
+    BeforeAll {
+        $script:ReconcileScript = Join-Path -Path $script:ControllerRoot -ChildPath "ReconcileQueue/run.ps1"
+    }
+
+    BeforeEach {
+        Mock Get-FleetConfig { @{ STALE_NUDGE_MINUTES = 5 } }
+        Mock Invoke-FleetReconcile { }
+        $script:NudgeJson = "{`"reason`":`"safety-tick`",`"delivery`":`"test-delivery`"}"
+    }
+
+    It "reconciles a nudge that is younger than the stale window" {
+        $freshMetadata = @{
+            InsertionTime = [DateTimeOffset]::UtcNow.AddMinutes(-1)
+            DequeueCount  = 1
+        }
+        & $script:ReconcileScript -QueueItem $script:NudgeJson -TriggerMetadata $freshMetadata
+        Should -Invoke Invoke-FleetReconcile -Times 1 -Exactly
+    }
+
+    It "drops a nudge that sat in the queue past the stale window" {
+        # String-typed timestamp on purpose: the worker may hand InsertionTime over as
+        # either a DateTimeOffset or its serialized form, and both routes must age.
+        $staleMetadata = @{
+            InsertionTime = ([DateTimeOffset]::UtcNow.AddMinutes(-10)).ToString("o")
+            DequeueCount  = 1
+        }
+        & $script:ReconcileScript -QueueItem $script:NudgeJson -TriggerMetadata $staleMetadata
+        Should -Invoke Invoke-FleetReconcile -Times 0 -Exactly
+    }
+
+    It "treats a missing insertion time as fresh, not as infinitely old" {
+        $bareMetadata = @{ DequeueCount = 1 }
+        & $script:ReconcileScript -QueueItem $script:NudgeJson -TriggerMetadata $bareMetadata 3>$null
+        Should -Invoke Invoke-FleetReconcile -Times 1 -Exactly
+    }
+
+    It "treats an unreadable insertion time as fresh" {
+        $garbledMetadata = @{
+            InsertionTime = "not-a-timestamp"
+            DequeueCount  = 1
+        }
+        & $script:ReconcileScript -QueueItem $script:NudgeJson -TriggerMetadata $garbledMetadata 3>$null
+        Should -Invoke Invoke-FleetReconcile -Times 1 -Exactly
+    }
+}
+
 Describe "registration readiness" {
     It "does not send a RunCommand to a VM that is still provisioning" {
         # Scale-out no longer waits for readiness in-pass, so Register-PoolVms now sees
