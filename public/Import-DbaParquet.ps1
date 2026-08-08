@@ -292,7 +292,21 @@ function Import-DbaParquet {
             try {
                 Add-Type -Path $parquetDllPath -ErrorAction Stop
             } catch {
-                Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
+                # A type load failure only says "Unable to find type" or "Unable to load one or more of
+                # the requested types" and keeps the reason in LoaderExceptions. Without those the
+                # message sends people to Install-DbaParquet even when the assemblies are installed and
+                # the real problem is a dependency that something else already loaded in another version.
+                $loadException = $_.Exception
+                while ($loadException -and -not $loadException.LoaderExceptions) {
+                    $loadException = $loadException.InnerException
+                }
+                $loaderDetail = ($loadException.LoaderExceptions | ForEach-Object { $PSItem.Message } | Sort-Object -Unique) -join " | "
+
+                if ($loaderDetail) {
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail" -ErrorRecord $_ -EnableException $EnableException
+                } else {
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
+                }
                 return
             }
         }
