@@ -151,7 +151,11 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
 
             # Create firewall rules with default RuleType (Program)
-            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
+            # The rule for the DAC can only be created when the instance wrote the DAC port to the
+            # current ERRORLOG, which it only does when it starts. On an instance whose ERRORLOG was
+            # cycled since then the command warns instead, so the warning is silenced here. It says
+            # nothing about the command and a test run must not print warnings.
+            $resultsNew = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
             $resultsGet = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $resultsRemoveBrowser = $resultsGet | Where-Object Type -eq "Browser" | Remove-DbaFirewallRule
             $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
@@ -228,7 +232,8 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
 
             # Create firewall rules with RuleType Port
-            $resultsNewPort = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -RuleType Port
+            # Same as above: without the DAC port in the current ERRORLOG the command warns.
+            $resultsNewPort = New-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -RuleType Port -WarningAction SilentlyContinue
             $resultsGetPort = Get-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle
             $resultsRemovePort = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
 
