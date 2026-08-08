@@ -276,13 +276,15 @@ function Get-FleetCapacityStep {
         return $null
     }
     if ($ActualCapacity -lt $TargetCapacity) {
-        # 35 is the MAX_RUNNERS hard ceiling. Nominal and actual are ARM-read telemetry
-        # and deliberately carry no range gate: the janitor runbook treats capacity above
-        # the ceiling as a real state, and validating it here would crash every pass
-        # that observes it -- a ParameterBindingException is not TransientFleetException,
-        # so nothing catches it and the controller stops scaling entirely. Target keeps
-        # its gate because the controller chooses it. The min bounds what this function
-        # emits, and a runaway nominal lands in the reclaim branch below instead.
+        # 35 matches the ValidateRange every capacity function in this file shares.
+        # It is the MAX_RUNNERS hard ceiling, and in this function only Target still
+        # carries the gate, because the controller chooses it. Nominal and actual are
+        # ARM-read telemetry and deliberately carry no range gate: the janitor runbook
+        # treats capacity above the ceiling as a real state, and validating it here
+        # would crash every pass that observes it -- a ParameterBindingException is not
+        # TransientFleetException, so nothing catches it and the controller stops
+        # scaling entirely. The min bounds what this function emits, and a runaway
+        # nominal lands in the reclaim branch below instead.
         $compensated = [math]::Min(35, $NominalCapacity + ($TargetCapacity - $ActualCapacity))
         if ($compensated -gt $NominalCapacity) {
             return $compensated

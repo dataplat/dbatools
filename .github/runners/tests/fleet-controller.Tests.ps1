@@ -515,7 +515,7 @@ Describe "capacity step ordering" {
             Mock Remove-OrphanedNetworking { }
             Mock Set-FleetHeartbeat { }
 
-            Invoke-FleetReconcile 6>$null
+            Invoke-FleetReconcile
 
             $freshInventoryFilter = {
                 $ProvisioningState -eq "Succeeded" -and
