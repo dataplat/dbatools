@@ -481,6 +481,8 @@ Describe "capacity step ordering" {
         $script:CapacityReadMalformed = $false
         $script:FleetStateGarbled = $false
         $script:FleetListsVms = $true
+        $script:FleetRepopulatesOnConfirm = $false
+        $script:PostReadStateCalls = 0
         $script:FleetOnlineRunners = @()
         $script:CapacityStepValue = $null
         Mock -ModuleName FleetCore Initialize-FleetContext { }
@@ -499,14 +501,25 @@ Describe "capacity step ordering" {
                 }
             }
             $vms = @()
-            if ($script:CapacityReadSeen -and $script:FleetListsVms) {
-                $vms = @(foreach ($vmSuffix in "a", "b", "c") {
+            if ($script:CapacityReadSeen) {
+                $script:PostReadStateCalls++
+                if ($script:FleetListsVms) {
+                    $vms = @(foreach ($vmSuffix in "a", "b", "c") {
+                            [pscustomobject]@{
+                                name         = "dbatools-runners_$vmSuffix"
+                                provisioning = "Succeeded"
+                                tags         = $null
+                            }
+                        })
+                } elseif ($script:FleetRepopulatesOnConfirm -and $script:PostReadStateCalls -ge 2) {
+                    $vms = @(
                         [pscustomobject]@{
-                            name         = "dbatools-runners_$vmSuffix"
+                            name         = "dbatools-runners_late"
                             provisioning = "Succeeded"
                             tags         = $null
                         }
-                    })
+                    )
+                }
             }
             [pscustomobject]@{
                 Vms     = $vms
@@ -591,6 +604,19 @@ Describe "capacity step ordering" {
                 busy   = $false
             }
         )
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "refuses the zero reclaim when the confirming re-read finds the fleet repopulated" {
+        # The first read came back empty and priced the step at zero; the confirming
+        # read sees a VM that the first one missed. One witness recanting is enough
+        # to hold fire for a pass.
+        $script:FleetListsVms = $false
+        $script:CapacityStepValue = 0
+        $script:FleetRepopulatesOnConfirm = $true
 
         Invoke-FleetReconcile 3>$null
 

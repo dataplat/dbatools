@@ -1358,14 +1358,31 @@ function Invoke-FleetReconcile {
         }
         $newCapacity = Get-FleetCapacityStep @splatCapacityStep
         if ($null -ne $newCapacity) {
-            $onlineRunners = @($state.Runners | Where-Object status -EQ "online").Count
-            if ($newCapacity -lt $capacity -and $onlineRunners -gt 0) {
-                # The only down-step the policy emits is the reclaim to zero, computed
-                # from the ARM VM list. GitHub is an independent witness: a runner
-                # cannot be online without a live VM behind it, so any online count
-                # contradicts an empty list and the PATCH would delete the very
-                # instances the list failed to return.
-                Write-Warning "Skipping capacity reclaim to ${newCapacity}: ARM listed no VMs but $onlineRunners runner(s) are online, so the list is stale."
+            $reclaimBlocked = $null
+            if ($newCapacity -lt $capacity) {
+                # The only down-step the policy emits is the reclaim to zero, and it
+                # hangs entirely on an empty ARM list, which a single read can fake:
+                # Get-FleetState flattens a garbled 200 into a clean empty array, and
+                # list endpoints are eventually consistent. So emptiness needs two
+                # independent witnesses before capacity may cross below nominal --
+                # GitHub first, because a runner cannot be online without a live VM
+                # behind it, then a second inventory read that must come back empty
+                # again. The extra ARM call is paid only on this rare empty-fleet
+                # path, never on the hot scale-out path.
+                $onlineRunners = @($state.Runners | Where-Object status -EQ "online").Count
+                if ($onlineRunners -gt 0) {
+                    $reclaimBlocked = "$onlineRunners runner(s) are online"
+                } else {
+                    $confirmState = Get-FleetState
+                    $confirmVms = @($confirmState.Vms).Count
+                    $confirmOnline = @($confirmState.Runners | Where-Object status -EQ "online").Count
+                    if ($confirmVms -gt 0 -or $confirmOnline -gt 0) {
+                        $reclaimBlocked = "a confirming re-read found $confirmVms VM(s) and $confirmOnline online runner(s)"
+                    }
+                }
+            }
+            if ($reclaimBlocked) {
+                Write-Warning "Skipping capacity reclaim to ${newCapacity}: $reclaimBlocked, so the empty inventory is not trusted."
             } elseif (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
                 # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
                 # readiness poll: the queue is serialized, so a pass that sleeps on
