@@ -178,14 +178,17 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        # -WarningAction Stop has to convert the warning to a terminating error INSIDE the loop, not
-        # after it: once an element has failed, no LATER element may still be dropped. Measured
-        # 2026-08-09 against sql01 - element one drops synStopA, element two repeats it and fails,
-        # and converting inside the loop leaves element three unreached, so synStopB is still there
-        # afterwards. -ErrorAction Stop is deliberately not the leg here: this body raises no
-        # non-terminating error at all, so binding it is indistinguishable from a plain run (also
-        # measured).
-        It "Stops inside the loop under -WarningAction Stop, leaving the later synonym in place" {
+        # Asserts the observable mutation boundary under -WarningAction Stop: element one drops
+        # synStopA, element two repeats it and fails, and element three is then never reached, so
+        # synStopB survives while the first drop stands.
+        #
+        # This deliberately does NOT claim to prove WHERE the warning was converted. The failure is
+        # reported through Stop-Function and re-emitted as it arrives, so a conversion at the caller
+        # would leave the third element undropped exactly as an in-body conversion does; separating
+        # the two needs the terminating error's own identity, which is not asserted here.
+        # -ErrorAction Stop is not the leg at all - this body raises no non-terminating error, so
+        # binding it is indistinguishable from a plain run.
+        It "Does not drop the later synonym once an earlier element has failed under -WarningAction Stop" {
             $splatSynonymFirst = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $dbnameStop

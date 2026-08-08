@@ -255,13 +255,17 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        # -WarningAction Stop has to convert the warning to a terminating error INSIDE the database
-        # loop, not after it. The first database warns and skips; if the conversion happened outside,
-        # the second database would have been fully processed and its user dropped before the caller
-        # ever saw the terminating error. Measured 2026-08-09 against sql01. -ErrorAction Stop is not
-        # the leg here: this body raises no non-terminating error, so binding it is indistinguishable
-        # from a plain run (also measured).
-        It "Stops inside the database loop under -WarningAction Stop, leaving the second database untouched" {
+        # Asserts the observable mutation boundary under -WarningAction Stop: the first database
+        # warns and skips, and the second database's user is still present afterwards, so the run
+        # stopped before that database was processed.
+        #
+        # This deliberately does NOT claim to prove WHERE the warning was converted. Body warnings
+        # are re-emitted as they arrive, so a conversion at the caller would halt the run before the
+        # second database exactly as an in-body conversion does; separating the two needs the
+        # terminating error's own identity, which is not asserted here. -ErrorAction Stop is not the
+        # leg at all - this body raises no non-terminating error, so binding it is indistinguishable
+        # from a plain run.
+        It "Does not touch the second database once the first has warned under -WarningAction Stop" {
             $splatStop = @{
                 SqlInstance   = $TestConfig.InstanceSingle
                 Database      = $stopDbFirst, $stopDbSecond
