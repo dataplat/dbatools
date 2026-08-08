@@ -268,10 +268,13 @@ function Get-FleetCapacityStep {
     # already met, or when the compensated step is pinned against the capacity ceiling
     # and reclaiming headroom is the only way forward. While the scale set is
     # mid-mutation a nominal-over-actual gap is Azure still working, not phantom
-    # capacity -- normalizing it away would cancel the instances being created -- so an
-    # unsettled pass emits nothing. Failed still mutates: a capacity PATCH is how a
-    # stuck scale set recovers, and skipping it would freeze the fleet.
-    if ($ProvisioningState -in @("Creating", "Updating", "Deleting", "Migrating")) {
+    # capacity -- normalizing it away would cancel the instances being created -- so
+    # only the ARM terminal states may mutate: an unknown or missing state is
+    # indistinguishable from an operation in flight, and the cost of skipping a pass is
+    # one safety-tick delay while the cost of overlapping PATCHes is cancelled
+    # instances. Failed and Canceled still mutate: a capacity PATCH is how a stuck
+    # scale set recovers, and skipping them would freeze the fleet.
+    if ($ProvisioningState -notin @("Succeeded", "Failed", "Canceled")) {
         return $null
     }
     if ($ActualCapacity -lt $TargetCapacity) {

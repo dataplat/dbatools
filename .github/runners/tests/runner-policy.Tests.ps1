@@ -579,6 +579,26 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatInFlight | Should -BeNullOrEmpty
     }
 
+    It "treats a missing provisioning state as an operation in flight" {
+        $splatMissing = @{
+            ProvisioningState = ""
+            NominalCapacity   = 9
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatMissing | Should -BeNullOrEmpty
+    }
+
+    It "treats an unknown provisioning state as an operation in flight" {
+        $splatUnknown = @{
+            ProvisioningState = "SomeFutureArmState"
+            NominalCapacity   = 9
+            ActualCapacity    = 6
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatUnknown | Should -BeNullOrEmpty
+    }
+
     It "keeps scaling out while churn mints fresh phantom capacity" {
         $splatChurn = @{
             ProvisioningState = "Succeeded"
