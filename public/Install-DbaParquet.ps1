@@ -4,19 +4,22 @@ function Install-DbaParquet {
         Installs Parquet.NET assemblies required by Import-DbaParquet.
 
     .DESCRIPTION
-        Downloads Parquet.NET from NuGet and installs the netstandard2.0 assemblies into the dbatools data directory.
-        The installer also downloads and extracts the managed dependency closure declared by the NuGet packages.
+        Downloads Parquet.NET from NuGet and installs it into the dbatools data directory, together with the managed
+        dependency closure declared by the NuGet packages.
 
-        Parquet.NET is a managed .NET library, so the installed assemblies work across Windows, Linux, and macOS as long
-        as the host PowerShell/.NET runtime can load netstandard2.0 assemblies.
+        The assemblies are picked for the runtime this is running on: .NET Framework targets on Windows PowerShell and
+        net<major> targets on PowerShell 7. Because both editions share the dbatools data directory, each one installs
+        into its own folder below the configured path ("desktop" or "core"). Run this once per edition if you use both.
 
         By default, assemblies are installed to the dbatools data directory for the current user. Use -Path for a custom
         portable location, or -LocalFile to install from an already downloaded nupkg, zip, or folder that contains
         Parquet.dll or Parquet.Net.dll and its dependencies.
 
     .PARAMETER Path
-        Specifies the directory where Parquet.NET assemblies will be installed.
-        If not specified, defaults to the Path.DbatoolsParquet configuration value.
+        Specifies the directory where Parquet.NET assemblies will be installed. Used exactly as given, so an installation
+        for another PowerShell edition in the same directory is overwritten.
+        If not specified, defaults to a subfolder of the Path.DbatoolsParquet configuration value named for the running
+        PowerShell edition, so the editions do not overwrite each other.
 
     .PARAMETER Version
         Specifies the Parquet.Net NuGet package version to install. Defaults to 5.4.0, the version used by Import-DbaParquet.
@@ -419,8 +422,33 @@ function Install-DbaParquet {
 
         Write-Progress -Activity "Installing Parquet.NET" -Status "Checking for existing installation..." -PercentComplete 0
 
-        $installedPath = Get-DbaParquetPath -Silent
-        if ($installedPath -and -not $Force) {
+        if (-not $Path) {
+            # Path.DbatoolsParquet ships with a default, so this is the normal case and not a fallback.
+            $basePath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
+            if (-not $basePath) {
+                $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+                $basePath = Join-Path -Path $dbatoolsData.TrimEnd("/", "\") -ChildPath "parquet"
+            }
+
+            # The assemblies are picked for the runtime this is running on, but both editions share
+            # the dbatools data directory, so each one installs into its own folder below the base
+            # path. Installing from PowerShell 7 used to leave net<major> assemblies that Windows
+            # PowerShell cannot load at all, and the failure looked like a missing installation.
+            $Path = Join-Path -Path $basePath.TrimEnd("/", "\") -ChildPath (Get-DbaParquetEditionFolder)
+        } else {
+            Set-DbatoolsConfig -FullName "Path.DbatoolsParquet" -Value $Path
+        }
+
+        # Only an installation in the folder this would write to counts as already installed. Asking
+        # Get-DbaParquetPath instead would report the assemblies of the *other* PowerShell edition as
+        # installed and then refuse to install the ones this edition can actually load, which left no
+        # way out of the failure except deleting the folder by hand.
+        $installedPath = Join-Path -Path $Path -ChildPath "Parquet.dll"
+        if (-not (Test-Path -Path $installedPath)) {
+            $installedPath = Join-Path -Path $Path -ChildPath "Parquet.Net.dll"
+        }
+
+        if ((Test-Path -Path $installedPath) -and -not $Force) {
             Write-Progress -Activity "Installing Parquet.NET" -Completed
             $notes = "Parquet.NET already exists at $installedPath. Skipped installation. Use -Force to overwrite."
             Write-Message -Level Verbose -Message $notes
@@ -432,17 +460,6 @@ function Install-DbaParquet {
                 Notes     = $notes
             }
             return
-        }
-
-        if (-not $Path) {
-            $Path = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
-            if (-not $Path) {
-                $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-                $dbatoolsData = $dbatoolsData.TrimEnd("/", "\")
-                $Path = Join-Path -Path $dbatoolsData -ChildPath "parquet"
-            }
-        } else {
-            Set-DbatoolsConfig -FullName "Path.DbatoolsParquet" -Value $Path
         }
 
         $tempRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatools-parquet-$([System.Guid]::NewGuid().ToString())"
