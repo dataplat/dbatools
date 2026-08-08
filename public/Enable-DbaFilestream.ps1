@@ -142,13 +142,32 @@ function Enable-DbaFilestream {
 
             if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
                 # Server level
+                $serviceLevelProblem = $null
                 if ($server.IsClustered) {
                     $nodes = Get-DbaWsfcNode -ComputerName $instance
                     foreach ($node in $nodes.Name) {
                         $result = Set-FileSystemSetting -Instance $node -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
+                        if (-not $serviceLevelProblem -and $result.Category -ne "Success") {
+                            $serviceLevelProblem = $result
+                        }
                     }
                 } else {
                     $result = Set-FileSystemSetting -Instance $instance -Credential $Credential -ShareName $ShareName -FilestreamLevel $level
+                    if ($result.Category -ne "Success") {
+                        $serviceLevelProblem = $result
+                    }
+                }
+
+                # The WMI provider says through its return value why it refused, and that used to be
+                # thrown away: every code was translated to the success message, and even that was
+                # only shown when -Force was absent. A refusal at the service level means the
+                # sp_configure below cannot take effect, so report it instead of returning a state
+                # that was never reached. -Force means do not prompt, not do not report errors.
+                if ($serviceLevelProblem.Category -eq "Failure") {
+                    Stop-Function -Message "[$instance] Could not set filestream at the service level: $($serviceLevelProblem.Message)" -Target $instance -Continue
+                }
+                if ($serviceLevelProblem.Category -eq "Unknown") {
+                    Write-Message -Level Warning -Message "[$instance] $($serviceLevelProblem.Message)"
                 }
 
                 # Instance level
@@ -169,7 +188,9 @@ function Enable-DbaFilestream {
 
                 Get-DbaFilestream -SqlInstance $instance -SqlCredential $SqlCredential -Credential $Credential
                 if ($filestreamstate -ne $level -and -not $Force) {
-                    Write-Message -Level Warning -Message "[$instance] $result"
+                    # Without -Force nothing was restarted, so the change is staged rather than
+                    # live. The message carries that caveat.
+                    Write-Message -Level Warning -Message "[$instance] $($result.Message)"
                 }
             }
         }
