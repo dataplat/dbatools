@@ -178,17 +178,17 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        # Asserts the observable mutation boundary under -WarningAction Stop: element one drops
-        # synStopA, element two repeats it and fails, and element three is then never reached, so
-        # synStopB survives while the first drop stands.
+        # -WarningAction Stop has to convert INSIDE the loop, not after it: element one drops
+        # synStopA, element two repeats it and fails, and element three must then go unreached, so
+        # synStopB survives while the first drop stands. The surviving synonym only shows the run
+        # stopped early though - a conversion at the caller would leave it just as undropped. The
+        # error identity separates them: converting in the body raises from Write-Message, the
+        # cmdlet Stop-Function reports through, so the activity and the error id name Write-Message.
+        # A caller-side conversion would raise from whatever re-emitted the warning to the host.
         #
-        # This deliberately does NOT claim to prove WHERE the warning was converted. The failure is
-        # reported through Stop-Function and re-emitted as it arrives, so a conversion at the caller
-        # would leave the third element undropped exactly as an in-body conversion does; separating
-        # the two needs the terminating error's own identity, which is not asserted here.
         # -ErrorAction Stop is not the leg at all - this body raises no non-terminating error, so
         # binding it is indistinguishable from a plain run.
-        It "Does not drop the later synonym once an earlier element has failed under -WarningAction Stop" {
+        It "Converts the failure warning inside the loop under -WarningAction Stop" {
             $splatSynonymFirst = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 Database        = $dbnameStop
@@ -224,7 +224,17 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "Stop"
                 Confirm       = $false
             }
-            { Remove-DbaDbSynonym @splatStop } | Should -Throw
+            $stopErrorSynonym = $null
+            try {
+                Remove-DbaDbSynonym @splatStop
+            } catch {
+                $stopErrorSynonym = $PSItem
+            }
+
+            $stopErrorSynonym | Should -Not -BeNullOrEmpty
+            $stopErrorSynonym.Exception | Should -BeOfType System.Management.Automation.ActionPreferenceStopException
+            $stopErrorSynonym.CategoryInfo.Activity | Should -Be "Write-Message"
+            $stopErrorSynonym.FullyQualifiedErrorId | Should -BeLike "ActionPreferenceStop,*WriteMessageCommand"
 
             $remaining = Get-DbaDbSynonym @splatGetSynonym
             $remaining.Name | Should -Not -Contain "synStopA"

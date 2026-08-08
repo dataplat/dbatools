@@ -255,17 +255,16 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        # Asserts the observable mutation boundary under -WarningAction Stop: the first database
-        # warns and skips, and the second database's user is still present afterwards, so the run
-        # stopped before that database was processed.
+        # -WarningAction Stop has to convert the skip warning INSIDE the database loop, not after it.
+        # The surviving second user only shows the run stopped early - it does not show where, since
+        # a conversion at the caller would halt just as soon. The error identity is what separates
+        # them: converting in the body raises from Write-Message, the cmdlet that emitted the
+        # warning, so the activity and the error id name Write-Message. A caller-side conversion
+        # would raise from whatever re-emitted the warning to the host and name that instead.
         #
-        # This deliberately does NOT claim to prove WHERE the warning was converted. Body warnings
-        # are re-emitted as they arrive, so a conversion at the caller would halt the run before the
-        # second database exactly as an in-body conversion does; separating the two needs the
-        # terminating error's own identity, which is not asserted here. -ErrorAction Stop is not the
-        # leg at all - this body raises no non-terminating error, so binding it is indistinguishable
-        # from a plain run.
-        It "Does not touch the second database once the first has warned under -WarningAction Stop" {
+        # -ErrorAction Stop is not the leg at all - this body raises no non-terminating error, so
+        # binding it is indistinguishable from a plain run.
+        It "Converts the skip warning inside the database loop under -WarningAction Stop" {
             $splatStop = @{
                 SqlInstance   = $TestConfig.InstanceSingle
                 Database      = $stopDbFirst, $stopDbSecond
@@ -273,7 +272,18 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "Stop"
                 Confirm       = $false
             }
-            { Remove-DbaDbOrphanUser @splatStop } | Should -Throw
+
+            $stopErrorOrphan = $null
+            try {
+                Remove-DbaDbOrphanUser @splatStop
+            } catch {
+                $stopErrorOrphan = $PSItem
+            }
+
+            $stopErrorOrphan | Should -Not -BeNullOrEmpty
+            $stopErrorOrphan.Exception | Should -BeOfType System.Management.Automation.ActionPreferenceStopException
+            $stopErrorOrphan.CategoryInfo.Activity | Should -Be "Write-Message"
+            $stopErrorOrphan.FullyQualifiedErrorId | Should -BeLike "ActionPreferenceStop,*WriteMessageCommand"
 
             $usersFirst = $server.Query("SELECT name FROM sys.database_principals WHERE name = '$stopLogin'", $stopDbFirst)
             $usersSecond = $server.Query("SELECT name FROM sys.database_principals WHERE name = '$stopLogin'", $stopDbSecond)
