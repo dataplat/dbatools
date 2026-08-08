@@ -478,18 +478,28 @@ Describe "capacity step ordering" {
             }
             $script:CapacityReadSeen = $false
             Mock Initialize-FleetContext { }
-            Mock Get-RunnerDemand { @{ Dispatch = $null; Desired = @{} } }
+            Mock Get-RunnerDemand {
+                @{
+                    Dispatch = $null
+                    Desired  = @{}
+                }
+            }
             Mock Get-OrphanedNetworking { $null }
             Mock Get-FleetState {
                 $vms = @()
                 if ($script:CapacityReadSeen) {
-                    $vms = @(
-                        [pscustomobject]@{ name = "dbatools-runners_a"; provisioning = "Succeeded"; tags = $null },
-                        [pscustomobject]@{ name = "dbatools-runners_b"; provisioning = "Succeeded"; tags = $null },
-                        [pscustomobject]@{ name = "dbatools-runners_c"; provisioning = "Succeeded"; tags = $null }
-                    )
+                    $vms = @(foreach ($vmSuffix in "a", "b", "c") {
+                            [pscustomobject]@{
+                                name         = "dbatools-runners_$vmSuffix"
+                                provisioning = "Succeeded"
+                                tags         = $null
+                            }
+                        })
                 }
-                [pscustomobject]@{ Vms = $vms; Runners = @() }
+                [pscustomobject]@{
+                    Vms     = $vms
+                    Runners = @()
+                }
             }
             Mock Invoke-ArmJson {
                 $script:CapacityReadSeen = $true
