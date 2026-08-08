@@ -479,6 +479,7 @@ Describe "capacity step ordering" {
         # code reads it there.
         $script:CapacityReadSeen = $false
         $script:CapacityReadMalformed = $false
+        $script:FleetStateGarbled = $false
         $script:FleetListsVms = $true
         $script:FleetOnlineRunners = @()
         $script:CapacityStepValue = $null
@@ -491,6 +492,12 @@ Describe "capacity step ordering" {
         }
         Mock -ModuleName FleetCore Get-OrphanedNetworking { $null }
         Mock -ModuleName FleetCore Get-FleetState {
+            if ($script:FleetStateGarbled) {
+                return [pscustomobject]@{
+                    Vms     = $null
+                    Runners = $null
+                }
+            }
             $vms = @()
             if ($script:CapacityReadSeen -and $script:FleetListsVms) {
                 $vms = @(foreach ($vmSuffix in "a", "b", "c") {
@@ -548,6 +555,20 @@ Describe "capacity step ordering" {
         # scale-out into a down-PATCH from Azure's real figure. The pass has to end
         # before a step is priced from a guessed number.
         $script:CapacityReadMalformed = $true
+
+        Invoke-FleetReconcile 3>$null
+
+        Should -Invoke Get-FleetCapacityStep -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Invoke-ArmWeb -ModuleName FleetCore -Times 0 -Exactly
+        Should -Invoke Set-FleetHeartbeat -ModuleName FleetCore -Times 0 -Exactly
+    }
+
+    It "bails out of the pass when the inventory read comes back null" {
+        # A null Vms list is a garbled read, not an empty fleet -- @($null).Count is 1,
+        # so unguarded it would impersonate a single live VM -- and a null runner list
+        # would slide through the reclaim corroboration as zero online. Neither may
+        # price a step.
+        $script:FleetStateGarbled = $true
 
         Invoke-FleetReconcile 3>$null
 

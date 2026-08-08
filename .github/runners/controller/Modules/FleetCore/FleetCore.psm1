@@ -1326,6 +1326,13 @@ function Invoke-FleetReconcile {
         # be missing just-created members. Listed first, a stale-low count could send
         # the normalization PATCH below the real membership and delete live instances.
         $state = Get-FleetState
+        if ($null -eq $state.Vms -or $null -eq $state.Runners) {
+            # A null inventory is a garbled read, not an empty fleet: @($null).Count
+            # is 1, which would masquerade as one live VM, and a null runner list
+            # would sail through the reclaim corroboration below as zero online.
+            # Neither figure may price a capacity step.
+            throw (New-TransientFleetException -Message "fleet inventory read returned no VM or runner list; skipping the pass rather than pricing a step from a guessed inventory")
+        }
         $transitionBusy = @($state.Vms | Where-Object {
                 $runner = Get-RunnerForVm -State $state -VmName $PSItem.name
                 $pool = Get-VmPool -Vm $PSItem
