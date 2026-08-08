@@ -55,7 +55,7 @@ InModuleScope dbatools {
                     return
                 }
 
-                if ($ArgumentList.Count -gt 0) {
+                if ($ScriptBlock.ToString() -match "secedit /configure") {
                     & $ScriptBlock @ArgumentList
                     $script:capturedPolicyContent = Get-Content -Path $script:policyFile
                     return
@@ -87,6 +87,12 @@ InModuleScope dbatools {
     }
 }
 
+<#
+    Integration test should appear below and are custom to the command you are writing.
+    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
+    for more guidence.
+#>
+
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
@@ -102,46 +108,90 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         # Revert the grant unless the user already held the privilege before the test: strip the
         # SID position-independently (secedit re-sorts the SID list on export) and re-apply.
         if (-not $hadCreateGlobalObjects) {
-            $tempPath = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-            $revertCfg = "$tempPath\secpolRevertByDbatoolsci.cfg"
-            $null = secedit /export /cfg $revertCfg
-            $revertContent = Get-Content -Path $revertCfg | ForEach-Object {
-                if ($PSItem -match "^SeCreateGlobalPrivilege") {
-                    ($PSItem -replace ("\*" + [regex]::Escape($currentSid) + ",?"), "") -replace ",\s*$", ""
-                } else {
-                    $PSItem
+            $revertTempPath = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+            $revertBaseName = "secpolRevertByDbatoolsci-$(Get-Random)"
+            $revertCfg = "$revertTempPath\$revertBaseName.cfg"
+            $revertDb = "$revertTempPath\$revertBaseName.sdb"
+            $revertJfm = "$revertTempPath\$revertBaseName.jfm"
+
+            try {
+                $null = secedit /export /cfg $revertCfg
+                if ($LASTEXITCODE -ne 0) {
+                    throw "secedit /export failed with exit code $LASTEXITCODE while reverting CreateGlobalObjects for $currentUser"
                 }
+
+                $revertContent = Get-Content -Path $revertCfg | ForEach-Object {
+                    if ($PSItem -match "^SeCreateGlobalPrivilege") {
+                        ($PSItem -replace ("\*" + [regex]::Escape($currentSid) + "(,|$)"), "") -replace ",\s*$", ""
+                    } else {
+                        $PSItem
+                    }
+                }
+
+                $splatWriteRevertCfg = @{
+                    Path     = $revertCfg
+                    Value    = $revertContent
+                    Encoding = "Unicode"
+                }
+                Set-Content @splatWriteRevertCfg
+
+                $null = secedit /configure /cfg $revertCfg /db $revertDb /areas USER_RIGHTS /overwrite /quiet
+                if ($LASTEXITCODE -ne 0) {
+                    throw "secedit /configure failed with exit code $LASTEXITCODE while reverting CreateGlobalObjects for $currentUser"
+                }
+            } finally {
+                $splatRemoveRevertArtifacts = @{
+                    Path        = $revertCfg, $revertDb, $revertJfm
+                    Force       = $true
+                    ErrorAction = "SilentlyContinue"
+                }
+                Remove-Item @splatRemoveRevertArtifacts
             }
-            Set-Content -Path $revertCfg -Value $revertContent -Encoding Unicode
-            $null = secedit /configure /cfg $revertCfg /db "$tempPath\secpolRevertByDbatoolsci.sdb" /areas USER_RIGHTS /overwrite /quiet
-            Remove-Item -Path $revertCfg, "$tempPath\secpolRevertByDbatoolsci.sdb" -Force -ErrorAction SilentlyContinue
         }
     }
 
     Context "Does not leave secedit artifacts behind" {
-        It "Does not create secedit.sdb or secedit.jfm in the working directory" {
+        It "Writes secedit's working database to temp, not the working directory, and cleans it up" {
             $workingDirectory = (Get-Location).Path
+            $artifactTempPath = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 
-            $splatSetPrivilege = @{
-                ComputerName = $env:COMPUTERNAME
-                Type         = "CreateGlobalObjects"
-                User         = $currentUser
-                Confirm      = $false
+            # Watch temp for the working database secedit creates for /db, so this test proves the
+            # file was actually routed to temp during the run, not just absent from cwd afterward.
+            $seceditWatcher = New-Object -TypeName System.IO.FileSystemWatcher
+            $seceditWatcher.Path = $artifactTempPath
+            $seceditWatcher.Filter = "secedit-*.sdb"
+            $seceditWatcher.EnableRaisingEvents = $true
+            $seceditWatcherSourceId = "SetDbaPrivilegeSeceditDbCreated-$(Get-Random)"
+            $null = Register-ObjectEvent -InputObject $seceditWatcher -EventName Created -SourceIdentifier $seceditWatcherSourceId
+
+            try {
+                $splatGrantCreateGlobalObjects = @{
+                    ComputerName    = $env:COMPUTERNAME
+                    Type            = "CreateGlobalObjects"
+                    User            = $currentUser
+                    Confirm         = $false
+                    EnableException = $true
+                }
+                $null = Set-DbaPrivilege @splatGrantCreateGlobalObjects
+
+                $seceditDbCreatedEvents = Get-Event -SourceIdentifier $seceditWatcherSourceId -ErrorAction SilentlyContinue
+                $seceditDbCreatedEvents | Should -Not -BeNullOrEmpty -Because "secedit's /db database should be created under $artifactTempPath while Set-DbaPrivilege runs"
+
+                Get-ChildItem -Path $workingDirectory -Filter "secedit-*.sdb" -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+                Get-ChildItem -Path $workingDirectory -Filter "secedit-*.jfm" -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+                Get-ChildItem -Path $artifactTempPath -Filter "secedit-*.sdb" -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+                Get-ChildItem -Path $artifactTempPath -Filter "secedit-*.jfm" -ErrorAction SilentlyContinue | Should -BeNullOrEmpty
+            } finally {
+                Unregister-Event -SourceIdentifier $seceditWatcherSourceId -ErrorAction SilentlyContinue
+                Remove-Event -SourceIdentifier $seceditWatcherSourceId -ErrorAction SilentlyContinue
+                $seceditWatcher.Dispose()
             }
-            $null = Set-DbaPrivilege @splatSetPrivilege 3>$null
-
-            Join-Path -Path $workingDirectory -ChildPath "secedit.sdb" | Should -Not -Exist
-            Join-Path -Path $workingDirectory -ChildPath "secedit.jfm" | Should -Not -Exist
-        }
-
-        It "Does not leave secedit.sdb or secedit.jfm behind in the temp directory either" {
-            $tempPath = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-
-            Join-Path -Path $tempPath -ChildPath "secedit.sdb" | Should -Not -Exist
-            Join-Path -Path $tempPath -ChildPath "secedit.jfm" | Should -Not -Exist
         }
     }
 }

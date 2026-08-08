@@ -112,12 +112,16 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type -ScriptBlock {
+                            # A random token keeps this invocation's secedit database from colliding with
+                            # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
+                            $dbToken = Get-Random
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type, $dbToken -ScriptBlock {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
                                     $SQLPerServiceSIDs,
-                                    $Type
+                                    $Type,
+                                    $DbToken
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
@@ -254,15 +258,21 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
-                                $null = secedit /configure /cfg $tempfile /db $temp\secedit.sdb /areas USER_RIGHTS /overwrite /quiet
+                                $null = secedit /configure /cfg $tempfile /db $temp\secedit-$DbToken.sdb /areas USER_RIGHTS /overwrite /quiet
                             }
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $dbToken -ScriptBlock {
+                                param ($DbToken)
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
                                 Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL
                                 # secedit's /configure /db creates a database file plus a matching .jfm journal
                                 # file next to it; both live in $temp now instead of leaking into the caller's cwd.
-                                Remove-Item $temp\secedit.sdb, $temp\secedit.jfm -Force -ErrorAction SilentlyContinue > $NULL
+                                $splatRemoveSeceditDb = @{
+                                    Path        = "$temp\secedit-$DbToken.sdb", "$temp\secedit-$DbToken.jfm"
+                                    Force       = $true
+                                    ErrorAction = "SilentlyContinue"
+                                }
+                                Remove-Item @splatRemoveSeceditDb > $NULL
                             }
                         } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
