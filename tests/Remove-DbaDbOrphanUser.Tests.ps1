@@ -202,11 +202,43 @@ Describe $CommandName -Tag IntegrationTests {
             $stopLogin = "dbatoolsci_stop_$stopRandom"
             $stopSchema = "dbatoolsci_stopsch_$stopRandom"
 
-            $null = New-DbaDatabase -SqlInstance $server -Name $stopDbFirst -Owner sa
-            $null = New-DbaDatabase -SqlInstance $server -Name $stopDbSecond -Owner sa
-            $null = New-DbaLogin -SqlInstance $server -Login $stopLogin -Password $securePassword -Force
-            $null = New-DbaDbUser -SqlInstance $server -Database $stopDbFirst -Login $stopLogin -Username $stopLogin
-            $null = New-DbaDbUser -SqlInstance $server -Database $stopDbSecond -Login $stopLogin -Username $stopLogin
+            $splatStopDbFirst = @{
+                SqlInstance = $server
+                Name        = $stopDbFirst
+                Owner       = "sa"
+            }
+            $null = New-DbaDatabase @splatStopDbFirst
+
+            $splatStopDbSecond = @{
+                SqlInstance = $server
+                Name        = $stopDbSecond
+                Owner       = "sa"
+            }
+            $null = New-DbaDatabase @splatStopDbSecond
+
+            $splatStopLogin = @{
+                SqlInstance = $server
+                Login       = $stopLogin
+                Password    = $securePassword
+                Force       = $true
+            }
+            $null = New-DbaLogin @splatStopLogin
+
+            $splatStopUserFirst = @{
+                SqlInstance = $server
+                Database    = $stopDbFirst
+                Login       = $stopLogin
+                Username    = $stopLogin
+            }
+            $null = New-DbaDbUser @splatStopUserFirst
+
+            $splatStopUserSecond = @{
+                SqlInstance = $server
+                Database    = $stopDbSecond
+                Login       = $stopLogin
+                Username    = $stopLogin
+            }
+            $null = New-DbaDbUser @splatStopUserSecond
             # The schema has an object, so without -Force the first database only warns and skips.
             $null = $server.Query("CREATE SCHEMA [$stopSchema] AUTHORIZATION [$stopLogin]", $stopDbFirst)
             $null = $server.Query("CREATE TABLE [$stopSchema].t1(Id int NULL)", $stopDbFirst)

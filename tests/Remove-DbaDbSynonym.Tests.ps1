@@ -179,15 +179,37 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         # -WarningAction Stop has to convert the warning to a terminating error INSIDE the loop, not
-        # after it: the drop of one synonym must not survive a failure on an earlier one. Measured
-        # 2026-08-09 against sql01 - the second element leaves the third unreached, so synStopB is
-        # still there afterwards. -ErrorAction Stop is deliberately not the leg here: this body
-        # raises no non-terminating error at all, so binding it is indistinguishable from a plain
-        # run (also measured).
+        # after it: once an element has failed, no LATER element may still be dropped. Measured
+        # 2026-08-09 against sql01 - element one drops synStopA, element two repeats it and fails,
+        # and converting inside the loop leaves element three unreached, so synStopB is still there
+        # afterwards. -ErrorAction Stop is deliberately not the leg here: this body raises no
+        # non-terminating error at all, so binding it is indistinguishable from a plain run (also
+        # measured).
         It "Stops inside the loop under -WarningAction Stop, leaving the later synonym in place" {
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -Synonym "synStopA" -BaseObject "objA" -EnableException
-            $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -Synonym "synStopB" -BaseObject "objB" -EnableException
-            $synonyms = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -EnableException | Sort-Object Name
+            $splatSynonymFirst = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbnameStop
+                Synonym         = "synStopA"
+                BaseObject      = "objA"
+                EnableException = $true
+            }
+            $null = New-DbaDbSynonym @splatSynonymFirst
+
+            $splatSynonymSecond = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbnameStop
+                Synonym         = "synStopB"
+                BaseObject      = "objB"
+                EnableException = $true
+            }
+            $null = New-DbaDbSynonym @splatSynonymSecond
+
+            $splatGetSynonym = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $dbnameStop
+                EnableException = $true
+            }
+            $synonyms = Get-DbaDbSynonym @splatGetSynonym | Sort-Object Name
 
             # The same synonym twice - the second DROP fails inside the source's try, which is the
             # only mid-loop failure this body can reach. One parameter-bound array is one record, so
@@ -201,7 +223,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
             { Remove-DbaDbSynonym @splatStop } | Should -Throw
 
-            $remaining = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbnameStop -EnableException
+            $remaining = Get-DbaDbSynonym @splatGetSynonym
             $remaining.Name | Should -Not -Contain "synStopA"
             $remaining.Name | Should -Contain "synStopB"
         }
