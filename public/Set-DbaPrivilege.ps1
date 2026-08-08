@@ -92,9 +92,21 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
                     if (Test-PSRemoting -ComputerName $Computer) {
                         Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
-                        Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
-                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
+                        # A random token keeps this invocation's secedit cfg/db/jfm files from colliding with
+                        # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
+                        $seceditRunToken = Get-Random
+                        $exportPrivilegesScriptBlock = {
+                            param ($ExportRunToken)
+                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools-$ExportRunToken.cfg > $NULL;
                         }
+                        $splatExportPrivileges = @{
+                            Raw          = $true
+                            ComputerName = $computer
+                            Credential   = $Credential
+                            ArgumentList = $seceditRunToken
+                            ScriptBlock  = $exportPrivilegesScriptBlock
+                        }
+                        Invoke-Command2 @splatExportPrivileges
 
                         $SQLServiceAccounts = @()
                         $SQLPerServiceSIDs = @()
@@ -112,20 +124,17 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            # A random token keeps this invocation's secedit database from colliding with
-                            # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
-                            $dbToken = Get-Random
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type, $dbToken -ScriptBlock {
+                            $setPrivilegesScriptBlock = {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
                                     $SQLPerServiceSIDs,
                                     $Type,
-                                    $DbToken
+                                    $ConfigureRunToken
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                                $tempfile = "$temp\secpolByDbatools.cfg"
+                                $tempfile = "$temp\secpolByDbatools-$ConfigureRunToken.cfg"
                                 if ('BatchLogon' -in $Type) {
                                     $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
                                     ForEach ($acc in $SQLServiceAccounts) {
@@ -258,22 +267,39 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
-                                $null = secedit /configure /cfg $tempfile /db $temp\secedit-$DbToken.sdb /areas USER_RIGHTS /overwrite /quiet
+                                $null = secedit /configure /cfg $tempfile /db $temp\secedit-$ConfigureRunToken.sdb /areas USER_RIGHTS /overwrite /quiet
                             }
+                            $splatSetPrivileges = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                Verbose      = $true
+                                ArgumentList = $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type, $seceditRunToken
+                                ScriptBlock  = $setPrivilegesScriptBlock
+                            }
+                            Invoke-Command2 @splatSetPrivileges
+
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $dbToken -ScriptBlock {
-                                param ($DbToken)
+                            $removeSecpolScriptBlock = {
+                                param ($CleanupRunToken)
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
-                                Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL
                                 # secedit's /configure /db creates a database file plus a matching .jfm journal
                                 # file next to it; both live in $temp now instead of leaking into the caller's cwd.
-                                $splatRemoveSeceditDb = @{
-                                    Path        = "$temp\secedit-$DbToken.sdb", "$temp\secedit-$DbToken.jfm"
+                                $splatRemoveSeceditFiles = @{
+                                    Path        = "$temp\secpolByDbatools-$CleanupRunToken.cfg", "$temp\secedit-$CleanupRunToken.sdb", "$temp\secedit-$CleanupRunToken.jfm"
                                     Force       = $true
                                     ErrorAction = "SilentlyContinue"
                                 }
-                                Remove-Item @splatRemoveSeceditDb > $NULL
+                                Remove-Item @splatRemoveSeceditFiles > $NULL
                             }
+                            $splatRemoveSecpolFile = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                ArgumentList = $seceditRunToken
+                                ScriptBlock  = $removeSecpolScriptBlock
+                            }
+                            Invoke-Command2 @splatRemoveSecpolFile
                         } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
