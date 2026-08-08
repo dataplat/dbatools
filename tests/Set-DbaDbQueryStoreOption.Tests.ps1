@@ -105,4 +105,43 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When a system database is named explicitly" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $serverMulti1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns about master and tempdb instead of doing nothing at all" {
+            $resultsSystemDb = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database master, tempdb -State ReadWrite -WarningVariable warnSystemDb
+            $resultsSystemDb | Should -BeNullOrEmpty
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database tempdb"
+        }
+
+        It "Configures model from SQL Server 2022 on and warns about it before that" {
+            if ($serverMulti1.VersionMajor -ge 16) {
+                # Query Store on model decides the defaults of every database created afterwards, so the original
+                # value is restored here rather than in an AfterAll that a failing assertion would reach too late.
+                $originalThreshold = (Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model).StaleQueryThresholdInDays
+                try {
+                    $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel
+                    $resultsModel.Database | Should -Be "model"
+                    $resultsModel.StaleQueryThresholdInDays | Should -Be 45
+                    $warnModel | Should -BeNullOrEmpty
+                } finally {
+                    $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold $originalThreshold
+                }
+            } else {
+                $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel
+                $resultsModel | Should -BeNullOrEmpty
+                $warnModel -join "`n" | Should -Match "Query Store cannot be read on model before SQL Server 2022"
+            }
+        }
+    }
 }

@@ -95,6 +95,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When a system database is named explicitly" {
+        It "Warns about master instead of failing with a null array" {
+            $resultsSystemDb = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -Database master -WarningVariable warnSystemDb
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
+            ($resultsSystemDb | Where-Object Database) | Should -BeNullOrEmpty
+        }
+
+        It "Does not fall back to evaluating every database once the filters leave nothing" {
+            $resultsSystemDb = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -Database master
+            ($resultsSystemDb | Where-Object Database -eq $dbname) | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Function works with piping smo server object" {
         BeforeAll {
             $svrPipe = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
