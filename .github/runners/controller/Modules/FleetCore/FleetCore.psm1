@@ -384,8 +384,14 @@ function Invoke-ArmList {
             Operation = $Operation
         }
         $page = Invoke-ArmJson @splatPage
-        if (-not $page) {
-            break
+        if ($null -eq $page -or $page.value -isnot [array]) {
+            # A list page without a value array is a garbled read, not an empty
+            # result -- ARM always ships value as an array, empty or not, so a
+            # missing value and a value of any other shape are the same garble.
+            # Emitting nothing here would flatten it into a clean empty inventory
+            # downstream, which is exactly the shape a destructive scale decision
+            # trusts.
+            throw (New-TransientFleetException -Message "$Operation returned a page without a value array; failing the pass rather than treating a garbled read as an empty list")
         }
         $page.value
         $next = [string]$page.nextLink
@@ -527,6 +533,13 @@ function Get-FleetState {
         Operation = "list GitHub runners"
     }
     $runnerResponse = Invoke-GhJson @splatRunners
+    if ($runnerResponse.runners -isnot [array]) {
+        # The runners endpoint always ships a runners array, even when it is empty,
+        # so a response without one -- or with one of any other shape -- is a
+        # garbled read. Flattening it into an empty list would erase every runner
+        # from the fleet's view in a single pass.
+        throw (New-TransientFleetException -Message "list GitHub runners returned no runners array; failing the pass rather than treating a garbled read as an empty fleet")
+    }
     $runners = @($runnerResponse.runners | Where-Object { $PSItem.labels.name -contains $script:Fleet.RunnerLabel })
     # One list call, not the CLI's --show-details fan-out: the projection below is
     # everything the fleet logic reads, and powerState was only ever projected, never
@@ -1306,7 +1319,39 @@ function Invoke-FleetReconcile {
             }
         }
 
+        $vmssPath = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Compute/virtualMachineScaleSets/$($script:Fleet.Vmss)"
+        $splatCapacity = @{
+            Path      = "$vmssPath`?api-version=2024-07-01"
+            Operation = "read VMSS capacity"
+        }
+        $capacityResponse = Invoke-ArmJson @splatCapacity
+        $capacity = 0
+        if (-not [int]::TryParse([string]$capacityResponse.sku.capacity, [ref]$capacity)) {
+            # A missing sku block coerced through [int] reads as capacity 0, and a
+            # falsely-zero nominal turns the compensated scale-out into a down-PATCH
+            # from Azure's real figure -- the delete-live-instances mutation this
+            # controller exists to avoid. No number is safer than a wrong one.
+            # TryParse also refuses non-integral garble and digit strings past
+            # Int32.MaxValue: casting either through [int] would throw past the
+            # TransientFleetException catch and crash the invocation instead of
+            # skipping the pass. A parsed negative rides through to the policy,
+            # whose negative-telemetry guard skips the pass -- out-of-domain
+            # numbers are its call, unparseable ones are refused here.
+            throw (New-TransientFleetException -Message "read VMSS capacity returned no usable sku.capacity; skipping the pass rather than PATCHing from a guessed nominal")
+        }
+        $provisioningState = [string]$capacityResponse.properties.provisioningState
+        # The inventory list has to come after the provisioning-state read: a settled
+        # state proves any prior scale-out already finished, so a list taken now cannot
+        # be missing just-created members. Listed first, a stale-low count could send
+        # the normalization PATCH below the real membership and delete live instances.
         $state = Get-FleetState
+        if ($null -eq $state.Vms -or $null -eq $state.Runners) {
+            # A null inventory is a garbled read, not an empty fleet: @($null).Count
+            # is 1, which would masquerade as one live VM, and a null runner list
+            # would sail through the reclaim corroboration below as zero online.
+            # Neither figure may price a capacity step.
+            throw (New-TransientFleetException -Message "fleet inventory read returned no VM or runner list; skipping the pass rather than pricing a step from a guessed inventory")
+        }
         $transitionBusy = @($state.Vms | Where-Object {
                 $runner = Get-RunnerForVm -State $state -VmName $PSItem.name
                 $pool = Get-VmPool -Vm $PSItem
@@ -1314,23 +1359,16 @@ function Invoke-FleetReconcile {
                 $outsideDesiredPool -and $runner -and $runner.busy
             }).Count
         $target = [math]::Min($script:Fleet.MaxRunners, $desiredTotal + $transitionBusy)
-        $vmssPath = "/subscriptions/$($script:Fleet.SubscriptionId)/resourceGroups/$($script:Fleet.ResourceGroup)/providers/Microsoft.Compute/virtualMachineScaleSets/$($script:Fleet.Vmss)"
-        $splatCapacity = @{
-            Path      = "$vmssPath`?api-version=2024-07-01"
-            Operation = "read VMSS capacity"
-        }
-        $capacityResponse = Invoke-ArmJson @splatCapacity
-        $capacity = [int]$capacityResponse.sku.capacity
-        $provisioningState = [string]$capacityResponse.properties.provisioningState
         $actualCapacity = @($state.Vms).Count
         Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy provisioning_state=$provisioningState"
         # On Flexible orchestration, deleting spent VMs one at a time leaves sku.capacity
         # above the number of instances that really exist, and a PATCH computed from the
         # nominal figure alone creates target-minus-nominal VMs instead of
         # target-minus-actual; that gap held a ten-runner lane at six VMs (2026-08-08).
-        # Get-FleetCapacityStep walks capacity down to reality before raising it to the
-        # target, one settled pass at a time, so an in-flight scale-out is never
-        # mistaken for phantom capacity and dependent PATCHes never overlap.
+        # Get-FleetCapacityStep emits at most one mutation per settled pass -- a scale-out
+        # compensated for the drift, or the reclaim to zero once the fleet stands empty --
+        # so an in-flight scale-out is never mistaken for phantom capacity, dependent
+        # PATCHes never overlap, and churn-minted drift can never starve creation.
         $splatCapacityStep = @{
             ProvisioningState = $provisioningState
             NominalCapacity   = $capacity
@@ -1339,7 +1377,34 @@ function Invoke-FleetReconcile {
         }
         $newCapacity = Get-FleetCapacityStep @splatCapacityStep
         if ($null -ne $newCapacity) {
-            if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
+            $reclaimBlocked = $null
+            if ($newCapacity -lt $capacity) {
+                # The only down-step the policy emits is the reclaim to zero, and it
+                # hangs entirely on an empty ARM list, which a single read can still
+                # fake: the shape guards in Get-FleetState make a garbled payload
+                # throw, but list endpoints are eventually consistent, so a
+                # well-shaped stale page can report empty while members exist. So
+                # emptiness needs two independent witnesses before capacity may
+                # cross below nominal --
+                # GitHub first, because a runner cannot be online without a live VM
+                # behind it, then a second inventory read that must come back empty
+                # again. The extra ARM call is paid only on this rare empty-fleet
+                # path, never on the hot scale-out path.
+                $onlineRunners = @($state.Runners | Where-Object status -EQ "online").Count
+                if ($onlineRunners -gt 0) {
+                    $reclaimBlocked = "$onlineRunners runner(s) are online"
+                } else {
+                    $confirmState = Get-FleetState
+                    $confirmVms = @($confirmState.Vms).Count
+                    $confirmOnline = @($confirmState.Runners | Where-Object status -EQ "online").Count
+                    if ($confirmVms -gt 0 -or $confirmOnline -gt 0) {
+                        $reclaimBlocked = "a confirming re-read found $confirmVms VM(s) and $confirmOnline online runner(s)"
+                    }
+                }
+            }
+            if ($reclaimBlocked) {
+                Write-Warning "Skipping capacity reclaim to ${newCapacity}: $reclaimBlocked, so the empty inventory is not trusted."
+            } elseif (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
                 # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
                 # readiness poll: the queue is serialized, so a pass that sleeps on
                 # provisioning holds up every queued nudge behind it, and a burst of runs
