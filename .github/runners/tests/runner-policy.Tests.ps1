@@ -711,6 +711,26 @@ Describe "Get-FleetCapacityStep" {
         Get-FleetCapacityStep @splatPinnedSlot | Should -Be 34
     }
 
+    It "skips the pass when nominal telemetry arrives negative" {
+        $splatNegativeNominal = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = -1
+            ActualCapacity    = 2
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatNegativeNominal | Should -BeNullOrEmpty
+    }
+
+    It "skips the pass when actual telemetry arrives negative" {
+        $splatNegativeActual = @{
+            ProvisioningState = "Succeeded"
+            NominalCapacity   = 5
+            ActualCapacity    = -3
+            TargetCapacity    = 10
+        }
+        Get-FleetCapacityStep @splatNegativeActual | Should -BeNullOrEmpty
+    }
+
     It "normalizes to an actual above the ceiling without clamping it" {
         # 40 members really exist, so 40 is the only safe normalization value:
         # clamping to the 35 ceiling would turn a bookkeeping correction into the

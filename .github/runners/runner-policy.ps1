@@ -275,6 +275,13 @@ function Get-FleetCapacityStep {
     if ($ProvisioningState -notin @("Succeeded", "Failed", "Canceled")) {
         return $null
     }
+    if ($NominalCapacity -lt 0 -or $ActualCapacity -lt 0) {
+        # Negative telemetry is a garbled ARM read, not a real fleet state, and it must
+        # not leak into a PATCH body. Skipping the pass costs one safety tick and the
+        # next read starts clean; a ValidateRange would crash the pass instead, which
+        # is the exact failure mode the missing attributes above avoid.
+        return $null
+    }
     if ($ActualCapacity -lt $TargetCapacity) {
         # 35 matches the ValidateRange every capacity function in this file shares.
         # It is the MAX_RUNNERS hard ceiling, and in this function only Target still
