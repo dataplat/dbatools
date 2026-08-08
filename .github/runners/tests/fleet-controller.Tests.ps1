@@ -633,6 +633,40 @@ Describe "capacity step ordering" {
     }
 }
 
+Describe "fleet state shape validation" {
+    BeforeEach {
+        InModuleScope FleetCore {
+            $script:Fleet = [pscustomobject]@{
+                Repo           = "dataplat/dbatools"
+                RunnerLabel    = "dbatools-modern"
+                SubscriptionId = "sub"
+                ResourceGroup  = "rg"
+                Vmss           = "dbatools-runners"
+            }
+        }
+        $script:GhPayload = $null
+        $script:ArmPage = $null
+        Mock -ModuleName FleetCore Invoke-GhJson { $script:GhPayload }
+        Mock -ModuleName FleetCore Invoke-ArmJson { $script:ArmPage }
+    }
+
+    It "throws on a GitHub payload without a runners array instead of erasing the fleet" {
+        # A garbled 200 flattened through @() reads as zero runners, which downstream
+        # is indistinguishable from a genuinely empty fleet. The real state function
+        # has to refuse the shape, not normalize it.
+        $script:GhPayload = [pscustomobject]@{ total_count = 3 }
+
+        { InModuleScope FleetCore { Get-FleetState } } | Should -Throw "*runners array*"
+    }
+
+    It "throws on an ARM list page without a value array instead of returning an empty inventory" {
+        $script:GhPayload = [pscustomobject]@{ runners = @() }
+        $script:ArmPage = [pscustomobject]@{ nextLink = $null }
+
+        { InModuleScope FleetCore { Get-FleetState } } | Should -Throw "*value array*"
+    }
+}
+
 Describe "fail-closed settings" {
     BeforeAll {
         # Everything Initialize-FleetContext demands before it looks at DRY_RUN, so the

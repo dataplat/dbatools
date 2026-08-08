@@ -384,8 +384,12 @@ function Invoke-ArmList {
             Operation = $Operation
         }
         $page = Invoke-ArmJson @splatPage
-        if (-not $page) {
-            break
+        if ($null -eq $page -or $null -eq $page.value) {
+            # A list page without a value array is a garbled read, not an empty
+            # result -- ARM always ships value, empty or not. Emitting nothing here
+            # would flatten the garble into a clean empty inventory downstream,
+            # which is exactly the shape a destructive scale decision trusts.
+            throw (New-TransientFleetException -Message "$Operation returned a page without a value array; failing the pass rather than treating a garbled read as an empty list")
         }
         $page.value
         $next = [string]$page.nextLink
@@ -527,6 +531,12 @@ function Get-FleetState {
         Operation = "list GitHub runners"
     }
     $runnerResponse = Invoke-GhJson @splatRunners
+    if ($null -eq $runnerResponse.runners) {
+        # The runners endpoint always ships a runners array, even when it is empty,
+        # so a response without one is a garbled read. Flattening it into an empty
+        # list would erase every runner from the fleet's view in a single pass.
+        throw (New-TransientFleetException -Message "list GitHub runners returned no runners array; failing the pass rather than treating a garbled read as an empty fleet")
+    }
     $runners = @($runnerResponse.runners | Where-Object { $PSItem.labels.name -contains $script:Fleet.RunnerLabel })
     # One list call, not the CLI's --show-details fan-out: the projection below is
     # everything the fleet logic reads, and powerState was only ever projected, never
