@@ -254,10 +254,16 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
-                                $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite /quiet
+                                $null = secedit /configure /cfg $tempfile /db $temp\secedit.sdb /areas USER_RIGHTS /overwrite /quiet
                             }
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
+                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
+                                $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
+                                Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL
+                                # secedit's /configure /db creates a database file plus a matching .jfm journal
+                                # file next to it; both live in $temp now instead of leaking into the caller's cwd.
+                                Remove-Item $temp\secedit.sdb, $temp\secedit.jfm -Force -ErrorAction SilentlyContinue > $NULL
+                            }
                         } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
