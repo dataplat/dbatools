@@ -1321,9 +1321,21 @@ function Invoke-FleetReconcile {
         }
         $capacityResponse = Invoke-ArmJson @splatCapacity
         $capacity = [int]$capacityResponse.sku.capacity
-        Write-Host "capacity=$capacity target=$target transition_busy=$transitionBusy"
-        if ($capacity -lt $target) {
-            if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$target")) {
+        $actualCapacity = @($state.Vms).Count
+        Write-Host "capacity=$capacity actual_capacity=$actualCapacity target=$target transition_busy=$transitionBusy"
+        # On Flexible orchestration, deleting spent VMs one at a time leaves sku.capacity
+        # above the number of instances that really exist, and a PATCH computed from the
+        # nominal figure alone creates target-minus-nominal VMs instead of
+        # target-minus-actual. Get-VmssCapacityPlan walks capacity down to reality before
+        # raising it to the target, the same normalization reconcile-runner-fleet.ps1
+        # always ran; skipping it here held a ten-runner lane at six VMs (2026-08-08).
+        $splatCapacityPlan = @{
+            NominalCapacity = $capacity
+            ActualCapacity  = $actualCapacity
+            TargetCapacity  = $target
+        }
+        foreach ($newCapacity in @(Get-VmssCapacityPlan @splatCapacityPlan)) {
+            if (-not (Test-FleetDryRun -Decision "scale vmss=$($script:Fleet.Vmss) from=$capacity to=$newCapacity")) {
                 # Fire and forget, matching the CLI's --no-wait. Deliberately no in-line
                 # readiness poll: the queue is serialized, so a pass that sleeps on
                 # provisioning holds up every queued nudge behind it, and a burst of runs
@@ -1333,8 +1345,8 @@ function Invoke-FleetReconcile {
                 $splatScale = @{
                     Path      = "$vmssPath`?api-version=2024-07-01"
                     Method    = "Patch"
-                    Body      = @{ sku = @{ capacity = $target } }
-                    Operation = "scale VMSS to $target"
+                    Body      = @{ sku = @{ capacity = $newCapacity } }
+                    Operation = "scale VMSS to $newCapacity"
                 }
                 $null = Invoke-ArmWeb @splatScale
             }
