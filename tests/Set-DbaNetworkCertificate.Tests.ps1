@@ -148,8 +148,14 @@ Describe $CommandName -Tag UnitTests {
                 # instance's Stop-Function throws before the buffer is returned, so a null capture
                 # is the DEF-001 regression. A script-scoped scalar holds the last streamed row.
                 $script:emittedRow = $null
+                $splatEmitThenThrow = @{
+                    SqlInstance     = "goodinstance", "badinstance"
+                    RestartService  = $true
+                    EnableException = $true
+                    Confirm         = $false
+                }
                 {
-                    Set-DbaNetworkCertificate -SqlInstance "goodinstance", "badinstance" -RestartService -EnableException -Confirm:$false |
+                    Set-DbaNetworkCertificate @splatEmitThenThrow |
                         ForEach-Object { $script:emittedRow = $PSItem }
                 } | Should -Throw
 
@@ -162,7 +168,12 @@ Describe $CommandName -Tag UnitTests {
                 # The streaming hop's pipeline-stop guard: a downstream Select -First 1 must halt the
                 # upstream loop so the second instance never reaches its side effects. A buffered or
                 # unguarded hop would run both instances and call Invoke-Command2/Restart twice.
-                $result = Set-DbaNetworkCertificate -SqlInstance "first", "second" -RestartService -Confirm:$false | Select-Object -First 1
+                $splatStopEarly = @{
+                    SqlInstance    = "first", "second"
+                    RestartService = $true
+                    Confirm        = $false
+                }
+                $result = Set-DbaNetworkCertificate @splatStopEarly | Select-Object -First 1
 
                 $result | Should -Not -BeNullOrEmpty
                 Assert-MockCalled -CommandName Invoke-Command2 -Exactly 1 -Scope It -ModuleName dbatools
