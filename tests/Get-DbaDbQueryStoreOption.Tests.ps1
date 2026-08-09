@@ -34,14 +34,16 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When a system database is named explicitly" {
         It "Warns about master and tempdb instead of silently returning nothing" {
-            $resultsSystemDb = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database master, tempdb -WarningVariable warnSystemDb
+            $resultsSystemDb = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database master, tempdb -WarningVariable warnSystemDb -WarningAction SilentlyContinue
             $resultsSystemDb | Should -BeNullOrEmpty
             $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
             $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database tempdb"
         }
 
         It "Reads model from SQL Server 2022 on and warns about it before that" {
-            $resultsModel = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database model -WarningVariable warnModel
+            # Silenced because the pre-2022 branch below expects a warning. The warning is still
+            # captured in $warnModel, so an unexpected one on 2022 and later fails the assertion.
+            $resultsModel = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database model -WarningVariable warnModel -WarningAction SilentlyContinue
 
             if ($serverSingle.VersionMajor -ge 16) {
                 $resultsModel.Database | Should -Be "model"

@@ -118,7 +118,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns about master and tempdb instead of doing nothing at all" {
-            $resultsSystemDb = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database master, tempdb -State ReadWrite -WarningVariable warnSystemDb
+            $resultsSystemDb = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database master, tempdb -State ReadWrite -WarningVariable warnSystemDb -WarningAction SilentlyContinue
             $resultsSystemDb | Should -BeNullOrEmpty
             $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
             $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database tempdb"
@@ -138,7 +138,7 @@ Describe $CommandName -Tag IntegrationTests {
                     $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold $originalThreshold
                 }
             } else {
-                $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel
+                $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel -WarningAction SilentlyContinue
                 $resultsModel | Should -BeNullOrEmpty
                 $warnModel -join "`n" | Should -Match "Query Store cannot be read on model before SQL Server 2022"
             }
