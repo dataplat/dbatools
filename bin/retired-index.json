@@ -3099,6 +3099,11 @@
     "module": "dbatools.core",
     "retiredPath": "private/retired/Set-DbaMaxMemory.ps1"
   },
+  "Set-DbaNetworkCertificate": {
+    "module": "dbatools.computer",
+    "retiredPath": "private/retired/Set-DbaNetworkCertificate.ps1",
+    "flippedUtc": "2026-08-09T05:09:49Z"
+  },
   "Set-DbaNetworkConfiguration": {
     "flippedUtc": "2026-07-17T00:04:59Z",
     "module": "dbatools.core",

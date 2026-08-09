@@ -71,7 +71,6 @@
         'Invoke-DbaDbPiiScan',
         'Remove-DbaDbOrphanUser',
         'Remove-DbaDbSynonym',
-        'Set-DbaNetworkCertificate',
         'Test-DbaReplLatency'
 
         # NEW REPLICATION STUFF

@@ -63,7 +63,8 @@
         'Invoke-DbaAdvancedUpdate',
         'Invoke-DbaAdvancedInstall',
         'Install-DbaInstance',
-        'Update-DbaInstance'
+        'Update-DbaInstance',
+        'Set-DbaNetworkCertificate'
     )
     VariablesToExport      = @()
     AliasesToExport        = @()
