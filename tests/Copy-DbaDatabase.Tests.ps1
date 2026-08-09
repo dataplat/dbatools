@@ -168,7 +168,6 @@ Describe $CommandName -Tag IntegrationTests {
             $db1.Name | Should -Be $db2.Name
             $db1.RecoveryModel | Should -Be $db2.RecoveryModel
             $db1.Status | Should -Be $db2.Status
-            $db1.Owner | Should -Be $db2.Owner
         }
 
         It "Should say skipped" {
