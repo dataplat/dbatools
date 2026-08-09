@@ -266,30 +266,33 @@ function Import-DbaParquet {
 
             $parquetDirectory = Split-Path -Path $parquetDllPath -Parent
             $script:dbatools_ParquetAssemblyPath = $parquetDirectory
-            if (-not $script:dbatools_ParquetAssemblyResolveRegistered) {
-                $script:dbatools_ParquetAssemblyResolve = [System.ResolveEventHandler] {
-                    param($sender, $resolveArgs)
+            # This handler is a PowerShell scriptblock, and a scriptblock cannot run on a thread that has no
+            # runspace. While it stayed registered for the life of the process, anything that resolved an
+            # assembly on another thread later on invoked it from a thread it cannot run on: New-DbaDacPackage
+            # validating a model on DacFx worker threads killed the whole process with an access violation
+            # inside clr.dll. So it is registered only while the assemblies are being loaded and removed again
+            # in the finally below, which is the only window it is needed in.
+            $parquetAssemblyResolve = [System.ResolveEventHandler] {
+                param($sender, $resolveArgs)
 
-                    $assemblyName = (New-Object -TypeName System.Reflection.AssemblyName -ArgumentList $resolveArgs.Name).Name
-                    $candidate = Join-Path -Path $script:dbatools_ParquetAssemblyPath -ChildPath "$assemblyName.dll"
-                    if (Test-Path -Path $candidate) {
-                        return [System.Reflection.Assembly]::LoadFrom($candidate)
-                    }
-                    return $null
+                $assemblyName = (New-Object -TypeName System.Reflection.AssemblyName -ArgumentList $resolveArgs.Name).Name
+                $candidate = Join-Path -Path $script:dbatools_ParquetAssemblyPath -ChildPath "$assemblyName.dll"
+                if (Test-Path -Path $candidate) {
+                    return [System.Reflection.Assembly]::LoadFrom($candidate)
                 }
-                [System.AppDomain]::CurrentDomain.add_AssemblyResolve($script:dbatools_ParquetAssemblyResolve)
-                $script:dbatools_ParquetAssemblyResolveRegistered = $true
+                return $null
             }
-
-            Get-ChildItem -Path $parquetDirectory -Filter "*.dll" | Where-Object Name -notin "Parquet.dll", "Parquet.Net.dll" | Sort-Object Name | ForEach-Object {
-                try {
-                    Add-Type -Path $PSItem.FullName -ErrorAction Stop
-                } catch {
-                    Write-Message -Level Verbose -Message "Could not preload Parquet.NET dependency $($PSItem.Name): $($_.Exception.Message)"
-                }
-            }
+            [System.AppDomain]::CurrentDomain.add_AssemblyResolve($parquetAssemblyResolve)
 
             try {
+                Get-ChildItem -Path $parquetDirectory -Filter "*.dll" | Where-Object Name -notin "Parquet.dll", "Parquet.Net.dll" | Sort-Object Name | ForEach-Object {
+                    try {
+                        Add-Type -Path $PSItem.FullName -ErrorAction Stop
+                    } catch {
+                        Write-Message -Level Verbose -Message "Could not preload Parquet.NET dependency $($PSItem.Name): $($_.Exception.Message)"
+                    }
+                }
+
                 Add-Type -Path $parquetDllPath -ErrorAction Stop
             } catch {
                 # A type load failure only says "Unable to find type" or "Unable to load one or more of
@@ -314,6 +317,8 @@ function Import-DbaParquet {
                     Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
                 }
                 return
+            } finally {
+                [System.AppDomain]::CurrentDomain.remove_AssemblyResolve($parquetAssemblyResolve)
             }
         }
 
