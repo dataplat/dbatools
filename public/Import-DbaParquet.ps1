@@ -306,7 +306,13 @@ function Import-DbaParquet {
                 $loaderDetail = ($loadException.LoaderExceptions | ForEach-Object { $PSItem.Message } | Sort-Object -Unique) -join " | "
 
                 if ($loaderDetail) {
-                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail" -ErrorRecord $_ -EnableException $EnableException
+                    # Assemblies that are present but unloadable are almost always the ones the other
+                    # PowerShell edition installed, back when both editions shared one folder.
+                    $currentEdition = $PSVersionTable.PSEdition
+                    if (-not $currentEdition) {
+                        $currentEdition = "Desktop"
+                    }
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail. If they were installed from another PowerShell edition, run Install-DbaParquet again on this one ($currentEdition) to get the matching assemblies." -ErrorRecord $_ -EnableException $EnableException
                 } else {
                     Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
                 }
