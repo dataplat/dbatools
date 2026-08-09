@@ -157,6 +157,17 @@ Describe $CommandName -Tag UnitTests {
                 $script:emittedRow.SqlInstance | Should -Be "goodinstance"
                 $script:emittedRow.CertificateThumbprint | Should -Be $script:goodThumbprint
             }
+
+            It "halts upstream side effects when the downstream pipeline stops early" {
+                # The streaming hop's pipeline-stop guard: a downstream Select -First 1 must halt the
+                # upstream loop so the second instance never reaches its side effects. A buffered or
+                # unguarded hop would run both instances and call Invoke-Command2/Restart twice.
+                $result = Set-DbaNetworkCertificate -SqlInstance "first", "second" -RestartService -Confirm:$false | Select-Object -First 1
+
+                $result | Should -Not -BeNullOrEmpty
+                Assert-MockCalled -CommandName Invoke-Command2 -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Restart-DbaService -Exactly 1 -Scope It -ModuleName dbatools
+            }
         }
     }
 }
