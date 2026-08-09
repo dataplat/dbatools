@@ -77,6 +77,86 @@ Describe $CommandName -Tag UnitTests {
                 }
             }
         }
+
+        Context "Parameter conflict validation" {
+            BeforeEach {
+                Mock Test-FunctionInterrupt { $false }
+                Mock Test-DbaNetworkCertificate { }
+                Mock Invoke-Command2 { }
+                Mock Restart-DbaService { }
+            }
+
+            It "warns and makes no change when -UnsetCertificate is combined with -Thumbprint" {
+                $splatConflict = @{
+                    SqlInstance      = "sql1"
+                    UnsetCertificate = $true
+                    Thumbprint       = "0123456789ABCDEF0123456789ABCDEF01234567"
+                    WarningVariable  = "conflictWarn"
+                    WarningAction    = "SilentlyContinue"
+                    Confirm          = $false
+                }
+                $result = Set-DbaNetworkCertificate @splatConflict
+
+                $result | Should -BeNullOrEmpty
+                $conflictWarn | Should -Match "-UnsetCertificate cannot be used with -Thumbprint or -Certificate"
+                Assert-MockCalled -CommandName Test-DbaNetworkCertificate -Exactly 0 -Scope It -ModuleName dbatools
+            }
+        }
+
+        Context "Multi-instance output preservation" {
+            BeforeEach {
+                $script:goodThumbprint = "0123456789ABCDEF0123456789ABCDEF01234567"
+
+                Mock Test-FunctionInterrupt { $false }
+                Mock Invoke-Command2 {
+                    [PSCustomObject]@{
+                        Verbose        = @()
+                        Exception      = $null
+                        ServiceAccount = "sql1\svc-sql"
+                    }
+                }
+                Mock Restart-DbaService { }
+                Mock Test-DbaNetworkCertificate {
+                    if ("$SqlInstance" -eq "badinstance") {
+                        [PSCustomObject]@{
+                            ComputerName                    = "badinstance"
+                            InstanceName                    = "MSSQLSERVER"
+                            SqlInstance                     = "badinstance"
+                            ConfiguredCertificateThumbprint = $null
+                            ConfiguredCertificateValid      = $false
+                            SuitableCertificateAvailable    = $false
+                            SuitableCertificateCount        = 0
+                            SuitableCertificates            = $null
+                        }
+                    } else {
+                        [PSCustomObject]@{
+                            ComputerName                    = "goodinstance"
+                            InstanceName                    = "MSSQLSERVER"
+                            SqlInstance                     = "goodinstance"
+                            ConfiguredCertificateThumbprint = $null
+                            ConfiguredCertificateValid      = $false
+                            SuitableCertificateAvailable    = $true
+                            SuitableCertificateCount        = 1
+                            SuitableCertificates            = [PSCustomObject]@{ Thumbprint = $script:goodThumbprint }
+                        }
+                    }
+                }
+            }
+
+            It "emits the earlier instance before a later one throws under -EnableException" {
+                # The hop streams output; a buffered hop would discard the good instance's row when
+                # the bad instance's Stop-Function throws, so this fails on the DEF-001 regression.
+                $emitted = [System.Collections.Generic.List[object]]::new()
+                {
+                    Set-DbaNetworkCertificate -SqlInstance "goodinstance", "badinstance" -RestartService -EnableException -Confirm:$false |
+                        ForEach-Object { $emitted.Add($_) }
+                } | Should -Throw
+
+                $emitted.Count | Should -Be 1
+                $emitted[0].SqlInstance | Should -Be "goodinstance"
+                $emitted[0].CertificateThumbprint | Should -Be $script:goodThumbprint
+            }
+        }
     }
 }
 
