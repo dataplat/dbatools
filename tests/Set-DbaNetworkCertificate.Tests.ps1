@@ -146,10 +146,10 @@ Describe $CommandName -Tag UnitTests {
             It "emits the earlier instance before a later one throws under -EnableException" {
                 # The hop streams output; a buffered hop would discard the good instance's row when
                 # the bad instance's Stop-Function throws, so this fails on the DEF-001 regression.
-                $emitted = [System.Collections.Generic.List[object]]::new()
+                $emitted = New-Object -TypeName System.Collections.ArrayList
                 {
                     Set-DbaNetworkCertificate -SqlInstance "goodinstance", "badinstance" -RestartService -EnableException -Confirm:$false |
-                        ForEach-Object { $emitted.Add($_) }
+                        ForEach-Object { $null = $emitted.Add($PSItem) }
                 } | Should -Throw
 
                 $emitted.Count | Should -Be 1
