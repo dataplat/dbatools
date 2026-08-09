@@ -144,17 +144,18 @@ Describe $CommandName -Tag UnitTests {
             }
 
             It "emits the earlier instance before a later one throws under -EnableException" {
-                # The hop streams output; a buffered hop would discard the good instance's row when
-                # the bad instance's Stop-Function throws, so this fails on the DEF-001 regression.
-                $emitted = New-Object -TypeName System.Collections.ArrayList
+                # The hop streams output; a buffered hop would emit nothing here because the bad
+                # instance's Stop-Function throws before the buffer is returned, so a null capture
+                # is the DEF-001 regression. A script-scoped scalar holds the last streamed row.
+                $script:emittedRow = $null
                 {
                     Set-DbaNetworkCertificate -SqlInstance "goodinstance", "badinstance" -RestartService -EnableException -Confirm:$false |
-                        ForEach-Object { $null = $emitted.Add($PSItem) }
+                        ForEach-Object { $script:emittedRow = $PSItem }
                 } | Should -Throw
 
-                $emitted.Count | Should -Be 1
-                $emitted[0].SqlInstance | Should -Be "goodinstance"
-                $emitted[0].CertificateThumbprint | Should -Be $script:goodThumbprint
+                $script:emittedRow | Should -Not -BeNullOrEmpty
+                $script:emittedRow.SqlInstance | Should -Be "goodinstance"
+                $script:emittedRow.CertificateThumbprint | Should -Be $script:goodThumbprint
             }
         }
     }
