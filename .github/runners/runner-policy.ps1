@@ -243,6 +243,84 @@ function Get-VmssCapacityPlan {
     }
 }
 
+function Get-FleetCapacityStep {
+    [CmdletBinding()]
+    param(
+        [string]$ProvisioningState,
+        [int]$NominalCapacity,
+        [int]$ActualCapacity,
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity
+    )
+
+    # The Function controller PATCHes capacity fire-and-forget, so unlike the CLI script
+    # it cannot run Get-VmssCapacityPlan's normalize-then-scale sequence: awaiting the
+    # normalization would reintroduce the in-line wait that put the queue 3.3 hours
+    # behind, and taking one plan step per pass starves scale-out entirely, because
+    # ephemeral deletes mint fresh phantom capacity between passes and normalization
+    # wins the slot every time -- the fleet drained from 8 VMs to 3 against a target of
+    # 20 that way (2026-08-08). So the scale-out step compensates for the drift instead
+    # of repairing it first: raising nominal by exactly the shortfall makes Azure create
+    # target-minus-actual instances no matter how stale the bookkeeping is, in a single
+    # mutation. Normalization above zero members is gone entirely: production proved
+    # (2026-08-08, six consecutive observations during the drain, then ten busy runners
+    # killed mid-job in one CI run) that a down-PATCH deletes nominal-minus-newValue
+    # LIVE instances, and that every capacity PATCH conserves the nominal-over-actual
+    # gap, so normalizing can never even catch the drift it chases. The gap grows on
+    # per-VM deletes and clears only at the zero-crossing, where a down-PATCH has no
+    # members left to take -- that reclaim to zero is the one down-step this function
+    # emits. A drifted nominal anywhere above it, runaway or pinned at the ceiling or
+    # demand-met surplus, stays untouched and costs at most gap-many slots of ceiling
+    # headroom until the fleet next empties on its own. While the scale set is
+    # mid-mutation a nominal-over-actual gap is Azure still working, not phantom
+    # capacity -- normalizing it away would cancel the instances being created -- so
+    # only the ARM terminal states may mutate: an unknown or missing state is
+    # indistinguishable from an operation in flight, and the cost of skipping a pass is
+    # one safety-tick delay while the cost of overlapping PATCHes is cancelled
+    # instances. Failed and Canceled still mutate: a capacity PATCH is how a stuck
+    # scale set recovers, and skipping them would freeze the fleet.
+    if ($ProvisioningState -notin @("Succeeded", "Failed", "Canceled")) {
+        return $null
+    }
+    if ($NominalCapacity -lt 0 -or $ActualCapacity -lt 0) {
+        # Negative telemetry is a garbled ARM read, not a real fleet state, and it must
+        # not leak into a PATCH body. Skipping the pass costs one safety tick and the
+        # next read starts clean; a ValidateRange would crash the pass instead, which
+        # is the exact failure mode the missing attributes above avoid.
+        return $null
+    }
+    if ($ActualCapacity -lt $TargetCapacity) {
+        # 35 matches the ValidateRange every capacity function in this file shares.
+        # It is the MAX_RUNNERS hard ceiling, and in this function only Target still
+        # carries the gate, because the controller chooses it. Nominal and actual are
+        # ARM-read telemetry and deliberately carry no range gate: the janitor runbook
+        # treats capacity above the ceiling as a real state, and validating it here
+        # would crash every pass that observes it -- a ParameterBindingException is not
+        # TransientFleetException, so nothing catches it and the controller stops
+        # scaling entirely. The min bounds what this function emits; a nominal already
+        # at or past the ceiling gets no step here and unwinds through the
+        # zero-crossing reclaim below.
+        $unclipped = $NominalCapacity + ($TargetCapacity - $ActualCapacity)
+        $compensated = [math]::Min(35, $unclipped)
+        if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0 -and $compensated -lt $unclipped) {
+            # A clipped step on an empty fleet would create fewer than target instances
+            # and then pin there, below target, until the drift unwinds. With zero
+            # members the zero-crossing reclaim is free, so repay the whole drift now
+            # and let the next pass create the full target from a clean nominal. A
+            # clipped step over a nonzero fleet has no such option -- reclaiming would
+            # delete the live members -- so it still takes whatever headroom remains.
+            return 0
+        }
+        if ($compensated -gt $NominalCapacity) {
+            return $compensated
+        }
+    }
+    if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0) {
+        return 0
+    }
+    return $null
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
