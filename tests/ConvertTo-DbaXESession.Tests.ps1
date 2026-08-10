@@ -116,7 +116,10 @@ select TraceID=@TraceID
         }
         $server = Connect-DbaInstance @splatConnect
         $traceid = ($server.Query($sql)).TraceID
-        $sessionName = "dbatoolsci-session"
+        $traceidSecond = ($server.Query($sql.Replace("temptrace", "temptrace-second"))).TraceID
+        $sessionName = "dbatoolsci-session-$(Get-Random)"
+        $carrierSessionName = "dbatoolsci-carrier-$(Get-Random)"
+        $null = $server.Query("CREATE EVENT SESSION [$carrierSessionName] ON SERVER ADD EVENT sqlserver.sql_statement_completed;")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -131,11 +134,21 @@ select TraceID=@TraceID
             Session     = $sessionName
         }
         $null = Remove-DbaXESession @splatRemoveSession
+        $splatRemoveCarrierSession = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Session     = $carrierSessionName
+        }
+        $null = Remove-DbaXESession @splatRemoveCarrierSession
         $splatRemoveTrace = @{
             SqlInstance = $TestConfig.InstanceSingle
             Id          = $traceid
         }
         $null = Remove-DbaTrace @splatRemoveTrace
+        $splatRemoveSecondTrace = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Id          = $traceidSecond
+        }
+        $null = Remove-DbaTrace @splatRemoveSecondTrace
         Remove-Item -Path $tracePath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -159,6 +172,58 @@ select TraceID=@TraceID
             $results.Name | Should -Be $sessionName
             $results.Status | Should -Be "Running"
             $results.Targets.Name | Should -Be "package0.event_file"
+        }
+
+        It "Carries conflict-renamed Name across two piped trace records" {
+            $traces = @(
+                Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+                Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceidSecond
+            )
+            $scripts = @($traces | ConvertTo-DbaXESession -Name $carrierSessionName -OutputScriptOnly -EnableException)
+            $expectedFirst = "$carrierSessionName-$traceid"
+            $expectedSecond = "$expectedFirst-$traceidSecond"
+
+            $scripts | Should -HaveCount 2
+            $scripts[0] | Should -Match [regex]::Escape($expectedFirst)
+            $scripts[1] | Should -Match [regex]::Escape($expectedSecond)
+        }
+
+        It "Resets the mutable Name between separate invocations" {
+            $firstScript = @(ConvertTo-DbaXESession -InputObject (Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid) -Name $carrierSessionName -OutputScriptOnly -EnableException)
+            $secondScript = @(ConvertTo-DbaXESession -InputObject (Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceidSecond) -Name $carrierSessionName -OutputScriptOnly -EnableException)
+            $expectedFirst = "$carrierSessionName-$traceid"
+            $expectedSecond = "$carrierSessionName-$traceidSecond"
+            $carriedSecond = "$expectedFirst-$traceidSecond"
+
+            $firstScript | Should -HaveCount 1
+            $firstScript[0] | Should -Match [regex]::Escape($expectedFirst)
+            $secondScript | Should -HaveCount 1
+            $secondScript[0] | Should -Match [regex]::Escape($expectedSecond)
+            $secondScript[0] | Should -Not -Match [regex]::Escape($carriedSecond)
+        }
+
+        It "Streams an earlier array element before a later element terminates" {
+            $trace = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid
+            $unsupportedTrace = [pscustomobject]@{
+                Id     = 900001
+                Parent = [pscustomobject]@{
+                    VersionMajor = 10
+                    Name         = "unsupported-$([guid]::NewGuid().ToString('N'))"
+                }
+            }
+            $streamed = [System.Collections.ArrayList]::new()
+            $caught = $null
+
+            try {
+                ConvertTo-DbaXESession -InputObject @($trace, $unsupportedTrace) -Name $carrierSessionName -OutputScriptOnly -EnableException |
+                    ForEach-Object { $null = $streamed.Add($PSItem) }
+            } catch {
+                $caught = $PSItem
+            }
+
+            $streamed | Should -HaveCount 1
+            $caught | Should -Not -BeNullOrEmpty
+            $caught.Exception.Message | Should -Match "2012"
         }
     }
 }
