@@ -167,6 +167,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Remove-Item @splatRemoveRevertArtifacts
             }
         }
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Does not leave secedit artifacts behind" {
