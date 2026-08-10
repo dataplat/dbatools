@@ -75,13 +75,13 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "warns instead of downloading when LocalDirectory is combined with multiple Software values" {
-        Save-DbaCommunitySoftware -Software MaintenanceSolution, DarlingData -LocalDirectory $targetDirectory
+        Save-DbaCommunitySoftware -Software MaintenanceSolution, DarlingData -LocalDirectory $targetDirectory -WarningAction SilentlyContinue
 
         $WarnVar | Should -Match "single -Software value"
     }
 
     It "warns instead of downloading when LocalDirectory is combined with All" {
-        Save-DbaCommunitySoftware -Software All -LocalDirectory $targetDirectory
+        Save-DbaCommunitySoftware -Software All -LocalDirectory $targetDirectory -WarningAction SilentlyContinue
 
         $WarnVar | Should -Match "single -Software value"
     }
