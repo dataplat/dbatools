@@ -448,6 +448,7 @@ function Reset-DbaAdmin {
                     }
                 }
             }
+            Write-ProgressHelper -Completed
 
         }
     }

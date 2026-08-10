@@ -201,6 +201,8 @@ Ideally start a new console, perform the minimal steps required to reproduce the
                 $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
             }
 
+            Write-ProgressHelper -Completed
+
             $data = [PSCustomObject]$hash
 
             try {
