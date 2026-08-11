@@ -10,6 +10,13 @@ function Copy-DbaDbMail {
 
         The function preserves all SMTP authentication details including encrypted passwords, handles name conflicts with optional force replacement, and can enable Database Mail on the destination if it's enabled on the source. You can migrate specific component types or the entire configuration in one operation.
 
+        Decrypting the stored passwords needs two connections to the source instance, so make sure both are possible:
+
+        - A dedicated admin connection (DAC), which this command opens from the machine you run it on. That makes it a remote DAC, so the source instance needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
+        - PowerShell remoting to the Windows host of the source instance, used to read the service master key out of the registry. This needs Windows administrator rights on that host.
+
+        Use -ExcludePassword to skip password decryption entirely; neither connection is opened then.
+
     .PARAMETER Source
         Specifies the source SQL Server instance containing the Database Mail configuration to copy. The function reads all mail profiles, accounts, mail servers, and configuration values from this instance.
         You must have sysadmin privileges to access the MSDB database where Database Mail settings are stored.
@@ -44,6 +51,7 @@ function Copy-DbaDbMail {
     .PARAMETER ExcludePassword
         Copies credential definitions without the actual password values.
         Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the copy then needs neither.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -68,7 +76,7 @@ function Copy-DbaDbMail {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        Requires: sysadmin access on SQL Servers
+        Requires: sysadmin access on SQL Servers, and unless -ExcludePassword is used a remote dedicated admin connection (DAC) to the source instance plus Windows administrator access to its host over PowerShell remoting
 
     .OUTPUTS
         PSCustomObject (MigrationObject)

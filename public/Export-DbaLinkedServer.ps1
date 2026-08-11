@@ -4,7 +4,14 @@ function Export-DbaLinkedServer {
         Generates T-SQL scripts to recreate linked server configurations with their login credentials.
 
     .DESCRIPTION
-        Creates executable T-SQL scripts from existing linked server definitions, including remote login mappings and passwords. Perfect for migrating linked servers between environments, creating disaster recovery scripts, or documenting your linked server landscape. When passwords are included, the function accesses the local registry to decrypt stored credentials, so the generated scripts contain actual working passwords rather than placeholder values.
+        Creates executable T-SQL scripts from existing linked server definitions, including remote login mappings and passwords. Perfect for migrating linked servers between environments, creating disaster recovery scripts, or documenting your linked server landscape. When passwords are included, the function decrypts the stored credentials so the generated scripts contain actual working passwords rather than placeholder values.
+
+        Decrypting those passwords needs two connections to the instance, so make sure both are possible:
+
+        - A dedicated admin connection (DAC), which this command opens from the machine you run it on. That makes it a remote DAC, so the instance needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
+        - PowerShell remoting to the Windows host of the instance, used to read the service master key out of the registry. This needs Windows administrator rights on that host.
+
+        Use -ExcludePassword to skip password decryption entirely; neither connection is opened then.
 
     .PARAMETER SqlInstance
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
@@ -40,6 +47,7 @@ function Export-DbaLinkedServer {
     .PARAMETER ExcludePassword
         Excludes actual passwords from the exported script, replacing them with placeholder values for security purposes.
         Use this when sharing scripts across environments or with team members where you need the linked server structure but want to protect sensitive credentials.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the export then needs neither.
 
     .PARAMETER Append
         Adds the exported linked server scripts to an existing file instead of overwriting it.
@@ -61,6 +69,10 @@ function Export-DbaLinkedServer {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        Requires:
+        - sysadmin access on SQL Server
+        - unless -ExcludePassword is used: a remote dedicated admin connection (DAC) to the instance, and Windows administrator access to its host over PowerShell remoting
 
     .LINK
         https://dbatools.io/Export-DbaLinkedServer

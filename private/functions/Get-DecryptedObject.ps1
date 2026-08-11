@@ -8,6 +8,12 @@ function Get-DecryptedObject {
         This is necessary because SQL Server does not allow retrieval of plaintext passwords for security reasons.
         By leveraging the service master key and the encryption mechanism used by SQL Server, this function can extract the actual passwords for credentials and linked servers.
 
+        Two connections to the instance are needed and both are established from the machine running the command:
+        - The dedicated admin connection (DAC) passed in as SqlInstance, needed to read master.sys.syslnklgns and sys.sysobjvalues. Callers open it with Connect-DbaInstance -DedicatedAdminConnection, so it is a remote DAC and the instance needs remote admin connections enabled and its DAC port reachable.
+        - PowerShell remoting to the Windows host, needed to unprotect the service master key with the entropy stored in the registry.
+
+        Up to dbatools 2.7 this function opened a local DAC itself from inside the PowerShell remoting session, which did not need remote admin connections. That was removed in #10174 so that one DAC can be opened early and shared across all commands that need it, because SQL Server only allows one DAC per instance.
+
         This function is used by the following public functions:
         - Copy-DbaCredential
         - Copy-DbaDbMail

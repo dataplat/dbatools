@@ -28,7 +28,9 @@ function Sync-DbaAvailabilityGroup {
 
         The command copies ALL objects of each enabled type - it doesn't filter based on which objects are actually used by the availability group databases. Use the exclusion parameters to limit scope when needed.
 
-        Copying credentials, database mail accounts and linked servers includes the stored passwords, and decrypting those requires a dedicated admin connection (DAC) to the primary. As SQL Server only allows one DAC per instance, this command opens a single DAC and hands it to all three of those copy operations instead of letting each of them open its own. Use -ExcludePassword if no DAC should be opened at all.
+        Copying credentials, database mail accounts and linked servers includes the stored passwords, and decrypting those requires a dedicated admin connection (DAC) to the primary plus PowerShell remoting to its Windows host. As SQL Server only allows one DAC per instance, this command opens a single DAC and hands it to all three of those copy operations instead of letting each of them open its own. Use -ExcludePassword if no DAC should be opened at all.
+
+        The DAC is opened from the machine you run this command on, which makes it a remote DAC: the primary needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
 
     .PARAMETER Primary
         The primary replica SQL Server instance for the availability group. This is the source server from which all server-level objects will be copied.
@@ -95,6 +97,7 @@ function Sync-DbaAvailabilityGroup {
     .PARAMETER ExcludePassword
         Copies credentials, linked servers, and other objects without the actual password values.
         Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the sync then needs neither.
 
     .PARAMETER Force
         Drops and recreates existing objects on secondary replicas instead of skipping them.
