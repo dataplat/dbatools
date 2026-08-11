@@ -48,6 +48,7 @@ Describe $CommandName -Tag UnitTests {
                 "AccessToken",
                 "AuthenticationType",
                 "DedicatedAdminConnection",
+                "IsNewConnectionReference",
                 "DisableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -415,6 +416,46 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets StatementTimeout to 0" {
             $server.ConnectionContext.StatementTimeout | Should -Be 0
+        }
+    }
+
+    Context "IsNewConnectionVariable tells the caller whether a connection was opened" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # We predefine the variables so that a test fails if Connect-DbaInstance does not set them at all.
+            $newFromString = $null
+            $newFromServer = $null
+            $newFromCopy = $null
+
+            $serverFromString = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection -IsNewConnectionReference ([ref]$newFromString)
+            $serverFromServer = Connect-DbaInstance -SqlInstance $serverFromString -IsNewConnectionReference ([ref]$newFromServer)
+            # Asking for a different database forces Connect-DbaInstance to copy the connection context, so this is a new connection.
+            $serverFromCopy = Connect-DbaInstance -SqlInstance $serverFromString -Database tempdb -IsNewConnectionReference ([ref]$newFromCopy)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = $serverFromString, $serverFromCopy | Disconnect-DbaInstance
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "is true when the connection is opened from a string" {
+            $newFromString | Should -BeTrue
+        }
+
+        It "is false when the server object is passed back in" {
+            $newFromServer | Should -BeFalse
+        }
+
+        It "returns the object that was passed in when nothing has to change" {
+            [object]::ReferenceEquals($serverFromServer, $serverFromString) | Should -BeTrue
+        }
+
+        It "is true when the connection context has to be copied" {
+            $newFromCopy | Should -BeTrue
         }
     }
 
