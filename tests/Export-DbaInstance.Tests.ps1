@@ -433,6 +433,15 @@ Describe $CommandName -Tag IntegrationTests {
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250000, 16, N'Sample error message1'"
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_addmessage 250001, 16, N'Sample error message2'"
 
+        # A second language for one of the custom errors. sp_addmessage only accepts a localized message
+        # when the us_english version of that message id already exists, so the export has to script the
+        # us_english messages first. The language name is built from a char code to keep this file ASCII.
+        $frenchLanguage = "Fran" + [char]0xE7 + "ais"
+        $addFrenchCustomErrorQuery = @"
+EXEC sp_addmessage 250000, 16, N'Exemple de message1', @lang = '$frenchLanguage'
+"@
+        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query $addFrenchCustomErrorQuery
+
         # credentials
         New-DbaCredential -SqlInstance $testServer -Name "dbatools1$random" -Identity "dbatools1$random" -SecurePassword (ConvertTo-SecureString -String "dbatools1" -AsPlainText -Force)
         New-DbaCredential -SqlInstance $testServer -Name "dbatools2$random" -Identity "dbatools2$random" -SecurePassword (ConvertTo-SecureString -String "dbatools2" -AsPlainText -Force)
@@ -511,9 +520,15 @@ Describe $CommandName -Tag IntegrationTests {
         Get-DbaRegServer -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer
         Get-DbaRegServerGroup -SqlInstance $testServer | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup
 
-        # custom error message
-        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropmessage 250000"
-        $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "EXEC sp_dropmessage 250001"
+        # custom error messages
+        # The replay test drops them all and lets the exported script recreate them, so we drop whatever
+        # is still there instead of two fixed ids. Dropping with "all" also removes the localized versions.
+        foreach ($leftoverCustomErrorId in @(Get-DbaCustomError -SqlInstance $testServer | Select-Object -ExpandProperty ID | Sort-Object -Unique)) {
+            $dropCustomErrorQuery = @"
+EXEC sp_dropmessage $leftoverCustomErrorId, 'all'
+"@
+            $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query $dropCustomErrorQuery
+        }
 
         # credentials
         $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query "DROP CREDENTIAL [dbatools1$random]"
@@ -748,6 +763,59 @@ Describe $CommandName -Tag IntegrationTests {
 
         $results.FullName | Should -Exist
         $results.Length | Should -BeGreaterThan 0
+    }
+
+    # This has to stay the last test, because it drops all custom errors of the instance and relies on
+    # the exported script to recreate them.
+    It "Exports custom errors in an order that can be replayed" {
+        $splatExportCustomErrors = @{
+            SqlInstance = $testServer
+            Path        = $exportDir
+            Exclude     = @(
+                "AgentServer",
+                "Audits",
+                "AvailabilityGroups",
+                "BackupDevices",
+                "CentralManagementServer",
+                "Credentials",
+                "DatabaseMail",
+                "Databases",
+                "Endpoints",
+                "ExtendedEvents",
+                "LinkedServers",
+                "Logins",
+                "PolicyManagement",
+                "ReplicationSettings",
+                "ResourceGovernor",
+                "ServerAuditSpecifications",
+                "ServerRoles",
+                "SpConfigure",
+                "SysDbUserObjects",
+                "SystemTriggers",
+                "OleDbProvider"
+            )
+        }
+        $results = Export-DbaInstance @splatExportCustomErrors
+
+        $customErrorFile = $results | Where-Object Name -eq "customererrors.sql"
+        $customErrorFile | Should -Not -BeNullOrEmpty
+
+        # sp_addmessage refuses a message that is already there, so the instance has to be empty before
+        # the exported script can be replayed. A successful replay puts the messages back for AfterAll.
+        foreach ($exportedCustomErrorId in @(Get-DbaCustomError -SqlInstance $testServer | Select-Object -ExpandProperty ID | Sort-Object -Unique)) {
+            $dropExportedCustomErrorQuery = @"
+EXEC sp_dropmessage $exportedCustomErrorId, 'all'
+"@
+            $null = Invoke-DbaQuery -SqlInstance $testServer -Database master -Query $dropExportedCustomErrorQuery -EnableException
+        }
+
+        # Before the fix the localized message was scripted first and this failed with
+        # "You must add the us_english version of this message before you can add the ... version."
+        { Invoke-DbaQuery -SqlInstance $testServer -Database master -File $customErrorFile.FullName -EnableException } | Should -Not -Throw
+
+        $replayedCustomError = Get-DbaCustomError -SqlInstance $testServer | Where-Object ID -eq 250000
+        $replayedCustomError.Language | Should -Contain "us_english"
+        $replayedCustomError.Language | Should -Contain $frenchLanguage
     }
 
     # placeholder for a future test with availability groups
