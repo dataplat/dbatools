@@ -496,11 +496,17 @@ function Invoke-DbaQuery {
                 # Again, here we are, but we cannot use the connection when an information is lost, which is that we are:
                 #   - Integrated Security=True
                 #   - using ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword to "log on as a different user"
+                #
+                # The database is tested with ConnectionContext.CurrentDatabase, the database the connection is on
+                # right now, and not with ConnectionContext.DatabaseName, which is only the database the connection
+                # was opened with. The two differ as soon as anything runs a USE, and then reusing the connection
+                # runs the query in the wrong database. Connect-DbaInstance tests CurrentDatabase as well, so both
+                # commands now ask the same question.
 
                 $startedWithAnOpenConnection = # we want to bypass Connect-DbaInstance if
                 ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
                 (-not $ReadOnly) -and # no readonly intent is requested and
-                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database) -and # the database is not set or the currently connected and
+                (-not $Database -or $instance.InputObject.ConnectionContext.CurrentDatabase -eq $Database) -and # the database is not set or the connection is on it and
                 (-not $AppendConnectionString) -and # we don't use AppendConnectionString and
                 ($instance.InputObject.ConnectionContext.ConnectAsUserName -eq '') # we don't use a DIFFERENT operating system user than the current logged in
                 # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened

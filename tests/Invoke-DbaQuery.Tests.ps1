@@ -402,6 +402,41 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results.Column1 | Should -Be "NULL"
     }
 
+    Context "The connection is only reused when it is on the requested database (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $movedServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -NonPooledConnection
+            $movedOwnSpid = $movedServer.ConnectionContext.ExecuteScalar("SELECT @@SPID")
+
+            # As long as the connection is still on tempdb, it is reused.
+            $reusedSpid = Invoke-DbaQuery -SqlInstance $movedServer -Database tempdb -Query "SELECT @@SPID AS spid" -As SingleValue
+
+            # A USE moves the connection to another database. ConnectionContext.DatabaseName still says tempdb,
+            # only ConnectionContext.CurrentDatabase knows that the connection is on master now.
+            $null = $movedServer.ConnectionContext.ExecuteNonQuery("USE [master]")
+            $movedDatabase = Invoke-DbaQuery -SqlInstance $movedServer -Database tempdb -Query "SELECT DB_NAME() AS dbname" -As SingleValue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $movedServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reuses the connection while it is on the requested database" {
+            $reusedSpid | Should -Be $movedOwnSpid
+        }
+
+        It "runs in the requested database after the connection was moved away from it" {
+            $movedDatabase | Should -Be "tempdb"
+        }
+    }
+
     Context "Connections that were passed in are not closed (#10554)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
