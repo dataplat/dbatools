@@ -496,23 +496,34 @@ function Invoke-DbaQuery {
                 # Again, here we are, but we cannot use the connection when an information is lost, which is that we are:
                 #   - Integrated Security=True
                 #   - using ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword to "log on as a different user"
+                #
+                # The database is tested with ConnectionContext.CurrentDatabase, the database the connection is on
+                # right now, and not with ConnectionContext.DatabaseName, which is only the database the connection
+                # was opened with. The two differ as soon as anything runs a USE, and then reusing the connection
+                # runs the query in the wrong database. Connect-DbaInstance tests CurrentDatabase as well, so both
+                # commands now ask the same question.
 
                 $startedWithAnOpenConnection = # we want to bypass Connect-DbaInstance if
                 ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
                 (-not $ReadOnly) -and # no readonly intent is requested and
-                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database) -and # the database is not set or the currently connected and
+                (-not $Database -or $instance.InputObject.ConnectionContext.CurrentDatabase -eq $Database) -and # the database is not set or the connection is on it and
                 (-not $AppendConnectionString) -and # we don't use AppendConnectionString and
                 ($instance.InputObject.ConnectionContext.ConnectAsUserName -eq '') # we don't use a DIFFERENT operating system user than the current logged in
+                # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+                # ourselves, because closing a connection of the caller takes their session with it. As we might not
+                # call Connect-DbaInstance at all, we have to set the default here.
+                $isNewConnection = $false
                 if ($startedWithAnOpenConnection) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
                     $server = $instance.InputObject
                 } else {
                     $connDbaInstanceParams = @{
-                        SqlInstance         = $instance
-                        SqlCredential       = $SqlCredential
-                        Database            = $Database
-                        NonPooledConnection = $true           # see #8491 for details, also #7725 is still relevant
-                        Verbose             = $false
+                        SqlInstance              = $instance
+                        SqlCredential            = $SqlCredential
+                        Database                 = $Database
+                        NonPooledConnection      = $true           # see #8491 for details, also #7725 is still relevant
+                        IsNewConnectionReference = [ref]$isNewConnection
+                        Verbose                  = $false
                     }
                     if ($ReadOnly) {
                         $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
@@ -541,9 +552,11 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
-            # if the given connection started out open, don't close it.
-            if ($connDbaInstanceParams.NonPooledConnection -and -not $startedWithAnOpenConnection) {
-                # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            # Only close the connection if Connect-DbaInstance opened a new one for us. Connect-DbaInstance returns the
+            # object that was passed in whenever nothing about it has to change, so testing our own parameters is not
+            # enough - see #10554.
+            if ($isNewConnection) {
+                # Close non-pooled connection as this is not done automatically.
                 $null = $server | Disconnect-DbaInstance -Verbose:$false
             }
         }

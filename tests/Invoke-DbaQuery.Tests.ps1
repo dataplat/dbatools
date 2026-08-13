@@ -401,4 +401,88 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
         $results = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "select cast(null as hierarchyid)"
         $results.Column1 | Should -Be "NULL"
     }
+
+    Context "The connection is only reused when it is on the requested database (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $movedServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -NonPooledConnection
+            $movedOwnSpid = $movedServer.ConnectionContext.ExecuteScalar("SELECT @@SPID")
+
+            # As long as the connection is still on tempdb, it is reused.
+            $reusedSpid = Invoke-DbaQuery -SqlInstance $movedServer -Database tempdb -Query "SELECT @@SPID AS spid" -As SingleValue
+
+            # A USE moves the connection to another database. ConnectionContext.DatabaseName still says tempdb,
+            # only ConnectionContext.CurrentDatabase knows that the connection is on master now.
+            $null = $movedServer.ConnectionContext.ExecuteNonQuery("USE [master]")
+            $movedDatabase = Invoke-DbaQuery -SqlInstance $movedServer -Database tempdb -Query "SELECT DB_NAME() AS dbname" -As SingleValue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $movedServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reuses the connection while it is on the requested database" {
+            $reusedSpid | Should -Be $movedOwnSpid
+        }
+
+        It "runs in the requested database after the connection was moved away from it" {
+            $movedDatabase | Should -Be "tempdb"
+        }
+    }
+
+    Context "Connections that were passed in are not closed (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            # Naming the database the connection is already on is enough to take the path where the connection of the caller used to be closed.
+            $null = Invoke-DbaQuery -SqlInstance $callerServer -Database master -Query "SELECT 1"
+
+            # Every call with a string opens and closes a connection of its own, so we count the sessions to see that they are still closed.
+            $counterServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $splatCountSessions = @{
+                SqlInstance  = $counterServer
+                Query        = "SELECT COUNT(*) FROM sys.dm_exec_sessions WHERE program_name = @clientName"
+                SqlParameter = @{ clientName = Get-DbatoolsConfigValue -FullName sql.connection.clientname }
+                As           = "SingleValue"
+            }
+            $sessionsBefore = Invoke-DbaQuery @splatCountSessions
+            foreach ($run in 1..5) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "SELECT 1"
+            }
+            $sessionsAfter = Invoke-DbaQuery @splatCountSessions
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer, $counterServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "leaves the connection of the caller open" {
+            $callerServer.ConnectionContext.IsOpen | Should -BeTrue
+        }
+
+        It "leaves the session of the caller intact, so the temp table is still there" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+
+        It "still closes the connections it opens itself (#6210)" {
+            # We allow for a little noise, because the tab expansion of dbatools connects in the background as well.
+            ($sessionsAfter - $sessionsBefore) | Should -BeLessThan 5
+        }
+    }
 }
