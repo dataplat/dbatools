@@ -128,8 +128,17 @@ function Update-DbaMaintenanceSolution {
         }
 
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+            # ourselves, because closing a connection of the caller takes their session with it. See #10554.
+            $isNewConnection = $false
+            $splatConnect = @{
+                SqlInstance              = $instance
+                SqlCredential            = $SqlCredential
+                NonPooledConnection      = $true
+                IsNewConnectionReference = [ref]$isNewConnection
+            }
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -181,8 +190,10 @@ function Update-DbaMaintenanceSolution {
                 }
             }
 
-            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $null = $server | Disconnect-DbaInstance
+            if ($isNewConnection) {
+                # Close non-pooled connection as this is not done automatically.
+                $null = $server | Disconnect-DbaInstance
+            }
         }
     }
 }
