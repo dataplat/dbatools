@@ -167,6 +167,15 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             }
             $singleToolResults = Install-DbaCommunitySoftware @splatSingleTool
 
+            $splatMixedCase = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Software    = "WhoIsActive", "whoisactive"
+                Database    = $singleToolDb
+                Force       = $true
+                Verbose     = $false
+            }
+            $mixedCaseResults = Install-DbaCommunitySoftware @splatMixedCase
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -187,6 +196,49 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $singleToolResults.Name | Should -Be "sp_WhoisActive"
             $singleToolResults.Database | Should -Be $singleToolDb
             $singleToolResults.SqlInstance | Should -Not -BeNullOrEmpty
+        }
+
+        It "Runs a differently cased duplicate only once" {
+            # ValidateSet accepts any casing, so the deduplication has to be case-insensitive
+            # or the same installer runs twice against the same database.
+            @($mixedCaseResults).Count | Should -Be 1
+        }
+    }
+
+    Context "Defaulting WhoIsActive to master when Database is omitted" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $defaultServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+
+            # Only clean up afterwards if this test is what put the procedure into master.
+            $preExistingProcedures = $defaultServer.Query("SELECT name FROM master.sys.procedures")
+            $whoIsActivePreExisted = $preExistingProcedures.name -contains "sp_WhoisActive"
+
+            $splatDefaultDatabase = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Software    = "WhoIsActive"
+                Force       = $true
+                Verbose     = $false
+            }
+            $defaultDatabaseResults = Install-DbaCommunitySoftware @splatDefaultDatabase
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if (-not $whoIsActivePreExisted) {
+                $defaultServer.Query("DROP PROCEDURE IF EXISTS dbo.sp_WhoisActive", "master")
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Installs into master rather than stalling on the interactive picker" {
+            $defaultDatabaseResults.Database | Should -Be "master"
+            $defaultDatabaseResults.Name | Should -Be "sp_WhoisActive"
         }
     }
 

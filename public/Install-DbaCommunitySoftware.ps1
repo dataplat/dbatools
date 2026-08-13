@@ -169,10 +169,22 @@ function Install-DbaCommunitySoftware {
             DbaMultiTool        = "Install-DbaMultiTool"
         }
 
+        $canonicalSoftware = @("MaintenanceSolution", "FirstResponderKit", "DarlingData", "SQLWATCH", "WhoIsActive", "DbaMultiTool")
+
         if ($Software -contains "All") {
-            $resolvedSoftware = @("MaintenanceSolution", "FirstResponderKit", "DarlingData", "SQLWATCH", "WhoIsActive", "DbaMultiTool")
+            $resolvedSoftware = $canonicalSoftware
         } else {
-            $resolvedSoftware = @($Software | Select-Object -Unique)
+            # ValidateSet accepts any casing but Select-Object -Unique compares case-sensitively on
+            # both editions, so "WhoIsActive, whoisactive" would survive as two entries and install
+            # twice. Fold each name onto its supported spelling and drop repeats, keeping the
+            # requested order so the messages below read the way the caller typed the command.
+            $resolvedSoftware = @()
+            foreach ($requested in $Software) {
+                $matchedSoftware = $canonicalSoftware | Where-Object { $PSItem -eq $requested }
+                if ($resolvedSoftware -notcontains $matchedSoftware) {
+                    $resolvedSoftware += $matchedSoftware
+                }
+            }
         }
 
         if ((Test-Bound -ParameterName LocalFile) -and $resolvedSoftware.Count -gt 1) {
