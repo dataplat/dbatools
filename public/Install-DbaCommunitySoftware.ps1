@@ -191,11 +191,11 @@ function Install-DbaCommunitySoftware {
             }
         }
 
+        $requestedSoftware = $resolvedSoftware
+
         # Install-DbaSqlWatch refuses to run on PowerShell Core, but its own check sits in process
         # while the download it needs happens in begin, so calling it there refreshes the cache over
         # the network and only then fails. Drop it up front rather than pay for that on every run.
-        # This runs before the LocalFile count check so that dropping it can leave a single tool
-        # holding the file rather than failing a selection that is no longer ambiguous.
         if ($PSEdition -eq "Core" -and $resolvedSoftware -contains "SQLWATCH") {
             Write-Message -Level Warning -Message "Install-DbaSqlWatch does not support PowerShell Core, so SQLWATCH was skipped. Run it from Windows PowerShell instead."
             $resolvedSoftware = @($resolvedSoftware | Where-Object { $PSItem -ne "SQLWATCH" })
@@ -206,9 +206,13 @@ function Install-DbaCommunitySoftware {
             }
         }
 
-        if ((Test-Bound -ParameterName LocalFile) -and $resolvedSoftware.Count -gt 1) {
-            $softwareList = $resolvedSoftware -join ", "
-            Stop-Function -Message "LocalFile points at a file for one tool, so it cannot be combined with $($resolvedSoftware.Count) values ($softwareList). Run the command once per tool, or leave LocalFile off to download each one."
+        # Counted against what the caller asked for rather than what survived the Core filter
+        # above. The archive belongs to one named tool, so two names are ambiguous however many
+        # of them can run on this edition, and dropping SQLWATCH must never leave WhoIsActive
+        # holding a SqlWatch zip.
+        if ((Test-Bound -ParameterName LocalFile) -and $requestedSoftware.Count -gt 1) {
+            $softwareList = $requestedSoftware -join ", "
+            Stop-Function -Message "LocalFile points at a file for one tool, so it cannot be combined with $($requestedSoftware.Count) values ($softwareList). Run the command once per tool, or leave LocalFile off to download each one."
             return
         }
 

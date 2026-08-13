@@ -105,15 +105,22 @@ Describe $CommandName -Tag UnitTests {
 
             # Two warnings can land here on Core, so join them rather than matching a collection.
             $allWarningText = $allWarning -join " "
+            $allWarningText | Should -Match "cannot be combined with 6 values"
+            $allWarningText | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, SQLWATCH, WhoIsActive, DbaMultiTool"
+        }
 
-            if ($PSEdition -eq "Core") {
-                # SQLWATCH is dropped before the LocalFile guard is reached, so All is five here.
-                $allWarningText | Should -Match "cannot be combined with 5 values"
-                $allWarningText | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, WhoIsActive, DbaMultiTool"
-            } else {
-                $allWarningText | Should -Match "cannot be combined with 6 values"
-                $allWarningText | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, SQLWATCH, WhoIsActive, DbaMultiTool"
+        It "Counts the requested tools even when Core drops one of them" -Skip:($PSEdition -ne "Core") {
+            # SQLWATCH is filtered out on Core before this guard is reached. Counting survivors
+            # would leave one tool standing and hand a SqlWatch archive to Install-DbaWhoIsActive.
+            $splatCoreLocalFile = @{
+                SqlInstance     = "NotARealInstance"
+                Software        = "SQLWATCH", "WhoIsActive"
+                LocalFile       = "C:\temp\dbatoolsci_sqlwatch.zip"
+                EnableException = $true
             }
+            {
+                Install-DbaCommunitySoftware @splatCoreLocalFile -WarningAction SilentlyContinue
+            } | Should -Throw -ExpectedMessage "*cannot be combined with 2 values*"
         }
     }
 }
