@@ -344,7 +344,7 @@ function Set-DbaDbQueryStoreOption {
                         $db.Refresh()
 
                         if ($query -ne "") {
-                            $db.Query($query, $dbName)
+                            $null = $server.Query($query)
                         }
                     } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue
