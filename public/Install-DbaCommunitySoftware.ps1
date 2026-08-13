@@ -15,7 +15,9 @@ function Install-DbaCommunitySoftware {
         - WhoIsActive: Install-DbaWhoIsActive (Adam Machanic)
         - DbaMultiTool: Install-DbaMultiTool (John McCall)
 
-        Two behaviors deliberately differ from calling an installer yourself:
+        Three behaviors deliberately differ from calling an installer yourself:
+
+        - SQLWATCH is skipped with a warning on PowerShell Core, and the rest of the batch still runs. Install-DbaSqlWatch supports Windows PowerShell only, and left to itself it downloads its payload before reaching that check, so selecting All from PowerShell Core would fetch a file it can never use.
 
         - WhoIsActive is given master when you do not pass Database. Called directly with no database, Install-DbaWhoIsActive opens an interactive picker, which would stall an unattended run.
         - A failure against one tool does not end the batch. The remaining tools and instances still run, and the failure surfaces as a warning naming the tool and instance. With EnableException the first failure throws, as it would anywhere else in dbatools.
@@ -191,6 +193,19 @@ function Install-DbaCommunitySoftware {
             $softwareList = $resolvedSoftware -join ", "
             Stop-Function -Message "LocalFile points at a file for one tool, so it cannot be combined with $($resolvedSoftware.Count) values ($softwareList). Run the command once per tool, or leave LocalFile off to download each one."
             return
+        }
+
+        # Install-DbaSqlWatch refuses to run on PowerShell Core, but its own check sits in process
+        # while the download it needs happens in begin, so calling it there refreshes the cache over
+        # the network and only then fails. Drop it up front rather than pay for that on every run.
+        if ($PSEdition -eq "Core" -and $resolvedSoftware -contains "SQLWATCH") {
+            Write-Message -Level Warning -Message "Install-DbaSqlWatch does not support PowerShell Core, so SQLWATCH was skipped. Run it from Windows PowerShell instead."
+            $resolvedSoftware = @($resolvedSoftware | Where-Object { $PSItem -ne "SQLWATCH" })
+
+            if ($resolvedSoftware.Count -eq 0) {
+                Stop-Function -Message "SQLWATCH was the only tool selected and it needs Windows PowerShell, so there is nothing left to install."
+                return
+            }
         }
 
         if ($Force) { $ConfirmPreference = "none" }

@@ -258,6 +258,54 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         }
     }
 
+    Context "Skipping SQLWATCH on PowerShell Core" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $coreSkipDb = "dbatoolsci_community_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $coreSkipDb
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Only run the call on Core. Under Windows PowerShell this would start a real SqlWatch
+            # DACPAC deployment, which is far heavier than anything else in this file.
+            $coreSkipResults = $null
+            if ($PSEdition -eq "Core") {
+                $splatCoreSkip = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Software        = "SQLWATCH", "WhoIsActive"
+                    Database        = $coreSkipDb
+                    WarningVariable = "coreSkipWarning"
+                    WarningAction   = "SilentlyContinue"
+                }
+                $coreSkipResults = Install-DbaCommunitySoftware @splatCoreSkip
+            }
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatCleanupCoreSkip = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $coreSkipDb
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-DbaDatabase @splatCleanupCoreSkip
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns that SQLWATCH needs Windows PowerShell" -Skip:($PSEdition -ne "Core") {
+            $coreSkipWarning | Should -Match "SQLWATCH was skipped"
+        }
+
+        It "Installs the supported tools in the same call" -Skip:($PSEdition -ne "Core") {
+            # One row, so SqlWatch was dropped before its installer could download anything.
+            @($coreSkipResults).Count | Should -Be 1
+            $coreSkipResults.Name | Should -Be "sp_WhoisActive"
+        }
+    }
+
     Context "Continuing past an instance that cannot be reached" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
