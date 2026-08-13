@@ -15,6 +15,8 @@ function Install-DbaCommunitySoftware {
         - WhoIsActive: Install-DbaWhoIsActive (Adam Machanic)
         - DbaMultiTool: Install-DbaMultiTool (John McCall)
 
+        Install-DbaSqlWatch is a Windows only command, so SQLWATCH cannot be selected from PowerShell on Linux or macOS. The other five work everywhere.
+
         Two behaviors deliberately differ from calling an installer yourself:
 
         - WhoIsActive is given master when you do not pass Database. Called directly with no database, Install-DbaWhoIsActive opens an interactive picker, which would stall an unattended run.
@@ -216,7 +218,7 @@ function Install-DbaCommunitySoftware {
         foreach ($tool in $resolvedSoftware) {
             $installer = Get-Command -Name $commandMap[$tool] -ErrorAction SilentlyContinue
             if (-not $installer) {
-                Stop-Function -Message "$($commandMap[$tool]) is not available in this session, so $tool cannot be installed. Reimport dbatools and try again."
+                Stop-Function -Message "$($commandMap[$tool]) is not available in this session, so $tool cannot be installed. SQLWATCH is the one tool that needs Windows, so on other platforms name the tools you want rather than using All."
                 return
             }
             $parameterMap[$tool] = @($installer.Parameters.Keys)
