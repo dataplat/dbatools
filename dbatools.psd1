@@ -435,6 +435,7 @@
         'Import-DbaSpConfigure',
         'Import-DbatoolsConfig',
         'Import-DbaXESessionTemplate',
+        'Install-DbaCommunitySoftware',
         'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
         'Install-DbaInstance',
