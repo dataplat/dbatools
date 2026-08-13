@@ -24,8 +24,15 @@ Describe $CommandName -Tag UnitTests {
         }
 
         It "Should reject a software name that has no installer" {
+            # AzSqlTips is downloadable through Save-DbaCommunitySoftware but is queried by
+            # Invoke-DbaDbAzSqlTip rather than installed, so it is deliberately out of the set.
+            $splatBadSoftware = @{
+                SqlInstance     = "NotARealInstance"
+                Software        = "AzSqlTips"
+                EnableException = $true
+            }
             {
-                Install-DbaCommunitySoftware -SqlInstance NotARealInstance -Software AzSqlTips -EnableException
+                Install-DbaCommunitySoftware @splatBadSoftware
             } | Should -Throw
         }
     }
@@ -53,8 +60,8 @@ Describe $CommandName -Tag UnitTests {
                 WarningVariable = "localFileWarning"
                 WarningAction   = "SilentlyContinue"
             }
-            $results = Install-DbaCommunitySoftware @splatWarn
-            $results | Should -BeNullOrEmpty
+            $localFileResults = Install-DbaCommunitySoftware @splatWarn
+            $localFileResults | Should -BeNullOrEmpty
             $localFileWarning | Should -Match "cannot be combined with 2 values"
         }
 
@@ -73,7 +80,7 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
+Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
     # Skip IntegrationTests on AppVeyor because the underlying installers fail there for unknown reasons.
 
     Context "Installing more than one tool in a single call" {
@@ -82,8 +89,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $multiToolDb = "dbatoolsci_community_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $server.Query("CREATE DATABASE $multiToolDb")
+            $multiToolServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $multiToolServer.Query("CREATE DATABASE $multiToolDb")
 
             $splatMultiTool = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -102,7 +109,12 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $multiToolDb
+            $splatCleanupMultiTool = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $multiToolDb
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-DbaDatabase @splatCleanupMultiTool
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -117,7 +129,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             @($multiToolResults.Name -eq "DarlingData").Count | Should -Be 1
         }
 
-        It "Installs every tool into the requested database: $multiToolDb" {
+        It "Installs every tool into the requested database" {
             @($multiToolResults.Database | Select-Object -Unique) | Should -Be $multiToolDb
         }
 
@@ -131,8 +143,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $singleToolDb = "dbatoolsci_community_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $server.Query("CREATE DATABASE $singleToolDb")
+            $singleToolServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $singleToolServer.Query("CREATE DATABASE $singleToolDb")
 
             $splatSingleTool = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -149,7 +161,12 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $singleToolDb
+            $splatCleanupSingleTool = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $singleToolDb
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-DbaDatabase @splatCleanupSingleTool
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -161,8 +178,72 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
     }
 
+    Context "Continuing past an instance that cannot be reached" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $continueDb = "dbatoolsci_community_$(Get-Random)"
+            $continueServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $continueServer.Query("CREATE DATABASE $continueDb")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The unreachable host goes first on purpose: it must fail before the real
+            # instance is reached, so a row back from the real one proves the batch continued.
+            $splatContinue = @{
+                SqlInstance   = "dbatoolsci_no_such_host", $TestConfig.InstanceSingle
+                Software      = "WhoIsActive"
+                Database      = $continueDb
+                WarningAction = "SilentlyContinue"
+            }
+            $continueResults = Install-DbaCommunitySoftware @splatContinue
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatCleanupContinue = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $continueDb
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-DbaDatabase @splatCleanupContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Still installs on the instance that follows the failure" {
+            @($continueResults).Count | Should -Be 1
+            $continueResults.Database | Should -Be $continueDb
+        }
+
+        It "Reports no row for the instance that failed" {
+            @($continueResults.SqlInstance) | Should -Not -Contain "dbatoolsci_no_such_host"
+        }
+
+        It "Throws on the first failure when EnableException is used" {
+            $splatContinueException = @{
+                SqlInstance     = "dbatoolsci_no_such_host", $TestConfig.InstanceSingle
+                Software        = "WhoIsActive"
+                Database        = $continueDb
+                EnableException = $true
+            }
+            {
+                Install-DbaCommunitySoftware @splatContinueException
+            } | Should -Throw
+        }
+    }
+
     Context "Branch and WhatIf handling" {
-        It "Warns that Branch was ignored for a tool that has no branch to switch" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $whatIfDb = "dbatoolsci_community_$(Get-Random)"
+            $whatIfServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $whatIfServer.Query("CREATE DATABASE $whatIfDb")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
             $splatNoBranch = @{
                 SqlInstance     = $TestConfig.InstanceSingle
                 Software        = "WhoIsActive"
@@ -172,30 +253,39 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
                 WarningAction   = "SilentlyContinue"
             }
             $null = Install-DbaCommunitySoftware @splatNoBranch
+
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Software    = "WhoIsActive"
+                Database    = $whatIfDb
+                WhatIf      = $true
+            }
+            $null = Install-DbaCommunitySoftware @splatWhatIf
+
+            # A freshly created database has no user procedures at all, so any row here
+            # means WhatIf let the install through.
+            $whatIfProcedures = $whatIfServer.Query("SELECT COUNT(*) AS ProcCount FROM $whatIfDb.sys.procedures")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatCleanupWhatIf = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $whatIfDb
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-DbaDatabase @splatCleanupWhatIf
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns that Branch was ignored for a tool that has no branch to switch" {
             $branchWarning | Should -Match "Branch was ignored for WhoIsActive"
         }
 
         It "Installs nothing under WhatIf" {
-            $whatIfDb = "dbatoolsci_community_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -EnableException
-            $server.Query("CREATE DATABASE $whatIfDb")
-
-            try {
-                $splatWhatIf = @{
-                    SqlInstance = $TestConfig.InstanceSingle
-                    Software    = "WhoIsActive"
-                    Database    = $whatIfDb
-                    WhatIf      = $true
-                }
-                $null = Install-DbaCommunitySoftware @splatWhatIf
-
-                # A freshly created database has no user procedures at all, so any row here
-                # means WhatIf let the install through.
-                $procedureCount = $server.Query("SELECT COUNT(*) AS ProcCount FROM $whatIfDb.sys.procedures")
-                $procedureCount.ProcCount | Should -Be 0
-            } finally {
-                Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $whatIfDb -EnableException
-            }
+            $whatIfProcedures.ProcCount | Should -Be 0
         }
     }
 }

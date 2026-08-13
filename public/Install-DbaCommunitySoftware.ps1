@@ -6,16 +6,21 @@ function Install-DbaCommunitySoftware {
     .DESCRIPTION
         Installs one or more of the community stored procedure kits that dbatools ships installers for, without needing to remember six separate command names. This is the install-side counterpart to Save-DbaCommunitySoftware, which already unifies the download step behind one -Software parameter.
 
-        Each tool is handed off to its dedicated installer, so behavior, prompts and output objects are exactly what you get from calling that command directly:
+        Each tool is handed off to its dedicated installer, and the objects that installer emits are passed straight back to you:
 
-        - MaintenanceSolution: Install-DbaMaintenanceSolution (Ola Hallengren)
+        - MaintenanceSolution: Install-DbaMaintenanceSolution (Ola Hallengren), SQL Server 2017 and later only
         - FirstResponderKit: Install-DbaFirstResponderKit (Brent Ozar Unlimited)
         - DarlingData: Install-DbaDarlingData (Erik Darling)
         - SQLWATCH: Install-DbaSqlWatch (Marcin Gminski)
         - WhoIsActive: Install-DbaWhoIsActive (Adam Machanic)
         - DbaMultiTool: Install-DbaMultiTool (John McCall)
 
-        A failure against one tool does not stop the batch. The remaining tools and instances still run, and the failure is reported as a warning unless you use EnableException.
+        Two behaviors deliberately differ from calling an installer yourself:
+
+        - WhoIsActive is given master when you do not pass Database. Called directly with no database, Install-DbaWhoIsActive opens an interactive picker, which would stall an unattended run.
+        - A failure against one tool does not end the batch. The remaining tools and instances still run, and the failure surfaces as a warning naming the tool and instance. With EnableException the first failure throws, as it would anywhere else in dbatools.
+
+        Everything else, including each installer version floor and its own confirmation prompts, is exactly what you get from the installer directly. An instance below a tool version floor is skipped by that installer with a warning while the rest of the batch continues.
 
         Only the parameters common to most of the installers are surfaced here. When you need tool-specific options such as the Ola Hallengren job scheduling switches, the First Responder Kit script selection, or the SqlWatch pre-release feed, call that installer directly.
 
@@ -47,9 +52,11 @@ function Install-DbaCommunitySoftware {
         A warning names any selected tool that has no branch to switch.
 
     .PARAMETER LocalFile
-        Specifies a previously downloaded zip or script file to install from instead of downloading. Use this on servers with no internet access, after fetching the file with Save-DbaCommunitySoftware.
+        Specifies a zip archive or SQL script to install from instead of downloading. Use this on servers with no internet access.
 
-        Because a downloaded file belongs to exactly one tool, this can only be combined with a single Software value.
+        Get the archive from the project release page on a machine that does have access and copy it across. Save-DbaCommunitySoftware does not produce a file for this: it consumes LocalFile the same way, to refresh the local cache. The release page for each tool is listed in the Save-DbaCommunitySoftware help.
+
+        Because an archive belongs to exactly one tool, this can only be combined with a single Software value.
 
     .PARAMETER Force
         If this switch is enabled, the local cached copy of each tool is refreshed before installing and confirmation prompts are suppressed.
@@ -68,18 +75,34 @@ function Install-DbaCommunitySoftware {
     .OUTPUTS
         PSCustomObject
 
-        Returns the objects emitted by each installer unchanged, so the shape follows the tool rather than this command. Most tools return one object per installed script with the following properties:
+        Objects are passed through from each installer unchanged, so the property set follows the tool rather than this command. Selecting several tools returns a mix of the shapes below, in the order the tools were requested. All three shapes share ComputerName, InstanceName and SqlInstance, so a mixed batch still groups and formats on those.
 
-        - ComputerName: The name of the computer where the SQL Server instance resides
-        - InstanceName: The name of the SQL Server instance
-        - SqlInstance: The full SQL Server instance name (computer\instance)
-        - Database: The name of the database the tool was installed into
-        - Name: The name of the installed script or stored procedure
-        - Status: The result of the installation, such as Installed, Updated, Error or Skipped
+        FirstResponderKit, DarlingData, DbaMultiTool and WhoIsActive return one object per script the installer ran:
 
-        Two tools differ. Install-DbaMaintenanceSolution returns ComputerName, InstanceName, SqlInstance and Results, where Results is the outcome of the whole solution install rather than a per-script row. Install-DbaSqlWatch returns ComputerName, InstanceName, SqlInstance, Database, Status and DashboardPath, and has no Name property.
+        - ComputerName (String): The name of the computer where the SQL Server instance resides
+        - InstanceName (String): The name of the SQL Server instance
+        - SqlInstance (String): The full SQL Server instance name (computer\instance)
+        - Database (String): The name of the database the script was installed into
+        - Name (String): The script base name, such as sp_Blitz or sp_BlitzCache. DarlingData installs from one combined script and so returns a single row named DarlingData; WhoIsActive returns a single row named sp_WhoisActive
+        - Status (String): Installed when the object was created, Updated when it already existed, Skipped when the script does not apply to that instance version, Error when the batch failed. DbaMultiTool never reports Skipped, and WhoIsActive reports only Installed or Updated
 
-        Note: Tools that fail are reported through error handling and produce no output objects.
+        MaintenanceSolution returns one object per instance, not per script, and has no Database, Name or Status:
+
+        - ComputerName (String): The name of the computer where the SQL Server instance resides
+        - InstanceName (String): The name of the SQL Server instance
+        - SqlInstance (String): The full SQL Server instance name (computer\instance)
+        - Results (String): Success or Failed, covering the whole solution install on that instance
+
+        SQLWATCH returns one object per instance and has no Name:
+
+        - ComputerName (String): The name of the computer where the SQL Server instance resides
+        - InstanceName (String): The name of the SQL Server instance
+        - SqlInstance (String): The full SQL Server instance name (computer\instance)
+        - Database (String): The name of the database SqlWatch was published to, SQLWATCH unless you pass Database
+        - Status (System.Text.RegularExpressions.Match): The last parenthesized fragment of the DACPAC publish result, which renders as its matched text
+        - DashboardPath (String): The full local file system path to the SqlWatch Dashboard directory
+
+        Note: an instance a tool refuses, such as MaintenanceSolution against anything below SQL Server 2017, produces a warning from that installer and no object, while the rest of the batch continues.
 
     .NOTES
         Tags: Community, Install, MaintenanceSolution, FirstResponderKit, DarlingData, SqlWatch, WhoIsActive, DbaMultiTool
@@ -103,9 +126,9 @@ function Install-DbaCommunitySoftware {
         Installs the First Responder Kit and sp_WhoIsActive into the DBAtools database on sql2017.
 
     .EXAMPLE
-        PS C:\> Install-DbaCommunitySoftware -SqlInstance sql2016, sql2017 -Software MaintenanceSolution, DarlingData -Force
+        PS C:\> Install-DbaCommunitySoftware -SqlInstance sql2017, sql2019 -Software MaintenanceSolution, DarlingData -Force
 
-        Refreshes the local cached copies and installs the Ola Hallengren Maintenance Solution and DarlingData on both instances, without prompting for confirmation.
+        Refreshes the local cached copies and installs the Ola Hallengren Maintenance Solution and DarlingData on both instances, without prompting for confirmation. Both instances are SQL Server 2017 or later, which the Maintenance Solution requires.
 
     .EXAMPLE
         PS C:\> Install-DbaCommunitySoftware -SqlInstance sql2017 -Software WhoIsActive -LocalFile C:\temp\sp_whoisactive.zip
@@ -216,7 +239,13 @@ function Install-DbaCommunitySoftware {
                 try {
                     & $commandName @splatInstall
                 } catch {
-                    Stop-Function -Message "Failed to install $tool on $instance" -ErrorRecord $_ -Target $instance -Continue
+                    $splatInstallFailure = @{
+                        Message     = "Failed to install $tool on $instance"
+                        ErrorRecord = $PSItem
+                        Target      = $instance
+                        Continue    = $true
+                    }
+                    Stop-Function @splatInstallFailure
                 }
             }
         }
