@@ -20,7 +20,9 @@ function Install-DbaCommunitySoftware {
         - SQLWATCH is skipped with a warning on PowerShell Core, and the rest of the batch still runs. Install-DbaSqlWatch supports Windows PowerShell only, and left to itself it downloads its payload before reaching that check, so selecting All from PowerShell Core would fetch a file it can never use.
 
         - WhoIsActive is given master when you do not pass Database. Called directly with no database, Install-DbaWhoIsActive opens an interactive picker, which would stall an unattended run.
-        - A failure against one tool does not end the batch. The remaining tools and instances still run, and the failure surfaces as a warning naming the tool and instance. With EnableException the first failure throws, as it would anywhere else in dbatools.
+        - A failure against one tool does not end the batch. The remaining tools still run, and the failure surfaces as a warning naming the tool. With EnableException the first failure throws, as it would anywhere else in dbatools.
+
+        Each installer is called once with the whole instance list rather than once per instance, because they all download their payload before touching the first instance. Passing ten instances therefore fetches each archive once, not ten times.
 
         A single script that fails partway through is reported rather than thrown. FirstResponderKit, DarlingData and DbaMultiTool catch a failed script themselves, warn, and hand back that row with a Status of Error, so EnableException does not make it terminating here any more than it does when you call those installers directly. Check Status on the returned objects to find them.
 
@@ -189,15 +191,11 @@ function Install-DbaCommunitySoftware {
             }
         }
 
-        if ((Test-Bound -ParameterName LocalFile) -and $resolvedSoftware.Count -gt 1) {
-            $softwareList = $resolvedSoftware -join ", "
-            Stop-Function -Message "LocalFile points at a file for one tool, so it cannot be combined with $($resolvedSoftware.Count) values ($softwareList). Run the command once per tool, or leave LocalFile off to download each one."
-            return
-        }
-
         # Install-DbaSqlWatch refuses to run on PowerShell Core, but its own check sits in process
         # while the download it needs happens in begin, so calling it there refreshes the cache over
         # the network and only then fails. Drop it up front rather than pay for that on every run.
+        # This runs before the LocalFile count check so that dropping it can leave a single tool
+        # holding the file rather than failing a selection that is no longer ambiguous.
         if ($PSEdition -eq "Core" -and $resolvedSoftware -contains "SQLWATCH") {
             Write-Message -Level Warning -Message "Install-DbaSqlWatch does not support PowerShell Core, so SQLWATCH was skipped. Run it from Windows PowerShell instead."
             $resolvedSoftware = @($resolvedSoftware | Where-Object { $PSItem -ne "SQLWATCH" })
@@ -206,6 +204,19 @@ function Install-DbaCommunitySoftware {
                 Stop-Function -Message "SQLWATCH was the only tool selected and it needs Windows PowerShell, so there is nothing left to install."
                 return
             }
+        }
+
+        if ((Test-Bound -ParameterName LocalFile) -and $resolvedSoftware.Count -gt 1) {
+            $softwareList = $resolvedSoftware -join ", "
+            Stop-Function -Message "LocalFile points at a file for one tool, so it cannot be combined with $($resolvedSoftware.Count) values ($softwareList). Run the command once per tool, or leave LocalFile off to download each one."
+            return
+        }
+
+        # A whitespace name is never a real database, and letting it through would hand WhoIsActive
+        # the master default below, quietly writing to a database the caller never asked for.
+        if ((Test-Bound -ParameterName Database) -and [string]::IsNullOrWhiteSpace($Database)) {
+            Stop-Function -Message "Database is only whitespace, which is not a database name. Pass the name you want, or leave Database off to let each installer use its own default."
+            return
         }
 
         if ($Force) { $ConfirmPreference = "none" }
@@ -236,49 +247,61 @@ function Install-DbaCommunitySoftware {
             }
             $parameterMap[$tool] = @($installer.Parameters.Keys)
         }
+
+        $targetInstances = @()
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
 
+        # Collect rather than install. Every installer downloads its payload in begin and loops
+        # instances in process, so one call per instance would fetch the same archive once per
+        # target - and with Force, redownload it every time.
         foreach ($instance in $SqlInstance) {
-            foreach ($tool in $resolvedSoftware) {
-                $commandName = $commandMap[$tool]
+            $targetInstances += $instance
+        }
+    }
 
-                $splatInstall = @{
-                    SqlInstance = $instance
+    end {
+        if (Test-FunctionInterrupt) { return }
+
+        $instanceList = $targetInstances -join ", "
+
+        foreach ($tool in $resolvedSoftware) {
+            $commandName = $commandMap[$tool]
+
+            $splatInstall = @{
+                SqlInstance = $targetInstances
+            }
+
+            foreach ($key in $splatForward.Keys) {
+                if ($parameterMap[$tool] -contains $key) {
+                    $splatInstall[$key] = $splatForward[$key]
                 }
+            }
 
-                foreach ($key in $splatForward.Keys) {
-                    if ($parameterMap[$tool] -contains $key) {
-                        $splatInstall[$key] = $splatForward[$key]
-                    }
+            if ($splatForward.ContainsKey("Branch") -and $parameterMap[$tool] -notcontains "Branch") {
+                Write-Message -Level Warning -Message "$commandName installs from a single source, so Branch was ignored for $tool."
+            }
+
+            # Install-DbaWhoIsActive has no Database default: left unbound its own "-not $Database"
+            # test opens an interactive Show-DbaDbList picker that would stall an unattended batch.
+            if ($tool -eq "WhoIsActive" -and -not $splatInstall.ContainsKey("Database")) {
+                $splatInstall["Database"] = "master"
+            }
+
+            Write-Message -Level Verbose -Message "Installing $tool on $instanceList with $commandName"
+
+            try {
+                & $commandName @splatInstall
+            } catch {
+                $splatInstallFailure = @{
+                    Message     = "Failed to install $tool"
+                    ErrorRecord = $PSItem
+                    Target      = $targetInstances
+                    Continue    = $true
                 }
-
-                if ($splatForward.ContainsKey("Branch") -and $parameterMap[$tool] -notcontains "Branch") {
-                    Write-Message -Level Warning -Message "$commandName installs from a single source, so Branch was ignored for $tool on $instance."
-                }
-
-                # Install-DbaWhoIsActive has no Database default: anything its own "-not $Database"
-                # test sees as empty opens an interactive Show-DbaDbList picker that would stall an
-                # unattended batch. Test the value, not just the key, so whitespace lands on master too.
-                if ($tool -eq "WhoIsActive" -and [string]::IsNullOrWhiteSpace($splatInstall["Database"])) {
-                    $splatInstall["Database"] = "master"
-                }
-
-                Write-Message -Level Verbose -Message "Installing $tool on $instance with $commandName"
-
-                try {
-                    & $commandName @splatInstall
-                } catch {
-                    $splatInstallFailure = @{
-                        Message     = "Failed to install $tool on $instance"
-                        ErrorRecord = $PSItem
-                        Target      = $instance
-                        Continue    = $true
-                    }
-                    Stop-Function @splatInstallFailure
-                }
+                Stop-Function @splatInstallFailure
             }
         }
     }

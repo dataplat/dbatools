@@ -79,7 +79,7 @@ Describe $CommandName -Tag UnitTests {
             $localFileWarning | Should -Match "cannot be combined with 2 values"
         }
 
-        It "Expands All to the six installable tools" {
+        It "Expands All to every installable tool" {
             $splatAll = @{
                 SqlInstance     = "NotARealInstance"
                 Software        = "All"
@@ -88,8 +88,18 @@ Describe $CommandName -Tag UnitTests {
                 WarningAction   = "SilentlyContinue"
             }
             $null = Install-DbaCommunitySoftware @splatAll
-            $allWarning | Should -Match "cannot be combined with 6 values"
-            $allWarning | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, SQLWATCH, WhoIsActive, DbaMultiTool"
+
+            # Two warnings can land here on Core, so join them rather than matching a collection.
+            $allWarningText = $allWarning -join " "
+
+            if ($PSEdition -eq "Core") {
+                # SQLWATCH is dropped before the LocalFile guard is reached, so All is five here.
+                $allWarningText | Should -Match "cannot be combined with 5 values"
+                $allWarningText | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, WhoIsActive, DbaMultiTool"
+            } else {
+                $allWarningText | Should -Match "cannot be combined with 6 values"
+                $allWarningText | Should -Match "MaintenanceSolution, FirstResponderKit, DarlingData, SQLWATCH, WhoIsActive, DbaMultiTool"
+            }
         }
     }
 }
@@ -148,6 +158,50 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
 
         It "Reports no failures" {
             @($multiToolResults | Where-Object Status -eq "Error") | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Handing the whole instance list to each installer" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $multiInstanceDb = "dbatoolsci_community_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $multiInstanceDb
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Name $multiInstanceDb
+
+            $splatMultiInstance = @{
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+                Software    = "WhoIsActive"
+                Database    = $multiInstanceDb
+                Force       = $true
+            }
+            # Verbose is captured rather than silenced here: the dispatch message is the only
+            # observable proof that the installer was entered once instead of once per instance.
+            $multiInstanceStreams = Install-DbaCommunitySoftware @splatMultiInstance -Verbose 4>&1
+            $multiInstanceDispatch = @($multiInstanceStreams | Where-Object { $PSItem -is [System.Management.Automation.VerboseRecord] -and $PSItem.Message -match "Installing WhoIsActive on" })
+            $multiInstanceResults = @($multiInstanceStreams | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] })
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $multiInstanceDb -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Database $multiInstanceDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Enters the installer once no matter how many instances are targeted" {
+            # Every installer downloads in begin, so a second entry would mean a second download.
+            $multiInstanceDispatch.Count | Should -Be 1
+        }
+
+        It "Installs on both instances from that one call" {
+            $multiInstanceResults.Count | Should -Be 2
+            @($multiInstanceResults.SqlInstance | Select-Object -Unique).Count | Should -Be 2
+            @($multiInstanceResults.Name | Select-Object -Unique) | Should -Be "sp_WhoisActive"
         }
     }
 
@@ -252,6 +306,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         It "Installs into master rather than stalling on the interactive picker" {
             if ($whoIsActivePreExisted) {
                 Set-ItResult -Skipped -Because "master.dbo.sp_WhoisActive already exists and this test will not overwrite an object it did not create"
+                return
             }
             $defaultDatabaseResults.Database | Should -Be "master"
             $defaultDatabaseResults.Name | Should -Be "sp_WhoisActive"
@@ -300,9 +355,14 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         }
 
         It "Installs the supported tools in the same call" -Skip:($PSEdition -ne "Core") {
-            # One row, so SqlWatch was dropped before its installer could download anything.
             @($coreSkipResults).Count | Should -Be 1
             $coreSkipResults.Name | Should -Be "sp_WhoisActive"
+        }
+
+        It "Never enters the SqlWatch installer at all" -Skip:($PSEdition -ne "Core") {
+            # Install-DbaSqlWatch downloads in begin and only then hits its own Core check, so
+            # its refusal message appearing would mean the download had already happened.
+            $coreSkipWarning | Should -Not -Match "PowerShell Core is not supported"
         }
     }
 
