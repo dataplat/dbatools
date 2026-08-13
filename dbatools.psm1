@@ -940,6 +940,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Export-DbaServerRole',
         'Get-DbaBuild',
         'Update-DbaBuildReference',
+        'Install-DbaCommunitySoftware',
         'Install-DbaFirstResponderKit',
         'Install-DbaSqlPackage',
         'Install-DbaWhoIsActive',
