@@ -210,10 +210,16 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $defaultServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $masterDatabase = $defaultServer.Databases["master"]
 
-            # Only clean up afterwards if this test is what put the procedure into master.
-            $preExistingProcedures = $defaultServer.Query("SELECT name FROM master.sys.procedures")
-            $whoIsActivePreExisted = $preExistingProcedures.name -contains "sp_WhoisActive"
+            # The install replaces dbo.sp_WhoisActive in place, so keep the definition of any copy
+            # that is already there and put it back afterwards. The schema has to be part of the
+            # lookup: a procedure of the same name under another schema is not the one we overwrite.
+            $existingWhoIsActive = $masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
+            $existingWhoIsActiveDefinition = ""
+            if ($existingWhoIsActive) {
+                $existingWhoIsActiveDefinition = $existingWhoIsActive.TextHeader + $existingWhoIsActive.TextBody
+            }
 
             $splatDefaultDatabase = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -229,8 +235,14 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            if (-not $whoIsActivePreExisted) {
-                $defaultServer.Query("DROP PROCEDURE IF EXISTS dbo.sp_WhoisActive", "master")
+            # Dropped through SMO rather than DROP PROCEDURE IF EXISTS, which needs SQL Server 2016.
+            $masterDatabase.StoredProcedures.Refresh()
+            $installedWhoIsActive = $masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
+            if ($installedWhoIsActive) {
+                $installedWhoIsActive.Drop()
+            }
+            if ($existingWhoIsActiveDefinition) {
+                $masterDatabase.ExecuteNonQuery($existingWhoIsActiveDefinition)
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
