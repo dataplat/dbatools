@@ -35,6 +35,20 @@ Describe $CommandName -Tag UnitTests {
                 Install-DbaCommunitySoftware @splatBadSoftware
             } | Should -Throw
         }
+
+        It "Rejects an empty database name" {
+            # An empty value would reach Install-DbaWhoIsActive's own "-not $Database" test and
+            # open its interactive picker, which would hang an unattended run.
+            $splatEmptyDatabase = @{
+                SqlInstance     = "NotARealInstance"
+                Software        = "WhoIsActive"
+                Database        = ""
+                EnableException = $true
+            }
+            {
+                Install-DbaCommunitySoftware @splatEmptyDatabase
+            } | Should -Throw
+        }
     }
 
     Context "LocalFile guard" {
@@ -89,8 +103,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $multiToolDb = "dbatoolsci_community_$(Get-Random)"
-            $multiToolServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $multiToolServer.Query("CREATE DATABASE $multiToolDb")
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $multiToolDb
 
             $splatMultiTool = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -143,8 +156,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $singleToolDb = "dbatoolsci_community_$(Get-Random)"
-            $singleToolServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $singleToolServer.Query("CREATE DATABASE $singleToolDb")
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $singleToolDb
 
             $splatSingleTool = @{
                 SqlInstance = $TestConfig.InstanceSingle
@@ -183,8 +195,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $continueDb = "dbatoolsci_community_$(Get-Random)"
-            $continueServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $continueServer.Query("CREATE DATABASE $continueDb")
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $continueDb
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
@@ -239,8 +250,8 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $whatIfDb = "dbatoolsci_community_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $whatIfDb
             $whatIfServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-            $whatIfServer.Query("CREATE DATABASE $whatIfDb")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 

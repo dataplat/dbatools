@@ -20,6 +20,8 @@ function Install-DbaCommunitySoftware {
         - WhoIsActive is given master when you do not pass Database. Called directly with no database, Install-DbaWhoIsActive opens an interactive picker, which would stall an unattended run.
         - A failure against one tool does not end the batch. The remaining tools and instances still run, and the failure surfaces as a warning naming the tool and instance. With EnableException the first failure throws, as it would anywhere else in dbatools.
 
+        A single script that fails partway through is reported rather than thrown. FirstResponderKit, DarlingData and DbaMultiTool catch a failed script themselves, warn, and hand back that row with a Status of Error, so EnableException does not make it terminating here any more than it does when you call those installers directly. Check Status on the returned objects to find them.
+
         Everything else, including each installer version floor and its own confirmation prompts, is exactly what you get from the installer directly. An instance below a tool version floor is skipped by that installer with a warning while the rest of the batch continues.
 
         Only the parameters common to most of the installers are surfaced here. When you need tool-specific options such as the Ola Hallengren job scheduling switches, the First Responder Kit script selection, or the SqlWatch pre-release feed, call that installer directly.
@@ -84,7 +86,8 @@ function Install-DbaCommunitySoftware {
         - SqlInstance (String): The full SQL Server instance name (computer\instance)
         - Database (String): The name of the database the script was installed into
         - Name (String): The script base name, such as sp_Blitz or sp_BlitzCache. DarlingData installs from one combined script and so returns a single row named DarlingData; WhoIsActive returns a single row named sp_WhoisActive
-        - Status (String): Installed when the object was created, Updated when it already existed, Skipped when the script does not apply to that instance version, Error when the batch failed. DbaMultiTool never reports Skipped, and WhoIsActive reports only Installed or Updated
+        - Status (String): Installed when the object was created, Updated when it already existed, Skipped when the script does not apply to that instance version, Error when that script failed. DbaMultiTool never reports Skipped, and WhoIsActive reports only Installed or Updated
+        - Version (String): WhoIsActive only. The sp_WhoisActive version read out of the installed script, or an empty string when the script carries no version header
 
         MaintenanceSolution returns one object per instance, not per script, and has no Database, Name or Status:
 
@@ -148,6 +151,7 @@ function Install-DbaCommunitySoftware {
         [Parameter(Mandatory)]
         [ValidateSet("MaintenanceSolution", "FirstResponderKit", "DarlingData", "SQLWATCH", "WhoIsActive", "DbaMultiTool", "All")]
         [string[]]$Software,
+        [ValidateNotNullOrEmpty()]
         [string]$Database,
         [string]$Branch,
         [string]$LocalFile,
@@ -228,9 +232,10 @@ function Install-DbaCommunitySoftware {
                     Write-Message -Level Warning -Message "$commandName installs from a single source, so Branch was ignored for $tool on $instance."
                 }
 
-                # Install-DbaWhoIsActive has no Database default: left unbound it opens an
-                # interactive Show-DbaDbList picker that would stall an unattended batch.
-                if ($tool -eq "WhoIsActive" -and -not $splatInstall.ContainsKey("Database")) {
+                # Install-DbaWhoIsActive has no Database default: anything its own "-not $Database"
+                # test sees as empty opens an interactive Show-DbaDbList picker that would stall an
+                # unattended batch. Test the value, not just the key, so whitespace lands on master too.
+                if ($tool -eq "WhoIsActive" -and [string]::IsNullOrWhiteSpace($splatInstall["Database"])) {
                     $splatInstall["Database"] = "master"
                 }
 
