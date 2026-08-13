@@ -33,6 +33,10 @@ concurrency:
 
 jobs:
   azure-migration-tests:
+    # GitHub withholds repository secrets from Dependabot-triggered runs, so azure/login
+    # sees an empty VMSS_AZURE_CREDENTIALS and hard-fails. This file is one of the trigger
+    # paths above, so every Dependabot bump of an action used here would otherwise go red.
+    if: github.actor != 'dependabot[bot]'
     env:
       SMODefaultModuleName: dbatools
     runs-on: ubuntu-latest
