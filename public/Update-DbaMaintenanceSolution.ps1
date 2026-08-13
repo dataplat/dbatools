@@ -128,8 +128,17 @@ function Update-DbaMaintenanceSolution {
         }
 
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+            # ourselves, because closing a connection of the caller takes their session with it. See #10554.
+            $isNewConnection = $false
+            $splatConnect = @{
+                SqlInstance              = $instance
+                SqlCredential            = $SqlCredential
+                NonPooledConnection      = $true
+                IsNewConnectionReference = [ref]$isNewConnection
+            }
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -139,7 +148,15 @@ function Update-DbaMaintenanceSolution {
                 Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
             }
 
-            $installedProcedures = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+            # The names are read with a query that names the database. Get-DbaModule would run on the connection of
+            # the caller and leave it in that database, and this command used to rely on exactly that to find the
+            # right database further down. See #10555.
+            $splatInstalledProcedures = @{
+                SqlInstance = $server
+                Database    = $Database
+                Query       = "SELECT name FROM sys.procedures"
+            }
+            $installedProcedures = (Invoke-DbaQuery @splatInstalledProcedures).name | Where-Object { $PSItem -in "CommandExecute", "DatabaseBackup", "DatabaseIntegrityCheck", "IndexOptimize" }
 
             foreach ($solutionName in $Solution) {
                 if ($solutionName -in 'Backup', 'IntegrityCheck') {
@@ -159,7 +176,7 @@ function Update-DbaMaintenanceSolution {
                         Results      = $null
                     }
 
-                    if ($procedureName -notin $installedProcedures.Name) {
+                    if ($procedureName -notin $installedProcedures) {
                         $output.Results = 'Procedure not installed'
                     } else {
                         $file = Get-ChildItem -Path $localCachedCopy -Recurse -File "$procedureName.sql"
@@ -168,7 +185,7 @@ function Update-DbaMaintenanceSolution {
                         } else {
                             Write-Message -Level Verbose -Message "Updating $procedureName from $($file.FullName)."
                             try {
-                                $null = Invoke-DbaQuery -SqlInstance $server -File $file
+                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -File $file
                                 $output.IsUpdated = $true
                                 $output.Results = 'Updated'
                             } catch {
@@ -181,8 +198,10 @@ function Update-DbaMaintenanceSolution {
                 }
             }
 
-            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $null = $server | Disconnect-DbaInstance
+            if ($isNewConnection) {
+                # Close non-pooled connection as this is not done automatically.
+                $null = $server | Disconnect-DbaInstance
+            }
         }
     }
 }
