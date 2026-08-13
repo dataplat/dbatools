@@ -49,6 +49,20 @@ Describe $CommandName -Tag UnitTests {
                 Install-DbaCommunitySoftware @splatEmptyDatabase
             } | Should -Throw
         }
+
+        It "Rejects a whitespace database name" {
+            # ValidateNotNullOrEmpty lets whitespace through, so this reaches the command's own
+            # guard rather than the attribute, and the message proves which one caught it.
+            $splatWhitespaceDatabase = @{
+                SqlInstance     = "NotARealInstance"
+                Software        = "WhoIsActive"
+                Database        = "   "
+                EnableException = $true
+            }
+            {
+                Install-DbaCommunitySoftware @splatWhitespaceDatabase
+            } | Should -Throw -ExpectedMessage "*Database is only whitespace*"
+        }
     }
 
     Context "LocalFile guard" {
@@ -322,18 +336,29 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
+            # Save-DbaCommunitySoftware deletes and recreates this directory every time it runs,
+            # so its write time is the sentinel for whether SqlWatch downloaded anything. Force
+            # below makes Install-DbaSqlWatch refresh it unconditionally, so an unchanged
+            # timestamp - or a directory that still does not exist - can only mean the installer
+            # was never entered.
+            $sqlWatchCachePath = Join-Path -Path (Get-DbatoolsConfigValue -FullName "Path.DbatoolsData") -ChildPath "SQLWATCH"
+            $sqlWatchCacheBefore = Get-Item -Path $sqlWatchCachePath -ErrorAction SilentlyContinue
+
             # Only run the call on Core. Under Windows PowerShell this would start a real SqlWatch
             # DACPAC deployment, which is far heavier than anything else in this file.
             $coreSkipResults = $null
+            $sqlWatchCacheAfter = $null
             if ($PSEdition -eq "Core") {
                 $splatCoreSkip = @{
                     SqlInstance     = $TestConfig.InstanceSingle
                     Software        = "SQLWATCH", "WhoIsActive"
                     Database        = $coreSkipDb
+                    Force           = $true
                     WarningVariable = "coreSkipWarning"
                     WarningAction   = "SilentlyContinue"
                 }
                 $coreSkipResults = Install-DbaCommunitySoftware @splatCoreSkip
+                $sqlWatchCacheAfter = Get-Item -Path $sqlWatchCachePath -ErrorAction SilentlyContinue
             }
         }
 
@@ -363,6 +388,15 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             # Install-DbaSqlWatch downloads in begin and only then hits its own Core check, so
             # its refusal message appearing would mean the download had already happened.
             $coreSkipWarning | Should -Not -Match "PowerShell Core is not supported"
+
+            # The absent message alone would also fit a download that failed before warning, so
+            # check the cache itself. Compare write times rather than creation times: Windows
+            # file system tunneling can carry a creation time onto a recreated directory.
+            if ($null -eq $sqlWatchCacheBefore) {
+                $sqlWatchCacheAfter | Should -BeNullOrEmpty
+            } else {
+                $sqlWatchCacheAfter.LastWriteTime | Should -Be $sqlWatchCacheBefore.LastWriteTime
+            }
         }
     }
 
