@@ -212,22 +212,23 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $defaultServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $masterDatabase = $defaultServer.Databases["master"]
 
-            # The install replaces dbo.sp_WhoisActive in place, so keep the definition of any copy
-            # that is already there and put it back afterwards. The schema has to be part of the
+            # The install replaces dbo.sp_WhoisActive in place, and a copy already sitting in master
+            # may be someone's own. Its full state cannot be put back afterwards - an encrypted
+            # procedure has no recoverable definition, and permissions granted on it do not survive
+            # a drop - so leave it alone entirely and skip instead. The schema has to be part of the
             # lookup: a procedure of the same name under another schema is not the one we overwrite.
-            $existingWhoIsActive = $masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
-            $existingWhoIsActiveDefinition = ""
-            if ($existingWhoIsActive) {
-                $existingWhoIsActiveDefinition = $existingWhoIsActive.TextHeader + $existingWhoIsActive.TextBody
-            }
+            $whoIsActivePreExisted = [bool]$masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
 
-            $splatDefaultDatabase = @{
-                SqlInstance = $TestConfig.InstanceSingle
-                Software    = "WhoIsActive"
-                Force       = $true
-                Verbose     = $false
+            $defaultDatabaseResults = $null
+            if (-not $whoIsActivePreExisted) {
+                $splatDefaultDatabase = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Software    = "WhoIsActive"
+                    Force       = $true
+                    Verbose     = $false
+                }
+                $defaultDatabaseResults = Install-DbaCommunitySoftware @splatDefaultDatabase
             }
-            $defaultDatabaseResults = Install-DbaCommunitySoftware @splatDefaultDatabase
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -235,20 +236,23 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Dropped through SMO rather than DROP PROCEDURE IF EXISTS, which needs SQL Server 2016.
-            $masterDatabase.StoredProcedures.Refresh()
-            $installedWhoIsActive = $masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
-            if ($installedWhoIsActive) {
-                $installedWhoIsActive.Drop()
-            }
-            if ($existingWhoIsActiveDefinition) {
-                $masterDatabase.ExecuteNonQuery($existingWhoIsActiveDefinition)
+            # Only ever remove a procedure this test created. Dropped through SMO rather than
+            # DROP PROCEDURE IF EXISTS, which needs SQL Server 2016.
+            if (-not $whoIsActivePreExisted) {
+                $masterDatabase.StoredProcedures.Refresh()
+                $installedWhoIsActive = $masterDatabase.StoredProcedures["sp_WhoisActive", "dbo"]
+                if ($installedWhoIsActive) {
+                    $installedWhoIsActive.Drop()
+                }
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Installs into master rather than stalling on the interactive picker" {
+            if ($whoIsActivePreExisted) {
+                Set-ItResult -Skipped -Because "master.dbo.sp_WhoisActive already exists and this test will not overwrite an object it did not create"
+            }
             $defaultDatabaseResults.Database | Should -Be "master"
             $defaultDatabaseResults.Name | Should -Be "sp_WhoisActive"
         }
