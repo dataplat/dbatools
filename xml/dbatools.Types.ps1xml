@@ -12,8 +12,21 @@ param (
     $AllTables = $false
 )
 
-if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
-else { ($this.ExecuteWithResults($Query)).Tables[0] }
+# ExecuteWithResults does not run on a private connection: the execution manager of a database is the
+# connection context of the parent server, which belongs to the caller. It issues a USE and never switches
+# back, so the previous database is put back here. See #10555.
+$connectionContext = $this.Parent.ConnectionContext
+$previousDatabase = $connectionContext.CurrentDatabase
+
+try {
+    if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
+    else { ($this.ExecuteWithResults($Query)).Tables[0] }
+} finally {
+    if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+        $escapedDatabase = $previousDatabase.Replace("]", "]]")
+        $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+    }
+}
 </Script>
 </ScriptMethod>
 <ScriptMethod>
@@ -22,7 +35,20 @@ else { ($this.ExecuteWithResults($Query)).Tables[0] }
 param (
     $Command
 )
-$this.ExecuteNonQuery($Command)
+
+# See the comment on Query above: this leaves the connection of the caller in this database, so the
+# previous database is put back afterwards. See #10555.
+$connectionContext = $this.Parent.ConnectionContext
+$previousDatabase = $connectionContext.CurrentDatabase
+
+try {
+    $this.ExecuteNonQuery($Command)
+} finally {
+    if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+        $escapedDatabase = $previousDatabase.Replace("]", "]]")
+        $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+    }
+}
 </Script>
 </ScriptMethod>
 </Members>
@@ -43,7 +69,19 @@ param (
 
 try {
     if ($Database) {
-        $dataSet = $this.Databases[$Database].ExecuteWithResults($Query)
+        # Going through the database object leaves the connection of the caller in that database, so the
+        # previous database is put back afterwards. This does not go through Database.Query, so it needs the
+        # same treatment of its own. See #10555.
+        $connectionContext = $this.ConnectionContext
+        $previousDatabase = $connectionContext.CurrentDatabase
+        try {
+            $dataSet = $this.Databases[$Database].ExecuteWithResults($Query)
+        } finally {
+            if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+                $escapedDatabase = $previousDatabase.Replace("]", "]]")
+                $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+            }
+        }
     } else {
         $dataSet = $this.ConnectionContext.ExecuteWithResults($Query)
     }
@@ -74,7 +112,18 @@ param (
 
 try {
     if ($Database) {
-        $this.Databases[$Database].ExecuteNonQuery($Command)
+        # See the comment on Query above: this does not go through Database.Invoke either, so the previous
+        # database is put back here as well. See #10555.
+        $connectionContext = $this.ConnectionContext
+        $previousDatabase = $connectionContext.CurrentDatabase
+        try {
+            $this.Databases[$Database].ExecuteNonQuery($Command)
+        } finally {
+            if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+                $escapedDatabase = $previousDatabase.Replace("]", "]]")
+                $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+            }
+        }
     } else {
         $this.ConnectionContext.ExecuteNonQuery($Command)
     }
