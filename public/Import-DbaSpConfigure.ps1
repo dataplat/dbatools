@@ -119,9 +119,20 @@ function Import-DbaSpConfigure {
         [switch]$EnableException
     )
     begin {
+        # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+        # ourselves, because closing a connection of the caller takes their session with it. See #10554.
+        $isNewSourceConnection = $false
+        $isNewDestinationConnection = $false
+        $isNewServerConnection = $false
+
         if (-not $PSBoundParameters.Path -and $PSBoundParameters.Source) {
             try {
-                $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                $splatConnectSource = @{
+                    SqlInstance              = $Source
+                    SqlCredential            = $SourceSqlCredential
+                    IsNewConnectionReference = [ref]$isNewSourceConnection
+                }
+                $sourceserver = Connect-DbaInstance @splatConnectSource
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
@@ -132,7 +143,12 @@ function Import-DbaSpConfigure {
             }
 
             try {
-                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+                $splatConnectDestination = @{
+                    SqlInstance              = $Destination
+                    SqlCredential            = $DestinationSqlCredential
+                    IsNewConnectionReference = [ref]$isNewDestinationConnection
+                }
+                $destserver = Connect-DbaInstance @splatConnectDestination
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
                 return
@@ -146,7 +162,12 @@ function Import-DbaSpConfigure {
             $destination = $destserver.DomainInstanceName
         } else {
             try {
-                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $splatConnectServer = @{
+                    SqlInstance              = $SqlInstance
+                    SqlCredential            = $SqlCredential
+                    IsNewConnectionReference = [ref]$isNewServerConnection
+                }
+                $server = Connect-DbaInstance @splatConnectServer
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
@@ -221,7 +242,10 @@ function Import-DbaSpConfigure {
 
         } else {
             if ($Pscmdlet.ShouldProcess($destination, "Importing sp_configure from $Path")) {
-                $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                # 'show advanced options' is not touched here. It used to be set on the Configuration collection
+                # without ever calling Alter(), so it never reached the instance - but it did leave a pending
+                # change on the server object of the caller, which their next Alter() would have applied.
+                # The file written by Export-DbaSpConfigure sets the option itself, first to 1 and then back to 0.
                 $sql = Get-Content $Path
                 foreach ($line in $sql) {
                     try {
@@ -231,7 +255,6 @@ function Import-DbaSpConfigure {
                         Stop-Function -Message "$line failed. Feature may not be supported." -ErrorRecord $_ -Continue
                     }
                 }
-                $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."
             }
         }
@@ -239,10 +262,14 @@ function Import-DbaSpConfigure {
     end {
         if (Test-FunctionInterrupt) { return }
 
-        if ($PSBoundParameters.Path) {
+        # Only close the connections that were opened here. See #10554.
+        if ($isNewServerConnection) {
             $server.ConnectionContext.Disconnect()
-        } else {
+        }
+        if ($isNewSourceConnection) {
             $sourceserver.ConnectionContext.Disconnect()
+        }
+        if ($isNewDestinationConnection) {
             $destserver.ConnectionContext.Disconnect()
         }
 
