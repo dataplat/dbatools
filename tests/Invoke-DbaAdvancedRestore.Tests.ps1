@@ -184,8 +184,145 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
+        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+        $null = New-Item -Path $backupPath -ItemType Directory
+
+        # A full and a log backup, so that the restore runs more than one backup file. The disconnect this is
+        # about sat inside the loop over the backup files, so a single file would not show the whole of it.
+        $restoreDbName = "dbatoolsci_advrestore_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $restoreDbName -RecoveryModel Full
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoreDbName -BackupDirectory $backupPath -Type Full
+        $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoreDbName -BackupDirectory $backupPath -Type Log
+
+        # The history is what Restore-DbaDatabase builds before it hands over, so the tests below can call the
+        # command the same way it does.
+        $backupHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $backupPath |
+            Select-DbaBackupInformation |
+            Format-DbaBackupInformation |
+            Test-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -WithReplace
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $restoreDbName -ErrorAction SilentlyContinue
+        Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "The connection of the caller is left alone (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Only a non-pooled connection can show this. SMO silently reopens a pooled connection, so the test
+            # would pass even with the disconnect after every backup file.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            $splatRestore = @{
+                SqlInstance = $callerServer
+                WithReplace = $true
+            }
+            $callerResult = $backupHistory | Invoke-DbaAdvancedRestore @splatRestore
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "restores every backup file" {
+            $callerResult.Count | Should -BeGreaterThan 1
+            $callerResult.RestoreComplete | Should -Not -Contain $false
+        }
+
+        It "leaves the connection open" {
+            $callerServer.ConnectionContext.IsOpen | Should -BeTrue
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+
+        It "leaves the connection in the database it was on" {
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+        }
+    }
+
+    Context "The connection of the caller of Restore-DbaDatabase is left alone (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Restore-DbaDatabase connects once and hands that server object down, so this is the connection that
+            # gets closed in practice.
+            $restoreCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = $restoreCallerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            $splatRestoreDatabase = @{
+                SqlInstance = $restoreCallerServer
+                Path        = $backupPath
+                WithReplace = $true
+            }
+            $restoreCallerResult = Restore-DbaDatabase @splatRestoreDatabase
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $restoreCallerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "restores every backup file" {
+            $restoreCallerResult.RestoreComplete | Should -Not -Contain $false
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $restoreCallerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+    }
+
+    Context "The command still closes the connection it opens itself" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Passing the name instead of a server object is the other side of the guard: the command opens the
+            # connection here, so it is the one that has to close it again.
+            $splatRestoreByName = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                WithReplace = $true
+            }
+            $ownResult = $backupHistory | Invoke-DbaAdvancedRestore @splatRestoreByName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "restores every backup file" {
+            $ownResult.RestoreComplete | Should -Not -Contain $false
+        }
+
+        It "does not warn" {
+            $WarnVar | Should -BeNullOrEmpty
+        }
+    }
+}
