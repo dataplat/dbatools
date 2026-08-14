@@ -6,6 +6,32 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
+    BeforeAll {
+        # These tests call private functions, which are only reachable inside the module. Get-Module
+        # returns one object for every loaded copy of dbatools, and a session readily holds more than
+        # one: Invoke-ManualPester imports dbatools.psd1 and dbatools.psm1, which leaves a binary module
+        # and a script module both named dbatools. Handing that array to the call operator makes
+        # PowerShell join the names and look for a command called "dbatools dbatools", and the call
+        # operator refuses a binary module outright, so the script copy that actually carries the
+        # private functions is resolved once here and reused.
+        $dbatoolsModule = $null
+        foreach ($candidate in @(Get-Module dbatools | Where-Object ModuleType -eq "Script")) {
+            $hasPrivateFunction = $false
+            try {
+                $hasPrivateFunction = & $candidate { [bool](Get-Command ConvertFrom-DbccPageDump -ErrorAction SilentlyContinue) }
+            } catch {
+                $hasPrivateFunction = $false
+            }
+            if ($hasPrivateFunction) {
+                $dbatoolsModule = $candidate
+                break
+            }
+        }
+        if ($null -eq $dbatoolsModule) {
+            throw "No loaded dbatools script module exposes the private functions these tests call. Import dbatools.psm1 before running them."
+        }
+    }
+
     Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
@@ -99,7 +125,7 @@ Describe $CommandName -Tag UnitTests {
 
         It "Parses a page dump with <Label>" -ForEach $dumpCase {
             $dumpLine = Format-TestPageDump -Page $expectedPage -LineWidth $LineWidth -HexGutter:$HexGutter
-            $actualPage = & (Get-Module dbatools) { param($line) ConvertFrom-DbccPageDump -DumpLine $line } $dumpLine
+            $actualPage = & $dbatoolsModule { param($line) ConvertFrom-DbccPageDump -DumpLine $line } $dumpLine
             $actualPage.Length | Should -Be 8192
             Compare-Object -ReferenceObject $expectedPage -DifferenceObject $actualPage -SyncWindow 0 | Should -BeNullOrEmpty
         }
@@ -107,7 +133,7 @@ Describe $CommandName -Tag UnitTests {
         It "Fails instead of returning a page with a hole in it when a line is missing" {
             $dumpLine = @(Format-TestPageDump -Page $expectedPage -LineWidth 20)
             $missingLine = @($dumpLine[0..9]) + @($dumpLine[11..($dumpLine.Count - 1)])
-            { & (Get-Module dbatools) { param($line) ConvertFrom-DbccPageDump -DumpLine $line } $missingLine } | Should -Throw -ExpectedMessage "*Incomplete page dump*"
+            { & $dbatoolsModule { param($line) ConvertFrom-DbccPageDump -DumpLine $line } $missingLine } | Should -Throw -ExpectedMessage "*Incomplete page dump*"
         }
     }
 
@@ -139,7 +165,7 @@ Describe $CommandName -Tag UnitTests {
                     ColId      = $KeyColId
                     Length     = $plainText.Length
                 }
-                $keystream = & (Get-Module dbatools) { param($p) Get-EncryptedObjectKeystream @p } $keystreamParams
+                $keystream = & $dbatoolsModule { param($p) Get-EncryptedObjectKeystream @p } $keystreamParams
 
                 $cipher = New-Object byte[] $plainText.Length
                 for ($offset = 0; $offset -lt $plainText.Length; $offset++) {
@@ -160,7 +186,7 @@ Describe $CommandName -Tag UnitTests {
                     ObjectId   = $chunkObjectId
                     Chunk      = $Chunk
                 }
-                return & (Get-Module dbatools) { param($p) ConvertFrom-EncryptedObjectChunk @p } $chunkParams
+                return & $dbatoolsModule { param($p) ConvertFrom-EncryptedObjectChunk @p } $chunkParams
             }
 
             $firstHalf = "CREATE PROCEDURE dbo.Split WITH ENCRYPTION AS "
