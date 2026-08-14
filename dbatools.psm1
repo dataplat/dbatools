@@ -879,6 +879,7 @@ $script:xplat = @(
         'Export-DbaServerRole',
         'Get-DbaBuild',
         'Update-DbaBuildReference',
+        'Install-DbaCommunitySoftware',
         'Install-DbaFirstResponderKit',
         'Install-DbaSqlPackage',
         'Install-DbaWhoIsActive',

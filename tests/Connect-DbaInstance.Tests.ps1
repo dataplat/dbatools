@@ -48,6 +48,7 @@ Describe $CommandName -Tag UnitTests {
                 "AccessToken",
                 "AuthenticationType",
                 "DedicatedAdminConnection",
+                "IsNewConnectionReference",
                 "DisableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -418,6 +419,46 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "IsNewConnectionVariable tells the caller whether a connection was opened" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # We predefine the variables so that a test fails if Connect-DbaInstance does not set them at all.
+            $newFromString = $null
+            $newFromServer = $null
+            $newFromCopy = $null
+
+            $serverFromString = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection -IsNewConnectionReference ([ref]$newFromString)
+            $serverFromServer = Connect-DbaInstance -SqlInstance $serverFromString -IsNewConnectionReference ([ref]$newFromServer)
+            # Asking for a different database forces Connect-DbaInstance to copy the connection context, so this is a new connection.
+            $serverFromCopy = Connect-DbaInstance -SqlInstance $serverFromString -Database tempdb -IsNewConnectionReference ([ref]$newFromCopy)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = $serverFromString, $serverFromCopy | Disconnect-DbaInstance
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "is true when the connection is opened from a string" {
+            $newFromString | Should -BeTrue
+        }
+
+        It "is false when the server object is passed back in" {
+            $newFromServer | Should -BeFalse
+        }
+
+        It "returns the object that was passed in when nothing has to change" {
+            [object]::ReferenceEquals($serverFromServer, $serverFromString) | Should -BeTrue
+        }
+
+        It "is true when the connection context has to be copied" {
+            $newFromCopy | Should -BeTrue
+        }
+    }
+
     Context "connection is properly made using a connection string" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=tempdb;Integrated Security=True"
@@ -526,12 +567,17 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "clones when using Backup-DabInstace" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            # The backups have to go to the shared temp folder. Without a path they land in the default
+            # backup folder of the instance, which is a path on the SQL Server, so the Remove-Item below
+            # runs against a path that does not exist on the machine running the tests and silently does
+            # nothing. The backup was then left behind on every remote instance, and because this file
+            # runs early in the suite, every later test file reported it as a leftover of its own.
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp
             if ($results.FullName) {
                 Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
             }
 
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -WarningVariable warn
             $warn | Should -BeNullOrEmpty
 
             if ($results.FullName) {

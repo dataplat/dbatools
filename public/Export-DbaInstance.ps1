@@ -339,7 +339,13 @@ function Export-DbaInstance {
                     if ($Exclude -notcontains 'CustomErrors') {
                         Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting custom errors (user defined messages)"
-                        $null = Get-DbaCustomError -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                        # sp_addmessage rejects a localized message whose us_english version does not exist yet,
+                        # and SMO returns the messages sorted by language name. So we script all us_english
+                        # messages first, the same way Copy-DbaCustomError orders them.
+                        $allCustomErrors = @(Get-DbaCustomError -SqlInstance $server -EnableException:$EnableException)
+                        $orderedCustomErrors = @($allCustomErrors | Where-Object Language -eq "us_english")
+                        $orderedCustomErrors += $allCustomErrors | Where-Object Language -ne "us_english"
+                        $null = $orderedCustomErrors | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
                         Get-ChildItem -ErrorAction Ignore -Path "$exportPath\customererrors.sql"
                     }
 

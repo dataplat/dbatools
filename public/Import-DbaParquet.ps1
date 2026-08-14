@@ -306,7 +306,13 @@ function Import-DbaParquet {
                 $loaderDetail = ($loadException.LoaderExceptions | ForEach-Object { $PSItem.Message } | Sort-Object -Unique) -join " | "
 
                 if ($loaderDetail) {
-                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail" -ErrorRecord $_ -EnableException $EnableException
+                    # Assemblies that are present but unloadable are almost always the ones the other
+                    # PowerShell edition installed, back when both editions shared one folder.
+                    $currentEdition = $PSVersionTable.PSEdition
+                    if (-not $currentEdition) {
+                        $currentEdition = "Desktop"
+                    }
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail. If they were installed from another PowerShell edition, run Install-DbaParquet again on this one ($currentEdition) to get the matching assemblies." -ErrorRecord $_ -EnableException $EnableException
                 } else {
                     Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
                 }
@@ -320,7 +326,12 @@ function Import-DbaParquet {
             param([string]$Path)
             $stream = [System.IO.File]::OpenRead($Path)
             try {
-                $reader = [Parquet.ParquetReader]::CreateAsync($stream).GetAwaiter().GetResult()
+                # leaveStreamOpen has to be passed as false. It defaults to true, which means disposing the
+                # reader leaves the file stream open and the file stays locked until the garbage collector
+                # finalizes it - so the imported file could not be deleted or overwritten for an arbitrary
+                # time after the import finished. All four arguments are passed because the overload that
+                # takes a stream can only be selected by its full signature.
+                $reader = [Parquet.ParquetReader]::CreateAsync($stream, $null, $false, [System.Threading.CancellationToken]::None).GetAwaiter().GetResult()
                 return $reader
             } catch {
                 $stream.Dispose()

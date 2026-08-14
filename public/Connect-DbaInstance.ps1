@@ -157,6 +157,10 @@ function Connect-DbaInstance {
         Creates a dedicated administrator connection (DAC) for emergency access to SQL Server.
         Use this when SQL Server is unresponsive to regular connections, allowing you to diagnose and resolve critical issues. Remember to manually disconnect the connection when finished.
 
+    .PARAMETER IsNewConnectionReference
+        Reports whether a new connection was opened, by writing $true or $false into the referenced variable: pass a variable that already exists as [ref]$variable.
+        Use this when your command has to clean up after itself: only close a connection when this is $true, because a connection that was passed in belongs to the caller and closing it takes their session, their temp tables and their database context with it. When several instances are connected in one call, the value reflects the last connection that was returned.
+
     .PARAMETER DisableException
         Changes exception handling from throwing errors to displaying warnings.
         Use this in interactive sessions where you want graceful error handling instead of script-stopping exceptions, which is the default behavior for this command.
@@ -414,6 +418,7 @@ function Connect-DbaInstance {
         [ValidateSet('ActiveDirectoryIntegrated', 'ActiveDirectoryInteractive', 'ActiveDirectoryPassword', 'ActiveDirectoryServicePrincipal', 'ActiveDirectoryManagedIdentity', 'ActiveDirectoryDeviceCodeFlow')]
         [string]$AuthenticationType,
         [switch]$DedicatedAdminConnection,
+        [ref]$IsNewConnectionReference,
         [switch]$DisableException
     )
     begin {
@@ -1261,6 +1266,9 @@ function Connect-DbaInstance {
                     $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
                 }
                 Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
+                if ($IsNewConnectionReference) {
+                    $IsNewConnectionReference.Value = $isNewConnection
+                }
                 $server.ConnectionContext.SqlConnectionObject
                 continue
             }
@@ -1313,6 +1321,9 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "We return the server object"
+            if ($IsNewConnectionReference) {
+                $IsNewConnectionReference.Value = $isNewConnection
+            }
             $server
 
             if ($isNewConnection -and -not $DedicatedAdminConnection) {
