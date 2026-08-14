@@ -81,4 +81,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Dropped"
         }
     }
+
+    Context "The connection of the caller is left alone (#10572)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerRegSrvName = "dbatoolsci-caller-server"
+            $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName $callerRegSrvName -Name $callerRegSrvName
+
+            # Only a non-pooled connection can show this. SMO silently reopens a pooled connection, so the test
+            # would pass even with the disconnect this is about.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+
+            # The marker is created after the lookup on purpose, because Get-DbaRegServer closes the connection
+            # too. This test has to measure the command under test, not its input.
+            $callerInputObject = Get-DbaRegServer -SqlInstance $callerServer -Name $callerRegSrvName
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            $callerResult = Remove-DbaRegServer -InputObject $callerInputObject
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -Name $callerRegSrvName | Remove-DbaRegServer -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still drops the registered server" {
+            $callerResult.Status | Should -Be "Dropped"
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+    }
 }

@@ -48,7 +48,9 @@ function Get-DbaRegServerStore {
         - RegisteredServers: Collection of registered servers at the root level
 
         Properties excluded from default display (internal/technical properties):
-        - ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer
+        - ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer, IsNewConnection
+
+        IsNewConnection records whether the connection behind the store was opened here or handed in by the caller. The registered server commands use it to decide whether they may close the connection when they are done.
 
         All SMO RegisteredServersStore properties are accessible using Select-Object *, including the excluded properties if needed for advanced operations.
 
@@ -72,8 +74,17 @@ function Get-DbaRegServerStore {
     )
     process {
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. The whole registered server
+            # family closes the connection through Disconnect-RegServer, which reads the answer back off the
+            # store, so that only a connection this module opened is ever closed. See #10572.
+            $isNewConnection = $false
+            $splatConnect = @{
+                SqlInstance              = $instance
+                SqlCredential            = $SqlCredential
+                IsNewConnectionReference = [ref]$isNewConnection
+            }
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -88,7 +99,8 @@ function Get-DbaRegServerStore {
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ParentServer -value $server
-            Select-DefaultView -InputObject $store -ExcludeProperty ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer
+            Add-Member -Force -InputObject $store -MemberType NoteProperty -Name IsNewConnection -value $isNewConnection
+            Select-DefaultView -InputObject $store -ExcludeProperty ServerConnection, DomainInstanceName, DomainName, Urn, Properties, Metadata, Parent, ConnectionContext, PropertyMetadataChanged, PropertyChanged, ParentServer, IsNewConnection
         }
 
         # Magic courtesy of Mathias Jessen and David Shifflet

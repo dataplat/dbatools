@@ -126,7 +126,7 @@ function Move-DbaRegServer {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($movetogroup).GetScript())
                     Get-DbaRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
-                    $parentserver.ServerConnection.Disconnect()
+                    Disconnect-RegServer -Server $parentserver
                 } catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $Group on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }

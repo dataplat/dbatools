@@ -177,9 +177,7 @@ function Get-DbaRegServerGroup {
                     $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -In $Id
                 }
             }
-            if ($serverstore.ServerConnection) {
-                $serverstore.ServerConnection.Disconnect()
-            }
+            Disconnect-RegServer -Server $serverstore
 
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -Value $serverstore.ComputerName
