@@ -68,15 +68,11 @@ function Import-DbaSpConfigure {
         None You cannot pipe objects to Import-DbaSpConfigure
 
     .OUTPUTS
-        System.Boolean
+        None
 
-        Returns $true if the sp_configure settings were successfully applied to the destination instance, or $false if the operation failed.
+        This command writes no objects to the pipeline. Progress is reported as messages: one per configuration option that was changed, and a final message when the migration is finished.
 
-        When using the -ServerCopy parameter set, settings are migrated from the source instance to the destination instance and the command returns a boolean indicating success or failure of the overall migration process.
-
-        When using the -FromFile parameter set, sp_configure settings from a SQL file are executed against the target instance and the command returns a boolean indicating success or failure of the configuration import.
-
-        Note: The function may also display warning messages about configuration options that require SQL Server restart, but these do not affect the boolean return value.
+        A warning is written when an option could not be set on the destination, and when an option that was changed only takes effect after a restart of SQL Server.
 
     .EXAMPLE
         PS C:\> Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster
@@ -139,7 +135,7 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $sourceserver -Continue
             }
 
             try {
@@ -155,7 +151,7 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $destserver -Continue
             }
 
             $source = $sourceserver.DomainInstanceName
@@ -197,37 +193,75 @@ function Import-DbaSpConfigure {
             }
 
             If ($Pscmdlet.ShouldProcess($destination, "Execute sp_configure")) {
-                $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $sourceserver.Configuration.Alter($true)
-                $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $sourceserver.Configuration.Alter($true)
+                # 'show advanced options' has to be on to read and to set the advanced options. It used to be
+                # switched on and then off again, which turned it off on instances that had it on. Both instances
+                # are now put back the way they were, in the finally block below, so that an option that cannot
+                # be set does not leave them switched on either.
+                $showAdvancedOptionsNumber = $sourceserver.Configuration.ShowAdvancedOptions.Number
+                $sourceShowAdvancedOptions = $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue
+                $destShowAdvancedOptions = $destserver.Configuration.ShowAdvancedOptions.ConfigValue
 
+                if ($sourceShowAdvancedOptions -eq 0) {
+                    $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                    $sourceserver.Configuration.Alter($true)
+                }
+                if ($destShowAdvancedOptions -eq 0) {
+                    # This used to alter the source a second time, so the option never reached the destination.
+                    $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                    $destserver.Configuration.Alter($true)
+                }
+
+                $needsrestart = $false
                 $destprops = $destserver.Configuration.Properties
 
-                foreach ($sourceprop in $sourceserver.Configuration.Properties) {
-                    $displayname = $sourceprop.DisplayName
+                try {
+                    foreach ($sourceprop in $sourceserver.Configuration.Properties) {
+                        $displayname = $sourceprop.DisplayName
 
-                    $destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
-                    if ($null -ne $destprop) {
+                        # 'show advanced options' is the means to do the migration, not part of it.
+                        if ($sourceprop.Number -eq $showAdvancedOptionsNumber) {
+                            continue
+                        }
+
+                        $destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
+                        if ($null -eq $destprop) {
+                            continue
+                        }
+
+                        # Only options that really differ are touched. Assigning a value marks the property as
+                        # changed even when it is the value that is already set, and Configuration.Alter() then
+                        # sends every option of the instance in one batch, which fails as a whole as soon as one
+                        # of them is not supported by the edition. That made the migration fail on SQL Server
+                        # 2022 and newer even when both instances were already identical.
+                        if ($destprop.ConfigValue -eq $sourceprop.ConfigValue) {
+                            continue
+                        }
+
                         try {
                             $destprop.configvalue = $sourceprop.configvalue
-                            $null = $destserver.Query("RECONFIGURE WITH OVERRIDE")
+                            $destserver.Configuration.Alter($true)
+                            if (-not $destprop.IsDynamic) {
+                                $needsrestart = $true
+                            }
                             Write-Message -Level Output -Message "updated $($destprop.displayname) to $($sourceprop.configvalue)."
                         } catch {
-                            Stop-Function -Message "Could not set $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported." -ErrorRecord $_ -Continue
+                            # An option that could not be set stays pending and would fail every following
+                            # Alter() together with it, so the pending change is discarded before going on.
+                            $destserver.Configuration.Refresh()
+                            $destprops = $destserver.Configuration.Properties
+                            Stop-Function -Message "Could not set $displayname to $($sourceprop.configvalue). Feature may not be supported." -ErrorRecord $_ -Continue
                         }
                     }
+                } finally {
+                    if ($destserver.Configuration.ShowAdvancedOptions.ConfigValue -ne $destShowAdvancedOptions) {
+                        $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $destShowAdvancedOptions
+                        $destserver.Configuration.Alter($true)
+                    }
+                    if ($sourceserver.Configuration.ShowAdvancedOptions.ConfigValue -ne $sourceShowAdvancedOptions) {
+                        $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $sourceShowAdvancedOptions
+                        $sourceserver.Configuration.Alter($true)
+                    }
                 }
-                try {
-                    $destserver.Configuration.Alter()
-                } catch {
-                    $needsrestart = $true
-                }
-
-                $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $sourceserver.Configuration.Alter($true)
-                $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $destserver.Configuration.Alter($true)
 
                 if ($needsrestart -eq $true) {
                     Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."

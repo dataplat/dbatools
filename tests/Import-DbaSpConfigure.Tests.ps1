@@ -46,6 +46,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Remove-Item -Path $exportPath -Recurse -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "The connection of the caller is left alone when importing from a file (#10554)" {
@@ -137,34 +139,53 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "Both connections of the caller are left alone when copying (#10554)" {
+    Context "The copy applies what differs and leaves both callers alone (#10554)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Source and destination are the same instance on purpose: every value copied is the value that is
-            # already set, so both connections are exercised without changing the configuration of the lab.
+            $setupServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+
+            # The command has to put this back the way it found it, so the test runs with it switched on.
+            $originalShowAdvancedOptions = $setupServer.Configuration.ShowAdvancedOptions.ConfigValue
+            $setupServer.Configuration.ShowAdvancedOptions.ConfigValue = $true
+            $setupServer.Configuration.Alter($true)
+
+            # Source and destination are the same instance, so nothing but the one option below can change and
+            # the test does not need a second instance. The two server objects are made to disagree the way two
+            # instances would: the source is connected while the option still has the value that is to be
+            # copied, the instance is then changed, and only then is the destination connected. SMO reads the
+            # configuration once per server object, so each of them keeps the value it saw.
+            $originalCostThreshold = $setupServer.Configuration.CostThresholdForParallelism.RunValue
+            $changedCostThreshold = $originalCostThreshold + 7
+
             $sourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
-            $destinationServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = $sourceServer.Configuration.Properties.Count
             $null = $sourceServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_source_marker (id INT)")
+
+            $setupServer.Configuration.CostThresholdForParallelism.ConfigValue = $changedCostThreshold
+            $setupServer.Configuration.Alter($true)
+
+            $destinationServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = $destinationServer.Configuration.Properties.Count
             $null = $destinationServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_destination_marker (id INT)")
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
-            # On SQL Server 2022 and newer the copy fails before it is finished, for a reason that has nothing to
-            # do with the connections: the command assigns every property of the destination even when the value
-            # does not change, and Configuration.Alter() then fails on an option the edition does not allow to be
-            # set. That is a separate defect, described in the pull request that added this test. What matters
-            # here is that the connections of the caller survive either way, so the failure is caught.
-            $splatCopy = @{
-                Source        = $sourceServer
-                Destination   = $destinationServer
-                WarningAction = "SilentlyContinue"
-            }
-            try {
-                $null = Import-DbaSpConfigure @splatCopy
-            } catch {
-                Write-Verbose -Message "Import-DbaSpConfigure failed: $PSItem"
-            }
+            $null = Import-DbaSpConfigure -Source $sourceServer -Destination $destinationServer
+
+            # Every other command below writes to $WarnVar as well, so it has to be kept here.
+            $copyWarnings = $WarnVar
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $configurationQuery = @"
+SELECT name, value, value_in_use FROM sys.configurations WHERE name IN ('cost threshold for parallelism', 'show advanced options')
+"@
+            $configurationAfter = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $configurationQuery
+            $costThresholdAfter = ($configurationAfter | Where-Object name -eq "cost threshold for parallelism").value_in_use
+            $showAdvancedOptionsAfter = ($configurationAfter | Where-Object name -eq "show advanced options").value_in_use
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
@@ -172,7 +193,24 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = $sourceServer, $destinationServer | Disconnect-DbaInstance
 
+            $setupServer.Configuration.Refresh()
+            $setupServer.Configuration.CostThresholdForParallelism.ConfigValue = $originalCostThreshold
+            $setupServer.Configuration.ShowAdvancedOptions.ConfigValue = $originalShowAdvancedOptions
+            $setupServer.Configuration.Alter($true)
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "copies the option the two instances disagree about" {
+            $costThresholdAfter | Should -Be $originalCostThreshold
+        }
+
+        It "leaves show advanced options the way it found it" {
+            $showAdvancedOptionsAfter | Should -Be 1
+        }
+
+        It "does not warn, because the option that changed takes effect without a restart" {
+            $copyWarnings | Should -BeNullOrEmpty
         }
 
         It "leaves the source connection open" {
