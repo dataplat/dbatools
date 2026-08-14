@@ -358,7 +358,10 @@ ORDER BY file_id;
             } else {
                 if ($Pscmdlet.ShouldProcess($instance, "Executing query and informing that a restart is required.")) {
                     try {
-                        $server.Databases['master'].ExecuteNonQuery($sql)
+                        # ALTER DATABASE does not depend on the current database, so this runs on the
+                        # connection. Going through the master database would leave the connection of the
+                        # caller there. See #10555.
+                        $server.ConnectionContext.ExecuteNonQuery($sql)
                         Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
 
                         [PSCustomObject]@{

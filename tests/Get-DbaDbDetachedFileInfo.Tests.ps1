@@ -64,4 +64,38 @@ Describe $CommandName -Tag IntegrationTests {
             $results.LogFiles | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "The connection of the caller keeps its database (#10555)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The collation lookup used to run through the master database, which leaves the connection of
+            # the caller there. Only a non-pooled connection shows it, because SMO reopens a pooled one at
+            # its default database.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database msdb -NonPooledConnection
+            $callerResult = Get-DbaDbDetachedFileInfo -SqlInstance $callerServer -Path $path
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still reads the detached file" {
+            $callerResult.Name | Should -Be $dbname
+        }
+
+        It "still resolves the collation" {
+            $callerResult.Collation | Should -Not -BeNullOrEmpty
+        }
+
+        It "leaves the connection in the database it was on" {
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "msdb"
+        }
+    }
 }
