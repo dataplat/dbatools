@@ -840,6 +840,75 @@ WHERE endpoint_id = (SELECT endpoint_id FROM sys.endpoints WHERE name = 'Dedicat
         }
     }
 
+    Context "Decrypt objects whose names contain quoting characters" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Its own database, because the counts asserted against the shared fixture are exact and would
+            # change if these objects were added to it.
+            $quotingDbName = "dbatoolsci_decryptquoting_$(Get-Random)"
+            $quotingDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $quotingDbName
+
+            # An object name may contain a single quote, and the method that uses the DAC put the name in
+            # the OBJECT_ID literal of the query that reads the secret and in the EXEC that runs the known
+            # plaintext. A name spelling the end of that literal therefore ran whatever followed it as a
+            # further statement in the same batch, as sysadmin over the dedicated admin connection, while
+            # the command returned as though nothing had happened. This name spells exactly that, so the
+            # table it names appearing in the database is the proof the hole is open.
+            $injectedTableName = "dbatoolsci_injected_by_name"
+            $quotingProcName = "dbatoolsci_quote_'); CREATE TABLE dbo.$injectedTableName (Id INT); --"
+            $quotingProcDefinition = "CREATE PROCEDURE dbo.[$quotingProcName] WITH ENCRYPTION AS SELECT 1 AS Id;"
+            $quotingDb.Query($quotingProcDefinition)
+
+            # A name may equally contain a closing bracket, which ends the identifier early and leaves the
+            # rest of the name standing as statement text in the ALTER that obtains the known plaintext.
+            $bracketProcName = "dbatoolsci_bracket_]_proc"
+            $bracketProcDefinition = "CREATE PROCEDURE dbo.[$($bracketProcName -replace "\]", "]]")] WITH ENCRYPTION AS SELECT 2 AS Id;"
+            $quotingDb.Query($bracketProcDefinition)
+
+            # A trigger names its parent as well as itself, and the parent was interpolated with no
+            # brackets at all, so a parent whose name holds a bracket breaks the same statement from the
+            # other side.
+            $bracketTableName = "dbatoolsci_bracket_]_table"
+            $quotingDb.Query("CREATE TABLE dbo.[$($bracketTableName -replace "\]", "]]")] (Id INTEGER);")
+
+            $bracketTriggerDefinition = "CREATE TRIGGER dbo.dbatoolsci_bracket_trigger ON dbo.[$($bracketTableName -replace "\]", "]]")] WITH ENCRYPTION AFTER INSERT AS SELECT 3 AS Id;"
+            $quotingDb.Query($bracketTriggerDefinition)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $quotingDbName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should decrypt them all with a dedicated admin connection and run nothing that a name spells" {
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $quotingDbName)
+
+            $result.Count | Should -Be 3
+            @($result | Where-Object Name -eq $quotingProcName)[0].Script | Should -Be $quotingProcDefinition
+            @($result | Where-Object Name -eq $bracketProcName)[0].Script | Should -Be $bracketProcDefinition
+            @($result | Where-Object Name -eq "dbatoolsci_bracket_trigger")[0].Script | Should -Be $bracketTriggerDefinition
+
+            $queryInjectedTable = @"
+SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
+"@
+            $injectedTable = @($quotingDb.Query($queryInjectedTable))
+            $injectedTable[0].TableCount | Should -Be 0
+        }
+
+        It "Should decrypt them all without a dedicated admin connection" {
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $quotingDbName -NoDAC)
+
+            $result.Count | Should -Be 3
+            @($result | Where-Object Name -eq $quotingProcName)[0].Script | Should -Be $quotingProcDefinition
+            @($result | Where-Object Name -eq $bracketProcName)[0].Script | Should -Be $bracketProcDefinition
+            @($result | Where-Object Name -eq "dbatoolsci_bracket_trigger")[0].Script | Should -Be $bracketTriggerDefinition
+        }
+    }
+
     Context "Decrypt across more than one database in a single call" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
