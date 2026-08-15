@@ -16,6 +16,8 @@ function Invoke-DbaDbDecryptObject {
 
         With -NoDAC no DAC is used and the object is never altered. The binary definition is read straight from the raw data pages with DBCC PAGE and the keystream is rebuilt from database and object metadata, so nothing is written to the database at any point. This method needs sysadmin, and it returns the definition exactly as it is stored, so object definitions that contain Unicode characters come back intact.
 
+        Both methods need SQL Server 2008 or later. Encrypted definitions have been stored this way since SQL Server 2005, but SMO cannot work against 2005 at all, so no dbatools command reaches that version.
+
         The following paragraphs only apply to the default method that uses the DAC.
 
         To connect to a remote SQL instance, the remote dedicated administrator connection option must be configured. The binary versions of encrypted objects can only be retrieved using a DAC connection.
@@ -62,7 +64,11 @@ function Invoke-DbaDbDecryptObject {
 
         Leave it off to keep the original behaviour of the command, where a Dedicated Admin Connection reads sys.sysobjvalues and each object is briefly altered inside a transaction that is rolled back to obtain a known plaintext.
 
-        One class of object needs -NoDAC rather than merely preferring it. An INSTEAD OF trigger defined on a view cannot be decrypted by the default method at all, because that method obtains its known plaintext by rewriting the object as an AFTER trigger and a view only accepts INSTEAD OF. Reading the data pages has no such restriction.
+        Two cases need -NoDAC rather than merely preferring it, and both come from the default method having to alter the object.
+
+        An INSTEAD OF trigger defined on a view cannot be decrypted by the default method at all, because that method obtains its known plaintext by rewriting the object as an AFTER trigger and a view only accepts INSTEAD OF. Reading the data pages has no such restriction.
+
+        A read-only database is the other. A database snapshot and an availability group readable secondary can both be read with -NoDAC, while the default method fails against either because it cannot alter anything there.
 
         Not available on Azure SQL Database or Azure SQL Managed Instance, neither of which supports DBCC PAGE. The command refuses -NoDAC on both rather than failing part way through reading the pages.
 
@@ -249,13 +255,25 @@ function Invoke-DbaDbDecryptObject {
                     }
                 } else {
                     # Reading the data pages needs no dedicated admin connection, so the connection of
-                    # the caller is used as it is and is left alone afterwards. sys.sysobjvalues, which
-                    # holds the encrypted definitions, arrived with SQL Server 2005.
+                    # the caller is used as it is and is left alone afterwards.
+                    #
+                    # sys.sysobjvalues, which holds the encrypted definitions, arrived with SQL Server
+                    # 2005, but the floor here is 2008. SMO cannot work against 2005 at all: enumerating
+                    # any collection issues CONNECTIONPROPERTY and reading the databases asks for
+                    # is_cdc_enabled, both of which arrived in 2008, so the command fails on
+                    # $server.Databases before a page is read. 2008 itself is verified, seek route and
+                    # page chain walk both, with every storage shape byte exact.
+                    #
+                    # Note that this does not actually refuse a 2005 instance. Connect-DbaInstance only
+                    # applies MinimumVersion when it can read VersionMajor, and on 2005 that property
+                    # comes back empty for the same reason everything else does, so the connection is
+                    # allowed and fails later in SMO. The floor is here to say what is supported, not
+                    # because it can be enforced at the one version where it would matter.
                     Write-Message -Level Verbose -Message "Opening a regular connection to read the data pages."
                     $connectParams = @{
                         SqlInstance    = $instance
                         SqlCredential  = $SqlCredential
-                        MinimumVersion = 9
+                        MinimumVersion = 10
                     }
                     $server = Connect-DbaInstance @connectParams
                 }

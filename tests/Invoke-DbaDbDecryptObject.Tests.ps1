@@ -944,6 +944,50 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
         }
     }
 
+    Context "Decrypt from a read only database" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Its own database, because the counts asserted against the shared fixture are exact, and
+            # because a database cannot be dropped while a snapshot of it exists.
+            $snapshotSourceName = "dbatoolsci_decryptsnap_$(Get-Random)"
+            $snapshotName = "$($snapshotSourceName)_snap"
+            $snapshotSourceDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $snapshotSourceName
+
+            # One definition small enough to live in the sys.sysobjvalues row and one far too large for it,
+            # so the read of the row and the walk into off row storage are both covered against a snapshot
+            # rather than only the simpler of the two.
+            $snapshotSmallDefinition = "CREATE PROCEDURE dbo.dbatoolsci_snap_small WITH ENCRYPTION AS SELECT 1 AS Id;"
+            $snapshotSourceDb.Query($snapshotSmallDefinition)
+
+            $snapshotLargeDefinition = "CREATE PROCEDURE dbo.dbatoolsci_snap_large WITH ENCRYPTION AS BEGIN /* $("A" * 20000) */ SELECT 2 AS Id; END;"
+            $snapshotSourceDb.Query($snapshotLargeDefinition)
+
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceMulti1 -Database $snapshotSourceName -Name $snapshotName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceMulti1 -Snapshot $snapshotName -ErrorAction SilentlyContinue
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $snapshotSourceName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        # A snapshot is read only, so the default method cannot reach these objects at all: it obtains a
+        # known plaintext by altering the object, which the database refuses. Reading the data pages writes
+        # nothing, which is what makes a read only database one of the two cases that need -NoDAC. The same
+        # holds for an availability group readable secondary, which no test instance here can provide.
+        It "Should decrypt in row and off row definitions from a database snapshot" {
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $snapshotName -NoDAC)
+
+            $result.Count | Should -Be 2
+            @($result | Where-Object Name -eq "dbatoolsci_snap_small")[0].Script | Should -Be $snapshotSmallDefinition
+            @($result | Where-Object Name -eq "dbatoolsci_snap_large")[0].Script | Should -Be $snapshotLargeDefinition
+        }
+    }
+
     Context "Decrypt across more than one database in a single call" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
