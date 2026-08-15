@@ -64,6 +64,8 @@ function Invoke-DbaDbDecryptObject {
 
         One class of object needs -NoDAC rather than merely preferring it. An INSTEAD OF trigger defined on a view cannot be decrypted by the default method at all, because that method obtains its known plaintext by rewriting the object as an AFTER trigger and a view only accepts INSTEAD OF. Reading the data pages has no such restriction.
 
+        Not available on Azure SQL Database or Azure SQL Managed Instance, neither of which supports DBCC PAGE. The command refuses -NoDAC on both rather than failing part way through reading the pages.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -226,6 +228,12 @@ function Invoke-DbaDbDecryptObject {
 
             $dacOpened = $false
 
+            # Cleared per instance, because the finally below restores whatever these hold and a capture
+            # that failed for this instance would otherwise put the previous instance's fields on it.
+            $savedInitFieldsProcedure = $null
+            $savedInitFieldsView = $null
+            $savedInitFieldsFunction = $null
+
             # Try to connect to instance
             try {
                 if (-not $NoDAC) {
@@ -259,9 +267,28 @@ function Invoke-DbaDbDecryptObject {
             # next run until the session is killed. A terminating error anywhere below would leak the one
             # this command opened, so the disconnect sits in a finally rather than at the end of the body.
             try {
-                # DBCC PAGE and DBCC DBINFO are limited to sysadmin, so checking up front gives a clear
-                # message instead of a permission error in the middle of reading the pages.
+                # Neither Azure SQL Database nor Azure SQL Managed Instance supports DBCC PAGE, so reading
+                # the data pages cannot work on either. MinimumVersion does not catch them, because both
+                # report a version this command is happy with, and without this the run gets as far as the
+                # first DBCC and fails on something that does not name the real problem.
+                #
+                # Both checks are needed. DatabaseEngineType only distinguishes Azure SQL Database, so a
+                # Managed Instance is identified by its engine edition, and that is tested first so the
+                # message names the right one whichever way the engine type reads.
                 if ($NoDAC) {
+                    $azurePlatform = $null
+                    if ($server.DatabaseEngineEdition -eq "SqlManagedInstance") {
+                        $azurePlatform = "Azure SQL Managed Instance"
+                    } elseif ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        $azurePlatform = "Azure SQL Database"
+                    }
+
+                    if ($azurePlatform) {
+                        Stop-Function -Message "Reading the encrypted objects on $instance without a dedicated admin connection uses DBCC PAGE, which $azurePlatform does not support." -Target $instance -Continue
+                    }
+
+                    # DBCC PAGE and DBCC DBINFO are limited to sysadmin, so checking up front gives a clear
+                    # message instead of a permission error in the middle of reading the pages.
                     $querySysadmin = @"
 SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
 "@
@@ -276,9 +303,18 @@ SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
                 # a collection, so it goes back to the instance once per object, and on a database with a
                 # couple of thousand modules that costs far more than the decryption itself. Asking for it up
                 # front makes SMO fetch it as part of the enumeration. This mirrors what Connect-DbaInstance
-                # already does for databases, logins and jobs, and it only ever adds properties, so it changes
-                # nothing for a connection that belongs to the caller.
+                # already does for databases, logins and jobs.
+                #
+                # The setting belongs to the connection and outlives this command on one the caller owns, so
+                # whatever is there is captured first and put back in the finally below. Without that, a
+                # caller who had chosen their own fields for these three types would find them replaced for
+                # the rest of their session. GetDefaultInitFields hands back a copy rather than the live
+                # collection, which is what makes capturing it work.
                 try {
+                    $savedInitFieldsProcedure = $server.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure])
+                    $savedInitFieldsView = $server.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View])
+                    $savedInitFieldsFunction = $server.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction])
+
                     $initFieldsModule = New-Object System.Collections.Specialized.StringCollection
                     [void]$initFieldsModule.AddRange([string[]]@("Name", "Schema", "IsEncrypted", "IsSystemObject"))
                     $initFieldsFunction = New-Object System.Collections.Specialized.StringCollection
@@ -404,13 +440,17 @@ INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
                         }
                         $familyGuid = [guid]$familyGuidRow[0].VALUE
 
-                        $wantedObjectId = @()
-                        foreach ($wantedObject in $objectCollection) {
-                            $wantedKey = "$($wantedObject.Schema).$($wantedObject.Name)"
-                            if ($objectIdMap.ContainsKey($wantedKey)) {
-                                $wantedObjectId += $objectIdMap[$wantedKey]
+                        # Collected in one pass rather than by appending, which copies the whole array every
+                        # time. The count here is only the encrypted objects of one database, so this follows
+                        # the same shape as the reader rather than because the append costs anything.
+                        $wantedObjectId = @(
+                            foreach ($wantedObject in $objectCollection) {
+                                $wantedKey = "$($wantedObject.Schema).$($wantedObject.Name)"
+                                if ($objectIdMap.ContainsKey($wantedKey)) {
+                                    $objectIdMap[$wantedKey]
+                                }
                             }
-                        }
+                        )
 
                         if ($wantedObjectId.Count -ge 1) {
                             try {
@@ -529,16 +569,16 @@ SELECT imageval AS Value FROM sys.sysobjvalues WHERE objid = $decryptObjectId AN
                                     $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER VIEW [$bracketedSchema].[$bracketedName] WITH ENCRYPTION AS SELECT NULL AS [Value];"
                                 }
                                 'Trigger' {
-                                    # The parent was interpolated bare, so it carried no brackets of its own
-                                    # and relied on however the SMO object happened to render. Its schema and
-                                    # name are read from the object and bracketed like every other identifier.
+                                    # A trigger names its parent as well as itself, so the parent gets the same
+                                    # treatment: taken from the object rather than left to however the SMO
+                                    # object renders as a string, and bracketed like every other identifier.
                                     $bracketedParentSchema = $object.Parent.Schema -replace "\]", "]]"
                                     $bracketedParentName = $object.Parent.Name -replace "\]", "]]"
 
-                                    # The quotes around the message are single here, where they used to be
-                                    # doubled by hand for the EXEC literal this ends up inside. Every quote in
-                                    # the statement is doubled in one place now, below, so that a quote in an
-                                    # object name is escaped as well rather than only the ones written here.
+                                    # The quotes around the message are single, not doubled. This statement is
+                                    # written as it should reach SQL Server, and the doubling that puts it
+                                    # inside the EXEC literal happens in one place below, so that a quote in
+                                    # an object name is escaped by the same pass rather than being missed.
                                     $statementTrigger = @"
 ALTER TRIGGER [$bracketedSchema].[$bracketedName] ON [$bracketedParentSchema].[$bracketedParentName] WITH ENCRYPTION AFTER INSERT AS RAISERROR ('Invoke-DbaDbDecryptObject', 16, 10);
 "@
@@ -611,9 +651,10 @@ ROLLBACK;
                                 if (-not (Test-Path $destinationFolder)) {
                                     try {
                                         # Create the new destination
-                                        # This command has no Force parameter, so -Force:$Force bound $null
-                                        # and the switch was always off. It matches the same call in begin
-                                        # now, which is what creates the folder tree the export needs.
+                                        # Plain -Force, matching the call in begin. It must not be written as
+                                        # -Force:$Force: this command has no Force parameter, so that binds
+                                        # $null and silently turns the switch off, and under StrictMode it
+                                        # throws instead.
                                         New-Item -Path $destinationFolder -ItemType Directory -Force | Out-Null
                                     } catch {
                                         Stop-Function -Message "Couldn't create destination folder $destinationFolder" -ErrorRecord $_ -Target $instance -Continue
@@ -649,6 +690,19 @@ ROLLBACK;
                     }
                 }
             } finally {
+                # The init fields belong to the connection, not to this command, so they go back however
+                # the run ended. Its own try/catch, because a failure here must not replace whatever error
+                # sent us to this finally in the first place.
+                if ($null -ne $savedInitFieldsProcedure) {
+                    try {
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], $savedInitFieldsProcedure)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], $savedInitFieldsView)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], $savedInitFieldsFunction)
+                    } catch {
+                        Write-Message -Level Debug -Message "Restoring the default init fields failed with $_"
+                    }
+                }
+
                 if ($dacOpened) {
                     $null = $server | Disconnect-DbaInstance -WhatIf:$false
                 }

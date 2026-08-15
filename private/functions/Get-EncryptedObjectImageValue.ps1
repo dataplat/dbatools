@@ -37,6 +37,12 @@ function Get-EncryptedObjectImageValue {
         calls them. The two parts that are unit tested from outside, the dump parser and the chunk
         concatenation, are separate functions for that reason and that reason alone.
 
+        Where a collection is built in one pass instead of appended to, the loop runs once per page, per
+        dump line or per blob link, which are the counts that grow with the database or with the size of a
+        definition, and appending copies the whole array every time. The appends that remain run once per
+        batch of pages, per object or per blob node, which are small and bounded, so they are left as they
+        read most clearly. Each of the one pass collections says so where it is.
+
         This function is used by the following public functions:
         - Invoke-DbaDbDecryptObject
 
@@ -126,7 +132,8 @@ function Get-EncryptedObjectImageValue {
 
     # The extent checks below add a length read straight off the page to an offset. In PowerShell an Int32
     # sum that overflows promotes to Double rather than wrapping, so a corrupt length cannot come out
-    # negative and pass a check it should fail. The same arithmetic in C# needs an explicit 64 bit cast.
+    # negative and pass a check it should fail. A language that wraps instead needs an explicit 64 bit cast
+    # there, so do not copy those checks anywhere without one.
 
     # Bounds. Each one exists because the thing it bounds follows pointers read out of page bytes, so bytes
     # that are not what they are taken for can point in a circle.
@@ -465,6 +472,11 @@ function Get-EncryptedObjectImageValue {
                 # silently, as rows are still found and every other check passes. Stopping here instead
                 # lands on the page before the object's first row and the forward walk collects from
                 # there, which costs at most one extra page read.
+                #
+                # Nothing exercises this. SQL Server writes one valclass 1 row per module and lets the off
+                # row machinery carry the size, so a definition spanning two leaf pages cannot be created
+                # to test against. That is an observation rather than a documented guarantee, which is why
+                # the comparison is written for the case that has never been seen.
                 if ($keyValueClass -eq $moduleValueClass -and $keyObjectId -lt $TargetObjectId) {
                     $chosen = $childEntry
                     continue
@@ -632,6 +644,11 @@ function Get-EncryptedObjectImageValue {
                             continue
                         }
 
+                        # Built in one pass and added to the level once, for the same reason as the root's
+                        # links above: an internal node holds up to about five hundred entries, so appending
+                        # per entry would copy the whole level that many times. The append below therefore
+                        # runs once per internal node, not once per child, which reads like the thing being
+                        # avoided and is the result of avoiding it.
                         $childNode = @(
                             for ($entry = 0; $entry -lt $entryCount; $entry++) {
                                 $entryOffset = $recordOffset + $internalEntriesOffset + $entry * $internalEntrySize
@@ -701,11 +718,11 @@ function Get-EncryptedObjectImageValue {
     # A T-SQL module also has to exist at all, which is a fact rather than a judgement. SMO reports
     # IsEncrypted as true for a CLR function, and a CLR function has no T-SQL body to encrypt, so asking
     # for one sends this reader hunting rows that cannot exist. OBJECTPROPERTY cannot save it: for a CLR
-    # module the answer is NULL, which is the case that is deliberately allowed through. Finding no rows
-    # then reads as "the seek could not answer" and hands the whole batch to a full page scan, so three CLR
-    # functions in a database turned a few page reads into nine thousand. A module with no row in
-    # sys.sql_modules holds nothing this reader can decrypt, so it is refused outright. The reference
-    # implementation avoids this by joining sys.sql_modules when it picks candidates in the first place.
+    # module the answer is NULL, which is the case that is deliberately allowed through. A CLR module has
+    # no row in sys.sql_modules either, since that view covers T-SQL modules only, and that is the test
+    # this uses. Without it the missing rows read as "the seek could not answer" and hand the whole batch
+    # to a scan of every page of the rowset, so a handful of CLR functions in a large database cost a few
+    # page reads to find nothing and thousands to confirm it.
     $queryIsEncrypted = @"
 SELECT o.object_id AS ObjectId,
        OBJECTPROPERTY(o.object_id, 'IsEncrypted') AS IsEncrypted,

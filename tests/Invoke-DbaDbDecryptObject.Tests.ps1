@@ -623,6 +623,41 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         }
     }
 
+    Context "Leave the SMO init fields of the caller's connection as they were found" {
+        # Finding the encrypted objects would cost a round trip per module without asking SMO to fetch
+        # IsEncrypted as part of the enumeration, so the command sets the init fields for the three
+        # module types. Those belong to the connection and outlive the command on one the caller owns,
+        # which would silently replace a choice the caller had made for the rest of their session.
+        It "Should put back init fields the caller had chosen" {
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+
+            try {
+                # Deliberately not the set the command wants, and deliberately missing IsEncrypted, so a
+                # command that failed to restore would leave a difference this can see.
+                $callerFields = New-Object System.Collections.Specialized.StringCollection
+                [void]$callerFields.AddRange([string[]]@("Name", "Schema", "IsSystemObject"))
+                $callerServer.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], $callerFields)
+
+                # Read back rather than compared against what was set, because SMO keeps only the fields
+                # it does not always fetch anyway, so the stored value is not the list handed to it.
+                $beforeProcedure = @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure])) -join ", "
+                $beforeView = @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View])) -join ", "
+                $beforeFunction = @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction])) -join ", "
+
+                # The run has to do real work, or a command that returned early would pass this without
+                # ever setting the fields it is supposed to put back.
+                $result = Invoke-DbaDbDecryptObject -SqlInstance $callerServer -Database $dbname -ObjectName DummyEncryptedStoredProcedure -NoDAC
+                $result.Script | Should -Be $queryStoredProcedure
+
+                @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure])) -join ", " | Should -Be $beforeProcedure
+                @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View])) -join ", " | Should -Be $beforeView
+                @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction])) -join ", " | Should -Be $beforeFunction
+            } finally {
+                $null = $callerServer | Disconnect-DbaInstance
+            }
+        }
+    }
+
     Context "Decrypt without a dedicated admin connection" {
         It "Should decrypt a stored procedure" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -NoDAC
