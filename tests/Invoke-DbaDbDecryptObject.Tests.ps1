@@ -944,6 +944,55 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
         }
     }
 
+    Context "Decrypt objects whose schema and name collide when joined into one key" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Its own database, because the counts asserted against the shared fixture are exact and would
+            # change if these objects were added to it.
+            $collideDbName = "dbatoolsci_decryptcollide_$(Get-Random)"
+            $collideDb = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $collideDbName
+
+            # Both a schema and an object name are allowed to contain a dot, so a lookup that joins them
+            # into a single "$schema.$name" string cannot tell schema [a], object [b.c] apart from schema
+            # [a.b], object [c]: both key as "a.b.c". Whichever row a name based lookup reads last silently
+            # overwrites the other's id in the map, and the object that lost the race is then decrypted
+            # with the other one's ciphertext instead of its own.
+            $collideDb.Query("CREATE SCHEMA [a]")
+            $collideDb.Query("CREATE SCHEMA [a.b]")
+
+            $collideFirstDefinition = "CREATE PROCEDURE [a].[b.c] WITH ENCRYPTION AS SELECT 111 AS Marker;"
+            $collideDb.Query($collideFirstDefinition)
+
+            $collideSecondDefinition = "CREATE PROCEDURE [a.b].[c] WITH ENCRYPTION AS SELECT 222 AS Marker;"
+            $collideDb.Query($collideSecondDefinition)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $collideDbName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should decrypt both with a dedicated admin connection, each with its own definition" {
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $collideDbName)
+
+            $result.Count | Should -Be 2
+            @($result | Where-Object { $PSItem.Schema -ceq "a" -and $PSItem.Name -ceq "b.c" })[0].Script | Should -Be $collideFirstDefinition
+            @($result | Where-Object { $PSItem.Schema -ceq "a.b" -and $PSItem.Name -ceq "c" })[0].Script | Should -Be $collideSecondDefinition
+        }
+
+        It "Should decrypt both without a dedicated admin connection, each with its own definition" {
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $collideDbName -NoDAC)
+
+            $result.Count | Should -Be 2
+            @($result | Where-Object { $PSItem.Schema -ceq "a" -and $PSItem.Name -ceq "b.c" })[0].Script | Should -Be $collideFirstDefinition
+            @($result | Where-Object { $PSItem.Schema -ceq "a.b" -and $PSItem.Name -ceq "c" })[0].Script | Should -Be $collideSecondDefinition
+        }
+    }
+
     Context "Decrypt from a read only database" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

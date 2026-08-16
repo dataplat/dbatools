@@ -323,6 +323,10 @@ SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
                 # front makes SMO fetch it as part of the enumeration. This mirrors what Connect-DbaInstance
                 # already does for databases, logins and jobs.
                 #
+                # ID rides along with it for the same reason. Both decrypt methods below select an object's
+                # rows by id rather than by name, and SMO's own ID property is already the object id, so
+                # fetching it here means neither method ever needs a name based lookup to get one.
+                #
                 # The setting belongs to the connection and outlives this command on one the caller owns, so
                 # whatever is there is captured first and put back in the finally below. Without that, a
                 # caller who had chosen their own fields for these three types would find them replaced for
@@ -334,9 +338,9 @@ SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
                     $savedInitFieldsFunction = $server.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction])
 
                     $initFieldsModule = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsModule.AddRange([string[]]@("Name", "Schema", "IsEncrypted", "IsSystemObject"))
+                    [void]$initFieldsModule.AddRange([string[]]@("Name", "Schema", "IsEncrypted", "IsSystemObject", "ID"))
                     $initFieldsFunction = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsFunction.AddRange([string[]]@("Name", "Schema", "IsEncrypted", "IsSystemObject", "FunctionType"))
+                    [void]$initFieldsFunction.AddRange([string[]]@("Name", "Schema", "IsEncrypted", "IsSystemObject", "FunctionType", "ID"))
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], $initFieldsModule)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], $initFieldsModule)
                     $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], $initFieldsFunction)
@@ -390,16 +394,16 @@ AND p.is_ms_shipped = 0
 
                     # Get the objects
                     if ($ObjectName) {
-                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { 'StoredProcedure' } }, @{N = "SubType"; E = { '' } })
-                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
-                        $views = @($db.Views | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { 'View' } }, @{N = "SubType"; E = { '' } })
-                        $triggers = @($triggers | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, Parent, @{N = "ObjectType"; E = { 'Trigger' } }, @{N = "SubType"; E = { '' } })
+                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
+                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
+                        $views = @($db.Views | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
+                        $triggers = @($triggers | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
                     } else {
                         # Get all encrypted objects
-                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { 'StoredProcedure' } }, @{N = "SubType"; E = { '' } })
-                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
-                        $views = @($db.Views | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, @{N = "ObjectType"; E = { 'View' } }, @{N = "SubType"; E = { '' } })
-                        $triggers = @($triggers | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, Parent, @{N = "ObjectType"; E = { 'Trigger' } }, @{N = "SubType"; E = { '' } })
+                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
+                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
+                        $views = @($db.Views | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
+                        $triggers = @($triggers | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
                     }
 
                     # Check if there are any objects
@@ -422,22 +426,16 @@ AND p.is_ms_shipped = 0
                     # allowed to contain a single quote: splicing the name into an OBJECT_ID('...') literal
                     # would let a crafted name end the literal early and run whatever followed it as a
                     # further statement in the same batch, as sysadmin over the dedicated admin connection.
-                    # An id is a number, so nothing a name contains can reach the query text. One lookup
-                    # for the whole database instead of a metadata query per object.
-                    $objectIdMap = @{ }
-                    $queryObjectId = @"
-SELECT o.object_id AS ObjectId, s.name AS SchemaName, o.name AS ObjectName
-FROM sys.objects AS o
-INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
-"@
-
-                    try {
-                        foreach ($objectRow in @($db.Query($queryObjectId))) {
-                            $objectIdMap["$($objectRow.SchemaName).$($objectRow.ObjectName)"] = [int]$objectRow.ObjectId
-                        }
-                    } catch {
-                        Stop-Function -Message "Couldn't retrieve the object ids of database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
-                    }
+                    # An id is a number, so nothing a name contains can reach the query text.
+                    #
+                    # The id is SMO's own ID property on each object, fetched as part of the enumeration
+                    # above rather than looked up afterwards by schema and name. A lookup keyed by
+                    # "$schema.$name" cannot be unambiguous, because either half may itself contain a dot:
+                    # schema [a], object [b.c] and schema [a.b], object [c] both key as "a.b.c", so whichever
+                    # of the two is read last silently overwrites the other's id in the map, and the object
+                    # that lost the race is then decrypted with the wrong ciphertext. Reading the id SMO
+                    # already carries on the object needs no key at all, so two objects sharing a dotted name
+                    # can no longer collide.
 
                     # Without a dedicated admin connection the ciphertext of every requested object is read in
                     # a single pass over the data pages of sys.sysobjvalues, because reading those pages is by
@@ -458,17 +456,7 @@ INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
                         }
                         $familyGuid = [guid]$familyGuidRow[0].VALUE
 
-                        # Collected in one pass rather than by appending, which copies the whole array every
-                        # time. The count here is only the encrypted objects of one database, so this follows
-                        # the same shape as the reader rather than because the append costs anything.
-                        $wantedObjectId = @(
-                            foreach ($wantedObject in $objectCollection) {
-                                $wantedKey = "$($wantedObject.Schema).$($wantedObject.Name)"
-                                if ($objectIdMap.ContainsKey($wantedKey)) {
-                                    $objectIdMap[$wantedKey]
-                                }
-                            }
-                        )
+                        $wantedObjectId = @($objectCollection.ID)
 
                         if ($wantedObjectId.Count -ge 1) {
                             try {
@@ -489,16 +477,13 @@ INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
 
                         $result = $null
 
-                        # Both methods below select this object's rows by id, so it is resolved once here.
-                        $objectKey = "$($object.Schema).$($object.Name)"
-                        $decryptObjectId = $null
-                        if ($objectIdMap.ContainsKey($objectKey)) {
-                            $decryptObjectId = $objectIdMap[$objectKey]
-                        }
+                        # Both methods below select this object's rows by id, taken from SMO's own ID
+                        # property rather than looked up by schema and name.
+                        $decryptObjectId = [int]$object.ID
 
                         # Without a dedicated admin connection the ciphertext that was collected for this object
                         # is combined with the keystream that its own metadata produces.
-                        if ($NoDAC -and $null -ne $decryptObjectId) {
+                        if ($NoDAC) {
                             # Asked for a key it does not hold, a hashtable answers with null, and wrapping
                             # null in @() gives an array of one null rather than an empty one. That reads as
                             # a chunk with no ciphertext, so an object the reader deliberately skipped - a
@@ -535,7 +520,7 @@ INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
                         # Only the DAC can read imageval directly, so none of this runs for the method that reads
                         # the data pages, and the block below is skipped with it.
                         $secret = $null
-                        if (-not $NoDAC -and $null -ne $decryptObjectId) {
+                        if (-not $NoDAC) {
                             # Setup the query to get the secret. Select by object id rather than by name. Exclude null values in sys.sysobjvalues for triggers.
                             $querySecret = @"
 SELECT imageval AS Value FROM sys.sysobjvalues WHERE objid = $decryptObjectId AND imageval IS NOT NULL
