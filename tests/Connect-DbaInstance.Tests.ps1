@@ -540,6 +540,21 @@ Describe $CommandName -Tag IntegrationTests {
             $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
         }
 
+        It "hands the clone a connection that Disconnect-DbaInstance can close" {
+            # The clone used to be built with GetDatabaseConnection, which opened the connection on an
+            # intermediate copy and returned a different context. The clone therefore did not own its
+            # connection and Disconnect-DbaInstance closed nothing, so every call left a session parked
+            # in the database holding a shared lock on it.
+            $countBefore = @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
+
+            $serverParked = Connect-DbaInstance -SqlInstance $server -Database tempdb
+            $serverParked.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $null = $serverParked | Disconnect-DbaInstance
+
+            $countAfter = @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
+            $countAfter | Should -Be $countBefore
+        }
+
         It "clones when using parameter ApplicationIntent" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
             $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty

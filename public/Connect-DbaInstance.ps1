@@ -777,10 +777,18 @@ function Connect-DbaInstance {
                         $connContext.NonPooledConnection = $true
                     }
                     if ($Database) {
-                        # Save StatementTimeout because it might be reset on GetDatabaseConnection
-                        $savedStatementTimeout = $connContext.StatementTimeout
-                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
-                        $connContext.StatementTimeout = $savedStatementTimeout
+                        # We set DatabaseName instead of calling GetDatabaseConnection on purpose.
+                        # GetDatabaseConnection opens the connection on the copy we are holding and returns
+                        # a *different* ConnectionContext, so the server we build below never owns that
+                        # connection. Disconnect-DbaInstance can only reach the context of the server it is
+                        # given, so nothing ever closed it: the session stayed open for the life of the
+                        # process, holding a shared lock on the database. On model that is enough to make a
+                        # later CREATE DATABASE on the same instance fail on the exclusive lock.
+                        # Setting DatabaseName keeps the connection with the context we hand to the server,
+                        # which is also what the connection string code paths of this command already do.
+                        # It does not reset StatementTimeout either, so the save and restore that
+                        # GetDatabaseConnection needed is gone with it.
+                        $connContext.DatabaseName = $Database
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
