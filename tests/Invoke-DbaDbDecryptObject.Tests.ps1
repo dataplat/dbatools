@@ -44,7 +44,7 @@ Describe $CommandName -Tag UnitTests {
                 "ObjectName",
                 "SqlCredential",
                 "SqlInstance",
-                "NoDAC"
+                "DataPages"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
@@ -646,7 +646,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
                 # The run has to do real work, or a command that returned early would pass this without
                 # ever setting the fields it is supposed to put back.
-                $result = Invoke-DbaDbDecryptObject -SqlInstance $callerServer -Database $dbname -ObjectName DummyEncryptedStoredProcedure -NoDAC
+                $result = Invoke-DbaDbDecryptObject -SqlInstance $callerServer -Database $dbname -ObjectName DummyEncryptedStoredProcedure -DataPages
                 $result.Script | Should -Be $queryStoredProcedure
 
                 @($callerServer.GetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure])) -join ", " | Should -Be $beforeProcedure
@@ -660,19 +660,19 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
 
     Context "Decrypt without a dedicated admin connection" {
         It "Should decrypt a stored procedure" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -DataPages
             $result.Script | Should -Be $queryStoredProcedure
         }
 
         It "Should decrypt a trigger in a schema other than dbo" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_trigger -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_trigger -DataPages
             $result.Script | Should -Be $setupTrigger
         }
 
         It "Should decrypt a definition that is stored off row" {
             # A definition of this size does not fit in the sys.sysobjvalues row, so it is reassembled
             # from the blob records that the row points at.
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedLargeStoredProcedure -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedLargeStoredProcedure -DataPages
             $result.Script | Should -Be $queryLargeStoredProcedure
         }
 
@@ -681,26 +681,26 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             # pages, so the pages are read a level at a time and reassembled depth first. A mistake in
             # that order produces ciphertext of exactly the right length, so only comparing the text
             # against what was submitted catches it.
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedTreeStoredProcedure -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedTreeStoredProcedure -DataPages
             $result.Script | Should -Be $queryTreeStoredProcedure
         }
 
         It "Should not return a module that is not encrypted" {
             # sys.sysobjvalues holds the text of every module, so a reader pointed at a plain one would
             # XOR its plaintext against a keystream and hand back rubbish of a plausible length.
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyPlainStoredProcedure -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyPlainStoredProcedure -DataPages
             $result | Should -BeNullOrEmpty
         }
 
         It "Should return a definition that contains non ASCII characters unchanged" {
             # The definition is stored as UCS-2 and is decoded as such, so no EncodingType is needed and
             # the characters survive, which the method that uses the DAC cannot do.
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_UTF8_vw -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_UTF8_vw -DataPages
             $result.Script | Should -Be $setupViewWithUTF8
         }
 
         It "Should decrypt every encrypted object in the database" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -DataPages
             @($result | Where-Object Type -eq "StoredProcedure").Count | Should -Be 3
             @($result | Where-Object Type -eq "Trigger").Count | Should -Be 1
             @($result | Where-Object Type -eq "UserDefinedFunction").Count | Should -Be 3
@@ -710,7 +710,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
         It "Should reach the rows by seeking the index rather than scanning every page" {
             # A fallback to the scan would pass every byte exactness check while testing nothing about the
             # seek, so the route actually taken has to be asserted on directly.
-            $trace = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -NoDAC -Verbose 4>&1)
+            $trace = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName DummyEncryptedStoredProcedure -DataPages -Verbose 4>&1)
             @($trace | Where-Object { "$PSItem" -like "*Seeked the index of sys.sysobjvalues*" }).Count | Should -BeGreaterThan 0
             @($trace | Where-Object { "$PSItem" -like "*Scanned * pages of sys.sysobjvalues*" }).Count | Should -Be 0
         }
@@ -768,7 +768,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             # The two routes share almost no code below the row parse - one reads a handful of pages, the
             # other reads every page of the rowset - so agreement is the strongest available evidence that
             # the seek finds the right rows rather than plausible ones.
-            $seekResult = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -NoDAC
+            $seekResult = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -DataPages
 
             $scanText = InModuleScope dbatools -Parameters @{ DatabaseName = $dbname; Instance = $TestConfig.InstanceMulti1 } {
                 $server = Connect-DbaInstance -SqlInstance $Instance
@@ -808,7 +808,7 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
             # configuration that the default method insists on must not be consulted at all.
             try {
                 Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $false -WarningAction SilentlyContinue
-                $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_vw -NoDAC
+                $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname -ObjectName dbatoolsci_test_vw -DataPages
                 $result.Script | Should -Be $setupView
             } finally {
                 Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -Name RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
@@ -853,7 +853,7 @@ END;"
         }
 
         It "Should decrypt an encrypted INSTEAD OF trigger defined on a view" {
-            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $viewTriggerDbName -NoDAC)
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $viewTriggerDbName -DataPages)
             @($result | Where-Object Type -eq "Trigger").Count | Should -Be 1
             @($result | Where-Object Name -eq "dbatoolsci_test_view_trigger")[0].Script | Should -Be $queryViewTrigger
         }
@@ -935,7 +935,7 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
         }
 
         It "Should decrypt them all without a dedicated admin connection" {
-            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $quotingDbName -NoDAC)
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $quotingDbName -DataPages)
 
             $result.Count | Should -Be 3
             @($result | Where-Object Name -eq $quotingProcName)[0].Script | Should -Be $quotingProcDefinition
@@ -985,7 +985,7 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
         }
 
         It "Should decrypt both without a dedicated admin connection, each with its own definition" {
-            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $collideDbName -NoDAC)
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $collideDbName -DataPages)
 
             $result.Count | Should -Be 2
             @($result | Where-Object { $PSItem.Schema -ceq "a" -and $PSItem.Name -ceq "b.c" })[0].Script | Should -Be $collideFirstDefinition
@@ -1026,10 +1026,10 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
 
         # A snapshot is read only, so the default method cannot reach these objects at all: it obtains a
         # known plaintext by altering the object, which the database refuses. Reading the data pages writes
-        # nothing, which is what makes a read only database one of the two cases that need -NoDAC. The same
+        # nothing, which is what makes a read only database one of the two cases that need -DataPages. The same
         # holds for an availability group readable secondary, which no test instance here can provide.
         It "Should decrypt in row and off row definitions from a database snapshot" {
-            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $snapshotName -NoDAC)
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $snapshotName -DataPages)
 
             $result.Count | Should -Be 2
             @($result | Where-Object Name -eq "dbatoolsci_snap_small")[0].Script | Should -Be $snapshotSmallDefinition
@@ -1064,7 +1064,7 @@ SELECT COUNT(*) AS TableCount FROM sys.tables WHERE name = N'$injectedTableName'
         }
 
         It "Should return each database's own copy of a same-named object exactly once" {
-            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $pairDbName -NoDAC)
+            $result = @(Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $pairDbName -DataPages)
             $result.Count | Should -Be 2
 
             foreach ($name in $pairDbName) {
@@ -1110,7 +1110,7 @@ END
         }
 
         It "Should decrypt a definition stored across several levels of blob tree" {
-            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $deepDbName -ObjectName DummyEncryptedDeepStoredProcedure -NoDAC
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $TestConfig.InstanceMulti1 -Database $deepDbName -ObjectName DummyEncryptedDeepStoredProcedure -DataPages
             $result.Script | Should -Be $queryDeepStoredProcedure
         }
     }

@@ -10,11 +10,11 @@ function Invoke-DbaDbDecryptObject {
 
         The command outputs results to the console by default, with an option to export all decrypted objects to organized .sql files in a folder structure.
 
-        Two methods are available and are selected with NoDAC.
+        Two methods are available and are selected with DataPages.
 
         By default the command uses a Dedicated Admin Connection (DAC) to read the binary definition from sys.sysobjvalues. It then alters the object to a known placeholder inside a transaction that is rolled back, which produces a known plaintext together with its matching ciphertext, and recovers the original text from those three values.
 
-        With -NoDAC no DAC is used and the object is never altered. The binary definition is read straight from the raw data pages with DBCC PAGE and the keystream is rebuilt from database and object metadata, so nothing is written to the database at any point. This method needs sysadmin, and it returns the definition exactly as it is stored, so object definitions that contain Unicode characters come back intact.
+        With -DataPages no DAC is used and the object is never altered. The binary definition is read straight from the raw data pages with DBCC PAGE and the keystream is rebuilt from database and object metadata, so nothing is written to the database at any point. This method needs sysadmin, and it returns the definition exactly as it is stored, so object definitions that contain Unicode characters come back intact.
 
         Both methods need SQL Server 2008 or later. Encrypted definitions have been stored this way since SQL Server 2005, but SMO cannot work against 2005 at all, so no dbatools command reaches that version.
 
@@ -53,24 +53,24 @@ function Invoke-DbaDbDecryptObject {
         Determines the text encoding used during the XOR decryption process to convert binary data back to readable T-SQL code. Defaults to ASCII.
         Use UTF8 when dealing with databases that contain Unicode characters in object definitions or when ASCII decryption produces garbled text.
 
-        Only applies to the default method that uses the DAC. With -NoDAC the definition is decoded with the encoding that SQL Server actually stores it in, so this parameter is not used.
+        Only applies to the default method that uses the DAC. With -DataPages the definition is decoded with the encoding that SQL Server actually stores it in, so this parameter is not used.
 
     .PARAMETER ExportDestination
         Specifies the folder path where decrypted T-SQL scripts will be saved as individual .sql files.
         When specified, creates an organized folder structure by instance, database, and object type (e.g., C:\temp\decrypt\SQLDB1\DB1\StoredProcedure). When omitted, results are displayed in the console only.
 
-    .PARAMETER NoDAC
+    .PARAMETER DataPages
         Reads the binary definition from the raw data pages with DBCC PAGE instead of through a Dedicated Admin Connection. No DAC is needed, the instance does not have to allow remote DAC connections, only one connection is used, and no object is ever altered, so no write happens against the database. This needs sysadmin.
 
         Leave it off to keep the original behaviour of the command, where a Dedicated Admin Connection reads sys.sysobjvalues and each object is briefly altered inside a transaction that is rolled back to obtain a known plaintext.
 
-        Two cases need -NoDAC rather than merely preferring it, and both come from the default method having to alter the object.
+        Two cases need -DataPages rather than merely preferring it, and both come from the default method having to alter the object.
 
         An INSTEAD OF trigger defined on a view cannot be decrypted by the default method at all, because that method obtains its known plaintext by rewriting the object as an AFTER trigger and a view only accepts INSTEAD OF. Reading the data pages has no such restriction.
 
-        A read-only database is the other. A database snapshot and an availability group readable secondary can both be read with -NoDAC, while the default method fails against either because it cannot alter anything there.
+        A read-only database is the other. A database snapshot and an availability group readable secondary can both be read with -DataPages, while the default method fails against either because it cannot alter anything there.
 
-        Not available on Azure SQL Database or Azure SQL Managed Instance, neither of which supports DBCC PAGE. The command refuses -NoDAC on both rather than failing part way through reading the pages.
+        Not available on Azure SQL Database or Azure SQL Managed Instance, neither of which supports DBCC PAGE. The command refuses -DataPages on both rather than failing part way through reading the pages.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -131,7 +131,7 @@ function Invoke-DbaDbDecryptObject {
         Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -NoDAC
+        PS C:\> Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -DataPages
 
         Decrypt all objects in DB1 of instance SQLDB1 without using a dedicated admin connection and without altering any of the objects.
 
@@ -147,7 +147,7 @@ function Invoke-DbaDbDecryptObject {
         [ValidateSet('ASCII', 'UTF8')]
         [string]$EncodingType = 'ASCII',
         [string]$ExportDestination,
-        [switch]$NoDAC,
+        [switch]$DataPages,
         [switch]$EnableException
     )
 
@@ -201,8 +201,8 @@ function Invoke-DbaDbDecryptObject {
         # EncodingType only means anything to the method that uses the DAC, which decodes the low byte of
         # each character. Reading the data pages returns the definition in the encoding SQL Server actually
         # stored it in, so say so rather than letting the parameter look like it did something.
-        if ($NoDAC -and (Test-Bound -ParameterName EncodingType)) {
-            Write-Message -Level Warning -Message "EncodingType is ignored when NoDAC is used, because the definition is decoded as the UCS-2 that SQL Server stores."
+        if ($DataPages -and (Test-Bound -ParameterName EncodingType)) {
+            Write-Message -Level Warning -Message "EncodingType is ignored when DataPages is used, because the definition is decoded as the UCS-2 that SQL Server stores."
         }
 
         # Check the export parameter
@@ -225,10 +225,10 @@ function Invoke-DbaDbDecryptObject {
         foreach ($instance in $SqlInstance) {
 
             # Check the configuration of the intance to see if the DAC is enabled
-            if (-not $NoDAC) {
+            if (-not $DataPages) {
                 $config = Get-DbaSpConfigure -SqlInstance $instance -SqlCredential $SqlCredential -ConfigName RemoteDacConnectionsEnabled
             }
-            if (-not $NoDAC -and $config.ConfiguredValue -ne 1) {
+            if (-not $DataPages -and $config.ConfiguredValue -ne 1) {
                 Stop-Function -Message "DAC is not enabled for instance $instance.`nPlease use 'Set-DbaSpConfigure -SqlInstance $instance -SqlCredential <credential> -ConfigName RemoteDacConnectionsEnabled -Value 1' to configure the instance to allow DAC connections" -Target $instance -Continue
             }
 
@@ -242,7 +242,7 @@ function Invoke-DbaDbDecryptObject {
 
             # Try to connect to instance
             try {
-                if (-not $NoDAC) {
+                if (-not $DataPages) {
                     # Do we have a dedicated admin connection already?
                     $dacConnected = Test-DacConnection -InputObject $instance
                     if ($dacConnected) {
@@ -293,7 +293,7 @@ function Invoke-DbaDbDecryptObject {
                 # Both checks are needed. DatabaseEngineType only distinguishes Azure SQL Database, so a
                 # Managed Instance is identified by its engine edition, and that is tested first so the
                 # message names the right one whichever way the engine type reads.
-                if ($NoDAC) {
+                if ($DataPages) {
                     $azurePlatform = $null
                     if ($server.DatabaseEngineEdition -eq "SqlManagedInstance") {
                         $azurePlatform = "Azure SQL Managed Instance"
@@ -312,7 +312,7 @@ SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
 "@
                     $sysadmin = @($server.Query($querySysadmin))
                     if ($sysadmin[0].IsSysadmin -ne 1) {
-                        Stop-Function -Message "Reading the encrypted objects without a dedicated admin connection uses DBCC PAGE, which requires sysadmin on $instance. Connect as a sysadmin or drop -NoDAC." -Target $instance -Continue
+                        Stop-Function -Message "Reading the encrypted objects without a dedicated admin connection uses DBCC PAGE, which requires sysadmin on $instance. Connect as a sysadmin or drop -DataPages." -Target $instance -Continue
                     }
                 }
 
@@ -441,7 +441,7 @@ AND p.is_ms_shipped = 0
                     # a single pass over the data pages of sys.sysobjvalues, because reading those pages is by
                     # far the most expensive part. The family GUID of the database and the object ids are the
                     # only other inputs that rebuilding the keystream needs.
-                    if ($NoDAC) {
+                    if ($DataPages) {
                         $familyGuid = $null
                         $imageValueMap = @{ }
 
@@ -483,7 +483,7 @@ AND p.is_ms_shipped = 0
 
                         # Without a dedicated admin connection the ciphertext that was collected for this object
                         # is combined with the keystream that its own metadata produces.
-                        if ($NoDAC) {
+                        if ($DataPages) {
                             # Asked for a key it does not hold, a hashtable answers with null, and wrapping
                             # null in @() gives an array of one null rather than an empty one. That reads as
                             # a chunk with no ciphertext, so an object the reader deliberately skipped - a
@@ -520,7 +520,7 @@ AND p.is_ms_shipped = 0
                         # Only the DAC can read imageval directly, so none of this runs for the method that reads
                         # the data pages, and the block below is skipped with it.
                         $secret = $null
-                        if (-not $NoDAC) {
+                        if (-not $DataPages) {
                             # Setup the query to get the secret. Select by object id rather than by name. Exclude null values in sys.sysobjvalues for triggers.
                             $querySecret = @"
 SELECT imageval AS Value FROM sys.sysobjvalues WHERE objid = $decryptObjectId AND imageval IS NOT NULL
