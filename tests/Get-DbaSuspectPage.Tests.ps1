@@ -19,6 +19,58 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Sanctioned per-record reset" {
+            It "does not repeat a successful record after the next connection fails" {
+                $originalConnect = Get-Item -Path Function:script:Connect-DbaInstance -ErrorAction SilentlyContinue
+                $script:issue734ConnectCalls = 0
+                function script:Connect-DbaInstance {
+                    param($SqlInstance)
+
+                    $script:issue734ConnectCalls++
+                    if ("$SqlInstance" -eq "bad") {
+                        throw "deterministic second-record connection failure"
+                    }
+
+                    $server = [pscustomobject]@{
+                        ComputerName      = "fake"
+                        ServiceName       = "fake"
+                        DomainInstanceName = "good"
+                    }
+                    $server | Add-Member -MemberType ScriptMethod -Name Query -Value {
+                        param($Sql)
+                        @([pscustomobject]@{
+                                DBName           = "seed"
+                                file_id           = 1
+                                page_id           = 1
+                                EventType         = "Bad Checksum"
+                                error_count       = 1
+                                last_update_date  = [datetime]"2026-01-01"
+                            })
+                    }
+                    $server
+                }
+
+                try {
+                    $warnings = @()
+                    $result = @("good", "bad") | Get-DbaSuspectPage -WarningVariable +warnings -WarningAction Continue
+
+                    $script:issue734ConnectCalls | Should -Be 2
+                    $warnings.Count | Should -Be 1
+                    @($result).Count | Should -Be 1
+                    $result.Database | Should -Be "seed"
+                } finally {
+                    if ($originalConnect) {
+                        Set-Item -Path Function:script:Connect-DbaInstance -Value $originalConnect.ScriptBlock
+                    } else {
+                        Remove-Item -Path Function:script:Connect-DbaInstance -ErrorAction SilentlyContinue
+                    }
+                    Remove-Variable -Scope Script -Name issue734ConnectCalls -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
