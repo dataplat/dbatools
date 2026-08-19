@@ -671,6 +671,67 @@ fi
 git -C "$REPO" checkout -q -- thing.ps1
 unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
 
+# ---- leg W2: a planted symlink .autospent must not become a write-through ----
+# Same class leg P covers for .fail markers. The path is predictable and lives
+# under a world-writable temp root, so a plain redirect would follow the link and
+# overwrite whatever it names. Two halves, because either alone passes on a build
+# that got the other wrong: nothing may be written THROUGH the link, and the link
+# must not read as a spent budget (which would buy a free block with no review).
+printf 'function Get-Thing { 6 } # SENTINEL_W2A\n' > "$REPO/thing.ps1"
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legW2.txt"
+printf '%s\t%s\t%s\n' "$BASE" "$ORIGIN_URL" "$REPO" > "$STATE/legW2.repos"
+export CODEX_STUB_VERDICT=CHANGES_REQUESTED
+
+# Round 1 spends the budget honestly, so the marker path is the live one. Round 2
+# is what NAMES it: round 1's block is the ordinary findings block, and only the
+# already-spent block prints the recheck path.
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW2a.txt"
+run_hook legW2
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW2a2.txt"
+run_hook legW2
+W2_RECHECK=$(printf '%s' "$OUT" | grep -o '[^ "\\]*_codex-review\.recheck' | head -1)
+W2_AUTOSPENT="${W2_RECHECK%.recheck}.autospent"
+if [[ -n "$W2_RECHECK" && -f "$W2_AUTOSPENT" ]]; then
+    pass "leg W2 setup: round 1 spent the budget and wrote a real marker"
+else
+    fail "leg W2 setup: no budget marker was written, so the symlink legs below prove nothing"
+fi
+
+# Replace the real marker with a symlink at an absent target and force a write.
+rm -f "$W2_AUTOSPENT"
+ln -s "$WORK/evil-autospent-target" "$W2_AUTOSPENT"
+: > "$W2_RECHECK"
+printf 'function Get-Thing { 7 } # SENTINEL_W2B\n' > "$REPO/thing.ps1"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW2b.txt"
+run_hook legW2
+if [[ ! -e "$WORK/evil-autospent-target" ]]; then
+    pass "leg W2: mark_autospent refused to write through the planted symlink"
+else
+    fail "leg W2: mark_autospent wrote through a symlinked marker -- arbitrary file overwrite"
+fi
+if [[ "$OUT" == *'"decision":"block"'* ]]; then
+    pass "leg W2: the turn still BLOCKS with an untrustworthy budget marker"
+else
+    fail "leg W2: a hostile marker released the turn"
+fi
+
+# The link must not read as a spent budget. With it in place and no recheck
+# marker, the round must still REVIEW rather than take the free-block branch.
+rm -f "$W2_RECHECK"
+rm -f "$W2_AUTOSPENT"
+ln -s "$WORK/evil-autospent-target2" "$W2_AUTOSPENT"
+printf 'function Get-Thing { 8 } # SENTINEL_W2C\n' > "$REPO/thing.ps1"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW2c2.txt"
+run_hook legW2
+if [[ -e "$WORK/promptW2c2.txt" ]]; then
+    pass "leg W2: a symlinked marker does not read as a spent budget -- the review still runs"
+else
+    fail "leg W2: a planted symlink bought a free block with no review -- the check was made unable to run"
+fi
+rm -f "$W2_AUTOSPENT"
+git -C "$REPO" checkout -q -- thing.ps1
+unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
+
 # ---- leg R: a lock cleared during the FINAL wait must read as cleared -------
 # Function-level: wait_for_index_locks is extracted verbatim; the lock is
 # removed ~12s in, inside the third 5s wait, so only a rescan AFTER that wait

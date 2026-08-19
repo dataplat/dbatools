@@ -484,7 +484,10 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
     # no-agent-override rule forbids.
     AUTOSPENT_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.autospent"
     RECHECK_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.recheck"
-    if [[ -f "$AUTOSPENT_FILE" ]]; then
+    # -f follows symlinks, so a planted link here would read as "already spent"
+    # and buy a free block with no review ever running - a check made unable to
+    # run. A symlink is hostile state, not a spent budget: ignore it and review.
+    if [[ -f "$AUTOSPENT_FILE" && ! -L "$AUTOSPENT_FILE" ]]; then
         if [[ -f "$RECHECK_FILE" ]]; then
             # Consume it BEFORE the review, and prove it is gone. A marker that
             # survives its round is not a wasted check - it silently restores
@@ -637,10 +640,25 @@ fi
 AUTOSPENT_WARN=""
 mark_autospent() {
     [[ -n "${AUTOSPENT_FILE:-}" ]] || return 0
-    printf '%s' "$PAYLOAD_HASH" > "$AUTOSPENT_FILE" 2>/dev/null
-    # Read it back. -s alone is not the check: a directory is non-empty by that
-    # test, so a path that swallowed the redirect would report itself written.
-    [[ -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
+    # -L first, and never a plain redirect onto this path. It is predictable and
+    # sits under a world-writable temp root, so `> "$AUTOSPENT_FILE"` FOLLOWS a
+    # planted symlink and turns a marker write into an arbitrary-file overwrite
+    # under this user. Same rule the .fail markers already carry (leg P).
+    if [[ -L "$AUTOSPENT_FILE" ]]; then
+        AUTOSPENT_WARN=$'\n\n(CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the automatic-round marker '"$AUTOSPENT_FILE"$' is a SYMLINK, so it was NOT written and nothing was written through it. Remove that entry from the state directory. This round was not recorded, so the next turn will spend another full review.)'
+        return 0
+    fi
+    # Write a private temp, then rename. rename(2) replaces the name atomically
+    # and does not traverse a symlink planted between the check above and here,
+    # so the check is not a TOCTOU window.
+    _autospent_tmp="${AUTOSPENT_FILE}.$$.tmp"
+    rm -f "$_autospent_tmp" 2>/dev/null
+    if printf '%s' "$PAYLOAD_HASH" > "$_autospent_tmp" 2>/dev/null && mv -f "$_autospent_tmp" "$AUTOSPENT_FILE" 2>/dev/null; then
+        # Read it back. -s alone is not the check: a directory is non-empty by that
+        # test, so a path that swallowed the redirect would report itself written.
+        [[ ! -L "$AUTOSPENT_FILE" && -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
+    fi
+    rm -f "$_autospent_tmp" 2>/dev/null
     AUTOSPENT_WARN=$'\n\n(CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the automatic-round marker '"$AUTOSPENT_FILE"$' could not be written, so this round was not recorded and the next turn will spend another full review. Check that directory -- missing, not yours, or full.)'
     return 0
 }
