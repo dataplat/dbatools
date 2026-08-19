@@ -732,6 +732,48 @@ rm -f "$W2_AUTOSPENT"
 git -C "$REPO" checkout -q -- thing.ps1
 unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
 
+# ---- leg W3: a DIRECTORY at the marker path must be refused, not filled ------
+# `mv -f file dir` moves the file INSIDE dir rather than failing, so a rename-
+# based marker write leaves the marker unwritten AND litters the path. The
+# emptiness assertion is the load-bearing one: the other two pass just as well on
+# a build that quietly deposited a file in there, which is how this shipped once.
+printf 'function Get-Thing { 9 } # SENTINEL_W3A\n' > "$REPO/thing.ps1"
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legW3.txt"
+printf '%s\t%s\t%s\n' "$BASE" "$ORIGIN_URL" "$REPO" > "$STATE/legW3.repos"
+export CODEX_STUB_VERDICT=CHANGES_REQUESTED
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW3a.txt"
+run_hook legW3
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW3a2.txt"
+run_hook legW3
+W3_RECHECK=$(printf '%s' "$OUT" | grep -o '[^ "\\]*_codex-review\.recheck' | head -1)
+W3_AUTOSPENT="${W3_RECHECK%.recheck}.autospent"
+if [[ -n "$W3_RECHECK" ]]; then
+    rm -f "$W3_AUTOSPENT"
+    mkdir -p "$W3_AUTOSPENT"          # a directory: -f is false, writing to it fails
+    printf 'function Get-Thing { 10 } # SENTINEL_W3B\n' > "$REPO/thing.ps1"
+    export CODEX_STUB_PROMPT_FILE="$WORK/promptW3b.txt"
+    run_hook legW3
+    if [[ -e "$WORK/promptW3b.txt" ]]; then
+        pass "leg W3: an unwritable marker does not suppress the review itself"
+    else
+        fail "leg W3: no review ran, so this leg is measuring the wrong thing"
+    fi
+    if [[ "$OUT" == *'CANNOT BOUND ITS ROUNDS'* && "$OUT" == *'"decision":"block"'* ]]; then
+        pass "leg W3: the block says the round could not be recorded, and still blocks"
+    else
+        fail "leg W3: the marker write failed silently -- the next turn spends another review with no warning"
+    fi
+    if rmdir "$W3_AUTOSPENT" 2>/dev/null; then
+        pass "leg W3: the directory was left EMPTY -- nothing was moved inside it"
+    else
+        fail "leg W3: the marker write deposited a file INSIDE the directory -- unwritten marker plus a littered path"
+    fi
+else
+    fail "leg W3: no marker path resolved, so directory-marker handling is UNVERIFIED on this run"
+fi
+git -C "$REPO" checkout -q -- thing.ps1
+unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
+
 # ---- leg R: a lock cleared during the FINAL wait must read as cleared -------
 # Function-level: wait_for_index_locks is extracted verbatim; the lock is
 # removed ~12s in, inside the third 5s wait, so only a rescan AFTER that wait

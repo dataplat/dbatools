@@ -653,7 +653,9 @@ mark_autospent() {
     # so the check is not a TOCTOU window.
     _autospent_tmp="${AUTOSPENT_FILE}.$$.tmp"
     rm -f "$_autospent_tmp" 2>/dev/null
-    if printf '%s' "$PAYLOAD_HASH" > "$_autospent_tmp" 2>/dev/null && mv -f "$_autospent_tmp" "$AUTOSPENT_FILE" 2>/dev/null; then
+    # -d before the mv: `mv -f file dir` moves the file INSIDE dir instead of
+    # failing, so the marker still is not written AND the path gets littered.
+    if [[ ! -d "$AUTOSPENT_FILE" ]] && printf '%s' "$PAYLOAD_HASH" > "$_autospent_tmp" 2>/dev/null && mv -f "$_autospent_tmp" "$AUTOSPENT_FILE" 2>/dev/null; then
         # Read it back. -s alone is not the check: a directory is non-empty by that
         # test, so a path that swallowed the redirect would report itself written.
         [[ ! -L "$AUTOSPENT_FILE" && -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
