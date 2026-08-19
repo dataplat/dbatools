@@ -774,6 +774,62 @@ fi
 git -C "$REPO" checkout -q -- thing.ps1
 unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
 
+# ---- leg W4: the marker rename must never dereference a symlink -------------
+# The -L pre-check cannot close a swap that lands AFTER it; no pre-check can.
+# What makes that window harmless is that the rename itself cannot follow a link,
+# so THAT is what gets asserted here.
+#
+# The race is not reproducible in a fixture - there is no way to land a swap
+# between two adjacent shell commands on demand - and this leg does not pretend
+# otherwise. It proves the property the window depends on, on this box.
+MVDIR="$WORK/mvT"
+rm -rf "$MVDIR"; mkdir -p "$MVDIR/victim"
+printf 'payload' > "$MVDIR/src"
+ln -s "$MVDIR/victim" "$MVDIR/link"
+if mv -fT "$MVDIR/src" "$MVDIR/link" 2>/dev/null &&
+   [[ -z "$(ls -A "$MVDIR/victim" 2>/dev/null)" && ! -L "$MVDIR/link" && -f "$MVDIR/link" ]]; then
+    pass "leg W4: the rename replaces a symlink-to-directory instead of writing into it"
+else
+    fail "leg W4: the rename dereferenced a symlinked directory on this box -- the marker write has no safe form here"
+fi
+
+# Negative control. Without it the assertion above would pass just as well on a
+# box where NOTHING dereferences, proving nothing about why -T is there.
+rm -rf "$MVDIR"; mkdir -p "$MVDIR/victim"
+printf 'payload' > "$MVDIR/src"
+ln -s "$MVDIR/victim" "$MVDIR/link"
+mv -f "$MVDIR/src" "$MVDIR/link" 2>/dev/null
+if [[ -e "$MVDIR/victim/src" ]]; then
+    pass "leg W4 control: the same rename WITHOUT -T does write through the symlink"
+else
+    fail "leg W4 control: plain mv did not dereference either, so leg W4 is not measuring the flag at all"
+fi
+
+# Function level: mark_autospent driven directly at a symlinked marker path.
+rm -rf "$MVDIR"; mkdir -p "$MVDIR/victim"
+eval "$(awk '/^mark_autospent\(\) \{/,/^\}$/' "$HOOK_DIR/stop-codex-review.sh")"
+if declare -f mark_autospent >/dev/null 2>&1; then
+    AUTOSPENT_FILE="$MVDIR/marker"
+    PAYLOAD_HASH="deadbeefdeadbeef"
+    AUTOSPENT_WARN=""
+    ln -s "$MVDIR/victim" "$AUTOSPENT_FILE"
+    mark_autospent
+    if [[ -z "$(ls -A "$MVDIR/victim" 2>/dev/null)" ]]; then
+        pass "leg W4: mark_autospent put nothing inside the directory a symlinked marker pointed at"
+    else
+        fail "leg W4: mark_autospent wrote into the directory behind a symlinked marker"
+    fi
+    if [[ "$AUTOSPENT_WARN" == *'CANNOT BOUND ITS ROUNDS'* ]]; then
+        pass "leg W4: and it said out loud that the round could not be recorded"
+    else
+        fail "leg W4: the marker write failed silently at a symlinked path"
+    fi
+    unset AUTOSPENT_FILE PAYLOAD_HASH AUTOSPENT_WARN
+else
+    fail "leg W4: mark_autospent could not be extracted, so the function-level half did not run"
+fi
+rm -rf "$MVDIR"
+
 # ---- leg R: a lock cleared during the FINAL wait must read as cleared -------
 # Function-level: wait_for_index_locks is extracted verbatim; the lock is
 # removed ~12s in, inside the third 5s wait, so only a rescan AFTER that wait

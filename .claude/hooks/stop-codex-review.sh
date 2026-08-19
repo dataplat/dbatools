@@ -648,19 +648,31 @@ mark_autospent() {
         AUTOSPENT_WARN=$'\n\n(CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the automatic-round marker '"$AUTOSPENT_FILE"$' is a SYMLINK, so it was NOT written and nothing was written through it. Remove that entry from the state directory. This round was not recorded, so the next turn will spend another full review.)'
         return 0
     fi
-    # Write a private temp, then rename. rename(2) replaces the name atomically
-    # and does not traverse a symlink planted between the check above and here,
-    # so the check is not a TOCTOU window.
-    _autospent_tmp="${AUTOSPENT_FILE}.$$.tmp"
-    rm -f "$_autospent_tmp" 2>/dev/null
-    # -d before the mv: `mv -f file dir` moves the file INSIDE dir instead of
-    # failing, so the marker still is not written AND the path gets littered.
-    if [[ ! -d "$AUTOSPENT_FILE" ]] && printf '%s' "$PAYLOAD_HASH" > "$_autospent_tmp" 2>/dev/null && mv -f "$_autospent_tmp" "$AUTOSPENT_FILE" 2>/dev/null; then
-        # Read it back. -s alone is not the check: a directory is non-empty by that
-        # test, so a path that swallowed the redirect would report itself written.
-        [[ ! -L "$AUTOSPENT_FILE" && -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
+    # Write a private temp, then rename onto the name.
+    #
+    # -T is load-bearing, not tidiness, and the -L check above cannot do its job:
+    # a swap landing AFTER that check is not something a pre-check can close.
+    # Plain `mv -f file dst` DEREFERENCES a dst that is a symlink to a directory
+    # and moves the file INSIDE it, so the window would deposit this temp file in
+    # an attacker-chosen directory. -T (--no-target-directory) renames onto the
+    # name itself, replacing the symlink and never following it, which is what
+    # makes the window harmless rather than merely narrow. Measured on coreutils
+    # 9.4 and asserted by leg W4 with its own negative control.
+    #
+    # mktemp, not "$AUTOSPENT_FILE.$$.tmp": a PID-suffixed name is predictable, so
+    # a symlink pre-planted at it would be followed by the redirect below - the
+    # same defect one step to the left.
+    _autospent_tmp=$(mktemp "${AUTOSPENT_FILE}.XXXXXX" 2>/dev/null) || _autospent_tmp=""
+    if [[ -n "$_autospent_tmp" ]]; then
+        # -d before the rename: a real directory there makes the rename fail, and
+        # refusing up front keeps the diagnostic specific.
+        if [[ ! -d "$AUTOSPENT_FILE" ]] && printf '%s' "$PAYLOAD_HASH" > "$_autospent_tmp" 2>/dev/null && mv -fT "$_autospent_tmp" "$AUTOSPENT_FILE" 2>/dev/null; then
+            # Read it back. -s alone is not the check: a directory is non-empty by that
+            # test, so a path that swallowed the redirect would report itself written.
+            [[ ! -L "$AUTOSPENT_FILE" && -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
+        fi
+        rm -f "$_autospent_tmp" 2>/dev/null
     fi
-    rm -f "$_autospent_tmp" 2>/dev/null
     AUTOSPENT_WARN=$'\n\n(CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the automatic-round marker '"$AUTOSPENT_FILE"$' could not be written, so this round was not recorded and the next turn will spend another full review. Check that directory -- missing, not yours, or full.)'
     return 0
 }
