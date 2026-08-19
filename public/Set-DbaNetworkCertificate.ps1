@@ -19,7 +19,12 @@ function Set-DbaNetworkCertificate {
         If the given certificate is not returned as a suitable certificate, the command gets detailed information
         about why the given certificate is not suitable and fails with that information.
 
-        This command also grants read permissions for the service account on the certificate's private key.
+        This command also grants read permissions on the certificate's private key
+        to the per-service SID of the instance (NT SERVICE\MSSQLSERVER for the default
+        instance, NT SERVICE\MSSQL$<InstanceName> for named instances). The service SID
+        is always part of the process token of the SQL Server service, so the permission
+        is effective regardless of the account the service runs as, and it does not have
+        to be changed when that account changes.
 
         The currently configured certificate can be unset by using the parameter -UnsetCertificate.
 
@@ -43,8 +48,9 @@ function Set-DbaNetworkCertificate {
     .PARAMETER Thumbprint
         Specifies the thumbprint (SHA-1 hash) of the certificate to configure as the network certificate.
         Use this when you know the specific certificate thumbprint from certificates already installed in LocalMachine\My.
-        Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key and the SQL Server
-        service account will be granted read permissions to it.
+        Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key.
+        Read permissions on the private key are granted to the per-service SID of the
+        instance (see the description above).
 
     .PARAMETER UnsetCertificate
         Unsets the currently configured network certificate for the SQL Server instance.
