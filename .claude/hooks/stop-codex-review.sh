@@ -461,6 +461,67 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
     # (codex-review-dispositions.jsonl), which is a reviewed, durable, and
     # auditable act rather than an invisible one.
     :
+
+    # 4a. WHO PAYS FOR THE ROUND (operator directive 2026-08-08: "fix it so that
+    # it runs once then you initiate the recheck").
+    #
+    # COVERAGE IS UNCHANGED and this is not the removed bypass. A turn still
+    # cannot end without a CLEAN verdict for THIS payload hash; the block below
+    # is lifted by nothing except that verdict or a ledger disposition. What
+    # moves is only WHEN the codex call is spent.
+    #
+    # Why it needed to move: the payload is cumulative - every file the session
+    # has ever written, diffed from its turn-start baseline, and committing does
+    # not shrink it. So an automatic round on every Stop re-reviews the entire
+    # session each turn and keeps surfacing a fresh batch out of text that was
+    # already there. Measured 2026-08-08: seven rounds, each finding real but
+    # DIFFERENT defects, none of them a failure to converge - the ceiling read
+    # that as a non-converging turn and halted the session.
+    #
+    # RECHECK_FILE is agent-settable deliberately. It can only cause a review to
+    # RUN; there is no marker anywhere that makes one not run, and none that
+    # clears a finding. An agent-settable "review me now" is not the thing the
+    # no-agent-override rule forbids.
+    AUTOSPENT_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.autospent"
+    RECHECK_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.recheck"
+    if [[ -f "$AUTOSPENT_FILE" ]]; then
+        if [[ -f "$RECHECK_FILE" ]]; then
+            # Consume it BEFORE the review, and prove it is gone. A marker that
+            # survives its round is not a wasted check - it silently restores
+            # automatic reviews for the rest of the session, which is the whole
+            # cost this step exists to bound. Unverified marker I/O is how the
+            # budget quietly stops existing.
+            rm -f "$RECHECK_FILE" 2>/dev/null
+            if [[ -e "$RECHECK_FILE" ]]; then
+                stop_guard_emit "CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the recheck marker
+
+  $RECHECK_FILE
+
+could not be removed, so the review it buys would be bought again on every
+following turn. Delete it by hand, or fix whatever is holding it (permissions, a
+directory that is not yours), and end the turn again."
+                exit 0
+            fi
+        else
+            stop_guard_emit "CODEX AUTO-REVIEW: this session already spent its automatic round, and the
+current change set has no CLEAN verdict - so the turn cannot end yet. No codex
+call was made this time and none will be until you ask, so this block is free.
+
+Finish the work. When the tree is how you want it reviewed, ask for the review
+and end the turn again:
+
+  touch \"$RECHECK_FILE\"
+
+The next Stop then runs a full review of the current diff. For a deeper read of
+a specific plan or change, run /reviewme yourself - that is a separate reviewer
+and it does not consume this budget.
+
+Nothing here suppresses a finding: the only things that release the turn are a
+CLEAN verdict for the current diff or a disposition in
+.claude/codex-review-dispositions.jsonl."
+            exit 0
+        fi
+    fi
 fi
 
 # 4b. Review memory: standing rejections from the repo ledger + the prior
@@ -566,6 +627,24 @@ if [[ "$VERDICT" == "CLEAN" && -n "$TRUNCATED" ]]; then
     REVIEW="$REVIEW"$'\n\n(Auto-review note: the diff exceeded the review size limit and was truncated; split the change set or set CLAUDE_CODEX_REVIEW_MAXBYTES higher to review it whole.)'
 fi
 
+# Charge the automatic round only on paths that BLOCK. An approved turn is not
+# one of those, and charging it would make every later turn in a healthy session
+# start with a marker touch.
+#
+# Verified, not hoped: an unwritable marker is the budget silently ceasing to
+# exist, so it is said out loud in the block rather than assumed. These paths
+# block either way, so the finding is never lost to this.
+AUTOSPENT_WARN=""
+mark_autospent() {
+    [[ -n "${AUTOSPENT_FILE:-}" ]] || return 0
+    printf '%s' "$PAYLOAD_HASH" > "$AUTOSPENT_FILE" 2>/dev/null
+    # Read it back. -s alone is not the check: a directory is non-empty by that
+    # test, so a path that swallowed the redirect would report itself written.
+    [[ -f "$AUTOSPENT_FILE" && "$(cat "$AUTOSPENT_FILE" 2>/dev/null)" == "$PAYLOAD_HASH" ]] && return 0
+    AUTOSPENT_WARN=$'\n\n(CODEX AUTO-REVIEW CANNOT BOUND ITS ROUNDS: the automatic-round marker '"$AUTOSPENT_FILE"$' could not be written, so this round was not recorded and the next turn will spend another full review. Check that directory -- missing, not yours, or full.)'
+    return 0
+}
+
 if [[ "$VERDICT" == "CLEAN" ]]; then
     # TOCTOU guard, fail CLOSED: the minutes-long review run is a window in
     # which the bytes on disk can change. A CLEAN verdict stands only if the
@@ -573,14 +652,16 @@ if [[ "$VERDICT" == "CLEAN" ]]; then
     # merely skipped the cache still shipped code the reviewer never saw.
     build_session_payload
     if [[ -n "$MEASURE_FAIL" ]]; then
+        mark_autospent
         stop_guard_emit "CODEX AUTO-REVIEW COULD NOT CONFIRM ITS VERDICT: the reviewed files failed to re-measure after the review ran, so the CLEAN cannot be tied to what is on disk:
 
 $MEASURE_FAIL
-Fix the measurement and end the turn again."
+Fix the measurement and end the turn again.$AUTOSPENT_WARN"
         exit 0
     fi
     if [[ "$(payload_scope_hash)" != "$PAYLOAD_HASH" ]]; then
-        stop_guard_emit "CODEX AUTO-REVIEW: this session's changes or review scope shifted while the reviewer was running, so its CLEAN verdict no longer describes what is on disk. End the turn again to review the current state."
+        mark_autospent
+        stop_guard_emit "CODEX AUTO-REVIEW: this session's changes or review scope shifted while the reviewer was running, so its CLEAN verdict no longer describes what is on disk. End the turn again to review the current state.$AUTOSPENT_WARN"
         exit 0
     fi
     [[ -n "$CLEAN_FILE" ]] && printf '%s' "$PAYLOAD_HASH" > "$CLEAN_FILE" 2>/dev/null
@@ -602,5 +683,6 @@ DISPUTE_HOWTO='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a d
 [[ -n "$DROPPED_NOTE" ]] && REVIEW="$REVIEW"$'\n\n'"($DROPPED_NOTE)"
 REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: %s, effort %s. There is no session opt-out: fix the findings, or record a disposition in the ledger if one is wrong.)' \
     "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" "${CLAUDE_CODEX_REVIEW_EFFORT:-high}")
-stop_guard_emit "$REASON"
+mark_autospent
+stop_guard_emit "$REASON$AUTOSPENT_WARN"
 exit 0

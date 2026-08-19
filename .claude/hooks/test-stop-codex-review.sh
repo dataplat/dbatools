@@ -575,6 +575,102 @@ else
     fail "leg L: campaign-root file no longer resolves (scope regression)"
 fi
 
+# ---- leg W: one AUTOMATIC round per session, and the free block still BLOCKS -
+# The value of step 4a is that it moved the SPEND without moving the GATE, so
+# both halves get asserted separately: a leg that only checked "no second codex
+# call" would pass just as well if the hook had started allowing the turn, which
+# is the bypass this campaign keeps re-learning.
+printf 'function Get-Thing { 4 } # SENTINEL_W1\n' > "$REPO/thing.ps1"
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legW.txt"
+printf '%s\t%s\t%s\n' "$BASE" "$ORIGIN_URL" "$REPO" > "$STATE/legW.repos"
+export CODEX_STUB_VERDICT=CHANGES_REQUESTED
+
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW1.txt"
+run_hook legW
+if [[ "$OUT" == *'"decision":"block"'* && -e "$WORK/promptW1.txt" ]]; then
+    pass "leg W: round 1 spends the automatic codex call and blocks"
+else
+    fail "leg W: round 1 did not review-and-block -- the rest of this leg proves nothing"
+fi
+
+# Round 2, same diff: the gate must hold, and it must hold for free.
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW2.txt"
+run_hook legW
+if [[ "$OUT" == *'"decision":"block"'* ]]; then
+    pass "leg W: round 2 still BLOCKS -- moving the spend did not reopen the bypass"
+else
+    fail "leg W: round 2 allowed the turn to end with no CLEAN verdict -- this is the removed per-diff bypass, back again"
+fi
+if [[ -e "$WORK/promptW2.txt" ]]; then
+    fail "leg W: round 2 called codex anyway -- the automatic-round budget does nothing"
+else
+    pass "leg W: round 2 called no codex -- the block is free"
+fi
+RECHECK_PATH=$(printf '%s' "$OUT" | grep -o '[^ "\\]*_codex-review\.recheck' | head -1)
+if [[ -n "$RECHECK_PATH" ]]; then
+    pass "leg W: the block names the recheck marker to touch"
+else
+    fail "leg W: the block did not name a recheck path -- there is no way out of it"
+fi
+
+# Perturbation control for the assertion above. "No codex call" is also what the
+# clean cache and every early exit produce, so the silence has to be shown to
+# come from the budget marker specifically: remove it, replay the SAME round,
+# and codex must run again. Without this, leg W would pass unchanged against a
+# build with step 4a deleted.
+AUTOSPENT_PATH="${RECHECK_PATH%.recheck}.autospent"
+if [[ -f "$AUTOSPENT_PATH" ]]; then
+    mv "$AUTOSPENT_PATH" "$AUTOSPENT_PATH.parked"
+    export CODEX_STUB_PROMPT_FILE="$WORK/promptW2c.txt"
+    run_hook legW
+    if [[ -e "$WORK/promptW2c.txt" ]]; then
+        pass "leg W control: with the budget marker gone the same round reviews again -- the silence above was the budget, not a cache"
+    else
+        fail "leg W control: the round stayed silent with no budget marker, so leg W is measuring something else entirely and cannot fail"
+    fi
+    rm -f "$AUTOSPENT_PATH.parked"
+else
+    fail "leg W control: no budget marker was written, so the free block is UNEXPLAINED and its assertion is unverified"
+fi
+
+# A NEW diff must not buy a fresh automatic round: "runs once" is per session,
+# and the cumulative payload means every turn's diff is a new one.
+printf 'function Get-Thing { 5 } # SENTINEL_W3\n' > "$REPO/thing.ps1"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptW3.txt"
+run_hook legW
+if [[ "$OUT" == *'"decision":"block"'* && ! -e "$WORK/promptW3.txt" ]]; then
+    pass "leg W: a changed diff does not buy another automatic round"
+else
+    fail "leg W: a changed diff bought a fresh codex call -- the budget is per-diff, so it caps nothing"
+fi
+
+# The recheck marker is the way out, and it must be consumed by the round it buys.
+if [[ -n "$RECHECK_PATH" ]]; then
+    : > "$RECHECK_PATH"
+    export CODEX_STUB_PROMPT_FILE="$WORK/promptW4.txt"
+    export CODEX_STUB_VERDICT=CLEAN
+    run_hook legW
+    if [[ -e "$WORK/promptW4.txt" ]]; then
+        pass "leg W: touching the recheck marker runs a full review"
+    else
+        fail "leg W: the recheck marker did not trigger a review -- the block is inescapable"
+    fi
+    if [[ "$OUT" != *'"decision":"block"'* ]]; then
+        pass "leg W: a CLEAN recheck releases the turn"
+    else
+        fail "leg W: a CLEAN recheck still blocked"
+    fi
+    if [[ ! -e "$RECHECK_PATH" ]]; then
+        pass "leg W: the marker is consumed, so one touch buys one round"
+    else
+        fail "leg W: the marker survived its round -- one touch re-enables automatic reviews for the rest of the session"
+    fi
+else
+    fail "leg W: no recheck path to exercise, so the escape hatch is UNVERIFIED on this run"
+fi
+git -C "$REPO" checkout -q -- thing.ps1
+unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
+
 # ---- leg R: a lock cleared during the FINAL wait must read as cleared -------
 # Function-level: wait_for_index_locks is extracted verbatim; the lock is
 # removed ~12s in, inside the third 5s wait, so only a rescan AFTER that wait
