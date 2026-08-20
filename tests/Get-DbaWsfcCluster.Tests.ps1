@@ -19,3 +19,34 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    # These tests need a Windows failover cluster. No CI environment has one, so
+    # $TestConfig.ClusterStorage is empty there and these tests skip. A lab that has a cluster sets
+    # it, and then a regression has to fail these tests.
+    Context "Retrieving the cluster" -Skip:(-not $TestConfig.ClusterStorage) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $wsfcCluster = Get-DbaWsfcCluster -ComputerName $TestConfig.ClusterStorage
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the name and fqdn of the cluster" {
+            $wsfcCluster.Name | Should -Be $TestConfig.ClusterStorage
+            $wsfcCluster.Fqdn | Should -BeLike "$($TestConfig.ClusterStorage).*"
+        }
+
+        It "Returns the quorum type as a readable string" {
+            $wsfcCluster.QuorumType | Should -Not -BeNullOrEmpty
+            $wsfcCluster.QuorumTypeValue | Should -BeOfType [uint32]
+        }
+
+        It "Does not add an empty State property" {
+            # MSCluster_Cluster has no State property, so the command built its State NoteProperty
+            # from an undefined variable and it was always empty, in the object and in the default view.
+            $wsfcCluster.PSObject.Properties.Name | Should -Not -Contain "State"
+        }
+    }
+}
