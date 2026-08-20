@@ -1,6 +1,11 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
+param(
+    $ModuleName = "dbatools",
+    $CommandName = "Invoke-DbaDbDecryptObject",
+    $PSDefaultParameterValues = $TestConfig.Defaults
+)
 
-Describe "Invoke-DbaDbDecryptObject hardening" -Tag UnitTests {
+Describe "$CommandName hardening" -Tag UnitTests {
     BeforeAll {
         $dbatoolsModule = $null
         foreach ($candidate in @(Get-Module dbatools | Where-Object ModuleType -eq "Script")) {
