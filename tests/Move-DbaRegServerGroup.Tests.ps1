@@ -67,4 +67,48 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Parent.Name | Should -Be "DatabaseEngineServerGroup"
         }
     }
+
+    Context "The connection of the caller is left alone (#10572)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerGroupName = "dbatoolsci-caller-group"
+            $callerTargetName = "dbatoolsci-caller-target"
+            $null = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $callerGroupName
+            $null = Add-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Name $callerTargetName
+
+            # Only a non-pooled connection can show this. SMO silently reopens a pooled connection, so the test
+            # would pass even with the disconnect this is about.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+
+            # The marker is created after the lookup on purpose, because Get-DbaRegServerGroup closes the
+            # connection too. This test has to measure the command under test, not its input.
+            $callerInputObject = Get-DbaRegServerGroup -SqlInstance $callerServer -Group $callerGroupName
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            $callerResult = Move-DbaRegServerGroup -InputObject $callerInputObject -NewGroup $callerTargetName
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+            Get-DbaRegServerGroup -SqlInstance $TestConfig.InstanceSingle -Group $callerTargetName | Remove-DbaRegServerGroup -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still moves the group" {
+            $callerResult.Parent.Name | Should -Be $callerTargetName
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+    }
 }
