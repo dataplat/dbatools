@@ -46,6 +46,7 @@ function Get-DbaWsfcCluster {
         - QuorumPath: File system path where quorum files are maintained
         - QuorumType: Current quorum type as a string (Majority Node Majority, Node and Disk Majority, No Majority - Disk Only, Node Majority, or Witness)
         - QuorumTypeValue: Numeric identifier representing the quorum type (uint32)
+        - WitnessPath: Location of the witness, whichever kind it is - the UNC path of the share for a file share witness, the value of QuorumPath for a disk witness, and empty for a cluster with no witness (added via NoteProperty)
         - RequestReplyTimeout: Timeout period in milliseconds for request-reply operations (uint32)
 
         Additional properties from MSCluster_Cluster WMI class (accessible via Select-Object *):
@@ -107,7 +108,24 @@ function Get-DbaWsfcCluster {
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster
-            $cluster | Select-DefaultView -Property Name, Fqdn, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
+
+            # One property for "where is the witness", whichever kind of witness the cluster uses.
+            # QuorumPath already holds it for a disk witness and is empty for every other quorum type.
+            $witnessPath = $cluster.QuorumPath
+
+            # A file share witness keeps its path in the private properties of its own resource and
+            # nowhere else - MSCluster_Cluster does not expose it at all. Ask for that resource only
+            # when the quorum type says there is one, so no other cluster pays for the extra query.
+            if ($cluster.QuorumTypeValue -eq 2) {
+                $witnessQuery = "SELECT * FROM MSCluster_Resource WHERE Type = `"File Share Witness`""
+                $witnessResource = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -Query $witnessQuery
+                if ($witnessResource.PrivateProperties.SharePath) {
+                    $witnessPath = $witnessResource.PrivateProperties.SharePath
+                }
+            }
+
+            $cluster | Add-Member -Force -NotePropertyName WitnessPath -NotePropertyValue $witnessPath
+            $cluster | Select-DefaultView -Property Name, Fqdn, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, WitnessPath, RequestReplyTimeout
         }
     }
 }

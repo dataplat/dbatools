@@ -48,5 +48,35 @@ Describe $CommandName -Tag IntegrationTests {
             # from an undefined variable and it was always empty, in the object and in the default view.
             $wsfcCluster.PSObject.Properties.Name | Should -Not -Contain "State"
         }
+
+        It "Reports the quorum path as the witness path of a disk witness" {
+            $wsfcCluster.WitnessPath | Should -Be $wsfcCluster.QuorumPath
+        }
+    }
+
+    # This needs a cluster whose witness is a file share, which is a different cluster from the one
+    # with the shared storage. Same rule as above: empty in CI, set by a lab that has one.
+    Context "Retrieving the witness of a file share witness cluster" -Skip:(-not $TestConfig.ClusterWitness) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $witnessCluster = Get-DbaWsfcCluster -ComputerName $TestConfig.ClusterWitness
+            $witnessResource = Get-DbaWsfcResource -ComputerName $TestConfig.ClusterWitness | Where-Object Type -eq "File Share Witness"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Uses a file share witness" {
+            $witnessResource | Should -Not -BeNullOrEmpty -Because "the rest of this context tests what such a cluster reports"
+        }
+
+        It "Returns the share path of the witness" {
+            # This is what issue #10573 asked for. MSCluster_Cluster has no property that carries it:
+            # QuorumPath stays empty for a file share witness, and the path only exists in the private
+            # properties of the witness resource.
+            $witnessCluster.QuorumPath | Should -BeNullOrEmpty
+            $witnessCluster.WitnessPath | Should -Be $witnessResource.PrivateProperties.SharePath
+            $witnessCluster.WitnessPath | Should -BeLike "\\*"
+        }
     }
 }
