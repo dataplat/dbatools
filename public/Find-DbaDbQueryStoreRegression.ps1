@@ -37,6 +37,10 @@ function Find-DbaDbQueryStoreRegression {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude.
 
+    .PARAMETER InputObject
+        Database objects piped in from Get-DbaDatabase. Use this to narrow the analysis with the
+        full Get-DbaDatabase filter set before the Query Store statistics are read.
+
     .PARAMETER BaselineStartDaysAgo
         Start of the historical baseline window, in days before now. Default: 7.
 
@@ -76,6 +80,27 @@ function Find-DbaDbQueryStoreRegression {
     .LINK
         https://dbatools.io/Find-DbaDbQueryStoreRegression
 
+    .OUTPUTS
+        PSCustomObject
+
+        Returns one object per query flagged as regressed, ordered by SlowdownFactor descending
+        within each database. Nothing is returned for a database with no regression.
+
+        Default display properties (via Select-DefaultView):
+        - SqlInstance: The full SQL Server instance name (computer\instance)
+        - Database: Name of the database the query ran in
+        - QueryId: The Query Store query_id, usable with sys.query_store_query and the Query Store reports
+        - BaselineDurationMs: Execution-weighted average duration over the baseline window, in milliseconds
+        - CurrentDurationMs: Execution-weighted average duration over the current window, in milliseconds
+        - SlowdownFactor: CurrentDurationMs divided by BaselineDurationMs
+        - PlanChanged: True when the query ran under more plans in the current window than in the baseline, or under more than one plan in the current window
+        - CurrentExecCount: Number of executions in the current window
+
+        Additional properties available:
+        - ComputerName: The computer name of the SQL Server instance
+        - InstanceName: The SQL Server instance name
+        - BaselineExecCount: Number of executions in the baseline window
+
     .EXAMPLE
         PS C:\> Find-DbaDbQueryStoreRegression -SqlInstance sql2017 -Database AdventureWorks
 
@@ -94,11 +119,13 @@ function Find-DbaDbQueryStoreRegression {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [int]$BaselineStartDaysAgo = 7,
         [int]$BaselineEndDaysAgo = 1,
         [double]$SlowdownThreshold = 1.5,
@@ -167,36 +194,60 @@ ORDER BY SlowdownFactor DESC;"
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        if (-not $SqlInstance -and -not $InputObject) {
+            Stop-Function -Message "You must specify SqlInstance or pipe in databases from Get-DbaDatabase"
+            return
+        }
+
+        # Each instance is resolved to its databases and analyzed before the next one connects, so a
+        # connection failure later in the list never withholds results already gathered. Piped
+        # databases take the same path in a single pass with nothing to connect to.
+        if ($SqlInstance) {
+            $targets = $SqlInstance
+        } else {
+            $targets = @($null)
+        }
+
+        foreach ($target in $targets) {
+            if ($target) {
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $target -SqlCredential $SqlCredential -MinimumVersion 13
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $target" -Category ConnectionError -ErrorRecord $_ -Target $target -Continue
+                }
+
+                $databases = Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+            } else {
+                $databases = $InputObject
             }
 
-            $dbs = Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+            foreach ($db in $databases) {
+                $server = $db.Parent
+                Write-Message -Level Verbose -Message "Processing $($db.Name) on $server"
 
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
+                # Piped databases bypass Connect-DbaInstance and its -MinimumVersion check.
+                if ($server.VersionMajor -lt 13) {
+                    Stop-Function -Message "Query Store requires SQL Server 2016 or later, $server is version $($server.VersionMajor)" -Target $db -Continue
+                }
 
-                if ($db.QueryStoreOptions.ActualState -eq 'Off') {
-                    Write-Message -Level Warning -Message "Query Store is not enabled on $($db.Name) on $instance, skipping"
+                if ($db.QueryStoreOptions.ActualState -eq "Off") {
+                    Write-Message -Level Warning -Message "Query Store is not enabled on $($db.Name) on $server, skipping"
                     continue
                 }
 
                 try {
                     $results = $db.Query($sql)
                 } catch {
-                    Stop-Function -Message "Failure executing Query Store analysis against $($db.Name) on $instance" -ErrorRecord $_ -Target $db -Continue
+                    Stop-Function -Message "Failure executing Query Store analysis against $($db.Name) on $server" -ErrorRecord $_ -Target $db -Continue
                 }
 
                 foreach ($row in $results) {
                     [PSCustomObject]@{
-                        ComputerName      = $server.ComputerName
-                        InstanceName      = $server.ServiceName
-                        SqlInstance       = $server.DomainInstanceName
-                        Database          = $db.Name
-                        QueryId           = $row.QueryId
+                        ComputerName       = $server.ComputerName
+                        InstanceName       = $server.ServiceName
+                        SqlInstance        = $server.DomainInstanceName
+                        Database           = $db.Name
+                        QueryId            = $row.QueryId
                         BaselineDurationMs = $row.BaselineDurationMs
                         CurrentDurationMs  = $row.CurrentDurationMs
                         SlowdownFactor     = $row.SlowdownFactor

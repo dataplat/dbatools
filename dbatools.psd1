@@ -170,6 +170,7 @@
         'Find-DbaDbDisabledIndex',
         'Find-DbaDbDuplicateIndex',
         'Find-DbaDbGrowthEvent',
+        'Find-DbaDbQueryStoreRegression',
         'Find-DbaDbUnusedIndex',
         'Find-DbaInstance',
         'Find-DbaLoginInGroup',
