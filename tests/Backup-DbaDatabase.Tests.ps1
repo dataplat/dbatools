@@ -81,7 +81,52 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Properly backups all databases" {
         BeforeAll {
+            # This backs up every database of the instance, so it also takes a full backup of model.
+            # As model is in the full recovery model, that backup starts its log chain, and because no
+            # log backup ever follows, the log can never be reused and grows a little on every run of
+            # this file. That growth is in the file size, so a restart does not undo it, and once the
+            # log passes 32 MB it breaks New-DbaDatabase.Tests.ps1, which asserts the exact log size
+            # of a new database on the same instance. So we record the state here and restore it below.
+            $queryModelStateBefore = @"
+SELECT d.recovery_model_desc AS RecoveryModel, f.size * 8 AS LogSizeKb
+FROM sys.databases AS d
+JOIN sys.master_files AS f ON f.database_id = d.database_id AND f.type = 1
+WHERE d.name = N'model'
+"@
+            $modelStateBefore = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database master -Query $queryModelStateBefore
+
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Break the log chain that the full backup of model started and give the log its original
+            # size back. Switching to the simple recovery model is what makes the log reusable again -
+            # without it the shrink cannot release anything, because the log still waits for a log
+            # backup, and the file even grows instead.
+            if ($modelStateBefore.RecoveryModel -ne "SIMPLE") {
+                $modelLogSizeMb = [Math]::Max(1, [Math]::Floor($modelStateBefore.LogSizeKb / 1024))
+
+                $queryBreakLogChain = @"
+ALTER DATABASE model SET RECOVERY SIMPLE WITH NO_WAIT;
+"@
+                # DBCC SHRINKFILE resolves the logical file name in the current database, so this has to run in model.
+                $queryShrinkModelLog = @"
+CHECKPOINT;
+DBCC SHRINKFILE (N'modellog', $modelLogSizeMb) WITH NO_INFOMSGS;
+"@
+                $queryRestoreRecoveryModel = @"
+ALTER DATABASE model SET RECOVERY $($modelStateBefore.RecoveryModel) WITH NO_WAIT;
+"@
+
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database master -Query $queryBreakLogChain
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database model -Query $queryShrinkModelLog
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database master -Query $queryRestoreRecoveryModel
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should return a database name, specifically master" {
@@ -534,7 +579,6 @@ go
     }
 
     Context "Test Backup Encryption with Certificate" {
-        # TODO: Should the master key be created at lab startup like in instance3?
         BeforeAll {
             $securePass = ConvertTo-SecureString "MyStrongPassword123!" -AsPlainText -Force
             $cert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceCopy2 -Database master -Name BackupCertt -Subject BackupCertt
