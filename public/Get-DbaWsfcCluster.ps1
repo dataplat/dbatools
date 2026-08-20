@@ -39,7 +39,6 @@ function Get-DbaWsfcCluster {
         Default display properties (via Select-DefaultView):
         - Name: The name of the cluster
         - Fqdn: Fully qualified domain name of the cluster
-        - State: Current operational state of the cluster (added via NoteProperty)
         - DrainOnShutdown: Boolean indicating if nodes drain resources during service shutdown (uint32)
         - DynamicQuorumEnabled: Boolean indicating if dynamic quorum adjustment is enabled (uint32)
         - EnableSharedVolumes: Boolean indicating if Cluster Shared Volumes feature is enabled (uint32)
@@ -108,8 +107,7 @@ function Get-DbaWsfcCluster {
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster
-            $cluster | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
-            $cluster | Select-DefaultView -Property Name, Fqdn, State, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
+            $cluster | Select-DefaultView -Property Name, Fqdn, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
         }
     }
 }

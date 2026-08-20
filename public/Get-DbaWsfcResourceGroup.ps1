@@ -81,17 +81,6 @@ function Get-DbaWsfcResourceGroup {
         [string[]]$Name,
         [switch]$EnableException
     )
-    begin {
-        function Get-ResourceGroupState ($state) {
-            switch ($state) {
-                -1 { "Unknown" }
-                0 { "Online" }
-                1 { "Offline" }
-                2 { "Failed" }
-                default { $state }
-            }
-        }
-    }
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
