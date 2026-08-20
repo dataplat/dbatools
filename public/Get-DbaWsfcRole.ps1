@@ -40,7 +40,7 @@ function Get-DbaWsfcRole {
         - ClusterFqdn: Fully qualified domain name of the cluster
         - Name: Name of the resource group (key property), typically the cluster role name (e.g., SQL Server instance name)
         - OwnerNode: Name of the node currently hosting this resource group
-        - State: Current state of the resource group translated to readable format (Online, Offline, Failed, Partial Online, Pending, or Unknown)
+        - State: Current state of the resource group translated to readable format (Online, Offline, Failed, or Unknown)
 
         Additional properties available (from WMI MSCluster_ResourceGroup object):
         - Caption: Short textual description of the resource group
@@ -89,11 +89,13 @@ function Get-DbaWsfcRole {
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
-            $role = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ResourceGroup
-            $role | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
-            $role | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
-            $role | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
-            $role | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, OwnerNode, State
+            $roles = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ResourceGroup
+            foreach ($role in $roles) {
+                $role | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceGroupState $role.State)
+                $role | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+                $role | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+                $role | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, OwnerNode, State
+            }
         }
     }
 }

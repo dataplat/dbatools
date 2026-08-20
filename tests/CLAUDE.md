@@ -468,6 +468,16 @@ A boundary is an external system such as SQL Server, S3, Azure Storage, SMTP, LD
 - A skipped placeholder is not coverage. If a required dependency was not provisioned, the behavioral test and runner setup must fail rather than skip. Skipping remains appropriate when the tested server version does not support the targeted feature.
 - Regression integration tests are expected when a bug crosses a boundary. Add the smallest focused test that fails for the old behavior and passes for the fix.
 
+### The one boundary CI does not have: Windows failover clusters
+
+`Get-DbaWsfc*` is the documented exception to "must fail rather than skip". A Windows failover cluster cannot be provisioned on any current runner - not on the container workflow, not on the self-hosted Azure runners - and there is deliberately no `CLUSTER` scenario in `pester.groups.ps1`, because scenarios exist to schedule CI lanes and no CI lane can host a cluster.
+
+So these tests read their cluster from `$TestConfig.ClusterStorage` and `$TestConfig.ClusterWitness`, which are `$null` in `Get-TestConfig` and set only by a local configuration whose lab has clusters. The integration `Context` carries `-Skip:(-not $TestConfig.ClusterStorage)`, so it skips in CI and runs for real against a lab.
+
+The lab those names describe needs more than a bare cluster: one cluster shared volume, one shared disk that every node can see but that is deliberately *not* part of the cluster, and a file share witness. Without them `Get-DbaWsfcSharedVolume` and `Get-DbaWsfcAvailableDisk` return nothing at all and cannot fail, which is exactly how a wrong WMI class name survived in `Get-DbaWsfcSharedVolume` from 2018 until August 2026.
+
+Do not copy this exception to any other command family. It applies where the boundary is a Windows feature that no runner can provide, not where provisioning is merely inconvenient.
+
 ## TEST MANAGEMENT GUIDELINES
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.

@@ -17,6 +17,14 @@ function Get-TestConfig {
         # When testing a remote SQL Server instance this must be a network share
         # where both the SQL Server instance and the test script can write to.
         Temp             = 'C:\Temp'
+        # The Windows failover clusters that the Get-DbaWsfc* tests need. No CI environment has a
+        # cluster, so these stay empty there and the cluster tests skip themselves. A local
+        # configuration whose lab has clusters sets them to the cluster names.
+        # ClusterStorage needs shared storage: one cluster shared volume, and one disk that every
+        # node can see but that is deliberately not part of the cluster.
+        ClusterStorage   = $null
+        # ClusterWitness needs a file share witness.
+        ClusterWitness   = $null
     }
 
     if (Test-Path $LocalConfigPath) {
