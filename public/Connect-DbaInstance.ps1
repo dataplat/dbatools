@@ -752,29 +752,52 @@ function Connect-DbaInstance {
                 } elseif ($copyContext) {
                     $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
+                    # A ServerConnection that was built from a SqlConnection has its connection string set
+                    # explicitly, and SMO then refuses to let some of its properties be assigned:
+                    #   Property <name> cannot be changed or read after a connection string has been set.
+                    # DatabaseName, NonPooledConnection and ServerInstance are all in that group, which is
+                    # why -Database, -NonPooledConnection and -DedicatedAdminConnection used to fail on a
+                    # server that was created from a SqlConnection. Those settings are collected here and
+                    # put into the connection string further down instead, where the same three are
+                    # Initial Catalog, Pooling and Data Source. No readable property tells the two kinds of
+                    # context apart - every one of them reads fine on both - so we find out by trying.
+                    $connectionStringKeyword = @{ }
                     if ($ApplicationIntent) {
                         $connContext.ApplicationIntent = $ApplicationIntent
                     }
                     if ($NonPooledConnection) {
-                        $connContext.NonPooledConnection = $true
+                        try {
+                            $connContext.NonPooledConnection = $true
+                        } catch {
+                            $connectionStringKeyword["Pooling"] = $false
+                        }
                     }
                     if (Test-Bound -Parameter StatementTimeout) {
                         $connContext.StatementTimeout = $StatementTimeout
                     }
-                    if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
+                    if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch "^ADMIN:") {
                         if ($instance.IsLocalHost) {
                             # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
-                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
-                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                            if ($instance.InstanceName -ne "MSSQLSERVER") {
+                                $dedicatedAdminServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
                             } else {
-                                $connContext.ServerInstance = "ADMIN:localhost"
+                                $dedicatedAdminServerInstance = "ADMIN:localhost"
                             }
                             # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
                             $connContext.TrustServerCertificate = $true
                         } else {
-                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                            $dedicatedAdminServerInstance = "ADMIN:$($connContext.ServerInstance)"
                         }
-                        $connContext.NonPooledConnection = $true
+                        try {
+                            $connContext.ServerInstance = $dedicatedAdminServerInstance
+                        } catch {
+                            $connectionStringKeyword["Data Source"] = $dedicatedAdminServerInstance
+                        }
+                        try {
+                            $connContext.NonPooledConnection = $true
+                        } catch {
+                            $connectionStringKeyword["Pooling"] = $false
+                        }
                     }
                     if ($Database) {
                         # We set DatabaseName instead of calling GetDatabaseConnection on purpose.
@@ -788,7 +811,32 @@ function Connect-DbaInstance {
                         # which is also what the connection string code paths of this command already do.
                         # It does not reset StatementTimeout either, so the save and restore that
                         # GetDatabaseConnection needed is gone with it.
-                        $connContext.DatabaseName = $Database
+                        try {
+                            $connContext.DatabaseName = $Database
+                        } catch {
+                            # Falling back to GetDatabaseConnection here would bring back the very leak this
+                            # change is about, so the database goes into the connection string instead. As
+                            # Initial Catalog it is part of the pool key, which is what setting DatabaseName
+                            # achieves as well, so the reason #9505 forced a non pooled connection still holds.
+                            $connectionStringKeyword["Initial Catalog"] = $Database
+                        }
+                    }
+                    if ($connectionStringKeyword.Count -gt 0) {
+                        $changedKeywords = $connectionStringKeyword.Keys -join ", "
+                        Write-Message -Level Debug -Message "Connection context does not accept property assignments, using the connection string for: $changedKeywords"
+                        # The copy has to be disconnected first: setting the connection string of an open
+                        # connection does not move it, and CurrentDatabase would silently stay where it was.
+                        # The copy is a session of its own - a different SPID than the server that was passed
+                        # in - so this does not touch the connection of the caller.
+                        $connContext.Disconnect()
+                        $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connContext.ConnectionString
+                        foreach ($keyword in $connectionStringKeyword.Keys) {
+                            # PowerShell routes property assignments on a connection string builder through its
+                            # dictionary indexer, so the keyword has to be used rather than the property name:
+                            # $connectionStringBuilder.InitialCatalog fails with "Keyword not supported".
+                            $connectionStringBuilder[$keyword] = $connectionStringKeyword[$keyword]
+                        }
+                        $connContext.ConnectionString = $connectionStringBuilder.ConnectionString
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {

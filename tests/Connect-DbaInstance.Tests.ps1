@@ -525,6 +525,46 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "connection is properly cloned from a connection that was created from a SqlConnection" {
+        BeforeAll {
+            # A ServerConnection that was built from a SqlConnection has its connection string set, and
+            # SMO then refuses assignments to DatabaseName, NonPooledConnection and ServerInstance, so
+            # cloning such a server has to go through the connection string instead. CI never noticed
+            # because it covers SqlConnection to Server and Server to another Database, but never the
+            # two of them chained. See #10584.
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlConnectionToClone = "Data Source=$($TestConfig.InstanceMulti1);Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $serverFromSqlConnection = Connect-DbaInstance -SqlInstance $sqlConnectionToClone
+        }
+
+        AfterAll {
+            $null = $serverFromSqlConnection | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverFromSqlConnection.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database together with NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb -NonPooledConnection
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ConnectionString | Should -Match "Pooling=False"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter DedicatedAdminConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -DedicatedAdminConnection
+            $serverClone.ConnectionContext.ConnectionString | Should -Match "ADMIN:"
+            # The connection context cannot be asked here, because ServerInstance is one of the properties
+            # that cannot be assigned on such a context, so ask the session which endpoint it is on.
+            $dacQuery = "SELECT COUNT(*) FROM sys.dm_exec_sessions AS s JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1 AND s.session_id = @@SPID"
+            $serverClone.ConnectionContext.ExecuteScalar($dacQuery) | Should -Be 1
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+    }
+
     Context "connection is properly cloned from an existing connection" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
@@ -545,20 +585,33 @@ Describe $CommandName -Tag IntegrationTests {
             # intermediate copy and returned a different context. The clone therefore did not own its
             # connection and Disconnect-DbaInstance closed nothing, so every call left a session parked
             # in the database holding a shared lock on it.
-            $countBefore = @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
+            # Repeated on purpose. With pooling, a sleeping session that stays behind is legitimate - it
+            # belongs to the pool and the next call reuses it. What must not happen is that their number
+            # grows with every call, which is what an orphaned connection looks like: nothing can reuse
+            # it and nothing can close it. Against the old implementation the count went up on almost
+            # every cycle, so a single cycle is not enough to tell the two apart.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                $serverParked = Connect-DbaInstance -SqlInstance $server -Database tempdb
+                $serverParked.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+                $null = $serverParked | Disconnect-DbaInstance
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
+            }
 
-            $serverParked = Connect-DbaInstance -SqlInstance $server -Database tempdb
-            $serverParked.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
-            $null = $serverParked | Disconnect-DbaInstance
-
-            $countAfter = @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
-            $countAfter | Should -Be $countBefore
+            $countPerCycle[-1] | Should -Be $countPerCycle[0]
         }
 
         It "clones when using parameter ApplicationIntent" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
             $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty
             $serverClone.ConnectionContext.ApplicationIntent | Should -Be "ReadOnly"
+        }
+
+        It "clones when using parameter Database together with NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -Database tempdb -NonPooledConnection
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.NonPooledConnection | Should -Be $true
+            $null = $serverClone | Disconnect-DbaInstance
         }
 
         It "clones when using parameter NonPooledConnection" {
