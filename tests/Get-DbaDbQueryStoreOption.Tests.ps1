@@ -22,6 +22,15 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 Describe $CommandName -Tag IntegrationTests {
+    BeforeDiscovery {
+        # MAX_PLANS_PER_QUERY arrived with SQL Server 2017, so the scenario below cannot be built before
+        # that. The value decides a Skip, which Pester needs while it discovers the tests, so it cannot be
+        # read in BeforeAll.
+        $discoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $instanceVersionMajor = $discoveryServer.VersionMajor
+        $null = $discoveryServer | Disconnect-DbaInstance
+    }
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -60,6 +69,48 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsSweep = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -WarningVariable warnSweep
             $resultsSweep.Database | Should -Not -Contain "model"
             $warnSweep | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When a value is available from SMO" -Skip:($instanceVersionMajor -lt 14) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $queryStoreDbName = "dbatoolsci_qso_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $queryStoreDbName
+            $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -State ReadWrite
+
+            $resultsFromSmo = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Leaves MaxPlansPerQuery and WaitStatsCaptureMode as the properties of the SMO object" {
+            # Both are real properties of QueryStoreOptions. Adding them with Add-Member replaces the
+            # property with a note property on the object of the caller - one that keeps its value even
+            # after the object is refreshed - so only values SMO does not carry may be added that way.
+            # See #10562. This guards the rule rather than a fix: on SQL Server 2019 and later the two
+            # were queried and then discarded, so nothing observable changed there. It is SQL Server 2017
+            # where they used to be added over the real property, and the lab has no 2017 instance.
+            (Get-Member -InputObject $resultsFromSmo -Name MaxPlansPerQuery).MemberType | Should -Be "Property"
+            (Get-Member -InputObject $resultsFromSmo -Name WaitStatsCaptureMode).MemberType | Should -Be "Property"
+        }
+
+        It "Still reports both of them" {
+            $resultsFromSmo.MaxPlansPerQuery | Should -Not -BeNullOrEmpty
+            $resultsFromSmo.WaitStatsCaptureMode | Should -Not -BeNullOrEmpty
+        }
+
+        It "Adds the CustomCapturePolicy values, which SMO does not carry" -Skip:($instanceVersionMajor -lt 15) {
+            (Get-Member -InputObject $resultsFromSmo -Name CustomCapturePolicyExecutionCount).MemberType | Should -Be "NoteProperty"
         }
     }
 }
