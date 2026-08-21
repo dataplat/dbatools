@@ -9,6 +9,16 @@ Describe $CommandName -Tag IntegrationTests {
     # The Query and Invoke script methods of Server and Database in xml\dbatools.Types.ps1xml run through
     # the execution manager of a database, which is the connection context of the parent server and belongs
     # to the caller. SMO issues a USE and never switches back, so the methods put the database back. See #10555.
+    BeforeDiscovery {
+        # Two databases whose names differ only in case can only exist on an instance with a case sensitive
+        # collation, and that is the only place where a case insensitive comparison in the restore can be
+        # caught. The collation decides it, not the version, so this is asked of the instance rather than
+        # assumed. On a case insensitive instance the scenario cannot be built at all and the Context skips.
+        $caseDiscoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $instanceIsCaseSensitive = $caseDiscoveryServer.Collation -match "_CS_"
+        $null = $caseDiscoveryServer | Disconnect-DbaInstance
+    }
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -78,10 +88,18 @@ Describe $CommandName -Tag IntegrationTests {
             $allTables.Count | Should -Be 2
         }
 
-        It "keeps the session, so temporary objects survive" {
+        It "runs on the session of the caller and not on a copy of the connection" {
+            # Checking the temporary table through the caller afterwards proves nothing: it never left the
+            # caller's session, so a copied connection context would pass that too. The wrapper itself has
+            # to see the table, and its SPID has to be the caller's. ConnectionContext.Copy() plus
+            # GetDatabaseConnection() was the other candidate for this fix and fails both assertions.
+            $callerSpid = $callerServer.ConnectionContext.ExecuteScalar("SELECT @@SPID")
             $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
-            $null = $callerServer.Databases[$contextDbName].Query("SELECT 1")
-            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+
+            $wrapperResult = $callerServer.Databases[$contextDbName].Query("SELECT @@SPID AS spid, (SELECT COUNT(*) FROM #dbatoolsci_marker) AS marker")
+
+            $wrapperResult.spid | Should -Be $callerSpid
+            $wrapperResult.marker | Should -Be 0
         }
 
         It "puts the database back even when the query fails" {
@@ -117,6 +135,86 @@ Describe $CommandName -Tag IntegrationTests {
         It "leaves the connection in msdb after Server.Query with a database" {
             $null = $msdbServer.Query("SELECT 1", $contextDbName)
             $msdbServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "msdb"
+        }
+    }
+
+    Context "A failing restore does not become the outcome of the call (#10555)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $offlineDbName = "dbatoolsci_typeext_offline_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineDbName
+            $offlineServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -NonPooledConnection
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $offlineServer | Disconnect-DbaInstance
+            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -Online -Force -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "returns normally when the statement made the previous database unreachable" {
+            # The wrapper moves the connection to master to run this, and the USE that would put it back
+            # cannot work afterwards, because by then the database it names is offline. Restoring is
+            # housekeeping and must not turn a statement that succeeded into an exception: a caller reading
+            # that as "it did not run" might well run it a second time. The wrapper warns instead, which a
+            # script method can only write to the host, so the preference is set rather than captured.
+            $WarningPreference = "SilentlyContinue"
+            $offlineStatement = "ALTER DATABASE [$offlineDbName] SET OFFLINE WITH ROLLBACK IMMEDIATE"
+
+            { $offlineServer.Databases["master"].Invoke($offlineStatement) } | Should -Not -Throw
+
+            (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName).Status | Should -Be "OFFLINE"
+        }
+    }
+
+    Context "Databases whose names differ only in case are told apart (#10579)" -Skip:(-not $instanceIsCaseSensitive) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $caseSuffix = Get-Random
+            $caseDbMixed = "dbatoolsci_CaseCtx$caseSuffix"
+            $caseDbLower = "dbatoolsci_casectx$caseSuffix"
+
+            # The two names may differ only in case, but their files may not: NTFS is case insensitive, so
+            # names derived from the database name collide, first the mdf and then the ldf. So the second
+            # database is created under a name of its own and renamed afterwards, which keeps its files
+            # apart and needs no explicit file paths.
+            $caseDbTemporary = "dbatoolsci_casetmp$caseSuffix"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $caseDbMixed
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $caseDbTemporary
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "ALTER DATABASE [$caseDbTemporary] MODIFY NAME = [$caseDbLower]"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            foreach ($caseDbName in $caseDbMixed, $caseDbLower, $caseDbTemporary) {
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $caseDbName -ErrorAction SilentlyContinue
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "restores the database of the caller when the two names differ only in case" {
+            # A case insensitive comparison reports the two as equal and skips the restore, so the caller is
+            # left in the wrong database - the very leak this change is about, on a valid configuration.
+            $caseCaller = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $caseDbMixed -NonPooledConnection
+            try {
+                $null = $caseCaller.Databases[$caseDbLower].Query("SELECT 1")
+
+                $caseCaller.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -BeExactly $caseDbMixed
+            } finally {
+                $null = $caseCaller | Disconnect-DbaInstance
+            }
         }
     }
 }

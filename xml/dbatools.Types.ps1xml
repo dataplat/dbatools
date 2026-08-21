@@ -22,9 +22,22 @@ try {
     if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
     else { ($this.ExecuteWithResults($Query)).Tables[0] }
 } finally {
-    if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+    # The comparison is case sensitive on purpose. Database names use the collation of the instance, so
+    # on a case sensitive instance AppDb and appdb are two different databases, and -ne would report
+    # them as equal and skip the restore. It cannot restore needlessly: both sides are read from the
+    # same property, so the same database always spells itself the same way.
+    if ($previousDatabase -and $connectionContext.CurrentDatabase -cne $previousDatabase) {
         $escapedDatabase = $previousDatabase.Replace("]", "]]")
-        $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+        try {
+            $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+        } catch {
+            # Putting the database back is housekeeping and must never become the outcome of the call.
+            # A query that makes the previous database unreachable - taking it offline, dropping it,
+            # renaming it, revoking access - would otherwise throw here although it succeeded, and the
+            # caller would read that as "it did not run" and might do it a second time. A query that
+            # failed would have its own error replaced by this one, which is just as misleading.
+            Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
+        }
     }
 }
 </Script>
@@ -44,9 +57,14 @@ $previousDatabase = $connectionContext.CurrentDatabase
 try {
     $this.ExecuteNonQuery($Command)
 } finally {
-    if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+    # See the comment on Query above for why this is case sensitive and why a failing restore only warns.
+    if ($previousDatabase -and $connectionContext.CurrentDatabase -cne $previousDatabase) {
         $escapedDatabase = $previousDatabase.Replace("]", "]]")
-        $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+        try {
+            $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+        } catch {
+            Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
+        }
     }
 }
 </Script>
@@ -77,9 +95,14 @@ try {
         try {
             $dataSet = $this.Databases[$Database].ExecuteWithResults($Query)
         } finally {
-            if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+            # See the comment on Database.Query for why this is case sensitive and why a failing restore only warns.
+            if ($previousDatabase -and $connectionContext.CurrentDatabase -cne $previousDatabase) {
                 $escapedDatabase = $previousDatabase.Replace("]", "]]")
-                $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+                try {
+                    $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+                } catch {
+                    Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
+                }
             }
         }
     } else {
@@ -119,9 +142,14 @@ try {
         try {
             $this.Databases[$Database].ExecuteNonQuery($Command)
         } finally {
-            if ($previousDatabase -and $connectionContext.CurrentDatabase -ne $previousDatabase) {
+            # See the comment on Database.Query for why this is case sensitive and why a failing restore only warns.
+            if ($previousDatabase -and $connectionContext.CurrentDatabase -cne $previousDatabase) {
                 $escapedDatabase = $previousDatabase.Replace("]", "]]")
-                $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+                try {
+                    $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
+                } catch {
+                    Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
+                }
             }
         }
     } else {
