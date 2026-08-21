@@ -15,13 +15,16 @@ function ConvertFrom-EncryptedObjectChunk {
         so a byte for byte comparison against a created object cannot reach this code with more than one
         chunk. The multi chunk behaviour of this function is covered by its unit tests and by nothing else.
 
-        Two mistakes are easy to make here and both produce text of exactly the right length, which is the
-        one failure mode that the rest of the suite cannot see:
+        Three mistakes are easy to make here and all can produce output that looks more trustworthy than it
+        is:
 
         - Concatenating in the order the rows were read rather than in colid order swaps the parts of a
           definition around.
         - Deriving one keystream for the whole object leaves the first chunk readable and everything after
           it mojibake. colid is an input to the key, so every chunk has its own keystream.
+        - Accepting the same colid twice can combine the current row with a stale or duplicate physical row.
+          The page reader is deliberately defensive, but this is the final boundary before decryption and
+          must reject an ambiguous chunk set rather than concatenate both versions.
 
         This function is used by the following public functions:
         - Invoke-DbaDbDecryptObject
@@ -60,8 +63,22 @@ function ConvertFrom-EncryptedObjectChunk {
     )
 
     $scriptBuilder = New-Object System.Text.StringBuilder
+    $seenColId = New-Object System.Collections.Hashtable
 
     foreach ($piece in ($Chunk | Sort-Object -Property ColId)) {
+        # There is only one sys.sysobjvalues row for a given (object id, colid). Seeing the same colid twice
+        # means the input is ambiguous, for example because a stale physical row was harvested along with
+        # the current one. Concatenating both can still yield plausible text, so fail before producing any
+        # definition instead.
+        if ($seenColId.ContainsKey([int]$piece.ColId)) {
+            throw "Object $ObjectId contains more than one ciphertext chunk with colid $($piece.ColId), so it is not safe to decrypt."
+        }
+        $seenColId[[int]$piece.ColId] = $true
+
+        if ($null -eq $piece.Cipher) {
+            throw "Chunk $($piece.ColId) of object $ObjectId has no ciphertext."
+        }
+
         # The definition is UCS-2, so a chunk's ciphertext has to be an even number of bytes. An odd length
         # means a bad in row slice or a bad off row reassembly, and the decode below would silently drop the
         # trailing byte and hand back plausible text, so it is refused here instead.
