@@ -170,6 +170,26 @@ function Set-DbaTempDbConfig {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Unlike the other sites in #10555, this command cannot avoid moving the database context:
+            # FILEPROPERTY and DBCC SHRINKFILE only report on and work on the current database, so tempdb
+            # has to be the current database for both. It puts the database of the caller back instead,
+            # which is what this does at each of the two places that move it.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
+            $restoreCallerDatabase = {
+                if ($callerDatabase -and $server.ConnectionContext.CurrentDatabase -cne $callerDatabase) {
+                    # Case sensitive, because on a case sensitive instance AppDb and appdb are two
+                    # different databases and -ne would report them as equal and skip the restore.
+                    $escapedCallerDatabase = $callerDatabase.Replace("]", "]]")
+                    try {
+                        $null = $server.ConnectionContext.ExecuteNonQuery("USE [$escapedCallerDatabase]")
+                    } catch {
+                        # Putting the database back is housekeeping and must never become the outcome of
+                        # the command, so this warns rather than throwing.
+                        Write-Message -Level Warning -Message "The database context could not be restored to [$callerDatabase]: $_"
+                    }
+                }
+            }
+
             $cores = $server.Processors
             if ($cores -gt 8) {
                 $cores = 8
@@ -201,7 +221,14 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message $invalidPathFound -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
+                # sys.master_files is a server level view, so the path of a tempdb file can be read
+                # without making tempdb the current database. See #10555.
+                $dataFilePathQuery = @"
+SELECT physical_name
+FROM sys.master_files
+WHERE database_id = DB_ID('tempdb') AND file_id = 1
+"@
+                $Filepath = $server.ConnectionContext.ExecuteScalar($dataFilePathQuery)
                 $DataPath = Split-Path $Filepath
             }
 
@@ -212,7 +239,13 @@ function Set-DbaTempDbConfig {
                     Stop-Function -Message "$LogPath is an invalid path." -Continue
                 }
             } else {
-                $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 2').PhysicalName
+                # Server level as well, see the comment on the data file path above.
+                $logFilePathQuery = @"
+SELECT physical_name
+FROM sys.master_files
+WHERE database_id = DB_ID('tempdb') AND file_id = 2
+"@
+                $Filepath = $server.ConnectionContext.ExecuteScalar($logFilePathQuery)
                 $LogPath = Split-Path $Filepath
             }
             Write-Message -Message "Using log path: $LogPath." -Level Verbose
@@ -235,6 +268,10 @@ FROM sys.database_files
 WHERE type = 0
 ORDER BY file_id;
 "@))
+            # FILEPROPERTY only reports on the current database - outside tempdb it silently returns NULL
+            # rather than failing - so this one has to run in tempdb and the caller gets its database back.
+            & $restoreCallerDatabase
+
             $CurrentFileCount = $tempdbFiles.Count
             $filesToRemove = @()
             $filesToKeep = @($tempdbFiles)
@@ -361,7 +398,15 @@ ORDER BY file_id;
                         # ALTER DATABASE does not depend on the current database, so this runs on the
                         # connection. Going through the master database would leave the connection of the
                         # caller there. See #10555.
-                        $server.ConnectionContext.ExecuteNonQuery($sql)
+                        # The batches built for -Force are the exception: they carry an explicit
+                        # USE [tempdb], because DBCC SHRINKFILE empties a file of the current database
+                        # only. So the database of the caller is put back once the batches have run,
+                        # in a finally, because a reconfiguration that fails half way moves it just as much.
+                        try {
+                            $server.ConnectionContext.ExecuteNonQuery($sql)
+                        } finally {
+                            & $restoreCallerDatabase
+                        }
                         Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
 
                         [PSCustomObject]@{

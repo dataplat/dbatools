@@ -144,11 +144,21 @@ Describe $CommandName -Tag IntegrationTests {
             $allocationTableName = "dbatoolsci_tempdb_reduction_$(Get-Random)"
             $allocationRowCount = 15000
 
+            # A connection of its own that starts in msdb, so the tests can assert that the command puts the
+            # database of the caller back. It has to be non-pooled: SMO reopens a pooled connection at its
+            # default database, which hides the leak. msdb rather than master, because restoring to master
+            # would pass an assertion and still be wrong. See #10555.
+            $tempdbContextServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database msdb -NonPooledConnection
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($null -ne $tempdbContextServer) {
+                $null = $tempdbContextServer | Disconnect-DbaInstance
+            }
 
             if ($null -ne $tempdbReductionServer -and $null -ne $allocationTableName) {
                 $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("IF OBJECT_ID(N'dbo.$allocationTableName', N'U') IS NOT NULL DROP TABLE dbo.[$allocationTableName];")
@@ -284,8 +294,13 @@ CROSS JOIN sys.all_objects AS second_source;
             $capacityResult | Should -BeNullOrEmpty
             ($capacityWarning -join " ") | Should -Match "exceeds the requested target capacity"
 
+            # Run the reduction through the connection that starts in msdb, so that the assertion below can
+            # show that the command leaves the database of the caller where it found it. This is the path
+            # that moves it twice: reading tempdb through FILEPROPERTY, which only reports on the current
+            # database, and then the batches, which carry an explicit USE [tempdb] because DBCC SHRINKFILE
+            # empties a file of the current database only.
             $splatReduce = @{
-                SqlInstance     = $tempdbReductionServer
+                SqlInstance     = $tempdbContextServer
                 DataFileCount   = $originalDataFileCount
                 DataFileSize    = $expandedTotalDataFileSize
                 DataPath        = $tempdbReductionDataPath
@@ -296,6 +311,8 @@ CROSS JOIN sys.all_objects AS second_source;
             }
             $reduceResult = Set-DbaTempDbConfig @splatReduce
             $reduceResult.DataFileCount | Should -Be $originalDataFileCount
+
+            $tempdbContextServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "msdb"
 
             $reducedFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
             $reducedFiles.Count | Should -Be $originalDataFileCount

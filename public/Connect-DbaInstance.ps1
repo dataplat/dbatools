@@ -21,7 +21,7 @@ function Connect-DbaInstance {
 
         To execute SQL commands directly: $server.ConnectionContext.ExecuteReader($sql) or $server.ConnectionContext.ExecuteNonQuery($sql)
 
-        Run statements through the connection context rather than through a database object. A database object executes on the same connection and leaves it in that database, which changes the database of every later command that reuses the connection.
+        For statements that do not depend on a particular database, use the connection context rather than a database object. A database object executes on the same connection and leaves it in that database, which changes the database of every later command that reuses the connection. A statement that does need a database still has to say so, because the connection context runs it in whatever database the session currently happens to be in.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
