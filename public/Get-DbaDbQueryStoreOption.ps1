@@ -128,10 +128,15 @@ function Get-DbaDbQueryStoreOption {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
                 $qso = $db.QueryStoreOptions
 
-                if ($server.VersionMajor -eq 14) {
-                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;" -As PSObject
-                } elseif ($server.VersionMajor -ge 15) {
-                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
+                # Only values that the SMO object does not carry are read from the catalog view. The four
+                # CustomCapturePolicy ones are not properties of QueryStoreOptions at all, so they have to
+                # be added. MaxPlansPerQuery and WaitStatsCaptureMode are, and used to be queried here as
+                # well - on SQL Server 2019 and later the result was then thrown away, and on SQL Server
+                # 2017 it was added over the real property, which turns it into a note property that no
+                # longer follows a Refresh of the object. SMO is the single source for those two now, on
+                # every version. See #10562.
+                if ($server.VersionMajor -ge 15) {
+                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
                 }
 
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
@@ -142,8 +147,6 @@ function Get-DbaDbQueryStoreOption {
                 if ($server.VersionMajor -eq 13) {
                     Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
                 } elseif ($server.VersionMajor -eq 14) {
-                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name MaxPlansPerQuery -Value $QueryStoreOptions.MaxPlansPerQuery
-                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name WaitStatsCaptureMode -Value $QueryStoreOptions.WaitStatsCaptureMode
                     Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
                 } elseif ($server.VersionMajor -ge 15) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -Value $QueryStoreOptions.CustomCapturePolicyExecutionCount
