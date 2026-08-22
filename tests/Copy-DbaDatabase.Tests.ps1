@@ -386,7 +386,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Where-Object Name -NotIn $supportDbs | Remove-DbaDatabase
         }
 
         AfterAll {
@@ -395,7 +395,11 @@ Describe $CommandName -Tag IntegrationTests {
                 Program     = "dbatools PowerShell module - dbatools.io"
             }
             Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
-            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -ExcludeSystem | Where-Object Name -NotIn $supportDbs | Remove-DbaDatabase
+        }
+
+        It "preserves SSISDB on the destination" {
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database SSISDB | Should -Not -BeNullOrEmpty
         }
 
         It "Should have renamed a single db" {
