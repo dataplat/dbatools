@@ -762,6 +762,7 @@ function Connect-DbaInstance {
                     # Initial Catalog, Pooling and Data Source. No readable property tells the two kinds of
                     # context apart - every one of them reads fine on both - so we find out by trying.
                     $connectionStringKeyword = @{ }
+                    $databaseNeedsSwitch = $false
                     if ($ApplicationIntent) {
                         $connContext.ApplicationIntent = $ApplicationIntent
                     }
@@ -792,6 +793,14 @@ function Connect-DbaInstance {
                             $connContext.ServerInstance = $dedicatedAdminServerInstance
                         } catch {
                             $connectionStringKeyword["Data Source"] = $dedicatedAdminServerInstance
+                            if ($instance.IsLocalHost) {
+                                # TrustServerCertificate was assigned above, and on a context with a fixed
+                                # connection string that assignment does not reach the string - the property
+                                # reads back as True while the string still says False. Since the string is
+                                # what the new connection is built from, the same has to be put in there, or
+                                # the localhost DAC fails on a certificate that does not match. See #10254.
+                                $connectionStringKeyword["Trust Server Certificate"] = $true
+                            }
                         }
                         try {
                             $connContext.NonPooledConnection = $true
@@ -815,21 +824,44 @@ function Connect-DbaInstance {
                             $connContext.DatabaseName = $Database
                         } catch {
                             # Falling back to GetDatabaseConnection here would bring back the very leak this
-                            # change is about, so the database goes into the connection string instead. As
-                            # Initial Catalog it is part of the pool key, which is what setting DatabaseName
-                            # achieves as well, so the reason #9505 forced a non pooled connection still holds.
-                            $connectionStringKeyword["Initial Catalog"] = $Database
+                            # change is about. The database is switched on the connection of the copy further
+                            # down instead, which needs no new connection and therefore cannot lose anything.
+                            $databaseNeedsSwitch = $true
                         }
                     }
                     if ($connectionStringKeyword.Count -gt 0) {
+                        # Rebuilding the connection string means opening a new connection from it, and that is
+                        # only safe when the string still carries what it takes to log in. Once a SqlConnection
+                        # has been opened with Persist Security Info=False, SqlClient hides the password, so
+                        # the string we can read back no longer has one and the new connection would fail with
+                        # "Login failed". Rejecting that is better than handing back a server that cannot be
+                        # used - and the caller can always pass the instance name and a SqlCredential instead.
+                        $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connContext.ConnectionString
+                        $usesSqlLogin = -not $connectionStringBuilder["Integrated Security"] -and $connectionStringBuilder["User ID"]
+                        if ($usesSqlLogin -and -not $connectionStringBuilder["Password"] -and -not $connContext.SqlConnectionObject.Credential) {
+                            Stop-Function -Message "Cannot apply the requested settings to [$instance]: they need a new connection, and the password of the SQL Server login is no longer readable from the connection that was passed in. Connect with the instance name and -SqlCredential instead, or pass a SqlConnection that uses Persist Security Info=True." -Target $instance -Continue
+                        }
+
+                        if ($databaseNeedsSwitch) {
+                            # A new connection is opened anyway, so the database belongs in the string. As
+                            # Initial Catalog it is part of the pool key, which is what setting DatabaseName
+                            # achieves as well, so the reason #9505 forced a non pooled connection still holds.
+                            $connectionStringKeyword["Initial Catalog"] = $Database
+                            $databaseNeedsSwitch = $false
+                        }
+                        if ($ApplicationIntent) {
+                            # Assigned as a property above, which does not reach a fixed connection string
+                            # either, so the context would report ReadOnly while the connection routes as it
+                            # always did.
+                            $connectionStringKeyword["ApplicationIntent"] = $ApplicationIntent
+                        }
+
                         $changedKeywords = $connectionStringKeyword.Keys -join ", "
                         Write-Message -Level Debug -Message "Connection context does not accept property assignments, using the connection string for: $changedKeywords"
                         # The copy has to be disconnected first: setting the connection string of an open
-                        # connection does not move it, and CurrentDatabase would silently stay where it was.
-                        # The copy is a session of its own - a different SPID than the server that was passed
-                        # in - so this does not touch the connection of the caller.
+                        # connection does not move it. The copy is a session of its own - a different SPID
+                        # than the server that was passed in - so this does not touch the caller.
                         $connContext.Disconnect()
-                        $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connContext.ConnectionString
                         foreach ($keyword in $connectionStringKeyword.Keys) {
                             # PowerShell routes property assignments on a connection string builder through its
                             # dictionary indexer, so the keyword has to be used rather than the property name:
@@ -837,6 +869,17 @@ function Connect-DbaInstance {
                             $connectionStringBuilder[$keyword] = $connectionStringKeyword[$keyword]
                         }
                         $connContext.ConnectionString = $connectionStringBuilder.ConnectionString
+                    }
+                    if ($databaseNeedsSwitch) {
+                        # Nothing else needs a new connection, so the database is switched on the one the copy
+                        # already holds. That keeps every part of the authentication that lives on the
+                        # SqlConnection rather than in its string, which rebuilding the string would lose.
+                        # The copy is a session of its own, so this is not the leak of #10555 - the caller
+                        # keeps its own database.
+                        if ($connContext.SqlConnectionObject.State -ne "Open") {
+                            $connContext.Connect()
+                        }
+                        $connContext.SqlConnectionObject.ChangeDatabase($Database)
                     }
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {

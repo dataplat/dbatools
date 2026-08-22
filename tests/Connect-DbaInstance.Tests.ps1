@@ -565,6 +565,64 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "connection is properly cloned from an open SQL authenticated SqlConnection" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Once a SqlConnection has been opened with Persist Security Info=False, SqlClient hides the
+            # password: the connection string that can be read back no longer carries one. Anything that
+            # rebuilds the connection string from it therefore produces a connection that cannot log in,
+            # so the database has to be switched on the connection that already exists. See #10584.
+            $sqlAuthLogin = "dbatoolsci_clone_$(Get-Random)"
+            $sqlAuthPassword = "dbatools.IO_$(Get-Random)"
+            $splatSqlAuthLogin = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Login       = $sqlAuthLogin
+                Password    = (ConvertTo-SecureString -String $sqlAuthPassword -AsPlainText -Force)
+                Force       = $true
+            }
+            $null = New-DbaLogin @splatSqlAuthLogin
+            $null = Set-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $sqlAuthLogin -AddRole sysadmin
+
+            $sqlAuthConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=master;User ID=$sqlAuthLogin;Password=$sqlAuthPassword;Persist Security Info=False;Encrypt=False;Trust Server Certificate=True"
+            $sqlAuthConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $sqlAuthConnectionString
+            $sqlAuthConnection.Open()
+            $serverFromSqlAuth = Connect-DbaInstance -SqlInstance $sqlAuthConnection
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $serverFromSqlAuth | Disconnect-DbaInstance
+            $sqlAuthConnection.Close()
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $sqlAuthLogin -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "hides the password from the connection string, which is what makes this case hard" {
+            $serverFromSqlAuth.ConnectionContext.ConnectionString | Should -Not -Match "Password="
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ExecuteScalar("select suser_sname()") | Should -Be $sqlAuthLogin
+            $serverFromSqlAuth.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "refuses instead of returning a server that cannot log in" {
+            # This one needs a new connection, and the password for it is gone, so the command has to say
+            # so rather than hand back something that fails on first use. Connect-DbaInstance throws by
+            # default, which is why this is not a warning.
+            { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb -NonPooledConnection } |
+                Should -Throw -ExpectedMessage "*no longer readable*"
+        }
+    }
+
     Context "connection is properly cloned from an existing connection" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
@@ -598,7 +656,9 @@ Describe $CommandName -Tag IntegrationTests {
                 $countPerCycle += @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
             }
 
-            $countPerCycle[-1] | Should -Be $countPerCycle[0]
+            # Every cycle has to land on the same number, not just the first and the last. A sequence like
+            # 4, 5, 4, 5, 4 starts and ends the same way and still means the pool is churning.
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
         }
 
         It "clones when using parameter ApplicationIntent" {
