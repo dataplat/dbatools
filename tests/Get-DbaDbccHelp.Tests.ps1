@@ -49,6 +49,17 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Output | Should -Not -BeNullOrEmpty
         }
 
+        It "returns results for every piped instance" {
+            $multiRecordResults = @($TestConfig.InstanceSingle, $TestConfig.InstanceSingle) | Get-DbaDbccHelp -Statement FREESYSTEMCACHE
+
+            $multiRecordResults.Count | Should -Be 2
+            foreach ($multiRecordResult in $multiRecordResults) {
+                $multiRecordResult.Operation | Should -Be "FREESYSTEMCACHE"
+                $multiRecordResult.Cmd | Should -Be "DBCC HELP(FREESYSTEMCACHE)"
+                $multiRecordResult.Output | Should -Not -BeNullOrEmpty
+            }
+        }
+
         It "returns the right results for PAGE" {
             $pageResult = Get-DbaDbccHelp -SqlInstance $TestConfig.InstanceSingle -Statement PAGE -IncludeUndocumented
             $pageResult.Operation | Should -Be "PAGE"
