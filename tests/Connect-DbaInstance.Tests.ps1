@@ -627,4 +627,46 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server | Disconnect-DbaInstance
         }
     }
+
+    Context "MinimumVersion decides based on a version it can read" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $versionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $smoVersionMajor = $versionServer.VersionMajor
+            $connectionVersionMajor = $versionServer.ConnectionContext.ServerVersion.Major
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "returns the connection when the instance meets the minimum" {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -MinimumVersion $smoVersionMajor
+            $result.VersionMajor | Should -Be $smoVersionMajor
+        }
+
+        It "refuses the connection when the instance is below the minimum" {
+            { Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -MinimumVersion ($smoVersionMajor + 1) } | Should -Throw "*SQL Server version $($smoVersionMajor + 1) required*"
+        }
+
+        It "warns instead of throwing when exceptions are disabled" {
+            $splatTooNew = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                MinimumVersion   = $smoVersionMajor + 1
+                DisableException = $true
+                WarningVariable  = "minimumVersionWarning"
+                WarningAction    = "SilentlyContinue"
+            }
+            $result = Connect-DbaInstance @splatTooNew
+            $result | Should -BeNullOrEmpty
+            $minimumVersionWarning | Should -Match "SQL Server version $($smoVersionMajor + 1) required"
+        }
+
+        It "can read the same major version from the connection as from SMO" {
+            # The check falls back to ConnectionContext.ServerVersion where SMO cannot serve
+            # VersionMajor, which is every instance below SQL Server 2008. No instance in the
+            # matrix is that old, so this guards the fallback source instead: if it ever stops
+            # agreeing with SMO, the fallback stops refusing the versions it exists to refuse.
+            $connectionVersionMajor | Should -Be $smoVersionMajor
+        }
+    }
 }

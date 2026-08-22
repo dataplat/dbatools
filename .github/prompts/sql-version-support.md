@@ -37,6 +37,8 @@ $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredenti
 # "SQL Server version 9 required - server not supported."
 ```
 
+`MinimumVersion 9` is the right guard only for commands that stay in T-SQL. Anything that walks SMO's object model needs 10 - see [The Floor SMO Enforces](#the-floor-smo-enforces).
+
 ### 2. Direct Version Checking with throw
 
 For features unavailable in older versions:
@@ -77,11 +79,33 @@ SQL Server 2005 introduced many foundational changes that make backward compatib
 - DMVs (Dynamic Management Views)
 - Deprecated features like Extended Stored Procedures (deprecated in 2005, favor CLR)
 
+## The Floor SMO Enforces
+
+The version table at the top of this guide describes the T-SQL surface. SMO has its own, higher floor, and it applies to every command that walks the object model rather than issuing raw queries.
+
+`Microsoft.SqlServer.SqlEnum.dll` in `dbatools.library` carries one XML definition per enumerated object, each declaring the oldest version it supports. In the 2026.5.3 build (SMO 18.100.1.19), `Server.xml`, `Information.xml`, `Database.xml` and `Login.xml` all open with `min_major='10'`, and 224 of the 298 definitions that declare a floor declare 10. Re-check it against whatever version is pinned in `.github/dbatools-library-version.json` before relying on the numbers:
+
+```powershell
+$assembly = [Reflection.Assembly]::LoadFrom("$smoPath\Microsoft.SqlServer.SqlEnum.dll")
+$stream = $assembly.GetManifestResourceStream("Database.xml")
+(New-Object System.IO.StreamReader($stream)).ReadToEnd() -match "min_major='(\d+)'"
+```
+
+What follows from that:
+
+- **`$server.Databases`, `$server.Logins` and the other collections need SQL Server 2008.** Below that they throw `'CONNECTIONPROPERTY' is not a recognized built-in function name`.
+- **`$server.VersionMajor` is itself unreadable below 2008**, because `Information.xml` is one of the 2008+ definitions. `VersionString`, `Edition` and `ProductLevel` come back empty for the same reason.
+- **Version branches misroute on such an instance.** `-eq 8` and `-eq 9` are both false against an empty `VersionMajor`, so the legacy path is skipped and the modern one runs anyway. Comparisons written as `-lt` fail safe by accident, since `$null -lt 9` is `$true`.
+- **`Connect-DbaInstance -MinimumVersion` falls back to `ConnectionContext.ServerVersion`** when `VersionMajor` cannot be read, because that value comes from the connection rather than from an enumerator. If neither source knows the version the connection is allowed through, as it was before the fallback existed.
+
+So use `MinimumVersion 10` and document "SQL Server 2008 or higher" for anything touching SMO collections. Reserve `MinimumVersion 9` for commands that only issue T-SQL. Background: [#10583](https://github.com/dataplat/dbatools/issues/10583).
+
 ## When to Use Each Pattern
 
 | Pattern | Use When |
 |---------|----------|
-| MinimumVersion 9 | Feature fundamentally requires SQL 2005+ (catalog views, schemas, DMVs) |
+| MinimumVersion 9 | Feature fundamentally requires SQL 2005+ (catalog views, schemas, DMVs) **and the command stays in T-SQL** |
+| MinimumVersion 10 | Command walks SMO's object model (`Databases`, `Logins`, ...) - SMO's own floor |
 | Explicit version check | Need clearer error message or version-specific logic paths |
 | Conditional logic | SQL 2000 support is straightforward (different system tables, minor syntax differences) |
 

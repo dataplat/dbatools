@@ -137,6 +137,7 @@ function Connect-DbaInstance {
     .PARAMETER MinimumVersion
         Specifies the minimum SQL Server version required for the connection to succeed.
         Use this to ensure scripts only run against SQL Server versions that support the required features, preventing compatibility issues.
+        The version is read from SMO, falling back to the version reported by the connection itself on instances too old for SMO to describe. If neither is available the connection is allowed through.
 
     .PARAMETER Tenant
         Specifies the Azure Active Directory tenant ID for Azure SQL Database authentication.
@@ -1254,8 +1255,23 @@ function Connect-DbaInstance {
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
-            if ($MinimumVersion -and $server.VersionMajor) {
-                if ($server.VersionMajor -lt $MinimumVersion) {
+            if ($MinimumVersion) {
+                # $server.VersionMajor is served by SMO's server information enumerator, which
+                # requires SQL Server 2008 and returns nothing at all on older instances. Testing
+                # the property for truthiness would therefore skip the check on exactly the
+                # versions it exists to refuse, so fall back to the version the connection itself
+                # reports before deciding.
+                $minimumVersionMajor = $server.VersionMajor
+                if (-not $minimumVersionMajor) {
+                    try {
+                        $minimumVersionMajor = $server.ConnectionContext.ServerVersion.Major
+                        Write-Message -Level Debug -Message "VersionMajor is not available, using ServerVersion.Major [$minimumVersionMajor] from the connection"
+                    } catch {
+                        Write-Message -Level Debug -Message "Failed to read ServerVersion from the connection: $_"
+                    }
+                }
+                # If neither source knows the version, the connection is let through as before.
+                if ($minimumVersionMajor -and $minimumVersionMajor -lt $MinimumVersion) {
                     if ($isNewConnection) {
                         $server.ConnectionContext.Disconnect()
                     }
