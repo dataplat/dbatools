@@ -390,7 +390,9 @@ function Export-DbaLogin {
                             try {
                                 $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
                             } catch {
-                                $hashedPassDt = $server.Databases['master'].ExecuteWithResults($sql)
+                                # Same query as above, so it runs on the connection as well. Going through the
+                                # master database would leave the connection of the caller there. See #10555.
+                                $hashedPassDt = $server.ConnectionContext.ExecuteWithResults($sql)
                                 $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                             }
 
