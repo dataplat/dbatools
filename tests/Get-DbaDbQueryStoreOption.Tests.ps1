@@ -37,7 +37,24 @@ Describe $CommandName -Tag IntegrationTests {
 
         $serverSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
 
+        # Created here rather than in the Context that uses it, because the Contexts below read Query Store
+        # on model and leave a session parked in it, and the next CREATE DATABASE then fails with
+        # "Could not obtain exclusive lock on database 'model'". That is the leak of #10584, and until it
+        # is merged the only way past it is to create the database before anything has touched model.
+        $queryStoreDbName = "dbatoolsci_qso_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $queryStoreDbName
+        $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -State ReadWrite
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -ErrorAction SilentlyContinue
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
@@ -76,19 +93,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $queryStoreDbName = "dbatoolsci_qso_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $queryStoreDbName
-            $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -State ReadWrite
-
+            # The database itself comes from the BeforeAll of the Describe, see the note there.
             $resultsFromSmo = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName -ErrorAction SilentlyContinue
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
