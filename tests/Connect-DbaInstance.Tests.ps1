@@ -7,6 +7,12 @@ param(
 
 BeforeDiscovery {
     $script:hasCredentialSspiProvider = $null -ne ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])
+    # A dedicated admin connection to an instance on the machine running the tests takes a different path
+    # than one to a remote instance: it goes to ADMIN:localhost and forces TrustServerCertificate, because
+    # the certificate of the instance does not have to match "localhost" (#10254). That path can only be
+    # exercised where the instance really is local, which is the case on the CI runners and not in a lab
+    # of remote instances. The value decides a Skip, so it has to exist at discovery time.
+    $script:instanceIsLocalHost = ([DbaInstanceParameter]$TestConfig.InstanceMulti1).IsLocalHost
 }
 
 Describe $CommandName -Tag UnitTests {
@@ -562,6 +568,32 @@ Describe $CommandName -Tag IntegrationTests {
             $dacQuery = "SELECT COUNT(*) FROM sys.dm_exec_sessions AS s JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1 AND s.session_id = @@SPID"
             $serverClone.ConnectionContext.ExecuteScalar($dacQuery) | Should -Be 1
             $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "keeps the forced certificate trust of a local dedicated admin connection" -Skip:(-not $script:instanceIsLocalHost) {
+            # A local DAC goes to ADMIN:localhost and forces TrustServerCertificate, because the
+            # certificate of the instance does not have to match "localhost" (#10254). On a context whose
+            # connection string is fixed, assigning that property succeeds and reads back as True while
+            # the string still says False - and the string is what the new connection is built from. So
+            # the trust has to be put into the string as well, or the local DAC fails on the certificate.
+            # Starts from Trust Server Certificate=False on purpose: with True the assertion would pass
+            # even if the command did nothing at all.
+            $localDacConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Integrated Security=True;Encrypt=False;Trust Server Certificate=False"
+            [Microsoft.Data.SqlClient.SqlConnection]$localDacConnection = $localDacConnectionString
+            $serverForLocalDac = Connect-DbaInstance -SqlInstance $localDacConnection
+            try {
+                $serverClone = Connect-DbaInstance -SqlInstance $serverForLocalDac -DedicatedAdminConnection
+
+                # Read back through a builder rather than matching the string: a connection string builder
+                # keeps the spelling it was given, so the same setting reads as "Trust Server Certificate"
+                # or "TrustServerCertificate" depending on how the caller wrote it.
+                $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+                $cloneStringBuilder["Trust Server Certificate"] | Should -BeTrue
+                $cloneStringBuilder["Data Source"] | Should -Match "^ADMIN:localhost"
+                $null = $serverClone | Disconnect-DbaInstance
+            } finally {
+                $null = $serverForLocalDac | Disconnect-DbaInstance
+            }
         }
     }
 
