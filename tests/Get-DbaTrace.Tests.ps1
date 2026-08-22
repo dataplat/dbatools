@@ -65,5 +65,15 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle
             $results.Id.Count -gt 0 | Should -Be $true
         }
+
+        It "Should return trace files for every piped instance" {
+            $instances = @($TestConfig.InstanceSingle, $TestConfig.InstanceMulti1 | Select-Object -Unique)
+            $results = @($instances | Get-DbaTrace)
+
+            $results | Should -Not -BeNullOrEmpty
+            $seenInstances = @($results.SqlInstance | Select-Object -Unique)
+            $seenInstances | Should -Contain $TestConfig.InstanceSingle
+            $seenInstances | Should -Contain $TestConfig.InstanceMulti1
+        }
     }
 }
