@@ -27,7 +27,27 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = New-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -Type DatabaseMirroring -Name dbatoolsci_MirroringEndpoint | Start-DbaEndpoint
+        $script:endpointSuffix = [guid]::NewGuid().ToString("N")
+        $script:endpointNames = @("dbatoolsci_TSqlA_$script:endpointSuffix", "dbatoolsci_TSqlB_$script:endpointSuffix")
+        $script:createdEndpoints = @()
+        $script:attemptedPorts = @()
+        $queryPorts = "SELECT port FROM sys.tcp_endpoints WHERE port IS NOT NULL;"
+        $usedPorts = @(Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $queryPorts | Select-Object -ExpandProperty port)
+
+        for ($attempt = 0; $attempt -lt 8 -and $script:createdEndpoints.Count -lt 2; $attempt++) {
+            $port = Get-Random -Minimum 50000 -Maximum 60000
+            if ($port -in $usedPorts -or $port -in $script:attemptedPorts -or (Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue)) { continue }
+            $script:attemptedPorts += $port
+            $splatEndpoint = @{ SqlInstance = $TestConfig.InstanceSingle; Type = "TSql"; Name = $script:endpointNames[$script:createdEndpoints.Count]; Port = $port; EnableException = $true }
+            try {
+                $script:createdEndpoints += New-DbaEndpoint @splatEndpoint | Start-DbaEndpoint -EnableException
+            } catch {
+                if ($_.Exception.Message -notmatch "bindings specified|0x800700b7") { throw }
+            }
+        }
+        $script:createdEndpoints.Count | Should -Be 2
+        $splatGrant = @{ SqlInstance = $TestConfig.InstanceSingle; Database = "master"; Query = "GRANT CONNECT ON ENDPOINT::[TSQL Default TCP] TO [public];"; EnableException = $true }
+        Invoke-DbaQuery @splatGrant | Out-Null
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -36,7 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle -EndPoint dbatoolsci_MirroringEndpoint
+        foreach ($name in $script:endpointNames) {
+            $splatRemove = @{ SqlInstance = $TestConfig.InstanceSingle; Endpoint = $name; EnableException = $true }
+            Remove-DbaEndpoint @splatRemove | Out-Null
+        }
+        $splatGrant = @{ SqlInstance = $TestConfig.InstanceSingle; Database = "master"; Query = "GRANT CONNECT ON ENDPOINT::[TSQL Default TCP] TO [public];"; EnableException = $true }
+        Invoke-DbaQuery @splatGrant | Out-Null
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -44,6 +69,14 @@ Describe $CommandName -Tag IntegrationTests {
     It "returns success" {
         $results = Test-DbaEndpoint -SqlInstance $TestConfig.InstanceSingle
         $results | Select-Object -First 1 -ExpandProperty Connection | Should -Be 'Success'
+    }
+
+    It "returns attributable success for two piped endpoints" {
+        $splatGet = @{ SqlInstance = $TestConfig.InstanceSingle; Endpoint = $script:endpointNames; EnableException = $true }
+        $results = @(Get-DbaEndpoint @splatGet | Test-DbaEndpoint)
+        $results.Count | Should -Be 2
+        @($results | Where-Object Connection -eq "Success").Count | Should -Be 2
+        @($results.Endpoint | Sort-Object) | Should -Be @($script:endpointNames | Sort-Object)
     }
 
 }
