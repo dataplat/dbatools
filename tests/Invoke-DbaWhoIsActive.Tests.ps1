@@ -90,10 +90,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
             # No test for results as we don't expect any running queries
         }
 
-        It "Should execute with ShowSleepingSpids" -Skip {
-            # Skip It because it warns: Failed during execution | Name cannot begin with the ' ' character, hexadecimal value 0x20. Line 5372, position 60.
-            # TODO: The command runs correct in an interactive session and only fails if executed by pester
-
+        It "Should execute with ShowSleepingSpids" {
             $resultsSleeping = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -ShowSleepingSpids 2
             $WarnVar | Should -BeNullOrEmpty
             $resultsSleeping | Should -Not -BeNullOrEmpty
