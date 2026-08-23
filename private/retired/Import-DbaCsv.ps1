@@ -949,6 +949,8 @@ WHERE c.object_id = OBJECT_ID(@tableName)
     }
     process {
         foreach ($filename in $Path) {
+            $script:totalRowsCopied = [int64]0
+
             if (-not $PSBoundParameters.ColumnMap) {
                 $ColumnMap = $null
             }
@@ -1421,7 +1423,6 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
                         # See https://github.com/dataplat/dbatools/issues/6927 for more details
                         $script:prevRowsCopied = [int64]0
-                        $script:totalRowsCopied = [int64]0
 
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
