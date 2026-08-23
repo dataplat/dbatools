@@ -23,6 +23,12 @@ Describe $CommandName -Tag UnitTests {
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+
+        It "requires standard confirmation for service stops" {
+            $cmdletAttribute = (Get-Command $CommandName).ImplementingType.GetCustomAttributes([System.Management.Automation.CmdletAttribute], $true) |
+                Select-Object -First 1
+            $cmdletAttribute.ConfirmImpact | Should -Be "High"
+        }
     }
 }
 
@@ -52,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Set-ItResult -Skipped -Because "the service-control path to InstanceRestart is unavailable from this runner"
                 return
             }
-            $services = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+            $services = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -Confirm:$false
             $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should -Be "Stopped"
@@ -75,6 +81,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $null = Start-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Engine, Agent
+        }
+
+        It "does not stop services under WhatIf" {
+            if ($skipServiceControl) {
+                Set-ItResult -Skipped -Because "the service-control path to InstanceRestart is unavailable from this runner"
+                return
+            }
+            $before = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+            $before | Should -Not -BeNullOrEmpty
+            $before.State | Should -Be "Running"
+            $null = Stop-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent -WhatIf
+            $after = Get-DbaService -ComputerName $TestConfig.InstanceRestart -InstanceName $instanceName -Type Agent
+            $after.State | Should -Be "Running"
         }
     }
 
