@@ -12,11 +12,13 @@
 # Convergence / cost control:
 #   - A per-session "clean" cache (keyed by diff hash) skips re-reviewing a
 #     diff codex already approved — no wasted codex call, no spurious block.
-#   - stop_guard_emit (lib-stop-guard.sh) bounds forced rounds via
-#     STOP_GUARD_MAX_BLOCKS (default 3); after the budget it downgrades to an
-#     advisory so the agent is never trapped in a Stop->work->Stop loop.
-#   - The strike budget is PER-DIFF: when the diff changes (progress was
-#     made), the streak resets so new code gets a fresh review budget.
+#   - ONE automatic codex round per session (step 4a). After it, the turn is
+#     released by ONE self-review: the session runs the reviewme skill over its
+#     own change set (step 4a-ii reads the transcript for that invocation), and
+#     from then on the session decides. Another codex pass runs only when the
+#     agent touches the recheck marker the block names. Operator directive
+#     2026-08-21, after the cumulative payload turned every re-review into a
+#     fresh batch of findings and a 20-line fix into an hour of rounds.
 #
 # Safety:
 #   - codex runs --sandbox read-only: the reviewer MUST NOT mutate the tree.
@@ -424,6 +426,40 @@ if (( ${#PAYLOAD} > PAYLOAD_MAX )); then
     TRUNCATED=$'\n\n[... DIFF TRUNCATED: '"$OMITTED"$' more bytes not shown. Unseen changes may contain defects -- do NOT return CLEAN; return CHANGES_REQUESTED and ask for a smaller change set. ...]'
 fi
 
+# reviewme_invoked_after <transcript> <skip-lines> -> 0 when a line after the
+# first <skip-lines> records the reviewme skill being run. Three shapes count:
+# the Skill tool_use Claude Code writes for an in-session invocation, a Bash
+# tool_use that launches the headless reviewer (claude -p "/reviewme ..."), and
+# the operator typing /reviewme. The block that asks for it deliberately never
+# contains these literal JSON shapes, so the instruction cannot satisfy itself.
+# A missing transcript is not a self-review.
+reviewme_invoked_after() {
+    local transcript="$1" from="$2"
+    [[ -n "$transcript" && -f "$transcript" ]] || return 1
+    [[ "$from" =~ ^[0-9]+$ ]] || from=0
+    tail -n +"$((from + 1))" "$transcript" 2>/dev/null | grep -E '"name"[[:space:]]*:[[:space:]]*"Skill"' | grep -qE '"skill"[[:space:]]*:[[:space:]]*"reviewme"' && return 0
+    tail -n +"$((from + 1))" "$transcript" 2>/dev/null | grep -E '"name"[[:space:]]*:[[:space:]]*"Bash"' | grep -q '/reviewme' && return 0
+    tail -n +"$((from + 1))" "$transcript" 2>/dev/null | grep -q '<command-name>/reviewme</command-name>' && return 0
+    return 1
+}
+
+# record_reviewme_from - anchor the self-review check at the transcript's
+# current length. Same write discipline as mark_autospent: the name is
+# predictable under a world-writable root, so never a plain redirect onto it.
+record_reviewme_from() {
+    [[ -n "${REVIEWME_FROM_FILE:-}" ]] || return 1
+    [[ -L "$REVIEWME_FROM_FILE" || -d "$REVIEWME_FROM_FILE" ]] && return 1
+    local n tmp
+    n=$(wc -l < "${_TRANSCRIPT:-/dev/null}" 2>/dev/null | tr -d '[:space:]')
+    [[ "$n" =~ ^[0-9]+$ ]] || n=0
+    tmp=$(mktemp "${REVIEWME_FROM_FILE}.XXXXXX" 2>/dev/null) || return 1
+    if printf '%s' "$n" > "$tmp" 2>/dev/null && mv -fT "$tmp" "$REVIEWME_FROM_FILE" 2>/dev/null; then
+        [[ ! -L "$REVIEWME_FROM_FILE" && -f "$REVIEWME_FROM_FILE" && "$(cat "$REVIEWME_FROM_FILE" 2>/dev/null)" == "$n" ]] && return 0
+    fi
+    rm -f "$tmp" 2>/dev/null
+    return 1
+}
+
 # 4. Convergence + cost guards (need transcript context for keyed markers).
 CLEAN_FILE=""
 if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
@@ -484,6 +520,10 @@ if [[ -n "${_MARKER_DIR:-}" && -n "${_TRANSCRIPT_HASH:-}" ]]; then
     # no-agent-override rule forbids.
     AUTOSPENT_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.autospent"
     RECHECK_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.recheck"
+    # Line count of the transcript at the moment the codex findings were
+    # delivered. Only a reviewme invocation recorded AFTER that line satisfies
+    # step 4a-ii: one that predates the findings reviewed something else.
+    REVIEWME_FROM_FILE="${_MARKER_DIR}/${_TRANSCRIPT_HASH}_codex-review.reviewme-from"
     # -f follows symlinks, so a planted link here would read as "already spent"
     # and buy a free block with no review ever running - a check made unable to
     # run. A symlink is hostile state, not a spent budget: ignore it and review.
@@ -506,22 +546,49 @@ directory that is not yours), and end the turn again."
                 exit 0
             fi
         else
-            stop_guard_emit "CODEX AUTO-REVIEW: this session already spent its automatic round, and the
-current change set has no CLEAN verdict - so the turn cannot end yet. No codex
-call was made this time and none will be until you ask, so this block is free.
+            # 4a-ii. ONE SELF-REVIEW, THEN THE SESSION DECIDES (operator directive
+            # 2026-08-21: "force a review just once, then Claude performs the
+            # reviewme skill").
+            #
+            # The automatic round is spent and this change set has no CLEAN
+            # verdict. Until 2026-08-19 this branch blocked until the agent bought
+            # another codex round; the payload is cumulative, so every purchased
+            # re-review read the whole session diff and surfaced a fresh finding
+            # almost every time - one 20-line fix took three rounds and an hour. A
+            # gate whose only exit is to buy another gate is a toll, not a check.
+            # The 2026-08-19 attempt to make it advisory printed to stderr, which
+            # Claude Code never shows the agent on exit 0, so it was a silent allow.
+            #
+            # What releases the turn now is evidence, in the transcript, that the
+            # session ran the reviewme skill over its own change set AFTER the
+            # findings landed (REVIEWME_FROM_FILE anchors "after"). That is still
+            # a check that can fail: no invocation, no release. It does not read
+            # the verdict - acting on it is the agent's, and the block says so.
+            REVIEWME_FROM=""
+            if [[ -f "$REVIEWME_FROM_FILE" && ! -L "$REVIEWME_FROM_FILE" ]]; then
+                REVIEWME_FROM=$(cat "$REVIEWME_FROM_FILE" 2>/dev/null)
+            fi
+            if [[ "$REVIEWME_FROM" =~ ^[0-9]+$ ]] && reviewme_invoked_after "${_TRANSCRIPT:-}" "$REVIEWME_FROM"; then
+                emit_system_message "CODEX AUTO-REVIEW: the automatic round is spent and the reviewme self-review is on the transcript, so the turn may end. The codex findings remain on the record; for another codex pass over the current diff: touch \"$RECHECK_FILE\""
+                stop_guard_emit ""
+                exit 0
+            fi
+            # No anchor (older session state, or a marker that failed to write):
+            # anchor NOW and ask. Fail closed toward one more cheap round, never
+            # open toward counting a self-review that predates the findings.
+            REVIEWME_FROM_WARN=""
+            if [[ ! "$REVIEWME_FROM" =~ ^[0-9]+$ ]]; then
+                record_reviewme_from || REVIEWME_FROM_WARN=$'\n\n(The self-review anchor '"$REVIEWME_FROM_FILE"$' could not be written - symlink, directory, or unwritable - so the next turn will ask again. Remove that entry from the state directory.)'
+            fi
+            stop_guard_emit "CODEX AUTO-REVIEW: this session already spent its automatic codex round, and this change set has no CLEAN verdict. No codex call was made now and none will be until you ask.
 
-Finish the work. When the tree is how you want it reviewed, ask for the review
-and end the turn again:
+What releases this turn is ONE self-review: invoke the Skill tool with skill reviewme (change-set mode, Part C of .claude/skills/reviewme/SKILL.md) over this session's change set and the codex findings you were given, act on its verdict in this same turn, and end the turn again. The next Stop checks the transcript for that invocation; it does not call codex.
+
+If you want codex to look again instead (a full re-review of the current diff), ask for it and end the turn again:
 
   touch \"$RECHECK_FILE\"
 
-The next Stop then runs a full review of the current diff. For a deeper read of
-a specific plan or change, run /reviewme yourself - that is a separate reviewer
-and it does not consume this budget.
-
-Nothing here suppresses a finding: the only things that release the turn are a
-CLEAN verdict for the current diff or a disposition in
-.claude/codex-review-dispositions.jsonl."
+Nothing here clears a finding: fix them, or record a false positive in .claude/codex-review-dispositions.jsonl.$REVIEWME_FROM_WARN"
             exit 0
         fi
     fi
@@ -713,8 +780,12 @@ fi
 codex_memory_save_prev "$REVIEW"
 DISPUTE_HOWTO='If a finding is a FALSE POSITIVE (it contradicts CLAUDE.md or a documented project ruling), do not ignore it and do not burn rounds arguing: append ONE JSON line to .claude/codex-review-dispositions.jsonl -- {"date":"YYYY-MM-DD","file":"<repo-relative path>","finding":"<short summary of the finding>","ruling":"rejected","reason":"<why it is wrong, citing the governing rule>"} -- then fix everything else. The ledger edit is itself reviewed next round (an illegitimate ruling is a finding), and legitimate rulings suppress materially-matching findings from then on.'
 [[ -n "$DROPPED_NOTE" ]] && REVIEW="$REVIEW"$'\n\n'"($DROPPED_NOTE)"
-REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\n(Reviewer: %s, effort %s. There is no session opt-out: fix the findings, or record a disposition in the ledger if one is wrong.)' \
+REASON=$(printf 'CODEX AUTO-REVIEW -- address these before finishing this turn:\n\n%s\n\n%s\n\nTHEN, still in this turn, run the self-review: invoke the Skill tool with skill reviewme (change-set mode, Part C of .claude/skills/reviewme/SKILL.md) over this session'"'"'s change set and these findings, and act on its verdict. This was the session'"'"'s one automatic codex round; the next Stop checks the transcript for that self-review instead of calling codex again.\n\n(Reviewer: %s, effort %s. There is no session opt-out: fix the findings, or record a disposition in the ledger if one is wrong.)' \
     "$REVIEW" "$DISPUTE_HOWTO" "${CLAUDE_CODEX_REVIEW_MODEL:-gpt-5.6-sol}" "${CLAUDE_CODEX_REVIEW_EFFORT:-high}")
 mark_autospent
+# Anchor the self-review check here, where the findings land: a reviewme run
+# later in this same working turn then counts, and the agent never has to hit
+# Stop a second time just to be told to run it.
+record_reviewme_from || AUTOSPENT_WARN="$AUTOSPENT_WARN"$'\n\n(The self-review anchor could not be written; the next Stop will anchor itself and ask for the reviewme pass then.)'
 stop_guard_emit "$REASON$AUTOSPENT_WARN"
 exit 0

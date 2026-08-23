@@ -31,7 +31,7 @@ bash .claude/hooks/hooks-doctor.sh
 | Stop | `stop-no-deflection.sh` | blocks blame-dodging language ("pre-existing", "out of scope"...) | JSON tool* |
 | Stop | `stop-verify.sh` | one self-verification checklist round per session when `.ps1` changed | git |
 | Stop | `stop-jscpd-ratchet.sh` → `lib-jscpd.js` | blocks NEW copy-paste duplication vs `.jscpd-baseline.json` | node + jscpd + baseline |
-| Stop | `stop-codex-review.sh` | external codex review of this session's diff; blocks until `VERDICT: CLEAN` | codex CLI |
+| Stop | `stop-codex-review.sh` | one external codex review of this session's diff, then one `/reviewme` self-review releases the turn | codex CLI |
 
 \* *JSON tool = first working one of jq, python, python3, py, node. Without
 any, parsing-dependent hooks pass silently.*
@@ -44,10 +44,13 @@ When the turn ends and this session wrote code files, the diff is sent to the
 `CLEAN` lets it finish. Cost/loop controls:
 
 - a per-diff **clean cache** — an approved diff is never re-reviewed
-- a per-diff **strike budget** (`STOP_GUARD_MAX_BLOCKS`, default 3) — after
-  that the gate loudly stands down instead of trapping the session
-- **prior-round memory** — the next round verifies fixes instead of
-  re-reviewing blind
+- **one automatic codex round per session** — after it, the turn is released
+  by one `/reviewme` self-review over the session's change set (the hook
+  reads the transcript for the invocation); from then on the session decides.
+  Another codex pass runs only when the agent touches the recheck marker the
+  block names
+- **prior-round memory** — a recheck verifies fixes instead of re-reviewing
+  blind
 - a **dispositions ledger** (`.claude/codex-review-dispositions.jsonl`,
   committed and therefore audited) — findings ruled false-positive are
   suppressed in future reviews; ledger edits are themselves reviewed

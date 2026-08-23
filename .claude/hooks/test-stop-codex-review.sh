@@ -59,6 +59,11 @@
 #          (function-level, extracted); plus leg H-e: the append verifier
 #          rejects a short re-append that an older intact occurrence of the
 #          same path would previously have vouched for
+#   leg S  one automatic codex round, then ONE reviewme self-review releases
+#          the turn: a reviewme recorded before the findings does not count,
+#          a different skill does not count, the real one releases with no
+#          codex call, a later diff stays free, and parking the anchor marker
+#          blocks again (the release is the anchor+transcript pair)
 #
 # Run: bash .claude/hooks/test-stop-codex-review.sh    (exit 0 = all legs green)
 set -u
@@ -612,6 +617,11 @@ if [[ -n "$RECHECK_PATH" ]]; then
 else
     fail "leg W: the block did not name a recheck path -- there is no way out of it"
 fi
+if [[ "$OUT" == *'skill reviewme'* ]]; then
+    pass "leg W: the free block asks for the reviewme self-review"
+else
+    fail "leg W: the free block never asks for the reviewme self-review -- the only exit it offers is another codex round"
+fi
 
 # Perturbation control for the assertion above. "No codex call" is also what the
 # clean cache and every early exit produce, so the silence has to be shown to
@@ -670,6 +680,129 @@ else
 fi
 git -C "$REPO" checkout -q -- thing.ps1
 unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
+
+# ---- leg S: after the automatic round, ONE reviewme self-review releases the turn
+# Operator directive 2026-08-21: codex runs once, then the session reviews its
+# own change set with the reviewme skill. The hook reads the transcript for that
+# invocation, and only one recorded AFTER the findings landed counts - so this
+# leg plants one BEFORE the round as its negative control, then a different
+# skill, then the real thing. A leg that only appended the real line would pass
+# on a build that allows whenever the word appears anywhere, or simply allows.
+printf 'function Get-Thing { 11 } # SENTINEL_S1\n' > "$REPO/thing.ps1"
+printf '%s\n' "$REPO/thing.ps1" > "$STATE/legS.txt"
+printf '%s\t%s\t%s\n' "$BASE" "$ORIGIN_URL" "$REPO" > "$STATE/legS.repos"
+S_TRANSCRIPT="$WORK/transcript-legS.jsonl"
+skill_line() {    # <id> <skill> - the one-line shape Claude Code writes for a Skill tool_use
+    printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_%s","name":"Skill","input":{"skill":"%s","args":"change set"}}]},"timestamp":"2026-08-21T00:00:00.000Z"}\n' "$1" "$2"
+}
+skill_line 001 reviewme > "$S_TRANSCRIPT"          # predates the findings: must not count
+export CODEX_STUB_VERDICT=CHANGES_REQUESTED
+export CODEX_STUB_PROMPT_FILE="$WORK/promptS1.txt"
+run_hook legS
+if [[ "$OUT" == *'"decision":"block"'* && -e "$WORK/promptS1.txt" ]]; then
+    pass "leg S: round 1 spends the automatic codex call and blocks"
+else
+    fail "leg S: round 1 did not review-and-block -- the rest of this leg proves nothing"
+fi
+if [[ "$OUT" == *'skill reviewme'* ]]; then
+    pass "leg S: the findings block already asks for the self-review, so it can happen in the same working turn"
+else
+    fail "leg S: the findings block never mentions reviewme -- the agent must hit Stop again just to be told"
+fi
+
+export CODEX_STUB_PROMPT_FILE="$WORK/promptS2.txt"
+run_hook legS
+if [[ "$OUT" == *'"decision":"block"'* && ! -e "$WORK/promptS2.txt" ]]; then
+    pass "leg S: a reviewme recorded BEFORE the codex round does not release the turn"
+else
+    fail "leg S: a stale reviewme (older than the findings) released the turn, or codex ran again"
+fi
+S_RECHECK=$(printf '%s' "$OUT" | grep -o '[^ "\\]*_codex-review\.recheck' | head -1)
+S_FROM="${S_RECHECK%.recheck}.reviewme-from"
+if [[ -n "$S_RECHECK" && -f "$S_FROM" && "$(cat "$S_FROM" 2>/dev/null)" == "1" ]]; then
+    pass "leg S: the anchor marks where the findings landed (transcript line 1)"
+else
+    fail "leg S: no usable anchor marker (content: '$(cat "$S_FROM" 2>/dev/null)') -- 'after the findings' has nothing to measure against"
+fi
+
+skill_line 002 codex >> "$S_TRANSCRIPT"             # a different skill, after the round
+export CODEX_STUB_PROMPT_FILE="$WORK/promptS3.txt"
+run_hook legS
+if [[ "$OUT" == *'"decision":"block"'* && ! -e "$WORK/promptS3.txt" ]]; then
+    pass "leg S: a different skill after the round does not count"
+else
+    fail "leg S: any Skill invocation released the turn"
+fi
+
+skill_line 003 reviewme >> "$S_TRANSCRIPT"          # the real thing
+export CODEX_STUB_PROMPT_FILE="$WORK/promptS4.txt"
+run_hook legS
+if [[ "$OUT" != *'"decision":"block"'* && ! -e "$WORK/promptS4.txt" ]]; then
+    pass "leg S: a reviewme after the findings releases the turn with no codex call"
+else
+    fail "leg S: the self-review did not release the turn (blocked=$([[ "$OUT" == *'"decision":"block"'* ]] && echo yes || echo no), codex=$([[ -e "$WORK/promptS4.txt" ]] && echo ran || echo silent))"
+fi
+
+# "Once" is per session: a later diff neither blocks nor buys a codex call.
+printf 'function Get-Thing { 12 } # SENTINEL_S5\n' > "$REPO/thing.ps1"
+export CODEX_STUB_PROMPT_FILE="$WORK/promptS5.txt"
+run_hook legS
+if [[ "$OUT" != *'"decision":"block"'* && ! -e "$WORK/promptS5.txt" ]]; then
+    pass "leg S: a later diff in the same session stays free"
+else
+    fail "leg S: a later diff re-opened the gate after the self-review"
+fi
+
+# Perturbation control: the release has to come from the anchor+transcript pair.
+# With the anchor gone the hook must re-anchor at the CURRENT transcript end,
+# which puts the recorded reviewme behind it, and block again.
+if [[ -f "$S_FROM" ]]; then
+    mv "$S_FROM" "$S_FROM.parked"
+    export CODEX_STUB_PROMPT_FILE="$WORK/promptS6.txt"
+    run_hook legS
+    if [[ "$OUT" == *'"decision":"block"'* && ! -e "$WORK/promptS6.txt" ]]; then
+        pass "leg S control: without the anchor the same transcript blocks again -- the release was the pair, not a general allow"
+    else
+        fail "leg S control: the turn was released with no anchor, so leg S is measuring something other than the self-review"
+    fi
+    rm -f "$S_FROM.parked"
+else
+    fail "leg S control: the anchor marker vanished, so the control could not run"
+fi
+git -C "$REPO" checkout -q -- thing.ps1
+unset CODEX_STUB_VERDICT CODEX_STUB_PROMPT_FILE
+
+# Function level: the other two invocation shapes, and two things that must NOT
+# read as a self-review - the hook's own instruction text, and no transcript.
+eval "$(awk '/^reviewme_invoked_after\(\) \{/,/^\}$/' "$HOOK_DIR/stop-codex-review.sh")"
+if declare -f reviewme_invoked_after >/dev/null 2>&1; then
+    S_FORMS="$WORK/forms.jsonl"
+    printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"cd /mnt/c/github/dbatools && claude -p \"/reviewme /tmp/plan.md #1\" --model opus"}}]}}' > "$S_FORMS"
+    if reviewme_invoked_after "$S_FORMS" 0; then
+        pass "leg S: a headless claude -p /reviewme call counts"
+    else
+        fail "leg S: the headless reviewer invocation does not count"
+    fi
+    printf '%s\n' '{"type":"user","message":{"role":"user","content":"<command-name>/reviewme</command-name>"}}' > "$S_FORMS"
+    if reviewme_invoked_after "$S_FORMS" 0; then
+        pass "leg S: the operator typing /reviewme counts"
+    else
+        fail "leg S: an operator-typed /reviewme does not count"
+    fi
+    printf '%s\n' '{"type":"user","message":{"role":"user","content":"CODEX AUTO-REVIEW: invoke the Skill tool with skill reviewme (change-set mode) and act on its verdict."}}' > "$S_FORMS"
+    if reviewme_invoked_after "$S_FORMS" 0; then
+        fail "leg S: the hook's own instruction text reads as an invocation -- the block satisfies itself"
+    else
+        pass "leg S: the instruction text itself does not count"
+    fi
+    if reviewme_invoked_after "$WORK/does-not-exist.jsonl" 0; then
+        fail "leg S: a missing transcript reads as a self-review"
+    else
+        pass "leg S: a missing transcript is not a self-review"
+    fi
+else
+    fail "leg S: reviewme_invoked_after could not be extracted, so the shape checks did not run"
+fi
 
 # ---- leg W2: a planted symlink .autospent must not become a write-through ----
 # Same class leg P covers for .fail markers. The path is predictable and lives

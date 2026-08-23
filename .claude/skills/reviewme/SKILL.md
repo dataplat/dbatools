@@ -51,8 +51,10 @@ treat that as a failed attempt under the three-tries rule below, not as a soft v
 
 **Cross-engine is the point.** codex writes the plan, Claude tries to break it. A reviewer that
 shares the worker's blind spots catches less, which is why this call is worth its tokens and why
-a Claude worker must never invoke it — that is a model reviewing itself and it is the reason the
-Claude-side `/gocodex` worker skill was retired in favour of this one.
+a Claude worker must never invoke it as its plan review — that is a model reviewing itself and it
+is the reason the Claude-side `/gocodex` worker skill was retired in favour of this one. (The
+change-set pass in Part C is the one sanctioned self-invocation; it follows a codex round rather
+than replacing one.)
 
 **One reviewer, always: `--model opus --effort medium`.** No tier table, no per-condition
 escalation, no alternate-model fallback. Set by the operator 2026-07-25, replacing a two-tier
@@ -192,3 +194,27 @@ REVISE: <specific, actionable reasons>
 
 The caller parses that last line. A verdict that hedges, or that trails a summary after the line,
 reads as a malformed review and costs a cycle.
+
+---
+
+## Part C — if the Stop hook sent you here (change-set mode)
+
+`.claude/hooks/stop-codex-review.sh` spends exactly ONE automatic codex round per session
+(operator directive 2026-08-21). After that round it asks the session to review its own change set
+with this skill before the turn may end — invoked in-session through the Skill tool, not via
+`claude -p`. This is the one sanctioned self-invocation: the cross-engine review already happened,
+and this is a second, structured pass over the fixes, not a substitute for codex.
+
+There is no plan file and no issue number. Review instead:
+
+1. **The change set** — every file this session wrote, diffed against its turn-start baseline
+   (`git diff` plus untracked files; the same scope the codex round saw).
+2. **The codex findings** from the automatic round, as delivered in the Stop block. For each one,
+   state its status: fixed (cite the hunk), dispositioned in
+   `.claude/codex-review-dispositions.jsonl`, or still open.
+3. **The laws above** — distinguishing leg, negative control, bounded scope — applied to the fix
+   rather than to a plan.
+
+Write the reasoning in your reply (no `logs/` artifact), end with the same single verdict line, and
+then ACT on it in the same turn: `REVISE` means fix it now, not end the turn. The hook looks for the
+invocation in the transcript; it does not read the verdict, so an unacted `REVISE` is on you.
