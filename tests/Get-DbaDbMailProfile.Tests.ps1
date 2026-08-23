@@ -73,6 +73,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results2 | Should -Not -BeNullOrEmpty
             ($results2 | Select-Object SqlInstance -Unique).Count | Should -BeExactly 2
         }
+
+        It "Gets profile results piped from multiple instances" {
+            $mailServers = Get-DbaDbMail -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+            $pipedResults = $mailServers | Get-DbaDbMailProfile -Profile $profilename
+            $expectedInstances = @($mailServers | Select-Object -ExpandProperty SqlInstance -Unique | Sort-Object)
+            $actualResults = @($pipedResults | Where-Object Name -eq $profilename)
+            $actualInstances = @($actualResults | Select-Object -ExpandProperty SqlInstance -Unique | Sort-Object)
+
+            $actualResults.Count | Should -BeExactly 2
+            $actualInstances.Count | Should -BeExactly 2
+            $actualInstances | Should -Be $expectedInstances
+        }
     }
 
     Context "Gets DbMailProfile when using -Profile" {
