@@ -47,6 +47,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set variables. They are available in all the It blocks.
         $outputFile = "$backupPath\Dbatoolsci_XE_CustomFile.sql"
+        $suffix = [guid]::NewGuid().ToString("N")
+        $firstPipelineSessionName = "dbatoolsci_export_pipeline_first_$suffix"
+        $secondPipelineSessionName = "dbatoolsci_export_pipeline_second_$suffix"
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $conn = $server.ConnectionContext
+        $conn.ExecuteNonQuery("CREATE EVENT SESSION [$firstPipelineSessionName] ON SERVER ADD EVENT sqlserver.sql_batch_completed;")
+        $conn.ExecuteNonQuery("CREATE EVENT SESSION [$secondPipelineSessionName] ON SERVER ADD EVENT sqlserver.sql_batch_completed;")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -58,6 +65,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse
+        $conn.ExecuteNonQuery("IF EXISTS(SELECT 1 FROM sys.server_event_sessions WHERE name = '$firstPipelineSessionName') DROP EVENT SESSION [$firstPipelineSessionName] ON SERVER;")
+        $conn.ExecuteNonQuery("IF EXISTS(SELECT 1 FROM sys.server_event_sessions WHERE name = '$secondPipelineSessionName') DROP EVENT SESSION [$secondPipelineSessionName] ON SERVER;")
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -105,6 +114,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exported file is bigger than 0" {
             (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "Check if supports multi-record Pipeline input" {
+        BeforeAll {
+            $pipelineSessions = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $firstPipelineSessionName, $secondPipelineSessionName
+            $pipelineExport = @($pipelineSessions | Export-DbaXESession -Passthru)
+        }
+
+        It "Exports each distinct piped session exactly once" {
+            $pipelineExport.Count | Should -BeExactly 2
+            @($pipelineExport | Where-Object Name -eq $firstPipelineSessionName).Count | Should -BeExactly 1
+            @($pipelineExport | Where-Object Name -eq $secondPipelineSessionName).Count | Should -BeExactly 1
         }
     }
 }
