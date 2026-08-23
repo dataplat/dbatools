@@ -25,6 +25,15 @@ function Get-TestConfig {
         ClusterStorage   = $null
         # ClusterWitness needs a file share witness.
         ClusterWitness   = $null
+        # The Azure SQL Database that the tests of the Azure code paths need. Azure SQL Database is the
+        # only engine that refuses to switch the database of an existing connection - it answers a USE
+        # with error 40508 - so a real one is the only place that branch can be covered. No CI
+        # environment has one, so these stay empty there and those tests skip themselves. A local
+        # configuration that has one sets all three: the server, a database on it, and a credential of a
+        # SQL Server login that can reach that database.
+        AzureSqlDbServer = $null
+        AzureSqlDbName   = $null
+        AzureSqlDbCred   = $null
     }
 
     if (Test-Path $LocalConfigPath) {

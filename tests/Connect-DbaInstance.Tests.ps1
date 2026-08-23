@@ -13,6 +13,12 @@ BeforeDiscovery {
     # exercised where the instance really is local, which is the case on the CI runners and not in a lab
     # of remote instances. The value decides a Skip, so it has to exist at discovery time.
     $script:instanceIsLocalHost = ([DbaInstanceParameter]$TestConfig.InstanceMulti1).IsLocalHost
+    # Azure SQL Database is the only engine that refuses to switch the database of a connection it has
+    # already opened - it answers a USE with error 40508 and wants a new connection instead. Every branch
+    # that depends on that can therefore only be covered against a real one, which a lab configuration
+    # supplies through AzureSqlDbServer. Everywhere else these tests skip themselves. The value decides a
+    # Skip, so it has to exist at discovery time.
+    $script:hasAzureSqlDb = -not [string]::IsNullOrWhiteSpace($TestConfig.AzureSqlDbServer)
 }
 
 Describe $CommandName -Tag UnitTests {
@@ -560,6 +566,29 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $serverClone | Disconnect-DbaInstance
         }
 
+        It "clones when using parameter ApplicationIntent" {
+            # ApplicationIntent is not one of the properties SMO refuses to assign, so this used to look
+            # like it worked: the property took the value and read it back. On a fixed connection string
+            # the assignment never reaches the string, and the string is what the login is made with -
+            # SQL Server reads the intent at login time and routes on it then. So the context reported
+            # ReadOnly over a connection that had logged in as ReadWrite, and with no other setting to
+            # apply, nothing rebuilt the string to correct it.
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -ApplicationIntent ReadOnly
+            $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+            $cloneStringBuilder["ApplicationIntent"] | Should -Be "ReadOnly"
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database together with ApplicationIntent" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb -ApplicationIntent ReadOnly
+            $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+            $cloneStringBuilder["ApplicationIntent"] | Should -Be "ReadOnly"
+            $cloneStringBuilder["Initial Catalog"] | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
         It "clones when using parameter DedicatedAdminConnection" {
             $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -DedicatedAdminConnection
             $serverClone.ConnectionContext.ConnectionString | Should -Match "ADMIN:"
@@ -621,13 +650,21 @@ Describe $CommandName -Tag IntegrationTests {
             $sqlAuthConnection.Open()
             $serverFromSqlAuth = Connect-DbaInstance -SqlInstance $sqlAuthConnection
 
+            # The session counting of the tests below goes through a connection of its own, opened once
+            # here. Passing an instance name to Get-DbaProcess instead would open a new connection on
+            # every call, and each of those registers itself with the tab expansion cache under the same
+            # instance key - which drops the reference to whatever was stored there before, and with it
+            # the leaked connection these tests are looking for. Counting would then hide the growth it
+            # is supposed to prove.
+            $serverForCounting = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $serverFromSqlAuth | Disconnect-DbaInstance
+            $null = $serverFromSqlAuth, $serverForCounting | Disconnect-DbaInstance
             $sqlAuthConnection.Close()
             $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $sqlAuthLogin -Force -ErrorAction SilentlyContinue
 
@@ -651,7 +688,144 @@ Describe $CommandName -Tag IntegrationTests {
             # so rather than hand back something that fails on first use. Connect-DbaInstance throws by
             # default, which is why this is not a warning.
             { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb -NonPooledConnection } |
-                Should -Throw -ExpectedMessage "*no longer readable*"
+                Should -Throw -ExpectedMessage "*cannot be reproduced from its connection string*"
+        }
+
+        It "keeps the session count flat over repeated refusals" {
+            # A refusal happens after the connection context has been copied, and Copy() clones an open
+            # connection as an open connection. Nothing but the returned server object can ever close that
+            # copy, so a refusal that simply returns leaves a session behind that nothing can reuse - the
+            # same orphaned connection this whole change is about, only on the failure path. Repeated on
+            # purpose: one sleeping pooled session is legitimate, growth is not.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb -NonPooledConnection } | Should -Throw
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+
+        It "keeps the session count flat over repeated failed database switches" {
+            # The other way out of the same block: the copy exists and is open, and switching it to a
+            # database that does not exist throws from inside SMO rather than through Stop-Function.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database "dbatoolsci_does_not_exist_$cycle" } | Should -Throw
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+
+        It "keeps the session count flat over repeated successful clones" {
+            # And the path that succeeds. This one switches the database on the connection the copy holds,
+            # which leaves that connection open, and an open connection was then copied a second time for
+            # the tab expansion cache and kept there for the life of the process. That copy was reachable
+            # by nothing, so every call parked another session: the count went 3, 4, 5, 6, 7, 8.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb
+                $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+                $null = $serverClone | Disconnect-DbaInstance
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+    }
+
+    Context "connection is properly cloned on Azure SQL Database" -Skip:(-not $script:hasAzureSqlDb) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Azure SQL Database answers a USE with error 40508 and wants a new connection for another
+            # database. Every other engine, Azure SQL Managed Instance included, takes the USE, so the
+            # branch that switches the database on an existing connection looks correct everywhere else
+            # and is wrong only here. See #10584.
+            # A serverless database that has been idle is paused and takes up to a minute to wake up, so
+            # the first connection gets a generous timeout.
+            $splatAzureConnect = @{
+                SqlInstance    = $TestConfig.AzureSqlDbServer
+                Database       = $TestConfig.AzureSqlDbName
+                SqlCredential  = $TestConfig.AzureSqlDbCred
+                ConnectTimeout = 120
+            }
+            $serverAzure = Connect-DbaInstance @splatAzureConnect
+
+            # The same login again, but through a SqlConnection, which gives the server a fixed connection
+            # string and so takes the code path that cannot assign DatabaseName. Persist Security Info is
+            # on, so the password survives being read back and a new connection can be built from it.
+            $azurePassword = $TestConfig.AzureSqlDbCred.GetNetworkCredential().Password
+            $azureConnectionString = @(
+                "Data Source=$($TestConfig.AzureSqlDbServer)"
+                "Initial Catalog=$($TestConfig.AzureSqlDbName)"
+                "User ID=$($TestConfig.AzureSqlDbCred.UserName)"
+                "Password=$azurePassword"
+                "Encrypt=True"
+                "Persist Security Info=True"
+                "Connect Timeout=120"
+            ) -join ";"
+            $azureConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $azureConnectionString
+            $azureConnection.Open()
+            $serverAzureFromSqlConnection = Connect-DbaInstance -SqlInstance $azureConnection
+
+            # And once more with the password hidden, which is what an opened connection looks like by
+            # default. Nothing can rebuild a connection string from this one.
+            $azureHiddenConnectionString = $azureConnectionString -replace "Persist Security Info=True", "Persist Security Info=False"
+            $azureHiddenConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $azureHiddenConnectionString
+            $azureHiddenConnection.Open()
+            $serverAzureHiddenPassword = Connect-DbaInstance -SqlInstance $azureHiddenConnection
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $serverAzure, $serverAzureFromSqlConnection, $serverAzureHiddenPassword | Disconnect-DbaInstance
+            $azureConnection.Close()
+            $azureHiddenConnection.Close()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "really is an Azure SQL Database, which is what makes this case different" {
+            # Guards the three tests below: against anything else they would pass without proving
+            # anything, because every other engine simply takes the USE.
+            $serverAzure.DatabaseEngineEdition | Should -Be "SqlDatabase"
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverAzure -Database master
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $serverAzure.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be $TestConfig.AzureSqlDbName
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database from a server that was created from a SqlConnection" {
+            # The regression: a fixed connection string cannot take DatabaseName, and switching the
+            # database on the connection instead is exactly what Azure SQL Database refuses. The database
+            # has to go into the connection string as Initial Catalog, which is also the only thing that
+            # gives it the right connection pool.
+            $serverClone = Connect-DbaInstance -SqlInstance $serverAzureFromSqlConnection -Database master
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $serverClone.ConnectionContext.ExecuteScalar("select suser_sname()") | Should -Be $TestConfig.AzureSqlDbCred.UserName
+            $serverAzureFromSqlConnection.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be $TestConfig.AzureSqlDbName
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "refuses rather than trying to switch the database on the connection" {
+            # No new connection can be built here, because the password is gone, and the fallback that
+            # every other engine uses cannot work on Azure SQL Database. The command has to say so. The
+            # last assertion is the one with teeth: it fails if the code ever reaches ChangeDatabase,
+            # which answers with "USE statement is not supported to switch between databases".
+            $errorRecord = $null
+            try {
+                $null = Connect-DbaInstance -SqlInstance $serverAzureHiddenPassword -Database master
+            } catch {
+                $errorRecord = $PSItem
+            }
+            $errorRecord | Should -Not -BeNullOrEmpty
+            $errorRecord.Exception.Message | Should -BeLike "*Azure SQL Database does not support switching the database*"
+            $errorRecord.Exception.Message | Should -Not -BeLike "*USE statement is not supported*"
         }
     }
 
