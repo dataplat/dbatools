@@ -125,8 +125,10 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Exports each distinct piped session exactly once" {
             $pipelineExport.Count | Should -BeExactly 2
-            @($pipelineExport | Where-Object Name -eq $firstPipelineSessionName).Count | Should -BeExactly 1
-            @($pipelineExport | Where-Object Name -eq $secondPipelineSessionName).Count | Should -BeExactly 1
+            $firstSessionCreate = [regex]::Escape("CREATE EVENT SESSION [$firstPipelineSessionName]")
+            $secondSessionCreate = [regex]::Escape("CREATE EVENT SESSION [$secondPipelineSessionName]")
+            @($pipelineExport | Where-Object { $_ -match $firstSessionCreate }).Count | Should -BeExactly 1
+            @($pipelineExport | Where-Object { $_ -match $secondSessionCreate }).Count | Should -BeExactly 1
         }
     }
 }
