@@ -36,6 +36,12 @@ try {
             # renaming it, revoking access - would otherwise throw here although it succeeded, and the
             # caller would read that as "it did not run" and might do it a second time. A query that
             # failed would have its own error replaced by this one, which is just as misleading.
+            # Write-Warning obeys the caller's $WarningPreference, and Stop turns it into a terminating
+            # error - which would hand the outcome of the call back to the housekeeping, the very thing
+            # this catch exists to prevent. Inquire stops just as dead where nobody can answer it. Only
+            # those two are neutralised, and only for this one call: a caller that asked for silence
+            # still gets silence, which passing -WarningAction Continue would have taken away.
+            if ($WarningPreference -notin "SilentlyContinue", "Continue") { $WarningPreference = "Continue" }
             Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
         }
     }
@@ -63,6 +69,8 @@ try {
         try {
             $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
         } catch {
+            # See the comment on Query above for why the warning preference is neutralised first.
+            if ($WarningPreference -notin "SilentlyContinue", "Continue") { $WarningPreference = "Continue" }
             Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
         }
     }
@@ -101,6 +109,8 @@ try {
                 try {
                     $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
                 } catch {
+                    # See the comment on Database.Query for why the warning preference is neutralised first.
+                    if ($WarningPreference -notin "SilentlyContinue", "Continue") { $WarningPreference = "Continue" }
                     Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
                 }
             }
@@ -148,6 +158,8 @@ try {
                 try {
                     $null = $connectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
                 } catch {
+                    # See the comment on Database.Query for why the warning preference is neutralised first.
+                    if ($WarningPreference -notin "SilentlyContinue", "Continue") { $WarningPreference = "Continue" }
                     Write-Warning "The database context could not be restored to [$previousDatabase]: $($_.Exception.Message)"
                 }
             }

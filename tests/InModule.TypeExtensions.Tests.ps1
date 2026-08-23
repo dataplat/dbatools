@@ -15,7 +15,14 @@ Describe $CommandName -Tag IntegrationTests {
         # caught. The collation decides it, not the version, so this is asked of the instance rather than
         # assumed. On a case insensitive instance the scenario cannot be built at all and the Context skips.
         $caseDiscoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
-        $instanceIsCaseSensitive = $caseDiscoveryServer.Collation -match "_CS_"
+        # Asked as a behaviour rather than matched against the collation name. The _BIN and _BIN2
+        # collations are case sensitive too and carry no _CS_, so a name match would skip this whole
+        # scenario on a binary collation instance. Comparing a name in sys.databases asks the exact
+        # question instead, because that column carries the collation of the instance - the one that
+        # database names are compared with. DB_NAME(1) is master, so the comparison needs no string
+        # literal of its own.
+        $caseProbeQuery = "SELECT CASE WHEN EXISTS (SELECT 1 FROM sys.databases WHERE name = UPPER(DB_NAME(1))) THEN 0 ELSE 1 END"
+        $instanceIsCaseSensitive = [bool]$caseDiscoveryServer.ConnectionContext.ExecuteScalar($caseProbeQuery)
         $null = $caseDiscoveryServer | Disconnect-DbaInstance
     }
 
@@ -142,9 +149,17 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # One database and one connection per test. The scenario is spent once it has run: the restore
+            # fails because the previous database went offline, so the connection is left in master, and a
+            # second call from the same connection would have master as its previous database and restore
+            # it without trouble.
             $offlineDbName = "dbatoolsci_typeext_offline_$(Get-Random)"
             $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineDbName
             $offlineServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -NonPooledConnection
+
+            $offlineStopDbName = "dbatoolsci_typeext_offlinestop_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $offlineStopDbName
+            $offlineStopServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $offlineStopDbName -NonPooledConnection
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -152,9 +167,11 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $offlineServer | Disconnect-DbaInstance
-            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -Online -Force -ErrorAction SilentlyContinue
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -ErrorAction SilentlyContinue
+            $null = $offlineServer, $offlineStopServer | Disconnect-DbaInstance
+            foreach ($offlineDatabase in $offlineDbName, $offlineStopDbName) {
+                $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDatabase -Online -Force -ErrorAction SilentlyContinue
+                $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $offlineDatabase -ErrorAction SilentlyContinue
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -171,6 +188,28 @@ Describe $CommandName -Tag IntegrationTests {
             { $offlineServer.Databases["master"].Invoke($offlineStatement) } | Should -Not -Throw
 
             (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName).Status | Should -Be "OFFLINE"
+        }
+
+        It "returns normally even when the caller turned warnings into terminating errors" {
+            # The same scenario with $WarningPreference = Stop, which is the one setting that can hand the
+            # outcome of the call back to the housekeeping after all: Write-Warning obeys the preference of
+            # the caller, and Stop makes it throw. The statement would have succeeded and the caller would
+            # still see an exception - and where the statement itself failed, that exception would replace
+            # its error. The wrapper neutralises the preference for its own warning, so this returns.
+            # The test above still proves that a caller asking for silence gets silence, which is why the
+            # preference is not simply forced to Continue.
+            $WarningPreference = "Stop"
+            $offlineStatement = "ALTER DATABASE [$offlineStopDbName] SET OFFLINE WITH ROLLBACK IMMEDIATE"
+
+            # Unlike the test above, the caller has not asked for silence here, so the warning is written -
+            # and it cannot be asserted on, because a script method writes to the host and neither
+            # -WarningVariable nor a redirection inside the method can reach it. It is merged into the
+            # output stream so that it does not land in the run, where the harness reads every warning as
+            # a defect. That does not soften the test: a preference of Stop throws before anything is
+            # written at all, which is how this fails against the unguarded code.
+            { $null = $offlineStopServer.Databases["master"].Invoke($offlineStatement) 3>&1 } | Should -Not -Throw
+
+            (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineStopDbName).Status | Should -Be "OFFLINE"
         }
     }
 
