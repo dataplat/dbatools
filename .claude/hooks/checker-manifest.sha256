@@ -5,7 +5,7 @@
 # stop-checker-integrity.sh, so silently re-baselining a weakened checker
 # does not go unrecorded - which is the whole point of the file.
 #
-# Generated from HEAD 02018e0f8
+# Generated from HEAD 5c693d4b4
 3f368c88538596eb37cc023905d2bec70425b7d6ad1eec37d075eaa38ece34d6  .claude/hooks/hooks-doctor.sh
 abe4c845ae6f5dd974d323503e5b190c80720c8310921f08f7751409201d352c  .claude/hooks/jscpd-baseline.sh
 7a0221328269aae82c94f23ecebd1aa4f9cf503fe3d3de77c63a464634f38694  .claude/hooks/lib-codex-review-exec.sh
@@ -16,7 +16,7 @@ f3076f680e2a057eaa5f78be8136e1a01440e8270730f8af0b81bb0ba3a6ff17  .claude/hooks/
 c991d699cddc90b94381894d2cfff213b0dc93e2d16c7217b4abda7de7936d45  .claude/hooks/lib-protected-surface.sh
 f052bd0a3160bf54dbf6f18b7d3dacf5bb980e5d78bed76cec575202c2fdc8c9  .claude/hooks/lib-stop-guard.sh
 04908283d3241330fb1d1f3e7d462910bdf16975e8c52c9c0cc8d14a16208d2e  .claude/hooks/post-read-track.sh
-4646882a60e302428f2f2789c37b9f715e38bc41b8d60d7acc9aa3356ec15671  .claude/hooks/post-write-track-session-files.sh
+1b0721a1c2e19db0fd785cf93d5a4d314c48195144ce7bb27174bcbebe83825b  .claude/hooks/post-write-track-session-files.sh
 f9b74ed4b35aff933071763ebe335fbaca6d25cb069195b8a7a8a10c0a2ff769  .claude/hooks/pre-bash-commit-do.sh
 e8bff93e6cf1bb2dd4b71a525df250dbeef4d53d535c75f547a8d4c29b218d05  .claude/hooks/pre-bash-guard.sh
 5576f13dcb675f62025d95149961ce1d2dc6e37d8df29fcb7991434e58b30f12  .claude/hooks/pre-bash-pwsh-script.sh
@@ -28,7 +28,7 @@ f0c2c5fdc35d3e1b07aa3556fcb1e58ce8f1ac541cbb77affaf8c152e64feb27  .claude/hooks/
 c2ba9fab5936eab9b5213c14b7f6b015660f0a17481fb0fb5a04deafa37e55a4  .claude/hooks/session-compact-reset-reads.sh
 99311b70c19c5d1f64998ab8184ce1aa5ccac37c8ee64a3c48a5c63e92cfedb2  .claude/hooks/session-context.sh
 e005c196beff7e6bf8b230094de8902cfd9619fc59cbeed5d4ac685ad730c4c3  .claude/hooks/stop-checker-integrity.sh
-85771a6bef745cffa44840833ebe453f821c16a9bfef43eee3630222256b2aeb  .claude/hooks/stop-codex-review.sh
+eb7d778ab36541e492a8e53f8dceb3bca3433a3734087309d387a3357740a7d8  .claude/hooks/stop-codex-review.sh
 da4e4ec2265076ac4f16333073d8522950d4614bf38d54f71d7d131ee66b1555  .claude/hooks/stop-jscpd-ratchet.sh
 274c047f1bb917123e08c3826bd4225e45503a673d61f669142bfbcf3924cb95  .claude/hooks/stop-no-deflection.sh
 7123ac90e34cff86e7cd770edd4a17a26831bf60616f5b0550a7400e79df2411  .claude/hooks/stop-registration-check.sh

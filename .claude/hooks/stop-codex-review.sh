@@ -226,6 +226,26 @@ fi
 # repo - 3 and 4 are cannot-measure, never skip.
 campaign_file_root() {
     local rf="$1" root _dir _top _origin
+    # Git Bash can spell one Windows file as C:/x, /c/x, or /mnt/c/x.
+    # Keep the fold here: this function is extracted by its focused probe.
+    _campaign_path_fold() {
+        local p="${1//\\//}" drive tail
+        p="${p#//\?/}"
+        if [[ "$p" =~ ^([A-Za-z]):/(.*)$ ]]; then
+            drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"
+        elif [[ "$p" =~ ^/([A-Za-z])/(.*)$ ]]; then
+            drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"
+        elif [[ "$p" =~ ^/mnt/([A-Za-z])/(.*)$ ]]; then
+            drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"
+        else
+            printf '%s' "$p"
+        fi
+    }
+    rf=$(_campaign_path_fold "$rf")
+    local _root_index
+    for _root_index in "${!CAMPAIGN_ROOTS[@]}"; do
+        CAMPAIGN_ROOTS[$_root_index]=$(_campaign_path_fold "${CAMPAIGN_ROOTS[$_root_index]}")
+    done
     _dir=$(dirname "$rf")
     # A deleted file may have taken its directory with it; walk up to the
     # nearest surviving parent so the deletion is still attributed to a repo.
@@ -233,6 +253,7 @@ campaign_file_root() {
         _dir=$(dirname "$_dir")
     done
     _top=$(git -C "$_dir" rev-parse --show-toplevel 2>/dev/null)
+    _top=$(_campaign_path_fold "$_top")
     if [[ -z "$_top" ]]; then
         # Unresolvable but sitting under a campaign root by path: that is a
         # broken measurement, not a scratchpad file to skip.
@@ -251,12 +272,14 @@ campaign_file_root() {
         local _bsha _bmid _btop
         while IFS=$'\t' read -r _bsha _bmid _btop; do
             [[ -n "$_btop" ]] || continue
+            _btop=$(_campaign_path_fold "$_btop")
             if [[ "$_btop" != "$_top" && "$_btop" == "$_top/"* && "$rf" == "$_btop/"* ]]; then
                 return 4
             fi
         done < "$SESSION_BASELINES"
     fi
     for root in "${CAMPAIGN_ROOTS[@]}"; do
+        root=$(_campaign_path_fold "$root")
         if [[ "$_top" == "$root" ]]; then printf '%s' "$_top"; return 0; fi
     done
     # Exact identity, not a suffix: *[/:]dataplat/dbatools also matched

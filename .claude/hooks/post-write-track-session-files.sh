@@ -30,6 +30,10 @@ SESSION_ID=$(hook_field '.session_id')
 FILE_PATH=$(hook_field_first '.tool_input.file_path' '.tool_response.filePath')
 
 [[ -z "$SESSION_ID" || -z "$FILE_PATH" ]] && exit 0
+FILE_PATH_ORIGINAL="$FILE_PATH"
+campaign_path_fold() { local p="${1//\\//}" drive tail; p="${p#//\?/}"; if [[ "$p" =~ ^([A-Za-z]):/(.*)$ ]]; then drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"; elif [[ "$p" =~ ^/([A-Za-z])/(.*)$ ]]; then drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"; elif [[ "$p" =~ ^/mnt/([A-Za-z])/(.*)$ ]]; then drive="${BASH_REMATCH[1],,}"; tail="${BASH_REMATCH[2]}"; printf '/%s/%s' "$drive" "$tail"; else printf '%s' "$p"; fi; }
+FILE_PATH=$(campaign_path_fold "$FILE_PATH")
+baseline_has_top() { local entry; while IFS= read -r entry; do [[ "$(campaign_path_fold "$entry")" == "$1" ]] && return 0; done < <(cut -f3 "$BASELINES" 2>/dev/null); return 1; }
 
 # The state root sits under a world-writable temp dir, so trust nothing about
 # it: owner-only perms, no symlinks, and refuse to write through anything that
@@ -108,12 +112,13 @@ chmod 600 "$TXT" "$BASELINES" 2>/dev/null
 # migration nests inside the dbatools worktree, so an ancestor-prefix match
 # would suppress the nested repo's baseline and its mid-turn commits would
 # fall back to a HEAD diff and vanish (review round on 637cfd04).
-UNIX_PATH=$(hook_to_unix_path "$FILE_PATH")
+UNIX_PATH=$(hook_to_unix_path "$FILE_PATH_ORIGINAL")
 DIR=$(dirname "$UNIX_PATH")
 [[ -d "$DIR" ]] || exit 0
 TOP=$(git -C "$DIR" rev-parse --show-toplevel 2>/dev/null)
 [[ -z "$TOP" ]] && exit 0
-if cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
+LEDGER_TOP=$(campaign_path_fold "$TOP")
+if baseline_has_top "$LEDGER_TOP"; then
     exit 0
 fi
 # First-baseline creation is serialized: two parallel hooks in one message
@@ -133,7 +138,7 @@ done
 if [[ -z "$_LOCKED" ]]; then
     persist_failure "baseline lock $BASE_LOCK still held after 5s - cannot record a trustworthy first-write baseline for $TOP"
 fi
-if cut -f3 "$BASELINES" 2>/dev/null | grep -qxF "$TOP"; then
+if baseline_has_top "$LEDGER_TOP"; then
     rmdir "$BASE_LOCK" 2>/dev/null
     exit 0
 fi
@@ -142,7 +147,7 @@ if [[ -z "$SHA" ]]; then
     rmdir "$BASE_LOCK" 2>/dev/null
     persist_failure "cannot read HEAD of $TOP - no baseline recorded, so the review gate will refuse to measure files there"
 fi
-if ! printf '%s\t-\t%s\n' "$SHA" "$TOP" >> "$BASELINES" 2>/dev/null; then
+if ! printf '%s\t-\t%s\n' "$SHA" "$LEDGER_TOP" >> "$BASELINES" 2>/dev/null; then
     rmdir "$BASE_LOCK" 2>/dev/null
     persist_failure "baseline append failed for $TOP - the review gate will refuse to measure files there"
 fi
