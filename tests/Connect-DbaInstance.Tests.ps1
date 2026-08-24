@@ -740,15 +740,30 @@ Describe $CommandName -Tag IntegrationTests {
             # database. Every other engine, Azure SQL Managed Instance included, takes the USE, so the
             # branch that switches the database on an existing connection looks correct everywhere else
             # and is wrong only here. See #10584.
-            # A serverless database that has been idle is paused and takes up to a minute to wake up, so
-            # the first connection gets a generous timeout.
+            # A serverless database that has been idle is paused and takes up to a minute to wake up. A
+            # generous ConnectTimeout does not cover that: while the database resumes, Azure does not
+            # keep the attempt waiting, it answers it right away with error 40613 "Database ... is not
+            # currently available. Please retry the connection later." So the first connection is
+            # retried until the database is up, and only an error that says something else is thrown
+            # immediately.
             $splatAzureConnect = @{
                 SqlInstance    = $TestConfig.AzureSqlDbServer
                 Database       = $TestConfig.AzureSqlDbName
                 SqlCredential  = $TestConfig.AzureSqlDbCred
                 ConnectTimeout = 120
             }
-            $serverAzure = Connect-DbaInstance @splatAzureConnect
+            $azureResumeAttempt = 0
+            while ($null -eq $serverAzure) {
+                $azureResumeAttempt++
+                try {
+                    $serverAzure = Connect-DbaInstance @splatAzureConnect
+                } catch {
+                    if ($azureResumeAttempt -ge 10 -or $PSItem.Exception.Message -notmatch "is not currently available") {
+                        throw
+                    }
+                    Start-Sleep -Seconds 15
+                }
+            }
 
             # The same login again, but through a SqlConnection, which gives the server a fixed connection
             # string and so takes the code path that cannot assign DatabaseName. Persist Security Info is
@@ -780,9 +795,17 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = $serverAzure, $serverAzureFromSqlConnection, $serverAzureHiddenPassword | Disconnect-DbaInstance
-            $azureConnection.Close()
-            $azureHiddenConnection.Close()
+            # The BeforeAll can fail partway through - an Azure SQL Database that stays unavailable is the
+            # realistic case - and then the variables below it were never assigned. Calling a method on
+            # one of them throws from the teardown, and Pester reports that null reference on every test
+            # of the block instead of the error that really happened.
+            $null = $serverAzure, $serverAzureFromSqlConnection, $serverAzureHiddenPassword | Where-Object { $null -ne $PSItem } | Disconnect-DbaInstance
+            if ($azureConnection) {
+                $azureConnection.Close()
+            }
+            if ($azureHiddenConnection) {
+                $azureHiddenConnection.Close()
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
