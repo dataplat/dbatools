@@ -114,7 +114,13 @@ Describe $CommandName -Tag IntegrationTests {
                 # and Random/SByte can return 0, and both are a returned value rather than nothing at all.
                 $typeValue = @(Get-DbaRandomizedValue @splatRandomValue)
 
-                if ($typeValue.Count -gt 0 -and "$($typeValue[0])" -ne "") {
+                # Measure the string instead of comparing it to "". PowerShell compares strings culture
+                # sensitively, so a string of a single ignorable character - a soft hyphen, a zero width
+                # mark, one of the C0 controls - compares equal to the empty string. Random/Chars returns
+                # five characters out of the whole range and lands on such a character as the first one
+                # about once in five hundred calls, and the type was then reported as returning nothing
+                # at all. Measured on 2026-08-24 after the full suite failed on exactly that.
+                if ($typeValue.Count -gt 0 -and "$($typeValue[0])".Length -gt 0) {
                     $typeResults[$typeKey] = "value"
                 } elseif ($typeWarning) {
                     $typeResults[$typeKey] = "message"
