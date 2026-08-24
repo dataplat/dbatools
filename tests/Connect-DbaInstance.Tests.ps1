@@ -635,6 +635,10 @@ Describe $CommandName -Tag IntegrationTests {
             $versionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $smoVersionMajor = $versionServer.VersionMajor
             $connectionVersionMajor = $versionServer.ConnectionContext.ServerVersion.Major
+            $productVersionQuery = @"
+SELECT SERVERPROPERTY('ProductVersion')
+"@
+            $tsqlVersionMajor = [int](($versionServer.ConnectionContext.ExecuteScalar($productVersionQuery) -split "\.")[0])
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -667,6 +671,13 @@ Describe $CommandName -Tag IntegrationTests {
             # matrix is that old, so this guards the fallback source instead: if it ever stops
             # agreeing with SMO, the fallback stops refusing the versions it exists to refuse.
             $connectionVersionMajor | Should -Be $smoVersionMajor
+        }
+
+        It "can read the same major version from T-SQL as from SMO" {
+            # The last fallback, and the only one proven to answer on SQL Server 2005, where both
+            # properties above come back empty. Guarded here for the same reason: the versions it
+            # exists to refuse are not in the matrix, but its source is readable everywhere.
+            $tsqlVersionMajor | Should -Be $smoVersionMajor
         }
     }
 }
