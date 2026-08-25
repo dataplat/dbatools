@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the cleanup fails visibly.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $contextDbName, $bracketDbName -ErrorAction SilentlyContinue
@@ -136,6 +136,25 @@ Describe $CommandName -Tag IntegrationTests {
             Restore-DatabaseContext @splatRestore
 
             $restoreWarning -join " " | Should -BeLike "*could not be restored*"
+
+            # The connection stays where it was, because there was nowhere to put it back to.
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be $contextDbName
+        }
+
+        It "does not throw when warning action is Stop" {
+            & $moveTheConnection
+
+            $missingDatabase = "dbatoolsci_does_not_exist_$(Get-Random)"
+
+            $splatRestore = @{
+                Server        = $callerServer
+                Database      = $missingDatabase
+                WarningAction = "Stop"
+            }
+
+            {
+                Restore-DatabaseContext @splatRestore
+            } | Should -Not -Throw
 
             # The connection stays where it was, because there was nowhere to put it back to.
             $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be $contextDbName
