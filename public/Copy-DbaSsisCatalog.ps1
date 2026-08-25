@@ -313,7 +313,7 @@ function Copy-DbaSsisCatalog {
         }
         foreach ($destinstance in $Destination) {
             try {
-                $destinationConnection = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
+                $destinationConnection = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 11
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
@@ -321,14 +321,14 @@ function Copy-DbaSsisCatalog {
             try {
                 Get-RemoteIntegrationService -Computer $destinstance.ComputerName
             } catch {
-                Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_
+                Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_ -Continue
             }
 
             try {
                 $destinationStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destinationConnection.ConnectionContext.SqlConnectionObject
                 $destinationSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $destinationStoreConnection
             } catch {
-                Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
+                Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationConnection -ErrorRecord $_ -Continue
             }
 
             $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
