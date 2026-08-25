@@ -74,6 +74,18 @@ function Restore-DatabaseContext {
     try {
         $null = $Server.ConnectionContext.ExecuteNonQuery("USE [$escapedDatabase]")
     } catch {
-        Write-Message -Level Warning -Message "The database context could not be restored to [$Database]: $_"
+        # A caller can promote warnings to terminating errors or interactive prompts. Housekeeping must
+        # never replace the outcome of the command, so only interrupting preferences are neutralised.
+        # Silent warning preferences remain silent.
+        if ($WarningPreference -notin "SilentlyContinue", "Ignore", "Continue") {
+            $WarningPreference = "Continue"
+        }
+
+        $splatMessage = @{
+            Level   = "Warning"
+            Message = "The database context could not be restored to [$Database]: $_"
+        }
+
+        Write-Message @splatMessage
     }
 }
