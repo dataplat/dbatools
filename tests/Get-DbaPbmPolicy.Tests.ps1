@@ -24,7 +24,8 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+if ($PSVersionTable.PSEdition -ne "Core") {
+    Describe $CommandName -Tag IntegrationTests {
     # Skip IntegrationTests on pwsh because working with policies is not supported.
 
     BeforeAll {
@@ -96,6 +97,18 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         It "returns a policy with a condition named dbatoolsci_Condition" {
             $results = Get-DbaPbmPolicy -SqlInstance $TestConfig.InstanceSingle -Policy dbatoolsci_TestPolicy
             $results.Condition -eq "dbatoolsci_Condition" | Should -Be $true
+        }
+    }
+    }
+} else {
+    Describe $CommandName -Tag IntegrationTests {
+        Context "Guarding on PowerShell Core" {
+            It "Warns and returns nothing on PowerShell Core" {
+                $result = @(Get-DbaPbmPolicy -SqlInstance "dbatoolsci-core-guard" -WarningVariable warn -WarningAction SilentlyContinue)
+                $result.Count | Should -Be 0
+                $payloads = @($warn | ForEach-Object { $PSItem.Message -replace "^(\[[^\]]*\]\s*)+", "" })
+                $payloads | Should -Contain "This command is not supported on Linux or macOS"
+            }
         }
     }
 }
