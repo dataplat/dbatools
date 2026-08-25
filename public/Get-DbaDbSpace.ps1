@@ -182,6 +182,11 @@ function Get-DbaDbSpace {
                 Stop-Function -Message "SQL Server 2000 not supported. $server skipped." -Continue
             }
 
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the query below runs there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back when the work is done. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
+
             try {
                 Write-Message -Level Verbose -Message "Querying $server - $db."
                 # Gated on IsAccessible alone. Status is a flags enum, so a database that merely has
@@ -194,7 +199,7 @@ function Get-DbaDbSpace {
                     continue
                 }
                 #Execute query against individual database and add to output
-                foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
+                foreach ($row in $db.Query($sql)) {
                     if ($row.UsedSpaceMB -is [System.DBNull]) {
                         $UsedMB = 0
                     } else {
@@ -254,6 +259,8 @@ function Get-DbaDbSpace {
                 }
             } catch {
                 Stop-Function -Message "Unable to query $server - $db." -Target $db -ErrorRecord $_ -Continue
+            } finally {
+                Restore-DatabaseContext -Server $server -Database $callerDatabase
             }
         }
     }
