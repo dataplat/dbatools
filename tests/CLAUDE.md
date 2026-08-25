@@ -478,6 +478,17 @@ The lab those names describe needs more than a bare cluster: one cluster shared 
 
 Do not copy this exception to any other command family. It applies where the boundary is a Windows feature that no runner can provide, not where provisioning is merely inconvenient.
 
+### The other boundary CI does not have: Azure SQL Database
+
+The same shape, for the same reason. Azure SQL Database is the only engine that refuses to switch the database of a connection it has already opened - it answers a `USE` with error 40508 and wants a new connection whose `Initial Catalog` names the target. Azure SQL Managed Instance takes the `USE` like every other engine, so it does not stand in for one. Any code that changes the database of an existing connection is therefore correct everywhere CI can reach and wrong only here, which is how `Connect-DbaInstance` shipped a fallback that could not work on Azure SQL Database at all (#10584).
+
+No CI environment has one, so `Get-TestConfig` leaves `AzureSqlDbServer`, `AzureSqlDbName` and `AzureSqlDbCred` empty and the tests carry `-Skip:(-not $script:hasAzureSqlDb)`. A local configuration whose lab has an Azure SQL Database sets all three, and the tests then run for real.
+
+Two things keep that skip honest, and both are worth copying:
+
+- **Assert the engine first.** The Azure tests begin with an `It` that fails unless `DatabaseEngineEdition` is `SqlDatabase`. Pointed at anything else the rest would pass while proving nothing, because every other engine simply takes the `USE`.
+- **Assert the message, not just the failure.** Where the command has to refuse, the test also asserts that the error is *not* the raw "USE statement is not supported" - that is what fails if the code ever reaches `ChangeDatabase` again.
+
 ## TEST MANAGEMENT GUIDELINES
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.

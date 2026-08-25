@@ -753,39 +753,198 @@ function Connect-DbaInstance {
                 } elseif ($copyContext) {
                     $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
-                    if ($ApplicationIntent) {
-                        $connContext.ApplicationIntent = $ApplicationIntent
-                    }
-                    if ($NonPooledConnection) {
-                        $connContext.NonPooledConnection = $true
-                    }
-                    if (Test-Bound -Parameter StatementTimeout) {
-                        $connContext.StatementTimeout = $StatementTimeout
-                    }
-                    if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
-                        if ($instance.IsLocalHost) {
-                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
-                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
-                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
-                            } else {
-                                $connContext.ServerInstance = "ADMIN:localhost"
-                            }
-                            # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
-                            $connContext.TrustServerCertificate = $true
-                        } else {
-                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                    # From here on the copy owns a connection of its own: Copy() clones the underlying
+                    # SqlConnection and, when the source is open, hands back a copy that is open as well.
+                    # Only the server object built at the end of this block gives anyone a way to close it
+                    # again, because Disconnect-DbaInstance can reach nothing but the context of the server
+                    # it is given. Every path that leaves without building that server - a refusal below, a
+                    # failed connect, a failed database switch - therefore has to close the copy itself, or
+                    # it becomes exactly the orphaned session this whole code path exists to remove.
+                    $connContextTransferred = $false
+                    try {
+                        # A ServerConnection that was built from a SqlConnection has its connection string set
+                        # explicitly, and SMO then refuses to let some of its properties be assigned:
+                        #   Property <name> cannot be changed or read after a connection string has been set.
+                        # DatabaseName, NonPooledConnection and ServerInstance are all in that group, which is
+                        # why -Database, -NonPooledConnection and -DedicatedAdminConnection used to fail on a
+                        # server that was created from a SqlConnection. Those settings are collected here and
+                        # put into the connection string further down instead, where the same three are
+                        # Initial Catalog, Pooling and Data Source. No readable property tells the two kinds of
+                        # context apart - every one of them reads fine on both - so we find out by trying.
+                        $databaseNeedsSwitch = $false
+                        $connectionStringKeyword = @{ }
+                        if ($ApplicationIntent) {
+                            $connContext.ApplicationIntent = $ApplicationIntent
                         }
-                        $connContext.NonPooledConnection = $true
-                    }
-                    if ($Database) {
-                        # Save StatementTimeout because it might be reset on GetDatabaseConnection
-                        $savedStatementTimeout = $connContext.StatementTimeout
-                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
-                        $connContext.StatementTimeout = $savedStatementTimeout
-                    }
-                    $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
-                    if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Warning -Message "Changing connection context to database $Database was not successful. Current database is $($server.ConnectionContext.CurrentDatabase). Please open an issue on https://github.com/dataplat/dbatools/issues."
+                        if ($NonPooledConnection) {
+                            try {
+                                $connContext.NonPooledConnection = $true
+                            } catch {
+                                $connectionStringKeyword["Pooling"] = $false
+                            }
+                        }
+                        if (Test-Bound -Parameter StatementTimeout) {
+                            $connContext.StatementTimeout = $StatementTimeout
+                        }
+                        if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch "^ADMIN:") {
+                            if ($instance.IsLocalHost) {
+                                # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                                if ($instance.InstanceName -ne "MSSQLSERVER") {
+                                    $dedicatedAdminServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                                } else {
+                                    $dedicatedAdminServerInstance = "ADMIN:localhost"
+                                }
+                                # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
+                                $connContext.TrustServerCertificate = $true
+                            } else {
+                                $dedicatedAdminServerInstance = "ADMIN:$($connContext.ServerInstance)"
+                            }
+                            try {
+                                $connContext.ServerInstance = $dedicatedAdminServerInstance
+                            } catch {
+                                $connectionStringKeyword["Data Source"] = $dedicatedAdminServerInstance
+                                if ($instance.IsLocalHost) {
+                                    # TrustServerCertificate was assigned above, and on a context with a fixed
+                                    # connection string that assignment does not reach the string - the property
+                                    # reads back as True while the string still says False. Since the string is
+                                    # what the new connection is built from, the same has to be put in there, or
+                                    # the localhost DAC fails on a certificate that does not match. See #10254.
+                                    $connectionStringKeyword["Trust Server Certificate"] = $true
+                                }
+                            }
+                            try {
+                                $connContext.NonPooledConnection = $true
+                            } catch {
+                                $connectionStringKeyword["Pooling"] = $false
+                            }
+                        }
+                        if ($Database) {
+                            # We set DatabaseName instead of calling GetDatabaseConnection on purpose.
+                            # GetDatabaseConnection opens the connection on the copy we are holding and returns
+                            # a *different* ConnectionContext, so the server we build below never owns that
+                            # connection. Disconnect-DbaInstance can only reach the context of the server it is
+                            # given, so nothing ever closed it: the session stayed open for the life of the
+                            # process, holding a shared lock on the database. On model that is enough to make a
+                            # later CREATE DATABASE on the same instance fail on the exclusive lock.
+                            # Setting DatabaseName keeps the connection with the context we hand to the server,
+                            # which is also what the connection string code paths of this command already do.
+                            # It does not reset StatementTimeout either, so the save and restore that
+                            # GetDatabaseConnection needed is gone with it.
+                            try {
+                                $connContext.DatabaseName = $Database
+                            } catch {
+                                # A fixed connection string. Falling back to GetDatabaseConnection here would
+                                # bring back the very leak this change is about, so the database is either put
+                                # into the connection string or switched on the connection further down.
+                                $databaseNeedsSwitch = $true
+                            }
+                        }
+
+                        # Everything above that could not be assigned needs a new connection built from a
+                        # changed connection string. Work out here whether that is possible at all, because
+                        # opening a new connection means logging in again, and only a connection string that
+                        # still carries the whole login can do that.
+                        $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connContext.ConnectionString
+                        if ($ApplicationIntent -and $connectionStringBuilder["ApplicationIntent"] -ne $ApplicationIntent) {
+                            # The property was assigned above without complaint, but on a fixed connection
+                            # string that assignment never reaches the string, and the string is what the login
+                            # is made with. SQL Server reads the intent at login time and routes on it then, so
+                            # a context that reports ReadOnly over a connection that logged in as ReadWrite is
+                            # simply wrong. Where the assignment did reach the string - every context that
+                            # accepts property assignments - the two match here and nothing is added, which is
+                            # what keeps this from forcing a new connection where none is needed.
+                            $connectionStringKeyword["ApplicationIntent"] = $ApplicationIntent
+                        }
+                        $authenticationMethod = [string]$connectionStringBuilder["Authentication"]
+                        if ($connectionStringBuilder["Integrated Security"] -or $connContext.SqlConnectionObject.AccessToken -or $connContext.SqlConnectionObject.AccessTokenCallback) {
+                            # Windows authentication needs no secret from the string, and an access token - or
+                            # the callback that fetches one - lives on the SqlConnection, where both survive
+                            # being given a new connection string.
+                            $connectionStringCanLogIn = $true
+                        } elseif ($authenticationMethod -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal") {
+                            # The only two Microsoft Entra methods that use a password of their own.
+                            $connectionStringCanLogIn = [bool]$connectionStringBuilder["Password"]
+                        } elseif ($authenticationMethod -ne "NotSpecified") {
+                            # Every other Entra method - managed identity, workload identity, default,
+                            # integrated, interactive, device code - is passwordless by design. Several of them
+                            # do put a client id in User ID, so User ID alone must not be read as a SQL Server
+                            # login, or these get rejected over a password they never had.
+                            $connectionStringCanLogIn = $true
+                        } else {
+                            # A SQL Server login, and both halves have to be in the string. Once a SqlConnection
+                            # has been opened with Persist Security Info=False, SqlClient hides the password,
+                            # and a SqlCredential is hidden the same way - ServerConnection.Copy() does not even
+                            # carry one over. So neither can be recovered from an open connection, and what is
+                            # left in the string would log in as nobody.
+                            $connectionStringCanLogIn = [bool]$connectionStringBuilder["User ID"] -and [bool]$connectionStringBuilder["Password"]
+                        }
+
+                        if ($databaseNeedsSwitch) {
+                            if ($connectionStringCanLogIn) {
+                                # A new connection can be built, so the database belongs in the string. As
+                                # Initial Catalog it is part of the pool key, which is what setting DatabaseName
+                                # achieves as well, so the reason #9505 forced a non pooled connection still
+                                # holds. This is also the only way that works on Azure SQL Database.
+                                $connectionStringKeyword["Initial Catalog"] = $Database
+                                $databaseNeedsSwitch = $false
+                            } elseif ($inputObject.ConnectionContext.DatabaseEngineEdition -in "SqlDatabase", "SqlDataWarehouse", "SqlOnDemand") {
+                                # Read the edition from the server that was passed in, never from the copy:
+                                # reading it there connects the copy, and every property of a connected context
+                                # is locked from then on, including the ones assigned above.
+                                # Azure SQL Database answers a USE with error 40508 and wants a new connection
+                                # for another database, so the switch below cannot work there. Refusing is the
+                                # honest answer - the alternative is a server object in the wrong database.
+                                Stop-Function -Message "Cannot change the database of [$instance] to [$Database]: it needs a new connection, because Azure SQL Database does not support switching the database of an existing one, and the authentication of the connection that was passed in cannot be reproduced from its connection string. Connect with the instance name and -SqlCredential, or with an access token, instead." -Target $instance -Continue
+                            }
+                        }
+                        if ($connectionStringKeyword.Count -gt 0) {
+                            if (-not $connectionStringCanLogIn) {
+                                # Refusing is better than handing back a server that cannot be used. The caller
+                                # can always connect with the instance name and a credential of its own.
+                                Stop-Function -Message "Cannot apply the requested settings to [$instance]: they need a new connection, and the authentication of the connection that was passed in cannot be reproduced from its connection string. Connect with the instance name and -SqlCredential, or with an access token, instead." -Target $instance -Continue
+                            }
+
+                            $changedKeywords = $connectionStringKeyword.Keys -join ", "
+                            Write-Message -Level Debug -Message "Connection context does not accept property assignments, using the connection string for: $changedKeywords"
+                            # The copy has to be disconnected first: setting the connection string of an open
+                            # connection does not move it. The copy is a session of its own - a different SPID
+                            # than the server that was passed in - so this does not touch the caller.
+                            $connContext.Disconnect()
+                            foreach ($keyword in $connectionStringKeyword.Keys) {
+                                # PowerShell routes property assignments on a connection string builder through its
+                                # dictionary indexer, so the keyword has to be used rather than the property name:
+                                # $connectionStringBuilder.InitialCatalog fails with "Keyword not supported".
+                                $connectionStringBuilder[$keyword] = $connectionStringKeyword[$keyword]
+                            }
+                            $connContext.ConnectionString = $connectionStringBuilder.ConnectionString
+                        }
+                        if ($databaseNeedsSwitch) {
+                            # No new connection can be built, but this engine takes a USE, so the database is
+                            # switched on the connection the copy already holds. That keeps every part of the
+                            # authentication that lives on the SqlConnection rather than in its string, which
+                            # rebuilding the string would lose. The copy is a session of its own, so this is not
+                            # the leak of #10555 - the caller keeps its own database.
+                            if ($connContext.SqlConnectionObject.State -ne "Open") {
+                                $connContext.Connect()
+                            }
+                            $connContext.SqlConnectionObject.ChangeDatabase($Database)
+                        }
+                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
+                        $connContextTransferred = $true
+                        if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
+                            Write-Message -Level Warning -Message "Changing connection context to database $Database was not successful. Current database is $($server.ConnectionContext.CurrentDatabase). Please open an issue on https://github.com/dataplat/dbatools/issues."
+                        }
+                    } finally {
+                        if (-not $connContextTransferred) {
+                            # Nothing else can reach this connection any more, so it is closed here. Disconnect
+                            # must not throw on the way out of a failure, or it would replace the error that
+                            # brought us here with one about the cleanup.
+                            try {
+                                $connContext.Disconnect()
+                            } catch {
+                                Write-Message -Level Debug -Message "Disconnecting the copied connection context after a failed connect failed as well: $PSItem"
+                            }
+                        }
                     }
                 } else {
                     $server = $inputObject
@@ -1364,7 +1523,15 @@ SELECT SERVERPROPERTY('ProductVersion')
             if ($isNewConnection -and -not $DedicatedAdminConnection) {
                 if (-not $usesCredentialSspiProvider) {
                     # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+                    # Copy() clones an open connection as an open connection, and this copy is then kept for
+                    # the life of the process, where nothing can ever reach it to close it again. Whenever the
+                    # context is already open at this point - which is what switching the database on the
+                    # connection leaves behind - that parked a session per call that nothing could reuse or
+                    # close. Handing over a disconnected copy costs nothing: the updater connects when it
+                    # runs, and it is off by default.
+                    $teppConnectionContext = $server.ConnectionContext.Copy()
+                    $teppConnectionContext.Disconnect()
+                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $teppConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
                     # Update cache for instance names
                     if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
