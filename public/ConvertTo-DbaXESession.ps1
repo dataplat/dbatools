@@ -155,7 +155,12 @@ function ConvertTo-DbaXESession {
 
             try {
                 Write-Message -Level Verbose -Message "Executing SQL in tempdb."
-                $results = $tempdb.ExecuteWithResults($sql).Tables.Rows.SqlString
+                # Through the Query script method and not through ExecuteWithResults of SMO: both run the
+                # statement in tempdb by issuing a USE on the connection context of the parent server, which
+                # belongs to the caller, but only ours puts the previous database back. See #10555.
+                # The second argument asks for every result set: the conversion procedure returns the script
+                # in more than one of them, and Query returns only the first without it.
+                $results = $tempdb.Query($sql, $true).Rows.SqlString
             } catch {
                 Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server." -Target $server -ErrorRecord $_
             }
@@ -167,7 +172,8 @@ function ConvertTo-DbaXESession {
             } else {
                 Write-Message -Level Verbose -Message "Creating XE Session $name."
                 try {
-                    $tempdb.ExecuteNonQuery($results)
+                    # See the comment above: the Invoke script method puts the database back afterwards.
+                    $tempdb.Invoke($results)
                 } catch {
                     Stop-Function -Message "Issue creating extended event $name on $server." -Target $server -ErrorRecord $_
                 }

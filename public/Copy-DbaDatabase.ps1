@@ -408,8 +408,14 @@ function Copy-DbaDatabase {
                 # Add support for Full Text Catalogs in SQL Server 2005 and below
                 if ($sourceServer.VersionMajor -lt 10) {
                     try {
-                        $fttable = $null = $sourceServer.Databases[$dbName].ExecuteWithResults('sp_help_fulltext_catalogs')
-                        $allrows = $fttable.Tables[0].rows
+                        # This used to read "$fttable = $null = ...", which assigns $null to $fttable, so
+                        # $allrows was always empty and no full text catalog was ever copied.
+                        # The Query script method runs the procedure in that database like ExecuteWithResults
+                        # of SMO does, by issuing a USE on the connection context of the parent server, which
+                        # belongs to the caller - but it puts the previous database back. It returns the rows,
+                        # so there is no table to unwrap. See #10555.
+                        $fttable = $sourceServer.Databases[$dbName].Query("sp_help_fulltext_catalogs")
+                        $allrows = $fttable
                     } catch {
                         # Nothing, it's just not enabled
                         # here to avoid an empty catch
@@ -1006,7 +1012,11 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
+            # Read on the server connection and not through the master database: the statement queries
+            # sys.master_files and never needed a database context, and going through the Database object
+            # would move the connection of the caller into master. See #10555. ExecuteWithResults of the
+            # connection context returns the same DataSet, which the Select calls below rely on.
+            $dbFileTable = $sourceServer.ConnectionContext.ExecuteWithResults($sql)
 
             if ($destServer.VersionMajor -eq 8) {
                 $sql = "SELECT DB_NAME (dbid) AS dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END AS filetype FROM sysaltfiles"
@@ -1014,7 +1024,8 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)
+            # See the comment above - the same for the destination.
+            $remoteDbFileTable = $destServer.ConnectionContext.ExecuteWithResults($sql)
 
             $fileStructure = Get-SqlFileStructure -sourceserver $sourceServer -destserver $destServer -databaselist $databaseList -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 

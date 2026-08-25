@@ -143,6 +143,10 @@ function Remove-DbaDbOrphanUser {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the statements below run there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back after every database. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
             $DatabaseCollection = $server.Databases | Where-Object IsAccessible | Where-Object ReadOnly -eq $false
 
             if ($Database) {
@@ -311,7 +315,7 @@ function Remove-DbaDbOrphanUser {
                                     if (-not $SkipUser) {
                                         if ($Force) {
                                             if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
-                                                $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                                $server.Databases[$db.Name].Invoke($query) | Out-Null
                                                 Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used."
                                             }
                                         } else {
@@ -322,7 +326,7 @@ function Remove-DbaDbOrphanUser {
                                 } else {
                                     if (-not $SkipUser) {
                                         if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
-                                            $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                            $server.Databases[$db.Name].Invoke($query) | Out-Null
                                             Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name)."
                                         }
                                     }
@@ -335,6 +339,8 @@ function Remove-DbaDbOrphanUser {
                         $users = $null
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
+                    } finally {
+                        Restore-DatabaseContext -Server $server -Database $callerDatabase
                     }
                 }
             } else {

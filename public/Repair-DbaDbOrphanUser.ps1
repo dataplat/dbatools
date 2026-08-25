@@ -137,6 +137,10 @@ function Repair-DbaDbOrphanUser {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the statements below run there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back after every database. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
             $DatabaseCollection = $server.Databases | Where-Object IsAccessible
 
             if ($Database) {
@@ -176,7 +180,7 @@ function Repair-DbaDbOrphanUser {
                                     }
 
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
-                                        $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+                                        $server.Databases[$db.Name].Invoke($query) | Out-Null
                                         Write-Message -Level Verbose -Message "User '$($User.Name)' mapped with their login."
 
                                         [PSCustomObject]@{
@@ -227,6 +231,8 @@ function Repair-DbaDbOrphanUser {
                         $UsersToWork = $null
                     } catch {
                         Stop-Function -Message $_ -Continue
+                    } finally {
+                        Restore-DatabaseContext -Server $server -Database $callerDatabase
                     }
                 }
             } else {

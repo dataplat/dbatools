@@ -1122,3 +1122,63 @@ END
         }
     }
 }
+Describe $CommandName -Tag IntegrationTests {
+    Context "The connection of the caller is left in the database it was in (#10555)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $contextDbName = "dbatoolsci_ctx_decrypt_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $contextDbName
+
+            $contextProcName = "dbatoolsci_ctx_secret"
+            $splatCreateProc = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $contextDbName
+                Query       = "EXEC ('CREATE PROCEDURE dbo.$contextProcName WITH ENCRYPTION AS SELECT 1');"
+            }
+            $null = Invoke-DbaQuery @splatCreateProc
+
+            # Only a non-pooled connection can show this. A pooled connection that is closed between two
+            # calls reconnects at its default database, which puts the database back by accident.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $contextBefore = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            # -DataPages, because that path reads the definitions from the data pages and needs no dedicated
+            # admin connection - the command would otherwise open a connection of its own and the connection
+            # of the caller would never be touched.
+            $splatDecrypt = @{
+                SqlInstance = $callerServer
+                Database    = $contextDbName
+                ObjectName  = $contextProcName
+                DataPages   = $true
+            }
+            $contextResult = Invoke-DbaDbDecryptObject @splatDecrypt
+
+            $contextAfter = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $contextDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still decrypts the procedure" {
+            # Only a command that really did the work can move the connection, so without this the
+            # assertion below would pass for the wrong reason.
+            $contextResult.Script | Should -BeLike "*CREATE PROCEDURE*"
+        }
+
+        It "leaves the connection in the database it was in" {
+            $contextAfter | Should -Be $contextBefore
+        }
+    }
+}
