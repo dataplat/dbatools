@@ -1454,6 +1454,15 @@ function Copy-DbaDatabase {
                             If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
                                 # needed because the newly restored database doesn't show up
                                 $destServer.Databases.Refresh()
+                                # Refresh() on the collection only updates its membership. A database that
+                                # already existed on the destination - a copy with -WithReplace or -Continue -
+                                # keeps the property values SMO cached while the restore had it inaccessible,
+                                # and Set-DbaDbOwner would then skip it as not accessible. Refreshing the
+                                # object itself rereads those values.
+                                $destDb = $destServer.Databases[$destinationDbName]
+                                if ($destDb) {
+                                    $destDb.Refresh()
+                                }
                                 $dbOwner = $sourceServer.Databases[$dbName].Owner
                                 if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer
