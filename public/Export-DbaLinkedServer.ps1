@@ -6,12 +6,13 @@ function Export-DbaLinkedServer {
     .DESCRIPTION
         Creates executable T-SQL scripts from existing linked server definitions, including remote login mappings and passwords. Perfect for migrating linked servers between environments, creating disaster recovery scripts, or documenting your linked server landscape. When passwords are included, the function decrypts the stored credentials so the generated scripts contain actual working passwords rather than placeholder values.
 
-        Decrypting those passwords needs two connections to the instance, so make sure both are possible:
+        Decrypting those passwords requires DAC access to the instance and Windows administrator access to its host. On SQL Server Express, the DAC is not available unless the instance is started with trace flag 7806.
 
-        - A dedicated admin connection (DAC), which this command opens from the machine you run it on. That makes it a remote DAC, so the instance needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
-        - PowerShell remoting to the Windows host of the instance, used to read the service master key out of the registry. This needs Windows administrator rights on that host.
+        The command opens or reuses the dedicated admin connection (DAC) from the machine it runs on. When that machine is different from the host of the instance, enable remote admin connections on the instance (Set-DbaSpConfigure -SqlInstance <instance> -Name RemoteDacConnectionsEnabled -Value 1) and make the DAC TCP listener reachable from that machine. SQL Server listens for the DAC on TCP port 1434 when that port is available; otherwise it assigns a port during startup. Check the SQL Server error log for the active DAC port.
 
-        Use -ExcludePassword to skip password decryption entirely; neither connection is opened then.
+        The service master key is read and unprotected on the Windows host of the instance. When that host is remote, this uses PowerShell remoting. When the command runs directly on the host, everything runs locally, so remote admin connections and PowerShell remoting are not required.
+
+        Use -ExcludePassword to skip password decryption entirely; no DAC is opened and the Windows host is not accessed then.
 
     .PARAMETER SqlInstance
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
@@ -72,7 +73,7 @@ function Export-DbaLinkedServer {
 
         Requires:
         - sysadmin access on SQL Server
-        - unless -ExcludePassword is used: a remote dedicated admin connection (DAC) to the instance, and Windows administrator access to its host over PowerShell remoting
+        - unless -ExcludePassword is used: DAC access to the instance, and Windows administrator access on its host
 
     .LINK
         https://dbatools.io/Export-DbaLinkedServer

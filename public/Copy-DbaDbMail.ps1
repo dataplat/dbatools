@@ -10,12 +10,13 @@ function Copy-DbaDbMail {
 
         The function preserves all SMTP authentication details including encrypted passwords, handles name conflicts with optional force replacement, and can enable Database Mail on the destination if it's enabled on the source. You can migrate specific component types or the entire configuration in one operation.
 
-        Decrypting the stored passwords needs two connections to the source instance, so make sure both are possible:
+        Decrypting the stored passwords requires DAC access to the source instance and Windows administrator access to the source host. On SQL Server Express, the DAC is not available unless the instance is started with trace flag 7806.
 
-        - A dedicated admin connection (DAC), which this command opens from the machine you run it on. That makes it a remote DAC, so the source instance needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
-        - PowerShell remoting to the Windows host of the source instance, used to read the service master key out of the registry. This needs Windows administrator rights on that host.
+        The command opens or reuses the dedicated admin connection (DAC) from the machine it runs on. When that machine is different from the source host, enable remote admin connections on the source instance (Set-DbaSpConfigure -SqlInstance <source instance> -Name RemoteDacConnectionsEnabled -Value 1) and make the DAC TCP listener reachable from that machine. SQL Server listens for the DAC on TCP port 1434 when that port is available; otherwise it assigns a port during startup. Check the SQL Server error log for the active DAC port.
 
-        Use -ExcludePassword to skip password decryption entirely; neither connection is opened then.
+        The service master key is read and unprotected on the source Windows host. When the source host is remote, this uses PowerShell remoting. When the command runs directly on the source host, everything runs locally, so remote admin connections and PowerShell remoting are not required.
+
+        Use -ExcludePassword to skip password decryption entirely; no DAC is opened and the Windows host is not accessed then.
 
     .PARAMETER Source
         Specifies the source SQL Server instance containing the Database Mail configuration to copy. The function reads all mail profiles, accounts, mail servers, and configuration values from this instance.
@@ -76,7 +77,7 @@ function Copy-DbaDbMail {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        Requires: sysadmin access on SQL Servers, and unless -ExcludePassword is used a remote dedicated admin connection (DAC) to the source instance plus Windows administrator access to its host over PowerShell remoting
+        Requires: sysadmin access on SQL Servers, and unless -ExcludePassword is used DAC access to the source instance plus Windows administrator access on the source host
 
     .OUTPUTS
         PSCustomObject (MigrationObject)

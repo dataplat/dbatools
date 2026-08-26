@@ -28,9 +28,9 @@ function Sync-DbaAvailabilityGroup {
 
         The command copies ALL objects of each enabled type - it doesn't filter based on which objects are actually used by the availability group databases. Use the exclusion parameters to limit scope when needed.
 
-        Copying credentials, database mail accounts and linked servers includes the stored passwords, and decrypting those requires a dedicated admin connection (DAC) to the primary plus PowerShell remoting to its Windows host. As SQL Server only allows one DAC per instance, this command opens a single DAC and hands it to all three of those copy operations instead of letting each of them open its own. Use -ExcludePassword if no DAC should be opened at all.
+        Copying credentials, database mail accounts and linked servers includes the stored passwords, and decrypting those requires a dedicated admin connection (DAC) to the primary plus Windows administrator access to its host. As SQL Server only allows one DAC per instance, this command opens a single DAC and hands it to all three of those copy operations instead of letting each of them open its own. Use -ExcludePassword if no DAC should be opened at all.
 
-        The DAC is opened from the machine you run this command on, which makes it a remote DAC: the primary needs remote admin connections enabled (Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1) and its DAC port has to be reachable from that machine - TCP port 1434 for a default instance, or the dynamically assigned port published by the SQL Server Browser service for a named instance.
+        The DAC is opened from the machine you run this command on. When that machine is different from the host of the primary, the primary needs remote admin connections enabled, its DAC TCP port reachable, and the service master key is read over PowerShell remoting. See Copy-DbaCredential, Copy-DbaDbMail and Copy-DbaLinkedServer for the details and prerequisites.
 
     .PARAMETER Primary
         The primary replica SQL Server instance for the availability group. This is the source server from which all server-level objects will be copied.
