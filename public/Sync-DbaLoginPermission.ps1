@@ -120,58 +120,75 @@ function Sync-DbaLoginPermission {
         # Get current login to not sync permissions for that login.
         $currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
-        foreach ($dest in $Destination) {
-            try {
-                $destServer = Connect-DbaInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
-            }
+        # Syncing the permissions of a login walks the database level collections of both servers and runs
+        # statements through their Database objects, which moves the connection into the database being
+        # worked on and never moves it back. The database of each caller connection is put back afterwards.
+        # See #10555.
+        $sourceCallerDatabase = $sourceServer.ConnectionContext.CurrentDatabase
 
-            $stepCounter = 0
-            foreach ($sourceLogin in $allLogins) {
-                $loginName = $sourceLogin.Name
-                if ($currentLogin -eq $loginName) {
-                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current login '$loginName'. Skipping."
-                    continue
-                }
-
-                # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
-                $serverName = $sourceServer.ComputerName
-                $userBase = ($loginName.Split("\")[0]).ToLowerInvariant()
-                if ($serverName -eq $userBase -or $loginName.StartsWith("NT ")) {
-                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of host or system login '$loginName'. Skipping."
-                    continue
-                }
-
-                if ($null -eq ($destLogin = $destServer.Logins.Item($loginName))) {
-                    Write-Message -Level Verbose -Message "Login '$loginName' not found on destination. Skipping."
-                    continue
-                }
-
-
-                $copyLoginPermissionStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceserver.Name
-                    DestinationServer = $destServer.Name
-                    Name              = $loginName
-                    Type              = "Login Permissions"
-                    Status            = $null
-                    Notes             = $null
-                    DateTime          = [DbaDateTime](Get-Date)
-                }
-                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
+        try {
+            foreach ($dest in $Destination) {
                 try {
-                    Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin -EnableException
-                    $copyLoginPermissionStatus.Status = "Successful"
-                    if ($PSCmdlet.ShouldProcess("Console", "Outputting results for login $loginName permission sync")) {
-                        $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    }
+                    $destServer = Connect-DbaInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
                 } catch {
-                    $copyLoginPermissionStatus.Status = "Failed"
-                    $copyLoginPermissionStatus.Notes = (Get-ErrorMessage -Record $_)
-                    $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message "Issue syncing permissions for login" -Target $loginName -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $dest -Continue
+                }
+
+                # See the comment above - the same for the connection of the destination.
+                $destCallerDatabase = $destServer.ConnectionContext.CurrentDatabase
+
+                try {
+                    $stepCounter = 0
+                    foreach ($sourceLogin in $allLogins) {
+                        $loginName = $sourceLogin.Name
+                        if ($currentLogin -eq $loginName) {
+                            Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current login '$loginName'. Skipping."
+                            continue
+                        }
+
+                        # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
+                        $serverName = $sourceServer.ComputerName
+                        $userBase = ($loginName.Split("\")[0]).ToLowerInvariant()
+                        if ($serverName -eq $userBase -or $loginName.StartsWith("NT ")) {
+                            Write-Message -Level Verbose -Message "Sync does not modify the permissions of host or system login '$loginName'. Skipping."
+                            continue
+                        }
+
+                        if ($null -eq ($destLogin = $destServer.Logins.Item($loginName))) {
+                            Write-Message -Level Verbose -Message "Login '$loginName' not found on destination. Skipping."
+                            continue
+                        }
+
+
+                        $copyLoginPermissionStatus = [PSCustomObject]@{
+                            SourceServer      = $sourceserver.Name
+                            DestinationServer = $destServer.Name
+                            Name              = $loginName
+                            Type              = "Login Permissions"
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [DbaDateTime](Get-Date)
+                        }
+                        Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
+                        try {
+                            Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin -EnableException
+                            $copyLoginPermissionStatus.Status = "Successful"
+                            if ($PSCmdlet.ShouldProcess("Console", "Outputting results for login $loginName permission sync")) {
+                                $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                        } catch {
+                            $copyLoginPermissionStatus.Status = "Failed"
+                            $copyLoginPermissionStatus.Notes = (Get-ErrorMessage -Record $_)
+                            $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Stop-Function -Message "Issue syncing permissions for login" -Target $loginName -ErrorRecord $_ -Continue
+                        }
+                    }
+                } finally {
+                    Restore-DatabaseContext -Server $destServer -Database $destCallerDatabase
                 }
             }
+        } finally {
+            Restore-DatabaseContext -Server $sourceServer -Database $sourceCallerDatabase
         }
     }
 }
