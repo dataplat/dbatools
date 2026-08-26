@@ -152,8 +152,10 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "Stop"
             }
 
+            # The command neutralises Stop to Continue, so the warning is printed instead of terminating.
+            # The redirect keeps it off the console, because a test run has to stay warning-free.
             {
-                Restore-DatabaseContext @splatRestore
+                Restore-DatabaseContext @splatRestore 3>$null
             } | Should -Not -Throw
 
             # The connection stays where it was, because there was nowhere to put it back to.
