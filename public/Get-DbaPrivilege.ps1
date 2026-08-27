@@ -92,9 +92,21 @@ function Convert-SIDToUserName ([string] `$SID ) {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $null = Test-PSRemoting -ComputerName $Computer -EnableException
+                # Pass the credential so that the connectivity test authenticates the same way as the
+                # Invoke-Command2 calls below. Without it, the test uses the implicit identity, which
+                # fails when that identity cannot authenticate to the target - for example when the
+                # caller itself runs in a remoting session with a network logon token (double hop).
+                if ($Credential) {
+                    $null = Test-PSRemoting -ComputerName $Computer -Credential $Credential -EnableException
+                } else {
+                    $null = Test-PSRemoting -ComputerName $Computer -EnableException
+                }
             } catch {
-                Stop-Function -Message "Failure on $computer" -ErrorRecord $_ -Continue
+                if ($Credential) {
+                    Stop-Function -Message "Failure on $computer" -ErrorRecord $_ -Continue
+                } else {
+                    Stop-Function -Message "Failure on $computer. If this session itself runs in a remote session (for example via WinRM or Ansible), its network logon cannot authenticate to $computer (double hop). Pass -Credential or connect with an authentication that supports delegation, like CredSSP." -ErrorRecord $_ -Continue
+                }
             }
 
             try {

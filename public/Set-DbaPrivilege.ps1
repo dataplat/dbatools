@@ -90,7 +90,16 @@ function Convert-UserNameToSID ([string] `$Acc ) {
             if ($Pscmdlet.ShouldProcess($computer, "Setting Privilege for SQL Service Account")) {
                 try {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
-                    if (Test-PSRemoting -ComputerName $Computer) {
+                    # Pass the credential so that the connectivity test authenticates the same way as the
+                    # Invoke-Command2 calls below. Without it, the test uses the implicit identity, which
+                    # fails when that identity cannot authenticate to the target - for example when the
+                    # caller itself runs in a remoting session with a network logon token (double hop).
+                    if ($Credential) {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer -Credential $Credential
+                    } else {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer
+                    }
+                    if ($remotingTestResult) {
                         Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
                         # A random token keeps this invocation's secedit cfg/db/jfm files from colliding with
                         # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
@@ -115,7 +124,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $services = Get-DbaService -ComputerName $computer -Type Engine
+                            $services = Get-DbaService -ComputerName $computer -Credential $Credential -Type Engine
                             $SQLServiceAccounts += $services.StartName
                             # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
                             # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID
@@ -304,7 +313,11 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
                     } else {
-                        Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        if ($Credential) {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        } else {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer. If this session itself runs in a remote session (for example via WinRM or Ansible), its network logon cannot authenticate to $Computer (double hop). Pass -Credential or connect with an authentication that supports delegation, like CredSSP."
+                        }
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

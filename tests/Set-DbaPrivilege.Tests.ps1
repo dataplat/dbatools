@@ -90,6 +90,32 @@ InModuleScope dbatools {
             ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) |
                 Should -Match "^SeCreateGlobalPrivilege = \*$([regex]::Escape($expectedSid))(,)?$"
         }
+
+        It "passes the credential to the remoting connectivity test and the service discovery" {
+            # Regression test: neither Test-PSRemoting nor Get-DbaService received the credential,
+            # so both authenticated with the implicit identity and failed although the credential
+            # would have worked - for example when the caller itself runs in a remoting session
+            # with a network logon token (double hop).
+            $script:mockServiceUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            Mock Get-DbaService {
+                [PSCustomObject]@{
+                    StartName   = $script:mockServiceUser
+                    ServiceName = "MSSQLSERVER"
+                }
+            }
+            $testCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsTestUser", (ConvertTo-SecureString -String "dummy" -AsPlainText -Force))
+
+            $splatSetPrivilege = @{
+                ComputerName = $env:COMPUTERNAME
+                Type         = "ServiceLogon"
+                Credential   = $testCredential
+                Confirm      = $false
+            }
+            $null = Set-DbaPrivilege @splatSetPrivilege
+
+            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $Credential -eq $testCredential }
+            Should -Invoke Get-DbaService -Times 1 -Exactly -ParameterFilter { $Credential -eq $testCredential }
+        }
     }
 }
 
