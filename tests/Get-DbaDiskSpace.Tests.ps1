@@ -14,7 +14,6 @@ Describe $CommandName -Tag UnitTests {
                 "ComputerName",
                 "Credential",
                 "Unit",
-                "SqlCredential",
                 "ExcludeDrive",
                 "CheckFragmentation",
                 "Force",
@@ -43,6 +42,24 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Has valid SizeInGB property" {
             $systemDriveResults.SizeInGB -gt 0 | Should -Be $true
+        }
+    }
+
+    Context "Honors the Unit parameter" {
+        It "Displays Capacity and Free in the requested unit" {
+            $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -Unit MB
+            $systemDriveResult = $results | Where-Object Name -eq "$env:SystemDrive\"
+            "$($systemDriveResult.Capacity)" | Should -Match "MB$"
+            "$($systemDriveResult.Free)" | Should -Match "MB$"
+            $systemDriveResult.SizeInGB -gt 0 | Should -Be $true
+        }
+    }
+
+    Context "Deprecated parameters" {
+        It "Stops with a message when CheckFragmentation is used" {
+            $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckFragmentation -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "CheckFragmentation"
         }
     }
 }
