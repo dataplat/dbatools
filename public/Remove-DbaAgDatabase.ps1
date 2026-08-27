@@ -110,7 +110,13 @@ function Remove-DbaAgDatabase {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $splatGetAgDatabase = @{
+                SqlInstance       = $SqlInstance
+                SqlCredential     = $SqlCredential
+                Database          = $Database
+                AvailabilityGroup = $AvailabilityGroup
+            }
+            $InputObject += Get-DbaAgDatabase @splatGetAgDatabase
         }
 
         foreach ($db in $InputObject) {
