@@ -39,6 +39,7 @@ function Set-DbaTempDbConfig {
     .PARAMETER LogFileGrowth
         Controls the growth increment for the tempdb log file in MB when it needs to expand. Defaults to 512 MB.
         Size this according to your transaction log activity in tempdb to minimize auto-growth events during peak workloads.
+        The log file is only modified when at least one of LogPath, LogFileSize, LogFileGrowth or DisableGrowth is specified; otherwise it stays untouched.
 
     .PARAMETER DataPath
         Sets the folder path(s) where tempdb data files will be created. When omitted, uses the current tempdb data file location.
@@ -63,6 +64,7 @@ function Set-DbaTempDbConfig {
     .PARAMETER Force
         Allows the command to reduce the number of tempdb data files. The highest-numbered secondary data files are emptied and removed first, and the primary data file is never selected for removal.
         The command refuses the reduction when current used space exceeds the requested total data file size. Use OutputScriptOnly to review the generated DBCC SHRINKFILE and ALTER DATABASE statements before execution.
+        The generated script releases the unused server cache entries (DBCC FREESYSTEMCACHE) before emptying the files, because cached work tables otherwise block DBCC SHRINKFILE with EMPTYFILE. Active cache entries and the buffer pool are not touched.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -102,7 +104,7 @@ function Set-DbaTempDbConfig {
 
         System.String[] (when -OutputScriptOnly is specified)
 
-        Returns an array of T-SQL statements that would configure tempdb without executing them. Forced file-count reductions also include DBCC SHRINKFILE and ALTER DATABASE REMOVE FILE statements.
+        Returns an array of T-SQL statements that would configure tempdb without executing them. Forced file-count reductions also include DBCC FREESYSTEMCACHE, DBCC SHRINKFILE and ALTER DATABASE REMOVE FILE statements.
 
         System.Void (when -OutFile is specified)
 
@@ -314,8 +316,38 @@ ORDER BY file_id;
             foreach ($fileToRemove in $filesToRemove) {
                 $escapedLogicalName = $fileToRemove.LogicalName.Replace("'", "''")
                 $escapedIdentifier = $fileToRemove.LogicalName.Replace("]", "]]")
-                $removalSql += "USE [tempdb]; DBCC SHRINKFILE (N'$escapedLogicalName', EMPTYFILE);"
-                $removalSql += "USE [tempdb]; ALTER DATABASE tempdb REMOVE FILE [$escapedIdentifier];"
+                # EMPTYFILE cannot move work table pages, and cached work tables survive the queries
+                # that created them, so on an instance that has seen any workload the removal fails
+                # with "could not be moved because it is a work table page". Releasing the unused
+                # cache entries drops those cached work tables; active cache entries and the buffer
+                # pool stay untouched, and a restart is due after this command anyway. Because a
+                # fresh work table can appear in the file at any moment, the release, the emptying
+                # and the removal travel as one batch per file and the batch retries.
+                $removalSql += @"
+USE [tempdb];
+DECLARE @removalAttempt int;
+SET @removalAttempt = 0;
+WHILE 1 = 1
+BEGIN
+    BEGIN TRY
+        DBCC FREESYSTEMCACHE ('ALL');
+        DBCC SHRINKFILE (N'$escapedLogicalName', EMPTYFILE);
+        ALTER DATABASE tempdb REMOVE FILE [$escapedIdentifier];
+        BREAK;
+    END TRY
+    BEGIN CATCH
+        SET @removalAttempt = @removalAttempt + 1;
+        IF @removalAttempt >= 5
+        BEGIN
+            DECLARE @removalError nvarchar(2048);
+            SET @removalError = ERROR_MESSAGE();
+            RAISERROR(@removalError, 16, 1);
+            BREAK;
+        END;
+        WAITFOR DELAY '00:00:02';
+    END CATCH
+END;
+"@
             }
 
             $DataFiles = @($filesToKeep | Sort-Object FileId | Select-Object LogicalName, PhysicalName)
@@ -368,18 +400,23 @@ ORDER BY file_id;
 
             $logfile = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 1 | Select-Object LogicalName, PhysicalName, @{L = "SizeMb"; E = { $_.Size.Megabyte } }
 
-            if ($LogPath -or $LogFileSize) {
+            if (-not $LogFileSize) {
+                $LogFileSize = $logfile.SizeMb
+            }
+
+            # The log path is always known at this point, because it is derived from the running
+            # instance when the parameter is not bound. So whether the log file is touched at all
+            # has to be decided from the bound parameters: on the variables, every call would emit
+            # the log statement and silently reset the growth of the log file to the LogFileGrowth
+            # default of 512 MB.
+            if ((Test-Bound -ParameterName LogPath, LogFileSize, LogFileGrowth) -or $DisableGrowth) {
                 $Filename = Split-Path $logfile.PhysicalName -Leaf
                 $LogicalName = $logfile.LogicalName
 
-                if ($LogPath) {
+                if (Test-Bound -ParameterName LogPath) {
                     $NewPath = "$LogPath\$Filename"
                 } else {
                     $NewPath = $logfile.PhysicalName
-                }
-
-                if (-not($LogFileSize)) {
-                    $LogFileSize = $logfile.SizeMb
                 }
 
                 $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"

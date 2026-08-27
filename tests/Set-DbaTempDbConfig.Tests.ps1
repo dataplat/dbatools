@@ -135,6 +135,7 @@ Describe $CommandName -Tag IntegrationTests {
             $tempdbReductionPhysicalName = $tempdbReductionServer.Databases["tempdb"].Query("SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
             $tempdbReductionDataPath = Split-Path $tempdbReductionPhysicalName
             $originalDataFileState = @($tempdbReductionServer.Databases["tempdb"].Query("SELECT file_id AS ID, name AS LogicalName, size AS SizePages, growth AS GrowthValue, is_percent_growth AS IsPercentGrowth FROM sys.database_files WHERE type = 0 ORDER BY file_id"))
+            $originalLogFileState = $tempdbReductionServer.Databases["tempdb"].Query("SELECT name AS LogicalName, size AS SizePages FROM sys.database_files WHERE type = 1")
             $originalDataFiles = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0)
             $originalDataFileCount = $originalDataFiles.Count
             $expandedDataFileCount = $originalDataFileCount + 2
@@ -194,7 +195,22 @@ Describe $CommandName -Tag IntegrationTests {
                     foreach ($extraDataFile in $extraDataFiles) {
                         $escapedExtraLogicalName = $extraDataFile.LogicalName.Replace("'", "''")
                         $escapedExtraIdentifier = $extraDataFile.LogicalName.Replace("]", "]]")
-                        $tempdbReductionServer.Databases["master"].ExecuteNonQuery("USE [tempdb]; DBCC SHRINKFILE (N'$escapedExtraLogicalName', EMPTYFILE); ALTER DATABASE tempdb REMOVE FILE [$escapedExtraIdentifier];")
+                        # The cache release makes the removal possible, but a fresh work table can appear in
+                        # the file between two removals, so every file gets up to three attempts.
+                        $extraRemovalAttempt = 0
+                        do {
+                            $extraRemovalAttempt += 1
+                            try {
+                                $tempdbReductionServer.Databases["master"].ExecuteNonQuery("DBCC FREESYSTEMCACHE ('ALL'); USE [tempdb]; DBCC SHRINKFILE (N'$escapedExtraLogicalName', EMPTYFILE); ALTER DATABASE tempdb REMOVE FILE [$escapedExtraIdentifier];")
+                                $extraRemovalError = $null
+                            } catch {
+                                $extraRemovalError = $PSItem
+                                Start-Sleep -Seconds 2
+                            }
+                        } while ($extraRemovalError -and $extraRemovalAttempt -lt 3)
+                        if ($extraRemovalError) {
+                            throw $extraRemovalError
+                        }
                     }
                     $currentDataFileCount = @(Get-DbaDbFile -SqlInstance $tempdbReductionServer -Database tempdb | Where-Object Type -eq 0).Count
                 }
@@ -218,7 +234,7 @@ Describe $CommandName -Tag IntegrationTests {
                     $sizeRestoreAttempt = 0
                     do {
                         $sizeRestoreAttempt += 1
-                        $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DBCC SHRINKFILE (N'$escapedOriginalLogicalName', $originalSizeMb);")
+                        $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DBCC FREESYSTEMCACHE ('ALL'); DBCC SHRINKFILE (N'$escapedOriginalLogicalName', $originalSizeMb);")
                         $restoredSizePages = $tempdbReductionServer.Databases["tempdb"].Query("SELECT size AS SizePages FROM sys.database_files WHERE file_id = $($originalDataFile.ID)").SizePages
                     } while ($restoredSizePages -gt $originalDataFile.SizePages -and $sizeRestoreAttempt -lt 3)
 
@@ -238,6 +254,26 @@ Describe $CommandName -Tag IntegrationTests {
                     if ($restoredDataFile.SizePages -ne $originalDataFile.SizePages -or $restoredDataFile.GrowthValue -ne $originalDataFile.GrowthValue -or $restoredDataFile.IsPercentGrowth -ne $originalDataFile.IsPercentGrowth) {
                         throw "Failed to restore tempdb file $($originalDataFile.LogicalName) to its original size and growth settings."
                     }
+                }
+            }
+
+            # The allocation table grows the tempdb log through normal autogrowth and no command
+            # call puts it back, so the original size is restored explicitly.
+            if ($null -ne $originalLogFileState) {
+                $escapedLogLogicalName = $originalLogFileState.LogicalName.Replace("'", "''")
+                $originalLogSizeMb = [Math]::Max(1, [Math]::Floor($originalLogFileState.SizePages / 128.0))
+                $logRestoreAttempt = 0
+                do {
+                    $logRestoreAttempt += 1
+                    $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DBCC FREESYSTEMCACHE ('ALL'); DBCC SHRINKFILE (N'$escapedLogLogicalName', $originalLogSizeMb);")
+                    $restoredLogSizePages = $tempdbReductionServer.Databases["tempdb"].Query("SELECT size AS SizePages FROM sys.database_files WHERE name = N'$escapedLogLogicalName'").SizePages
+                } while ($restoredLogSizePages -gt $originalLogFileState.SizePages -and $logRestoreAttempt -lt 3)
+
+                if ($restoredLogSizePages -lt $originalLogFileState.SizePages) {
+                    $tempdbReductionServer.Databases["master"].ExecuteNonQuery("ALTER DATABASE tempdb MODIFY FILE (NAME = N'$escapedLogLogicalName', SIZE = $($originalLogFileState.SizePages * 8)KB);")
+                }
+                if ($restoredLogSizePages -gt $originalLogFileState.SizePages) {
+                    throw "Failed to shrink the tempdb log file back to its original size after $logRestoreAttempt attempts."
                 }
             }
 
@@ -294,6 +330,26 @@ CROSS JOIN sys.all_objects AS second_source;
             $capacityResult | Should -BeNullOrEmpty
             ($capacityWarning -join " ") | Should -Match "exceeds the requested target capacity"
 
+            # Seed cached work tables. They survive the queries that created them, are allocated into the
+            # emptiest files - exactly the files the reduction is about to remove - and EMPTYFILE cannot
+            # move their pages. On an instance with a warm cache this is what made the reduction fail, so
+            # it is made deterministic here: without the cache release in the command, the reduction fails.
+            $seedWorkTablesQuery = @"
+DECLARE @i int = 0, @sql nvarchar(max);
+WHILE @i < 40
+BEGIN
+    SET @sql = N'DECLARE cur CURSOR STATIC FOR SELECT TOP (' + CAST(1000 + @i AS nvarchar(10)) + N') name FROM sys.all_objects ORDER BY NEWID(); OPEN cur; CLOSE cur; DEALLOCATE cur;';
+    EXEC sp_executesql @sql;
+    SET @i += 1;
+END
+"@
+            $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery($seedWorkTablesQuery)
+
+            # The reduction below passes no log related parameter, so the log file has to stay
+            # untouched. This guards against the log statement that every call used to emit, which
+            # silently reset the growth of the log file to the LogFileGrowth default of 512 MB.
+            $logGrowthBeforeReduce = $tempdbReductionServer.Databases["tempdb"].Query("SELECT growth AS GrowthValue FROM sys.database_files WHERE type = 1").GrowthValue
+
             # Run the reduction through the connection that starts in msdb, so that the assertion below can
             # show that the command leaves the database of the caller where it found it. This is the path
             # that moves it twice: reading tempdb through FILEPROPERTY, which only reports on the current
@@ -311,6 +367,9 @@ CROSS JOIN sys.all_objects AS second_source;
             }
             $reduceResult = Set-DbaTempDbConfig @splatReduce
             $reduceResult.DataFileCount | Should -Be $originalDataFileCount
+
+            $logGrowthAfterReduce = $tempdbReductionServer.Databases["tempdb"].Query("SELECT growth AS GrowthValue FROM sys.database_files WHERE type = 1").GrowthValue
+            $logGrowthAfterReduce | Should -Be $logGrowthBeforeReduce
 
             $tempdbContextServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "msdb"
 
