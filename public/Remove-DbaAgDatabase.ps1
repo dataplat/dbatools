@@ -98,7 +98,7 @@ function Remove-DbaAgDatabase {
 
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+                Stop-Function -Message "You must specify one or more databases when using the SqlInstance parameter."
                 return
             }
         }
