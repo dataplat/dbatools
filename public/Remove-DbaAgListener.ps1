@@ -97,7 +97,13 @@ function Remove-DbaAgListener {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Listener $Listener
+            $splatGetAgListener = @{
+                SqlInstance       = $SqlInstance
+                SqlCredential     = $SqlCredential
+                Listener          = $Listener
+                AvailabilityGroup = $AvailabilityGroup
+            }
+            $InputObject += Get-DbaAgListener @splatGetAgListener
         }
 
         foreach ($aglistener in $InputObject) {
