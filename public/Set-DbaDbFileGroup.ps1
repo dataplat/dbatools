@@ -150,11 +150,22 @@ function Set-DbaDbFileGroup {
 
                 foreach ($fg in $FileGroup) {
 
-                    if ($obj.FileGroups.Name -notcontains $fg) {
-                        Stop-Function -Message "Filegroup $fg does not exist in the database $($obj.Name) on $($obj.Parent.Name)" -Continue
+                    # On a case sensitive database the SMO collection indexer compares case sensitively, so checking
+                    # with -notcontains (case insensitive) and then retrieving with the indexer returns null for a
+                    # name in the wrong case. Resolve with one lookup: exact match first, case insensitive fallback.
+                    $fileGroupObject = $obj.FileGroups | Where-Object Name -ceq $fg
+                    if (-not $fileGroupObject) {
+                        $fileGroupObject = $obj.FileGroups | Where-Object Name -eq $fg
                     }
 
-                    $fileGroupsToModify += $obj.FileGroups[$fg]
+                    if (-not $fileGroupObject) {
+                        Stop-Function -Message "Filegroup $fg does not exist in the database $($obj.Name) on $($obj.Parent.Name)" -Continue
+                    }
+                    if (@($fileGroupObject).Count -gt 1) {
+                        Stop-Function -Message "Multiple filegroups match $fg case insensitively in the database $($obj.Name) on $($obj.Parent.Name). Specify the exact name." -Continue
+                    }
+
+                    $fileGroupsToModify += $fileGroupObject
                 }
             } elseif ($obj -is [Microsoft.SqlServer.Management.Smo.FileGroup]) {
                 $fileGroupsToModify += $obj
@@ -164,7 +175,7 @@ function Set-DbaDbFileGroup {
         foreach ($fgToModify in $fileGroupsToModify) {
 
             if ($fgToModify.Files.Count -eq 0) {
-                Stop-Function -Message "Filegroup $FileGroup is empty on $($obj.Name) on $($obj.Parent.Name). Before the options can be set there must be at least one file in the filegroup." -Continue
+                Stop-Function -Message "Filegroup $($fgToModify.Name) is empty on $($fgToModify.Parent.Name) on $($fgToModify.Parent.Parent.Name). Before the options can be set there must be at least one file in the filegroup." -Continue
             }
 
             if ($Pscmdlet.ShouldProcess($fgToModify.Parent.Parent.Name, "Updating the filegroup options for $($fgToModify.Name) on the database $($fgToModify.Parent.Name) on $($fgToModify.Parent.Parent.Name)")) {
