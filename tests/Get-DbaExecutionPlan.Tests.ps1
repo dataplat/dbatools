@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -Database" {
         BeforeAll {
-            $databaseResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master | Select-Object -First 1)
+            $databaseResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -49,13 +49,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should be execution plan on Master" {
-            $databaseResults.DatabaseName | Should -Be "Master"
+            $databaseResults.DatabaseName | Should -Be "master"
         }
     }
 
     Context "Gets no Execution Plan when using -ExcludeDatabase" {
         BeforeAll {
-            $excludeResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase Master | Select-Object -First 1)
+            $excludeResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -63,13 +63,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should be execution plan on Master" {
-            $excludeResults.DatabaseName | Should -Not -Be "Master"
+            $excludeResults.DatabaseName | Should -Not -Be "master"
         }
     }
 
     Context "Gets Execution Plan when using -SinceCreation" {
         BeforeAll {
-            $creationResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master -SinceCreation "01-01-2000" | Select-Object -First 1)
+            $creationResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master -SinceCreation "01-01-2000" | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -77,7 +77,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should be execution plan on Master" {
-            $creationResults.DatabaseName | Should -Be "Master"
+            $creationResults.DatabaseName | Should -Be "master"
         }
 
         It "Should have a creation date Greater than 01-01-2000" {
@@ -87,7 +87,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Gets Execution Plan when using -SinceLastExecution" {
         BeforeAll {
-            $executionResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database Master -SinceLastExecution "01-01-2000" | Select-Object -First 1)
+            $executionResults = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database master -SinceLastExecution "01-01-2000" | Select-Object -First 1)
         }
 
         It "Gets results" {
@@ -95,7 +95,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should be execution plan on Master" {
-            $executionResults.DatabaseName | Should -Be "Master"
+            $executionResults.DatabaseName | Should -Be "master"
         }
 
         It "Should have a execution time Greater than 01-01-2000" {
