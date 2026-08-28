@@ -72,7 +72,7 @@ function Install-DbaWhoIsActive {
         - InstanceName: The SQL Server instance name
         - SqlInstance: The full SQL Server instance name (computer\instance)
         - Database: The database where sp_WhoIsActive was installed
-        - Name: Always 'sp_WhoisActive', the name of the installed stored procedure
+        - Name: Always 'sp_WhoIsActive', the name of the installed stored procedure
         - Version: The version of sp_WhoIsActive that was installed (extracted from the procedure source code)
         - Status: String indicating 'Installed' for new installations or 'Updated' if the procedure already existed
 
@@ -198,7 +198,7 @@ function Install-DbaWhoIsActive {
             }
             if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
                 try {
-                    $ProcedureExists_Query = "SELECT COUNT(*) [proc_count] FROM sys.procedures WHERE is_ms_shipped = 0 AND name LIKE '%sp_WhoisActive%'"
+                    $ProcedureExists_Query = "SELECT COUNT(*) [proc_count] FROM sys.procedures WHERE is_ms_shipped = 0 AND LOWER(name) LIKE '%sp_whoisactive%'"
 
                     if ($server.Databases[$Database]) {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
@@ -221,7 +221,7 @@ function Install-DbaWhoIsActive {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $Database
-                            Name         = 'sp_WhoisActive'
+                            Name         = 'sp_WhoIsActive'
                             Version      = $versionWhoIsActive
                             Status       = $status
                         }

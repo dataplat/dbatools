@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         It "Should output correct results" {
             $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $installResults.Database | Should -Be $dbName
-            $installResults.Name | Should -Be "sp_WhoisActive"
+            $installResults.Name | Should -Be "sp_WhoIsActive"
             $installResults.Status | Should -Be "Installed"
         }
     }
@@ -59,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         It "Should output correct results" {
             $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $updateResults.Database | Should -Be $dbName
-            $updateResults.Name | Should -Be "sp_WhoisActive"
+            $updateResults.Name | Should -Be "sp_WhoIsActive"
             $updateResults.Status | Should -Be "Updated"
         }
     }
