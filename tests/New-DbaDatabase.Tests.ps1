@@ -187,13 +187,13 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $containmentEnabled = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled).ConfiguredValue
+            $containmentEnabled = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName ContainmentEnabled).ConfiguredValue
             if ($containmentEnabled -ne 1) {
-                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value 1
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName ContainmentEnabled -Value 1
             }
 
             $containmentDbName = "dbatoolsci_containment_$(Get-Random)"
-            $containedDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $containmentDbName -ContainmentType Partial
+            $containedDatabase = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $containmentDbName -ContainmentType Partial
 
             # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -203,9 +203,9 @@ Describe $CommandName -Tag IntegrationTests {
             # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $containmentDbName | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $containmentDbName | Remove-DbaDatabase
             if ($containmentEnabled -ne 1) {
-                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ConfigName ContainmentEnabled -Value $containmentEnabled
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceMulti1 -ConfigName ContainmentEnabled -Value $containmentEnabled
             }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -226,10 +226,10 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $random = Get-Random
-            $InstanceSingle = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
-            $instance3 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $serverMulti1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $serverMulti2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
 
-            $randomDb = New-DbaDatabase -SqlInstance $InstanceSingle
+            $randomDb = New-DbaDatabase -SqlInstance $serverMulti1
 
             $newDbName = "dbatoolsci_newdb_$random"
             $newDb1Name = "dbatoolsci_newdb1_$random"
@@ -253,7 +253,7 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Cleanup all created databases.
-            Get-DbaDatabase -SqlInstance $InstanceSingle, $instance3 -ExcludeSystem | Remove-DbaDatabase
+            Get-DbaDatabase -SqlInstance $serverMulti1, $serverMulti2 -ExcludeSystem | Remove-DbaDatabase
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -263,104 +263,104 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "creates one new database on two servers" {
-            $newDbOnTwoServers = New-DbaDatabase -SqlInstance $InstanceSingle, $instance3 -Name $newDbName -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
+            $newDbOnTwoServers = New-DbaDatabase -SqlInstance $serverMulti1, $serverMulti2 -Name $newDbName -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $newDbOnTwoServers.Count | Should -Be 2
             $newDbOnTwoServers[0].Name | Should -Be $newDbName
             $newDbOnTwoServers[1].Name | Should -Be $newDbName
 
-            $InstanceSingle.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
-            $InstanceSingle.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
-            $InstanceSingle.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
-            $InstanceSingle.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
+            $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
+            $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
+            $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
+            $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
-            $InstanceSingle.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
-            $InstanceSingle.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
-            $InstanceSingle.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $InstanceSingle.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
 
-            $InstanceSingle.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
-            $InstanceSingle.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
-            $InstanceSingle.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
-            $InstanceSingle.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
+            $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
+            $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
+            $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
+            $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
 
-            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
-            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
+            $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Size | Should -Be 65536
+            $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].MaxSize | Should -Be 524288
+            $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
+            $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
-            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
-            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
-            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $instance3.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
 
-            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
-            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
-            $instance3.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
+            $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
+            $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
+            $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Growth | Should -Be 65536
+            $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].GrowthType | Should -Be "KB"
         }
 
         It "creates two new databases on two servers" {
-            $multipleDbOnTwoServers = New-DbaDatabase -SqlInstance $InstanceSingle, $instance3 -Name $newDb1Name, $newDb2Name
+            $multipleDbOnTwoServers = New-DbaDatabase -SqlInstance $serverMulti1, $serverMulti2 -Name $newDb1Name, $newDb2Name
             $multipleDbOnTwoServers.Count | Should -Be 4
             $multipleDbOnTwoServers[0].Name | Should -Be $newDb1Name
             $multipleDbOnTwoServers[1].Name | Should -Be $newDb2Name
         }
 
         It "bug 6780 autogrowth params" {
-            $db6780 = New-DbaDatabase -SqlInstance $InstanceSingle -Name $bug6780DbName -Recoverymodel Simple -DataFilePath $randomDb.PrimaryFilePath -LogFilePath $randomDb.PrimaryFilePath -SecondaryFileCount 1 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
+            $db6780 = New-DbaDatabase -SqlInstance $serverMulti1 -Name $bug6780DbName -Recoverymodel Simple -DataFilePath $randomDb.PrimaryFilePath -LogFilePath $randomDb.PrimaryFilePath -SecondaryFileCount 1 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $db6780.Count | Should -Be 1
 
-            $InstanceSingle.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].Growth | Should -Be $InstanceSingle.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
-            $InstanceSingle.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].GrowthType | Should -Be $InstanceSingle.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
+            $serverMulti1.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].Growth | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
+            $serverMulti1.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].GrowthType | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
 
-            $InstanceSingle.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].Growth | Should -Be $InstanceSingle.Databases["model"].LogFiles["modellog"].Growth
-            $InstanceSingle.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].GrowthType | Should -Be $InstanceSingle.Databases["model"].LogFiles["modellog"].GrowthType
+            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].Growth | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].Growth
+            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].GrowthType | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].GrowthType
 
             # also check the randomDb since it was created without any additional params
-            $InstanceSingle.Databases[$($randomDb.Name)].FileGroups["PRIMARY"].Files["$($randomDb.Name)"].Growth | Should -Be $InstanceSingle.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
-            $InstanceSingle.Databases[$($randomDb.Name)].FileGroups["PRIMARY"].Files["$($randomDb.Name)"].GrowthType | Should -Be $InstanceSingle.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
+            $serverMulti1.Databases[$($randomDb.Name)].FileGroups["PRIMARY"].Files["$($randomDb.Name)"].Growth | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
+            $serverMulti1.Databases[$($randomDb.Name)].FileGroups["PRIMARY"].Files["$($randomDb.Name)"].GrowthType | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
 
-            $InstanceSingle.Databases[$($randomDb.Name)].LogFiles["$($randomDb.Name)_log"].Growth | Should -Be $InstanceSingle.Databases["model"].LogFiles["modellog"].Growth
-            $InstanceSingle.Databases[$($randomDb.Name)].LogFiles["$($randomDb.Name)_log"].GrowthType | Should -Be $InstanceSingle.Databases["model"].LogFiles["modellog"].GrowthType
+            $serverMulti1.Databases[$($randomDb.Name)].LogFiles["$($randomDb.Name)_log"].Growth | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].Growth
+            $serverMulti1.Databases[$($randomDb.Name)].LogFiles["$($randomDb.Name)_log"].GrowthType | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].GrowthType
         }
 
         It "collation is validated" {
-            $collationDb = New-DbaDatabase -SqlInstance $InstanceSingle -Name $collationDbName -Collation "invalid_collation" -WarningAction SilentlyContinue
+            $collationDb = New-DbaDatabase -SqlInstance $serverMulti1 -Name $collationDbName -Collation "invalid_collation" -WarningAction SilentlyContinue
             $collationDb | Should -BeNull
 
-            $collationDb = New-DbaDatabase -SqlInstance $InstanceSingle -Name $collationDbName -Collation $InstanceSingle.Databases["model"].Collation
-            $InstanceSingle.Databases[$collationDbName].Collation | Should -Be $InstanceSingle.Databases["model"].Collation
+            $collationDb = New-DbaDatabase -SqlInstance $serverMulti1 -Name $collationDbName -Collation $serverMulti1.Databases["model"].Collation
+            $serverMulti1.Databases[$collationDbName].Collation | Should -Be $serverMulti1.Databases["model"].Collation
         }
 
         It "SecondaryFilesize is specified but not the SecondaryFileCount" {
-            $secondaryFileTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileTestDbName -SecondaryFilesize 10 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
-            $instance3.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files.Count | Should -Be 1
-            $instance3.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files[0].Size | Should -Be 10240
+            $secondaryFileTestDb = New-DbaDatabase -SqlInstance $serverMulti2 -Name $secondaryFileTestDbName -SecondaryFilesize 10 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
+            $serverMulti2.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files.Count | Should -Be 1
+            $serverMulti2.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files[0].Size | Should -Be 10240
         }
 
         It "SecondaryFileCount is specified but not the other secondary file params" {
-            $secondaryFileCountTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileCountTestDbName -SecondaryFileCount 2 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
-            $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files.Count | Should -Be 2
-            $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[0].Size | Should -Be $instance3.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
-            $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[1].Size | Should -Be $instance3.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
+            $secondaryFileCountTestDb = New-DbaDatabase -SqlInstance $serverMulti2 -Name $secondaryFileCountTestDbName -SecondaryFileCount 2 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
+            $serverMulti2.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files.Count | Should -Be 2
+            $serverMulti2.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[0].Size | Should -Be $serverMulti2.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
+            $serverMulti2.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[1].Size | Should -Be $serverMulti2.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
         }
 
         It "RecoveryModel" {
-            $simpleRecoveryModelDb = New-DbaDatabase -SqlInstance $InstanceSingle -Name $simpleRecoveryModelDbName -RecoveryModel Simple
+            $simpleRecoveryModelDb = New-DbaDatabase -SqlInstance $serverMulti1 -Name $simpleRecoveryModelDbName -RecoveryModel Simple
             $simpleRecoveryModelDb.RecoveryModel | Should -Be "Simple"
 
-            $fullRecoveryModelDb = New-DbaDatabase -SqlInstance $InstanceSingle -Name $fullRecoveryModelDbName -RecoveryModel Full
+            $fullRecoveryModelDb = New-DbaDatabase -SqlInstance $serverMulti1 -Name $fullRecoveryModelDbName -RecoveryModel Full
             $fullRecoveryModelDb.RecoveryModel | Should -Be "Full"
 
-            $bulkLoggedRecoveryModelDb = New-DbaDatabase -SqlInstance $InstanceSingle -Name $bulkLoggedRecoveryModelDbName -RecoveryModel BulkLogged
+            $bulkLoggedRecoveryModelDb = New-DbaDatabase -SqlInstance $serverMulti1 -Name $bulkLoggedRecoveryModelDbName -RecoveryModel BulkLogged
             $bulkLoggedRecoveryModelDb.RecoveryModel | Should -Be "BulkLogged"
         }
 
         It "DefaultFileGroup" {
-            $primaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $primaryFileGroupDbName -DefaultFileGroup "Primary"
+            $primaryFileGroupDb = New-DbaDatabase -SqlInstance $serverMulti2 -Name $primaryFileGroupDbName -DefaultFileGroup "Primary"
             $primaryFileGroupDb.DefaultFileGroup | Should -Be "PRIMARY"
 
-            $secondaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileGroupDbName -DefaultFileGroup "Secondary" -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
+            $secondaryFileGroupDb = New-DbaDatabase -SqlInstance $serverMulti2 -Name $secondaryFileGroupDbName -DefaultFileGroup "Secondary" -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $secondaryFileGroupDb.DefaultFileGroup | Should -Be "$($secondaryFileGroupDbName)_MainData"
         }
     }
