@@ -131,8 +131,10 @@ function Get-DbaDbMailLog {
                 }
 
                 if ($Type) {
-                    $combinedtype = $Type -join "', '"
-                    $wherearray += "event_type IN ('$combinedtype')"
+                    # The sysmail_event_log view emits event_type in lowercase, so compare lowercased or the
+                    # documented values (Error, Warning, Information, Success, Internal) never match on a case sensitive instance.
+                    $combinedtype = ($Type -join "', '").ToLower()
+                    $wherearray += "LOWER(event_type) IN ('$combinedtype')"
                 }
 
                 $wherearray = $wherearray -join ' AND '
