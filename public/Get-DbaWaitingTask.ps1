@@ -10,7 +10,7 @@ function Get-DbaWaitingTask {
         Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Server version must be SQL Server version XXXX or higher.
+        The target SQL Server instance or instances. Server version must be SQL Server 2005 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
