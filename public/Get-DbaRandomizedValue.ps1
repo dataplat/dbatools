@@ -214,31 +214,40 @@ function Get-DbaRandomizedValue {
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
 
         # Check the variables
+        # None of these validation stops may use -Continue: the begin block has no enclosing loop, so
+        # the continue would escape the command and eat an iteration of whatever loop the caller runs
+        # in - and the data masking and generation commands call this in a loop per row.
         if (-not $DataType -and -not $RandomizerType -and -not $RandomizerSubType) {
-            Stop-Function -Message "Please use one of the variables i.e. -DataType, -RandomizerType or -RandomizerSubType" -Continue
+            Stop-Function -Message "Please use one of the variables i.e. -DataType, -RandomizerType or -RandomizerSubType"
+            return
         } elseif ($DataType -and ($RandomizerType -or $RandomizerSubType)) {
-            Stop-Function -Message "You cannot use -DataType with -RandomizerType or -RandomizerSubType" -Continue
+            Stop-Function -Message "You cannot use -DataType with -RandomizerType or -RandomizerSubType"
+            return
         } elseif (-not $RandomizerSubType -and $RandomizerType) {
-            Stop-Function -Message "Please enter a sub type" -Continue
+            Stop-Function -Message "Please enter a sub type"
+            return
         } elseif (-not $RandomizerType -and $RandomizerSubType) {
             $RandomizerType = $uniqueSubType
         }
 
         if ($DataType -and $DataType.ToLowerInvariant() -notin $supportedDataTypes) {
-            Stop-Function -Message "Unsupported sql data type" -Continue -Target $DataType
+            Stop-Function -Message "Unsupported sql data type" -Target $DataType
+            return
         }
 
         # Check the bogus type
         if ($RandomizerType) {
             if ($RandomizerType -notin $script:uniquerandomizertypes) {
-                Stop-Function -Message "Invalid randomizer type" -Continue -Target $RandomizerType
+                Stop-Function -Message "Invalid randomizer type" -Target $RandomizerType
+                return
             }
         }
 
         # Check the sub type
         if ($RandomizerSubType) {
             if ($RandomizerSubType -notin $script:uniquerandomizersubtype) {
-                Stop-Function -Message "Invalid randomizer sub type" -Continue -Target $RandomizerSubType
+                Stop-Function -Message "Invalid randomizer sub type" -Target $RandomizerSubType
+                return
             }
 
             # The type and the subtype used to be checked against two independent lists, so Name/ZipCode passed
@@ -247,21 +256,25 @@ function Get-DbaRandomizedValue {
             $randomizerCombination = $script:randomizerTypes.Group | Where-Object { $_.Type -eq $RandomizerType -and $_.SubType -eq $RandomizerSubType } | Select-Object -First 1
 
             if (-not $randomizerCombination) {
-                Stop-Function -Message "Randomizer type $RandomizerType has no sub type $RandomizerSubType, run Get-DbaRandomizedType to list the valid combinations" -Continue -Target $RandomizerSubType
+                Stop-Function -Message "Randomizer type $RandomizerType has no sub type $RandomizerSubType, run Get-DbaRandomizedType to list the valid combinations" -Target $RandomizerSubType
+                return
             }
 
             # Some combinations need input that cannot be made up. The randomizer types say which parameter
             # that is, so the list stays the single place that knows.
             if ($randomizerCombination.RequiredParameter -eq "Value" -and -not $Value) {
-                Stop-Function -Message "Value cannot be empty when using sub type $RandomizerSubType" -Continue -Target $RandomizerSubType
+                Stop-Function -Message "Value cannot be empty when using sub type $RandomizerSubType" -Target $RandomizerSubType
+                return
             }
 
             if ($randomizerCombination.RequiredParameter -eq "Format" -and -not $Format) {
-                Stop-Function -Message "Format cannot be empty when using sub type $RandomizerSubType, use something like ###-###" -Continue -Target $RandomizerSubType
+                Stop-Function -Message "Format cannot be empty when using sub type $RandomizerSubType, use something like ###-###" -Target $RandomizerSubType
+                return
             }
 
             if ($randomizerCombination.RequiredParameter -eq "StaticValue") {
-                Stop-Function -Message "Randomizer type $RandomizerType does not generate a value, it marks a value that the configuration supplies" -Continue -Target $RandomizerType
+                Stop-Function -Message "Randomizer type $RandomizerType does not generate a value, it marks a value that the configuration supplies" -Target $RandomizerType
+                return
             }
         }
 
