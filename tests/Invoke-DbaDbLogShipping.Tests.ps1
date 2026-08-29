@@ -111,11 +111,15 @@ Describe $CommandName -Tag IntegrationTests {
             # escapes bypassed this command's own catch blocks (#10638).
             $loopCount = 0
             foreach ($i in 1..3) {
+                # The share is never touched: it only has to look like a UNC path so that the guards
+                # before the database check pass, and IgnoreFileChecks skips the reachability test.
+                # On CI $TestConfig.Temp is a local path and would trip the UNC form check instead.
                 $splatEmptyDatabase = @{
                     SourceSqlInstance      = $TestConfig.InstanceHadr
                     DestinationSqlInstance = $TestConfig.InstanceHadr
                     Database               = ""
-                    SharedPath             = $TestConfig.Temp
+                    SharedPath             = "\\dbatoolsci\notashare"
+                    IgnoreFileChecks       = $true
                     WarningAction          = "SilentlyContinue"
                 }
                 $null = Invoke-DbaDbLogShipping @splatEmptyDatabase
