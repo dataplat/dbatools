@@ -93,7 +93,10 @@ function Get-DbaRandomizedType {
         try {
             $randomizerTypes = Import-Csv (Resolve-Path -Path "$script:PSModuleRoot\bin\randomizer\en.randomizertypes.csv")
         } catch {
-            Stop-Function -Message "Could not import randomized types" -Continue
+            # No -Continue here: the begin block has no enclosing loop, so the continue would escape
+            # the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Could not import randomized types"
+            return
         }
 
     }
