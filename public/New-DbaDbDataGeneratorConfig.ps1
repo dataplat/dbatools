@@ -122,7 +122,10 @@ function New-DbaDbDataGeneratorConfig {
         try {
             $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
         } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -Continue
+            # No -Continue here: no loop encloses this call, so the continue would escape the
+            # command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Something went wrong importing the column types"
+            return
         }
 
         # Check if the Path is accessible
@@ -365,7 +368,9 @@ function New-DbaDbDataGeneratorConfig {
                     Get-ChildItem -Path $temppath
                 }
             } catch {
-                Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
+                # No -Continue here either, see the begin block.
+                Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -ErrorRecord $_
+                return
             }
         } else {
             Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose
