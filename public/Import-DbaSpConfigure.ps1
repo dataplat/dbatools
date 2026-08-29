@@ -135,7 +135,11 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $sourceserver -Continue
+                # No -Continue on these guards: the begin block has no enclosing loop, so the continue
+                # would escape the command, eat an iteration of whatever loop the caller runs in, and
+                # skip the connection cleanup in the end block.
+                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $sourceserver
+                return
             }
 
             try {
@@ -151,7 +155,8 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $destserver -Continue
+                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $destserver
+                return
             }
 
             $source = $sourceserver.DomainInstanceName
@@ -170,11 +175,13 @@ function Import-DbaSpConfigure {
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -Target $server
+                return
             }
 
             if (-not (Test-Path $Path)) {
-                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path -Continue
+                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path
+                return
             }
         }
 

@@ -50,6 +50,21 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "A missing file does not eat an iteration of the caller's loop" {
+        It "Warns and completes every iteration" {
+            # The begin block guards used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Import-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path "$exportPath\does-not-exist.sql" -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Not Found*"
+        }
+    }
+
     Context "The connection of the caller is left alone when importing from a file (#10554)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
