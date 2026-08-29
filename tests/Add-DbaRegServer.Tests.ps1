@@ -102,4 +102,46 @@ Describe $CommandName -Tag IntegrationTests {
             $results2.SqlInstance | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "When adding registered servers repeatedly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command used to reconnect the store connection for its verification call and never
+            # close it again, one new sleeping session per call. Count sessions through a server object
+            # opened once, because a per-call counting command would open connections of its own.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+select count(*)
+from sys.dm_exec_sessions
+where program_name like 'dbatools%'
+  and status = 'sleeping'
+  and session_id <> @@spid
+"@
+
+            # One warm-up call so the shared pooled connection exists before the baseline is taken.
+            $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName "dbatoolsci-leak0" -Name "dbatoolsci-leak0"
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName "dbatoolsci-leak$i" -Name "dbatoolsci-leak$i"
+            }
+            $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Get-DbaRegServer -SqlInstance $TestConfig.InstanceSingle | Where-Object Name -Like "dbatoolsci-leak*" | Remove-DbaRegServer
+            $countServer.ConnectionContext.Disconnect()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Leaves no sleeping session behind" {
+            $sleepingAfter | Should -Be $sleepingBefore
+        }
+    }
 }

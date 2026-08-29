@@ -246,6 +246,10 @@ function Add-DbaRegServer {
                             $newserver.Create()
 
                             Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
+                            # The verification call above reconnects the store connection that Get-DbaRegServerGroup
+                            # already closed, and nothing closes it again - one session per call stayed open. Close it
+                            # like Add-DbaRegServerGroup does; only a connection this module opened is ever closed.
+                            Disconnect-RegServer -Server $newserver
                         } catch {
                             Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                         }
@@ -262,6 +266,10 @@ function Add-DbaRegServer {
                         $newserver.Create()
 
                         Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
+                        # The verification call above reconnects the store connection that Get-DbaRegServerGroup
+                        # already closed, and nothing closes it again - one session per call stayed open. Close it
+                        # like Add-DbaRegServerGroup does; only a connection this module opened is ever closed.
+                        Disconnect-RegServer -Server $newserver
                     } catch {
                         Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
                     }
