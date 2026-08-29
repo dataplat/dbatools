@@ -172,6 +172,76 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
 
+    Context "Honors EnableException when no full backup anchors the chain #10621" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Build a full/diff/log chain with one file per backup, so the diff and log never share a
+            # file with the full (the default backup file name has minute resolution and would hide
+            # the missing full by accident).
+            $chainDbName = "dbatoolsci_chaintest_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $chainDbName
+            $splatChainBackup = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $chainDbName
+                Path        = $backupPath
+            }
+            $null = Backup-DbaDatabase @splatChainBackup -Type Full -FilePath "chaintest_full.bak"
+            $chainDiff = Backup-DbaDatabase @splatChainBackup -Type Diff -FilePath "chaintest_diff.bak"
+            $chainLog = Backup-DbaDatabase @splatChainBackup -Type Log -FilePath "chaintest_log.trn"
+
+            # An existing directory without any backup files, to hit the "No backups passed through" path.
+            $emptyBackupDir = "$backupPath\emptydir"
+            $null = New-Item -Path $emptyBackupDir -ItemType Directory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $chainDbName | Remove-DbaDatabase
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Throws when only diff and log are passed with EnableException" {
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $chainDiff.BackupPath, $chainLog.BackupPath
+                DatabaseName    = $chainDbName
+                WithReplace     = $true
+                EnableException = $true
+            }
+            { Restore-DbaDatabase @splatRestore } | Should -Throw "*Fullname property not found*"
+        }
+
+        It "Still warns and returns nothing without EnableException" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $chainDiff.BackupPath, $chainLog.BackupPath
+                DatabaseName  = $chainDbName
+                WithReplace   = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Restore-DbaDatabase @splatRestore
+            $WarnVar | Should -BeLike "*Fullname property not found*"
+            $results | Should -BeNullOrEmpty
+        }
+
+        It "Throws when the path holds no backups at all with EnableException" {
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $emptyBackupDir
+                DatabaseName    = $chainDbName
+                WithReplace     = $true
+                EnableException = $true
+            }
+            { Restore-DbaDatabase @splatRestore } | Should -Throw "*No backups passed through*"
+        }
+    }
+
+
     Context "Database is restored with correct renamings" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
