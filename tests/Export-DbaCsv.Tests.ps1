@@ -332,6 +332,48 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         }
     }
 
+    Context "When exporting repeatedly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command used to open a database-scoped connection per call and never close it,
+            # one new sleeping session per call. Count sessions through a server object opened once,
+            # because a per-call counting command would open connections of its own.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+select count(*)
+from sys.dm_exec_sessions
+where program_name like 'dbatools%'
+  and status = 'sleeping'
+  and session_id <> @@spid
+"@
+
+            # One warm-up call so the shared pooled connection exists before the baseline is taken.
+            $splatLeakExport = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = $tableName
+            }
+            $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-0.csv"
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-$i.csv"
+            }
+            $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $countServer.ConnectionContext.Disconnect()
+        }
+
+        It "Leaves no sleeping session behind" {
+            $sleepingAfter | Should -Be $sleepingBefore
+        }
+    }
+
     Context "Compression options (issue #8646)" {
         It "exports with each compression type" {
             $compressionTypes = @("None", "GZip", "Deflate")
