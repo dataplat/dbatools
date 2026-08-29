@@ -33,4 +33,47 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Name -eq "system_health" | Should -Be $true
         }
     }
+
+    Context "When querying sessions repeatedly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command used to leave the cloned connection of its XEStore open, one new sleeping
+            # session per call. Count sessions through a server object opened once, because a per-call
+            # counting command would open connections of its own.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+select count(*)
+from sys.dm_exec_sessions
+where program_name like 'dbatools%'
+  and status = 'sleeping'
+  and session_id <> @@spid
+"@
+
+            # One warm-up call so the shared pooled connection exists before the baseline is taken.
+            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
+            }
+            $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $countServer.ConnectionContext.Disconnect()
+        }
+
+        It "Leaves no sleeping session behind" {
+            $sleepingAfter | Should -Be $sleepingBefore
+        }
+
+        It "Emits objects whose store still works after the connection is returned" {
+            $result = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
+            # The store must transparently reconnect for downstream commands like Start or Stop.
+            $result.Store.Sessions.Name | Should -Contain "system_health"
+        }
+    }
 }
