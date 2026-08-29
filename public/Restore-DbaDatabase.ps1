@@ -883,7 +883,10 @@ function Restore-DbaDatabase {
 
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation @parms
             } catch {
-                Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
+                # No -Continue here: this catch is in the end block outside of any loop, so the continue
+                # would escape the command and eat an iteration of whatever loop the caller runs in.
+                Stop-Function -ErrorRecord $_ -Message "Failure"
+                return
             }
             if (Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
@@ -940,7 +943,12 @@ function Restore-DbaDatabase {
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
+                # No -Continue here: this catch is in the end block outside of any loop, so the continue
+                # would escape the command and eat an iteration of whatever loop the caller runs in. Under
+                # Pester that corrupted the test runner - the failure surfaced as "Cannot bind argument to
+                # parameter 'ErrorRecord' because it is null" and kept the StopAt tests broken for years.
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $RestoreInstance
+                return
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
