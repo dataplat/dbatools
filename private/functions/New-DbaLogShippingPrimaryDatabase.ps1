@@ -368,7 +368,10 @@ function New-DbaLogShippingPrimaryDatabase {
             }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance -Continue
+            # No -Continue here: no loop encloses this call, so the continue would escape into the
+            # caller and bypass the catch that Invoke-DbaDbLogShipping wraps around this function.
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     }
 

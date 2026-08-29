@@ -101,3 +101,28 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When no database name is supplied" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The empty-database guard used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short. The log shipping helper functions carried the same defect and their
+            # escapes bypassed this command's own catch blocks (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatEmptyDatabase = @{
+                    SourceSqlInstance      = $TestConfig.InstanceHadr
+                    DestinationSqlInstance = $TestConfig.InstanceHadr
+                    Database               = ""
+                    SharedPath             = $TestConfig.Temp
+                    WarningAction          = "SilentlyContinue"
+                }
+                $null = Invoke-DbaDbLogShipping @splatEmptyDatabase
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Please supply a database*"
+        }
+    }
+}
