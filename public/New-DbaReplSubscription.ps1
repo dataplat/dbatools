@@ -129,17 +129,23 @@ function New-DbaReplSubscription {
         try {
             $pubReplServer = Get-DbaReplServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException:$EnableException
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+            # No -Continue on these guards: the begin block has no enclosing loop, so the continue
+            # would escape the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
         }
 
         try {
             $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName -EnableException:$EnableException
         } catch {
-            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $SqlInstance) -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $SqlInstance) -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     }
 
     process {
+        # The begin block stops without a publisher or publication - do not run the subscriber loop then.
+        if (Test-FunctionInterrupt) { return }
 
         # for each subscription SqlInstance we need to create a subscription
         foreach ($instance in $SubscriberSqlInstance) {
