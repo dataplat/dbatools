@@ -369,7 +369,11 @@ function Test-DbaLastBackup {
             if ($DataDirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $DataDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $DataDirectory Please check if $serviceAccount has permissions." -Continue
+                    # No -Continue here: unlike the twin check in the per-instance loop below, no loop
+                    # encloses this call, so the continue would escape the command and eat an iteration
+                    # of whatever loop the caller runs in.
+                    Stop-Function -Message "Can't access $DataDirectory Please check if $serviceAccount has permissions."
+                    return
                 }
                 $effectiveDataDirectory = $DataDirectory
             } else {
@@ -379,7 +383,9 @@ function Test-DbaLastBackup {
             if ($LogDirectory) {
                 if (-not (Test-DbaPath -SqlInstance $destserver -Path $LogDirectory)) {
                     $serviceAccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $LogDirectory. Please check if $serviceAccount has permissions." -Continue
+                    # No -Continue here either, see above.
+                    Stop-Function -Message "$Destination can't access its local directory $LogDirectory. Please check if $serviceAccount has permissions."
+                    return
                 }
                 $effectiveLogDirectory = $LogDirectory
             } else {
