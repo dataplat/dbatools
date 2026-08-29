@@ -102,6 +102,29 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "When SharedPath is not accessible" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The validation guards used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command before its own return statement ran and consumed an
+            # iteration of this very loop, so the counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatBadPath = @{
+                    Primary       = $TestConfig.InstanceHadr
+                    Name          = "dbatoolsci_agbadpath"
+                    ClusterType   = "None"
+                    FailoverMode  = "Manual"
+                    SharedPath    = "Q:\dbatoolsci\does\not\exist"
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = New-DbaAvailabilityGroup @splatBadPath
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Cannot access*"
+        }
+    }
+
     Context "When creating availability groups" {
         It "returns an ag with a db named" {
             $splatAg = @{
