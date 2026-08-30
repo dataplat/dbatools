@@ -1935,7 +1935,10 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for primary instance"
-                            Stop-Function -Message "Something went wrong setting up log shipping for primary instance" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
+                            # No -Continue here: it would advance the database loop past the status
+                            # object at the end of the iteration, so a failure would return nothing.
+                            # $setupResult already suppresses the later phases.
+                            Stop-Function -Message "Something went wrong setting up log shipping for primary instance" -ErrorRecord $_ -Target $SourceSqlInstance
                         }
                     }
                 }
@@ -2068,7 +2071,9 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for secondary instance"
-                            Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -ErrorRecord $_ -Target $destInstance -Continue
+                            # No -Continue here: it would advance the database loop past the status
+                            # object at the end of the iteration, so a failure would return nothing.
+                            Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -ErrorRecord $_ -Target $destInstance
                         }
                     }
                 }

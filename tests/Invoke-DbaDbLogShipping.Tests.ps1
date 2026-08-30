@@ -129,4 +129,68 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeLike "*Please supply a database*"
         }
     }
+
+    Context "When a helper fails after the setup phases" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $primaryDatabase = "dbatoolsci_lsfail_$(Get-Random)"
+            $secondaryDatabase = "$($primaryDatabase)_ls"
+            $sharedPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_lsfail_$(Get-Random)"
+            $null = New-Item -Path $sharedPath -ItemType Directory
+            # The copy destination has to exist and be passed explicitly: for a missing default
+            # folder the command falls into a raw PromptForChoice, which a non-interactive session
+            # cannot answer.
+            $copyDestinationFolder = Join-Path -Path $sharedPath -ChildPath "copy"
+            $null = New-Item -Path $copyDestinationFolder -ItemType Directory
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $primaryDatabase -RecoveryModel Full
+            # The full backup is taken here and passed via UseExistingFullBackup: letting the
+            # command generate its own backup fails on this lab, because SQL Server cannot verify
+            # the freshly created per-database subfolder below the share.
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $primaryDatabase -Path $sharedPath -Type Full
+
+            # The helper is the first call inside the primary region try block, so failing it
+            # exercises the catch without creating log shipping metadata or agent jobs. Everything
+            # before the helper - backup generation, restore of the secondary - runs for real.
+            Mock -CommandName New-DbaLogShippingPrimaryDatabase -ModuleName dbatools -MockWith {
+                throw "Simulated helper failure"
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $primaryDatabase, $secondaryDatabase
+            Remove-Item -Path $sharedPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Emits the failed status object instead of skipping it" {
+            # Before the fix the catch around the primary helpers ran Stop-Function -Continue,
+            # which advanced the per-database loop past the status object at the end of the
+            # iteration: a helper failure returned nothing at all.
+            $splatLogShipping = @{
+                SourceSqlInstance       = $TestConfig.InstanceHadr
+                DestinationSqlInstance  = $TestConfig.InstanceHadr
+                Database                = $primaryDatabase
+                SharedPath              = $sharedPath
+                CopyDestinationFolder   = $copyDestinationFolder
+                UseExistingFullBackup   = $true
+                SecondaryDatabaseSuffix = "_ls"
+                WarningAction           = "SilentlyContinue"
+            }
+            $results = Invoke-DbaDbLogShipping @splatLogShipping
+
+            $results | Should -Not -BeNullOrEmpty
+            $results.Result | Should -Be "Failed"
+            $results.Comment | Should -Be "Something went wrong setting up log shipping for primary instance"
+            $results.PrimaryDatabase | Should -Be $primaryDatabase
+            $WarnVar | Should -BeLike "*primary instance*"
+            Should -Invoke -CommandName New-DbaLogShippingPrimaryDatabase -ModuleName dbatools -Times 1 -Exactly
+        }
+    }
 }
