@@ -128,6 +128,13 @@ where program_name like 'dbatools%'
             }
             $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
 
+            # Early pipeline termination stops the command right after the emitted verification
+            # object - only a buffered emission with the disconnect in a finally survives that.
+            foreach ($i in 4..6) {
+                $null = Add-DbaRegServer -SqlInstance $TestConfig.InstanceSingle -ServerName "dbatoolsci-leak$i" -Name "dbatoolsci-leak$i" | Select-Object -First 1
+            }
+            $sleepingAfterEarlyEnd = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -142,6 +149,10 @@ where program_name like 'dbatools%'
 
         It "Leaves no sleeping session behind" {
             $sleepingAfter | Should -Be $sleepingBefore
+        }
+
+        It "Leaves no sleeping session behind when the pipeline ends early" {
+            $sleepingAfterEarlyEnd | Should -Be $sleepingBefore
         }
     }
 }
