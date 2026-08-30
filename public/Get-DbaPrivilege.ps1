@@ -91,18 +91,22 @@ function Convert-SIDToUserName ([string] `$SID ) {
     }
     process {
         foreach ($computer in $ComputerName) {
+            # Invoke-Command2 executes on the local computer under the process identity and ignores
+            # -Credential, so the connectivity test has to authenticate the same way: with the
+            # credential only for remote targets. Otherwise a credential that is valid on the remote
+            # computers of a mixed list but not locally would reject the local computer although the
+            # actual operation would succeed. Without a credential the implicit identity is used,
+            # which fails when it cannot authenticate to the target - for example when the caller
+            # itself runs in a remoting session with a network logon token (double hop).
+            $useCredentialForPreflight = $Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost
             try {
-                # Pass the credential so that the connectivity test authenticates the same way as the
-                # Invoke-Command2 calls below. Without it, the test uses the implicit identity, which
-                # fails when that identity cannot authenticate to the target - for example when the
-                # caller itself runs in a remoting session with a network logon token (double hop).
-                if ($Credential) {
+                if ($useCredentialForPreflight) {
                     $null = Test-PSRemoting -ComputerName $Computer -Credential $Credential -EnableException
                 } else {
                     $null = Test-PSRemoting -ComputerName $Computer -EnableException
                 }
             } catch {
-                if ($Credential) {
+                if ($useCredentialForPreflight) {
                     Stop-Function -Message "Failure on $computer" -ErrorRecord $_ -Continue
                 } else {
                     Stop-Function -Message "Failure on $computer. If this session itself runs in a remote session (for example via WinRM or Ansible), its network logon cannot authenticate to $computer (double hop). Pass -Credential or connect with an authentication that supports delegation, like CredSSP." -ErrorRecord $_ -Continue

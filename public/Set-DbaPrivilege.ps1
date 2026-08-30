@@ -90,11 +90,15 @@ function Convert-UserNameToSID ([string] `$Acc ) {
             if ($Pscmdlet.ShouldProcess($computer, "Setting Privilege for SQL Service Account")) {
                 try {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
-                    # Pass the credential so that the connectivity test authenticates the same way as the
-                    # Invoke-Command2 calls below. Without it, the test uses the implicit identity, which
-                    # fails when that identity cannot authenticate to the target - for example when the
-                    # caller itself runs in a remoting session with a network logon token (double hop).
-                    if ($Credential) {
+                    # Invoke-Command2 executes on the local computer under the process identity and
+                    # ignores -Credential, so the connectivity test and the service discovery below
+                    # have to authenticate the same way: with the credential only for remote targets.
+                    # Otherwise a credential that is valid on the remote computers of a mixed list
+                    # but not locally would reject the local computer although the actual operation
+                    # would succeed. Without a credential the implicit identity is used, which fails
+                    # when it cannot authenticate to the target (double hop).
+                    $useCredentialForPreflight = $Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost
+                    if ($useCredentialForPreflight) {
                         $remotingTestResult = Test-PSRemoting -ComputerName $Computer -Credential $Credential
                     } else {
                         $remotingTestResult = Test-PSRemoting -ComputerName $Computer
@@ -124,7 +128,11 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $services = Get-DbaService -ComputerName $computer -Credential $Credential -Type Engine
+                            if ($useCredentialForPreflight) {
+                                $services = Get-DbaService -ComputerName $computer -Credential $Credential -Type Engine
+                            } else {
+                                $services = Get-DbaService -ComputerName $computer -Type Engine
+                            }
                             $SQLServiceAccounts += $services.StartName
                             # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
                             # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID

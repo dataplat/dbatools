@@ -47,6 +47,17 @@ InModuleScope dbatools {
 
             Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $Credential -eq $testCredential }
         }
+
+        It "does not pass the credential to the connectivity test for the local computer" {
+            # Invoke-Command2 runs locally under the process identity and ignores -Credential, so
+            # the pre-flight has to do the same - a credential that is valid remotely but not
+            # locally must not reject the local computer of a mixed list.
+            $testCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsTestUser", (ConvertTo-SecureString -String "dummy" -AsPlainText -Force))
+
+            $null = Get-DbaPrivilege -ComputerName $env:COMPUTERNAME -Credential $testCredential
+
+            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $null -eq $Credential }
+        }
     }
 }
 
