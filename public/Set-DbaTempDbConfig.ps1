@@ -198,17 +198,20 @@ function Set-DbaTempDbConfig {
             }
 
             #Set DataFileCount if not specified. If specified, check against best practices.
+            # Per-iteration local: assigning the fallback to the parameter variable would carry the
+            # first instance's core count into every later instance of the same call.
             if (-not $DataFileCount) {
-                $DataFileCount = $cores
-                Write-Message -Message "Data file count set to number of cores: $DataFileCount" -Level Verbose
+                $effectiveDataFileCount = $cores
+                Write-Message -Message "Data file count set to number of cores: $effectiveDataFileCount" -Level Verbose
             } else {
-                if ($DataFileCount -gt $cores) {
-                    Write-Message -Message "Data File Count of $DataFileCount exceeds the Logical Core Count of $cores. This is outside of best practices." -Level Warning
+                $effectiveDataFileCount = $DataFileCount
+                if ($effectiveDataFileCount -gt $cores) {
+                    Write-Message -Message "Data File Count of $effectiveDataFileCount exceeds the Logical Core Count of $cores. This is outside of best practices." -Level Warning
                 }
-                Write-Message -Message "Data file count set explicitly: $DataFileCount" -Level Verbose
+                Write-Message -Message "Data file count set explicitly: $effectiveDataFileCount" -Level Verbose
             }
 
-            $DataFilesizeSingle = $([Math]::Floor($DataFileSize / $DataFileCount))
+            $DataFilesizeSingle = $([Math]::Floor($DataFileSize / $effectiveDataFileCount))
             Write-Message -Message "Single data file size (MB): $DataFilesizeSingle." -Level Verbose
 
             if (Test-Bound -ParameterName DataPath) {
@@ -278,12 +281,12 @@ ORDER BY file_id;
             $filesToRemove = @()
             $filesToKeep = @($tempdbFiles)
 
-            if ($CurrentFileCount -gt $DataFileCount) {
+            if ($CurrentFileCount -gt $effectiveDataFileCount) {
                 if (-not $Force) {
-                    Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)." -Continue
+                    Stop-Function -Message "Current tempdb in $instance is not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($effectiveDataFileCount)." -Continue
                 }
 
-                $removeCount = $CurrentFileCount - $DataFileCount
+                $removeCount = $CurrentFileCount - $effectiveDataFileCount
                 $filesToRemove = @(
                     $tempdbFiles |
                         Where-Object { $PSItem.FileId -ne 1 } |
@@ -292,7 +295,7 @@ ORDER BY file_id;
                 )
 
                 if ($filesToRemove.Count -ne $removeCount) {
-                    Stop-Function -Message "Current tempdb in $instance cannot be reduced to $DataFileCount data files without removing the primary data file." -Continue
+                    Stop-Function -Message "Current tempdb in $instance cannot be reduced to $effectiveDataFileCount data files without removing the primary data file." -Continue
                 }
 
                 $usedMb = ($tempdbFiles | Measure-Object -Property UsedMb -Sum).Sum
@@ -358,7 +361,7 @@ END;
             $dataPathIndexToUse = 0
 
             #Checks passed, process reconfiguration
-            for ($i = 0; $i -lt $DataFileCount; $i++) {
+            for ($i = 0; $i -lt $effectiveDataFileCount; $i++) {
                 $File = $DataFiles[$i]
 
                 if ($DataPath.Count -gt 1) {
@@ -400,8 +403,12 @@ END;
 
             $logfile = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 1 | Select-Object LogicalName, PhysicalName, @{L = "SizeMb"; E = { $_.Size.Megabyte } }
 
+            # Per-iteration local: assigning the fallback to the parameter variable would carry the
+            # first instance's log size into the statement for every later instance of the same call.
             if (-not $LogFileSize) {
-                $LogFileSize = $logfile.SizeMb
+                $effectiveLogFileSize = $logfile.SizeMb
+            } else {
+                $effectiveLogFileSize = $LogFileSize
             }
 
             # The log path is always known at this point, because it is derived from the running
@@ -419,7 +426,7 @@ END;
                     $NewPath = $logfile.PhysicalName
                 }
 
-                $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
+                $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$effectiveLogFileSize MB,filegrowth=$LogFileGrowth);"
             }
 
             Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
@@ -440,7 +447,10 @@ END;
                         # only. So the database of the caller is put back once the batches have run,
                         # in a finally, because a reconfiguration that fails half way moves it just as much.
                         try {
-                            $server.ConnectionContext.ExecuteNonQuery($sql)
+                            # ExecuteNonQuery returns the rows-affected count per statement; without
+                            # the assignment every executed batch leaked a raw -1 into the pipeline
+                            # alongside the result object.
+                            $null = $server.ConnectionContext.ExecuteNonQuery($sql)
                         } finally {
                             & $restoreCallerDatabase
                         }
@@ -450,10 +460,10 @@ END;
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
-                            DataFileCount      = $DataFileCount
+                            DataFileCount      = $effectiveDataFileCount
                             DataFileSize       = [dbasize]($DataFileSize * 1024 * 1024)
                             SingleDataFileSize = [dbasize]($DataFilesizeSingle * 1024 * 1024)
-                            LogSize            = [dbasize]($LogFileSize * 1024 * 1024)
+                            LogSize            = [dbasize]($effectiveLogFileSize * 1024 * 1024)
                             DataPath           = $DataPath
                             LogPath            = $LogPath
                             DataFileGrowth     = [dbasize]($DataFileGrowth * 1024 * 1024)

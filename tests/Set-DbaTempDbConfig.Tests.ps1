@@ -39,18 +39,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         $random = Get-Random
 
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
 
         $tempdbDataFilePhysicalName = $server.Databases["tempdb"].Query("SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
         $tempdbDataFilePath = Split-Path $tempdbDataFilePhysicalName
 
-        if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
+        if (([DbaInstanceParameter]($TestConfig.InstanceMulti1)).IsLocalHost) {
             $null = New-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Type Directory
             $null = New-Item -Path "$tempdbDataFilePath\Log_$random" -Type Directory
         } else {
-            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock {
+            Invoke-Command2 -ComputerName $TestConfig.InstanceMulti1 -ScriptBlock {
                 $null = New-Item -Path "$($args[0])\DataDir0_$($args[1])" -Type Directory
                 $null = New-Item -Path "$($args[0])\DataDir1_$($args[1])" -Type Directory
                 $null = New-Item -Path "$($args[0])\DataDir2_$($args[1])" -Type Directory
@@ -67,13 +67,13 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created directories.
-        if (([DbaInstanceParameter]($TestConfig.InstanceSingle)).IsLocalHost) {
+        if (([DbaInstanceParameter]($TestConfig.InstanceMulti1)).IsLocalHost) {
             Remove-Item -Path "$tempdbDataFilePath\DataDir0_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\DataDir1_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\DataDir2_$random" -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "$tempdbDataFilePath\Log_$random" -Force -ErrorAction SilentlyContinue
         } else {
-            Invoke-Command2 -ComputerName $TestConfig.InstanceSingle -ScriptBlock {
+            Invoke-Command2 -ComputerName $TestConfig.InstanceMulti1 -ScriptBlock {
                 Remove-Item -Path "$($args[0])\DataDir0_$($args[1])" -Force -ErrorAction SilentlyContinue
                 Remove-Item -Path "$($args[0])\DataDir1_$($args[1])" -Force -ErrorAction SilentlyContinue
                 Remove-Item -Path "$($args[0])\DataDir2_$($args[1])" -Force -ErrorAction SilentlyContinue
@@ -86,13 +86,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command actually works" {
 
         It "test with an invalid data dir" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly -WarningAction SilentlyContinue -WarningVariable WarnVar
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceMulti1 -DataFileSize 1024 -DataPath "$tempdbDataFilePath\invalidDir_$random" -OutputScriptOnly -WarningAction SilentlyContinue -WarningVariable WarnVar
             $WarnVar | Should -Match "does not exist"
             $result | Should -BeNullOrEmpty
         }
 
         It "valid sql is produced with nearly all options set and a single data directory" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceMulti1 -DataFileCount 8 -DataFileSize 2048 -LogFileSize 512 -DataFileGrowth 1024 -LogFileGrowth 512 -DataPath "$tempdbDataFilePath\DataDir0_$random" -LogPath "$tempdbDataFilePath\Log_$random" -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -101,7 +101,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "valid sql is produced with -DisableGrowth" {
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceMulti1 -DataFileCount 8 -DataFileSize 1024 -LogFileSize 512 -DisableGrowth -DataPath $tempdbDataFilePath -LogPath $tempdbDataFilePath -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             $sqlStatements.Count | Should -Be 9
@@ -111,7 +111,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "multiple data directories are supported" {
             $dataDirLocations = "$tempdbDataFilePath\DataDir0_$random", "$tempdbDataFilePath\DataDir1_$random", "$tempdbDataFilePath\DataDir2_$random"
-            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceSingle -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly -WarningAction SilentlyContinue
+            $result = Set-DbaTempDbConfig -SqlInstance $TestConfig.InstanceMulti1 -DataFileCount 8 -DataFileSize 1024 -DataPath $dataDirLocations -OutputScriptOnly -WarningAction SilentlyContinue
             $sqlStatements = $result -Split ";" | Where-Object { $PSItem -ne "" }
 
             # check the round robin assignment of files to data dir locations
@@ -131,7 +131,7 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $tempdbReductionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $tempdbReductionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $tempdbReductionPhysicalName = $tempdbReductionServer.Databases["tempdb"].Query("SELECT physical_name AS PhysicalName FROM sys.database_files WHERE file_id = 1").PhysicalName
             $tempdbReductionDataPath = Split-Path $tempdbReductionPhysicalName
             $originalDataFileState = @($tempdbReductionServer.Databases["tempdb"].Query("SELECT file_id AS ID, name AS LogicalName, size AS SizePages, growth AS GrowthValue, is_percent_growth AS IsPercentGrowth FROM sys.database_files WHERE type = 0 ORDER BY file_id"))
@@ -149,7 +149,7 @@ Describe $CommandName -Tag IntegrationTests {
             # database of the caller back. It has to be non-pooled: SMO reopens a pooled connection at its
             # default database, which hides the leak. msdb rather than master, because restoring to master
             # would pass an assertion and still be wrong. See #10555.
-            $tempdbContextServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database msdb -NonPooledConnection
+            $tempdbContextServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database msdb -NonPooledConnection
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -383,6 +383,105 @@ END
             $preservedRowCount = $tempdbReductionServer.Databases["tempdb"].Query("SELECT COUNT(1) AS PreservedRows FROM dbo.[$allocationTableName]").PreservedRows
             $preservedRowCount | Should -Be $allocationRowCount
             $tempdbReductionServer.Databases["tempdb"].ExecuteNonQuery("DROP TABLE dbo.[$allocationTableName];")
+        }
+    }
+
+    Context "Two instances keep their own log sizes in one call" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The per-instance fallback for an unbound -LogFileSize used to be assigned to the
+            # parameter variable, so the first instance's log size leaked into the log statement
+            # of every later instance of the same call.
+            $serverMulti1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $serverMulti2 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+
+            # Two captures per instance: the configured values (master) are what AfterAll restores;
+            # the running values (tempdb itself) are what the command reads for its fallback, and
+            # the two can drift apart on a lab instance that has not restarted since a resize.
+            $configuredQuery = @"
+SELECT name, type, size / 128 AS SizeMb, growth / 128 AS GrowthMb, is_percent_growth
+FROM sys.master_files WHERE database_id = 2
+"@
+            $runningQuery = @"
+SELECT name, type, size / 128 AS SizeMb FROM tempdb.sys.database_files
+"@
+            $configuredBefore1 = Invoke-DbaQuery -SqlInstance $serverMulti1 -Query $configuredQuery
+            $configuredBefore2 = Invoke-DbaQuery -SqlInstance $serverMulti2 -Query $configuredQuery
+            $runningBefore1 = Invoke-DbaQuery -SqlInstance $serverMulti1 -Query $runningQuery
+            $runningBefore2 = Invoke-DbaQuery -SqlInstance $serverMulti2 -Query $runningQuery
+
+            $dataFileCount1 = @($configuredBefore1 | Where-Object type -eq 0).Count
+            $dataFileCount2 = @($configuredBefore2 | Where-Object type -eq 0).Count
+            if ($dataFileCount1 -ne $dataFileCount2) {
+                throw "The two instances have different tempdb data file counts ($dataFileCount1 vs $dataFileCount2), the regression needs equal counts"
+            }
+            $dataFileSizeTotal1 = ($configuredBefore1 | Where-Object type -eq 0 | Measure-Object SizeMb -Sum).Sum
+
+            # Make the two running log sizes provably different: growing is immediate, so the
+            # command's fallback reads the new value right away.
+            $logRunningSize1 = ($runningBefore1 | Where-Object type -eq 1).SizeMb
+            $logNameMulti2 = ($runningBefore2 | Where-Object type -eq 1).name
+            $logSizeTarget2 = ($runningBefore2 | Where-Object type -eq 1).SizeMb + 64
+            Invoke-DbaQuery -SqlInstance $serverMulti2 -Query "ALTER DATABASE tempdb MODIFY FILE (NAME = $logNameMulti2, SIZE = $($logSizeTarget2)MB)"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # LogFileSize stays unbound on purpose: the per-instance fallback is what regressed.
+            $splatTwoInstances = @{
+                SqlInstance   = $serverMulti1, $serverMulti2
+                DataFileCount = $dataFileCount1
+                DataFileSize  = $dataFileSizeTotal1
+                LogFileGrowth = 64
+                WarningAction = "SilentlyContinue"
+            }
+            $resultsTwoInstances = Set-DbaTempDbConfig @splatTwoInstances
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $logConfiguredQuery = "SELECT size / 128 AS SizeMb FROM sys.master_files WHERE database_id = 2 AND type = 1"
+            $logConfiguredAfter1 = (Invoke-DbaQuery -SqlInstance $serverMulti1 -Query $logConfiguredQuery).SizeMb
+            $logConfiguredAfter2 = (Invoke-DbaQuery -SqlInstance $serverMulti2 -Query $logConfiguredQuery).SizeMb
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The grown running log of the second instance shrinks back first; best effort, because
+            # active log use can refuse the shrink, and the configured restore below stands either way.
+            $logRunningTarget2 = ($runningBefore2 | Where-Object type -eq 1).SizeMb
+            try {
+                Invoke-DbaQuery -SqlInstance $serverMulti2 -Database tempdb -Query "DBCC SHRINKFILE ($logNameMulti2, $logRunningTarget2)"
+            } catch {
+                Write-Message -Level Warning -Message "Could not shrink the tempdb log of the second instance back: $PSItem"
+            }
+
+            $restoreServers = @($serverMulti1, $serverMulti2)
+            $restoreCaptures = @($configuredBefore1, $configuredBefore2)
+            for ($i = 0; $i -lt 2; $i++) {
+                foreach ($file in $restoreCaptures[$i]) {
+                    $growthUnit = if ($file.is_percent_growth) { "%" } else { "MB" }
+                    $restoreQuery = "ALTER DATABASE tempdb MODIFY FILE (NAME = $($file.name), SIZE = $($file.SizeMb)MB, FILEGROWTH = $($file.GrowthMb)$growthUnit)"
+                    Invoke-DbaQuery -SqlInstance $restoreServers[$i] -Query $restoreQuery
+                }
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns exactly one clean object per instance" {
+            # The command used to leak a raw -1 per executed batch into the pipeline.
+            @($resultsTwoInstances).Count | Should -Be 2
+        }
+
+        It "Returns the size of each instance's own log file" {
+            ($resultsTwoInstances | Select-Object -First 1).LogSize.Megabyte | Should -Be $logRunningSize1
+            ($resultsTwoInstances | Select-Object -Last 1).LogSize.Megabyte | Should -Be $logSizeTarget2
+        }
+
+        It "Configures each instance's log to its own size" {
+            $logConfiguredAfter1 | Should -Be $logRunningSize1
+            $logConfiguredAfter2 | Should -Be $logSizeTarget2
         }
     }
 }
