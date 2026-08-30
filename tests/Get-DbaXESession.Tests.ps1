@@ -59,6 +59,13 @@ where program_name like 'dbatools%'
             }
             $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
 
+            # Early pipeline termination stops the command in the middle of its emission loop, so
+            # a disconnect placed after the loop never runs on this path - only a finally covers it.
+            foreach ($i in 1..3) {
+                $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle | Select-Object -First 1
+            }
+            $sleepingAfterEarlyEnd = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -70,10 +77,17 @@ where program_name like 'dbatools%'
             $sleepingAfter | Should -Be $sleepingBefore
         }
 
+        It "Leaves no sleeping session behind when the pipeline ends early" {
+            $sleepingAfterEarlyEnd | Should -Be $sleepingBefore
+        }
+
         It "Emits objects whose store still works after the connection is returned" {
             $result = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session system_health
             # The store must transparently reconnect for downstream commands like Start or Stop.
             $result.Store.Sessions.Name | Should -Contain "system_health"
+            # The assertion above deliberately reopened the store connection - return it, so this
+            # test does not leave shared connection state behind for later tests to trip over.
+            $result.Store.SfcConnection.Disconnect()
         }
     }
 }
