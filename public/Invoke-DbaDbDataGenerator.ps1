@@ -555,6 +555,7 @@ function Invoke-DbaDbDataGenerator {
                     }
                 }
             }
+            Write-ProgressHelper -Completed
 
             try {
                 $sqlconn.Close()

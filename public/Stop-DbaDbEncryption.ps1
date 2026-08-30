@@ -110,6 +110,7 @@ function Stop-DbaDbEncryption {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
+            Write-ProgressHelper -Completed
         } else {
             # Parallel processing using runspaces
             $disableScript = {
@@ -249,6 +250,7 @@ function Stop-DbaDbEncryption {
                 }
                 Start-Sleep -Milliseconds 500
             }
+            Write-Progress -Id 1 -Activity "Disabling encryption" -Completed
 
             $runspacePool.Close()
             $runspacePool.Dispose()

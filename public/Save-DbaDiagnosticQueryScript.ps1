@@ -217,8 +217,10 @@ function Save-DbaDiagnosticQueryScript {
             Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
             Get-ChildItem -Path $filename
         } catch {
+            Write-ProgressHelper -Completed
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
             return
         }
     }
+    Write-ProgressHelper -Completed
 }

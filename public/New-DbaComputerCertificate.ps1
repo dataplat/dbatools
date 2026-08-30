@@ -526,6 +526,7 @@ function New-DbaComputerCertificate {
                     Stop-Function "Isue removing files from $certDir" -Target $certDir -ErrorRecord $_
                 }
             }
+            Write-ProgressHelper -Completed
         }
     }
 }

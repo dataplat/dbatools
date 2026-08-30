@@ -1038,6 +1038,7 @@ WHERE c.object_id = OBJECT_ID(@tableName)
                         } else {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
+                        Write-Progress -Activity "Importing from $file" -Completed
                     }
                 }
                 # Clean up Parquet reader if ShouldProcess was skipped (WhatIf mode)

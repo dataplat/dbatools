@@ -374,6 +374,7 @@ function Read-DbaBackupHeader {
             }
             Start-Sleep -Milliseconds 500
         }
+        Write-Progress -Id 1 -Activity Updating -Completed
         #Close the runspace pool
         $runspacePool.Close()
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace

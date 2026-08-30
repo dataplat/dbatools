@@ -383,6 +383,7 @@ function Start-DbaDbEncryption {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
+            Write-ProgressHelper -Completed
         } else {
             # Parallel processing - group databases by instance and pre-create shared resources
             $instanceGroups = $InputObject | Group-Object -Property { $_.Parent.Name }
@@ -615,6 +616,7 @@ function Start-DbaDbEncryption {
                     }
                     Start-Sleep -Milliseconds 500
                 }
+                Write-Progress -Id 1 -Activity "Enabling encryption on $servername" -Completed
 
                 $runspacePool.Close()
                 $runspacePool.Dispose()

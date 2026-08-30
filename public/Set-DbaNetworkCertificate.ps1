@@ -410,6 +410,7 @@ function Set-DbaNetworkCertificate {
                     Notes                 = $notes
                 }
             }
+            Write-ProgressHelper -Completed
         }
     }
 }
