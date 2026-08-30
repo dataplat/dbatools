@@ -198,7 +198,11 @@ function Install-DbaWhoIsActive {
             }
             if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
                 try {
-                    $ProcedureExists_Query = "SELECT COUNT(*) [proc_count] FROM sys.procedures WHERE is_ms_shipped = 0 AND LOWER(name) LIKE '%sp_whoisactive%'"
+                    # Every shipped script creates dbo.sp_WhoIsActive, so the exact schema-qualified
+                    # lookup is the reliable detection. The LOWER-LIKE probe it replaces depended on
+                    # the database collation twice: a case sensitive collation never matched the
+                    # lowercase pattern, and under Turkish rules LOWER() turns the I into a dotless i.
+                    $ProcedureExists_Query = "SELECT CASE WHEN OBJECT_ID(N'dbo.sp_WhoIsActive', N'P') IS NOT NULL THEN 1 ELSE 0 END AS [proc_count]"
 
                     if ($server.Databases[$Database]) {
                         $ProcedureExists = ($server.Query($ProcedureExists_Query, $Database)).proc_count
