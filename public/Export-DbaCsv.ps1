@@ -356,7 +356,10 @@ function Export-DbaCsv {
                 }
             } finally {
                 if ($isNewConnection) {
-                    $null = $server | Disconnect-DbaInstance -Verbose:$false
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation:
+                    # Disconnect-DbaInstance supports ShouldProcess, so a propagated $WhatIfPreference
+                    # would skip the actual disconnect and leak the connection this command opened.
+                    $null = $server | Disconnect-DbaInstance -Verbose:$false -WhatIf:$false -Confirm:$false
                 }
             }
         }

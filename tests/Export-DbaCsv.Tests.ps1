@@ -362,6 +362,14 @@ where program_name like 'dbatools%'
             }
             $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
 
+            # -WhatIf still opens the connection before ShouldProcess skips the export, and
+            # Disconnect-DbaInstance supports ShouldProcess itself - the ownership disconnect has
+            # to ignore the propagated WhatIf preference or every -WhatIf call leaks its session.
+            foreach ($i in 1..3) {
+                $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-whatif-$i.csv" -WhatIf
+            }
+            $sleepingAfterWhatIf = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -371,6 +379,10 @@ where program_name like 'dbatools%'
 
         It "Leaves no sleeping session behind" {
             $sleepingAfter | Should -Be $sleepingBefore
+        }
+
+        It "Leaves no sleeping session behind with -WhatIf" {
+            $sleepingAfterWhatIf | Should -Be $sleepingBefore
         }
     }
 
