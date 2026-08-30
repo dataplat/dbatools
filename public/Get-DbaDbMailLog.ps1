@@ -133,7 +133,10 @@ function Get-DbaDbMailLog {
                 if ($Type) {
                     # The sysmail_event_log view emits event_type in lowercase, so compare lowercased or the
                     # documented values (Error, Warning, Information, Success, Internal) never match on a case sensitive instance.
-                    $combinedtype = ($Type -join "', '").ToLower()
+                    # Invariantly: a culture-sensitive lowercase turns the I of Information or
+                    # Internal into a dotless i under Turkish rules, which never matches the
+                    # ASCII tokens sysmail stores.
+                    $combinedtype = ($Type -join "', '").ToLowerInvariant()
                     $wherearray += "LOWER(event_type) IN ('$combinedtype')"
                 }
 
