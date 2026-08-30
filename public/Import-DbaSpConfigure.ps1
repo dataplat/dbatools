@@ -301,9 +301,10 @@ function Import-DbaSpConfigure {
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
-
-        # Only close the connections that were opened here. See #10554.
+        # Only close the connections that were opened here, and close them before the interrupt
+        # return below: a begin-block guard sets the interrupt after a connection was already
+        # opened (a missing -Path, a failed sysadmin check), and returning first would leak it
+        # on every guard path. See #10554.
         if ($isNewServerConnection) {
             $server.ConnectionContext.Disconnect()
         }
@@ -313,6 +314,9 @@ function Import-DbaSpConfigure {
         if ($isNewDestinationConnection) {
             $destserver.ConnectionContext.Disconnect()
         }
+
+        # Only the finished message stays suppressed when the command was interrupted.
+        if (Test-FunctionInterrupt) { return }
 
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Message -Level Output -Message "SQL Server configuration options migration finished."
