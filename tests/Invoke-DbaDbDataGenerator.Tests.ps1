@@ -428,4 +428,141 @@ Describe $CommandName -Tag IntegrationTests {
             ($uniqueNumbersRows.Nr | Select-Object -Unique).Count | Should -Be 10
         }
     }
+
+    Context "Config for a table with an identity primary key" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The primary key is an identity column and also the table's unique index. Its values
+            # must come from the identity branch (IDENT_CURRENT + increment) - the unique value
+            # machinery used to claim the column and insert random values, jumping the seed.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[identitypeople]([Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY, [Nr] [int] NOT NULL);"
+
+            $identityConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "identitypeople",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Id",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1000,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": true,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        },
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1000,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 5
+    }
+  ]
+}
+"@
+            $identityConfigPath = "$backupPath\identitypk.json"
+            Set-Content -Path $identityConfigPath -Value $identityConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $identityResult = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $identityConfigPath
+            $identityWarning = $WarnVar
+            $identityRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select Id from dbo.identitypeople order by Id"
+        }
+
+        It "Does not warn" {
+            $identityWarning | Should -BeNullOrEmpty
+        }
+
+        It "Reports the rows" {
+            $identityResult.Rows | Should -Be 5
+        }
+
+        It "Fills the identity column from the identity sequence" {
+            ($identityRows.Id -join ",") | Should -Be "1,2,3,4,5"
+        }
+    }
+
+    Context "Config for a unique index whose values already exist in the table" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # With TruncateTable disabled the candidates have to avoid what is already persisted.
+            # MinValue = MaxValue = 1 against an existing value 1 makes success impossible - the
+            # command has to stop cleanly before the insert instead of failing on the duplicate key.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[uniquepersisted]([Nr] [int] NOT NULL);
+                CREATE UNIQUE INDEX [ix_uniquepersisted_nr] ON [dbo].[uniquepersisted]([Nr]);
+                INSERT INTO [dbo].[uniquepersisted] VALUES (1);"
+
+            $persistedConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "uniquepersisted",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 1
+    }
+  ]
+}
+"@
+            $persistedConfigPath = "$backupPath\uniquepersisted.json"
+            Set-Content -Path $persistedConfigPath -Value $persistedConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $persistedConfigPath -WarningAction SilentlyContinue
+            $persistedWarning = $WarnVar
+            $persistedCount = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select count(*) as c from dbo.uniquepersisted").c
+        }
+
+        It "Stops cleanly before the insert instead of failing on the duplicate key" {
+            $persistedWarning | Should -BeLike "*Could not generate a unique value*"
+        }
+
+        It "Inserts nothing" {
+            $persistedCount | Should -Be 1
+        }
+    }
 }

@@ -299,8 +299,27 @@ function Invoke-DbaDbDataGenerator {
 
                         # Only the index columns that are part of the configuration get a value generated
                         # here. The insert statement further down only names configured columns, so an
-                        # index column outside the configuration is left to SQL Server.
-                        $uniqueValueColumns = @($uniqueIndexes.IndexedColumns.Name | Select-Object -Unique | Where-Object { $PSItem -in $tableobject.Columns.Name })
+                        # index column outside the configuration is left to SQL Server. Identity columns
+                        # are excluded even when they carry the unique index - the typical primary key:
+                        # their values come from the identity branch of the insert, and random values
+                        # here would jump the identity seed toward the type limit.
+                        $identityColumnNames = @($tableobject.Columns | Where-Object Identity | Select-Object -ExpandProperty Name)
+                        $uniqueValueColumns = @($uniqueIndexes.IndexedColumns.Name | Select-Object -Unique | Where-Object { $PSItem -in $tableobject.Columns.Name -and $PSItem -notin $identityColumnNames })
+
+                        # The collision check must also see what is already persisted: without
+                        # TruncateTable, a candidate matching an existing indexed value would pass
+                        # the generation and then fail at insert time.
+                        $existingUniqueValues = @()
+                        if ($uniqueValueColumns.Count -gt 0 -and -not $tableobject.TruncateTable) {
+                            $existingColumnList = "[" + ($uniqueValueColumns -join "], [") + "]"
+                            $existingValuesQuery = "SELECT DISTINCT $existingColumnList FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            try {
+                                $existingUniqueValues = @(Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $existingValuesQuery -EnableException)
+                            } catch {
+                                Stop-Function -Message "Error reading the existing unique index values from $($tableobject.Schema).$($tableobject.Name)" -Target $tableobject -ErrorRecord $_
+                                return
+                            }
+                        }
 
                         for ($i = 0; $i -lt $tableobject.Rows; $i++) {
                             $attempt = 0
@@ -344,7 +363,7 @@ function Invoke-DbaDbDataGenerator {
                                         continue
                                     }
 
-                                    foreach ($existingRow in $uniqueValues) {
+                                    foreach ($existingRow in ($existingUniqueValues + $uniqueValues)) {
                                         $matchingColumnNames = @($indexColumnNames | Where-Object { $existingRow.$PSItem -eq $rowValue.$PSItem })
 
                                         if ($matchingColumnNames.Count -eq $indexColumnNames.Count) {
