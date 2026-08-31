@@ -216,6 +216,93 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When using Query without ForceExplicitMapping and the destination has unwritable columns" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_positional_source (Id INT, A INT, B INT, C INT)")
+            $null = $sourceDb.Query("INSERT dbo.dbatoolsci_positional_source (Id, A, B, C) VALUES (1, 11, 22, 33), (2, 111, 222, 333)")
+            # A computed and a rowversion column sit between the writable ones, so a positional mapping that
+            # counts them shifts every column behind them (#10661).
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_dest (Id INT, A INT, Computed AS (A * 10), RV ROWVERSION, B INT, C INT)")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_identity (Id INT IDENTITY(1, 1), A INT, B INT, C INT)")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_rowversion (Id INT, A INT, RV ROWVERSION, B INT, C INT)")
+
+            $splatPositional = @{
+                SqlInstance      = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                Database         = "tempdb"
+                Table            = "dbatoolsci_positional_source"
+                Query            = "SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_source"
+                DestinationTable = "dbatoolsci_positional_dest"
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_source")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_dest")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_identity")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_rowversion")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Maps the query columns by position onto the writable destination columns only" {
+            $result = Copy-DbaDbTableData @splatPositional
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, Computed, B, C FROM dbo.dbatoolsci_positional_dest ORDER BY Id")
+            $destData.A | Should -Be @(11, 111)
+            $destData.Computed | Should -Be @(110, 1110)
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Does not shift the columns behind a rowversion column" {
+            # This is the silent variant: SqlBulkCopy drops the source column that lands on the rowversion
+            # column and reports success, so the last column ends up empty and the ones before it are off by one.
+            $splatRowversion = $splatPositional.Clone()
+            $splatRowversion.DestinationTable = "dbatoolsci_positional_rowversion"
+            $result = Copy-DbaDbTableData @splatRowversion
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_rowversion ORDER BY Id")
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Still ignores the identity placeholder unless KeepIdentity is used" {
+            $splatIdentity = $splatPositional.Clone()
+            $splatIdentity.Query = "SELECT 0, A, B, C FROM dbo.dbatoolsci_positional_source ORDER BY Id"
+            $splatIdentity.DestinationTable = "dbatoolsci_positional_identity"
+            $result = Copy-DbaDbTableData @splatIdentity
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_identity ORDER BY Id")
+            $destData.Id | Should -Be @(1, 2)
+            $destData.A | Should -Be @(11, 111)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Refuses a query with more columns than the destination can take instead of dropping them" {
+            $splatTooMany = $splatPositional.Clone()
+            $splatTooMany.Query = "SELECT Id, A, B, C, C AS Extra FROM dbo.dbatoolsci_positional_source"
+            $splatTooMany.Truncate = $true
+            $result = Copy-DbaDbTableData @splatTooMany -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "5 columns"
+            $WarnVar | Should -Match "4 writable columns"
+            $destinationDb.Query("SELECT COUNT(*) AS RowCnt FROM dbo.dbatoolsci_positional_dest").RowCnt | Should -Be 0
+        }
+    }
+
     Context "Regression tests" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
