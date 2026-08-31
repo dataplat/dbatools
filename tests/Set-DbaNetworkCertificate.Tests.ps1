@@ -65,6 +65,32 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -Match "No suitable certificate found"
     }
 
+    It "Says why a certificate with a CNG key is unsuitable" {
+        # New-SelfSignedCertificate creates a Key Storage Provider (CNG) key by default. SQL Server cannot use
+        # such a key, and the refusal has to name that reason instead of a bare PrivateKeyInvalid.
+        $newCngCertificate = {
+            param ($DnsName)
+            $splatCertificate = @{
+                DnsName           = $DnsName
+                CertStoreLocation = "Cert:\LocalMachine\My"
+                FriendlyName      = "dbatoolsci_cng_key"
+            }
+            (New-SelfSignedCertificate @splatCertificate).Thumbprint
+        }
+        $splatCreateCng = @{
+            ComputerName = $computerName
+            ScriptBlock  = $newCngCertificate
+            ArgumentList = $computerName
+        }
+        $cngThumbprint = Invoke-Command2 @splatCreateCng
+        $script:createdNetworkCertificateThumbprints += $cngThumbprint
+
+        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $cngThumbprint -WarningAction SilentlyContinue
+        $result | Should -BeNullOrEmpty
+        $WarnVar | Should -Match "PrivateKeyInvalid"
+        $WarnVar | Should -Match "legacy CSP key with KeySpec AT_KEYEXCHANGE"
+    }
+
     It "applies an unsuitable certificate when Force is used" {
         $splatNewUnsuitableCertificate = @{
             ComputerName           = $computerName

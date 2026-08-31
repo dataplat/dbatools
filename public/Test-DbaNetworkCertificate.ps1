@@ -78,7 +78,7 @@ function Test-DbaNetworkCertificate {
         - CertificateFound: Boolean indicating if the certificate was found in LocalMachine\My
         - KeyUsagesValid: Boolean indicating if the certificate has the required key usages (DigitalSignature and KeyEncipherment)
         - DnsNamesValid: Boolean indicating if the certificate's DNS names include the server's network name
-        - PrivateKeyValid: Boolean indicating if the private key is RSACryptoServiceProvider with KeyNumber Exchange
+        - PrivateKeyValid: Boolean indicating if the private key is RSACryptoServiceProvider with KeyNumber Exchange (a legacy CSP key with KeySpec AT_KEYEXCHANGE, which SQL Server requires; CNG / Key Storage Provider keys are not supported by SQL Server)
         - PublicKeyValid: Boolean indicating if the public key is RSA with at least 2048 bits
         - SignatureAlgorithmValid: Boolean indicating if the signature algorithm is SHA-256, SHA-384, or SHA-512
         - EnhancedKeyUsageValid: Boolean indicating if the certificate has the Server Authentication enhanced key usage
