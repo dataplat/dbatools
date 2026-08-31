@@ -718,7 +718,7 @@ function Copy-DbaDbTableData {
                                 if ($destColumns -contains $sourceColumn) {
                                     $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
                                 } else {
-                                    Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or not writable)"
+                                    Write-Message -Level Verbose -Message "Skipping column $sourceColumn (not in destination or not writable)"
                                 }
                             }
                         } else {
