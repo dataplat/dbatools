@@ -108,12 +108,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Copy data using a query that relies on the default source database" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) id FROM dbo.dbatoolsci_example4 ORDER BY id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
 
         It "Copy data using a query that uses a 3 part query" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
     }
