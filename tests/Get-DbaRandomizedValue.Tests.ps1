@@ -83,6 +83,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Accepts the same sub type under the type it belongs to" {
             Get-DbaRandomizedValue -RandomizerType Address -RandomizerSubType ZipCode | Should -Not -BeNullOrEmpty
         }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The validation guards used to run Stop-Function -Continue in the begin block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this
+            # very loop, so the counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaRandomizedValue -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Please use one of the variables*"
+        }
     }
 
     Context "Every randomizer type" {
@@ -96,10 +109,12 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($randomizerType in (Get-DbaRandomizedType)) {
                 $typeKey = "$($randomizerType.Type)/$($randomizerType.SubType)"
 
-                # Stop-Function -Continue from the begin block skips the rest of this iteration, so this entry
-                # is written first and only overwritten when the call comes back. Landing on it means a message
-                # was given. A Stop-Function inside the switch is swallowed by the switch instead, and those
-                # calls do come back, so the warning is checked as well.
+                # Landing on "message" means the call warned instead of producing a value - the guard in
+                # the begin block returns nothing and sets the warning, and a Stop-Function inside the
+                # switch is swallowed by the switch. Both come back, so the warning is checked below; the
+                # pre-written entry stays as a safety net. (Before #10638 the begin block guards escaped
+                # the command via a loop-less -Continue and ate this very foreach iteration, which is why
+                # the entry is written first.)
                 $typeResults[$typeKey] = "message"
                 $typeWarning = $null
 
