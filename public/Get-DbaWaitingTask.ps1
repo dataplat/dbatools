@@ -10,7 +10,7 @@ function Get-DbaWaitingTask {
         Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Server version must be SQL Server version XXXX or higher.
+        The target SQL Server instance or instances. Server version must be SQL Server 2005 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -110,7 +110,7 @@ function Get-DbaWaitingTask {
                 [er].[database_id] AS [DbId],
                 [est].[text] AS [SqlText],
                 [eqp].[query_plan] AS [QueryPlan],
-                CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] AS XML) AS [URL]
+                CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] AS XML) AS [InfoUrl]
             FROM sys.dm_os_waiting_tasks [owt]
             INNER JOIN sys.dm_os_tasks [ot] ON
                 [owt].[waiting_task_address] = [ot].[task_address]
