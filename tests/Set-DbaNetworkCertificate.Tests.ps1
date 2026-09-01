@@ -81,6 +81,8 @@ Describe $CommandName -Tag IntegrationTests {
             ComputerName = $computerName
             ScriptBlock  = $newCngCertificate
             ArgumentList = $computerName
+            # Raw, because Invoke-Command2 otherwise wraps the string in an object that only has a Length.
+            Raw          = $true
         }
         $cngThumbprint = Invoke-Command2 @splatCreateCng
         $script:createdNetworkCertificateThumbprints += $cngThumbprint
