@@ -141,7 +141,9 @@ function Invoke-DbaDbDataGenerator {
             Stop-Function -Message "Could not load randomizer class" -Continue
         }
 
-        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        # This list has to match the one in Test-DbaDbDataGeneratorConfig, because a configuration is
+        # rejected up front on every finding reported there.
+        $supportedDataTypes = "bigint", "bit", "bool", "char", "date", "datetime", "datetime2", "decimal", "int", "float", "guid", "money", "numeric", "nchar", "ntext", "nvarchar", "real", "smalldatetime", "smallint", "text", "time", "tinyint", "uniqueidentifier", "userdefineddatatype", "varchar"
         # This list decides which configurations we accept, so it has to predict what Get-DbaRandomizedValue
         # will accept further down. That command validates its input against the randomizer types, so we use
         # the same list here. Reflecting over a Bogus.Faker object instead offered subtypes that
@@ -168,7 +170,17 @@ function Invoke-DbaDbDataGenerator {
 
             # Test the configuration
             try {
-                Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
+                $configErrors = @()
+
+                # The findings are output objects, not exceptions, so they have to be collected and
+                # acted on. Left unassigned they went to the output stream and the generation ran on
+                # an invalid configuration.
+                $configErrors += Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
+
+                if ($configErrors.Count -ge 1) {
+                    Stop-Function -Message "Errors found testing the configuration file." -Target $FilePath
+                    return $configErrors
+                }
             } catch {
                 Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return
@@ -276,85 +288,105 @@ function Invoke-DbaDbDataGenerator {
                     }
 
                     $uniqueValues = @()
+                    $uniqueValueColumns = @()
 
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
                         # Loop through the rows and generate a unique value for each row
                         Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
 
-                        for ($i = 0; $i -lt $tableobject.Rows; $i++) {
-                            $rowValue = New-Object PSCustomObject
+                        $uniqueIndexes = @($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true)
 
-                            # Loop through each of the unique indexes
-                            foreach ($index in ($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true )) {
+                        # Only the index columns that are part of the configuration get a value generated
+                        # here. The insert statement further down only names configured columns, so an
+                        # index column outside the configuration is left to SQL Server. Identity columns
+                        # are excluded even when they carry the unique index - the typical primary key:
+                        # their values come from the identity branch of the insert, and random values
+                        # here would jump the identity seed toward the type limit.
+                        $identityColumnNames = @($tableobject.Columns | Where-Object Identity | Select-Object -ExpandProperty Name)
+                        $uniqueValueColumns = @($uniqueIndexes.IndexedColumns.Name | Select-Object -Unique | Where-Object { $PSItem -in $tableobject.Columns.Name -and $PSItem -notin $identityColumnNames })
 
-                                # Loop through the index columns
-                                foreach ($indexColumn in $index.IndexedColumns) {
-                                    # Get the column mask info
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
-
-                                    if ($columnMaskInfo) {
-                                        # Generate a new value
-                                        try {
-                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
-                                                $columnMaskInfo.MaxValue = $MaxValue
-                                            }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random' -and $columnMaskInfo.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
-                                            } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
-                                            }
-                                        } catch {
-                                            Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
-                                        }
-
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                        }
-                                    }
-
-                                }
-
-                                # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
-
-                                    $rowValue = New-Object PSCustomObject
-
-                                    # Loop through the index columns
-                                    foreach ($indexColumn in $index.IndexedColumns) {
-                                        # Get the column mask info
-                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
-
-                                        # Generate a new value
-                                        try {
-                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
-                                                $columnMaskInfo.MaxValue = $MaxValue
-                                            }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random' -and $columnMaskInfo.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
-                                            } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
-                                            }
-
-                                        } catch {
-                                            Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
-                                        }
-
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                            $uniqueValueColumns += $indexColumn.Name
-                                        }
-                                    }
-                                }
+                        # The collision check must also see what is already persisted: without
+                        # TruncateTable, a candidate matching an existing indexed value would pass
+                        # the generation and then fail at insert time.
+                        $existingUniqueValues = @()
+                        if ($uniqueValueColumns.Count -gt 0 -and -not $tableobject.TruncateTable) {
+                            $existingColumnList = "[" + ($uniqueValueColumns -join "], [") + "]"
+                            $existingValuesQuery = "SELECT DISTINCT $existingColumnList FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            try {
+                                $existingUniqueValues = @(Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $existingValuesQuery -EnableException)
+                            } catch {
+                                Stop-Function -Message "Error reading the existing unique index values from $($tableobject.Schema).$($tableobject.Name)" -Target $tableobject -ErrorRecord $_
+                                return
                             }
+                        }
+
+                        for ($i = 0; $i -lt $tableobject.Rows; $i++) {
+                            $attempt = 0
+
+                            # Generate a candidate row holding a value for every unique index column and
+                            # try again as long as a unique index of an earlier row holds the same
+                            # combination. The whole candidate is regenerated on a collision, so two
+                            # indexes sharing a column stay consistent within the row.
+                            do {
+                                $attempt++
+                                $rowValue = New-Object PSCustomObject
+
+                                foreach ($indexColumnName in $uniqueValueColumns) {
+                                    # Get the column mask info
+                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumnName
+
+                                    # Generate a new value
+                                    try {
+                                        if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq "String" -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                            $columnMaskInfo.MaxValue = $MaxValue
+                                        }
+                                        if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq "Random" -and $columnMaskInfo.SubType -in "Bool", "Number", "Float", "Byte", "String") {
+                                            $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                        } else {
+                                            $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                        }
+                                    } catch {
+                                        Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
+                                    }
+
+                                    $rowValue | Add-Member -Name $indexColumnName -Type NoteProperty -Value $newValue
+                                }
+
+                                # A collision is an earlier row that carries the same values in all the
+                                # configured columns of one of the unique indexes.
+                                $collision = $false
+                                foreach ($index in $uniqueIndexes) {
+                                    $indexColumnNames = @($index.IndexedColumns.Name | Where-Object { $PSItem -in $uniqueValueColumns })
+
+                                    if ($indexColumnNames.Count -eq 0) {
+                                        continue
+                                    }
+
+                                    foreach ($existingRow in ($existingUniqueValues + $uniqueValues)) {
+                                        $matchingColumnNames = @($indexColumnNames | Where-Object { $existingRow.$PSItem -eq $rowValue.$PSItem })
+
+                                        if ($matchingColumnNames.Count -eq $indexColumnNames.Count) {
+                                            $collision = $true
+                                            break
+                                        }
+                                    }
+
+                                    if ($collision) {
+                                        break
+                                    }
+                                }
+                            } while ($collision -and $attempt -lt 100)
+
+                            if ($collision) {
+                                Stop-Function -Message "Could not generate a unique value for the unique indexes of $($tableobject.Name) after $attempt tries" -Target $tableobject
+                                return
+                            }
+
                             # Add the row value to the array
                             $uniqueValues += $rowValue
                         }
                     }
-
-                    $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
 
                     if (-not $server.IsAzure) {
                         $sqlconn.ChangeDatabase($db.Name)
@@ -417,17 +449,19 @@ function Invoke-DbaDbDataGenerator {
                                 # before the insert statement was built.
 
                                 # make sure max is good
-                                if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
-                                    $columnValue = $null
-                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+                                # A column of a unique index always gets its pre-generated value, even when
+                                # it is nullable - the second NULL would already violate the index.
+                                if ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
                                     if ($uniqueValues.Count -lt 1) {
                                         Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
                                         return
                                     }
 
-                                    $columnValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+                                    $columnValue = $uniqueValues[$i - 1].$($columnobject.Name)
 
+                                } elseif ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
+                                    $columnValue = $null
                                 } elseif ($columnobject.Identity) {
                                     if ($nextIdentity -or (-not $nextIdentity -and $tableobject.TruncateTable)) {
                                         $nextIdentity += $identityValues.IdentityIncrement

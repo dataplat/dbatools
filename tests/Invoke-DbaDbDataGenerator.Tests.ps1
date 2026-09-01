@@ -146,21 +146,24 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Warns about the masking type and names the column" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath -WarningAction SilentlyContinue
-            ($WarnVar -join " ") | Should -BeLike "*Unsupported masking type*Locale*for column City*"
+        It "Rejects the masking type and names the column" {
+            $results = @(Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath -WarningAction SilentlyContinue)
+            ($WarnVar -join " ") | Should -BeLike "*Errors found testing the configuration file*"
+            $results.Column | Should -Contain "City"
+            ($results | Where-Object Column -eq "City").Error | Should -BeLike "*MaskingType is not valid*"
         }
 
-        It "Warns about the masking sub type and names the column" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkSubTypeConfigPath -WarningAction SilentlyContinue
-            ($WarnVar -join " ") | Should -BeLike "*Unsupported masking sub type*ContainsKey*for column City*"
+        It "Rejects the masking sub type and names the column" {
+            $results = @(Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkSubTypeConfigPath -WarningAction SilentlyContinue)
+            ($WarnVar -join " ") | Should -BeLike "*Errors found testing the configuration file*"
+            $results.Column | Should -Contain "City"
+            ($results | Where-Object Column -eq "City").Error | Should -BeLike "*SubType is not valid*"
         }
 
-        It "Skips the table instead of running an insert it cannot fill" {
-            # The insert statement names every column of the table, so skipping a single column further down
-            # left it with fewer values than columns and SQL Server answered with a syntax error.
+        It "Stops before running an insert it cannot fill" {
+            # The insert statement names every column of the table, so running it with a rejected column
+            # would leave it with fewer values than columns and SQL Server answered with a syntax error.
             $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $junkTypeConfigPath -WarningAction SilentlyContinue
-            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
             ($WarnVar -join " ") | Should -Not -BeLike "*Incorrect syntax*"
         }
     }
@@ -293,9 +296,9 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Names the parameter the configuration cannot supply" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $needsFormatConfigPath -WarningAction SilentlyContinue
-            ($WarnVar -join " ") | Should -BeLike "*needs a Format*for column City*"
-            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.people*"
+            $results = @(Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $needsFormatConfigPath -WarningAction SilentlyContinue)
+            ($WarnVar -join " ") | Should -BeLike "*Errors found testing the configuration file*"
+            ($results | Where-Object Column -eq "City").Error | Should -BeLike "*needs a Format*"
         }
     }
 
@@ -347,13 +350,219 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Rejects the column before generating unique values for it" {
-            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueConfigPath -WarningAction SilentlyContinue
-            ($WarnVar -join " ") | Should -BeLike "*Unsupported masking type*Locale*for column City*"
-            ($WarnVar -join " ") | Should -BeLike "*Skipping table dbo.uniquepeople*"
+            $results = @(Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueConfigPath -WarningAction SilentlyContinue)
+            ($WarnVar -join " ") | Should -BeLike "*Errors found testing the configuration file*"
+            ($results | Where-Object Column -eq "City").Error | Should -BeLike "*MaskingType is not valid*"
         }
 
         It "Leaves the table empty" {
             (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select count(*) as c from dbo.uniquepeople").c | Should -Be 0
+        }
+    }
+
+    Context "Config for a table with a unique index and a valid column" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The generated unique values were never written to the rows: the insert read them with a row
+            # index variable that was never assigned, and the list of unique index columns was only filled
+            # after a collision. So every row got a fresh random value instead of its pre-generated unique
+            # one, and nothing guarded the rows against violating the index.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[uniquenumbers]([Nr] [int] NOT NULL);
+                CREATE UNIQUE INDEX [ix_uniquenumbers_nr] ON [dbo].[uniquenumbers]([Nr]);"
+
+            $uniqueNumbersConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "uniquenumbers",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 10,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 10
+    }
+  ]
+}
+"@
+            $uniqueNumbersConfigPath = "$backupPath\uniquenumbers.json"
+            Set-Content -Path $uniqueNumbersConfigPath -Value $uniqueNumbersConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $uniqueNumbersResult = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $uniqueNumbersConfigPath
+            $uniqueNumbersWarning = $WarnVar
+            $uniqueNumbersRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select Nr from dbo.uniquenumbers"
+        }
+
+        It "Accepts the config without a warning" {
+            $uniqueNumbersWarning | Should -BeNullOrEmpty
+        }
+
+        It "Reports the generated rows" {
+            $uniqueNumbersResult.Rows | Should -Be 10
+        }
+
+        It "Inserts every row with its own unique value" {
+            # Ten rows from a domain of only ten values: without the unique value machinery, ten
+            # independent random draws practically never form a permutation, so this fails when the
+            # generated unique values are not the ones that reach the insert.
+            $uniqueNumbersRows.Nr.Count | Should -Be 10
+            ($uniqueNumbersRows.Nr | Select-Object -Unique).Count | Should -Be 10
+        }
+    }
+
+    Context "Config for a table with an identity primary key" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The primary key is an identity column and also the table's unique index. Its values
+            # must come from the identity branch (IDENT_CURRENT + increment) - the unique value
+            # machinery used to claim the column and insert random values, jumping the seed.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[identitypeople]([Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY, [Nr] [int] NOT NULL);"
+
+            $identityConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "identitypeople",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Id",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1000,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": true,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        },
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1000,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 5
+    }
+  ]
+}
+"@
+            $identityConfigPath = "$backupPath\identitypk.json"
+            Set-Content -Path $identityConfigPath -Value $identityConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $identityResult = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $identityConfigPath
+            $identityWarning = $WarnVar
+            $identityRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select Id from dbo.identitypeople order by Id"
+        }
+
+        It "Does not warn" {
+            $identityWarning | Should -BeNullOrEmpty
+        }
+
+        It "Reports the rows" {
+            $identityResult.Rows | Should -Be 5
+        }
+
+        It "Fills the identity column from the identity sequence" {
+            ($identityRows.Id -join ",") | Should -Be "1,2,3,4,5"
+        }
+    }
+
+    Context "Config for a unique index whose values already exist in the table" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # With TruncateTable disabled the candidates have to avoid what is already persisted.
+            # MinValue = MaxValue = 1 against an existing value 1 makes success impossible - the
+            # command has to stop cleanly before the insert instead of failing on the duplicate key.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[uniquepersisted]([Nr] [int] NOT NULL);
+                CREATE UNIQUE INDEX [ix_uniquepersisted_nr] ON [dbo].[uniquepersisted]([Nr]);
+                INSERT INTO [dbo].[uniquepersisted] VALUES (1);"
+
+            $persistedConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "uniquepersisted",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 1,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 1
+    }
+  ]
+}
+"@
+            $persistedConfigPath = "$backupPath\uniquepersisted.json"
+            Set-Content -Path $persistedConfigPath -Value $persistedConfig
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $null = Invoke-DbaDbDataGenerator -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -FilePath $persistedConfigPath -WarningAction SilentlyContinue
+            $persistedWarning = $WarnVar
+            $persistedCount = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "select count(*) as c from dbo.uniquepersisted").c
+        }
+
+        It "Stops cleanly before the insert instead of failing on the duplicate key" {
+            $persistedWarning | Should -BeLike "*Could not generate a unique value*"
+        }
+
+        It "Inserts nothing" {
+            $persistedCount | Should -Be 1
         }
     }
 }
